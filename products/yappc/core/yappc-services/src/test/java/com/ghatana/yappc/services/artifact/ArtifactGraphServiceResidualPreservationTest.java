@@ -4,7 +4,9 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +82,7 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
             "t1", "p1", "w1", "snap-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             "p1", "t1",
             List.of(), List.of(),
             null, "snap-1", "ver-1", "checksum-1",
@@ -114,7 +116,7 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
     @Test
     @DisplayName("empty residualIslands triggers saveResidualIslands with empty list, not placeholder records")
     void emptyResidualIslandsSavesEmptyList() {
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             "p1", "t1",
             List.of(), List.of(),
             null, "snap-2", "ver-2", "checksum-2",

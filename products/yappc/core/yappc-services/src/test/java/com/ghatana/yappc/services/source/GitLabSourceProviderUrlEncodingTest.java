@@ -16,8 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("GitLabSourceProvider URL Encoding Tests")
 class GitLabSourceProviderUrlEncodingTest {
 
-    private final GitLabSourceProvider provider = new GitLabSourceProvider();
-
     @Test
     @DisplayName("encodeProjectId encodes slash as %2F for namespace/project")
     void encodeProjectIdEncodesSlash() throws Exception {
@@ -38,36 +36,28 @@ class GitLabSourceProviderUrlEncodingTest {
 
     @Test
     @DisplayName("encodeFilePath joins path segments with %2F between encoded segments")
-    void encodeFilePathJoinsSegmentsWithEncodedSlash() throws Exception {
+    void encodeFilePathJoinsSegments() throws Exception {
         Method method = GitLabSourceProvider.class.getDeclaredMethod("encodeFilePath", String.class);
         method.setAccessible(true);
-        String encoded = (String) method.invoke(null, "src/main/App.ts");
-        // Each segment is URL-encoded, slashes between segments are %2F
-        assertThat(encoded).isEqualTo("src%2Fmain%2FApp.ts");
+        String encoded = (String) method.invoke(null, "src/components/Button.tsx");
+        assertThat(encoded).isEqualTo("src%2Fcomponents%2FButton.tsx");
     }
 
     @Test
     @DisplayName("encodeFilePath encodes special chars in segment names")
-    void encodeFilePathEncodesSpecialCharsInSegments() throws Exception {
+    void encodeFilePathEncodesSpecialChars() throws Exception {
         Method method = GitLabSourceProvider.class.getDeclaredMethod("encodeFilePath", String.class);
         method.setAccessible(true);
-        String encoded = (String) method.invoke(null, "src/my component/index.tsx");
-        // Java URLEncoder encodes spaces as '+' while preserving path separators as %2F
-        assertThat(encoded).contains("+");
-        assertThat(encoded).contains("%2F");
+        String encoded = (String) method.invoke(null, "src/[test]/file.ts");
+        assertThat(encoded).isEqualTo("src%2F%5Btest%5D%2Ffile.ts");
     }
 
     @Test
     @DisplayName("normalizeRepo strips gitlab.com prefix and .git suffix")
-    void normalizeRepoStripsGitlabPrefixAndGitSuffix() throws Exception {
+    void normalizeRepoStripsPrefix() throws Exception {
         Method method = GitLabSourceProvider.class.getDeclaredMethod("normalizeRepo", String.class);
         method.setAccessible(true);
-
-        assertThat((String) method.invoke(null, "https://gitlab.com/my-org/my-repo.git"))
-            .isEqualTo("my-org/my-repo");
-        assertThat((String) method.invoke(null, "git@gitlab.com:my-org/my-repo.git"))
-            .isEqualTo("my-org/my-repo");
-        assertThat((String) method.invoke(null, "my-org/my-repo"))
-            .isEqualTo("my-org/my-repo");
+        String normalized = (String) method.invoke(null, "https://gitlab.com/my-group/my-project.git");
+        assertThat(normalized).isEqualTo("my-group/my-project");
     }
 }

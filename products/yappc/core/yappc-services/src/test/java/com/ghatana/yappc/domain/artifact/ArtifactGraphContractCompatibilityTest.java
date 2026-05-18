@@ -28,9 +28,9 @@ class ArtifactGraphContractCompatibilityTest {
     void artifactNodeDtoHasCanonicalFieldNames() {
         Set<String> expectedFields = Set.of(
             "id", "type", "name", "filePath", "content", "properties", "tags",
-            "tenantId", "projectId", "workspaceId", "snapshotRef", "sourceLocation",
+            "tenantId", "projectId", "sourceLocation",
             "confidence", "provenance", "extractorId", "extractorVersion",
-            "residualFragmentIds", "securityFlags", "privacyFlags"
+            "residualFragmentIds", "privacySecurityFlags", "sourceRef", "symbolRef"
         );
 
         Set<String> actualFields = getRecordComponentNames(ArtifactNodeDto.class);
@@ -45,7 +45,7 @@ class ArtifactGraphContractCompatibilityTest {
     void artifactEdgeDtoHasCanonicalFieldNames() {
         Set<String> expectedFields = Set.of(
             "edgeId", "sourceNodeId", "targetNodeId", "relationshipType", "properties",
-            "confidence", "bidirectional", "tenantId", "projectId", "workspaceId"
+            "confidence", "bidirectional", "metadata", "snapshotId", "versionId"
         );
 
         Set<String> actualFields = getRecordComponentNames(ArtifactEdgeDto.class);
@@ -59,8 +59,8 @@ class ArtifactGraphContractCompatibilityTest {
     @DisplayName("UnresolvedGraphEdgeDto has canonical field names matching proto UnresolvedGraphEdge")
     void unresolvedGraphEdgeDtoHasCanonicalFieldNames() {
         Set<String> expectedFields = Set.of(
-            "edgeId", "sourceNodeId", "targetRef", "relationshipType", "targetKindHint",
-            "confidence", "metadata", "tenantId", "projectId", "workspaceId"
+            "id", "sourceNodeId", "targetRef", "relationshipType", "targetKindHint",
+            "sourceLocation", "confidence", "metadata", "tenantId", "projectId", "workspaceId"
         );
 
         Set<String> actualFields = getRecordComponentNames(UnresolvedGraphEdgeDto.class);
@@ -89,8 +89,8 @@ class ArtifactGraphContractCompatibilityTest {
     @DisplayName("EdgeResolutionRecordDto has canonical field names matching proto EdgeResolutionRecord")
     void edgeResolutionRecordDtoHasCanonicalFieldNames() {
         Set<String> expectedFields = Set.of(
-            "recordId", "unresolvedEdgeId", "status", "resolvedTargetId", "candidateIds",
-            "reviewRequired", "resolutionMethod", "tenantId", "projectId", "workspaceId"
+            "id", "unresolvedEdgeId", "status", "resolvedTargetId", "candidateIds",
+            "reviewRequired", "resolutionMethod", "metadata", "tenantId", "projectId", "workspaceId"
         );
 
         Set<String> actualFields = getRecordComponentNames(EdgeResolutionRecordDto.class);
@@ -137,8 +137,8 @@ class ArtifactGraphContractCompatibilityTest {
 
         assertThat(proto).contains("message UnresolvedGraphEdge");
         assertThat(proto).contains("string relationship_type = 4");
-        // Verify legacy 'relationship' field is not present
-        assertThat(proto).doesNotContain("string relationship");
+        // Verify legacy 'relationship' field is not present (check for field definition, not comments)
+        assertThat(proto).doesNotContain("string relationship =");
     }
 
     @Test

@@ -20,6 +20,7 @@ import java.util.Objects;
  * - Never log credential values or secrets
  * - Enforce tenant/workspace/project ownership validation
  * - Resolve governed credential refs from vault or secret store
+ * - Env-backed resolver is dev-only (requires YAPPC_DEV_MODE=true or dev.mode=true)
  *
  * The default implementation reads from environment variables only.
  * Production deployments may supply a vault-backed implementation via DI.
@@ -46,6 +47,9 @@ public interface SourceCredentialResolver {
     /**
      * Default environment-variable-backed implementation.
      *
+     * <p>P0: Feature-gated for dev-only use. Set {@code YAPPC_DEV_MODE=true} or {@code dev.mode=true}
+     * system property to enable. In production, this will throw SecurityException.
+     *
      * <p>Resolution order:
      * <ol>
      *   <li>Validate scope (tenant/workspace/project ownership)</li>
@@ -58,9 +62,25 @@ public interface SourceCredentialResolver {
      * P0: Never logs resolved credential values to prevent secret leakage.
      *
      * @return a no-op-safe singleton instance
+     * @throws SecurityException if dev mode is not enabled
      */
     static SourceCredentialResolver envBacked() {
+        if (!isDevModeEnabled()) {
+            throw new SecurityException(
+                "Env-backed credential resolver is dev-only. Set YAPPC_DEV_MODE=true or dev.mode=true system property to enable. " +
+                "Production deployments must use governed(SourceCredentialRepository) with vault-backed credentials."
+            );
+        }
         return new EnvBackedSourceCredentialResolver();
+    }
+
+    /**
+     * P0: Check if dev mode is enabled via environment variable or system property.
+     */
+    private static boolean isDevModeEnabled() {
+        String envDevMode = System.getenv("YAPPC_DEV_MODE");
+        String propDevMode = System.getProperty("dev.mode");
+        return "true".equalsIgnoreCase(envDevMode) || "true".equalsIgnoreCase(propDevMode);
     }
 
     static SourceCredentialResolver governed(SourceCredentialRepository repository) {
@@ -73,10 +93,16 @@ public interface SourceCredentialResolver {
  * Not part of the public API — obtain via {@link SourceCredentialResolver#envBacked()}.
  *
  * P0: Enforces tenant/workspace/project ownership validation and never logs secrets.
+ * P0: Dev-only feature flag enforced at factory method level.
  */
 final class EnvBackedSourceCredentialResolver implements SourceCredentialResolver {
 
     private static final Logger log = LoggerFactory.getLogger(EnvBackedSourceCredentialResolver.class);
+
+    EnvBackedSourceCredentialResolver() {
+        log.warn("Env-backed credential resolver initialized. This is dev-only and should not be used in production. " +
+                 "Use governed(SourceCredentialRepository) with vault-backed credentials for production deployments.");
+    }
 
     @Override
     public String resolve(SourceLocator locator, String provider,
@@ -117,35 +143,47 @@ final class EnvBackedSourceCredentialResolver implements SourceCredentialResolve
     /**
      * P0: Validate tenant/workspace/project ownership.
      * Throws SecurityException if scope mismatch is detected.
+     * P0: Logs redacted credential ref to avoid leaking sensitive information.
      */
     private void validateScope(SourceLocator locator, String expectedTenantId, 
                                String expectedWorkspaceId, String expectedProjectId) {
         if (!Objects.equals(locator.tenantId(), expectedTenantId)) {
             String msg = String.format("Credential scope mismatch: locator tenant=%s, expected tenant=%s",
-                locator.tenantId(), expectedTenantId);
+                redact(locator.tenantId()), redact(expectedTenantId));
             log.error(msg);
             throw new SecurityException(msg);
         }
         if (!Objects.equals(locator.workspaceId(), expectedWorkspaceId)) {
             String msg = String.format("Credential scope mismatch: locator workspace=%s, expected workspace=%s",
-                locator.workspaceId(), expectedWorkspaceId);
+                redact(locator.workspaceId()), redact(expectedWorkspaceId));
             log.error(msg);
             throw new SecurityException(msg);
         }
         if (!Objects.equals(locator.projectId(), expectedProjectId)) {
             String msg = String.format("Credential scope mismatch: locator project=%s, expected project=%s",
-                locator.projectId(), expectedProjectId);
+                redact(locator.projectId()), redact(expectedProjectId));
             log.error(msg);
             throw new SecurityException(msg);
         }
     }
 
     /**
+     * P0: Redact sensitive information for logging.
+     */
+    private static String redact(String value) {
+        if (value == null || value.length() <= 4) {
+            return "***";
+        }
+        return value.substring(0, 2) + "***" + value.substring(value.length() - 2);
+    }
+
+    /**
      * P0: Log credential resolution without exposing the actual secret value.
+     * P0: Redacts credential ref to avoid leaking sensitive information.
      */
     private void logCredentialResolved(String credentialRef, String provider) {
         log.debug("Credential resolved for ref='{}', provider='{}' (value not logged)", 
-            credentialRef, provider);
+            redact(credentialRef), provider);
     }
 
     private static String resolveProviderFallback(String provider) {

@@ -91,7 +91,7 @@ class ArtifactNodeDtoRoundTripTest {
             List.of(),
             "tenant-123",
             "project-456",
-            null,
+            Map.of("filePath", "src/SimpleComponent.ts", "startLine", 1, "endLine", 10),
             null,
             null,
             null,

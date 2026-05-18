@@ -29,6 +29,10 @@ export interface ArtifactCompilerConfig {
   authToken: string;
   tenantId: string;
   timeout?: number;
+  // P0: Feature flag for manual patch-bundle compatibility methods
+  // These methods use manual HTTP calls instead of generated API client
+  // and should only be used when the generated API doesn't yet support patch bundle workflows
+  enableLegacyPatchBundleMethods?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -165,6 +169,7 @@ export class ArtifactCompilerClient {
   constructor(config: ArtifactCompilerConfig) {
     this.config = {
       timeout: 10000,
+      enableLegacyPatchBundleMethods: false, // P0: Default to false to encourage using generated API
       ...config,
     };
   }
@@ -255,6 +260,17 @@ export class ArtifactCompilerClient {
   }
 
   async approveBundle(bundleId: string, request: ApproveBundleRequest): Promise<ApiResponse<ApproveBundleResponse>> {
+    // P0: Feature-gated manual patch-bundle method
+    if (!this.config.enableLegacyPatchBundleMethods) {
+      throw new Error(
+        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
+        'Prefer using the generated API client for patch bundle operations.'
+      );
+    }
+    console.warn(
+      '[ArtifactCompilerClient] Using legacy manual HTTP method for approveBundle. ' +
+      'This method bypasses the generated API client and should only be used when necessary.'
+    );
     const payload = await this.postJson<ApproveBundleResponse>(
       this.buildEndpoint(`patch/bundles/${bundleId}/approve`),
       request,
@@ -263,6 +279,17 @@ export class ArtifactCompilerClient {
   }
 
   async rejectBundle(bundleId: string, request: RejectBundleRequest): Promise<ApiResponse<RejectBundleResponse>> {
+    // P0: Feature-gated manual patch-bundle method
+    if (!this.config.enableLegacyPatchBundleMethods) {
+      throw new Error(
+        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
+        'Prefer using the generated API client for patch bundle operations.'
+      );
+    }
+    console.warn(
+      '[ArtifactCompilerClient] Using legacy manual HTTP method for rejectBundle. ' +
+      'This method bypasses the generated API client and should only be used when necessary.'
+    );
     const payload = await this.postJson<RejectBundleResponse>(
       this.buildEndpoint(`patch/bundles/${bundleId}/reject`),
       request,
@@ -271,6 +298,17 @@ export class ArtifactCompilerClient {
   }
 
   async applyBundle(bundleId: string): Promise<ApiResponse<ApplyBundleResponse>> {
+    // P0: Feature-gated manual patch-bundle method
+    if (!this.config.enableLegacyPatchBundleMethods) {
+      throw new Error(
+        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
+        'Prefer using the generated API client for patch bundle operations.'
+      );
+    }
+    console.warn(
+      '[ArtifactCompilerClient] Using legacy manual HTTP method for applyBundle. ' +
+      'This method bypasses the generated API client and should only be used when necessary.'
+    );
     const payload = await this.postJson<ApplyBundleResponse>(
       this.buildEndpoint(`patch/bundles/${bundleId}/apply`),
       {},

@@ -87,7 +87,7 @@ class DataCloudRuntimeTruthProviderTest extends EventloopTestBase {
         assertThat(data).contains("\"workspaceId\":\"workspace-1\"");
         assertThat(data).contains("\"projectId\":\"data-cloud\"");
         assertThat(data).contains("\"snapshotId\":\"snapshot-2\"");
-        assertThat(data).contains("\"capturedAt\":\"2026-05-14T00:00:00.000Z\"");
+        assertThat(data).contains("\"capturedAt\":\"2026-05-14T00:00:00Z\"");
         assertThat(data).contains("\"correlationId\":\"corr-runtime-truth\"");
         assertThat(data).contains("\"persistedAt\"");
     }

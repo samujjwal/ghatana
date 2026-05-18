@@ -3,7 +3,9 @@ package com.ghatana.yappc.services.artifact;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +37,13 @@ class ArtifactGraphValidatorTest {
     void shouldValidateValidIngestRequest() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
-            PROJECT_ID, TENANT_ID, List.of(node), List.of(),
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+            "test-project", "test-tenant", List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
         );
@@ -66,7 +69,7 @@ class ArtifactGraphValidatorTest {
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button2.tsx", "src/Button2.tsx#component:Button2"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(node1, node2), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -84,7 +87,8 @@ class ArtifactGraphValidatorTest {
     void shouldRejectEdgeWithNonExistentSource() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -92,7 +96,7 @@ class ArtifactGraphValidatorTest {
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -110,7 +114,8 @@ class ArtifactGraphValidatorTest {
     void shouldRejectEdgeWithNonExistentTarget() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -118,7 +123,7 @@ class ArtifactGraphValidatorTest {
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -136,7 +141,8 @@ class ArtifactGraphValidatorTest {
     void shouldRejectMissingRelationshipType() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -144,7 +150,7 @@ class ArtifactGraphValidatorTest {
             Map.of(), 0.9, false, Map.of(), "snapshot-1", "version-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(node), List.of(edge),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
@@ -162,12 +168,13 @@ class ArtifactGraphValidatorTest {
     void shouldDetectScopeMismatch() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), "wrong-tenant", PROJECT_ID, null,
+            Map.of(), List.of(), "wrong-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
-            PROJECT_ID, "wrong-tenant", List.of(node), List.of(),
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+            "test-project", "wrong-tenant", List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
         );
@@ -188,7 +195,7 @@ class ArtifactGraphValidatorTest {
             TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of(residual)
@@ -210,7 +217,7 @@ class ArtifactGraphValidatorTest {
             TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             PROJECT_ID, TENANT_ID, List.of(), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of(residual)
@@ -227,7 +234,8 @@ class ArtifactGraphValidatorTest {
     void shouldDetectOrphanedResidualReferences() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.9, "exact", List.of(),
             List.of("orphaned-residual-id"), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
@@ -244,12 +252,13 @@ class ArtifactGraphValidatorTest {
     void shouldRejectInvalidConfidenceRange() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 1.5, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
-            PROJECT_ID, TENANT_ID, List.of(node), List.of(),
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+            "test-project", "test-tenant", List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
         );
@@ -266,12 +275,13 @@ class ArtifactGraphValidatorTest {
     void shouldWarnAboutLowConfidence() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
-            Map.of(), List.of(), TENANT_ID, PROJECT_ID, null,
+            Map.of(), List.of(), "test-tenant", "test-project",
+            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
             "extractor-1", "1.0", 0.3, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
-            PROJECT_ID, TENANT_ID, List.of(node), List.of(),
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
+            "test-project", "test-tenant", List.of(node), List.of(),
             "snapshot-1", "snapshot-1", "version-1", "checksum-1",
             List.of(), List.of(), List.of()
         );

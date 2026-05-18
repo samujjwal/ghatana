@@ -47,6 +47,20 @@ public class ArtifactGraphController {
     }
 
     /**
+     * P0: Safe JSON error serialization to prevent injection attacks and malformed JSON.
+     * Properly escapes special characters in error messages.
+     */
+    private String toJsonError(String errorType, String message) {
+        try {
+            Map<String, String> errorMap = Map.of("error", errorType + ": " + message);
+            return JsonMapper.toJson(errorMap);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize error JSON", e);
+            return "{\"error\":\"Internal error\"}";
+        }
+    }
+
+    /**
      * POST /api/v1/yappc/artifact/graph/ingest
      * Ingest artifact nodes and edges extracted by the TypeScript scanner.
      *
@@ -134,8 +148,9 @@ public class ArtifactGraphController {
                             for (ArtifactGraphValidator.ValidationError error : validationResult.errors()) {
                                 errorMsg.append(" ").append(error.code()).append("-").append(error.message()).append(";");
                             }
+                            String errorJson = toJsonError("Validation failed", errorMsg.toString());
                             return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"" + errorMsg.toString().replace("\"", "'") + "\"}")
+                                .withJson(errorJson)
                                 .build());
                         }
 
@@ -152,8 +167,9 @@ public class ArtifactGraphController {
                             for (ArtifactGraphValidator.ValidationError error : residualValidation.errors()) {
                                 errorMsg.append(" ").append(error.code()).append("-").append(error.message()).append(";");
                             }
+                            String errorJson = toJsonError("Residual validation failed", errorMsg.toString());
                             return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"" + errorMsg.toString().replace("\"", "'") + "\"}")
+                                .withJson(errorJson)
                                 .build());
                         }
 

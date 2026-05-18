@@ -12,18 +12,19 @@ import java.util.stream.Collectors;
 
 /**
  * @doc.type class
- * @doc.purpose Canonical repository inventory scanner with stable sorted walk, authoritative .gitignore, include/exclude rules, and comprehensive skip reasons
+ * @doc.purpose Canonical repository inventory scanner with stable sorted walk, streaming SHA-256, comprehensive skip reasons
  * @doc.layer service
  * @doc.pattern Scanner
  * 
  * P1: Canonical scanner replacing all ad-hoc repository walking logic.
+ * P0: Streaming SHA-256 checksum computation for memory efficiency with large files.
  * Provides:
  * - Stable sorted walk for deterministic ordering across OS/filesystem
  * - .gitignore pattern matching (simplified - production should use jgitignore library for full spec compliance)
  * - Include/exclude rule support for custom filtering
  * - Comprehensive skip reasons (vendor, generated, binary, large files, package boundaries)
  * - File type classification (source, config, docs, test, assets, build, unknown)
- * - SHA-256 checksum computation for content integrity
+ * - SHA-256 checksum computation with streaming for memory efficiency
  * - Package boundary detection for multi-module projects
  */
 public final class RepositoryInventoryScanner {
@@ -490,7 +491,9 @@ public final class RepositoryInventoryScanner {
     }
 
     /**
-     * Compute SHA-256 checksum of a file.
+     * Compute SHA-256 checksum of a file using streaming to avoid loading entire file into memory.
+     * 
+     * P0: Streaming implementation for large file support and memory efficiency.
      * 
      * @param file File path
      * @return SHA-256 checksum
@@ -499,8 +502,15 @@ public final class RepositoryInventoryScanner {
     private String computeFileChecksum(Path file) throws IOException {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] content = Files.readAllBytes(file);
-            digest.update(content);
+            byte[] buffer = new byte[8192]; // 8KB buffer for streaming
+            
+            try (java.io.InputStream in = java.nio.file.Files.newInputStream(file)) {
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    digest.update(buffer, 0, bytesRead);
+                }
+            }
+            
             byte[] hash = digest.digest();
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {

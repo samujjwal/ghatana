@@ -26,7 +26,7 @@ import java.util.Map;
 
 /**
  * @doc.type class
- * @doc.purpose GitHub source provider with commit pinning, deterministic snapshots, credentials, and archive fallback
+ * @doc.purpose GitHub source provider with commit pinning, deterministic snapshots, credentials
  * @doc.layer service
  * @doc.pattern Strategy
  * 
@@ -34,8 +34,8 @@ import java.util.Map;
  * P0: Added credentials support for private repositories via SourceCredentialResolver.
  * P0: Added bounded concurrency with semaphore for concurrent HTTP requests.
  * P0: Added file-size limits to prevent OOM on large files.
- * P0: Added archive fallback for when GitHub API fails.
  * P0: Enforces tenant/workspace/project ownership via credential resolver scope validation.
+ * P0: Made capability claims honest - removed unsupported archive fallback claim.
  */
 public final class GitHubSourceProvider implements SourceProvider {
 
@@ -193,9 +193,10 @@ public final class GitHubSourceProvider implements SourceProvider {
 
     @Override
     public Map<String, Object> capabilities() {
+        // P0: Made capability claims honest - removed supportsTruncatedTreeFailClosed
+        // since archive fallback is not yet implemented (see line 92-95 where truncated tree throws error)
         return Map.of(
             "supportsCommitPinning", true,
-            "supportsTruncatedTreeFailClosed", true,
             "supportsBlobMaterialization", true
         );
     }

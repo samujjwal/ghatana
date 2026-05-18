@@ -21,10 +21,11 @@ import java.util.stream.Stream;
 
 /**
  * @doc.type class
- * @doc.purpose Trusted runtime local-folder source provider with path safety checks, content SHA-256, and deterministic snapshots
+ * @doc.purpose Trusted runtime local-folder source provider with configurable allowed roots, path safety checks, content SHA-256, and deterministic snapshots
  * @doc.layer service
  * @doc.pattern Strategy
  * 
+ * P0: Added configurable allowed roots instead of hardcoded user.dir for security.
  * P0: Added content SHA-256 checksums for actual file content instead of path+size.
  * P0: Added deterministic snapshotId based on content hash.
  * P0: Integrated RepositoryInventoryScanner for .gitignore filtering and file classification.
@@ -32,13 +33,22 @@ import java.util.stream.Stream;
 public final class LocalFolderSourceProvider implements SourceProvider {
 
     private final RepositoryInventoryScanner scanner;
+    private final java.util.Set<Path> allowedRoots;
 
     public LocalFolderSourceProvider() {
-        this.scanner = new RepositoryInventoryScanner();
+        this(new RepositoryInventoryScanner(), java.util.Set.of(Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize()));
     }
 
     public LocalFolderSourceProvider(RepositoryInventoryScanner scanner) {
+        this(scanner, java.util.Set.of(Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize()));
+    }
+
+    public LocalFolderSourceProvider(RepositoryInventoryScanner scanner, java.util.Set<Path> allowedRoots) {
         this.scanner = scanner;
+        this.allowedRoots = allowedRoots.stream()
+            .map(Path::toAbsolutePath)
+            .map(Path::normalize)
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -56,13 +66,18 @@ public final class LocalFolderSourceProvider implements SourceProvider {
     @Override
     public Promise<RepositorySnapshot> resolve(SourceLocator locator, ScopeContext scope) {
         try {
-            Path workspaceRoot = Paths.get(System.getProperty("user.dir")).toAbsolutePath().normalize();
             Path candidate = normalizeCandidatePath(locator.repoId());
-            if (!candidate.startsWith(workspaceRoot)) {
+            
+            // P0: Verify candidate path is within one of the allowed roots
+            boolean isAllowed = allowedRoots.stream()
+                .anyMatch(root -> candidate.startsWith(root));
+            
+            if (!isAllowed) {
                 return Promise.ofException(new IllegalArgumentException(
-                    "Local folder source must be inside workspace root"
+                    "Local folder source must be inside one of the allowed roots: " + allowedRoots
                 ));
             }
+            
             if (!Files.exists(candidate) || !Files.isDirectory(candidate)) {
                 return Promise.ofException(new IllegalArgumentException(
                     "Local folder source path does not exist or is not a directory"
@@ -117,7 +132,8 @@ public final class LocalFolderSourceProvider implements SourceProvider {
         return Map.of(
             "supportsCommitPinning", false,
             "supportsPathTraversalProtection", true,
-            "supportsDeterministicSnapshot", true
+            "supportsDeterministicSnapshot", true,
+            "supportsConfigurableAllowedRoots", true
         );
     }
 

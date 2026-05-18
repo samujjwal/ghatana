@@ -57,18 +57,32 @@ class ArtifactGraphIngestRequestJsonTest {
             "version-456"
         );
 
-        Map<String, Object> unresolvedEdge = Map.of(
-            "sourceNodeId", "node1",
-            "targetRef", "label://unknown-symbol",
-            "relationship", "REFERENCES",
-            "confidence", 0.5
+        UnresolvedGraphEdgeDto unresolvedEdge = new UnresolvedGraphEdgeDto(
+            "edge-1",
+            "node1",
+            "label://unknown-symbol",
+            "REFERENCES",
+            "SYMBOL",
+            new UnresolvedGraphEdgeDto.SourceLocation("src/test.ts", 1, 0, 1, 10),
+            0.5,
+            Map.of("confidence", 0.5),
+            "tenant-123",
+            "product-456",
+            "workspace-1"
         );
 
-        Map<String, Object> resolutionRecord = Map.of(
-            "unresolvedEdgeId", "edge-1",
-            "status", "RESOLVED",
-            "resolvedTargetId", "node-2",
-            "reviewRequired", false
+        EdgeResolutionRecordDto resolutionRecord = new EdgeResolutionRecordDto(
+            "record-1",
+            "edge-1",
+            "RESOLVED",
+            "node-2",
+            List.of("node-2", "node-3"),
+            false,
+            "SYMBOL_LOOKUP",
+            Map.of(),
+            "tenant-123",
+            "product-456",
+            "workspace-1"
         );
 
         ResidualIslandDto residualIsland = new ResidualIslandDto(
@@ -91,7 +105,7 @@ class ArtifactGraphIngestRequestJsonTest {
             "commit-abc123"
         );
 
-        ArtifactGraphIngestRequest request = ArtifactGraphIngestRequest.fromLegacyMaps(
+        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
             "product-456",
             "tenant-123",
             List.of(node),

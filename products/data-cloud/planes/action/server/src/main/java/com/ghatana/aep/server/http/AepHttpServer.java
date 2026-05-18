@@ -70,6 +70,7 @@ import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.orchestrator.deployment.http.DeploymentHttpAdapter;
+import com.ghatana.orchestrator.deployment.http.KernelLifecycleClient;
 import com.ghatana.orchestrator.deployment.service.DeploymentOrchestrator;
 import com.ghatana.orchestrator.deployment.service.EventCloudDeploymentEventPublisher;
 import com.ghatana.pipeline.registry.model.Pipeline;
@@ -147,6 +148,7 @@ public class AepHttpServer {
     private final int port;
     private final ObjectMapper objectMapper;
     private final DeploymentHttpAdapter deploymentAdapter;
+    private DeploymentOrchestrator deploymentOrchestrator;
     private final PipelineRepository pipelineRepository;
     private final PipelineValidator pipelineValidator;
     private final CapabilitiesService capabilitiesService;
@@ -626,10 +628,12 @@ public class AepHttpServer {
             ? new RunLedgerService(runLedger)
             : new RunLedgerService();
         this.objectMapper = JsonUtils.getDefaultMapper();
-        DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
+        // P0: DeploymentOrchestrator will use KernelLifecycleClient if available, otherwise fallback to legacy behavior
+        deploymentOrchestrator = new DeploymentOrchestrator(
             new EventCloudDeploymentEventPublisher(engine.eventCloud()),
-            this.metricsCollector);
-        this.deploymentAdapter = new DeploymentHttpAdapter(orchestrator);
+            this.metricsCollector,
+            null); // KernelLifecycleClient is optional
+        this.deploymentAdapter = new DeploymentHttpAdapter(deploymentOrchestrator);
         if (agentDataCloud != null) {
             this.pipelineRepository = new DataCloudPipelineStore(agentDataCloud);
             this.durablePipelines = true;

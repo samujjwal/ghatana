@@ -446,9 +446,12 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             
             // P0: Extract source location for semantic models
             @SuppressWarnings("unchecked")
-            Map<String, Object> sourceLocation = model.get("sourceLocation") instanceof Map<?, ?> location
+            Map<String, Object> sourceLocationMap = model.get("sourceLocation") instanceof Map<?, ?> location
                 ? (Map<String, Object>) location
                 : Map.of();
+            
+            // P0: Convert Map to SourceLocation record
+            SemanticModelDto.SourceLocation sourceLocation = toSourceLocation(sourceLocationMap, asString(model.get("filePath")));
             
             mapped.add(SemanticModelDto.builder()
                 .id(firstNonBlank(asString(model.get("id")), java.util.UUID.randomUUID().toString()))
@@ -525,6 +528,31 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
 
     private static String normalizePath(String value) {
         return value.replace('\\', '/');
+    }
+
+    /**
+     * P0: Convert Map to SourceLocation record for semantic models.
+     * Handles missing or incomplete location data gracefully.
+     */
+    private static SemanticModelDto.SourceLocation toSourceLocation(Map<String, Object> locationMap, String defaultFilePath) {
+        if (locationMap == null || locationMap.isEmpty()) {
+            return new SemanticModelDto.SourceLocation(
+                defaultFilePath != null ? defaultFilePath : "",
+                0, 0, 0, 0
+            );
+        }
+        Integer startLine = asInteger(locationMap.get("startLine"));
+        Integer startColumn = asInteger(locationMap.get("startColumn"));
+        Integer endLine = asInteger(locationMap.get("endLine"));
+        Integer endColumn = asInteger(locationMap.get("endColumn"));
+        
+        return new SemanticModelDto.SourceLocation(
+            asString(locationMap.get("filePath")) != null ? asString(locationMap.get("filePath")) : (defaultFilePath != null ? defaultFilePath : ""),
+            startLine != null ? startLine : 0,
+            startColumn != null ? startColumn : 0,
+            endLine != null ? endLine : 0,
+            endColumn != null ? endColumn : 0
+        );
     }
 
     private static String normalizeProvenance(String provenance) {

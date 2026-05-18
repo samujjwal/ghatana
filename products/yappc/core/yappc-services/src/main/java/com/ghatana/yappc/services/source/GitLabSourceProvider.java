@@ -35,7 +35,7 @@ import java.util.List;
  * P0: Paginated tree results with fail-closed on incomplete/inconsistent pagination.
  * P0: Credentials support via SourceCredentialResolver with scope validation.
  * P0: Deterministic sorting of files for reproducible snapshots.
- * P0: Bounded concurrency with semaphore for concurrent HTTP requests.
+ * P0: Rate-limited sequential file fetch with semaphore (not parallel concurrency).
  * P0: File-size limits to prevent OOM on large files.
  */
 public final class GitLabSourceProvider implements SourceProvider {
@@ -99,7 +99,7 @@ public final class GitLabSourceProvider implements SourceProvider {
                 }
                 String path = entry.path("path").asText();
                 
-                // P1-13: Acquire semaphore for bounded concurrency
+                // P0: Rate-limit sequential file fetch with semaphore (not parallel concurrency)
                 try {
                     requestSemaphore.acquire();
                 } catch (InterruptedException e) {
@@ -113,13 +113,13 @@ public final class GitLabSourceProvider implements SourceProvider {
                     JsonNode file = fetchJson("https://gitlab.com/api/v4/projects/" + encodedRepo + "/repository/files/" + encodedPath + "?ref=" + encodedRef, credentials);
                     byte[] content = Base64.getMimeDecoder().decode(file.path("content").asText(""));
                     
-                    // P1-13: Check file size limit
+                    // P0: Check file size limit
                     if (content.length > MAX_FILE_SIZE_BYTES) {
                         log.warn("Skipping file exceeding size limit: {} ({} bytes)", path, content.length);
                         continue;
                     }
                     
-                    // P1-13: Check total size limit
+                    // P0: Check total size limit
                     if (totalSize + content.length > MAX_TOTAL_SIZE_BYTES) {
                         log.warn("Stopping snapshot due to total size limit: {} bytes", totalSize);
                         break;
@@ -133,7 +133,7 @@ public final class GitLabSourceProvider implements SourceProvider {
                     Files.createDirectories(filePath.getParent());
                     Files.write(filePath, content);
 
-                    // P1-13: Use file content SHA-256 instead of GitLab blob ID for checksum
+                    // P0: Use file content SHA-256 instead of GitLab blob ID for checksum
                     String contentChecksum = computeContentChecksum(content);
                     files.add(new RepositorySnapshot.SnapshotFile(
                         path,
@@ -324,6 +324,10 @@ public final class GitLabSourceProvider implements SourceProvider {
         return encoded.toString();
     }
 
+    /**
+     * P0: Normalizes a GitLab repository ID by removing common prefixes and suffixes.
+     * Handles https://, git@gitlab.com:, and .git suffixes.
+     */
     private static String normalizeRepo(String repoId) {
         String repo = repoId;
         if (repo.contains("gitlab.com/")) {
@@ -338,8 +342,6 @@ public final class GitLabSourceProvider implements SourceProvider {
         if (repo.endsWith(".git")) {
             repo = repo.substring(0, repo.length() - 4);
         }
-        // GitLab uses URL-encoded project paths (e.g., namespace%2Fproject)
-        repo = repo.replace("%2F", "/");
         return repo;
     }
 }

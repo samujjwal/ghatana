@@ -53,15 +53,62 @@ public final class RouteAuthorizationFilter {
         } catch (AccessDeniedException e) {
             log.warn("Route authorization denied: {} {} - {}",
                 request.getMethod(), request.getRelativePath(), e.getMessage());
+            String errorJson = toJsonError("Forbidden", e.getMessage());
             return Promise.of(HttpResponse.ofCode(403)
-                .withJson("{\"error\":\"Forbidden: " + e.getMessage() + "\"}")
+                .withJson(errorJson)
                 .build());
         } catch (Exception e) {
             log.error("Unexpected error during route authorization: {} {} - {}",
                 request.getMethod(), request.getRelativePath(), e.getMessage(), e);
+            String errorJson = toJsonError("Internal authorization error", "Internal authorization error");
             return Promise.of(HttpResponse.ofCode(500)
-                .withJson("{\"error\":\"Internal authorization error\"}")
+                .withJson(errorJson)
                 .build());
         }
+    }
+
+    /**
+     * P0: Safe JSON error serialization to prevent injection attacks and malformed JSON.
+     * Properly escapes special characters in error messages.
+     */
+    private String toJsonError(String errorType, String message) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"error\":\"");
+        json.append(escapeJsonString(errorType));
+        if (message != null && !message.isEmpty()) {
+            json.append(": ");
+            json.append(escapeJsonString(message));
+        }
+        json.append("\"}");
+        return json.toString();
+    }
+
+    /**
+     * P0: Escape special characters for JSON string literals.
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) {
+            return "";
+        }
+        StringBuilder escaped = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            switch (c) {
+                case '"' -> escaped.append("\\\"");
+                case '\\' -> escaped.append("\\\\");
+                case '\b' -> escaped.append("\\b");
+                case '\f' -> escaped.append("\\f");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        escaped.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        escaped.append(c);
+                    }
+                }
+            }
+        }
+        return escaped.toString();
     }
 }

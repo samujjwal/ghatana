@@ -322,9 +322,6 @@ jobs:
       - name: Smoke Digital Marketing lifecycle pilot
         run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-smoke
 
-      - name: Compose-backed deploy/verify proof (best-effort)
-        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --compose-proof --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-compose
-
       - name: Validate build phase plan
         run: node ./scripts/kernel-product.mjs product plan digital-marketing build --json
 
@@ -359,6 +356,53 @@ jobs:
             docs/kernel/PRODUCT_SHAPE_CAPABILITY_MATRIX.md
             **/test-results/**
             **/coverage/**
+          retention-days: 7
+
+  check-digital-marketing-compose-proof:
+    name: Check Digital Marketing Compose Proof
+    needs: check-digital-marketing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download kernel build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-build
+          path: .
+
+      - name: Provision Digital Marketing compose env
+        run: cp products/digital-marketing/deploy/local.env.example products/digital-marketing/deploy/local.env
+
+      - name: Verify docker compose availability
+        run: |
+          docker compose version
+          docker info
+
+      - name: Compose-backed deploy/verify proof
+        run: node ./scripts/check-digital-marketing-lifecycle-pilot.mjs --compose-proof --evidence-pack-dir .kernel/out/products/digital-marketing/evidence/ci-compose
+
+      - name: Upload compose proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: digital-marketing-compose-proof-evidence
+          path: .kernel/out/products/digital-marketing/evidence/ci-compose/**
+          if-no-files-found: warn
           retention-days: 7
 
   test-studio-lifecycle-ui:

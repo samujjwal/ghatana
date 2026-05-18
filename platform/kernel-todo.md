@@ -7,6 +7,8 @@
 - [x] P5-02 tests updated: product-unit-intents route tests now set explicit Data Cloud scope env vars and cover missing-scope rejection.
 - [x] P2-01/P8-02 CI toolchain drift remediation (lifecycle workflow set): migrated product lifecycle build/validate/package/deploy-local/release workflows to Node 22 + pnpm 10.33.0 with frozen lockfile installs.
 - [x] P8-02 CI toolchain drift remediation (promotion workflow): migrated product promotion workflow to Node 22 + pnpm 10.33.0 and frozen lockfile install.
+- [x] P8-02 workflow contract verification: kernel phase-gates and product-lifecycle workflows explicitly pin Node 22 + pnpm 10.33.0 and use frozen lockfile installs for lifecycle/phase checks.
+- [x] P2-03 compose-proof CI split completed: product lifecycle workflow now runs smoke checks in the primary Digital Marketing pilot job and executes compose-proof as a separate env-provisioned job with dedicated evidence artifact upload.
 - [x] P0-01 registry metadata hygiene: removed stale PHR readiness reference to virtual-org and pointed evidence refs to PHR-owned artifacts.
 - [x] Group 1 TS worker request boundary: extractor worker now accepts canonical request shape only.
 - [x] Group 1 TS worker output fidelity: worker nodes now emit required extractor/provenance/source fields; semantic model payload expanded with richer fields.
@@ -20,6 +22,9 @@
 - [x] Group 4 agentic lifecycle E2E proof strengthened: guard now enforces service-level tests for governed execution, raw-command rejection, and provider writes (provenance/runtime truth/memory).
 - [x] Group 6 artifact-intelligence E2E proof strengthened: boundary guard now enforces Data Cloud evidence persistence tests plus import/synthesis residual proof coverage.
 - [x] Phase-level validation expanded: `check:phase4` and `check:phase6` now pass after proof-guard and provider coverage hardening.
+- [x] Phase-level validation reverified locally: `check:phase2` passed end-to-end including Digital Marketing pilot, kernel lifecycle contracts, toolchain adapters, artifact/deployment contracts, and secret default credential checks.
+- [x] Phase-level validation reverified locally: `check:phase8` passed (exit code 0) via log-captured run; full chained readiness checks completed including deprecated packages/imports, orphan-modules, doc-truth, production-readiness, architecture boundaries, and audited workflow checks.
+- [x] End-to-end readiness revalidated locally: `check:world-class-platform-readiness` passed (exit code 0) after CI workflow hardening updates.
 - [x] Full readiness validation completed: `check:world-class-platform-readiness` passed after regenerating stale product-registry artifacts via `scripts/generate-product-registry-artifacts.mjs`.
 
 - [x] Focused TS validations completed:

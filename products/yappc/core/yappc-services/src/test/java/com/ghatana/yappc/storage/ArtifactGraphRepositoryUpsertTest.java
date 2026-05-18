@@ -41,17 +41,17 @@ class ArtifactGraphRepositoryUpsertTest {
             "original content",
             Map.of("checksum", "sha256:abc123"),
             List.of(),
-            "tenant-123",
-            "project-456",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "tenant-1",
+            "product-1",
+            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            "extractor-1",
+            "1.0",
+            0.9,
+            "exact",
+            List.of(),
+            List.of(),
+            "source-ref-1",
+            "symbol-ref-1"
         );
 
         ArtifactNodeDto node2 = new ArtifactNodeDto(
@@ -62,17 +62,17 @@ class ArtifactGraphRepositoryUpsertTest {
             "original content", // Same content = same checksum
             Map.of("checksum", "sha256:abc123"), // Same checksum
             List.of(),
-            "tenant-123",
-            "project-456",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "tenant-1",
+            "product-1",
+            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            "extractor-1",
+            "1.0",
+            0.9,
+            "exact",
+            List.of(),
+            List.of(),
+            "source-ref-1",
+            "symbol-ref-1"
         );
 
         when(repository.upsertNodes(
@@ -121,17 +121,17 @@ class ArtifactGraphRepositoryUpsertTest {
             "new content", // Different content
             Map.of("checksum", "sha256:def456"), // Different checksum
             List.of(),
-            "tenant-123",
-            "project-456",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
+            "tenant-1",
+            "product-1",
+            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            "extractor-1",
+            "1.0",
+            0.9,
+            "exact",
+            List.of(),
+            List.of(),
+            "source-ref-1",
+            "symbol-ref-1"
         );
 
         when(repository.upsertNodes(

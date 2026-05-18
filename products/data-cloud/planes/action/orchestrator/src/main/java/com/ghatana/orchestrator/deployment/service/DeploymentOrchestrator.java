@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.MDC;
 
 /**
@@ -46,6 +47,7 @@ import org.slf4j.MDC;
 public class DeploymentOrchestrator {
     private final DeploymentEventPublisher eventPublisher;
     private final MetricsCollector metricsCollector;
+    @Nullable
     private final KernelLifecycleClient kernelLifecycleClient;
 
     /**
@@ -89,22 +91,49 @@ public class DeploymentOrchestrator {
 
             log.info("Deployment request accepted: {} for pipeline {}", deploymentId, request.getPipelineId());
 
-            // Submit governed Kernel lifecycle action request
-            Map<String, String> headers = Map.of(
-                    "X-Ghatana-Tenant-Id", request.getTenantId(),
-                    "X-Ghatana-Workspace-Id", request.getPipelineId()
-            );
+            // Submit governed Kernel lifecycle action request if client is available
+            if (kernelLifecycleClient != null) {
+                Map<String, String> headers = Map.of(
+                        "X-Ghatana-Tenant-Id", request.getTenantId(),
+                        "X-Ghatana-Workspace-Id", request.getPipelineId()
+                );
 
-            Promise<KernelLifecycleClient.LifecycleRunResult> lifecyclePromise =
-                    kernelLifecycleClient.executeLifecyclePhase(
+                Promise<KernelLifecycleClient.LifecycleRunResult> lifecyclePromise =
+                        kernelLifecycleClient.executeLifecyclePhase(
+                                request.getPipelineId(),
+                                "deploy",
+                                request.getEnvironment(),
+                                headers
+                        );
+
+                // Publish deployment event after lifecycle request is submitted
+                return lifecyclePromise.then(lifecycleResult -> {
+                    eventPublisher.publishDeploymentEvent(DeploymentEventType.PIPELINE_DEPLOY_REQUESTED, deploymentId, request);
+
+                    // Emit metrics
+                    metricsCollector.incrementCounter(
+                            "aep.deployment.request.count",
+                            "pipeline_id",
                             request.getPipelineId(),
-                            "deploy",
-                            request.getEnvironment(),
-                            headers
-                    );
+                            "tenant_id",
+                            request.getTenantId(),
+                            "environment",
+                            request.getEnvironment());
 
-            // Publish deployment event after lifecycle request is submitted
-            return lifecyclePromise.then(lifecycleResult -> {
+                    // Return response with deployment ID and Kernel run ID
+                    DeploymentResponse response = DeploymentResponse.builder()
+                            .deploymentId(deploymentId)
+                            .pipelineId(request.getPipelineId())
+                            .tenantId(request.getTenantId())
+                            .status(lifecycleResult.status())
+                            .runId(lifecycleResult.runId())
+                            .timestamp(Instant.now().toString())
+                            .build();
+
+                    return Promise.of(response);
+                });
+            } else {
+                // Fallback: publish event without Kernel lifecycle integration
                 eventPublisher.publishDeploymentEvent(DeploymentEventType.PIPELINE_DEPLOY_REQUESTED, deploymentId, request);
 
                 // Emit metrics
@@ -117,18 +146,17 @@ public class DeploymentOrchestrator {
                         "environment",
                         request.getEnvironment());
 
-                // Return response with deployment ID and Kernel run ID
+                // Return response with deployment ID (legacy behavior)
                 DeploymentResponse response = DeploymentResponse.builder()
                         .deploymentId(deploymentId)
                         .pipelineId(request.getPipelineId())
                         .tenantId(request.getTenantId())
-                        .status(lifecycleResult.status())
-                        .runId(lifecycleResult.runId())
+                        .status("DEPLOYED")
                         .timestamp(Instant.now().toString())
                         .build();
 
                 return Promise.of(response);
-            });
+            }
         } catch (Exception e) {
             log.error("Deployment request processing failed", e);
             return Promise.of(DeploymentResponse.builder()
