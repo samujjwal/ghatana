@@ -44,6 +44,15 @@ public final class GitLabSourceProvider implements SourceProvider {
     private static final int MAX_CONCURRENT_REQUESTS = 10;
     private static final long MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB per file
     private static final long MAX_TOTAL_SIZE_BYTES = 100 * 1024 * 1024; // 100MB total
+    private static final java.util.Set<String> EXCLUDED_PATH_SEGMENTS = java.util.Set.of(
+        "node_modules", "vendor", ".git", "dist", "build", "target", "generated", "__generated__"
+    );
+    private static final java.util.Set<String> BINARY_EXTENSIONS = java.util.Set.of(
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tiff",
+        ".mp4", ".mp3", ".wav", ".ogg", ".mov", ".avi", ".pdf", ".zip", ".tar",
+        ".gz", ".bz2", ".xz", ".7z", ".rar", ".jar", ".war", ".ear", ".class",
+        ".exe", ".dll", ".so", ".dylib", ".woff", ".woff2", ".ttf", ".eot", ".otf"
+    );
 
     private static final int PAGE_SIZE = 100;
 
@@ -51,16 +60,31 @@ public final class GitLabSourceProvider implements SourceProvider {
     private final ObjectMapper objectMapper;
     private final java.util.concurrent.Semaphore requestSemaphore;
     private final SourceCredentialResolver credentialResolver;
+    private final long maxFileSizeBytes;
+    private final long maxTotalSizeBytes;
 
-    public GitLabSourceProvider() {
-        this(HttpClient.newHttpClient(), new ObjectMapper(), SourceCredentialResolver.envBacked());
+    /**
+     * P0: Removed default constructor that called SourceCredentialResolver.envBacked().
+     * Production code must explicitly inject credentialResolver.
+     * The envBacked() method throws SecurityException when dev mode is not enabled.
+     */
+    public GitLabSourceProvider(HttpClient httpClient, ObjectMapper objectMapper, SourceCredentialResolver credentialResolver) {
+        this(httpClient, objectMapper, credentialResolver, MAX_FILE_SIZE_BYTES, MAX_TOTAL_SIZE_BYTES);
     }
 
-    public GitLabSourceProvider(HttpClient httpClient, ObjectMapper objectMapper, SourceCredentialResolver credentialResolver) {
+    GitLabSourceProvider(
+        HttpClient httpClient,
+        ObjectMapper objectMapper,
+        SourceCredentialResolver credentialResolver,
+        long maxFileSizeBytes,
+        long maxTotalSizeBytes
+    ) {
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
         this.credentialResolver = credentialResolver;
         this.requestSemaphore = new java.util.concurrent.Semaphore(MAX_CONCURRENT_REQUESTS);
+        this.maxFileSizeBytes = maxFileSizeBytes;
+        this.maxTotalSizeBytes = maxTotalSizeBytes;
     }
 
     @Override
@@ -98,6 +122,14 @@ public final class GitLabSourceProvider implements SourceProvider {
                     continue;
                 }
                 String path = entry.path("path").asText();
+                if (!isEligibleBlobPath(path)) {
+                    continue;
+                }
+                long declaredSize = entry.path("size").asLong(-1);
+                if (declaredSize > maxFileSizeBytes) {
+                    log.warn("Skipping GitLab blob by metadata size limit: {} ({} bytes)", path, declaredSize);
+                    continue;
+                }
                 
                 // P0: Rate-limit sequential file fetch with semaphore (not parallel concurrency)
                 try {
@@ -114,15 +146,18 @@ public final class GitLabSourceProvider implements SourceProvider {
                     byte[] content = Base64.getMimeDecoder().decode(file.path("content").asText(""));
                     
                     // P0: Check file size limit
-                    if (content.length > MAX_FILE_SIZE_BYTES) {
+                    if (content.length > maxFileSizeBytes) {
                         log.warn("Skipping file exceeding size limit: {} ({} bytes)", path, content.length);
                         continue;
                     }
                     
-                    // P0: Check total size limit
-                    if (totalSize + content.length > MAX_TOTAL_SIZE_BYTES) {
-                        log.warn("Stopping snapshot due to total size limit: {} bytes", totalSize);
-                        break;
+                    // P0: Fail closed on total size limit - do not return partial snapshot
+                    if (totalSize + content.length > maxTotalSizeBytes) {
+                        throw new IllegalStateException(
+                            "PARTIAL_SNAPSHOT_REJECTED: GitLab snapshot exceeds total size limit: " + (totalSize + content.length) + " bytes (max: " + maxTotalSizeBytes + " bytes). " +
+                            "Snapshot materialization aborted to avoid incomplete/inconsistent state. " +
+                            "Consider increasing MAX_TOTAL_SIZE_BYTES or using a more targeted repository path."
+                        );
                     }
                     totalSize += content.length;
 
@@ -343,5 +378,20 @@ public final class GitLabSourceProvider implements SourceProvider {
             repo = repo.substring(0, repo.length() - 4);
         }
         return repo;
+    }
+
+    private static boolean isEligibleBlobPath(String path) {
+        String normalized = path.replace('\\', '/').toLowerCase();
+        String[] segments = normalized.split("/");
+        for (String segment : segments) {
+            if (EXCLUDED_PATH_SEGMENTS.contains(segment)) {
+                return false;
+            }
+        }
+        int dot = normalized.lastIndexOf('.');
+        if (dot >= 0 && BINARY_EXTENSIONS.contains(normalized.substring(dot))) {
+            return false;
+        }
+        return true;
     }
 }

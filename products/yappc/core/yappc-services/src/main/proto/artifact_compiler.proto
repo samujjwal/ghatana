@@ -76,7 +76,49 @@ message SourceLocation {
   int32 end_column = 5;
 }
 
-// ArtifactNode represents a single extracted artifact node (component, page, model, etc.)
+// P1: Provenance enum for semantic model elements
+enum Provenance {
+  PROVENANCE_UNSPECIFIED = 0;
+  EXACT = 1;
+  INFERRED = 2;
+  SYNTHESIZED = 3;
+  MANUAL = 4;
+  ASSUMED = 5;
+}
+
+// SemanticModel - Compile-time semantic representation matching Java SemanticModelDto
+// P1: Updated to match canonical Java DTO structure with Provenance enum
+message SemanticModel {
+  string id = 1;
+  string element_id = 2;
+  string element_type = 3;
+  string name = 4;
+  string qualified_name = 5;
+  string file_path = 6;
+  SourceLocation source_location = 7;
+  map<string, string> properties = 8;
+  repeated string dependencies = 9;
+  repeated string dependents = 10;
+  double confidence = 11;
+  bool review_required = 12;
+  string review_reason = 13;
+  repeated string security_flags = 14;
+  repeated string privacy_flags = 15;
+  repeated string graph_node_ids = 16;
+  repeated string residual_island_ids = 17;
+  string source_ref = 18;
+  string symbol_ref = 19;
+  string extractor_id = 20;
+  string extractor_version = 21;
+  string model_version_id = 22;
+  string synthetic_reason = 23;
+  Provenance provenance = 24; // P1: Using enum instead of string
+  string extracted_at = 25;
+  string snapshot_id = 26;
+  string tenant_id = 27;
+  string workspace_id = 28;
+  string project_id = 29;
+}
 message ArtifactNode {
   string id = 1;
   string type = 2;
@@ -158,33 +200,6 @@ message EdgeResolutionRecord {
   string tenant_id = 8; // P1-19: Added tenant scope
   string project_id = 9; // P1-19: Added project scope
   string workspace_id = 10; // P1-19: Added workspace scope
-}
-
-// SemanticModel - Compile-time semantic representation with governance fields
-message SemanticModel {
-  string model_id = 1;
-  string model_type = 2;
-  string language = 3;
-  string framework = 4;
-  
-  // Governance fields for safety and review
-  double confidence = 5;
-  bool review_required = 6;
-  string review_reason = 7;
-  repeated string security_flags = 8;
-  repeated string privacy_flags = 9;
-  repeated string graph_node_ids = 10;
-  repeated string residual_island_ids = 11;
-  string source_ref = 12;
-  string symbol_ref = 13;
-  string extractor_id = 14;
-  string extractor_version = 15;
-  string model_version_id = 16;
-  string synthetic_reason = 17;
-  
-  string tenant_id = 18;
-  string project_id = 19;
-  string workspace_id = 20;
 }
 
 // ResidualIsland - Phase 1 extractor output (unmodelable code preserved verbatim)

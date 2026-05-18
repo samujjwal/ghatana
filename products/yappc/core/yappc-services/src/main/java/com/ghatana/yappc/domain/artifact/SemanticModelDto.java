@@ -1,6 +1,7 @@
 package com.ghatana.yappc.domain.artifact;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,6 +14,8 @@ import java.util.Objects;
  *
  * P3: Semantic model DTO for persisting high-level semantic understanding of code artifacts.
  * Used in compile-back operations to provide context for change planning and patch generation.
+ * P1: Enforces confidence range, uses provenance enum, and requires syntheticReason for synthetic provenance.
+ * P1: Added adapter methods for proto-generated classes compatibility.
  */
 public record SemanticModelDto(
     String id,
@@ -21,7 +24,7 @@ public record SemanticModelDto(
     String name,
     String qualifiedName,
     String filePath,
-    SourceLocation sourceLocation,
+    SourceLocationDto sourceLocation,
     Map<String, Object> properties,
     List<String> dependencies,
     List<String> dependents,
@@ -38,13 +41,24 @@ public record SemanticModelDto(
     String extractorVersion,
     String modelVersionId,
     String syntheticReason,
-    String provenance,
+    Provenance provenance,
     Instant extractedAt,
     String snapshotId,
     String tenantId,
     String workspaceId,
     String projectId
 ) {
+    /**
+     * P1: Provenance enum for semantic model elements.
+     */
+    public enum Provenance {
+        EXACT,
+        INFERRED,
+        SYNTHESIZED,
+        MANUAL,
+        ASSUMED
+    }
+
     public SemanticModelDto {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(elementId, "elementId must not be null");
@@ -53,26 +67,22 @@ public record SemanticModelDto(
         Objects.requireNonNull(provenance, "provenance must not be null");
         Objects.requireNonNull(extractedAt, "extractedAt must not be null");
         Objects.requireNonNull(snapshotId, "snapshotId must not be null");
+        
+        // P1: Validate confidence is in range [0.0, 1.0]
+        if (confidence != null && (confidence < 0.0 || confidence > 1.0)) {
+            throw new IllegalArgumentException("confidence must be in range [0.0, 1.0], got: " + confidence);
+        }
+        
+        // P1: Require syntheticReason when provenance is SYNTHESIZED
+        if (provenance == Provenance.SYNTHESIZED && (syntheticReason == null || syntheticReason.isBlank())) {
+            throw new IllegalArgumentException("syntheticReason is required when provenance is SYNTHESIZED");
+        }
     }
 
     /**
-     * Source location for precise positioning within files.
+     * P1: Source location for precise positioning within files.
+     * Now using shared SourceLocationDto instead of nested record.
      */
-    public record SourceLocation(
-        String filePath,
-        int startLine,
-        int startColumn,
-        int endLine,
-        int endColumn
-    ) {
-        public SourceLocation {
-            Objects.requireNonNull(filePath, "filePath must not be null");
-            if (startLine < 0) throw new IllegalArgumentException("startLine must be non-negative");
-            if (startColumn < 0) throw new IllegalArgumentException("startColumn must be non-negative");
-            if (endLine < 0) throw new IllegalArgumentException("endLine must be non-negative");
-            if (endColumn < 0) throw new IllegalArgumentException("endColumn must be non-negative");
-        }
-    }
 
     /**
      * Builder for SemanticModelDto.
@@ -88,7 +98,7 @@ public record SemanticModelDto(
         private String name;
         private String qualifiedName;
         private String filePath;
-        private SourceLocation sourceLocation;
+        private SourceLocationDto sourceLocation;
         private Map<String, Object> properties;
         private List<String> dependencies;
         private List<String> dependents;
@@ -105,7 +115,7 @@ public record SemanticModelDto(
         private String extractorVersion;
         private String modelVersionId;
         private String syntheticReason;
-        private String provenance;
+        private Provenance provenance;
         private Instant extractedAt;
         private String snapshotId;
         private String tenantId;
@@ -142,7 +152,7 @@ public record SemanticModelDto(
             return this;
         }
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocationDto sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -227,7 +237,7 @@ public record SemanticModelDto(
             return this;
         }
 
-        public Builder provenance(String provenance) {
+        public Builder provenance(Provenance provenance) {
             this.provenance = provenance;
             return this;
         }
@@ -290,5 +300,126 @@ public record SemanticModelDto(
                 projectId
             );
         }
+    }
+
+    /**
+     * P1: Adapter method to convert from proto-generated SemanticModel to domain DTO.
+     * Provides compatibility layer between proto contract and validated domain model.
+     */
+    public static SemanticModelDto fromProto(com.ghatana.yappc.artifact.grpc.SemanticModel proto) {
+        return new SemanticModelDto(
+            proto.getId(),
+            proto.getElementId(),
+            proto.getElementType(),
+            proto.getName(),
+            proto.getQualifiedName(),
+            proto.getFilePath(),
+            proto.hasSourceLocation() ? SourceLocationDto.fromProto(proto.getSourceLocation()) : null,
+            Map.copyOf(proto.getPropertiesMap()),
+            List.copyOf(proto.getDependenciesList()),
+            List.copyOf(proto.getDependentsList()),
+            proto.getConfidence(),
+            proto.getReviewRequired(),
+            proto.getReviewReason(),
+            List.copyOf(proto.getSecurityFlagsList()),
+            List.copyOf(proto.getPrivacyFlagsList()),
+            List.copyOf(proto.getGraphNodeIdsList()),
+            List.copyOf(proto.getResidualIslandIdsList()),
+            proto.getSourceRef(),
+            proto.getSymbolRef(),
+            proto.getExtractorId(),
+            proto.getExtractorVersion(),
+            proto.getModelVersionId(),
+            proto.getSyntheticReason(),
+            fromProtoProvenance(proto.getProvenance()),
+            Instant.parse(proto.getExtractedAt()),
+            proto.getSnapshotId(),
+            proto.getTenantId(),
+            proto.getWorkspaceId(),
+            proto.getProjectId()
+        );
+    }
+
+    /**
+     * P1: Adapter method to convert domain DTO to proto-generated SemanticModel.
+     * Provides compatibility layer between validated domain model and proto contract.
+     */
+    public com.ghatana.yappc.artifact.grpc.SemanticModel toProto() {
+        com.ghatana.yappc.artifact.grpc.SemanticModel.Builder builder = com.ghatana.yappc.artifact.grpc.SemanticModel.newBuilder()
+            .setId(id)
+            .setElementId(elementId)
+            .setElementType(elementType)
+            .setName(name)
+            .setQualifiedName(qualifiedName)
+            .setFilePath(filePath)
+            .putAllProperties(convertPropertiesToStringMap(properties))
+            .addAllDependencies(dependencies != null ? dependencies : List.of())
+            .addAllDependents(dependents != null ? dependents : List.of())
+            .setConfidence(confidence != null ? confidence : 0.0)
+            .setReviewRequired(reviewRequired != null ? reviewRequired : false)
+            .setReviewReason(reviewReason)
+            .addAllSecurityFlags(securityFlags != null ? securityFlags : List.of())
+            .addAllPrivacyFlags(privacyFlags != null ? privacyFlags : List.of())
+            .addAllGraphNodeIds(graphNodeIds != null ? graphNodeIds : List.of())
+            .addAllResidualIslandIds(residualIslandIds != null ? residualIslandIds : List.of())
+            .setSourceRef(sourceRef)
+            .setSymbolRef(symbolRef)
+            .setExtractorId(extractorId)
+            .setExtractorVersion(extractorVersion)
+            .setModelVersionId(modelVersionId)
+            .setSyntheticReason(syntheticReason)
+            .setProvenance(toProtoProvenance(provenance))
+            .setExtractedAt(extractedAt.toString())
+            .setSnapshotId(snapshotId)
+            .setTenantId(tenantId)
+            .setWorkspaceId(workspaceId)
+            .setProjectId(projectId);
+
+        if (sourceLocation != null) {
+            builder.setSourceLocation(sourceLocation.toProto());
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * P1: Helper method to convert proto Provenance enum to domain Provenance enum.
+     */
+    private static Provenance fromProtoProvenance(com.ghatana.yappc.artifact.grpc.Provenance protoProvenance) {
+        return switch (protoProvenance) {
+            case EXACT -> Provenance.EXACT;
+            case INFERRED -> Provenance.INFERRED;
+            case SYNTHESIZED -> Provenance.SYNTHESIZED;
+            case MANUAL -> Provenance.MANUAL;
+            case ASSUMED -> Provenance.ASSUMED;
+            case UNRECOGNIZED, PROVENANCE_UNSPECIFIED -> Provenance.ASSUMED;
+        };
+    }
+
+    /**
+     * P1: Helper method to convert domain Provenance enum to proto Provenance enum.
+     */
+    private static com.ghatana.yappc.artifact.grpc.Provenance toProtoProvenance(Provenance provenance) {
+        return switch (provenance) {
+            case EXACT -> com.ghatana.yappc.artifact.grpc.Provenance.EXACT;
+            case INFERRED -> com.ghatana.yappc.artifact.grpc.Provenance.INFERRED;
+            case SYNTHESIZED -> com.ghatana.yappc.artifact.grpc.Provenance.SYNTHESIZED;
+            case MANUAL -> com.ghatana.yappc.artifact.grpc.Provenance.MANUAL;
+            case ASSUMED -> com.ghatana.yappc.artifact.grpc.Provenance.ASSUMED;
+        };
+    }
+
+    /**
+     * P1: Helper method to convert Map<String,Object> to Map<String,String> for proto compatibility.
+     */
+    private static Map<String, String> convertPropertiesToStringMap(Map<String, Object> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+            result.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : "");
+        }
+        return result;
     }
 }

@@ -135,4 +135,52 @@ class RepositoryInventoryScannerTest {
         assertThat(summary.getOrDefault(RepositoryInventoryScanner.SkipReason.VENDOR_DIRECTORY, 0L)).isGreaterThanOrEqualTo(1L);
         assertThat(summary.getOrDefault(RepositoryInventoryScanner.SkipReason.BINARY_FILE, 0L)).isGreaterThanOrEqualTo(1L);
     }
+
+    @Test
+    @DisplayName("exclude pattern skip reason is EXCLUDE_PATTERN with matched pattern")
+    void excludePatternUsesExplicitSkipReason(@TempDir Path root) throws Exception {
+        Files.createDirectories(root.resolve("src"));
+        Files.writeString(root.resolve("src/keep.ts"), "export const keep = true;");
+        Files.writeString(root.resolve("src/skip.tmp.ts"), "export const skip = true;");
+
+        RepositoryInventoryScanner.InventoryResult result = scanner.scanRepository(
+            root,
+            Set.of(),
+            Set.of(),
+            Set.of("*.tmp.ts")
+        );
+
+        assertThat(result.skipped()).anyMatch(s ->
+            s.reason() == RepositoryInventoryScanner.SkipReason.EXCLUDE_PATTERN
+                && "*.tmp.ts".equals(s.matchedPattern())
+                && s.relativePath().endsWith("skip.tmp.ts")
+        );
+        assertThat(result.files()).anyMatch(f -> f.relativePath().endsWith("keep.ts"));
+    }
+
+    @Test
+    @DisplayName("include patterns do not override safety filters")
+    void includePatternsDoNotOverrideSafetyFilters(@TempDir Path root) throws Exception {
+        Files.createDirectories(root.resolve("src"));
+        Files.write(root.resolve("src/logo.png"), new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47});
+        Files.createDirectories(root.resolve("generated"));
+        Files.writeString(root.resolve("generated/forced.ts"), "export const forced = true;");
+
+        RepositoryInventoryScanner.InventoryResult result = scanner.scanRepository(
+            root,
+            Set.of(),
+            Set.of("**/*.png", "generated/**"),
+            Set.of()
+        );
+
+        assertThat(result.files()).isEmpty();
+        assertThat(result.skipped()).anyMatch(s ->
+            s.reason() == RepositoryInventoryScanner.SkipReason.BINARY_FILE
+                && s.relativePath().endsWith("logo.png")
+        );
+        assertThat(result.skipped()).anyMatch(s ->
+            s.reason() == RepositoryInventoryScanner.SkipReason.GENERATED_FILE
+                && s.relativePath().endsWith("forced.ts")
+        );
+    }
 }

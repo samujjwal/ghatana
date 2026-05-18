@@ -58,7 +58,7 @@ import java.util.Map;
  */
 public final class LocalKernelManifestTruthSource implements KernelLifecycleTruthSource {
 
-    private static final Logger log = LoggerFactory.getLogger(LocalKernelManifestTruthSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LocalKernelManifestTruthSource.class);
 
     private final KernelLifecycleEventIngestService ingestService;
 
@@ -87,11 +87,11 @@ public final class LocalKernelManifestTruthSource implements KernelLifecycleTrut
      */
     @Override
     public Promise<Map<String, Object>> getProductUnitLifecycleData(@NotNull String productUnitId) {
-        log.debug("Reading local manifest data for productUnitId={}", productUnitId);
+        LOG.debug("Reading local manifest data for productUnitId={}", productUnitId);
         return ingestService.ingestProductUnitLifecycle(productUnitId)
                 .map(data -> {
                     if (data == null || data.isEmpty()) {
-                        log.warn("No local manifest data found for productUnitId={}", productUnitId);
+                        LOG.warn("No local manifest data found for productUnitId={}", productUnitId);
                         Map<String, Object> empty = new HashMap<>();
                         empty.put("productUnitId", productUnitId);
                         empty.put("status", "unknown");
@@ -109,7 +109,7 @@ public final class LocalKernelManifestTruthSource implements KernelLifecycleTrut
      */
     @Override
     public Promise<List<Map<String, Object>>> listAllProductUnitLifecycleData() {
-        log.debug("Reading local manifest data for all ProductUnits");
+        LOG.debug("Reading local manifest data for all ProductUnits");
         return ingestService.ingestAllProductUnitLifecycles()
                 .map(dataList -> {
                     if (dataList == null) {

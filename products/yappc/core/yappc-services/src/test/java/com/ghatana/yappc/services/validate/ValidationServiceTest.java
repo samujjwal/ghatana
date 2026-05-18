@@ -38,6 +38,7 @@ class ValidationServiceTest extends EventloopTestBase {
     private ValidationService service;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() { 
         policyEngine = mock(PolicyEngine.class); 
         auditLogger = mock(AuditLogger.class); 
@@ -54,6 +55,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should pass validation for valid shape spec")
+        @SuppressWarnings("unchecked")
         void shouldValidateValidShapeSpec() { 
             ShapeSpec spec = ShapeSpec.builder() 
                     .id("shape-123")
@@ -126,6 +128,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should record validation timer metric")
+        @SuppressWarnings("unchecked")
         void shouldRecordTimerMetric() { 
             ShapeSpec spec = validShapeSpec("tenant-1");
 
@@ -139,6 +142,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should increment success counter")
+        @SuppressWarnings("unchecked")
         void shouldIncrementSuccessCounter() { 
             ShapeSpec spec = validShapeSpec("tenant-2");
 
@@ -157,6 +161,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should validate with excluded validators")
+        @SuppressWarnings("unchecked")
         void shouldValidateWithExcludedValidators() { 
             ShapeSpec spec = validShapeSpec("tenant-abc");
             ValidationConfig config = ValidationConfig.builder() 
@@ -171,6 +176,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle null config by using default")
+        @SuppressWarnings("unchecked")
         void shouldHandleNullConfig() { 
             ShapeSpec spec = validShapeSpec("tenant-abc");
 
@@ -182,6 +188,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should apply failFast option from config")
+        @SuppressWarnings("unchecked")
         void shouldApplyFailFastOption() { 
             ShapeSpec spec = validShapeSpec("tenant-abc");
             ValidationConfig config = ValidationConfig.builder() 
@@ -215,6 +222,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should invoke policy engine for policy validation")
+        @SuppressWarnings("unchecked")
         void shouldInvokePolicyEngine() { 
             ShapeSpec spec = validShapeSpec("tenant-abc");
             PolicySpecMock policySpec = new PolicySpecMock(); 
@@ -249,6 +257,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should tag metrics with tenant ID")
+        @SuppressWarnings("unchecked")
         void shouldTagMetricsWithTenant() { 
             ShapeSpec spec1 = validShapeSpec("tenant-1");
             ShapeSpec spec2 = validShapeSpec("tenant-2");
@@ -280,6 +289,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle audit logger failures")
+        @SuppressWarnings("unchecked")
         void shouldHandleAuditLoggerFailure() { 
             when(auditLogger.log(any(Map.class))) 
                     .thenReturn(Promise.ofException(new RuntimeException("Audit failed")));
@@ -292,6 +302,7 @@ class ValidationServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should increment failure counter on validation error")
+        @SuppressWarnings("unchecked")
         void shouldIncrementFailureCounter() { 
             ShapeSpec spec = ShapeSpec.builder() 
                     .id("shape-fail")

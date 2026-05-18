@@ -3,6 +3,7 @@ package com.ghatana.yappc.storage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
+import com.ghatana.yappc.domain.source.SourceLocator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -111,7 +112,15 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        RepositorySnapshot saved = runPromise(() -> repository.saveSnapshot(snapshot));
+        RepositorySnapshot saved = runPromise(() -> repository.saveSnapshot(snapshot, 
+            SourceLocator.builder()
+                .provider("github")
+                .repoId("owner/repo")
+                .ref("main")
+                .tenantId("tenant-1")
+                .workspaceId("workspace-1")
+                .projectId("project-1")
+                .build()));
 
         assertThat(saved).isNotNull();
         assertThat(saved.snapshotId()).isEqualTo("snap-123");
@@ -134,7 +143,7 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
         when(resultSet.getString("workspace_id")).thenReturn("workspace-1");
         when(resultSet.getString("project_id")).thenReturn("project-1");
 
-        Optional<RepositorySnapshot> found = runPromise(() -> repository.findById("snap-123"));
+        Optional<RepositorySnapshot> found = runPromise(() -> repository.findById("snap-123", "tenant-1", "workspace-1", "project-1"));
 
         assertThat(found).isPresent();
         assertThat(found.get().snapshotId()).isEqualTo("snap-123");
@@ -146,7 +155,7 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
     void shouldReturnEmptyWhenSnapshotNotFound() throws Exception {
         when(resultSet.next()).thenReturn(false);
 
-        Optional<RepositorySnapshot> found = runPromise(() -> repository.findById("non-existent"));
+        Optional<RepositorySnapshot> found = runPromise(() -> repository.findById("non-existent", "tenant-1", "workspace-1", "project-1"));
 
         assertThat(found).isEmpty();
     }
@@ -182,7 +191,7 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getString("snapshot_id")).thenReturn("snap-123");
 
-        Optional<String> found = runPromise(() -> repository.findByContentHash("content-hash-123"));
+        Optional<String> found = runPromise(() -> repository.findByContentHash("content-hash-123", "tenant-1", "workspace-1", "project-1"));
 
         assertThat(found).isPresent();
         assertThat(found.get()).isEqualTo("snap-123");
@@ -193,7 +202,7 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
     void shouldDeleteOldSnapshots() throws Exception {
         when(preparedStatement.executeUpdate()).thenReturn(5);
 
-        Integer deleted = runPromise(() -> repository.deleteOldSnapshots(Instant.now().minusSeconds(86400)));
+        Integer deleted = runPromise(() -> repository.deleteOldSnapshots(Instant.now().minusSeconds(86400), "tenant-1", "workspace-1", "project-1"));
 
         assertThat(deleted).isEqualTo(5);
     }
@@ -226,7 +235,15 @@ class RepositorySnapshotRepositoryTest extends EventloopTestBase {
 
         when(preparedStatement.executeUpdate()).thenReturn(1);
 
-        RepositorySnapshot saved = runPromise(() -> repository.saveSnapshot(snapshot));
+        RepositorySnapshot saved = runPromise(() -> repository.saveSnapshot(snapshot, 
+            SourceLocator.builder()
+                .provider("github")
+                .repoId("owner/repo")
+                .ref("main")
+                .tenantId("tenant-1")
+                .workspaceId("workspace-1")
+                .projectId("project-1")
+                .build()));
 
         assertThat(saved.files()).hasSize(2);
     }

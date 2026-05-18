@@ -413,17 +413,27 @@ describe('RepositorySnapshotSchema', () => {
     const { RepositorySnapshotSchema } = await import('../source-providers/types');
 
     const snapshot = {
+      snapshotId: 'snapshot-1',
       snapshotRef: { provider: 'local-folder', repoId: 'my-project', commitSha: 'abc123' },
       localRootPath: '/tmp/project',
       files: [
         {
           relativePath: 'src/index.ts',
+          absolutePath: '/tmp/project/src/index.ts',
           sizeBytes: 100,
           materialized: true,
           lastModifiedAt: new Date().toISOString(),
+          checksum: 'd'.repeat(64),
         },
       ],
       snapshotAt: new Date().toISOString(),
+      shallow: false,
+      diagnostics: [],
+      contentHash: 'c'.repeat(64),
+      contentChecksum: 'b'.repeat(64),
+      tenantId: 'tenant-test',
+      workspaceId: 'workspace-test',
+      projectId: 'project-test',
     };
 
     const result = RepositorySnapshotSchema.safeParse(snapshot);

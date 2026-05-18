@@ -1,9 +1,11 @@
 /**
  * @fileoverview Artifact Compiler API Client
  *
- * Generated-client-backed wrapper for artifact graph/import APIs, with
- * compatibility methods retained for patch bundle workflows that are not
- * yet available in the generated OpenAPI surface.
+ * Generated-client-backed wrapper for artifact graph/import APIs (Group 1-3).
+ * This client uses only the generated OpenAPI client for all operations.
+ *
+ * Legacy patch-bundle methods have been moved to LegacyArtifactPatchBundleClient.ts
+ * and should be imported explicitly when needed.
  *
  * @doc.type class
  * @doc.purpose Typed HTTP client for artifact compiler API
@@ -29,10 +31,6 @@ export interface ArtifactCompilerConfig {
   authToken: string;
   tenantId: string;
   timeout?: number;
-  // P0: Feature flag for manual patch-bundle compatibility methods
-  // These methods use manual HTTP calls instead of generated API client
-  // and should only be used when the generated API doesn't yet support patch bundle workflows
-  enableLegacyPatchBundleMethods?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -102,61 +100,6 @@ export interface ResidualAnalyzeResponse {
   };
 }
 
-export interface PatchReviewRequest {
-  projectId: string;
-  tenantId?: string;
-  workspaceId?: string;
-  patchSetId: string;
-}
-
-export interface PatchReviewResponse {
-  success: boolean;
-  message: string;
-  patchSet?: {
-    id: string;
-    changeOps: unknown[];
-    patches: unknown[];
-    preservedResiduals: string[];
-    reviewRequiredPatches: string[];
-    stats: {
-      totalChangeOps: number;
-      totalPatches: number;
-      autoApplicable: number;
-      requiresReview: number;
-      preservedResiduals: number;
-    };
-  };
-}
-
-export interface ApproveBundleRequest {
-  reviewer: string;
-}
-
-export interface RejectBundleRequest {
-  reviewer: string;
-  reason: string;
-}
-
-export interface ApproveBundleResponse {
-  success: boolean;
-  bundleId: string;
-  status: string;
-  reviewedBy: string;
-}
-
-export interface RejectBundleResponse {
-  success: boolean;
-  bundleId: string;
-  status: string;
-  reviewedBy: string;
-}
-
-export interface ApplyBundleResponse {
-  success: boolean;
-  bundleId: string;
-  status: string;
-}
-
 export interface ArtifactCompilerScopeConfig {
   workspaceId: string;
   projectId: string;
@@ -169,7 +112,6 @@ export class ArtifactCompilerClient {
   constructor(config: ArtifactCompilerConfig) {
     this.config = {
       timeout: 10000,
-      enableLegacyPatchBundleMethods: false, // P0: Default to false to encourage using generated API
       ...config,
     };
   }
@@ -211,6 +153,36 @@ export class ArtifactCompilerClient {
         request,
       );
       return this.ok(payload as GraphQueryResponse);
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async analyzeGraph(request: ArtifactGraphAnalyzeRequest): Promise<ApiResponse<ArtifactGraphIngestResponse>> {
+    try {
+      this.configureGeneratedClient();
+      const payload = await ArtifactGraphService.analyzeArtifactGraph(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+      return this.ok(payload as ArtifactGraphIngestResponse);
+    } catch (error: unknown) {
+      throw this.toApiError(error);
+    }
+  }
+
+  async mergeGraph(request: ArtifactGraphMergePayload): Promise<ApiResponse<ArtifactGraphIngestResponse>> {
+    try {
+      this.configureGeneratedClient();
+      const payload = await ArtifactGraphService.mergeArtifactGraph(
+        this.requireTenantId(),
+        this.requireWorkspaceId(),
+        this.requireProjectId(),
+        request,
+      );
+      return this.ok(payload as ArtifactGraphIngestResponse);
     } catch (error: unknown) {
       throw this.toApiError(error);
     }
@@ -259,63 +231,6 @@ export class ArtifactCompilerClient {
     }
   }
 
-  async approveBundle(bundleId: string, request: ApproveBundleRequest): Promise<ApiResponse<ApproveBundleResponse>> {
-    // P0: Feature-gated manual patch-bundle method
-    if (!this.config.enableLegacyPatchBundleMethods) {
-      throw new Error(
-        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
-        'Prefer using the generated API client for patch bundle operations.'
-      );
-    }
-    console.warn(
-      '[ArtifactCompilerClient] Using legacy manual HTTP method for approveBundle. ' +
-      'This method bypasses the generated API client and should only be used when necessary.'
-    );
-    const payload = await this.postJson<ApproveBundleResponse>(
-      this.buildEndpoint(`patch/bundles/${bundleId}/approve`),
-      request,
-    );
-    return this.ok(payload);
-  }
-
-  async rejectBundle(bundleId: string, request: RejectBundleRequest): Promise<ApiResponse<RejectBundleResponse>> {
-    // P0: Feature-gated manual patch-bundle method
-    if (!this.config.enableLegacyPatchBundleMethods) {
-      throw new Error(
-        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
-        'Prefer using the generated API client for patch bundle operations.'
-      );
-    }
-    console.warn(
-      '[ArtifactCompilerClient] Using legacy manual HTTP method for rejectBundle. ' +
-      'This method bypasses the generated API client and should only be used when necessary.'
-    );
-    const payload = await this.postJson<RejectBundleResponse>(
-      this.buildEndpoint(`patch/bundles/${bundleId}/reject`),
-      request,
-    );
-    return this.ok(payload);
-  }
-
-  async applyBundle(bundleId: string): Promise<ApiResponse<ApplyBundleResponse>> {
-    // P0: Feature-gated manual patch-bundle method
-    if (!this.config.enableLegacyPatchBundleMethods) {
-      throw new Error(
-        'Legacy patch-bundle methods are disabled. Set enableLegacyPatchBundleMethods=true in config to use them. ' +
-        'Prefer using the generated API client for patch bundle operations.'
-      );
-    }
-    console.warn(
-      '[ArtifactCompilerClient] Using legacy manual HTTP method for applyBundle. ' +
-      'This method bypasses the generated API client and should only be used when necessary.'
-    );
-    const payload = await this.postJson<ApplyBundleResponse>(
-      this.buildEndpoint(`patch/bundles/${bundleId}/apply`),
-      {},
-    );
-    return this.ok(payload);
-  }
-
   private configureGeneratedClient(): void {
     OpenAPI.BASE = this.config.baseUrl;
     OpenAPI.TOKEN = this.config.authToken || undefined;
@@ -345,54 +260,6 @@ export class ArtifactCompilerClient {
       throw new Error('projectId is required. Call setScope first.');
     }
     return this.scopeConfig.projectId;
-  }
-
-  private async postJson<T>(url: string, body: unknown): Promise<T> {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.config.authToken ? { Authorization: `Bearer ${this.config.authToken}` } : {}),
-        ...(this.config.tenantId ? { 'X-Tenant-ID': this.config.tenantId } : {}),
-        ...(this.scopeConfig?.workspaceId ? { 'X-Workspace-ID': this.scopeConfig.workspaceId } : {}),
-        ...(this.scopeConfig?.projectId ? { 'X-Project-ID': this.scopeConfig.projectId } : {}),
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorBody = await this.safeJson(response);
-      throw this.fromHttpError(response.status, errorBody);
-    }
-
-    return (await this.safeJson(response)) as T;
-  }
-
-  private async safeJson(response: Response): Promise<unknown> {
-    try {
-      return await response.json();
-    } catch {
-      return undefined;
-    }
-  }
-
-  private fromHttpError(status: number, data: unknown): ApiError {
-    if (status === 400) {
-      return { code: 'BAD_REQUEST', message: 'Invalid request parameters', details: { status, data } };
-    }
-    if (status === 401) {
-      return { code: 'UNAUTHORIZED', message: 'Authentication required', details: { status, data } };
-    }
-    if (status === 403) {
-      return { code: 'FORBIDDEN', message: 'Access denied', details: { status, data } };
-    }
-    if (status === 404) {
-      return { code: 'NOT_FOUND', message: 'Resource not found', details: { status, data } };
-    }
-    if (status >= 500) {
-      return { code: 'SERVER_ERROR', message: 'Server error occurred', details: { status, data } };
-    }
-    return { code: 'HTTP_ERROR', message: `Request failed with status ${status}`, details: { status, data } };
   }
 
   private toApiError(error: unknown): ApiError {
@@ -428,12 +295,6 @@ export class ArtifactCompilerClient {
       data,
       timestamp: new Date().toISOString(),
     };
-  }
-
-  private buildEndpoint(path: string): string {
-    const base = this.config.baseUrl.replace(/\/$/, '');
-    const normalized = path.replace(/^\//, '');
-    return `${base}/api/v1/yappc/artifact/${normalized}`;
   }
 }
 

@@ -252,10 +252,29 @@ public final class KernelActionRecommendationService {
             return actions;
         }
 
-        public String gateId() { return gateId; }
-        public String status() { return status; }
-        public List<String> criteria() { return criteria; }
-        public String reason() { return reason; }
-        public List<String> suggestedActions() { return suggestedActions; }
+        public String gateId()
+        {
+            return gateId;
+        }
+
+        public String status()
+        {
+            return status;
+        }
+
+        public List<String> criteria()
+        {
+            return criteria;
+        }
+
+        public String reason()
+        {
+            return reason;
+        }
+
+        public List<String> suggestedActions()
+        {
+            return suggestedActions;
+        }
     }
 }

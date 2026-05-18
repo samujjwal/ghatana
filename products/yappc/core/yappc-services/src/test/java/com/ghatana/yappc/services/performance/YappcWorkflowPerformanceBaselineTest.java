@@ -46,12 +46,13 @@ import static org.mockito.Mockito.*;
  * not micro-optimise. For load-level throughput testing, see {@code k6-tests/}.
  *
  * @doc.type class
- * @doc.purpose Performance baseline tests for YAPPC workflow service
- * @doc.layer product
- * @doc.pattern Test
+ * @doc.purpose Performance baseline tests for YAPPC workflow
+ * @doc.layer test
+ * @doc.pattern PerformanceTest
  */
+@SuppressWarnings("unchecked")
 @Tag("performance")
-@DisplayName("YAPPC Workflow Service — Performance Baselines")
+@DisplayName("YAPPC Workflow — Performance Baselines")
 @Disabled("All tests failing due to GenerationRunRepository mock configuration issues")
 class YappcWorkflowPerformanceBaselineTest extends EventloopTestBase {
 

@@ -1,11 +1,12 @@
 package com.ghatana.yappc.services.artifact;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
-import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
+import com.ghatana.yappc.domain.artifact.*;
+import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
@@ -70,6 +71,7 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
             "imperative_logic",
             "Complex reducer",
             "const next = reducer(state, action);",
+            new SourceLocationDto("src/store/reducers.ts", 10, 0, 50, 1),
             "src/store/reducers.ts:10:0-50:1",
             "sha256:cafebabe",
             "blobs/cafebabe",

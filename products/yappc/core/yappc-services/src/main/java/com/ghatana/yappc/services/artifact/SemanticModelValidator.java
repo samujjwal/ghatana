@@ -208,8 +208,8 @@ public final class SemanticModelValidator {
             ));
         }
 
-        // Validate provenance
-        if (model.provenance() == null || model.provenance().isBlank()) {
+        // Validate provenance - it's an enum, not a string
+        if (model.provenance() == null) {
             errors.add(new ValidationError(
                 "MISSING_PROVENANCE",
                 "Semantic model is missing required 'provenance' field",
@@ -217,8 +217,8 @@ public final class SemanticModelValidator {
                 model.id()
             ));
         } else {
-            String normalizedProvenance = model.provenance().toLowerCase();
-            if (!VALID_PROVENANCE.contains(normalizedProvenance)) {
+            // Provenance is an enum, no need to normalize
+            if (!VALID_PROVENANCE.contains(model.provenance().name().toLowerCase())) {
                 warnings.add(new ValidationWarning(
                     "UNKNOWN_PROVENANCE",
                     "Semantic model provenance '" + model.provenance() + "' is not in canonical set",
@@ -227,7 +227,7 @@ public final class SemanticModelValidator {
                 ));
             }
 
-            if (isSyntheticProvenance(normalizedProvenance)
+            if (isSyntheticProvenance(model.provenance().name().toLowerCase())
                 && (model.syntheticReason() == null || model.syntheticReason().isBlank())) {
                 errors.add(new ValidationError(
                     "MISSING_SYNTHETIC_REASON",

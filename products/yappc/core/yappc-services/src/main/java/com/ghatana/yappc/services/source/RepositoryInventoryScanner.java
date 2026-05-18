@@ -48,7 +48,8 @@ public final class RepositoryInventoryScanner {
         VENDOR_DIRECTORY,
         GENERATED_FILE,
         FILE_TOO_LARGE,
-        PACKAGE_BOUNDARY
+        PACKAGE_BOUNDARY,
+        EXCLUDE_PATTERN  // P0: Added for explicit exclude pattern matching
     }
 
     /**
@@ -63,7 +64,8 @@ public final class RepositoryInventoryScanner {
 
     public record SkippedEntry(
         String relativePath,
-        SkipReason reason
+        SkipReason reason,
+        String matchedPattern  // P0: Added matched pattern for diagnostic clarity
     ) {}
 
     /**
@@ -141,11 +143,12 @@ public final class RepositoryInventoryScanner {
      * Scan a repository directory with .gitignore filtering and include/exclude rules.
      * 
      * P1: Canonical scanner method with gitignore patterns and include/exclude rules.
-     * Include rules take precedence over exclude rules and gitignore.
+     * P0: Split filters into user filters (include/exclude/gitignore) and safety filters (binary, vendor, generated, large file).
+     * Include rules override user filters but NOT safety filters.
      * 
      * @param rootPath Root directory of the repository
      * @param gitignorePatterns .gitignore patterns to filter
-     * @param includePatterns Patterns that must be included (overrides other filters)
+     * @param includePatterns Patterns that must be included (overrides user filters only)
      * @param excludePatterns Patterns that must be excluded (applied after include rules)
      * @return Inventory result with classified files
      * @throws IOException if scanning fails
@@ -170,7 +173,34 @@ public final class RepositoryInventoryScanner {
         for (Path path : allPaths) {
             String relative = rootPath.relativize(path).toString().replace('\\', '/');
 
-            // P1: Include rules take precedence - if matched, skip all other filtering
+            // P0: Safety filters run first and cannot be overridden by include rules
+            // Skip vendor directories
+            if (isInVendorDirectory(relative)) {
+                skipped.add(new SkippedEntry(relative, SkipReason.VENDOR_DIRECTORY, "vendor directory"));
+                continue;
+            }
+
+            // Skip generated directories
+            if (isInGeneratedDirectory(relative)) {
+                skipped.add(new SkippedEntry(relative, SkipReason.GENERATED_FILE, "generated directory"));
+                continue;
+            }
+
+            // Skip binary files
+            if (isBinaryFile(relative)) {
+                skipped.add(new SkippedEntry(relative, SkipReason.BINARY_FILE, getBinaryExtension(relative)));
+                continue;
+            }
+
+            // Skip oversized files
+            long size = Files.size(path);
+            if (size > MAX_SINGLE_FILE_BYTES) {
+                skipped.add(new SkippedEntry(relative, SkipReason.FILE_TOO_LARGE, String.valueOf(size)));
+                continue;
+            }
+
+            // P0: User filters (include/exclude/gitignore) run after safety filters
+            // Include rules take precedence over exclude rules and gitignore
             if (matchesAnyPattern(relative, includePatterns)) {
                 files.add(toInventoryEntry(rootPath, path));
                 continue;
@@ -185,40 +215,17 @@ public final class RepositoryInventoryScanner {
                 }
             }
 
-            // P1: Exclude rules applied after include rules
-            if (matchesAnyPattern(relative, excludePatterns)) {
-                skipped.add(new SkippedEntry(relative, SkipReason.PACKAGE_BOUNDARY));
-                continue;
-            }
-
-            // Skip vendor directories
-            if (isInVendorDirectory(relative)) {
-                skipped.add(new SkippedEntry(relative, SkipReason.VENDOR_DIRECTORY));
-                continue;
-            }
-
-            // Skip generated directories
-            if (isInGeneratedDirectory(relative)) {
-                skipped.add(new SkippedEntry(relative, SkipReason.GENERATED_FILE));
+            // Exclude rules applied after include rules
+            String matchedExcludePattern = findMatchingPattern(relative, excludePatterns);
+            if (matchedExcludePattern != null) {
+                skipped.add(new SkippedEntry(relative, SkipReason.EXCLUDE_PATTERN, matchedExcludePattern));
                 continue;
             }
 
             // Skip .gitignore-matched paths
-            if (matchesGitignore(relative, gitignorePatterns)) {
-                skipped.add(new SkippedEntry(relative, SkipReason.GITIGNORE));
-                continue;
-            }
-
-            // Skip binary files
-            if (isBinaryFile(relative)) {
-                skipped.add(new SkippedEntry(relative, SkipReason.BINARY_FILE));
-                continue;
-            }
-
-            // Skip oversized files
-            long size = Files.size(path);
-            if (size > MAX_SINGLE_FILE_BYTES) {
-                skipped.add(new SkippedEntry(relative, SkipReason.FILE_TOO_LARGE));
+            String matchedGitignorePattern = findMatchingPattern(relative, gitignorePatterns);
+            if (matchedGitignorePattern != null) {
+                skipped.add(new SkippedEntry(relative, SkipReason.GITIGNORE, matchedGitignorePattern));
                 continue;
             }
 
@@ -375,15 +382,35 @@ public final class RepositoryInventoryScanner {
      * P1: Used for include/exclude rule matching.
      */
     private static boolean matchesAnyPattern(String path, Set<String> patterns) {
+        return findMatchingPattern(path, patterns) != null;
+    }
+
+    /**
+     * Find the first matching pattern from a set.
+     * P0: Returns the matched pattern for diagnostic clarity.
+     */
+    private static String findMatchingPattern(String path, Set<String> patterns) {
         if (patterns.isEmpty()) {
-            return false;
+            return null;
         }
         for (String pattern : patterns) {
             if (matchesPattern(path, pattern)) {
-                return true;
+                return pattern;
             }
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * Get the binary extension from a file path.
+     * P0: Helper for diagnostic messages.
+     */
+    private static String getBinaryExtension(String relativePath) {
+        int dot = relativePath.lastIndexOf('.');
+        if (dot < 0) {
+            return "unknown";
+        }
+        return relativePath.substring(dot).toLowerCase();
     }
 
     /**

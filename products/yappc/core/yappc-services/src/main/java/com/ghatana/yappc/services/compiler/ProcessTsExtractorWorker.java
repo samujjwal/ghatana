@@ -8,6 +8,7 @@ import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import io.activej.promise.Promise;
@@ -80,6 +81,11 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 .redirectErrorStream(true)
                 .start();
 
+            String tenantId = requireNonBlank(snapshot.tenantId(), "snapshot.tenantId");
+            String workspaceId = requireNonBlank(snapshot.workspaceId(), "snapshot.workspaceId");
+            String projectId = requireNonBlank(snapshot.projectId(), "snapshot.projectId");
+            String contentHash = snapshot.contentHash().filter(v -> !v.isBlank()).orElse(snapshot.checksum());
+
             Map<String, Object> snapshotRef = new java.util.LinkedHashMap<>();
             snapshotRef.put("provider", snapshot.provider());
             snapshotRef.put("repoId", snapshot.repoId());
@@ -87,22 +93,28 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 snapshotRef.put("commitSha", snapshot.commitSha().get());
             }
 
-            Map<String, Object> payload = Map.of(
-                "snapshot", Map.of(
-                    "snapshotRef", snapshotRef,
-                    "localRootPath", snapshot.materializedRoot(),
-                    "files", scopedTsFiles.stream().map(file -> Map.of(
-                        "relativePath", file.relativePath(),
-                        "absolutePath", file.absolutePath(),
-                        "materialized", true,
-                        "sizeBytes", file.sizeBytes(),
-                        "lastModifiedAt", file.lastModified().toString()
-                    )).toList(),
-                    "snapshotAt", snapshot.createdAt().toString(),
-                    "shallow", false,
-                    "diagnostics", snapshot.diagnostics()
-                )
-            );
+            Map<String, Object> snapshotPayload = new java.util.LinkedHashMap<>();
+            snapshotPayload.put("snapshotId", requireNonBlank(snapshot.snapshotId(), "snapshot.snapshotId"));
+            snapshotPayload.put("snapshotRef", snapshotRef);
+            snapshotPayload.put("localRootPath", snapshot.materializedRoot());
+            snapshotPayload.put("files", scopedTsFiles.stream().map(file -> Map.of(
+                "relativePath", file.relativePath(),
+                "absolutePath", file.absolutePath(),
+                "materialized", true,
+                "sizeBytes", file.sizeBytes(),
+                "lastModifiedAt", file.lastModified().toString(),
+                "checksum", requireNonBlank(file.contentChecksum(), "snapshot.file.contentChecksum")
+            )).toList());
+            snapshotPayload.put("snapshotAt", snapshot.createdAt().toString());
+            snapshotPayload.put("shallow", false);
+            snapshotPayload.put("diagnostics", snapshot.diagnostics());
+            snapshotPayload.put("contentHash", contentHash);
+            snapshotPayload.put("contentChecksum", snapshot.checksum());
+            snapshotPayload.put("tenantId", tenantId);
+            snapshotPayload.put("workspaceId", workspaceId);
+            snapshotPayload.put("projectId", projectId);
+
+            Map<String, Object> payload = Map.of("snapshot", snapshotPayload);
 
             String jsonPayload = objectMapper.writeValueAsString(payload);
             process.getOutputStream().write(jsonPayload.getBytes(StandardCharsets.UTF_8));
@@ -360,7 +372,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return result;
     }
 
-    private static ResidualIslandDto.SourceLocation parseResidualSourceLocation(Object value) {
+    private static SourceLocationDto parseResidualSourceLocation(Object value) {
         if (!(value instanceof Map<?, ?> raw)) {
             return null;
         }
@@ -368,7 +380,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         if (filePath == null || filePath.isBlank()) {
             return null;
         }
-        return new ResidualIslandDto.SourceLocation(
+        return new SourceLocationDto(
             filePath,
             asInteger(raw.get("startLine")) == null ? 0 : asInteger(raw.get("startLine")),
             asInteger(raw.get("startColumn")) == null ? 0 : asInteger(raw.get("startColumn")),
@@ -451,7 +463,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 : Map.of();
             
             // P0: Convert Map to SourceLocation record
-            SemanticModelDto.SourceLocation sourceLocation = toSourceLocation(sourceLocationMap, asString(model.get("filePath")));
+            SourceLocationDto sourceLocation = toSourceLocation(sourceLocationMap, asString(model.get("filePath")));
             
             mapped.add(SemanticModelDto.builder()
                 .id(firstNonBlank(asString(model.get("id")), java.util.UUID.randomUUID().toString()))
@@ -478,8 +490,8 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 .extractorVersion(asString(model.get("extractorVersion")))
                 .modelVersionId(asString(model.get("modelVersionId")))
                 .syntheticReason(asString(model.get("syntheticReason")))
-                // P0: Normalized provenance
-                .provenance(provenance)
+                // P0: Normalized provenance - convert string to enum
+                .provenance(parseProvenance(provenance))
                 .extractedAt(java.time.Instant.now())
                 .snapshotId(firstNonBlank(asString(model.get("snapshotId")), snapshot.snapshotId()))
                 .tenantId(asString(model.get("tenantId")))
@@ -490,6 +502,11 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return mapped;
     }
 
+    /**
+     * P0: Enforces file-scope enforcement for nodes returned by the TS extractor worker.
+     * Returns a clear diagnostic when the TS pipeline ignores the snapshot file list.
+     * This ensures the TS worker only processes files that were explicitly routed to it.
+     */
     private static void enforceNodeFileScope(
         List<ArtifactNodeDto> nodes,
         List<RepositorySnapshot.SnapshotFile> scopedTsFiles
@@ -509,6 +526,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             }
         }
 
+        List<String> violations = new ArrayList<>();
         for (ArtifactNodeDto node : nodes) {
             String filePath = node.filePath();
             if (filePath == null || filePath.isBlank()) {
@@ -519,10 +537,20 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
             if (!allowed) {
                 Object crossFileRef = node.properties() == null ? null : node.properties().get("crossFileReference");
                 if (!Boolean.TRUE.equals(crossFileRef)) {
-                    throw new IllegalArgumentException(
-                        "Worker returned node outside routed TypeScript file scope: " + filePath);
+                    violations.add(filePath);
                 }
             }
+        }
+
+        if (!violations.isEmpty()) {
+            throw new IllegalArgumentException(
+                "TS extractor worker returned nodes outside the routed snapshot file scope. " +
+                "The TS pipeline must respect the snapshot.files list provided in the request. " +
+                "Violations: " + String.join(", ", violations) + ". " +
+                "Allowed files: " + String.join(", ", allowedRelativePaths) + ". " +
+                "This indicates the TS synthesis pipeline is ignoring the snapshot file boundary, " +
+                "which can lead to incomplete or inconsistent artifact graphs."
+            );
         }
     }
 
@@ -534,9 +562,25 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
      * P0: Convert Map to SourceLocation record for semantic models.
      * Handles missing or incomplete location data gracefully.
      */
-    private static SemanticModelDto.SourceLocation toSourceLocation(Map<String, Object> locationMap, String defaultFilePath) {
+    private static SourceLocationDto parseNodeSourceLocation(Map<String, Object> locationMap, String defaultFilePath) {
         if (locationMap == null || locationMap.isEmpty()) {
-            return new SemanticModelDto.SourceLocation(
+            return new SourceLocationDto(
+                defaultFilePath != null ? defaultFilePath : "",
+                0, 0, 0, 0
+            );
+        }
+        return new SourceLocationDto(
+            asString(locationMap.get("filePath")) != null ? asString(locationMap.get("filePath")) : (defaultFilePath != null ? defaultFilePath : ""),
+            asInteger(locationMap.get("startLine")) != null ? asInteger(locationMap.get("startLine")) : 0,
+            asInteger(locationMap.get("startColumn")) != null ? asInteger(locationMap.get("startColumn")) : 0,
+            asInteger(locationMap.get("endLine")) != null ? asInteger(locationMap.get("endLine")) : 0,
+            asInteger(locationMap.get("endColumn")) != null ? asInteger(locationMap.get("endColumn")) : 0
+        );
+    }
+
+    private static SourceLocationDto toSourceLocation(Map<String, Object> locationMap, String defaultFilePath) {
+        if (locationMap == null || locationMap.isEmpty()) {
+            return new SourceLocationDto(
                 defaultFilePath != null ? defaultFilePath : "",
                 0, 0, 0, 0
             );
@@ -546,7 +590,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         Integer endLine = asInteger(locationMap.get("endLine"));
         Integer endColumn = asInteger(locationMap.get("endColumn"));
         
-        return new SemanticModelDto.SourceLocation(
+        return new SourceLocationDto(
             asString(locationMap.get("filePath")) != null ? asString(locationMap.get("filePath")) : (defaultFilePath != null ? defaultFilePath : ""),
             startLine != null ? startLine : 0,
             startColumn != null ? startColumn : 0,
@@ -562,6 +606,20 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return switch (provenance) {
             case "exact", "inferred", "synthesized", "manual", "assumed" -> provenance;
             default -> "inferred";
+        };
+    }
+
+    private static SemanticModelDto.Provenance parseProvenance(String provenance) {
+        if (provenance == null || provenance.isBlank()) {
+            return SemanticModelDto.Provenance.INFERRED;
+        }
+        return switch (provenance.toLowerCase()) {
+            case "exact" -> SemanticModelDto.Provenance.EXACT;
+            case "inferred" -> SemanticModelDto.Provenance.INFERRED;
+            case "synthesized" -> SemanticModelDto.Provenance.SYNTHESIZED;
+            case "manual" -> SemanticModelDto.Provenance.MANUAL;
+            case "assumed" -> SemanticModelDto.Provenance.ASSUMED;
+            default -> SemanticModelDto.Provenance.INFERRED;
         };
     }
 
@@ -597,9 +655,10 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         List<ArtifactNodeDto> nodes = new ArrayList<>();
         for (Map<String, Object> node : rawNodes) {
             @SuppressWarnings("unchecked")
-            Map<String, Object> sourceLocation = node.get("sourceLocation") instanceof Map<?, ?> location
+            Map<String, Object> sourceLocationMap = node.get("sourceLocation") instanceof Map<?, ?> location
                 ? (Map<String, Object>) location
                 : Map.of();
+            SourceLocationDto sourceLocation = parseNodeSourceLocation(sourceLocationMap, asString(node.get("filePath")));
 
             // P0: Require canonical 'type', reject legacy 'kind'
             String nodeType = asString(node.get("type"));
@@ -612,7 +671,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 asString(node.get("id")),
                 nodeType,
                 asString(node.get("name")),
-                firstNonBlank(asString(node.get("filePath")), asString(sourceLocation.get("filePath"))),
+                firstNonBlank(asString(node.get("filePath")), sourceLocation != null ? sourceLocation.filePath() : null),
                 asString(node.get("content")),
                 mapOrEmpty(node.get("properties")),
                 asListOfStrings(node.get("tags")),
@@ -704,5 +763,12 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
 
     private static String readAll(InputStream inputStream) throws IOException {
         return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    private static String requireNonBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Missing required non-blank field: " + fieldName);
+        }
+        return value;
     }
 }

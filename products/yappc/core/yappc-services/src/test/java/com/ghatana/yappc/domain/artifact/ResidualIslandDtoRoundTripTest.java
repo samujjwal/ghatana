@@ -27,6 +27,7 @@ class ResidualIslandDtoRoundTripTest {
             "imperative_logic",
             "Complex mutation chain that cannot be represented as a node",
             "const x = mutate(state);",
+            new SourceLocationDto("src/service/OrderService.ts", 42, 0, 68, 1),
             "src/service/OrderService.ts:42:0-68:1",
             "sha256:deadbeef",
             "blobs/deadbeef",
@@ -70,9 +71,10 @@ class ResidualIslandDtoRoundTripTest {
             "island-min",
             "unknown",
             "Minimal island",
-            null,
+            "minimal source",
+            new SourceLocationDto("src/a.ts", 1, 0, 2, 0),
             "src/a.ts:1:0-2:0",
-            null,
+            "sha256:abc",
             null,
             null,
             0.5,
@@ -90,7 +92,8 @@ class ResidualIslandDtoRoundTripTest {
         ResidualIslandDto restored = mapper.readValue(json, ResidualIslandDto.class);
 
         assertThat(restored.id()).isEqualTo("island-min");
-        assertThat(restored.checksum()).isNull();
+        assertThat(restored.originalSource()).isEqualTo("minimal source");
+        assertThat(restored.checksum()).isEqualTo("sha256:abc");
         assertThat(restored.rawFragmentRef()).isNull();
         assertThat(restored.riskScore()).isNull();
     }

@@ -115,6 +115,38 @@ describe("createBootstrapKernelProviders", () => {
     expect(providers.context.registryProvider).toBe(providers.registryProvider);
   });
 
+  it("allows Digital Marketing bootstrap pilot gates needed by direct lifecycle commands", async () => {
+    const repoRoot = path.join(os.tmpdir(), "ghatana-repo");
+    const providers = createBootstrapKernelProviders({ repoRoot });
+
+    await expect(
+      providers.gates["lifecycle-contract-validation"]?.evaluateGate({
+        gateId: "lifecycle-contract-validation",
+        productUnitId: "digital-marketing",
+        phase: "validate",
+        context: {},
+      })
+    ).resolves.toMatchObject({ passed: true });
+
+    await expect(
+      providers.gates["deployment-readiness"]?.evaluateGate({
+        gateId: "deployment-readiness",
+        productUnitId: "digital-marketing",
+        phase: "deploy",
+        context: {},
+      })
+    ).resolves.toMatchObject({ passed: true });
+
+    await expect(
+      providers.gates["artifact-validation"]?.evaluateGate({
+        gateId: "artifact-validation",
+        productUnitId: "digital-marketing",
+        phase: "deploy",
+        context: {},
+      })
+    ).resolves.toMatchObject({ passed: true });
+  });
+
   it("rejects custom output roots outside repo .kernel/out by default", () => {
     const repoRoot = path.join(os.tmpdir(), "ghatana-repo");
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,9 @@ public final class SemanticModelRepository {
     /**
      * Save a semantic model element.
      *
+     * P0: Extracted shared binder logic to bindSemanticModelStatement for consistency.
+     * P0: Added schema validation to ensure required columns exist.
+     *
      * @param model the semantic model to persist
      * @return promise of the persisted model
      */
@@ -86,48 +90,25 @@ public final class SemanticModelRepository {
                     extracted_at = EXCLUDED.extracted_at
                 """;
 
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, model.id());
-                statement.setString(2, model.elementId());
-                statement.setString(3, model.elementType());
-                statement.setString(4, model.name());
-                statement.setString(5, model.qualifiedName());
-                statement.setString(6, model.filePath());
-                statement.setString(7, writeSourceLocation(model.sourceLocation()));
-                statement.setString(8, writeStringList(model.properties()));
-                statement.setString(9, writeStringList(model.dependencies()));
-                statement.setString(10, writeStringList(model.dependents()));
-                statement.setDouble(11, model.confidence() != null ? model.confidence() : 0.0);
-                statement.setBoolean(12, model.reviewRequired() != null ? model.reviewRequired() : false);
-                statement.setString(13, model.reviewReason());
-                statement.setString(14, writeStringList(model.securityFlags()));
-                statement.setString(15, writeStringList(model.privacyFlags()));
-                statement.setString(16, writeStringList(model.graphNodeIds()));
-                statement.setString(17, writeStringList(model.residualIslandIds()));
-                statement.setString(18, model.sourceRef());
-                statement.setString(19, model.symbolRef());
-                statement.setString(20, model.extractorId());
-                statement.setString(21, model.extractorVersion());
-                statement.setString(22, model.modelVersionId());
-                statement.setString(23, model.syntheticReason());
-                statement.setString(24, model.provenance());
-                statement.setTimestamp(25, Timestamp.from(model.extractedAt()));
-                statement.setString(26, model.snapshotId());
-                statement.setString(27, model.tenantId());
-                statement.setString(28, model.workspaceId());
-                statement.setString(29, model.projectId());
-                statement.executeUpdate();
-                
-                log.debug("Saved semantic model {} for element {} in snapshot {}", 
-                    model.id(), model.elementId(), model.snapshotId());
-                return model;
+            try (Connection connection = dataSource.getConnection()) {
+                validateSchema(connection);
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    bindSemanticModelStatement(statement, model, 1);
+                    statement.executeUpdate();
+                    
+                    log.debug("Saved semantic model {} for element {} in snapshot {}", 
+                        model.id(), model.elementId(), model.snapshotId());
+                    return model;
+                }
             }
         });
     }
 
     /**
      * Save multiple semantic model elements in batch.
+     *
+     * P0: Extracted shared binder logic to bindSemanticModelStatement for consistency.
+     * P0: Added schema validation to ensure required columns exist.
      *
      * @param models the semantic models to persist
      * @return promise of count of saved models
@@ -172,44 +153,18 @@ public final class SemanticModelRepository {
                     extracted_at = EXCLUDED.extracted_at
                 """;
 
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                for (SemanticModelDto model : models) {
-                    statement.setString(1, model.id());
-                    statement.setString(2, model.elementId());
-                    statement.setString(3, model.elementType());
-                    statement.setString(4, model.name());
-                    statement.setString(5, model.qualifiedName());
-                    statement.setString(6, model.filePath());
-                    statement.setString(7, writeSourceLocation(model.sourceLocation()));
-                    statement.setString(8, writeStringList(model.properties()));
-                    statement.setString(9, writeStringList(model.dependencies()));
-                    statement.setString(10, writeStringList(model.dependents()));
-                    statement.setDouble(11, model.confidence() != null ? model.confidence() : 0.0);
-                    statement.setBoolean(12, model.reviewRequired() != null ? model.reviewRequired() : false);
-                    statement.setString(13, model.reviewReason());
-                    statement.setString(14, writeStringList(model.securityFlags()));
-                    statement.setString(15, writeStringList(model.privacyFlags()));
-                    statement.setString(16, writeStringList(model.graphNodeIds()));
-                    statement.setString(17, writeStringList(model.residualIslandIds()));
-                    statement.setString(18, model.sourceRef());
-                    statement.setString(19, model.symbolRef());
-                    statement.setString(20, model.extractorId());
-                    statement.setString(21, model.extractorVersion());
-                    statement.setString(22, model.modelVersionId());
-                    statement.setString(23, model.syntheticReason());
-                    statement.setString(24, model.provenance());
-                    statement.setTimestamp(25, Timestamp.from(model.extractedAt()));
-                    statement.setString(26, model.snapshotId());
-                    statement.setString(27, model.tenantId());
-                    statement.setString(28, model.workspaceId());
-                    statement.setString(29, model.projectId());
-                    statement.addBatch();
+            try (Connection connection = dataSource.getConnection()) {
+                validateSchema(connection);
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    for (SemanticModelDto model : models) {
+                        bindSemanticModelStatement(statement, model, 1);
+                        statement.addBatch();
+                    }
+                    int[] results = statement.executeBatch();
+                    int total = java.util.Arrays.stream(results).sum();
+                    log.info("Saved {} semantic models in batch", total);
+                    return total;
                 }
-                int[] results = statement.executeBatch();
-                int total = java.util.Arrays.stream(results).sum();
-                log.info("Saved {} semantic models in batch", total);
-                return total;
             }
         });
     }
@@ -380,7 +335,7 @@ public final class SemanticModelRepository {
             rs.getString("extractor_version"),
             rs.getString("model_version_id"),
             rs.getString("synthetic_reason"),
-            rs.getString("provenance"),
+            parseProvenance(rs.getString("provenance")),
             rs.getTimestamp("extracted_at").toInstant(),
             rs.getString("snapshot_id"),
             rs.getString("tenant_id"),
@@ -436,7 +391,7 @@ public final class SemanticModelRepository {
         return List.of();
     }
 
-    private String writeSourceLocation(SemanticModelDto.SourceLocation location) throws JsonProcessingException {
+    private String writeSourceLocation(SourceLocationDto location) throws JsonProcessingException {
         if (location == null) {
             return null;
         }
@@ -449,13 +404,13 @@ public final class SemanticModelRepository {
         ));
     }
 
-    private SemanticModelDto.SourceLocation readSourceLocation(String json) {
+    private SourceLocationDto readSourceLocation(String json) {
         if (json == null || json.isBlank()) {
             return null;
         }
         try {
             Map<String, Object> map = objectMapper.readValue(json, STRING_MAP);
-            return new SemanticModelDto.SourceLocation(
+            return new SourceLocationDto(
                 (String) map.get("filePath"),
                 ((Number) map.getOrDefault("startLine", 0)).intValue(),
                 ((Number) map.getOrDefault("startColumn", 0)).intValue(),
@@ -487,6 +442,20 @@ public final class SemanticModelRepository {
         }
     }
 
+    private SemanticModelDto.Provenance parseProvenance(String provenance) {
+        if (provenance == null || provenance.isBlank()) {
+            return SemanticModelDto.Provenance.INFERRED;
+        }
+        return switch (provenance.toLowerCase()) {
+            case "exact" -> SemanticModelDto.Provenance.EXACT;
+            case "inferred" -> SemanticModelDto.Provenance.INFERRED;
+            case "synthesized" -> SemanticModelDto.Provenance.SYNTHESIZED;
+            case "manual" -> SemanticModelDto.Provenance.MANUAL;
+            case "assumed" -> SemanticModelDto.Provenance.ASSUMED;
+            default -> SemanticModelDto.Provenance.INFERRED;
+        };
+    }
+
     private String writeStringList(Map<String, Object> map) throws JsonProcessingException {
         if (map == null || map.isEmpty()) {
             return "{}";
@@ -504,5 +473,84 @@ public final class SemanticModelRepository {
             log.warn("Failed to parse string map JSON", e);
             return Map.of();
         }
+    }
+
+    /**
+     * P0: Validates that the semantic_models table schema matches the expected columns.
+     * Throws IllegalStateException if required columns are missing, preventing silent failures.
+     */
+    private void validateSchema(Connection connection) throws SQLException {
+        java.util.Set<String> requiredColumns = java.util.Set.of(
+            "id", "element_id", "element_type", "name", "qualified_name", "file_path",
+            "source_location_json", "properties_json", "dependencies_json", "dependents_json",
+            "confidence", "review_required", "review_reason", "security_flags", "privacy_flags",
+            "graph_node_ids", "residual_island_ids", "source_ref", "symbol_ref",
+            "extractor_id", "extractor_version", "model_version_id", "synthetic_reason",
+            "provenance", "extracted_at", "snapshot_id", "tenant_id", "workspace_id", "project_id"
+        );
+
+        String schemaSql = """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'semantic_models'
+            """;
+
+        java.util.Set<String> existingColumns = new java.util.HashSet<>();
+        try (PreparedStatement statement = connection.prepareStatement(schemaSql);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                existingColumns.add(rs.getString("column_name"));
+            }
+        }
+
+        java.util.Set<String> missingColumns = new java.util.HashSet<>(requiredColumns);
+        missingColumns.removeAll(existingColumns);
+
+        if (!missingColumns.isEmpty()) {
+            throw new IllegalStateException(
+                "semantic_models table schema mismatch. Missing required columns: " + 
+                String.join(", ", missingColumns) + 
+                ". Run the latest database migration to fix the schema."
+            );
+        }
+    }
+
+    /**
+     * P0: Shared binder for semantic model statements.
+     * Ensures consistent parameter binding across saveModel and saveModels methods.
+     * All 29 parameters must be bound in the correct order to match the SQL placeholder count.
+     */
+    private void bindSemanticModelStatement(PreparedStatement statement, SemanticModelDto model, int startIndex) 
+            throws SQLException, JsonProcessingException {
+        int idx = startIndex;
+        statement.setString(idx++, model.id());
+        statement.setString(idx++, model.elementId());
+        statement.setString(idx++, model.elementType());
+        statement.setString(idx++, model.name());
+        statement.setString(idx++, model.qualifiedName());
+        statement.setString(idx++, model.filePath());
+        statement.setString(idx++, writeSourceLocation(model.sourceLocation()));
+        statement.setString(idx++, writeStringList(model.properties()));
+        statement.setString(idx++, writeStringList(model.dependencies()));
+        statement.setString(idx++, writeStringList(model.dependents()));
+        statement.setDouble(idx++, model.confidence() != null ? model.confidence() : 0.0);
+        statement.setBoolean(idx++, model.reviewRequired() != null ? model.reviewRequired() : false);
+        statement.setString(idx++, model.reviewReason());
+        statement.setString(idx++, writeStringList(model.securityFlags()));
+        statement.setString(idx++, writeStringList(model.privacyFlags()));
+        statement.setString(idx++, writeStringList(model.graphNodeIds()));
+        statement.setString(idx++, writeStringList(model.residualIslandIds()));
+        statement.setString(idx++, model.sourceRef());
+        statement.setString(idx++, model.symbolRef());
+        statement.setString(idx++, model.extractorId());
+        statement.setString(idx++, model.extractorVersion());
+        statement.setString(idx++, model.modelVersionId());
+        statement.setString(idx++, model.syntheticReason());
+        statement.setString(idx++, model.provenance() != null ? model.provenance().name().toLowerCase() : null);
+        statement.setTimestamp(idx++, Timestamp.from(model.extractedAt()));
+        statement.setString(idx++, model.snapshotId());
+        statement.setString(idx++, model.tenantId());
+        statement.setString(idx++, model.workspaceId());
+        statement.setString(idx++, model.projectId());
     }
 }

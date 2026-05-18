@@ -6,7 +6,13 @@ import {
   type GraphQueryRequest,
   type ResidualAnalyzeRequest,
 } from '../ArtifactCompilerClient';
+import { LegacyArtifactPatchBundleClient } from '../LegacyArtifactPatchBundleClient';
 import { ArtifactGraphService } from '@/clients/generated/api';
+
+type LegacyPatchMethodNames = 'approveBundle' | 'rejectBundle' | 'applyBundle';
+type ArtifactClientPublicMethodNames = keyof ArtifactCompilerClient;
+type LegacyMethodsOnMainClient = Extract<ArtifactClientPublicMethodNames, LegacyPatchMethodNames>;
+const assertLegacyMethodsNotExposed: LegacyMethodsOnMainClient extends never ? true : never = true;
 
 describe('ArtifactCompilerClient', () => {
   let client: ArtifactCompilerClient;
@@ -88,7 +94,14 @@ describe('ArtifactCompilerClient', () => {
     expect(result.data?.message).toBe('analyzed');
   });
 
-  it('uses patch compatibility endpoint for approve bundle', async () => {
+  it('does not expose legacy patch-bundle methods', () => {
+    expect(assertLegacyMethodsNotExposed).toBe(true);
+    expect('approveBundle' in client).toBe(false);
+    expect('rejectBundle' in client).toBe(false);
+    expect('applyBundle' in client).toBe(false);
+  });
+
+  it('uses patch compatibility endpoint via LegacyArtifactPatchBundleClient', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, bundleId: 'bundle-1', status: 'APPROVED', reviewedBy: 'u1' }),
@@ -96,11 +109,18 @@ describe('ArtifactCompilerClient', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await client.approveBundle('bundle-1', { reviewer: 'u1' });
+    const legacyClient = new LegacyArtifactPatchBundleClient({
+      baseUrl: 'http://localhost:3000',
+      authToken: 'token',
+      tenantId: 'tenant-123',
+    });
+    legacyClient.setScope({ workspaceId: 'workspace-123', projectId: 'project-123' });
+
+    const result = await legacyClient.approveBundle('bundle-1', { reviewer: 'u1' });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toContain('/api/v1/yappc/artifact/patch/bundles/bundle-1/approve');
     expect(result.success).toBe(true);
-    expect(result.data?.status).toBe('APPROVED');
+    expect(result.status).toBe('APPROVED');
   });
 });

@@ -1,5 +1,8 @@
+import com.google.protobuf.gradle.id
+
 plugins {
     id("java-module")
+    id("com.google.protobuf")
 }
 
 description = "YAPPC Consolidated Services Module — absorbs services-platform and services-lifecycle (SIMP-Y8)"
@@ -76,6 +79,12 @@ dependencies {
     implementation(libs.protobuf.java)
     implementation("com.google.protobuf:protobuf-java-util:4.34.1")
 
+    // gRPC dependencies for proto generation
+    implementation("io.grpc:grpc-netty-shaded:1.60.0")
+    implementation("io.grpc:grpc-protobuf:1.60.0")
+    implementation("io.grpc:grpc-stub:1.60.0")
+    implementation("javax.annotation:javax.annotation-api:1.3.2")
+
     // JSON Schema validation for configuration governance
     implementation(libs.networknt.validator)
 
@@ -115,6 +124,27 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:1.19.3")
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
+}
+
+// ============================================================================
+// Protocol Buffers Configuration for artifact_compiler.proto
+// ============================================================================
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.26.1"
+    }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.60.0"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                id("grpc")
+            }
+        }
+    }
 }
 
 tasks.test {
@@ -279,6 +309,25 @@ tasks.register("serviceHealthCheck") {
     doLast {
         println("Running service health checks...")
     }
+}
+
+// ============================================================================
+// Artifact Compiler Contract Drift Gate
+// ============================================================================
+tasks.register<Test>("verifyArtifactCompilerContract") {
+    group = "verification"
+    description = "Runs canonical artifact compiler contract compatibility tests (proto <-> Java DTO adapters <-> worker payload)."
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    filter {
+        includeTestsMatching("com.ghatana.yappc.domain.artifact.ArtifactCompilerContractCompatibilityTest")
+    }
+    shouldRunAfter(tasks.test)
+}
+
+tasks.check {
+    dependsOn("verifyArtifactCompilerContract")
 }
 
 // --- Tree-sitter JNI native build --------------------------------------

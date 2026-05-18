@@ -57,6 +57,13 @@ export interface ScannerConfig {
    */
   readonly snapshotRef?: SnapshotRef;
   /**
+   * P0: Allowed file list for scoped scanning.
+   * When supplied (e.g., from snapshot.files), only files in this list are scanned.
+   * This ensures the pipeline respects the inventory boundary when running from a snapshot.
+   * File paths should be relative to rootPath with forward slashes.
+   */
+  readonly allowedFiles?: readonly string[];
+  /**
    * Whether to parse .gitignore files found in the repository and honour them.
    * Defaults to true.
    */
@@ -877,10 +884,35 @@ async function* walkDirectory(
     entries.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // P0: Build allowed files set for efficient lookup when provided
+  const allowedFiles = config.allowedFiles
+    ? config.allowedFiles.map(p => p.replace(/\\/g, '/'))
+    : null;
+  const allowedFilesSet = allowedFiles
+    ? new Set(allowedFiles)
+    : null;
+
   for (const entry of entries) {
     const entryName = entry.name as string;
     const absolutePath = join(dir, entryName);
     const relativePath = relative(root, absolutePath).replace(/\\/g, '/');
+    
+    // P0: Skip files not in allowedFiles when scoped scanning is enabled
+    if (allowedFilesSet !== null) {
+      if (entry.isDirectory()) {
+        const directoryPrefix = `${relativePath}/`;
+        const shouldDescend = allowedFiles !== null && allowedFiles.some(
+          path => path === relativePath || path.startsWith(directoryPrefix),
+        );
+        if (!shouldDescend) {
+          continue;
+        }
+      } else if (!allowedFilesSet.has(relativePath)) {
+        // When allowedFiles is set, non-listed files are silently skipped.
+        continue;
+      }
+    }
+    
     if (relativePath.includes('/vendor/') || relativePath.startsWith('vendor/')) {
       yield {
         kind: 'skip',

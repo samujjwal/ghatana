@@ -50,11 +50,15 @@ export const SnapshotFileSchema = z.object({
   sizeBytes: z.number().int().nonnegative(),
   /** ISO-8601 last-modified timestamp. */
   lastModifiedAt: z.string().datetime(),
+  /** SHA-256 checksum of the file content for round-trip fidelity. */
+  checksum: z.string().min(1),
 });
 
 export type SnapshotFile = z.infer<typeof SnapshotFileSchema>;
 
 export const RepositorySnapshotSchema = z.object({
+  /** Stable snapshot ID for database persistence and provenance tracking. */
+  snapshotId: z.string().min(1),
   snapshotRef: SnapshotRefSchema,
   /** Absolute local path where files have been materialized. */
   localRootPath: z.string().min(1),
@@ -67,6 +71,16 @@ export const RepositorySnapshotSchema = z.object({
    * Useful for observability and debugging.
    */
   diagnostics: z.array(ProviderDiagnosticSchema).default([]),
+  /** Deterministic content hash for snapshot identity verification. */
+  contentHash: z.string().min(1),
+  /** Legacy content checksum for backward compatibility. */
+  contentChecksum: z.string().min(1),
+  /** Tenant identifier for multi-tenant isolation. */
+  tenantId: z.string().min(1),
+  /** Workspace identifier for workspace-level scoping. */
+  workspaceId: z.string().min(1),
+  /** Project identifier for project-level scoping. */
+  projectId: z.string().min(1),
 });
 
 export type RepositorySnapshot = z.infer<typeof RepositorySnapshotSchema>;

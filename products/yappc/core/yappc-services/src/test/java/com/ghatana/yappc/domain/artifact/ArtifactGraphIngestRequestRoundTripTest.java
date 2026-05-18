@@ -1,5 +1,7 @@
 package com.ghatana.yappc.domain.artifact;
 
+import com.ghatana.yappc.domain.artifact.*;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +27,7 @@ class ArtifactGraphIngestRequestRoundTripTest {
     void residualIslandsRoundTrip() throws Exception {
         ResidualIslandDto island = new ResidualIslandDto(
             "ri-1", "css_module", "Stylesheet fragment",
-            ".btn { color: red; }", "src/App.css:1:0-10:0", "sha256:abc", null, "no_css_model",
+            ".btn { color: red; }", new SourceLocationDto("src/App.css", 1, 0, 10, 0), "src/App.css:1:0-10:0", "sha256:abc", null, "no_css_model",
             0.9, false, 0.3, Map.of("lang", "css"), 1,
             "t1", "p1", "w1", "snap-1"
         );

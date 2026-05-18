@@ -16,7 +16,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 /**
  * @doc.type class
@@ -188,5 +187,61 @@ class SourceProviderRegistryTest {
         var providers = registry.providers();
         assertThat(providers).hasSize(2);
         assertThat(providers).contains(githubProvider, localProvider);
+    }
+
+    @Test
+    @DisplayName("defaultRegistry with explicit resolver registers governed providers")
+    void defaultRegistryWithResolverRegistersGovernedProviders() {
+        SourceCredentialResolver resolver = (locator, providerId, tenantId, workspaceId, projectId) -> "token";
+
+        SourceProviderRegistry defaultRegistry = SourceProviderRegistry.defaultRegistry(resolver);
+
+        assertThat(defaultRegistry.resolve("github")).isPresent();
+        assertThat(defaultRegistry.resolve("gitlab")).isPresent();
+        assertThat(defaultRegistry.resolve("local-folder")).isPresent();
+    }
+
+    @Test
+    @DisplayName("defaultRegistry rejects null credential resolver")
+    void defaultRegistryRejectsNullCredentialResolver() {
+        assertThatThrownBy(() -> SourceProviderRegistry.defaultRegistry((SourceCredentialResolver) null))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessageContaining("credentialResolver must not be null");
+    }
+
+    @Test
+    @DisplayName("defaultRegistry rejects null credential repository")
+    void defaultRegistryRejectsNullCredentialRepository() {
+        assertThatThrownBy(() -> SourceProviderRegistry.defaultRegistry((SourceCredentialRepository) null))
+            .isInstanceOf(NullPointerException.class)
+            .hasMessageContaining("credentialRepository must not be null");
+    }
+
+    @Test
+    @DisplayName("findProvider prefers exact provider ID over canHandle fallback")
+    void findProviderPrefersExactProviderIdOverCanHandleFallback() {
+        SourceProvider exactProvider = mock(SourceProvider.class);
+        SourceProvider fallbackProvider = mock(SourceProvider.class);
+
+        SourceLocator exactLocator = SourceLocator.builder()
+            .provider("gitlab")
+            .repoId("org/repo")
+            .tenantId("tenant-1")
+            .workspaceId("workspace-1")
+            .projectId("project-1")
+            .build();
+
+        when(exactProvider.providerId()).thenReturn("gitlab");
+        when(fallbackProvider.providerId()).thenReturn("github");
+
+        registry.register(fallbackProvider);
+        registry.register(exactProvider);
+
+        Optional<SourceProvider> found = registry.findProvider(exactLocator);
+
+        assertThat(found).isPresent();
+        assertThat(found.get()).isEqualTo(exactProvider);
+        verify(fallbackProvider, never()).canHandle(any());
+        verify(exactProvider, never()).canHandle(any());
     }
 }

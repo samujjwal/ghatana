@@ -5,6 +5,7 @@ import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -269,25 +270,16 @@ public final class ArtifactGraphValidator {
 
         // Validate source location if present
         if (node.sourceLocation() != null) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> location = node.sourceLocation() instanceof Map<?, ?> map
-                ? (Map<String, Object>) map
-                : null;
-            if (location != null) {
-                Object startLine = location.get("startLine");
-                Object endLine = location.get("endLine");
-                if (startLine instanceof Number && endLine instanceof Number) {
-                    int start = ((Number) startLine).intValue();
-                    int end = ((Number) endLine).intValue();
-                    if (start > end) {
-                        errors.add(new ValidationError(
-                            "INVALID_SOURCE_SPAN",
-                            "Source location startLine " + start + " is greater than endLine " + end,
-                            "sourceLocation",
-                            node.id()
-                        ));
-                    }
-                }
+            SourceLocationDto location = node.sourceLocation();
+            int startLine = location.startLine();
+            int endLine = location.endLine();
+            if (startLine > endLine) {
+                errors.add(new ValidationError(
+                    "INVALID_SOURCE_SPAN",
+                    "Source location startLine " + startLine + " is greater than endLine " + endLine,
+                    "sourceLocation",
+                    node.id()
+                ));
             }
         }
 

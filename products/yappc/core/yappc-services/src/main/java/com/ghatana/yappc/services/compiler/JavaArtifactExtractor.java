@@ -5,6 +5,7 @@ import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
 import com.ghatana.yappc.domain.source.RepositorySnapshot;
 import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
@@ -139,12 +140,12 @@ public final class JavaArtifactExtractor {
             properties.put("methods", classModel.get("methods"));
             properties.put("fields", classModel.get("fields"));
 
-            Map<String, Object> sourceLocation = Map.of(
-                "filePath", file.relativePath(),
-                "startLine", 1,
-                "startColumn", 1,
-                "endLine", 100, // Approximate - would need full parsing for exact
-                "endColumn", 1
+            SourceLocationDto sourceLocation = new SourceLocationDto(
+                file.relativePath(),
+                1,
+                1,
+                100, // Approximate - would need full parsing for exact
+                1
             );
 
             ArtifactNodeDto node = new ArtifactNodeDto(
@@ -231,7 +232,7 @@ public final class JavaArtifactExtractor {
             String qualifiedName = packageName.isEmpty() ? className : packageName + "." + className;
             String elementId = UUID.randomUUID().toString();
 
-            SemanticModelDto.SourceLocation sourceLocation = new SemanticModelDto.SourceLocation(
+            SourceLocationDto sourceLocation = new SourceLocationDto(
                 file.relativePath(),
                 1,
                 1,
@@ -260,7 +261,7 @@ public final class JavaArtifactExtractor {
                 .properties(properties)
                 .dependencies(imports)
                 .dependents(List.of())
-                .provenance("java-source-parser")
+                .provenance(SemanticModelDto.Provenance.INFERRED)
                 .extractedAt(Instant.now())
                 .snapshotId(snapshot.snapshotId())
                 .tenantId(scope.tenantId())
@@ -306,7 +307,7 @@ public final class JavaArtifactExtractor {
             "parse-error",
             "Java file could not be parsed: " + error,
             "// Parse error: " + error,
-            file.relativePath() + ":1:1-1:1",
+            new SourceLocationDto(file.relativePath(), 1, 1, 1, 1),
             checksum,
             "ref:" + islandId,
             error,
@@ -357,7 +358,7 @@ public final class JavaArtifactExtractor {
             "extraction-error",
             "Java file extraction failed: " + error,
             "// Extraction error: " + error,
-            file.relativePath() + ":1:1-1:1",
+            new SourceLocationDto(file.relativePath(), 1, 1, 1, 1),
             checksum,
             "ref:" + islandId,
             error,

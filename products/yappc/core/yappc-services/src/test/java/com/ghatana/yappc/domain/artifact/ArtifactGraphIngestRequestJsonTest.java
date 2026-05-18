@@ -1,5 +1,7 @@
 package com.ghatana.yappc.domain.artifact;
 
+import com.ghatana.yappc.domain.artifact.*;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +35,7 @@ class ArtifactGraphIngestRequestJsonTest {
             List.of("tag1"),
             "tenant-123",
             "project-456",
-            Map.of("filePath", "src/test.tsx", "startLine", 0, "startColumn", 0, "endLine", 10, "endColumn", 0),
+            new SourceLocationDto("src/test.tsx", 0, 0, 10, 0),
             "typescript-extractor",
             "1.0.0",
             0.95,
@@ -61,9 +63,9 @@ class ArtifactGraphIngestRequestJsonTest {
             "edge-1",
             "node1",
             "label://unknown-symbol",
-            "REFERENCES",
+            "references",
             "SYMBOL",
-            new UnresolvedGraphEdgeDto.SourceLocation("src/test.ts", 1, 0, 1, 10),
+            new SourceLocationDto("src/test.ts", 1, 0, 1, 10),
             0.5,
             Map.of("confidence", 0.5),
             "tenant-123",
@@ -85,13 +87,21 @@ class ArtifactGraphIngestRequestJsonTest {
             "workspace-1"
         );
 
+        ResidualIslandDto island = new ResidualIslandDto(
+            "ri-1", "css_module", "Stylesheet fragment",
+            ".btn { color: red; }", new SourceLocationDto("src/App.css", 1, 0, 10, 0), "src/App.css:1:0-10:0", "sha256:abc", null, "no_css_model",
+            0.9, false, 0.3, Map.of("lang", "css"), 1,
+            "t1", "p1", "w1", "snap-1"
+        );
+
         ResidualIslandDto residualIsland = new ResidualIslandDto(
             "residual-1",
             "unsupported_language",
             "Unknown artifact type",
             "raw source",
+            new SourceLocationDto("src/test.unknown", 1, 0, 1, 10),
             "src/test.unknown:1:0-1:10",
-            null,
+            "sha256:def456",
             null,
             "unsupported",
             0.0,

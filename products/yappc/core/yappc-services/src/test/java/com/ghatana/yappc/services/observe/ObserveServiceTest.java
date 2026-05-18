@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
+@SuppressWarnings("unchecked")
 class ObserveServiceTest extends EventloopTestBase {
 
     @Test

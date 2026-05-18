@@ -313,10 +313,14 @@ export class SynthesisPipeline {
     // ── Phase 1: Scan ─────────────────────────────────────────────────────────
     let inventory: Awaited<ReturnType<typeof scanRepository>>;
     try {
+      // P0: When running from snapshot, pass snapshot.files as allowed inventory boundary
+      // This ensures the pipeline only processes files that were in the snapshot
+      const allowedFiles = snapshot?.files.map(f => f.relativePath);
       const scanConfig: Partial<ScannerConfig> = {
         ...this.config.scannerConfig,
         rootPath,
         ...(snapshotRef ? { snapshotRef } : {}),
+        ...(allowedFiles ? { allowedFiles } : {}),
       };
       inventory = await scanRepository(scanConfig);
     } catch (err) {

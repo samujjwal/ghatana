@@ -99,6 +99,7 @@ class IntentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("records timer with tenant tag on success")
+        @SuppressWarnings("unchecked")
         void shouldRecordTimerOnSuccess() { 
             stubAiSuccess("Product: X\nDescription: desc");
 
@@ -165,6 +166,7 @@ class IntentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("records timer with tenant tag on successful analysis")
+        @SuppressWarnings("unchecked")
         void shouldRecordTimerOnAnalyze() { 
             stubAiSuccess("Feasibility: High");
 

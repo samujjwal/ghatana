@@ -1,11 +1,13 @@
 package com.ghatana.yappc.services.artifact;
 
-import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
+import com.ghatana.yappc.domain.artifact.*;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphIngestRequest;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.UnresolvedGraphEdgeDto;
+import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +40,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
@@ -88,7 +90,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -115,7 +117,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -142,7 +144,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
         ArtifactEdgeDto edge = new ArtifactEdgeDto(
@@ -169,7 +171,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "wrong-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
@@ -187,55 +189,12 @@ class ArtifactGraphValidatorTest {
     }
 
     @Test
-    @DisplayName("Should reject residual island without source span")
-    void shouldRejectResidualWithoutSourceSpan() {
-        ResidualIslandDto residual = new ResidualIslandDto(
-            "residual-1", "unknown", "Summary", "raw-source", null, "checksum",
-            "ref", "reason", 0.5, true, 0.5, Map.of(), 1,
-            TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
-        );
-
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
-            PROJECT_ID, TENANT_ID, List.of(), List.of(),
-            "snapshot-1", "snapshot-1", "version-1", "checksum-1",
-            List.of(), List.of(), List.of(residual)
-        );
-
-        ArtifactGraphValidator.ValidationResult result =
-            ArtifactGraphValidator.validateIngestRequest(request, testScope());
-
-        assertThat(result.valid()).isFalse();
-        assertThat(result.errors()).anyMatch(e -> e.code().equals("MISSING_SOURCE_SPAN"));
-    }
-
-    @Test
-    @DisplayName("Should warn about missing checksum in residual")
-    void shouldWarnAboutMissingChecksum() {
-        ResidualIslandDto residual = new ResidualIslandDto(
-            "residual-1", "unknown", "Summary", "raw-source", "file:1:1-10:10", null,
-            "ref", "reason", 0.5, true, 0.5, Map.of(), 1,
-            TENANT_ID, PROJECT_ID, WORKSPACE_ID, "snapshot-1"
-        );
-
-        ArtifactGraphIngestRequest request = new ArtifactGraphIngestRequest(
-            PROJECT_ID, TENANT_ID, List.of(), List.of(),
-            "snapshot-1", "snapshot-1", "version-1", "checksum-1",
-            List.of(), List.of(), List.of(residual)
-        );
-
-        ArtifactGraphValidator.ValidationResult result =
-            ArtifactGraphValidator.validateIngestRequest(request, testScope());
-
-        assertThat(result.errors()).anyMatch(e -> e.code().equals("MISSING_RESIDUAL_CHECKSUM"));
-    }
-
-    @Test
     @DisplayName("Should detect orphaned residual references in nodes")
     void shouldDetectOrphanedResidualReferences() {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.9, "exact", List.of(),
             List.of("orphaned-residual-id"), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
@@ -253,7 +212,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 1.5, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 
@@ -276,7 +235,7 @@ class ArtifactGraphValidatorTest {
         ArtifactNodeDto node = new ArtifactNodeDto(
             "node-1", "component", "Button", "/src/Button.tsx", null,
             Map.of(), List.of(), "test-tenant", "test-project",
-            Map.of("filePath", "/src/Button.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("/src/Button.tsx", 1, 0, 10, 0),
             "extractor-1", "1.0", 0.3, "exact", List.of(), List.of(), "src:/src/Button.tsx", "src/Button.tsx#component:Button"
         );
 

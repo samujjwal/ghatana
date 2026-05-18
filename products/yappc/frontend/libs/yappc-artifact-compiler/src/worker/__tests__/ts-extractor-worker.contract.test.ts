@@ -8,6 +8,7 @@ import {
 
 function createCanonicalSnapshot(rootPath: string): RepositorySnapshot {
   return {
+    snapshotId: 'snapshot-1',
     snapshotRef: {
       provider: 'local-folder',
       repoId: rootPath,
@@ -20,11 +21,17 @@ function createCanonicalSnapshot(rootPath: string): RepositorySnapshot {
         materialized: true,
         sizeBytes: 128,
         lastModifiedAt: '2026-05-16T00:00:00.000Z',
+        checksum: 'a'.repeat(64),
       },
     ],
     snapshotAt: '2026-05-16T00:00:00.000Z',
     shallow: false,
     diagnostics: [],
+    contentHash: 'b'.repeat(64),
+    contentChecksum: 'c'.repeat(64),
+    tenantId: 'tenant-1',
+    workspaceId: 'workspace-1',
+    projectId: 'project-1',
   };
 }
 
@@ -44,7 +51,7 @@ function createPipelineResult(): SynthesisPipelineResult {
       nodes: [
         {
           id: 'node-1',
-          kind: 'component',
+          type: 'component',
           label: 'App',
           sourceRef: 'src/App.tsx#component:App',
           symbolRef: 'src/App.tsx#component:App',
@@ -71,7 +78,7 @@ function createPipelineResult(): SynthesisPipelineResult {
           id: 'edge-1',
           sourceId: 'node-1',
           targetId: 'node-2',
-          kind: 'imports',
+          relationshipType: 'imports',
           confidence: 0.9,
           bidirectional: false,
           metadata: {
@@ -83,7 +90,7 @@ function createPipelineResult(): SynthesisPipelineResult {
         {
           sourceId: 'node-1',
           targetRef: './Button',
-          relationship: 'imports',
+          relationshipType: 'imports',
           targetKindHint: 'component',
           sourceLocation: {
             filePath: 'src/App.tsx',
@@ -101,7 +108,7 @@ function createPipelineResult(): SynthesisPipelineResult {
           unresolvedEdge: {
             sourceId: 'node-1',
             targetRef: './Button',
-            relationship: 'imports',
+            relationshipType: 'imports',
             targetKindHint: 'component',
             sourceLocation: {
               filePath: 'src/App.tsx',
@@ -132,8 +139,38 @@ function createPipelineResult(): SynthesisPipelineResult {
       createdAt: '2026-05-16T00:00:00.000Z',
       updatedAt: '2026-05-16T00:00:00.000Z',
       version: 1,
-      elements: [],
-      elementIndex: {},
+      elements: [
+        {
+          id: 'element-1',
+          kind: 'component',
+          name: 'App',
+          confidence: 0.95,
+          provenance: {
+            extractorId: 'react-component',
+            extractorVersion: '1.0.0',
+            sourcePaths: ['src/App.tsx'],
+            kind: 'exact',
+            extractedAt: '2026-05-16T00:00:00.000Z',
+          },
+          securityFlags: [],
+          privacyFlags: [],
+          tags: [],
+          graphNodeIds: ['node-1'],
+          sourceRefs: ['src/App.tsx#component:App'],
+          residualIslandIds: ['residual-1'],
+          contractName: 'App',
+          props: [],
+          slots: [],
+          events: [],
+          variants: [],
+          stateConnections: [],
+          dataDependencies: [],
+          styleDependencies: [],
+          storyIds: [],
+          builderCanvasHints: {},
+        },
+      ],
+      elementIndex: { component: ['element-1'] },
       residualIslandIds: ['residual-1'],
     },
     residualIslands: [
@@ -245,11 +282,12 @@ describe('ts-extractor-worker contract', () => {
     expect(typeof response.residualIslands[0]?.confidence).toBe('number');
     expect(typeof response.residualIslands[0]?.reviewRequired).toBe('boolean');
     expect(response.semanticModels[0]).toMatchObject({
-      elementId: 'node-1',
+      elementId: 'element-1',
       elementType: 'component',
       sourceRef: 'src/App.tsx#component:App',
       extractorId: 'react-component',
       extractorVersion: '1.0.0',
+      provenance: 'EXACT',
     });
     expect(response.diagnostics).toEqual([
       {
@@ -270,5 +308,44 @@ describe('ts-extractor-worker contract', () => {
       },
     ]);
     expect(response.versionMetadata.timeoutMs).toBe(120000);
+  });
+
+  it('fails closed when residual originalSource is blank', () => {
+    const base = createPipelineResult();
+    const invalid: SynthesisPipelineResult = {
+      ...base,
+      residualIslands: base.residualIslands.map((island, index) =>
+        index === 0 ? { ...island, originalSource: '   ' } : island,
+      ),
+    };
+
+    expect(() => serializeExtractionWorkerResponse(invalid, 120000)).toThrow(
+      "missing required field 'originalSource'",
+    );
+  });
+
+  it('fails closed when residual checksum or rawFragmentRef is blank', () => {
+    const base = createPipelineResult();
+    const invalidChecksum: SynthesisPipelineResult = {
+      ...base,
+      residualIslands: base.residualIslands.map((island, index) =>
+        index === 0 ? { ...island, checksum: '' } : island,
+      ),
+    };
+
+    expect(() => serializeExtractionWorkerResponse(invalidChecksum, 120000)).toThrow(
+      "missing required field 'checksum'",
+    );
+
+    const invalidRawFragmentRef: SynthesisPipelineResult = {
+      ...base,
+      residualIslands: base.residualIslands.map((island, index) =>
+        index === 0 ? { ...island, rawFragmentRef: '' } : island,
+      ),
+    };
+
+    expect(() => serializeExtractionWorkerResponse(invalidRawFragmentRef, 120000)).toThrow(
+      "missing required field 'rawFragmentRef'",
+    );
   });
 });

@@ -9,6 +9,20 @@ import type { KernelLifecycleService } from '../../service/KernelLifecycleServic
 import { KernelLifecycleApiHandlers } from '../KernelLifecycleApiHandlers.js';
 
 describe('KernelLifecycleApiHandlers', () => {
+  it('publishes the canonical v1 ProductUnitIntent route metadata', () => {
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      requireAuthentication: false,
+    });
+
+    expect(handlers.routeMetadata).toContainEqual({
+      routeId: 'kernel.lifecycle.productUnitIntent.mutate',
+      method: 'POST',
+      path: '/api/v1/kernel/lifecycle/product-unit-intents',
+      handler: 'mutateProductUnitIntent',
+    });
+  });
+
   it('rejects missing tenant header when scope is required', async () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),

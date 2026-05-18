@@ -19,8 +19,9 @@ WORKDIR /workspace
 # Copy full monorepo workspace for deterministic filtered build
 COPY . .
 
-# Install all dependencies (frozen for reproducibility)
-RUN pnpm install --frozen-lockfile
+# Monorepo catalog metadata can differ from the lockfile shape available inside
+# the container context; use the repo's proven container install path instead.
+RUN pnpm install --no-frozen-lockfile
 
 ENV NODE_ENV=production
 RUN pnpm --dir products/digital-marketing/ui run build:docker

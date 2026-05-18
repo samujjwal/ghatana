@@ -2,6 +2,7 @@ package com.ghatana.yappc.services.compiler;
 
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.ghatana.yappc.domain.artifact.EdgeResolutionRecordDto;
 import com.ghatana.yappc.domain.artifact.ResidualIslandDto;
 import com.ghatana.yappc.domain.artifact.SemanticModelDto;
@@ -85,7 +86,7 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                             "java-parse-error",
                             "Java parser failed for " + file.relativePath(),
                             content,
-                            file.relativePath() + ":1:1-" + lineCount + ":1",
+                            new SourceLocationDto(file.relativePath(), 1, 1, lineCount, 1),
                             computeChecksum(content),
                             file.relativePath() + "#parse-error",
                             "java-parse-error",
@@ -162,13 +163,13 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                     "isAbstract", classModel.get("isAbstract"),
                     "isPublic", classModel.get("isPublic"),
                     "annotations", classModel.get("annotations"),
-                    "filePath", file.relativePath(),
-                    "packageName", packageName
+                    "methods", classModel.get("methods"),
+                    "fields", classModel.get("fields")
                 ),
-                List.of(),
+                List.of("java", "source"),
                 scope.tenantId(),
                 scope.projectId(),
-                Map.of("startLine", 1, "endLine", 100), // P1: Simplified location, should be from AST
+                new SourceLocationDto(file.relativePath(), 1, 1, 100, 1), // P1: Simplified location, should be from AST
                 "java-parser",
                 "1.0",
                 1.0,
@@ -201,10 +202,10 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                         "isPublic", method.get("isPublic"),
                         "className", className
                     ),
-                    List.of(),
+                    List.of("java", "source"),
                     scope.tenantId(),
                     scope.projectId(),
-                    Map.of("startLine", 10, "endLine", 50), // P1: Simplified location
+                    new SourceLocationDto(file.relativePath(), 1, 1, 50, 1), // P1: Simplified location
                     "java-parser",
                     "1.0",
                     1.0,
@@ -251,10 +252,10 @@ public final class JavaArtifactExtractorImpl implements ArtifactCompileJobServic
                         "annotations", field.get("annotations"),
                         "className", className
                     ),
-                    List.of(),
+                    List.of("java", "source"),
                     scope.tenantId(),
                     scope.projectId(),
-                    Map.of("startLine", 20, "endLine", 25), // P1: Simplified location
+                    new SourceLocationDto(file.relativePath(), 1, 1, 20, 1), // P1: Simplified location
                     "java-parser",
                     "1.0",
                     1.0,

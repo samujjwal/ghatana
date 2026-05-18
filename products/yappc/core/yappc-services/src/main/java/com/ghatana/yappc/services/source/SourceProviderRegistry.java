@@ -32,16 +32,18 @@ public final class SourceProviderRegistry {
         return this;
     }
 
-    public static SourceProviderRegistry defaultRegistry() {
-        return defaultRegistry(SourceCredentialResolver.envBacked());
-    }
-
+    /**
+     * P0: Removed dev-only defaultRegistry() that called envBacked().
+     * Production bootstrap must use governed(SourceCredentialRepository) or provide an explicit credentialResolver.
+     * The dev-only envBacked() method throws SecurityException when dev mode is not enabled.
+     */
     public static SourceProviderRegistry defaultRegistry(SourceCredentialRepository credentialRepository) {
         Objects.requireNonNull(credentialRepository, "credentialRepository must not be null");
         return defaultRegistry(SourceCredentialResolver.governed(credentialRepository));
     }
 
     public static SourceProviderRegistry defaultRegistry(SourceCredentialResolver credentialResolver) {
+        Objects.requireNonNull(credentialResolver, "credentialResolver must not be null");
         return new SourceProviderRegistry()
             .register(new GitHubSourceProvider(java.net.http.HttpClient.newHttpClient(), new com.fasterxml.jackson.databind.ObjectMapper(), credentialResolver))
             .register(new LocalFolderSourceProvider())

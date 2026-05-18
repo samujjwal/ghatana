@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
 import com.ghatana.yappc.domain.artifact.ArtifactEdgeDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -376,6 +377,57 @@ public final class ArtifactGraphRepository {
     }
 
     /**
+     * Tombstone only nodes and edges associated with a specific snapshot within scoped project data.
+     * This is used as a compensation rollback when downstream persistence fails post-ingest.
+     */
+    public Promise<Boolean> tombstoneGraphForSnapshot(String projectId, String tenantId, String workspaceId, String snapshotId) {
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection connection = dataSource.getConnection()) {
+                String tombstoneEdges = """
+                    UPDATE artifact_edges
+                    SET is_tombstone = true, updated_at = ?
+                    WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
+                      AND snapshot_id = ? AND is_tombstone = false
+                    """;
+                int edgeCount;
+                try (PreparedStatement edgeStmt = connection.prepareStatement(tombstoneEdges)) {
+                    edgeStmt.setTimestamp(1, Timestamp.from(Instant.now()));
+                    edgeStmt.setString(2, tenantId);
+                    edgeStmt.setString(3, workspaceId);
+                    edgeStmt.setString(4, projectId);
+                    edgeStmt.setString(5, snapshotId);
+                    edgeCount = edgeStmt.executeUpdate();
+                }
+
+                String tombstoneNodes = """
+                    UPDATE artifact_nodes
+                    SET is_tombstone = true, updated_at = ?
+                    WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
+                      AND snapshot_id = ? AND is_tombstone = false
+                    """;
+                int nodeCount;
+                try (PreparedStatement nodeStmt = connection.prepareStatement(tombstoneNodes)) {
+                    nodeStmt.setTimestamp(1, Timestamp.from(Instant.now()));
+                    nodeStmt.setString(2, tenantId);
+                    nodeStmt.setString(3, workspaceId);
+                    nodeStmt.setString(4, projectId);
+                    nodeStmt.setString(5, snapshotId);
+                    nodeCount = nodeStmt.executeUpdate();
+                }
+
+                log.info(
+                    "Tombstoned snapshot-scoped graph rows for project {} (snapshotId={}, nodes={}, edges={})",
+                    projectId,
+                    snapshotId,
+                    nodeCount,
+                    edgeCount
+                );
+                return nodeCount > 0 || edgeCount > 0;
+            }
+        });
+    }
+
+    /**
      * P4-4: Tombstone all nodes and edges for a product instead of hard delete.
      * This preserves history and enables cross-snapshot diffing.
      */
@@ -622,7 +674,7 @@ public final class ArtifactGraphRepository {
                         String snapshotId = resultSet.getString("snapshot_id");
                         ArtifactNodeDto node = mapNode(resultSet);
                         
-                        if (snapshotId.equals(fromSnapshotId)) {
+                        if (Objects.equals(snapshotId, fromSnapshotId)) {
                             fromNodes.put(node.id(), node);
                         } else {
                             toNodes.put(node.id(), node);
@@ -638,7 +690,7 @@ public final class ArtifactGraphRepository {
                             addedNodes.add(node);
                         } else {
                             ArtifactNodeDto fromNode = fromNodes.get(node.id());
-                            if (!fromNode.content().equals(node.content()) ||
+                            if (!Objects.equals(fromNode.content(), node.content()) ||
                                 !fromNode.properties().equals(node.properties())) {
                                 modifiedNodes.add(node);
                             }
@@ -1072,13 +1124,17 @@ public final class ArtifactGraphRepository {
 
     /**
      * Compute checksum for a node to enable incremental upsert.
-     * Uses SHA-256 hash of node content + properties + tags.
+     * Uses SHA-256 hash of node id + content + properties + tags.
+     * P0: Made null-safe - handles null content by using empty string.
+     * P0: Uses stable canonical fields for checksum to support nodes with null content.
      */
     private String computeChecksum(ArtifactNodeDto node) {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
             digest.update(node.id().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            digest.update(node.content().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            // P0: Null-safe content handling - use empty string if content is null
+            String content = node.content() != null ? node.content() : "";
+            digest.update(content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             digest.update(writeJson(node.properties()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             digest.update(writeJson(node.tags()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
             byte[] hash = digest.digest();
@@ -1091,7 +1147,9 @@ public final class ArtifactGraphRepository {
             return hexString.toString();
         } catch (java.security.NoSuchAlgorithmException e) {
             log.warn("SHA-256 not available, using fallback checksum", e);
-            return String.valueOf(node.content().hashCode());
+            // P0: Null-safe fallback - use id hash if content is null
+            String content = node.content() != null ? node.content() : "";
+            return String.valueOf((node.id() + content).hashCode());
         }
     }
 
@@ -1106,7 +1164,7 @@ public final class ArtifactGraphRepository {
             readJson(resultSet.getString("tags_json"), STRING_LIST, List.of()),
             resultSet.getString("tenant_id"),
             resultSet.getString("project_id"),
-            readJson(resultSet.getString("source_location_json"), OBJECT_MAP, Map.of()),
+            readSourceLocation(resultSet.getString("source_location_json")),
             resultSet.getString("extractor_id"),
             resultSet.getString("extractor_version"),
             resultSet.getObject("confidence") != null ? resultSet.getDouble("confidence") : null,
@@ -1149,6 +1207,25 @@ public final class ArtifactGraphRepository {
             return objectMapper.readValue(value, typeReference);
         } catch (JsonProcessingException exception) {
             throw new IllegalArgumentException("Unable to deserialize artifact graph data", exception);
+        }
+    }
+
+    private SourceLocationDto readSourceLocation(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            Map<String, Object> map = objectMapper.readValue(json, OBJECT_MAP);
+            return new SourceLocationDto(
+                (String) map.get("filePath"),
+                map.get("startLine") instanceof Number ? ((Number) map.get("startLine")).intValue() : 0,
+                map.get("startColumn") instanceof Number ? ((Number) map.get("startColumn")).intValue() : 0,
+                map.get("endLine") instanceof Number ? ((Number) map.get("endLine")).intValue() : 0,
+                map.get("endColumn") instanceof Number ? ((Number) map.get("endColumn")).intValue() : 0
+            );
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse source location JSON", e);
+            return null;
         }
     }
 }

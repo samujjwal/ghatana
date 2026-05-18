@@ -204,6 +204,7 @@ export class KernelLifecycleApiHandlers {
     { routeId: 'kernel.approvals.list', method: 'GET', path: '/api/kernel/approvals', handler: 'listPendingApprovals' },
     { routeId: 'kernel.approvals.request', method: 'POST', path: '/api/kernel/approvals', handler: 'requestApproval' },
     { routeId: 'kernel.approvals.decide', method: 'POST', path: '/api/kernel/approvals/:approvalId/decisions', handler: 'submitApprovalDecision' },
+    { routeId: 'kernel.lifecycle.productUnitIntent.mutate', method: 'POST', path: '/api/v1/kernel/lifecycle/product-unit-intents', handler: 'mutateProductUnitIntent' },
     { routeId: 'kernel.lifecycle.productUnitIntent.mutate', method: 'POST', path: '/api/kernel/lifecycle/product-unit-intents', handler: 'mutateProductUnitIntent' },
   ];
 

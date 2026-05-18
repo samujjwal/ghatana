@@ -1,5 +1,7 @@
 package com.ghatana.yappc.domain.artifact;
 
+import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,13 +36,7 @@ class ArtifactNodeDtoRoundTripTest {
             List.of("component", "test"),
             "tenant-123",
             "project-456",
-            Map.of(
-                "filePath", "src/test/TestComponent.tsx",
-                "startLine", 0,
-                "startColumn", 0,
-                "endLine", 1,
-                "endColumn", 50
-            ),
+            new SourceLocationDto("src/test/TestComponent.tsx", 0, 0, 1, 50),
             "typescript-extractor",
             "1.2.0",
             0.98,
@@ -91,7 +87,7 @@ class ArtifactNodeDtoRoundTripTest {
             List.of(),
             "tenant-123",
             "project-456",
-            Map.of("filePath", "src/SimpleComponent.ts", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("src/SimpleComponent.ts", 1, 0, 10, 0),
             null,
             null,
             null,

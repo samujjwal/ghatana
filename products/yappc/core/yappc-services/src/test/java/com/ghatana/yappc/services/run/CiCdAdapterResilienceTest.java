@@ -37,11 +37,11 @@ import static org.mockito.Mockito.*;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Resilience tests — timeout, retry, failure isolation for CI/CD adapters
+ * @doc.purpose Tests for CiCdAdapter resilience patterns
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("CiCd Adapter Resilience — failure isolation, error propagation, no silent drops")
+@SuppressWarnings("unchecked")
 class CiCdAdapterResilienceTest extends EventloopTestBase {
 
     private AuditLogger auditLogger;

@@ -13,6 +13,7 @@ import java.util.Map;
  * rawFragmentRef, risk, and reviewRequired without synthesizing placeholder values.
  *
  * Fields mirror the canonical proto {@code ResidualIsland} message in {@code artifact_compiler.proto}.
+ * P1: Added adapter methods for proto-generated classes compatibility.
  */
 public record ResidualIslandDto(
     /**
@@ -37,9 +38,10 @@ public record ResidualIslandDto(
     String originalSource,
 
     /**
-        * Structured source location. This is the canonical location representation for persistence and validation.
+        * P1: Structured source location using shared SourceLocationDto.
+        * This is the canonical location representation for persistence and validation.
         */
-        SourceLocation sourceLocation,
+        SourceLocationDto sourceLocation,
 
         /**
      * Source span as "file:startLine:startCol-endLine:endCol".
@@ -92,12 +94,30 @@ public record ResidualIslandDto(
     String workspaceId,
     String snapshotId
 ) {
+    /**
+     * P0: Validate that originalSource and checksum are required for complete round-trip fidelity.
+     */
+    public ResidualIslandDto {
+        java.util.Objects.requireNonNull(originalSource, "originalSource must not be null");
+        java.util.Objects.requireNonNull(checksum, "checksum must not be null");
+        if (originalSource.isBlank()) {
+            throw new IllegalArgumentException("originalSource must not be blank");
+        }
+        if (checksum.isBlank()) {
+            throw new IllegalArgumentException("checksum must not be blank");
+        }
+    }
+
+    /**
+     * P1: Compact canonical constructor requiring originalSource and checksum.
+     * This is the recommended constructor for creating ResidualIslandDto instances.
+     */
     public ResidualIslandDto(
         String id,
         String islandType,
         String summary,
         String originalSource,
-        String sourceSpan,
+        SourceLocationDto sourceLocation,
         String checksum,
         String rawFragmentRef,
         String reason,
@@ -116,8 +136,8 @@ public record ResidualIslandDto(
             islandType,
             summary,
             originalSource,
-            null,
-            sourceSpan,
+            sourceLocation,
+            null,  // sourceSpan is optional
             checksum,
             rawFragmentRef,
             reason,
@@ -133,12 +153,63 @@ public record ResidualIslandDto(
         );
     }
 
-    public record SourceLocation(
-        String filePath,
-        int startLine,
-        int startColumn,
-        int endLine,
-        int endColumn
-    ) {
+    /**
+     * P1: Adapter method to convert from proto-generated ResidualIsland to domain DTO.
+     * Provides compatibility layer between proto contract and validated domain model.
+     */
+    public static ResidualIslandDto fromProto(com.ghatana.yappc.artifact.grpc.ResidualIsland proto) {
+        return new ResidualIslandDto(
+            proto.getId(),
+            proto.getIslandType(),
+            proto.getSummary(),
+            proto.getOriginalSource(),
+            proto.hasSourceLocation() ? SourceLocationDto.fromProto(proto.getSourceLocation()) : null,
+            proto.getSourceSpan(),
+            proto.getChecksum(),
+            proto.getRawFragmentRef(),
+            proto.getReason(),
+            proto.getConfidence(),
+            proto.getReviewRequired(),
+            proto.getRiskScore(),
+            Map.copyOf(proto.getMetadataMap()),
+            proto.getFileCount(),
+            proto.getTenantId(),
+            proto.getProjectId(),
+            proto.getWorkspaceId(),
+            proto.getSnapshotId()
+        );
+    }
+
+    /**
+     * P1: Adapter method to convert domain DTO to proto-generated ResidualIsland.
+     * Provides compatibility layer between validated domain model and proto contract.
+     */
+    public com.ghatana.yappc.artifact.grpc.ResidualIsland toProto() {
+        com.ghatana.yappc.artifact.grpc.ResidualIsland.Builder builder = com.ghatana.yappc.artifact.grpc.ResidualIsland.newBuilder()
+            .setId(id)
+            .setIslandType(islandType)
+            .setSummary(summary)
+            .setOriginalSource(originalSource)
+            .setChecksum(checksum)
+            .setRawFragmentRef(rawFragmentRef)
+            .setReason(reason)
+            .setConfidence(confidence != null ? confidence : 0.0)
+            .setReviewRequired(reviewRequired != null ? reviewRequired : false)
+            .setRiskScore(riskScore)
+            .putAllMetadata(metadata != null ? metadata : Map.of())
+            .setFileCount(fileCount != null ? fileCount : 1)
+            .setTenantId(tenantId)
+            .setProjectId(projectId)
+            .setWorkspaceId(workspaceId)
+            .setSnapshotId(snapshotId);
+
+        if (sourceLocation != null) {
+            builder.setSourceLocation(sourceLocation.toProto());
+        }
+        if (sourceSpan != null) {
+            builder.setSourceSpan(sourceSpan);
+        }
+
+        return builder.build();
     }
 }

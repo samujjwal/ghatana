@@ -1,6 +1,8 @@
 package com.ghatana.yappc.storage;
 
-import com.ghatana.yappc.domain.artifact.ArtifactNodeDto;
+import com.ghatana.yappc.domain.artifact.*;
+import com.ghatana.yappc.domain.artifact.SourceLocationDto;
+import com.ghatana.yappc.storage.ArtifactGraphRepository;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +45,7 @@ class ArtifactGraphRepositoryUpsertTest {
             List.of(),
             "tenant-1",
             "product-1",
-            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("src/Test.tsx", 1, 0, 10, 0),
             "extractor-1",
             "1.0",
             0.9,
@@ -64,7 +66,7 @@ class ArtifactGraphRepositoryUpsertTest {
             List.of(),
             "tenant-1",
             "product-1",
-            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("src/Test.tsx", 1, 0, 10, 0),
             "extractor-1",
             "1.0",
             0.9,
@@ -123,7 +125,7 @@ class ArtifactGraphRepositoryUpsertTest {
             List.of(),
             "tenant-1",
             "product-1",
-            Map.of("filePath", "src/Test.tsx", "startLine", 1, "endLine", 10),
+            new SourceLocationDto("src/Test.tsx", 1, 0, 10, 0),
             "extractor-1",
             "1.0",
             0.9,

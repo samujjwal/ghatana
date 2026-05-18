@@ -263,24 +263,56 @@ function toWorkerEdgeResolutionRecord(
 }
 
 function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands'][number]): WorkerResidualIsland {
+  // P0: Extract original source for round-trip fidelity - fail closed if missing
+  const originalSource = 'originalSource' in island && typeof island.originalSource === 'string'
+    ? island.originalSource
+    : null;
+  
+  if (originalSource == null || originalSource.trim().length === 0) {
+    throw new Error(
+      `ResidualIsland '${island.id}' missing required field 'originalSource'. ` +
+      'Lossy residual source rejected - full residual source fidelity required for production.'
+    );
+  }
+
+  // P0: Extract source location - fail closed if missing
   const sourceLocation = 'sourceLocation' in island && island.sourceLocation != null
     ? island.sourceLocation as { filePath: string; startLine: number; startColumn: number; endLine: number; endColumn: number }
     : null;
-  const sourceSpan = sourceLocation != null
-    ? `${sourceLocation.filePath}:${sourceLocation.startLine}:${sourceLocation.startColumn}-${sourceLocation.endLine}:${sourceLocation.endColumn}`
-    : '';
-  // P0: Extract original source for round-trip fidelity
-  const originalSourceCandidate = 'originalSource' in island && typeof island.originalSource === 'string'
-    ? island.originalSource
-    : ('source' in island && typeof island.source === 'string' ? island.source : sourceSpan);
-  const originalSource = originalSourceCandidate.trim().length > 0 ? originalSourceCandidate : '[source-unavailable]';
   
-  // P0: Generate checksum if not provided
-  const checksum = ('checksum' in island && typeof island.checksum === 'string') ? island.checksum : buildHash(originalSource);
-  // P0: Generate raw fragment ref if not provided
-  const rawFragmentRef = ('rawFragmentRef' in island && typeof island.rawFragmentRef === 'string')
+  if (sourceLocation == null) {
+    throw new Error(
+      `ResidualIsland '${island.id}' missing required field 'sourceLocation'. ` +
+      'Lossy residual source rejected - precise source location required for production.'
+    );
+  }
+
+  // P0: Extract checksum - fail closed if missing
+  const checksum = 'checksum' in island && typeof island.checksum === 'string'
+    ? island.checksum
+    : null;
+  
+  if (checksum == null || checksum.trim().length === 0) {
+    throw new Error(
+      `ResidualIsland '${island.id}' missing required field 'checksum'. ` +
+      'Lossy residual source rejected - checksum required for production.'
+    );
+  }
+
+  // P0: Extract raw fragment ref - fail closed if missing
+  const rawFragmentRef = 'rawFragmentRef' in island && typeof island.rawFragmentRef === 'string'
     ? island.rawFragmentRef
-    : `ref:${island.id}`;
+    : null;
+  
+  if (rawFragmentRef == null || rawFragmentRef.trim().length === 0) {
+    throw new Error(
+      `ResidualIsland '${island.id}' missing required field 'rawFragmentRef'. ` +
+      'Lossy residual source rejected - raw fragment ref required for production.'
+    );
+  }
+
+  // P0: Generate source span from source location for compatibility
+  const sourceSpan = `${sourceLocation.filePath}:${sourceLocation.startLine}:${sourceLocation.startColumn}-${sourceLocation.endLine}:${sourceLocation.endColumn}`;
   
   return {
     id: island.id,
@@ -291,13 +323,7 @@ function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands
       ? island.normalizedSummary
       : (('summary' in island && typeof island.summary === 'string') ? island.summary : ''),
     originalSource,
-    sourceLocation: sourceLocation || {
-      filePath: sourceSpan.split(':')[0] || 'unknown',
-      startLine: 0,
-      startColumn: 0,
-      endLine: 0,
-      endColumn: 0,
-    },
+    sourceLocation,
     sourceSpan,
     checksum,
     rawFragmentRef,
@@ -313,31 +339,50 @@ function toWorkerResidualIsland(island: SynthesisPipelineResult['residualIslands
   };
 }
 
-function toWorkerSemanticModel(node: GraphNode): ExtractorWorkerResponse['semanticModels'][number] {
+function toWorkerSemanticModelFromElement(
+  element: import('../model/types').SemanticModelElement,
+): ExtractorWorkerResponse['semanticModels'][number] {
+  const firstSourceRef = element.sourceRefs[0];
+  const sourceRef =
+    firstSourceRef == null
+      ? undefined
+      : typeof firstSourceRef === 'string'
+        ? firstSourceRef
+        : JSON.stringify(firstSourceRef);
+
+  // P1: Create semantic models from true semantic synthesis output, not every graph node
   return {
-    id: buildHash(node.id, node.type, node.label), // P0: Canonical field name 'type'
-    elementId: node.id,
-    elementType: node.type, // P0: Canonical field name 'type'
-    name: node.label,
-    qualifiedName: node.symbolRef,
-    filePath: node.sourceLocation?.filePath,
-    sourceLocation: node.sourceLocation,
-    properties: node.metadata,
+    id: element.id,
+    elementId: element.id,
+    elementType: element.kind,
+    name: element.name,
+    qualifiedName: element.name, // P1: Use name as qualifiedName for model elements
+    filePath: element.provenance.sourcePaths[0] ?? undefined,
+    sourceLocation: element.provenance.sourcePaths[0] ? {
+      filePath: element.provenance.sourcePaths[0],
+      startLine: 0,
+      startColumn: 0,
+      endLine: 0,
+      endColumn: 0,
+    } : undefined,
+    properties: {},
     dependencies: [],
     dependents: [],
-    confidence: node.confidence,
-    reviewRequired: false,
-    securityFlags: node.privacySecurityFlags,
-    privacyFlags: node.privacySecurityFlags,
-    graphNodeIds: [node.id],
-    residualIslandIds: node.residualFragmentIds,
-    sourceRef: node.sourceRef,
-    symbolRef: node.symbolRef,
-    extractorId: node.extractorId,
-    extractorVersion: node.extractorVersion,
-    provenance: node.provenance,
-    extractedAt: new Date().toISOString(),
-    metadata: node.metadata,
+    confidence: element.confidence,
+    reviewRequired: element.reviewRequirement?.required ?? false,
+    reviewReason: element.reviewRequirement?.reason,
+    securityFlags: element.securityFlags,
+    privacyFlags: element.privacyFlags,
+    graphNodeIds: element.graphNodeIds,
+    residualIslandIds: element.residualIslandIds,
+    sourceRef,
+    symbolRef: undefined,
+    extractorId: element.provenance.extractorId,
+    extractorVersion: element.provenance.extractorVersion,
+    modelVersionId: undefined,
+    syntheticReason: element.provenance.kind === 'synthesized' ? 'Synthesized from graph analysis' : undefined,
+    provenance: element.provenance.kind.toUpperCase() as any,
+    extractedAt: element.provenance.extractedAt,
   };
 }
 
@@ -351,7 +396,7 @@ export function serializeExtractionWorkerResponse(
     unresolvedEdges: result.graph.unresolvedEdges.map((edge) => toWorkerUnresolvedEdge(edge)),
     edgeResolutionRecords: result.graph.edgeResolutionRecords.map((record) => toWorkerEdgeResolutionRecord(record)),
     residualIslands: result.residualIslands.map((island) => toWorkerResidualIsland(island)),
-    semanticModels: result.graph.nodes.map((node) => toWorkerSemanticModel(node)),
+    semanticModels: result.model.elements.map((element) => toWorkerSemanticModelFromElement(element)),
     diagnostics: [
       ...result.warnings.map((warning) => ({
         level: 'WARNING' as const,

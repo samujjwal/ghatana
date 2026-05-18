@@ -25,6 +25,11 @@ public interface ArtifactGraphService {
     Promise<ArtifactGraphResponse> ingestGraph(ArtifactRequestScope scope, ArtifactGraphIngestRequest request);
 
     /**
+     * Roll back a just-ingested graph snapshot by tombstoning nodes/edges for that snapshot and scope.
+     */
+    Promise<ArtifactGraphResponse> rollbackIngest(ArtifactRequestScope scope, String snapshotId);
+
+    /**
      * Run graph analysis algorithms (centrality, cycles, communities, topological sort).
      */
     Promise<List<ArtifactGraphAnalysisResult>> analyzeGraph(ArtifactRequestScope scope, ArtifactGraphAnalysisRequest request);

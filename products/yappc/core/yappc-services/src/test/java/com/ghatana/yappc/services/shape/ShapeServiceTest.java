@@ -103,6 +103,7 @@ class ShapeServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("records timer with tenant tag on success")
+        @SuppressWarnings("unchecked")
         void shouldRecordTimerOnDerive() { 
             stubAiSuccess("{\"architecture\": {\"name\": \"monolith\"}, \"domainModel\": {}}"); 
 
@@ -169,6 +170,7 @@ class ShapeServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("records timer with tenant tag on success")
+        @SuppressWarnings("unchecked")
         void shouldRecordTimerOnGenerateModel() { 
             stubAiSuccess("Design Rationale: Simple monolith");
 

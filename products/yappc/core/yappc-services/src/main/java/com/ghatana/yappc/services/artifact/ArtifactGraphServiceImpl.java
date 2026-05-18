@@ -151,6 +151,39 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
                 .whenException(e -> log.error("Failed to incrementally upsert artifact graph for project {}", scope.projectId(), e));
     }
 
+    @Override
+    public Promise<ArtifactGraphResponse> rollbackIngest(ArtifactRequestScope scope, String snapshotId) {
+        if (snapshotId == null || snapshotId.isBlank()) {
+            return Promise.of(new ArtifactGraphResponse(
+                false,
+                "rollback",
+                Map.of("snapshotId", "missing"),
+                "Rollback skipped: snapshotId is missing"
+            ));
+        }
+
+        String cacheKey = cacheKey(scope.tenantId(), scope.workspaceId(), scope.projectId());
+        return repository.tombstoneGraphForSnapshot(scope.projectId(), scope.tenantId(), scope.workspaceId(), snapshotId)
+            .map(tombstoned -> {
+                nodeCache.invalidate(cacheKey);
+                edgeCache.invalidate(cacheKey);
+                return new ArtifactGraphResponse(
+                    tombstoned,
+                    "rollback",
+                    Map.of("snapshotId", snapshotId, "tombstoned", tombstoned),
+                    tombstoned
+                        ? "Artifact graph snapshot rollback completed"
+                        : "Artifact graph snapshot rollback found no active rows"
+                );
+            })
+            .whenException(e -> log.error(
+                "Failed to rollback artifact graph snapshot {} for project {}",
+                snapshotId,
+                scope.projectId(),
+                e
+            ));
+    }
+
     private static String firstNonBlank(String... values) {
         if (values == null) {
             return null;

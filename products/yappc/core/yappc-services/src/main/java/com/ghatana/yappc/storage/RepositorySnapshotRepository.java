@@ -39,6 +39,7 @@ public final class RepositorySnapshotRepository {
 
     private static final Logger log = LoggerFactory.getLogger(RepositorySnapshotRepository.class);
     private static final TypeReference<Map<String, String>> STRING_MAP = new TypeReference<>() { };
+    private static final TypeReference<Map<String, Object>> OBJECT_MAP = new TypeReference<>() { };
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
@@ -54,25 +55,31 @@ public final class RepositorySnapshotRepository {
      * Persist a complete repository snapshot with all file metadata and source locator ref.
      *
      * P1: Stores source locator ref to track the exact source used for snapshot creation.
+     * P1: Stores inventory metadata including skip reasons, package boundaries, and file counts.
      *
      * @param snapshot the snapshot to persist
      * @param sourceLocator the source locator used to create this snapshot
+     * @param inventoryMetadata optional inventory metadata to persist
      * @return promise of the persisted snapshot
      */
-    public Promise<RepositorySnapshot> saveSnapshot(RepositorySnapshot snapshot, SourceLocator sourceLocator) {
+    public Promise<RepositorySnapshot> saveSnapshot(RepositorySnapshot snapshot, SourceLocator sourceLocator, Map<String, Object> inventoryMetadata) {
         return Promise.ofBlocking(executor, () -> {
+            // P0: Use scoped ON CONFLICT with tenant/workspace/project/provider/repo scope to prevent cross-tenant collisions
+            // and to match the canonical repository_snapshots key in V15/V28 migrations.
             String snapshotSql = """
                 INSERT INTO repository_snapshots (
                     snapshot_id, provider, repo_id, commit_sha, materialized_root,
                     checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
-                    created_by, diagnostics_json, source_locator_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (snapshot_id) DO UPDATE SET
+                    created_by, diagnostics_json, source_locator_json, inventory_metadata_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (tenant_id, workspace_id, project_id, provider, repo_id, commit_sha) DO UPDATE SET
+                    snapshot_id = EXCLUDED.snapshot_id,
                     materialized_root = EXCLUDED.materialized_root,
                     checksum = EXCLUDED.checksum,
                     content_hash = EXCLUDED.content_hash,
                     diagnostics_json = EXCLUDED.diagnostics_json,
-                    source_locator_json = EXCLUDED.source_locator_json
+                    source_locator_json = EXCLUDED.source_locator_json,
+                    inventory_metadata_json = EXCLUDED.inventory_metadata_json
                 """;
 
             String fileSql = """
@@ -107,6 +114,7 @@ public final class RepositorySnapshotRepository {
                         statement.setString(12, "system"); // created_by
                         statement.setString(13, writeDiagnostics(snapshot.diagnostics()));
                         statement.setString(14, writeSourceLocator(sourceLocator));
+                        statement.setString(15, writeInventoryMetadata(inventoryMetadata));
                         statement.executeUpdate();
                     }
 
@@ -128,7 +136,7 @@ public final class RepositorySnapshotRepository {
                     }
 
                     connection.commit();
-                    log.info("Persisted snapshot {} for repo {} with {} files and source locator ref",
+                    log.info("Persisted snapshot {} for repo {} with {} files, source locator ref, and inventory metadata",
                         snapshot.snapshotId(), snapshot.repoId(),
                         snapshot.files() != null ? snapshot.files().size() : 0);
                     return snapshot;
@@ -143,48 +151,35 @@ public final class RepositorySnapshotRepository {
     }
 
     /**
-     * Persist a complete repository snapshot with all file metadata (backward compatibility).
+     * Persist a complete repository snapshot with all file metadata and source locator ref.
+     *
+     * P1: Stores source locator ref to track the exact source used for snapshot creation.
+     * P1: Backward-compatible method without inventory metadata.
      *
      * @param snapshot the snapshot to persist
+     * @param sourceLocator the source locator used to create this snapshot
      * @return promise of the persisted snapshot
      */
-    public Promise<RepositorySnapshot> saveSnapshot(RepositorySnapshot snapshot) {
-        return saveSnapshot(snapshot, null);
+    public Promise<RepositorySnapshot> saveSnapshot(RepositorySnapshot snapshot, SourceLocator sourceLocator) {
+        return saveSnapshot(snapshot, sourceLocator, null);
     }
 
     /**
-     * Find a snapshot by its deterministic ID.
+     * P0: Removed unscoped saveSnapshot method - all saves must be explicitly scoped.
+     * Production code must use the scoped saveSnapshot(snapshot, sourceLocator) method.
+     */
+    /**
+     * Find a snapshot by its deterministic ID with tenant/workspace/project scope.
      *
-     * P1: Returns snapshot with source locator ref if available.
+     * P0: Removed unscoped findById method - all queries must be explicitly scoped.
+     * This prevents cross-tenant data leakage.
      *
      * @param snapshotId the snapshot ID
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param projectId the project ID
      * @return promise of optional snapshot
      */
-    public Promise<Optional<RepositorySnapshot>> findById(String snapshotId) {
-        return Promise.ofBlocking(executor, () -> {
-            String sql = """
-                SELECT snapshot_id, provider, repo_id, commit_sha, materialized_root,
-                       checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
-                       created_by, diagnostics_json, source_locator_json
-                FROM repository_snapshots
-                WHERE snapshot_id = ?
-                """;
-
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, snapshotId);
-                try (ResultSet rs = statement.executeQuery()) {
-                    if (rs.next()) {
-                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId);
-                        RepositorySnapshot snapshot = mapSnapshot(rs, files);
-                        return Optional.of(snapshot);
-                    }
-                    return Optional.<RepositorySnapshot>empty();
-                }
-            }
-        });
-    }
-
     public Promise<Optional<RepositorySnapshot>> findById(String snapshotId, String tenantId, String workspaceId, String projectId) {
         Objects.requireNonNull(snapshotId, "snapshotId must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
@@ -195,7 +190,7 @@ public final class RepositorySnapshotRepository {
             String sql = """
                 SELECT snapshot_id, provider, repo_id, commit_sha, materialized_root,
                        checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
-                       created_by, diagnostics_json, source_locator_json
+                       created_by, diagnostics_json, source_locator_json, inventory_metadata_json
                 FROM repository_snapshots
                 WHERE snapshot_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """;
@@ -208,7 +203,7 @@ public final class RepositorySnapshotRepository {
                 statement.setString(4, projectId);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
-                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId);
+                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId, tenantId, workspaceId, projectId);
                         return Optional.of(mapSnapshot(rs, files));
                     }
                     return Optional.<RepositorySnapshot>empty();
@@ -237,7 +232,7 @@ public final class RepositorySnapshotRepository {
             String sql = """
                 SELECT snapshot_id, provider, repo_id, commit_sha, materialized_root,
                        checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
-                       created_by, diagnostics_json, source_locator_json
+                       created_by, diagnostics_json, source_locator_json, inventory_metadata_json
                 FROM repository_snapshots
                 WHERE tenant_id = ? AND workspace_id = ? AND project_id = ?
                 ORDER BY created_at DESC
@@ -254,7 +249,7 @@ public final class RepositorySnapshotRepository {
                 try (ResultSet rs = statement.executeQuery()) {
                     while (rs.next()) {
                         String snapshotId = rs.getString("snapshot_id");
-                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId);
+                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId, tenantId, workspaceId, projectId);
                         snapshots.add(mapSnapshot(rs, files));
                     }
                 }
@@ -264,71 +259,21 @@ public final class RepositorySnapshotRepository {
     }
 
     /**
-     * Find snapshots by repo ID across all scopes.
-     *
-     * P1: Returns snapshots with source locator refs if available.
-     *
-     * @param repoId the repository ID
-     * @param limit maximum number of results
-     * @return promise of snapshot list
+     * P0: Removed unscoped findByRepoId method - all queries must be explicitly scoped.
+     * Production code must use findByScope instead.
      */
-    public Promise<List<RepositorySnapshot>> findByRepoId(String repoId, int limit) {
-        return Promise.ofBlocking(executor, () -> {
-            String sql = """
-                SELECT snapshot_id, provider, repo_id, commit_sha, materialized_root,
-                       checksum, content_hash, created_at, tenant_id, workspace_id, project_id,
-                       created_by, diagnostics_json, source_locator_json
-                FROM repository_snapshots
-                WHERE repo_id = ?
-                ORDER BY created_at DESC
-                LIMIT ?
-                """;
-
-            List<RepositorySnapshot> snapshots = new ArrayList<>();
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, repoId);
-                statement.setInt(2, limit);
-                try (ResultSet rs = statement.executeQuery()) {
-                    while (rs.next()) {
-                        String snapshotId = rs.getString("snapshot_id");
-                        List<RepositorySnapshot.SnapshotFile> files = loadSnapshotFiles(connection, snapshotId);
-                        snapshots.add(mapSnapshot(rs, files));
-                    }
-                }
-            }
-            return snapshots;
-        });
-    }
-
     /**
-     * Check if a snapshot exists with the given content hash (for deduplication).
+     * Check if a snapshot exists with the given content hash within tenant/workspace/project scope.
+     *
+     * P0: Removed unscoped findByContentHash method - all queries must be explicitly scoped.
+     * This prevents cross-tenant data leakage.
      *
      * @param contentHash the content hash to check
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param projectId the project ID
      * @return promise of optional matching snapshot ID
      */
-    public Promise<Optional<String>> findByContentHash(String contentHash) {
-        return Promise.ofBlocking(executor, () -> {
-            String sql = """
-                SELECT snapshot_id
-                FROM repository_snapshots
-                WHERE content_hash = ?
-                LIMIT 1
-                """;
-
-            try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, contentHash);
-                try (ResultSet rs = statement.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(rs.getString("snapshot_id"));
-                    }
-                    return Optional.<String>empty();
-                }
-            }
-        });
-    }
-
     public Promise<Optional<String>> findByContentHash(String contentHash, String tenantId, String workspaceId, String projectId) {
         Objects.requireNonNull(contentHash, "contentHash must not be null");
         Objects.requireNonNull(tenantId, "tenantId must not be null");
@@ -360,63 +305,96 @@ public final class RepositorySnapshotRepository {
     }
 
     /**
-     * Delete old snapshots for cleanup.
+     * P0: Removed unscoped deleteOldSnapshots method - all deletions must be explicitly scoped.
+     * Production code must use the scoped deleteOldSnapshots method.
+     */
+    /**
+     * Delete old snapshots for a specific tenant/workspace/project scope.
+     *
+     * P0: Added scoped deletion - prevents cross-tenant data deletion.
      *
      * @param olderThan delete snapshots older than this instant
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param projectId the project ID
      * @return promise of count of deleted snapshots
      */
-    public Promise<Integer> deleteOldSnapshots(Instant olderThan) {
+    public Promise<Integer> deleteOldSnapshots(Instant olderThan, String tenantId, String workspaceId, String projectId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
+
         return Promise.ofBlocking(executor, () -> {
             // First delete files (cascade would handle this, but explicit is safer)
             String deleteFilesSql = """
                 DELETE FROM repository_snapshot_files
                 WHERE snapshot_id IN (
                     SELECT snapshot_id FROM repository_snapshots
-                    WHERE created_at < ?
+                    WHERE created_at < ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
                 )
                 """;
 
             String deleteSnapshotsSql = """
                 DELETE FROM repository_snapshots
-                WHERE created_at < ?
+                WHERE created_at < ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """;
 
             try (Connection connection = dataSource.getConnection()) {
                 int deletedFiles;
                 try (PreparedStatement statement = connection.prepareStatement(deleteFilesSql)) {
                     statement.setTimestamp(1, Timestamp.from(olderThan));
+                    statement.setString(2, tenantId);
+                    statement.setString(3, workspaceId);
+                    statement.setString(4, projectId);
                     deletedFiles = statement.executeUpdate();
                 }
 
                 int deletedSnapshots;
                 try (PreparedStatement statement = connection.prepareStatement(deleteSnapshotsSql)) {
                     statement.setTimestamp(1, Timestamp.from(olderThan));
+                    statement.setString(2, tenantId);
+                    statement.setString(3, workspaceId);
+                    statement.setString(4, projectId);
                     deletedSnapshots = statement.executeUpdate();
                 }
 
-                log.info("Deleted {} old snapshots and {} associated files", deletedSnapshots, deletedFiles);
+                log.info("Deleted {} old snapshots and {} associated files for scope {}/{}/{}",
+                    deletedSnapshots, deletedFiles, tenantId, workspaceId, projectId);
                 return deletedSnapshots;
             }
         });
     }
 
     /**
-     * P1: Find source locator ref for a snapshot.
+     * P1: Find source locator ref for a snapshot (scoped).
+     *
+     * P0: Added scope parameters to prevent cross-tenant data leakage.
      *
      * @param snapshotId the snapshot ID
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param projectId the project ID
      * @return promise of optional source locator
      */
-    public Promise<Optional<SourceLocator>> findSourceLocator(String snapshotId) {
+    public Promise<Optional<SourceLocator>> findSourceLocator(String snapshotId, String tenantId, String workspaceId, String projectId) {
+        Objects.requireNonNull(snapshotId, "snapshotId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
+
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT source_locator_json
                 FROM repository_snapshots
-                WHERE snapshot_id = ?
+                WHERE snapshot_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
                 """;
 
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, snapshotId);
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
                         String json = rs.getString("source_locator_json");
@@ -430,7 +408,7 @@ public final class RepositorySnapshotRepository {
         });
     }
 
-    private List<RepositorySnapshot.SnapshotFile> loadSnapshotFiles(Connection connection, String snapshotId) throws SQLException {
+    private List<RepositorySnapshot.SnapshotFile> loadSnapshotFiles(Connection connection, String snapshotId, String tenantId, String workspaceId, String projectId) throws SQLException {
         String sql = """
             SELECT relative_path, absolute_path, size_bytes, last_modified_at, content_checksum, file_type
             FROM repository_snapshot_files
@@ -531,6 +509,66 @@ public final class RepositorySnapshotRepository {
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse source locator JSON", e);
             throw new IllegalStateException("Invalid source locator JSON", e);
+        }
+    }
+
+    /**
+     * P1: Retrieve inventory metadata for a snapshot.
+     *
+     * @param snapshotId the snapshot ID
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param projectId the project ID
+     * @return promise of optional inventory metadata
+     */
+    public Promise<Optional<Map<String, Object>>> findInventoryMetadata(String snapshotId, String tenantId, String workspaceId, String projectId) {
+        Objects.requireNonNull(snapshotId, "snapshotId must not be null");
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        Objects.requireNonNull(projectId, "projectId must not be null");
+
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                SELECT inventory_metadata_json
+                FROM repository_snapshots
+                WHERE snapshot_id = ? AND tenant_id = ? AND workspace_id = ? AND project_id = ?
+                """;
+
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, snapshotId);
+                statement.setString(2, tenantId);
+                statement.setString(3, workspaceId);
+                statement.setString(4, projectId);
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (rs.next()) {
+                        String json = rs.getString("inventory_metadata_json");
+                        if (json != null && !json.isBlank()) {
+                            return Optional.of(readStringMap(json));
+                        }
+                    }
+                    return Optional.<Map<String, Object>>empty();
+                }
+            }
+        });
+    }
+
+    private String writeInventoryMetadata(Map<String, Object> metadata) throws JsonProcessingException {
+        if (metadata == null || metadata.isEmpty()) {
+            return null;
+        }
+        return objectMapper.writeValueAsString(metadata);
+    }
+
+    private Map<String, Object> readStringMap(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+        try {
+            return objectMapper.readValue(json, OBJECT_MAP);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse string map JSON", e);
+            return Map.of();
         }
     }
 
