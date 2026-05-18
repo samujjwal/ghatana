@@ -163,29 +163,30 @@ describe("§2.7 — Digital Marketing registry field validation", () => {
   });
 });
 
-describe("§2.7 — Digital Marketing is the sole lifecycleExecutionAllowed product", () => {
+describe("§2.7 — DM and PHR are the lifecycle-enabled pilot products", () => {
   let registry: CanonicalRegistryLoader;
 
   beforeEach(() => {
     registry = new CanonicalRegistryLoader(CONFIG_DIR);
   });
 
-  it("only digital-marketing has lifecycleExecutionAllowed = true", async () => {
+  it("digital-marketing and phr are the only lifecycleExecutionAllowed products", async () => {
     const all = await registry.getAllProducts();
     const allowedProducts = Object.entries(all)
       .filter(([, product]) => {
         const raw = product as unknown as Record<string, unknown>;
         return raw["lifecycleExecutionAllowed"] === true;
       })
-      .map(([id]) => id);
+      .map(([id]) => id)
+      .sort();
 
-    expect(allowedProducts).toEqual(["digital-marketing"]);
+    expect(allowedProducts).toEqual(["digital-marketing", "phr"]);
   });
 
-  it("PHR does NOT have lifecycleExecutionAllowed = true", async () => {
+  it("PHR has lifecycleExecutionAllowed = true as second parallel pilot", async () => {
     const phr = await registry.getProduct("phr");
     const raw = phr as unknown as Record<string, unknown>;
-    expect(raw["lifecycleExecutionAllowed"]).not.toBe(true);
+    expect(raw["lifecycleExecutionAllowed"]).toBe(true);
   });
 
   it("finance does NOT have lifecycleExecutionAllowed = true", async () => {

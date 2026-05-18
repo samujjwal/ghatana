@@ -71,19 +71,17 @@
         "category": "healthcare"
       },
       "lifecycleProfile": "standard-web-api-product",
-      "lifecycleStatus": "planned",
+      "lifecycleStatus": "enabled",
       "lifecycleMigration": {
-        "status": "partial",
-        "notes": "Lifecycle registry entry exists, but execution path is not yet validated."
+        "status": "enabled",
+        "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "planned-shape-only",
-          "requires-consent-gate",
-          "requires-pii-classification",
-          "requires-audit-evidence",
-          "requires-fhir-contract-validation",
-          "requires-data-sovereignty-gate"
+          "healthcare-pilot-enabled",
+          "fhir-r4-pilot-surfaces-validated",
+          "consent-gate-active",
+          "pii-classification-active"
         ],
         "requiredGates": [
           "consent",
@@ -93,12 +91,18 @@
           "tenant-data-sovereignty"
         ],
         "nextRequiredWork": [
-          "Validate PHR backend-api and web adapters against healthcare gates before enabling lifecycle execution",
-          "Produce FHIR contract and tenant/data sovereignty evidence in product-local lifecycle manifests"
+          "Develop PHR features in parallel with Digital Marketing under kernel lifecycle",
+          "Validate healthcare-specific gate-packs against real FHIR evidence as features mature"
         ],
         "evidenceRefs": [
           "products/phr/kernel-product.yaml",
-          "products/phr/schema-packs/schema-registry.yaml"
+          "products/phr/schema-packs/schema-registry.yaml",
+          "products/phr/lifecycle/readiness-evidence.yaml",
+          "products/phr/lifecycle/gate-packs/consent.yaml",
+          "products/phr/lifecycle/gate-packs/pii-classification.yaml",
+          "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+          "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+          "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
         ],
         "blockerGateAdapterMatrix": {
           "blockers": [
@@ -141,11 +145,11 @@
             }
           ]
         },
-        "status": "blocked"
+        "status": "enabled"
       },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {
-        "enabled": false,
+        "enabled": true,
         "phases": {
           "dev": {
             "defaultSurfaces": ["backend-api", "web"],
@@ -191,7 +195,7 @@
       "environments": {
         "supported": ["local", "dev", "staging", "prod"]
       },
-      "lifecycleExecutionAllowed": false
+      "lifecycleExecutionAllowed": true
     },
     "finance": {
       "id": "finance",
@@ -317,7 +321,12 @@
         ],
         "evidenceRefs": [
           "products/finance/kernel-product.yaml",
-          "products/finance/schema-packs/schema-registry.yaml"
+          "products/finance/schema-packs/schema-registry.yaml",
+          "products/finance/lifecycle/readiness-evidence.yaml",
+          "products/finance/lifecycle/gate-packs/regulatory-compliance.yaml",
+          "products/finance/lifecycle/gate-packs/risk-controls.yaml",
+          "products/finance/lifecycle/gate-packs/promotion-approval.yaml",
+          "products/finance/lifecycle/gate-packs/multi-module-build.yaml"
         ],
         "blockerGateAdapterMatrix": {
           "blockers": [
@@ -639,7 +648,16 @@
           "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
           "Add ipa/aab artifact contracts before enabling mobile bundle execution"
         ],
-        "evidenceRefs": ["products/flashit/kernel-product.yaml"],
+        "evidenceRefs": [
+          "products/flashit/kernel-product.yaml",
+          "products/flashit/lifecycle/readiness-evidence.yaml",
+          "products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml",
+          "products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml",
+          "products/flashit/lifecycle/gate-packs/privacy.yaml",
+          "products/flashit/lifecycle/gate-packs/preview-security.yaml",
+          "products/flashit/lifecycle/gate-packs/personal-data-classification.yaml",
+          "products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml"
+        ],
         "blockerGateAdapterMatrix": {
           "blockers": [
             "missing-mobile-adapters",
@@ -870,6 +888,7 @@
           "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed"
         ],
         "evidenceRefs": [
+          "products/data-cloud/lifecycle/readiness-evidence.yaml",
           "products/data-cloud/extensions/kernel-bridge",
           "products/data-cloud/planes/action/kernel-bridge"
         ],
@@ -1009,7 +1028,7 @@
         "documentation": "products/yappc/README.md",
         "status": "active",
         "displayName": "YAPPC",
-        "description": "Yet Another Platform for Platform Composition \u2014 plugin and scaffold framework",
+        "description": "Yet Another Platform for Platform Composition — plugin and scaffold framework",
         "category": "platform-tooling"
       },
       "lifecycleReadiness": {
@@ -1029,6 +1048,7 @@
           "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts"
         ],
         "evidenceRefs": [
+          "products/yappc/lifecycle/readiness-evidence.yaml",
           "products/yappc/kernel-bridge",
           "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
         ],

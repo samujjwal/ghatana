@@ -24,19 +24,8 @@
     "yappc",
     "security-gateway"
   ],
-  "productsWithIntegrationTests": [
-    "finance",
-    "data-cloud",
-    "yappc"
-  ],
-  "productsWithLifecycle": [
-    "digital-marketing"
-  ],
-  "excludedFromLifecycle": [
-    "data-cloud",
-    "yappc"
-  ],
-  "lifecycleProfiles": [
-    "standard-web-api-product"
-  ]
+  "productsWithIntegrationTests": ["finance", "data-cloud", "yappc"],
+  "productsWithLifecycle": ["phr", "digital-marketing"],
+  "excludedFromLifecycle": ["data-cloud", "yappc"],
+  "lifecycleProfiles": ["standard-web-api-product"]
 }

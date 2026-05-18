@@ -1,20 +1,18 @@
 schemaVersion: 1.0.0
 productId: phr
 lifecycleProfile: standard-web-api-product
-status: draft
-executionEnabled: false
+status: enabled
+executionEnabled: true
 migration:
-  status: planned
-  reason: "PHR lifecycle config requires path/module correction before execution."
+  status: enabled
+  reason: "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare gates are active at execution time."
 
 readiness:
   reasonCodes:
-    - planned-shape-only
-    - requires-consent-gate
-    - requires-pii-classification
-    - requires-audit-evidence
-    - requires-fhir-contract-validation
-    - requires-data-sovereignty-gate
+    - healthcare-pilot-enabled
+    - fhir-r4-pilot-surfaces-validated
+    - consent-gate-active
+    - pii-classification-active
   requiredGates:
     - consent
     - pii-classification
@@ -22,8 +20,15 @@ readiness:
     - fhir-contract-validation
     - tenant-data-sovereignty
   nextRequiredWork:
-    - Validate backend-api and web lifecycle adapters against healthcare gates before enabling execution.
-    - Add FHIR contract and tenant sovereignty evidence to executable manifests.
+    - Develop PHR features in parallel with Digital Marketing under kernel lifecycle.
+    - Validate healthcare-specific gate-packs against real FHIR evidence as features mature.
+  evidenceRefs:
+    - products/phr/lifecycle/readiness-evidence.yaml
+    - products/phr/lifecycle/gate-packs/consent.yaml
+    - products/phr/lifecycle/gate-packs/pii-classification.yaml
+    - products/phr/lifecycle/gate-packs/audit-evidence.yaml
+    - products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
+    - products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
 
 surfaces:
   backend-api:
@@ -52,3 +57,44 @@ gates:
     - audit-evidence
     - fhir-contract-validation
     - tenant-data-sovereignty
+  build:
+    - consent
+    - pii-classification
+    - audit-evidence
+    - fhir-contract-validation
+    - tenant-data-sovereignty
+  deploy:
+    - consent
+    - tenant-data-sovereignty
+
+deployment:
+  local:
+    adapter: compose-local
+    target: compose-local
+    composeFile: products/phr/deploy/local.compose.yaml
+    envFile: products/phr/deploy/local.env
+    envExampleFile: products/phr/deploy/local.env.example
+    requireEnvFile: false
+    expectedServices:
+      - phr-api
+      - phr-web
+    healthChecks:
+      backend-api:
+        type: http
+        url: http://localhost:${PHR_API_PORT:-8085}/health/ready
+        retries: 10
+        intervalMs: 3000
+      web:
+        type: http
+        url: http://localhost:${PHR_WEB_PORT:-5178}/
+        retries: 5
+        intervalMs: 2000
+
+requiredManifests:
+  build:
+    - lifecycle-result
+    - artifact-manifest
+    - lifecycle-health-snapshot
+  deploy:
+    - deployment-manifest
+    - lifecycle-health-snapshot

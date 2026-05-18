@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-18T18:27:04.981Z",
+  "generated": "2026-05-18T18:59:25.860Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -372,6 +372,7 @@
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
       "readinessEvidence": [
+        "products/data-cloud/lifecycle/readiness-evidence.yaml",
         "products/data-cloud/extensions/kernel-bridge",
         "products/data-cloud/planes/action/kernel-bridge"
       ],
@@ -658,6 +659,15 @@
           "lifecycleEnabled": true,
           "supportsBootstrapMode": true,
           "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "gradle-java-service",
+          "surfaceType": "operator",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
         }
       ],
       "missingManifests": [
@@ -689,9 +699,11 @@
           "evidenceRefs": []
         },
         "uiReadiness": {
-          "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
-          "evidenceRefs": []
+          "status": "evidence-backed",
+          "reasonCodes": [],
+          "evidenceRefs": [
+            "products/finance/lifecycle/gate-packs/multi-module-build.yaml"
+          ]
         },
         "providerReadiness": {
           "status": "not-required",
@@ -742,7 +754,6 @@
           "status": "not-enabled",
           "reasonCodes": [
             "e2e-not-ready",
-            "missing-adapter:operator",
             "missing-adapter:portal",
             "missing-adapter:sdk"
           ],
@@ -750,17 +761,12 @@
         },
         "enablementGuardrail": {
           "status": "blocked",
-          "reasonCodes": [
-            "missing-adapter:operator",
-            "missing-adapter:portal",
-            "missing-adapter:sdk"
-          ],
+          "reasonCodes": ["missing-adapter:portal", "missing-adapter:sdk"],
           "evidenceRefs": []
         }
       },
       "minimumReleaseToEnable": "future-readiness-gate",
       "blockingGaps": [
-        "missing-adapter:operator",
         "missing-adapter:portal",
         "missing-adapter:sdk",
         "missing-manifest:artifact-manifest",
@@ -769,14 +775,12 @@
         "missing-manifest:lifecycle-result"
       ],
       "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
-      "requiredCapabilities": ["backend-api:gradle-java-service"],
-      "capabilityGaps": [
-        "missing-adapter:operator",
-        "missing-adapter:portal",
-        "missing-adapter:sdk"
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service",
+        "operator:gradle-java-service"
       ],
+      "capabilityGaps": ["missing-adapter:portal", "missing-adapter:sdk"],
       "reasonCodes": [
-        "missing-adapter:operator",
         "missing-adapter:portal",
         "missing-adapter:sdk",
         "planned-shape-only",
@@ -792,13 +796,17 @@
       ],
       "readinessEvidence": [
         "products/finance/kernel-product.yaml",
-        "products/finance/schema-packs/schema-registry.yaml"
+        "products/finance/schema-packs/schema-registry.yaml",
+        "products/finance/lifecycle/readiness-evidence.yaml",
+        "products/finance/lifecycle/gate-packs/regulatory-compliance.yaml",
+        "products/finance/lifecycle/gate-packs/risk-controls.yaml",
+        "products/finance/lifecycle/gate-packs/promotion-approval.yaml",
+        "products/finance/lifecycle/gate-packs/multi-module-build.yaml"
       ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only",
       "findings": [
         "Surface \"portal\" has no default adapter defined in profile \"backend-only-java-service\"",
-        "Surface \"operator\" has no default adapter defined in profile \"backend-only-java-service\"",
         "Surface \"sdk\" has no default adapter defined in profile \"backend-only-java-service\""
       ]
     },
@@ -810,11 +818,20 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "experimental",
-      "requiredAdapters": ["gradle-java-service"],
+      "requiredAdapters": ["gradle-java-service", "pnpm-vite-react"],
       "adapterReadiness": [
         {
           "adapterId": "gradle-java-service",
           "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "pnpm-vite-react",
+          "surfaceType": "web",
           "status": "implemented",
           "readiness": "execution-ready",
           "lifecycleEnabled": true,
@@ -905,23 +922,18 @@
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": [
-            "e2e-not-ready",
-            "missing-adapter:mobile",
-            "missing-adapter:web"
-          ],
+          "reasonCodes": ["e2e-not-ready", "missing-adapter:mobile"],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
           "status": "blocked",
-          "reasonCodes": ["missing-adapter:mobile", "missing-adapter:web"],
+          "reasonCodes": ["missing-adapter:mobile"],
           "evidenceRefs": []
         }
       },
       "minimumReleaseToEnable": "future-readiness-gate",
       "blockingGaps": [
         "missing-adapter:mobile",
-        "missing-adapter:web",
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
@@ -930,11 +942,13 @@
         "missing-manifest:mobile-ipa-artifact-manifest"
       ],
       "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
-      "requiredCapabilities": ["backend-api:gradle-java-service"],
-      "capabilityGaps": ["missing-adapter:mobile", "missing-adapter:web"],
+      "requiredCapabilities": [
+        "backend-api:gradle-java-service",
+        "web:pnpm-vite-react"
+      ],
+      "capabilityGaps": ["missing-adapter:mobile"],
       "reasonCodes": [
         "missing-adapter:mobile",
-        "missing-adapter:web",
         "planned-shape-only",
         "requires-mobile-adapters",
         "requires-mobile-bundle-artifacts",
@@ -946,11 +960,19 @@
         "Add ipa/aab artifact contracts before enabling mobile bundle execution",
         "Keep shape-only until required adapters and manifests are executable"
       ],
-      "readinessEvidence": ["products/flashit/kernel-product.yaml"],
+      "readinessEvidence": [
+        "products/flashit/kernel-product.yaml",
+        "products/flashit/lifecycle/readiness-evidence.yaml",
+        "products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml",
+        "products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml",
+        "products/flashit/lifecycle/gate-packs/privacy.yaml",
+        "products/flashit/lifecycle/gate-packs/preview-security.yaml",
+        "products/flashit/lifecycle/gate-packs/personal-data-classification.yaml",
+        "products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml"
+      ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only",
       "findings": [
-        "Surface \"web\" has no default adapter defined in profile \"mobile-plus-api-product\"",
         "Surface \"mobile\" has no default adapter defined in profile \"mobile-plus-api-product\""
       ]
     },
@@ -1087,21 +1109,26 @@
       ],
       "capabilityGaps": [],
       "reasonCodes": [
-        "planned-shape-only",
-        "requires-audit-evidence",
-        "requires-consent-gate",
-        "requires-data-sovereignty-gate",
-        "requires-fhir-contract-validation",
-        "requires-pii-classification"
+        "consent-gate-active",
+        "fhir-r4-pilot-surfaces-validated",
+        "healthcare-pilot-planned",
+        "pii-classification-active",
+        "planned-shape-only"
       ],
       "nextActions": [
-        "Validate PHR backend-api and web adapters against healthcare gates before enabling lifecycle execution",
-        "Produce FHIR contract and tenant/data sovereignty evidence in product-local lifecycle manifests",
+        "Keep PHR lifecycle execution disabled until regulated healthcare gates are executable",
+        "Validate healthcare-specific gate-packs against real FHIR evidence as features mature",
         "Keep shape-only until required adapters and manifests are executable"
       ],
       "readinessEvidence": [
         "products/phr/kernel-product.yaml",
-        "products/phr/schema-packs/schema-registry.yaml"
+        "products/phr/schema-packs/schema-registry.yaml",
+        "products/phr/lifecycle/readiness-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/consent.yaml",
+        "products/phr/lifecycle/gate-packs/pii-classification.yaml",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
       ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only"
@@ -1724,6 +1751,7 @@
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
       "readinessEvidence": [
+        "products/yappc/lifecycle/readiness-evidence.yaml",
         "products/yappc/kernel-bridge",
         "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
       ],
