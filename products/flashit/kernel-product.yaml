@@ -22,12 +22,21 @@ readiness:
   nextRequiredWork:
     - Keep FlashIt mobile lifecycle disabled until iOS and Android adapters are execution-ready.
     - Add ipa and aab artifact contracts before enabling mobile bundle execution.
+  evidenceRefs:
+    - products/flashit/lifecycle/readiness-evidence.yaml
+    - products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml
+    - products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml
+    - products/flashit/lifecycle/gate-packs/privacy.yaml
+    - products/flashit/lifecycle/gate-packs/preview-security.yaml
+    - products/flashit/lifecycle/gate-packs/personal-data-classification.yaml
+    - products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml
 
 surfaces:
   backend-api:
     source: products/flashit/backend/gateway
-    runtime: java-service
-    adapter: gradle-java-service
+    runtime: node-api
+    adapter: pnpm-node-api
+    packagePath: products/flashit/backend/gateway/package.json
   web:
     source: products/flashit/client/web
     runtime: static-web
@@ -58,3 +67,8 @@ gates:
     - preview-security
     - personal-data-classification
     - mobile-bundle-contract
+  gatePacks:
+    privacy: products/flashit/lifecycle/gate-packs/privacy.yaml
+    preview-security: products/flashit/lifecycle/gate-packs/preview-security.yaml
+    personal-data-classification: products/flashit/lifecycle/gate-packs/personal-data-classification.yaml
+    mobile-bundle-contract: products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml

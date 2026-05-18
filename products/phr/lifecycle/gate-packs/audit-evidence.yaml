@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: phr
+gateId: audit-evidence
+title: PHR audit evidence readiness
+executionMode: declarative-only
+owner: PHR Team
+status: planned
+description: Product evidence required for audit trail and emergency access review before lifecycle execution.
+requiredEvidenceRefs:
+  - products/phr/src/main/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewAuditLogger.java
+  - products/phr/src/main/java/com/ghatana/phr/kernel/service/EmergencyAccessLogService.java
+  - products/phr/docs/HIPAA_VALIDATION_EVIDENCE_2026-04-07.md
+blockingReasonCodes:
+  - requires-audit-evidence
+  - missing-audit-evidence
+validationCommands:
+  - ./gradlew :products:phr:build
+notes:
+  - Audit evidence stays product-local and references shared audit plugins through public contracts.

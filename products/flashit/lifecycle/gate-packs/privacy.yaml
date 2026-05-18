@@ -1,0 +1,18 @@
+schemaVersion: 1.0.0
+productId: flashit
+gateId: privacy
+title: FlashIt privacy readiness
+executionMode: declarative-only
+owner: FlashIt Team
+status: planned
+description: Product evidence required for privacy and data protection validation.
+requiredEvidenceRefs:
+  - products/flashit/backend/gateway/src/services/data-deletion/deletion-service.ts
+  - products/flashit/backend/gateway/src/services/security.ts
+  - products/flashit/policy-packs/flashit-boundary-policy.yaml
+blockingReasonCodes:
+  - requires-personal-data-classification
+validationCommands:
+  - pnpm --filter ./products/flashit test
+notes:
+  - Privacy remains product policy evidence, not Kernel-hardcoded behavior.

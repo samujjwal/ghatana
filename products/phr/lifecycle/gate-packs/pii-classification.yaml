@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: phr
+gateId: pii-classification
+title: PHR PII classification readiness
+executionMode: declarative-only
+owner: PHR Team
+status: planned
+description: Product evidence required for PHI/PII field classification and handling.
+requiredEvidenceRefs:
+  - products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrDataClassification.java
+  - products/phr/docs/01_governance/phr_data_classification_matrix.md
+  - products/phr/src/main/java/com/ghatana/phr/security/PhiFieldEncryptionService.java
+blockingReasonCodes:
+  - requires-pii-classification
+  - missing-pii-classification
+validationCommands:
+  - ./gradlew :products:phr:build
+notes:
+  - This pack records product-owned classification evidence only.

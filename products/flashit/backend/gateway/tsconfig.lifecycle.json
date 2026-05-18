@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src/lifecycle-readiness.ts",
+    "src/lib/__tests__/auth.test.ts",
+    "src/lib/__tests__/data-access-context.test.ts",
+    "src/services/__tests__/ai-disabled-mode.test.ts"
+  ]
+}

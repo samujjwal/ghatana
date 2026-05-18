@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../../../../",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lifecycle.tsbuildinfo"
+  },
+  "include": [
+    "src/platform-provider-readiness.ts",
+    "src/__tests__/platform-provider-readiness.spec.ts",
+    "src/__tests__/routes.spec.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

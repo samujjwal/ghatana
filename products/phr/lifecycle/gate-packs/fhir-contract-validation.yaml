@@ -1,0 +1,20 @@
+schemaVersion: 1.0.0
+productId: phr
+gateId: fhir-contract-validation
+title: PHR FHIR contract validation readiness
+executionMode: declarative-only
+owner: PHR Team
+status: planned
+description: Product evidence required to validate FHIR R4 contracts and healthcare domain compatibility.
+requiredEvidenceRefs:
+  - products/phr/docs/openapi.yaml
+  - products/phr/schema-packs/schema-registry.yaml
+  - products/phr/docs/03_architecture/phr_fhir_complete_starter_schema.prisma
+  - products/phr/src/main/java/com/ghatana/phr/plugin/FhirInteropKernelPlugin.java
+blockingReasonCodes:
+  - requires-fhir-contract-validation
+  - missing-fhir-contract-validation
+validationCommands:
+  - ./gradlew :products:phr:domains:healthcare:build
+notes:
+  - FHIR validation is declared as PHR evidence and remains disabled until executable lifecycle gates exist.

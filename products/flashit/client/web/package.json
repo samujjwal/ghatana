@@ -7,11 +7,11 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "pnpm run type-check && vite build --config vite.lifecycle.config.ts",
     "preview": "vite preview",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run src/__tests__/route-access.test.ts",
     "test:unit:coverage": "vitest run --coverage",
-    "test": "playwright test",
+    "test": "pnpm run test:unit",
     "test:coverage": "playwright test --reporter=line",
     "test:e2e": "playwright test",
     "test:e2e:a11y": "playwright test --grep @a11y",
@@ -24,7 +24,7 @@
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit --project tsconfig.lifecycle.json"
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",

@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: finance
+gateId: promotion-approval
+title: Finance promotion approval readiness
+executionMode: declarative-only
+owner: Finance Team
+status: planned
+description: Defines the Finance-specific approval evidence required before promotion through lifecycle environments.
+requiredEvidenceRefs:
+  - products/finance/src/main/java/com/ghatana/finance/ai/ApprovalWorkflowService.java
+  - products/finance/domains/oms/src/main/java/com/ghatana/products/finance/domains/oms/service/ApprovalWorkflowService.java
+  - products/finance/operator-workflows/build.gradle.kts
+blockingReasonCodes:
+  - requires-promotion-approval
+  - missing-promotion-approval
+validationCommands:
+  - ./gradlew :products:finance:operator-workflows:build
+notes:
+  - This pack is declarative product policy evidence and does not add cross-product promotion logic.

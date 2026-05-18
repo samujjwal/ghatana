@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: phr
+gateId: tenant-data-sovereignty
+title: PHR tenant data sovereignty readiness
+executionMode: declarative-only
+owner: PHR Team
+status: planned
+description: Product evidence required for tenant isolation, data residency, retention, and deletion controls.
+requiredEvidenceRefs:
+  - products/phr/docs/03_architecture/phr_multi_tenancy_enforcement_spec.md
+  - products/phr/docs/01_governance/phr_retention_and_deletion_policy.md
+  - products/phr/src/main/java/com/ghatana/phr/repository/TenantConfigRepository.java
+blockingReasonCodes:
+  - requires-data-sovereignty-gate
+  - missing-data-sovereignty-gate
+validationCommands:
+  - ./gradlew :products:phr:build
+notes:
+  - Tenant/data sovereignty gates remain product policy evidence, not Kernel-hardcoded behavior.

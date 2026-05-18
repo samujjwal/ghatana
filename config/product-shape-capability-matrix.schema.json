@@ -3,7 +3,12 @@
   "$id": "https://ghatana.io/schemas/product-shape-capability-matrix.json",
   "title": "Product Shape Capability Matrix",
   "type": "object",
-  "required": ["version", "generated", "source", "matrix"],
+  "required": [
+    "version",
+    "generated",
+    "source",
+    "matrix"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
@@ -58,7 +63,12 @@
         },
         "lifecycleStatus": {
           "type": "string",
-          "enum": ["disabled", "planned", "partial", "enabled"]
+          "enum": [
+            "disabled",
+            "planned",
+            "partial",
+            "enabled"
+          ]
         },
         "lifecycleExecutionAllowed": {
           "type": "boolean"

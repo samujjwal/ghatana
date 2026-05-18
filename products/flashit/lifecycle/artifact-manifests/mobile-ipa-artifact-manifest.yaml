@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: flashit
+artifactId: flashit-mobile-ios-ipa
+surface: mobile-ios
+artifactType: mobile-bundle
+packaging: ipa
+status: contract-only
+adapter: xcode-ios
+requiredOutputs:
+  - ios-app
+  - test-report
+evidenceRefs:
+  - products/flashit/client/mobile/package.json
+  - products/flashit/client/mobile/ios/Flashit/Info.plist
+blockingReasonCodes:
+  - requires-mobile-bundle-artifacts
+  - missing-ipa-artifact-manifest
+notes:
+  - Contract is declared, but xcode-ios is not execution-ready or safe by default.

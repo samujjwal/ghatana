@@ -18,17 +18,16 @@ import java.util.*;
 
 /**
  * AEP-owned central catalog service that discovers, loads, merges, and
- * validates agent definitions from all configured product roots.
+ * validates agent definitions from configured catalog roots.
  *
  * <p>Replaces product-local catalog discovery with a single coordinated
- * path. Each product root is expected to contain an
+ * path. Each configured catalog root is expected to contain an
  * {@code agent-catalog.yaml} manifest.
  *
  * <h2>Supported Layouts</h2>
  * <ul>
  *   <li>{@code products/data-cloud/planes/action/agent-catalog/agent-catalog.yaml} (canonical)</li>
  *   <li>{@code products/data-cloud/extensions/agent-catalog/agent-catalog.yaml} (canonical)</li>
- *   <li>{@code products/yappc/config/agents/agent-catalog.yaml} (legacy)</li>
  *   <li>{@code platform/agent-catalog/agent-catalog.yaml} (platform core)</li>
  * </ul>
  *
@@ -97,12 +96,7 @@ public class AepCentralCatalogService {
         return List.of(
                 repositoryRoot.resolve("platform/agent-catalog"),
                 repositoryRoot.resolve("products/data-cloud/planes/action/agent-catalog"),
-                repositoryRoot.resolve("products/data-cloud/extensions/agent-catalog"),
-                repositoryRoot.resolve("products/yappc/config/agents"),
-                repositoryRoot.resolve("products/software-org/config/agents"),
-                repositoryRoot.resolve("products/virtual-org/config/agents"),
-                repositoryRoot.resolve("products/finance/config/agents"),
-                repositoryRoot.resolve("products/tutorputor/config/agents")
+                repositoryRoot.resolve("products/data-cloud/extensions/agent-catalog")
         );
     }
 

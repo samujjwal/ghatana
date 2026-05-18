@@ -1,0 +1,58 @@
+schemaVersion: 1.0.0
+productId: phr
+status: planned
+lifecycleExecutionAllowed: false
+truthSource:
+  registry: config/canonical-product-registry.json
+  lifecycleConfig: products/phr/kernel-product.yaml
+  productManifest: products/phr/domain-pack-manifest.yaml
+moduleGraph:
+  requiredModules:
+    - module: backend-api
+      gradleModule: :products:phr
+      buildFile: products/phr/build.gradle.kts
+      adapter: gradle-java-service
+    - module: launcher
+      gradleModule: :products:phr:launcher
+      buildFile: products/phr/launcher/build.gradle.kts
+      adapter: gradle-java-service
+    - module: healthcare-domain
+      gradleModule: :products:phr:domains:healthcare
+      buildFile: products/phr/domains/healthcare/build.gradle.kts
+      adapter: gradle-java-service
+    - module: web
+      packagePath: products/phr/apps/web/package.json
+      adapter: pnpm-vite-react
+gatePacks:
+  - gateId: consent
+    path: products/phr/lifecycle/gate-packs/consent.yaml
+    executionMode: declarative-only
+  - gateId: pii-classification
+    path: products/phr/lifecycle/gate-packs/pii-classification.yaml
+    executionMode: declarative-only
+  - gateId: audit-evidence
+    path: products/phr/lifecycle/gate-packs/audit-evidence.yaml
+    executionMode: declarative-only
+  - gateId: fhir-contract-validation
+    path: products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
+    executionMode: declarative-only
+  - gateId: tenant-data-sovereignty
+    path: products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
+    executionMode: declarative-only
+blockers:
+  - gate:consent
+  - gate:pii-classification
+  - gate:audit-evidence
+  - gate:fhir-contract-validation
+  - gate:tenant-data-sovereignty
+  - missing-manifest:lifecycle-plan
+  - missing-manifest:lifecycle-result
+  - missing-manifest:artifact-manifest
+  - missing-manifest:deployment-manifest
+validationCommands:
+  - ./gradlew :products:phr:build
+  - ./gradlew :products:phr:launcher:build
+  - ./gradlew :products:phr:domains:healthcare:build
+  - pnpm --filter ./products/phr/apps/web type-check
+  - pnpm --filter ./products/phr/apps/web test
+  - pnpm --filter ./products/phr/apps/web build

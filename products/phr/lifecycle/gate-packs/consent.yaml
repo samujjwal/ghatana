@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: phr
+gateId: consent
+title: PHR consent gate readiness
+executionMode: declarative-only
+owner: PHR Team
+status: planned
+description: Product policy evidence required for patient consent enforcement before lifecycle execution.
+requiredEvidenceRefs:
+  - products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGate.java
+  - products/phr/src/main/java/com/ghatana/phr/kernel/consent/ConsentService.java
+  - products/phr/policy-packs/healthcare-boundary-policy.yaml
+blockingReasonCodes:
+  - requires-consent-gate
+  - missing-consent-gate
+validationCommands:
+  - ./gradlew :products:phr:build
+notes:
+  - Consent remains a PHR policy/config concern and is not hardcoded into Kernel lifecycle.

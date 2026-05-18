@@ -16,9 +16,9 @@ Generated from:
 | data-cloud | platform-provider | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, platform-provider-mode-required, requires-bootstrap-platform-separation, requires-runtime-truth-provider | Disabled observed |
 | dcmaar | business-product | disabled-observed | not-declared | disabled | disabled | None | disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition, requires-security-threat-model-gates | Disabled observed |
 | digital-marketing | business-product | execution | stable | enabled | executable | compose-local, gradle-java-service, pnpm-vite-react | execution-ready | Pilot |
-| finance | business-product | shape-only | stable | planned | not-enabled | gradle-java-service | missing-adapter:operator, missing-adapter:portal, missing-adapter:sdk, planned-shape-only, requires-multi-module-build-validation, requires-portal-operator-sdk-adapters, requires-promotion-approval, requires-regulatory-gates | Shape-only |
-| flashit | business-product | shape-only | experimental | planned | not-enabled | gradle-java-service | missing-adapter:mobile, missing-adapter:web, planned-shape-only, requires-mobile-adapters, requires-mobile-bundle-artifacts, requires-personal-data-classification, requires-preview-security-gate | Shape-only |
-| phr | business-product | shape-only | stable | planned | not-enabled | gradle-java-service, pnpm-vite-react | planned-shape-only, requires-audit-evidence, requires-consent-gate, requires-data-sovereignty-gate, requires-fhir-contract-validation, requires-pii-classification | Shape-only |
+| finance | business-product | shape-only | stable | planned | not-enabled | gradle-java-service | missing-adapter:portal, missing-adapter:sdk, planned-shape-only, requires-multi-module-build-validation, requires-portal-operator-sdk-adapters, requires-promotion-approval, requires-regulatory-gates | Shape-only |
+| flashit | business-product | shape-only | experimental | planned | not-enabled | gradle-java-service, pnpm-vite-react | missing-adapter:mobile, planned-shape-only, requires-mobile-adapters, requires-mobile-bundle-artifacts, requires-personal-data-classification, requires-preview-security-gate | Shape-only |
+| phr | business-product | shape-only | stable | planned | not-enabled | gradle-java-service, pnpm-vite-react | consent-gate-active, fhir-r4-pilot-surfaces-validated, healthcare-pilot-planned, pii-classification-active, planned-shape-only | Shape-only |
 | security-gateway | shared-service | disabled-observed | not-declared | disabled | disabled | None | disabled-observed | Disabled observed |
 | software-org | demo/example | disabled-observed | not-declared | disabled | disabled | None | demo-product-not-execution-ready, disabled-observed, requires-lifecycle-profile, requires-product-owner-executable-surface-definition | Disabled observed |
 | tutorputor | business-product | shape-only-with-known-limitations | stable | partial | not-enabled | gradle-java-service, pnpm-vite-react | partial-lifecycle, requires-content-safety-gates, requires-product-owner-executable-surface-definition | Shape-only with limitations |
@@ -30,10 +30,8 @@ Generated from:
 ### finance
 
 - Surface "portal" has no default adapter defined in profile "backend-only-java-service"
-- Surface "operator" has no default adapter defined in profile "backend-only-java-service"
 - Surface "sdk" has no default adapter defined in profile "backend-only-java-service"
 
 ### flashit
 
-- Surface "web" has no default adapter defined in profile "mobile-plus-api-product"
 - Surface "mobile" has no default adapter defined in profile "mobile-plus-api-product"

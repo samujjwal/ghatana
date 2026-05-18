@@ -1,0 +1,79 @@
+schemaVersion: 1.0.0
+productId: finance
+status: planned
+lifecycleExecutionAllowed: false
+truthSource:
+  registry: config/canonical-product-registry.json
+  lifecycleConfig: products/finance/kernel-product.yaml
+  productManifest: products/finance/domain-pack-manifest.yaml
+moduleGraph:
+  root:
+    gradleModule: :products:finance
+    buildFile: products/finance/build.gradle.kts
+    domainDependencyScope: runtimeOnly
+    requiredDomainScopePattern: ':products:finance:domains:*'
+  requiredSurfaceModules:
+    - surface: backend-api
+      gradleModule: :products:finance
+      buildFile: products/finance/build.gradle.kts
+      packaging: jar
+      adapter: gradle-java-service
+    - surface: operator
+      gradleModule: :products:finance:operator-workflows
+      buildFile: products/finance/operator-workflows/build.gradle.kts
+      packaging: jar
+      adapter: gradle-java-service
+    - surface: portal
+      gradleModule: :products:finance:regulator-portal
+      buildFile: products/finance/regulator-portal/build.gradle.kts
+      packaging: jar
+      adapter: gradle-java-service
+    - surface: sdk
+      gradleModule: :products:finance:platform-sdk
+      buildFile: products/finance/platform-sdk/build.gradle.kts
+      packaging: jar
+      adapter: gradle-java-library
+  runtimeOnlyDomainModules:
+    - :products:finance:domains:oms
+    - :products:finance:domains:ems
+    - :products:finance:domains:pms
+    - :products:finance:domains:risk
+    - :products:finance:domains:rules
+    - :products:finance:domains:corporate-actions
+    - :products:finance:domains:market-data
+    - :products:finance:domains:post-trade
+    - :products:finance:domains:pricing
+    - :products:finance:domains:reconciliation
+    - :products:finance:domains:reference-data
+    - :products:finance:domains:regulatory-reporting
+    - :products:finance:domains:sanctions
+    - :products:finance:domains:surveillance
+gatePacks:
+  - gateId: regulatory-compliance
+    path: products/finance/lifecycle/gate-packs/regulatory-compliance.yaml
+    executionMode: declarative-only
+  - gateId: risk-controls
+    path: products/finance/lifecycle/gate-packs/risk-controls.yaml
+    executionMode: declarative-only
+  - gateId: promotion-approval
+    path: products/finance/lifecycle/gate-packs/promotion-approval.yaml
+    executionMode: declarative-only
+  - gateId: multi-module-build
+    path: products/finance/lifecycle/gate-packs/multi-module-build.yaml
+    executionMode: declarative-only
+blockers:
+  - gate:regulatory-compliance
+  - gate:risk-controls
+  - gate:promotion-approval
+  - gate:multi-module-build
+  - adapter-not-execution-ready:gradle-java-library
+  - missing-manifest:lifecycle-plan
+  - missing-manifest:lifecycle-result
+  - missing-manifest:artifact-manifest
+  - missing-manifest:deployment-manifest
+validationCommands:
+  - ./gradlew :products:finance:build
+  - ./gradlew :products:finance:platform-sdk:build
+  - ./gradlew :products:finance:operator-workflows:build
+  - ./gradlew :products:finance:regulator-portal:build
+  - ./gradlew :products:finance:integration-testing:test

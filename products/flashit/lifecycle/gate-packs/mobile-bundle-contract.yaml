@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: flashit
+gateId: mobile-bundle-contract
+title: FlashIt mobile bundle artifact readiness
+executionMode: declarative-only
+owner: FlashIt Team
+status: planned
+description: Product evidence required for IPA/AAB artifact contracts before mobile lifecycle execution.
+requiredEvidenceRefs:
+  - products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml
+  - products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml
+  - products/flashit/client/mobile/package.json
+blockingReasonCodes:
+  - requires-mobile-bundle-artifacts
+  - missing-mobile-bundle-artifacts
+validationCommands:
+  - pnpm --filter ./products/flashit type-check
+notes:
+  - Mobile bundle contracts are not executable until xcode-ios and gradle-android adapters have real commands, outputs, and tests.

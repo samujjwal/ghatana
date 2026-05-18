@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: finance
+gateId: risk-controls
+title: Finance risk controls readiness
+executionMode: declarative-only
+owner: Finance Team
+status: planned
+description: Defines the Finance-specific evidence required before lifecycle execution can validate risk controls.
+requiredEvidenceRefs:
+  - products/finance/src/main/java/com/ghatana/finance/kernel/service/RiskManagementService.java
+  - products/finance/domains/risk/build.gradle.kts
+  - products/finance/domains/oms/src/test/java/com/ghatana/products/finance/domains/oms/service/OrderRiskCheckTest.java
+blockingReasonCodes:
+  - requires-regulatory-gates
+  - missing-risk-controls
+validationCommands:
+  - ./gradlew :products:finance:build
+notes:
+  - This gate pack records required evidence for Finance; executable enforcement remains blocked until Kernel lifecycle adapters are ready.

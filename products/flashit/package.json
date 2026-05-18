@@ -17,7 +17,7 @@
     "dev:web": "pnpm --dir client/web dev -- --port 2901 --host",
     "dev:mobile": "pnpm --dir client/mobile start -- --port 2902",
     "lint": "pnpm --dir client/web lint && pnpm --dir backend/gateway lint",
-    "type-check": "pnpm --dir client/web type-check && pnpm --dir backend/gateway exec tsc --noEmit",
+    "type-check": "pnpm --dir client/web type-check && pnpm --dir backend/gateway type-check",
     "build": "pnpm --dir client/web build && pnpm --dir backend/gateway build",
     "test": "pnpm --dir backend/gateway test && pnpm --dir libs/ts/shared exec vitest run",
     "test:contract": "pnpm --dir backend/gateway exec vitest run src/__tests__/api.integration.test.ts",

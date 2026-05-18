@@ -6,7 +6,8 @@
       "supportedSurfaceTypes": [
         "backend-api",
         "worker",
-        "operator"
+        "operator",
+        "portal"
       ],
       "supportedPhases": [
         "dev",

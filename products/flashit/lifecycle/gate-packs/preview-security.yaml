@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: flashit
+gateId: preview-security
+title: FlashIt preview security readiness
+executionMode: declarative-only
+owner: FlashIt Team
+status: planned
+description: Product evidence required before FlashIt preview/mobile surfaces can participate in lifecycle execution.
+requiredEvidenceRefs:
+  - products/flashit/kernel-product.yaml
+  - products/flashit/client/web/vite.config.ts
+  - products/flashit/backend/gateway/src/services/security.ts
+blockingReasonCodes:
+  - requires-preview-security-gate
+  - missing-preview-security-gate
+validationCommands:
+  - pnpm --filter ./products/flashit/client/web type-check
+notes:
+  - Preview security is declared as product-specific policy/config evidence.

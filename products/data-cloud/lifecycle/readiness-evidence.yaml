@@ -1,0 +1,64 @@
+productId: data-cloud
+productKind: platform-provider
+status: blocked
+lifecycleExecutionAllowed: false
+ordinaryLifecycleProductEnabled: false
+providerMode:
+  requiresPlatformProviderMode: true
+  bootstrapSeparationRequired: true
+  runtimeTruthProviderRequired: true
+  productNeutralityRequired: true
+  actionPlaneGovernanceRequired: true
+bootstrapSeparation:
+  kernelCanBuildWithoutDataCloudBackedProviders: true
+  evidenceRefs:
+    - platform/typescript/kernel-lifecycle/src/providers/LifecycleProviderContext.ts
+    - scripts/check-kernel-provider-mode.mjs
+    - scripts/check-data-cloud-platform-providers.mjs
+runtimeTruthProvider:
+  requiredSignals:
+    - lifecycle-events
+    - artifact-refs
+    - health-snapshots
+    - provenance-refs
+    - tenant-scoping
+  providerRefs:
+    - products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudEventProvider.java
+    - products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudArtifactProvider.java
+    - products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudHealthProvider.java
+    - products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudProvenanceProvider.java
+    - products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudRuntimeTruthProvider.java
+  testRefs:
+    - products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudRuntimeTruthProviderTest.java
+    - products/data-cloud/planes/event/store/src/test/java/com/ghatana/datacloud/storage/KernelLifecycleEventIngestionServiceTest.java
+productNeutrality:
+  coreFallbackCatalogRoots:
+    - platform/agent-catalog
+    - products/data-cloud/planes/action/agent-catalog
+    - products/data-cloud/extensions/agent-catalog
+  prohibitedBusinessProductRoots:
+    - products/digital-marketing
+    - products/finance
+    - products/phr
+    - products/flashit
+  evidenceRefs:
+    - products/data-cloud/planes/action/engine/src/main/java/com/ghatana/aep/catalog/AepCentralCatalogService.java
+    - products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/AepBoundaryTest.java
+actionPlane:
+  governedRuntime: true
+  policyRequired: true
+  identityRequired: true
+  securityRequired: true
+  complianceRequired: true
+  eventBridgeRequired: true
+  evidenceRefs:
+    - products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java
+    - products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/audit/AgentLifecycleActionTraceRecorder.java
+    - products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/orchestrator/executor/AgentExecutionPolicyTest.java
+    - products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/AgentExecutionSecurityIntegrationTest.java
+    - products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/audit/DataCloudAgentTraceLedgerTest.java
+conformance:
+  updateFieldsOnlyWithExecutableProof: true
+  executableProofRefs:
+    - scripts/check-data-cloud-platform-providers.mjs
+    - scripts/check-data-cloud-platform-provider-readiness.mjs

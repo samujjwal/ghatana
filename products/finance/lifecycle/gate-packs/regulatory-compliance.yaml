@@ -1,0 +1,20 @@
+schemaVersion: 1.0.0
+productId: finance
+gateId: regulatory-compliance
+title: Finance regulatory compliance readiness
+executionMode: declarative-only
+owner: Finance Team
+status: planned
+description: Defines the Finance-specific evidence required before lifecycle execution can validate regulatory compliance.
+requiredEvidenceRefs:
+  - products/finance/domain-pack-manifest.yaml
+  - products/finance/policy-packs/trading-boundary-policy.yaml
+  - products/finance/schema-packs/schema-registry.yaml
+  - products/finance/integration-testing/src/main/java/com/ghatana/finance/integration/ComplianceScreeningE2eTestSuiteService.java
+blockingReasonCodes:
+  - requires-regulatory-gates
+  - missing-regulatory-compliance
+validationCommands:
+  - ./gradlew :products:finance:integration-testing:test
+notes:
+  - This gate pack is product-specific metadata only; it does not define a generic gate engine.

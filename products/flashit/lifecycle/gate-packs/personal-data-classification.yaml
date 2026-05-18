@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: flashit
+gateId: personal-data-classification
+title: FlashIt personal data classification readiness
+executionMode: declarative-only
+owner: FlashIt Team
+status: planned
+description: Product evidence required for personal media, biometric, and analytics data classification.
+requiredEvidenceRefs:
+  - products/flashit/client/mobile/src/services/dataUsageTracker.ts
+  - products/flashit/client/mobile/src/services/biometricAuth.ts
+  - products/flashit/backend/gateway/src/services/analytics/meaning-telemetry-service.ts
+blockingReasonCodes:
+  - requires-personal-data-classification
+  - missing-personal-data-classification
+validationCommands:
+  - pnpm --filter ./products/flashit type-check
+notes:
+  - This gate records product-owned data classification evidence only.

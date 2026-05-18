@@ -1,12 +1,14 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-18T18:27:04.981Z",
+  "generated": "2026-05-18T18:59:25.860Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
       "productId": "audio-video",
       "kind": "shared-service",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -25,7 +27,12 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
@@ -49,12 +56,16 @@
         "Add media artifact and retention evidence before enabling lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "aura",
       "kind": "demo/example",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -73,11 +84,18 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
-      "currentEvidenceRefs": ["products/aura/platform/api"],
+      "currentEvidenceRefs": [
+        "products/aura/platform/api"
+      ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
         "manifest:deployment-manifest",
@@ -95,12 +113,18 @@
         "Add recommendation safety and explainability evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "data-cloud",
       "kind": "platform-provider",
-      "surfaces": ["backend-api", "sdk", "web"],
+      "surfaces": [
+        "backend-api",
+        "sdk",
+        "web"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -119,7 +143,12 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [
         "provider-bridge",
         "runtime-truth",
@@ -134,6 +163,7 @@
         "policy-denial-observability"
       ],
       "currentEvidenceRefs": [
+        "products/data-cloud/lifecycle/readiness-evidence.yaml",
         "products/data-cloud/extensions/kernel-bridge",
         "products/data-cloud/planes/action/kernel-bridge"
       ],
@@ -147,19 +177,28 @@
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
+        "missing-manifest:lifecycle-result",
+        "product-owner:missing-bootstrap-platform-separation",
+        "product-owner:missing-platform-provider-health",
+        "product-owner:missing-runtime-truth-provider",
+        "product-owner:platform-providers-required-in-bootstrap"
       ],
       "nextActions": [
         "Declare Data Cloud lifecycle profile only after bootstrap build/deploy remains independent of Data Cloud providers",
         "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "dcmaar",
       "kind": "business-product",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -178,7 +217,12 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
@@ -202,12 +246,17 @@
         "Add threat-model and Guardian policy evidence before enabling lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "digital-marketing",
       "kind": "business-product",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "lifecycleStatus": "enabled",
       "lifecycleExecutionAllowed": true,
       "requiredKernelCapabilities": [
@@ -231,15 +280,24 @@
         "lifecycle-result",
         "static-web-bundle"
       ],
-      "requiredDeploymentTargets": ["compose-local"],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredDeploymentTargets": [
+        "compose-local"
+      ],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [
         "runtime-truth",
         "lifecycle-events",
         "artifact-references",
         "health-snapshots"
       ],
-      "requiredYappcVisibility": ["product-unit-summary-visible"],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
       "requiredAgentRuntimeSupport": [
         "approval-aware-agent-actions",
         "verification-proof-evidence"
@@ -261,7 +319,12 @@
     {
       "productId": "finance",
       "kind": "business-product",
-      "surfaces": ["backend-api", "operator", "portal", "sdk"],
+      "surfaces": [
+        "backend-api",
+        "operator",
+        "portal",
+        "sdk"
+      ],
       "lifecycleStatus": "planned",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -273,29 +336,45 @@
         "gate:promotion-approval",
         "gate:regulatory-compliance",
         "gate:risk-controls",
-        "gate:security"
+        "gate:security",
+        "operator:gradle-java-service"
       ],
-      "requiredToolchainAdapters": ["gradle-java-service"],
+      "requiredToolchainAdapters": [
+        "gradle-java-service"
+      ],
       "requiredArtifactManifests": [
         "artifact-manifest",
         "deployment-manifest",
         "jvm-service",
         "lifecycle-result"
       ],
-      "requiredDeploymentTargets": ["compose-local"],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredDeploymentTargets": [
+        "compose-local"
+      ],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
-      "requiredYappcVisibility": ["product-unit-summary-visible"],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
       "requiredAgentRuntimeSupport": [
         "approval-aware-agent-actions",
         "verification-proof-evidence"
       ],
       "currentEvidenceRefs": [
         "products/finance/kernel-product.yaml",
-        "products/finance/schema-packs/schema-registry.yaml"
+        "products/finance/schema-packs/schema-registry.yaml",
+        "products/finance/lifecycle/readiness-evidence.yaml",
+        "products/finance/lifecycle/gate-packs/regulatory-compliance.yaml",
+        "products/finance/lifecycle/gate-packs/risk-controls.yaml",
+        "products/finance/lifecycle/gate-packs/promotion-approval.yaml",
+        "products/finance/lifecycle/gate-packs/multi-module-build.yaml"
       ],
       "missingEvidenceRefs": [
-        "capability:missing-adapter:operator",
         "capability:missing-adapter:portal",
         "capability:missing-adapter:sdk",
         "manifest:artifact-manifest",
@@ -304,25 +383,35 @@
         "manifest:lifecycle-result"
       ],
       "blockers": [
-        "missing-adapter:operator",
         "missing-adapter:portal",
         "missing-adapter:sdk",
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
+        "missing-manifest:lifecycle-result",
+        "product-owner:missing-multi-module-build-validation",
+        "product-owner:missing-portal-operator-sdk-adapters",
+        "product-owner:missing-promotion-approval",
+        "product-owner:missing-regulatory-compliance",
+        "product-owner:missing-risk-controls"
       ],
       "nextActions": [
         "Validate the Finance multi-module Gradle graph before lifecycle execution",
         "Add portal, operator, and SDK adapter readiness only after executable adapters exist",
         "Keep shape-only until required adapters and manifests are executable"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "flashit",
       "kind": "business-product",
-      "surfaces": ["backend-api", "mobile", "web"],
+      "surfaces": [
+        "backend-api",
+        "mobile",
+        "web"
+      ],
       "lifecycleStatus": "planned",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -333,9 +422,13 @@
         "gate:personal-data-classification",
         "gate:preview-security",
         "gate:privacy",
-        "gate:security"
+        "gate:security",
+        "web:pnpm-vite-react"
       ],
-      "requiredToolchainAdapters": ["gradle-java-service"],
+      "requiredToolchainAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "requiredArtifactManifests": [
         "artifact-manifest",
         "deployment-manifest",
@@ -343,18 +436,35 @@
         "lifecycle-result",
         "mobile-bundle"
       ],
-      "requiredDeploymentTargets": ["compose-local"],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredDeploymentTargets": [
+        "compose-local"
+      ],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
-      "requiredYappcVisibility": ["product-unit-summary-visible"],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
       "requiredAgentRuntimeSupport": [
         "approval-aware-agent-actions",
         "verification-proof-evidence"
       ],
-      "currentEvidenceRefs": ["products/flashit/kernel-product.yaml"],
+      "currentEvidenceRefs": [
+        "products/flashit/kernel-product.yaml",
+        "products/flashit/lifecycle/readiness-evidence.yaml",
+        "products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml",
+        "products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml",
+        "products/flashit/lifecycle/gate-packs/privacy.yaml",
+        "products/flashit/lifecycle/gate-packs/preview-security.yaml",
+        "products/flashit/lifecycle/gate-packs/personal-data-classification.yaml",
+        "products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml"
+      ],
       "missingEvidenceRefs": [
         "capability:missing-adapter:mobile",
-        "capability:missing-adapter:web",
         "manifest:artifact-manifest",
         "manifest:deployment-manifest",
         "manifest:lifecycle-plan",
@@ -363,26 +473,36 @@
         "manifest:mobile-ipa-artifact-manifest"
       ],
       "blockers": [
+        "gate:missing-preview-security-gate",
         "missing-adapter:mobile",
-        "missing-adapter:web",
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
         "missing-manifest:lifecycle-result",
         "missing-manifest:mobile-aab-artifact-manifest",
-        "missing-manifest:mobile-ipa-artifact-manifest"
+        "missing-manifest:mobile-ipa-artifact-manifest",
+        "product-owner:missing-aab-artifact-manifest",
+        "product-owner:missing-ipa-artifact-manifest",
+        "product-owner:missing-mobile-adapters",
+        "product-owner:missing-mobile-bundle-artifacts",
+        "product-owner:missing-personal-data-classification"
       ],
       "nextActions": [
         "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
         "Add ipa/aab artifact contracts before enabling mobile bundle execution",
         "Keep shape-only until required adapters and manifests are executable"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "phr",
       "kind": "business-product",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "lifecycleStatus": "planned",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -398,7 +518,10 @@
         "gate:tenant-data-sovereignty",
         "web:pnpm-vite-react"
       ],
-      "requiredToolchainAdapters": ["gradle-java-service", "pnpm-vite-react"],
+      "requiredToolchainAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "requiredArtifactManifests": [
         "artifact-manifest",
         "deployment-manifest",
@@ -406,7 +529,9 @@
         "lifecycle-result",
         "static-web-bundle"
       ],
-      "requiredDeploymentTargets": ["compose-local"],
+      "requiredDeploymentTargets": [
+        "compose-local"
+      ],
       "requiredSecurityPrivacyGates": [
         "a11y",
         "audit-evidence",
@@ -418,14 +543,22 @@
         "tenant-data-sovereignty"
       ],
       "requiredDataCloudSupport": [],
-      "requiredYappcVisibility": ["product-unit-summary-visible"],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
       "requiredAgentRuntimeSupport": [
         "approval-aware-agent-actions",
         "verification-proof-evidence"
       ],
       "currentEvidenceRefs": [
         "products/phr/kernel-product.yaml",
-        "products/phr/schema-packs/schema-registry.yaml"
+        "products/phr/schema-packs/schema-registry.yaml",
+        "products/phr/lifecycle/readiness-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/consent.yaml",
+        "products/phr/lifecycle/gate-packs/pii-classification.yaml",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
@@ -434,22 +567,31 @@
         "manifest:lifecycle-result"
       ],
       "blockers": [
+        "gate:missing-consent-gate",
+        "gate:missing-data-sovereignty-gate",
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
+        "missing-manifest:lifecycle-result",
+        "product-owner:missing-audit-evidence",
+        "product-owner:missing-fhir-contract-validation",
+        "product-owner:missing-pii-classification"
       ],
       "nextActions": [
-        "Validate PHR backend-api and web adapters against healthcare gates before enabling lifecycle execution",
-        "Produce FHIR contract and tenant/data sovereignty evidence in product-local lifecycle manifests",
+        "Keep PHR lifecycle execution disabled until regulated healthcare gates are executable",
+        "Validate healthcare-specific gate-packs against real FHIR evidence as features mature",
         "Keep shape-only until required adapters and manifests are executable"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "security-gateway",
       "kind": "shared-service",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -465,7 +607,12 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
@@ -485,12 +632,16 @@
       "nextActions": [
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "software-org",
       "kind": "demo/example",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -509,11 +660,18 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
-      "currentEvidenceRefs": ["products/software-org"],
+      "currentEvidenceRefs": [
+        "products/software-org"
+      ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
         "manifest:deployment-manifest",
@@ -531,12 +689,17 @@
         "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "tutorputor",
       "kind": "business-product",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "lifecycleStatus": "partial",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -550,7 +713,10 @@
         "gate:security",
         "web:pnpm-vite-react"
       ],
-      "requiredToolchainAdapters": ["gradle-java-service", "pnpm-vite-react"],
+      "requiredToolchainAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "requiredArtifactManifests": [
         "artifact-manifest",
         "deployment-manifest",
@@ -558,12 +724,21 @@
         "lifecycle-result",
         "static-web-bundle"
       ],
-      "requiredDeploymentTargets": ["compose-local"],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredDeploymentTargets": [
+        "compose-local"
+      ],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
-      "currentEvidenceRefs": ["products/tutorputor/kernel-product.yaml"],
+      "currentEvidenceRefs": [
+        "products/tutorputor/kernel-product.yaml"
+      ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
         "manifest:deployment-manifest",
@@ -581,12 +756,16 @@
         "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "virtual-org",
       "kind": "demo/example",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -605,11 +784,18 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "requiredDataCloudSupport": [],
       "requiredYappcVisibility": [],
       "requiredAgentRuntimeSupport": [],
-      "currentEvidenceRefs": ["products/virtual-org"],
+      "currentEvidenceRefs": [
+        "products/virtual-org"
+      ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
         "manifest:deployment-manifest",
@@ -627,12 +813,17 @@
         "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     },
     {
       "productId": "yappc",
       "kind": "platform-provider",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "lifecycleStatus": "disabled",
       "lifecycleExecutionAllowed": false,
       "requiredKernelCapabilities": [
@@ -651,8 +842,15 @@
         "lifecycle-result"
       ],
       "requiredDeploymentTargets": [],
-      "requiredSecurityPrivacyGates": ["a11y", "i18n", "privacy", "security"],
-      "requiredDataCloudSupport": ["provider-bridge-validation"],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredDataCloudSupport": [
+        "provider-bridge-validation"
+      ],
       "requiredYappcVisibility": [
         "product-unit-intent-export",
         "artifact-intelligence-contracts",
@@ -660,6 +858,7 @@
       ],
       "requiredAgentRuntimeSupport": [],
       "currentEvidenceRefs": [
+        "products/yappc/lifecycle/readiness-evidence.yaml",
         "products/yappc/kernel-bridge",
         "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
       ],
@@ -673,14 +872,20 @@
         "missing-manifest:artifact-manifest",
         "missing-manifest:deployment-manifest",
         "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
+        "missing-manifest:lifecycle-result",
+        "product-owner:artifact-intelligence-contracts-not-ready",
+        "product-owner:creator-kernel-lifecycle-not-separated",
+        "product-owner:missing-artifact-intelligence-boundary",
+        "product-owner:missing-product-unit-intent-export"
       ],
       "nextActions": [
         "Add a YAPPC lifecycle manifest only after creator lifecycle remains separate from Kernel product lifecycle",
         "Keep Kernel consumption limited to ProductUnitIntent and artifact-intelligence evidence contracts",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
-      "validationCommands": ["pnpm check:product-shape-capability-matrix"]
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
     }
   ]
 }

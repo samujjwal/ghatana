@@ -1,0 +1,19 @@
+schemaVersion: 1.0.0
+productId: flashit
+artifactId: flashit-mobile-android-aab
+surface: mobile-android
+artifactType: mobile-bundle
+packaging: aab
+status: contract-only
+adapter: gradle-android
+requiredOutputs:
+  - android-aab
+  - test-report
+evidenceRefs:
+  - products/flashit/client/mobile/package.json
+  - products/flashit/client/mobile/android/build.gradle.kts
+blockingReasonCodes:
+  - requires-mobile-bundle-artifacts
+  - missing-aab-artifact-manifest
+notes:
+  - Contract is declared, but gradle-android is not execution-ready or safe by default.

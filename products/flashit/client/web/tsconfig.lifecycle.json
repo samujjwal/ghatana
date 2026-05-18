@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": [],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"],
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@flashit/shared": ["../../libs/ts/shared/src/index.ts"],
+      "@flashit/shared-contracts": ["../../libs/ts/shared/src/contracts/routes.ts"]
+    }
+  },
+  "include": [
+    "src/lifecycle-readiness-entry.tsx",
+    "src/routeAccess.ts",
+    "src/__tests__/route-access.test.ts",
+    "../../libs/ts/shared/src/contracts/routes.ts"
+  ],
+  "references": []
+}

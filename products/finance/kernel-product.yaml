@@ -22,6 +22,12 @@ readiness:
   nextRequiredWork:
     - Validate the multi-module Gradle graph before enabling lifecycle execution.
     - Add operator, portal, and SDK adapter evidence only after those surfaces are executable.
+  evidenceRefs:
+    - products/finance/lifecycle/readiness-evidence.yaml
+    - products/finance/lifecycle/gate-packs/regulatory-compliance.yaml
+    - products/finance/lifecycle/gate-packs/risk-controls.yaml
+    - products/finance/lifecycle/gate-packs/promotion-approval.yaml
+    - products/finance/lifecycle/gate-packs/multi-module-build.yaml
 
 surfaces:
   backend-api:
@@ -39,18 +45,23 @@ surfaces:
     runtime: java-service
     adapter: gradle-java-service
     gradleModule: :products:finance:operator-workflows
+  portal:
+    source: products/finance/regulator-portal
+    runtime: java-service
+    adapter: gradle-java-service
+    gradleModule: :products:finance:regulator-portal
   sdk:
     source: products/finance/platform-sdk
     runtime: java-library
-    adapter: gradle-java-service
+    adapter: gradle-java-library
     gradleModule: :products:finance:platform-sdk
 
 phases:
   dev:
-    defaultSurfaces: [backend-api, worker, operator]
+    defaultSurfaces: [backend-api, worker, operator, portal]
     mode: parallel
   build:
-    defaultSurfaces: [backend-api, worker, operator, sdk]
+    defaultSurfaces: [backend-api, worker, operator, portal, sdk]
     mode: parallel
 
 gates:
@@ -59,3 +70,8 @@ gates:
     - risk-controls
     - promotion-approval
     - multi-module-build
+  gatePacks:
+    regulatory-compliance: products/finance/lifecycle/gate-packs/regulatory-compliance.yaml
+    risk-controls: products/finance/lifecycle/gate-packs/risk-controls.yaml
+    promotion-approval: products/finance/lifecycle/gate-packs/promotion-approval.yaml
+    multi-module-build: products/finance/lifecycle/gate-packs/multi-module-build.yaml

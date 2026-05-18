@@ -86,7 +86,9 @@ function analyzeProduct(productId, product, profiles, adapters) {
       continue;
     }
     const surfaceType = surface.type;
-    const adapterKey = profile?.defaultAdapters?.[surfaceType];
+    const adapterKey = product.lifecycle?.toolchain?.[surfaceType] ??
+      product.toolchain?.adapters?.[surfaceType] ??
+      profile?.defaultAdapters?.[surfaceType];
     const adapter = adapterKey ? adapters[adapterKey] : null;
 
     if (!adapterKey && lifecycleStatus !== 'disabled') {
@@ -481,6 +483,7 @@ function generatePhase5Matrix(registry, matrix) {
     const blockers = normalizeBlockers([
       ...row.blockingGaps,
       ...asStringArray(lifecycleReadiness.blockers),
+      ...asStringArray(lifecycleReadiness.blockerGateAdapterMatrix?.blockers),
     ]);
 
     return {

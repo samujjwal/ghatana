@@ -27,6 +27,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,scss}\"",
     "typecheck": "tsc --noEmit",
+    "type-check": "pnpm typecheck",
     "typecheck:build": "tsc -b tsconfig.refs.json",
     "check:namespaces": "node ./scripts/check-namespace-consistency.js",
     "check:auth-policy": "node ./scripts/check-auth-policy.js",

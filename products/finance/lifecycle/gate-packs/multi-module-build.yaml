@@ -1,0 +1,25 @@
+schemaVersion: 1.0.0
+productId: finance
+gateId: multi-module-build
+title: Finance multi-module build readiness
+executionMode: declarative-only
+owner: Finance Team
+status: planned
+description: Defines the Finance module graph evidence required before lifecycle execution may build Finance as a product unit.
+requiredEvidenceRefs:
+  - products/finance/build.gradle.kts
+  - products/finance/platform-sdk/build.gradle.kts
+  - products/finance/operator-workflows/build.gradle.kts
+  - products/finance/regulator-portal/build.gradle.kts
+  - products/finance/integration-testing/build.gradle.kts
+blockingReasonCodes:
+  - requires-multi-module-build-validation
+  - missing-multi-module-build-validation
+validationCommands:
+  - ./gradlew :products:finance:build
+  - ./gradlew :products:finance:platform-sdk:build
+  - ./gradlew :products:finance:operator-workflows:build
+  - ./gradlew :products:finance:regulator-portal:build
+  - ./gradlew :products:finance:integration-testing:test
+notes:
+  - Root-to-domain composition must remain runtimeOnly so Finance stays a product composition boundary.

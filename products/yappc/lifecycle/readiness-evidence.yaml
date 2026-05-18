@@ -1,0 +1,58 @@
+schemaVersion: 1.0.0
+productId: yappc
+status: blocked
+lifecycleExecutionAllowed: false
+truthSource:
+  registry: config/canonical-product-registry.json
+  publicContracts: platform/typescript/kernel-product-contracts/src
+providerMode:
+  productKind: platform-provider
+  creatorLifecycleDistinctFromKernelLifecycle: true
+  kernelConsumesReferencesOnly: true
+contracts:
+  productUnitIntentExporter:
+    implementationRefs:
+      - products/yappc/core/scaffold/api/src/main/java/com/ghatana/yappc/kernel/ProductUnitIntentExporter.java
+      - products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/kernel/ProductUnitIntentExporterTest.java
+      - products/yappc/core/scaffold/api/src/test/java/com/ghatana/yappc/kernel/ProductUnitIntentValidationServiceTest.java
+  artifactIntelligence:
+    publicContractRef: platform/typescript/kernel-product-contracts/src/artifact-intelligence/ArtifactIntelligence.ts
+    requiredEvidenceTypes:
+      - ArtifactGraphSummary
+      - ProductShapeEvidence
+      - DependencyGraphEvidence
+      - ResidualIslandReport
+      - RiskHotspotReport
+      - GeneratedChangeSetSummary
+    providerRefs:
+      - products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcArtifactGraphSummaryProvider.java
+      - products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcProductUnitIntentProvider.java
+      - products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcResidualIslandReportProvider.java
+      - products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcRiskHotspotReportProvider.java
+      - products/yappc/kernel-bridge/src/main/java/com/ghatana/yappc/kernel/YappcSemanticArtifactEvidenceProvider.java
+  dataCloudPublication:
+    mode: public-provider-contracts-only
+    evidenceRefs:
+      - products/yappc/infrastructure/datacloud/README.md
+      - products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java
+      - products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java
+  visualization:
+    publicTruthOnly: true
+    evidenceRefs:
+      - products/yappc/frontend/web/src/components/canvas/page/PageDesigner.tsx
+      - products/yappc/frontend/web/src/services/canvas/commands/ProductUnitIntentExportService.ts
+guardrails:
+  - id: no-canonical-registry-mutation
+    description: YAPPC tooling may read product shape/registry state but must not write canonical registry or generated Gradle includes.
+  - id: creator-kernel-lifecycle-vocabulary
+    description: Creator lifecycle vocabulary must remain distinct from Kernel Product Lifecycle vocabulary.
+  - id: references-only-artifact-intelligence
+    description: YAPPC artifact intelligence emits evidence references and summaries; Kernel owns lifecycle execution.
+validationCommands:
+  - ./gradlew :products:yappc:core:yappc-services:test
+  - ./gradlew :products:yappc:core:yappc-api:test
+  - ./gradlew :products:yappc:kernel-bridge:test
+  - pnpm --filter ./products/yappc/frontend type-check
+  - pnpm --filter ./products/yappc/frontend test
+  - pnpm --filter ./products/yappc/frontend/web type-check
+  - pnpm --filter ./products/yappc/frontend/web test

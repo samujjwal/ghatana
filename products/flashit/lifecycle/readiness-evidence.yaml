@@ -1,0 +1,66 @@
+schemaVersion: 1.0.0
+productId: flashit
+status: planned
+lifecycleExecutionAllowed: false
+truthSource:
+  registry: config/canonical-product-registry.json
+  lifecycleConfig: products/flashit/kernel-product.yaml
+  productManifest: products/flashit/domain-pack-manifest.yaml
+workspaceGraph:
+  rootPackage: products/flashit/package.json
+  requiredPackages:
+    - package: root
+      packagePath: products/flashit/package.json
+      requiredScripts: [type-check, test]
+    - package: web
+      packagePath: products/flashit/client/web/package.json
+      requiredScripts: [type-check, test, build]
+    - package: backend-gateway
+      packagePath: products/flashit/backend/gateway/package.json
+      requiredScripts: [type-check, test]
+    - package: shared-ts
+      packagePath: products/flashit/libs/ts/shared/package.json
+      requiredScripts: [test]
+mobileWorkspace:
+  source: products/flashit/client/mobile
+  ios:
+    adapter: xcode-ios
+    readiness: declared-only
+    safeForDefault: false
+    artifactManifest: products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml
+  android:
+    adapter: gradle-android
+    readiness: declared-only
+    safeForDefault: false
+    artifactManifest: products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml
+gatePacks:
+  - gateId: privacy
+    path: products/flashit/lifecycle/gate-packs/privacy.yaml
+    executionMode: declarative-only
+  - gateId: preview-security
+    path: products/flashit/lifecycle/gate-packs/preview-security.yaml
+    executionMode: declarative-only
+  - gateId: personal-data-classification
+    path: products/flashit/lifecycle/gate-packs/personal-data-classification.yaml
+    executionMode: declarative-only
+  - gateId: mobile-bundle-contract
+    path: products/flashit/lifecycle/gate-packs/mobile-bundle-contract.yaml
+    executionMode: declarative-only
+blockers:
+  - adapter-not-execution-ready:xcode-ios
+  - adapter-not-execution-ready:gradle-android
+  - gate:preview-security
+  - gate:personal-data-classification
+  - gate:mobile-bundle-contract
+  - missing-manifest:lifecycle-plan
+  - missing-manifest:lifecycle-result
+  - missing-manifest:artifact-manifest
+  - missing-manifest:deployment-manifest
+validationCommands:
+  - pnpm --filter ./products/flashit type-check
+  - pnpm --filter ./products/flashit test
+  - pnpm --filter ./products/flashit/client/web type-check
+  - pnpm --filter ./products/flashit/client/web test
+  - pnpm --filter ./products/flashit/client/web build
+  - pnpm --filter ./products/flashit/backend/gateway type-check
+  - pnpm --filter ./products/flashit/backend/gateway test

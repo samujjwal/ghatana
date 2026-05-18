@@ -10,6 +10,7 @@
     "postinstall": "pnpm run db:generate",
     "dev": "pnpm run db:generate && tsx watch src/server.ts",
     "build": "tsc --project tsconfig.json",
+    "type-check": "tsc --noEmit --project tsconfig.lifecycle.json",
     "start": "node dist/server.js",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "test": "vitest run src/lib/__tests__/auth.test.ts src/lib/__tests__/data-access-context.test.ts src/services/__tests__/ai-disabled-mode.test.ts",
