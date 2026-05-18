@@ -45,7 +45,7 @@
     "@ghatana/ds-registry": "workspace:*",
     "@ghatana/primitives": "workspace:*",
     "zod": "^4.3.6",
-    "nanoid": "^5.1.7",
+    "nanoid": "^5.1.11",
     "immer": "^10.1.1"
   },
   "devDependencies": {
