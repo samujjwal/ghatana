@@ -66,7 +66,9 @@ public final class PhrTestInfrastructure {
                 if (dependency != null) {
                     return (T) dependency;
                 }
-                if (DataCloudKernelAdapter.class.isAssignableFrom(type)) return (T) dataCloud;
+                if (DataCloudKernelAdapter.class.isAssignableFrom(type)) {
+                    return (T) dataCloud;
+                }
                 return null;
             }
 
@@ -177,7 +179,9 @@ public final class PhrTestInfrastructure {
         @Override
         public Promise<DataResult> readData(DataReadRequest request) {
             StoredEntry entry = store.get(storeKey(request.getDatasetId(), request.getRecordId()));
-            if (entry == null) return Promise.of(null);
+            if (entry == null) {
+                return Promise.of(null);
+            }
             return Promise.of(new DataResult(
                     request.getRecordId(), entry.data(), Map.of(), System.currentTimeMillis()));
         }

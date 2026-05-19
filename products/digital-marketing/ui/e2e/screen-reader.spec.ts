@@ -30,10 +30,10 @@ test.describe('Screen Reader Labels @a11y', () => {
     await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/strategy`);
 
     // Check that inputs have labels
-    const serviceAreaInput = page.locator('[data-testid="strategy-service-area-input"]');
-    await expect(serviceAreaInput).toBeVisible();
+    const objectiveInput = page.locator('[data-testid="strategy-objective-input"]');
+    await expect(objectiveInput).toBeVisible();
 
-    await expect(page.getByLabel('Service Area')).toBeVisible();
+    await expect(page.getByLabel('Business Objective')).toBeVisible();
   });
 
   test('buttons have accessible names', async ({ page }) => {

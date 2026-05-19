@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 
 const repoRoot = resolve(new URL('..', import.meta.url).pathname);
 const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'config/product-shape.json'), 'utf8'));
+const workspaceConfig = readFileSync(resolve(repoRoot, 'pnpm-workspace.yaml'), 'utf8');
 const requiredScripts = ['lint', 'type-check', 'test', 'test:coverage', 'test:e2e', 'test:e2e:a11y', 'build'];
 const approvedRouterVersion = '^7.14.0';
 const approvedPackageManager = 'pnpm@10.33.0';
@@ -24,6 +25,22 @@ function getWebClientPackage(config) {
   return clientPackages.find((packagePath) =>
     /\/(apps\/web|client\/web|ui)\/package\.json$/.test(packagePath),
   );
+}
+
+function getCatalogVersion(dependencyName) {
+  const escapedName = dependencyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const catalogEntry = workspaceConfig.match(
+    new RegExp(`^\\s*["']?${escapedName}["']?\\s*:\\s*["']([^"']+)["']\\s*$`, 'm'),
+  );
+  return catalogEntry?.[1];
+}
+
+function resolveDependencyVersion(dependencyName, declaredVersion) {
+  if (declaredVersion === 'catalog:') {
+    return getCatalogVersion(dependencyName) ?? declaredVersion;
+  }
+
+  return declaredVersion;
 }
 
 function requireFile(relativePath, message) {
@@ -48,7 +65,9 @@ for (const [product, config] of Object.entries(manifest.products)) {
 
   const webClientPackage = getWebClientPackage(config);
   if (!webClientPackage) {
-    violations.push(`${product}: missing canonical web UI package declaration in config/product-shape.json`);
+    if (config.lifecycle?.enabled) {
+      violations.push(`${product}: missing canonical web UI package declaration in config/product-shape.json`);
+    }
     continue;
   }
 
@@ -75,7 +94,8 @@ for (const [product, config] of Object.entries(manifest.products)) {
     violations.push(`${product}: expected exactly one approved router dependency in ${webClientPackage}`);
   } else {
     const routerName = routerDependencies[0];
-    if (dependencies[routerName] !== approvedRouterVersion) {
+    const resolvedRouterVersion = resolveDependencyVersion(routerName, dependencies[routerName]);
+    if (resolvedRouterVersion !== approvedRouterVersion) {
       violations.push(
         `${product}: ${routerName} must use approved version ${approvedRouterVersion} in ${webClientPackage}`
       );

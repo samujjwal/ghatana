@@ -409,7 +409,9 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         @Override
         public Promise<DataResult> readData(DataReadRequest request) {
             byte[] data = store.get(request.getDatasetId() + ":" + request.getRecordId());
-            if (data == null) return Promise.of(null);
+            if (data == null) {
+                return Promise.of(null);
+            }
             return Promise.of(new DataResult(request.getRecordId(), data, Map.of(), System.currentTimeMillis()));
         }
 

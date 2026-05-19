@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -15,13 +16,62 @@ const REQUIRED_HEALTHCARE_GATES = [
   'fhir-contract-validation',
   'tenant-data-sovereignty',
 ];
+const REQUIRED_GATE_PHASES = {
+  consent: ['validate', 'build', 'deploy'],
+  'pii-classification': ['validate', 'build'],
+  'audit-evidence': ['validate', 'build'],
+  'fhir-contract-validation': ['validate', 'build'],
+  'tenant-data-sovereignty': ['validate', 'build', 'deploy'],
+};
 const REQUIRED_MANIFEST_PHASES = ['build', 'package', 'deploy', 'verify'];
+const REQUIRED_EVIDENCE_CATEGORIES = [
+  'baseline',
+  'plan',
+  'validate',
+  'test',
+  'build',
+  'package',
+  'deploy',
+  'verify',
+  'rollback',
+  'gate-results',
+  'health',
+  'approvals',
+  'provenance',
+  'product-domain-correctness',
+];
+const REQUIRED_PHASE_EVIDENCE_FIELDS = [
+  'runId',
+  'correlationId',
+  'productUnitId',
+  'phase',
+  'providerMode',
+  'status',
+  'startedAt',
+  'completedAt',
+  'durationMs',
+  'evidenceRefs',
+];
+const REQUIRED_ROLLBACK_ENABLEMENT_ITEMS = [
+  'stable-deployment-manifest-history',
+  'previous-artifact-selection-policy',
+  'healthcare-post-rollback-verification-gates',
+  'rollback-approval-contract',
+];
 const REQUIRED_MANIFEST_SCHEMA_VERSIONS = [
   'lifecycle-result',
   'artifact-manifest',
   'lifecycle-health-snapshot',
   'deployment-manifest',
   'verify-health-report',
+];
+const SMOKE_PHASES = [
+  { phase: 'validate', args: ['product', 'validate', PRODUCT_ID, '--dry-run', '--json'] },
+  { phase: 'test', args: ['product', 'test', PRODUCT_ID, '--dry-run', '--json'] },
+  { phase: 'build', args: ['product', 'build', PRODUCT_ID, '--dry-run', '--json'] },
+  { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
+  { phase: 'deploy', args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
+  { phase: 'verify', args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
 ];
 const KERNEL_ROOTS = [
   'platform-kernel',
@@ -78,6 +128,25 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function parseArgs(argv) {
+  return {
+    smoke: argv.includes('--smoke'),
+    evidencePackDir: readFlagValue(argv, '--evidence-pack-dir'),
+  };
+}
+
+function readFlagValue(argv, flagName) {
+  const flagIndex = argv.indexOf(flagName);
+  if (flagIndex === -1) {
+    return undefined;
+  }
+  const value = argv[flagIndex + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`Missing value for option ${flagName}`);
+  }
+  return value;
+}
+
 function includesAll(label, actual, expected, errors) {
   const actualSet = new Set(asArray(actual));
   for (const item of expected) {
@@ -85,6 +154,58 @@ function includesAll(label, actual, expected, errors) {
       errors.push(`${label} missing required entry: ${item}`);
     }
   }
+}
+
+function requireNonEmptyString(label, value, errors) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    errors.push(`${label} must be a non-empty string`);
+  }
+}
+
+function validateGatePackShape(gatePath, gateId, gatePack, errors) {
+  if (gatePack.productId !== PRODUCT_ID || gatePack.gateId !== gateId) {
+    errors.push(`${gatePath} must declare productId: phr and gateId: ${gateId}`);
+  }
+  requireNonEmptyString(`${gatePath}.schemaVersion`, gatePack.schemaVersion, errors);
+  requireNonEmptyString(`${gatePath}.owner`, gatePack.owner, errors);
+  requireNonEmptyString(`${gatePath}.title`, gatePack.title, errors);
+  requireNonEmptyString(`${gatePath}.description`, gatePack.description, errors);
+  requireNonEmptyString(`${gatePath}.executionMode`, gatePack.executionMode, errors);
+  if (gatePack.executionMode !== 'evidence-backed') {
+    errors.push(`${gatePath}.executionMode must be evidence-backed`);
+  }
+  if (!Array.isArray(gatePack.requiredEvidenceRefs) || gatePack.requiredEvidenceRefs.length === 0) {
+    errors.push(`${gatePath} must declare requiredEvidenceRefs`);
+  }
+  if (!Array.isArray(gatePack.blockingReasonCodes) || gatePack.blockingReasonCodes.length < 2) {
+    errors.push(`${gatePath} must declare pass/fail blockingReasonCodes`);
+  }
+  if (!Array.isArray(gatePack.validationCommands) || gatePack.validationCommands.length === 0) {
+    errors.push(`${gatePath} must declare validationCommands`);
+  }
+  includesAll(`${gatePath} lifecyclePhases`, gatePack.lifecyclePhases, REQUIRED_GATE_PHASES[gateId] ?? [], errors);
+}
+
+function validateRollbackReadiness(label, rollbackReadiness, errors) {
+  if (!rollbackReadiness || typeof rollbackReadiness !== 'object') {
+    errors.push(`${label} must classify PHR rollback readiness while rollback is absent`);
+    return;
+  }
+  if (rollbackReadiness.status !== 'target-partial') {
+    errors.push(`${label}.status must be target-partial`);
+  }
+  if (rollbackReadiness.classification !== 'target/partial') {
+    errors.push(`${label}.classification must be target/partial`);
+  }
+  if (rollbackReadiness.reasonCode !== 'phr-rollback-after-stable-deploy-verify') {
+    errors.push(`${label}.reasonCode must be phr-rollback-after-stable-deploy-verify`);
+  }
+  includesAll(
+    `${label}.requiredBeforeEnablement`,
+    rollbackReadiness.requiredBeforeEnablement,
+    REQUIRED_ROLLBACK_ENABLEMENT_ITEMS,
+    errors,
+  );
 }
 
 function checkUnsafeSecretDefaults(envExampleContent) {
@@ -102,6 +223,150 @@ function checkUnsafeSecretDefaults(envExampleContent) {
     }
   }
   return violations;
+}
+
+function runKernelProduct(args) {
+  const output = execFileSync(
+    process.execPath,
+    [path.join(repoRoot, 'scripts', 'kernel-product.mjs'), ...args],
+    { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
+  );
+  return parseKernelJsonOutput(output);
+}
+
+function parseKernelJsonOutput(output) {
+  const trimmed = output.trim();
+  const markerIndex = trimmed.indexOf('{\n  "plan":');
+  const jsonStartIndex = markerIndex >= 0 ? markerIndex : trimmed.lastIndexOf('{');
+  if (jsonStartIndex === -1) {
+    throw new Error(`Kernel output does not contain JSON payload: ${trimmed.slice(0, 200)}`);
+  }
+  return JSON.parse(trimmed.slice(jsonStartIndex));
+}
+
+function runLifecycleSmoke() {
+  const errors = [];
+  const phases = [];
+
+  for (const smokePhase of SMOKE_PHASES) {
+    try {
+      const payload = runKernelProduct(smokePhase.args);
+      if (payload?.result?.status !== 'skipped') {
+        errors.push(`PHR lifecycle smoke phase "${smokePhase.phase}" must dry-run to skipped status, got "${payload?.result?.status}"`);
+      }
+      if (!payload?.plan?.runId || !payload?.plan?.correlationId) {
+        errors.push(`PHR lifecycle smoke phase "${smokePhase.phase}" missing runId or correlationId`);
+      }
+      if (!payload?.result?.eventsRef || !payload?.result?.healthSnapshotRef) {
+        errors.push(`PHR lifecycle smoke phase "${smokePhase.phase}" missing eventsRef or healthSnapshotRef`);
+      }
+      phases.push(buildSmokePhaseEvidence(smokePhase.phase, payload, 'ok'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      errors.push(`PHR lifecycle smoke failed for phase "${smokePhase.phase}": ${message}`);
+      phases.push({
+        phase: smokePhase.phase,
+        status: 'failed',
+        error: message,
+      });
+    }
+  }
+
+  return { errors, phases };
+}
+
+function buildSmokePhaseEvidence(phase, payload, status) {
+  const result = payload?.result ?? {};
+  const plan = payload?.plan ?? {};
+  const manifests = payload?.manifests ?? {};
+  const startedAt = result.startedAt ?? new Date().toISOString();
+  const completedAt = result.completedAt ?? startedAt;
+
+  return {
+    phase,
+    status,
+    runId: plan.runId ?? result.runId,
+    correlationId: plan.correlationId ?? result.correlationId,
+    productUnitId: plan.productUnitId ?? result.productUnitId ?? result.productId ?? PRODUCT_ID,
+    providerMode: plan.providerMode ?? result.providerMode,
+    startedAt,
+    completedAt,
+    durationMs: typeof result.durationMs === 'number'
+      ? result.durationMs
+      : Math.max(0, Date.parse(completedAt) - Date.parse(startedAt)),
+    evidenceRefs: collectEvidenceRefs(result, manifests),
+    manifests,
+  };
+}
+
+function collectEvidenceRefs(result, manifests) {
+  const refs = new Set();
+  for (const value of Object.values(manifests ?? {})) {
+    if (typeof value === 'string' && value.trim().length > 0 && value.endsWith('.json')) {
+      refs.add(value);
+    }
+  }
+  for (const value of [result?.eventsRef, result?.healthSnapshotRef]) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      refs.add(value);
+    }
+  }
+  return [...refs].sort();
+}
+
+export function validateEvidencePackShape(productId, evidence) {
+  const errors = [];
+
+  if (evidence?.schemaVersion !== '1.0.0') {
+    errors.push(`${productId} evidence pack schemaVersion must be 1.0.0`);
+  }
+  includesAll(`${productId} evidence categories`, evidence?.evidenceCategories, REQUIRED_EVIDENCE_CATEGORIES, errors);
+
+  for (const [index, phaseEvidence] of asArray(evidence?.checks?.smokePhases).entries()) {
+    for (const field of REQUIRED_PHASE_EVIDENCE_FIELDS) {
+      if (phaseEvidence?.[field] === undefined || phaseEvidence?.[field] === null || phaseEvidence?.[field] === '') {
+        errors.push(`${productId} smokePhases[${index}] missing ${field}`);
+      }
+    }
+    if (!Array.isArray(phaseEvidence?.evidenceRefs) || phaseEvidence.evidenceRefs.length === 0) {
+      errors.push(`${productId} smokePhases[${index}].evidenceRefs must include generated manifest refs`);
+    }
+  }
+
+  return errors;
+}
+
+function normalizeManifestRefsToRepoRelative(value) {
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(normalizeManifestRefsToRepoRelative);
+  }
+
+  const normalized = {};
+  const normalizedRepoRoot = repoRoot.replaceAll('\\', '/');
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === 'string') {
+      const normalizedEntry = entry.replaceAll('\\', '/');
+      normalized[key] = normalizedEntry.startsWith(normalizedRepoRoot)
+        ? normalizedEntry.slice(normalizedRepoRoot.length + 1)
+        : entry;
+      continue;
+    }
+    normalized[key] = normalizeManifestRefsToRepoRelative(entry);
+  }
+  return normalized;
+}
+
+function writeEvidencePack(relativeDir, reportPayload) {
+  const outputDir = path.join(repoRoot, relativeDir);
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(
+    path.join(outputDir, 'phr-lifecycle-evidence-pack.json'),
+    `${JSON.stringify(normalizeManifestRefsToRepoRelative(reportPayload), null, 2)}\n`,
+    'utf8',
+  );
 }
 
 export function validatePhrLifecyclePilot(options = {}) {
@@ -127,6 +392,29 @@ export function validatePhrLifecyclePilot(options = {}) {
   if (product.lifecycle?.enabled !== true) {
     errors.push('PHR lifecycle.enabled must be true');
   }
+  if (product.metadata?.pilot !== true) {
+    errors.push('PHR metadata.pilot must be true for the validated lifecycle pilot');
+  }
+  if (product.lifecycleMigration?.readinessReasonCode !== 'validated-phr-lifecycle-pilot') {
+    errors.push('PHR lifecycleMigration.readinessReasonCode must be validated-phr-lifecycle-pilot');
+  }
+  for (const staleReasonCode of [
+    'disabled-observed',
+    'requires-product-owner-executable-surface-definition',
+    'requires-lifecycle-profile',
+    'demo-product-not-execution-ready',
+  ]) {
+    if (asArray(product.metadata?.lifecycleReadiness?.reasonCodes).includes(staleReasonCode)) {
+      errors.push(`PHR metadata.lifecycleReadiness.reasonCodes must not include stale disabled/demo code: ${staleReasonCode}`);
+    }
+  }
+  includesAll(
+    'PHR metadata.lifecycleReadiness.requiredGates',
+    product.metadata?.lifecycleReadiness?.requiredGates,
+    REQUIRED_HEALTHCARE_GATES,
+    errors,
+  );
+  validateRollbackReadiness('PHR registry rollbackReadiness', product.rollbackReadiness, errors);
   if (!exists(product.lifecycleConfigPath ?? '')) {
     errors.push(`PHR lifecycleConfigPath does not exist: ${product.lifecycleConfigPath}`);
     return errors;
@@ -152,6 +440,10 @@ export function validatePhrLifecyclePilot(options = {}) {
   if (config.executionEnabled !== true) {
     errors.push('PHR kernel-product.yaml executionEnabled must be true');
   }
+  validateRollbackReadiness('PHR kernel rollbackReadiness', config.rollbackReadiness, errors);
+  if (config.phases?.rollback || config.requiredManifests?.rollback) {
+    errors.push('PHR rollback phase/manifests must remain absent until rollbackReadiness is promoted from target-partial');
+  }
 
   if (config.surfaces?.['backend-api']?.adapter !== 'gradle-java-service') {
     errors.push('PHR backend-api surface adapter must be gradle-java-service');
@@ -173,9 +465,7 @@ export function validatePhrLifecyclePilot(options = {}) {
       continue;
     }
     const gatePack = loadYaml(gatePath);
-    if (gatePack.productId !== PRODUCT_ID || gatePack.gateId !== gateId) {
-      errors.push(`${gatePath} must declare productId: phr and gateId: ${gateId}`);
-    }
+    validateGatePackShape(gatePath, gateId, gatePack, errors);
   }
 
   for (const evidencePath of [
@@ -253,7 +543,38 @@ export function validatePhrLifecyclePilot(options = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const options = parseArgs(process.argv.slice(2));
   const errors = validatePhrLifecyclePilot();
+  const evidence = {
+    schemaVersion: '1.0.0',
+    productId: PRODUCT_ID,
+    checkedAt: new Date().toISOString(),
+    smokeEnabled: options.smoke,
+    evidenceCategories: REQUIRED_EVIDENCE_CATEGORIES,
+    checks: {
+      smokePhases: [],
+    },
+  };
+
+  if (options.smoke) {
+    const smokeResult = runLifecycleSmoke();
+    evidence.checks.smokePhases = smokeResult.phases;
+    errors.push(...smokeResult.errors);
+  }
+
+  errors.push(...validateEvidencePackShape(PRODUCT_ID, evidence));
+
+  if (options.evidencePackDir !== undefined) {
+    writeEvidencePack(options.evidencePackDir, {
+      ...evidence,
+      summary: {
+        status: errors.length === 0 ? 'passed' : 'failed',
+        errorCount: errors.length,
+      },
+      errors,
+    });
+  }
+
   if (errors.length === 0) {
     console.log('PHR lifecycle pilot check passed');
     process.exit(0);

@@ -17,20 +17,51 @@
         "scripts/check-domain-boundaries.mjs",
         "scripts/check-deprecated-imports.mjs"
       ],
-      "allowedConsumers": ["all-products", "platform", "shared-services", "ci"],
-      "forbiddenDependencies": ["product-runtime-logic", "product-local-lifecycle-execution"],
+      "allowedConsumers": [
+        "all-products",
+        "platform",
+        "shared-services",
+        "ci"
+      ],
+      "forbiddenDependencies": [
+        "product-runtime-logic",
+        "product-local-lifecycle-execution"
+      ],
       "requiredChecks": [
         "node scripts/check-doc-authority.mjs",
         "node scripts/validate-domain-registry.mjs",
         "node scripts/check-domain-boundaries.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "scripts/check-doc-truth.mjs"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit",
+        "data-cloud",
+        "yappc"
+      ],
+      "currentStateEvidence": [
+        "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+        "scripts/check-doc-truth.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/**", "config/**", "scripts/**"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["config/*.json", "docs/**/*.md", "scripts/**/*.mjs"],
-        "mustNotOwn": ["product-runtime-logic", "product-local-lifecycle-execution"]
+        "mayImport": [
+          "platform/**",
+          "config/**",
+          "scripts/**"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "config/*.json",
+          "docs/**/*.md",
+          "scripts/**/*.mjs"
+        ],
+        "mustNotOwn": [
+          "product-runtime-logic",
+          "product-local-lifecycle-execution"
+        ]
       },
       "sourceOfTruth": "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
       "independentExecutionChecks": [
@@ -44,13 +75,69 @@
         "node scripts/check-deprecated-imports.mjs",
         "node scripts/check-current-state-claims.mjs"
       ],
-      "reasonCodes": ["governance-truth-partial", "documentation-authority-in-progress"],
-      "phase": [0, 8],
-      "journey": ["platform-coherence"],
-      "exitCriteria": ["Phase and journey crosswalk is explicit", "Validation gates point to canonical governance checks"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["docs/architecture/DOMAIN_WORKSTREAM_MAP.md", "config/documentation-truth-scope.json", "scripts/check-doc-truth.mjs"],
-      "phaseOwner": "platform-coherence"
+      "reasonCodes": [
+        "governance-truth-partial",
+        "documentation-authority-in-progress"
+      ],
+      "phase": [
+        0,
+        8
+      ],
+      "journey": [
+        "platform-coherence"
+      ],
+      "exitCriteria": [
+        "Phase and journey crosswalk is explicit",
+        "Validation gates point to canonical governance checks"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "docs/architecture/DOMAIN_WORKSTREAM_MAP.md",
+        "config/documentation-truth-scope.json",
+        "scripts/check-doc-truth.mjs"
+      ],
+      "phaseOwner": "platform-coherence",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-doc-authority.mjs",
+        "node scripts/validate-domain-registry.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-doc-authority.mjs",
+        "node scripts/validate-domain-registry.mjs",
+        "node scripts/check-domain-boundaries.mjs",
+        "node scripts/check-deprecated-imports.mjs",
+        "node scripts/check-current-state-claims.mjs"
+      ],
+      "ownedContracts": [
+        "docs/architecture/DOMAIN_WORKSTREAM_MAP.md"
+      ],
+      "forbiddenOwnership": [
+        "product-runtime-logic",
+        "product-local-lifecycle-execution"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform-coherence",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 0
+        },
+        {
+          "owner": "platform-coherence",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 0
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "product-development-kernel-lifecycle",
@@ -67,23 +154,48 @@
         "scripts/check-kernel-platform-lifecycle.mjs",
         "scripts/check-digital-marketing-lifecycle-pilot.mjs"
       ],
-      "allowedConsumers": ["digital-marketing", "ghatana-studio", "kernel-api", "ci"],
-      "forbiddenDependencies": ["products/data-cloud/planes", "products/yappc implementation internals"],
+      "allowedConsumers": [
+        "digital-marketing",
+        "ghatana-studio",
+        "kernel-api",
+        "ci"
+      ],
+      "forbiddenDependencies": [
+        "products/data-cloud/planes",
+        "products/yappc implementation internals"
+      ],
       "requiredChecks": [
         "pnpm --dir platform/typescript/kernel-product-contracts test",
         "pnpm --dir platform/typescript/kernel-lifecycle test",
         "node scripts/check-kernel-platform-lifecycle.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit",
+        "data-cloud",
+        "yappc"
+      ],
       "currentStateEvidence": [
         "platform/typescript/kernel-lifecycle/src",
         "scripts/check-digital-marketing-lifecycle-pilot.mjs"
       ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-*", "platform/java/*"],
-        "mustNotImport": ["products/data-cloud/planes/**", "products/yappc/**"],
-        "mayOwn": ["platform/typescript/kernel-*"],
-        "mustNotOwn": ["product-specific-logic"]
+        "mayImport": [
+          "platform/typescript/kernel-*",
+          "platform/java/*"
+        ],
+        "mustNotImport": [
+          "products/data-cloud/planes/**",
+          "products/yappc/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/kernel-*"
+        ],
+        "mustNotOwn": [
+          "product-specific-logic"
+        ]
       },
       "sourceOfTruth": "platform/typescript/kernel-product-contracts",
       "independentExecutionChecks": [
@@ -97,12 +209,45 @@
         "node scripts/check-digital-marketing-lifecycle-pilot.mjs"
       ],
       "reasonCodes": [],
-      "journey": ["kernel-lifecycle"],
-      "phase": [2],
-      "exitCriteria": ["Lifecycle execution truth is complete", "Provider contracts are validated"],
+      "journey": [
+        "kernel-lifecycle"
+      ],
+      "phase": [
+        2
+      ],
+      "exitCriteria": [
+        "Lifecycle execution truth is complete",
+        "Provider contracts are validated"
+      ],
       "blockingGaps": [],
-      "evidenceRequired": ["platform/typescript/kernel-lifecycle", "platform/typescript/kernel-providers"],
-      "phaseOwner": "platform-kernel"
+      "evidenceRequired": [
+        "platform/typescript/kernel-lifecycle",
+        "platform/typescript/kernel-providers"
+      ],
+      "phaseOwner": "platform-kernel",
+      "phasePlanStatus": "executable",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "pnpm --dir platform/typescript/kernel-lifecycle test"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "pnpm --dir platform/typescript/kernel-lifecycle test",
+        "node scripts/check-kernel-platform-lifecycle.mjs",
+        "node scripts/check-digital-marketing-lifecycle-pilot.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/kernel-product-contracts"
+      ],
+      "forbiddenOwnership": [
+        "product-specific-logic"
+      ],
+      "currentBlockingGaps": [],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "toolchain-adapter-runtime",
@@ -117,20 +262,44 @@
         "scripts/check-toolchain-adapter-contracts.mjs",
         "scripts/check-toolchain-adapter-registry-schema.mjs"
       ],
-      "allowedConsumers": ["kernel-lifecycle", "product-surfaces", "ci"],
-      "forbiddenDependencies": ["unsafe-command-expansion", "product-local-build-runtimes"],
+      "allowedConsumers": [
+        "kernel-lifecycle",
+        "product-surfaces",
+        "ci"
+      ],
+      "forbiddenDependencies": [
+        "unsafe-command-expansion",
+        "product-local-build-runtimes"
+      ],
       "requiredChecks": [
         "pnpm --dir platform/typescript/kernel-toolchains test",
         "pnpm --dir platform/typescript/kernel-toolchains typecheck",
         "node scripts/check-toolchain-adapter-contracts.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["platform/typescript/kernel-toolchains/src", "config/command-registry-manifest.json"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/kernel-toolchains/src",
+        "config/command-registry-manifest.json"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-*", "config/command-registry-manifest.json"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["platform/typescript/kernel-toolchains"],
-        "mustNotOwn": ["unsafe-command-expansion"]
+        "mayImport": [
+          "platform/typescript/kernel-*",
+          "config/command-registry-manifest.json"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/kernel-toolchains"
+        ],
+        "mustNotOwn": [
+          "unsafe-command-expansion"
+        ]
       },
       "sourceOfTruth": "config/command-registry-manifest.json",
       "independentExecutionChecks": [
@@ -144,12 +313,45 @@
         "node scripts/check-toolchain-adapter-registry-schema.mjs"
       ],
       "reasonCodes": [],
-      "journey": ["toolchain-runtime"],
-      "phase": [3],
-      "exitCriteria": ["Toolchain adapters are production-ready", "Runtime execution is validated"],
+      "journey": [
+        "toolchain-runtime"
+      ],
+      "phase": [
+        3
+      ],
+      "exitCriteria": [
+        "Toolchain adapters are production-ready",
+        "Runtime execution is validated"
+      ],
       "blockingGaps": [],
-      "evidenceRequired": ["platform/typescript/kernel-toolchains", "platform/java/toolchain-runtime"],
-      "phaseOwner": "platform-kernel"
+      "evidenceRequired": [
+        "platform/typescript/kernel-toolchains",
+        "platform/java/toolchain-runtime"
+      ],
+      "phaseOwner": "platform-kernel",
+      "phasePlanStatus": "executable",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "pnpm --dir platform/typescript/kernel-toolchains test",
+        "node scripts/check-toolchain-adapter-contracts.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir platform/typescript/kernel-toolchains test",
+        "pnpm --dir platform/typescript/kernel-toolchains typecheck",
+        "node scripts/check-toolchain-adapter-contracts.mjs",
+        "node scripts/check-toolchain-adapter-registry-schema.mjs"
+      ],
+      "ownedContracts": [
+        "config/command-registry-manifest.json"
+      ],
+      "forbiddenOwnership": [
+        "unsafe-command-expansion"
+      ],
+      "currentBlockingGaps": [],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "artifact-supply-chain-provenance",
@@ -164,20 +366,49 @@
       "secondaryLocations": [
         "scripts/check-product-artifact-contracts.mjs"
       ],
-      "allowedConsumers": ["kernel-lifecycle", "kernel-release", "deployment", "audit"],
-      "forbiddenDependencies": ["fake-artifact-success", "product-specific-shared-storage-adapters"],
+      "allowedConsumers": [
+        "kernel-lifecycle",
+        "kernel-release",
+        "deployment",
+        "audit"
+      ],
+      "forbiddenDependencies": [
+        "fake-artifact-success",
+        "product-specific-shared-storage-adapters"
+      ],
       "requiredChecks": [
         "pnpm --dir platform/typescript/kernel-artifacts test",
         "pnpm --dir platform/typescript/kernel-providers test",
         "node scripts/check-product-artifact-contracts.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/typescript/kernel-artifacts/src", "platform/typescript/kernel-providers/src/provenance"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit",
+        "data-cloud",
+        "yappc"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/kernel-artifacts/src",
+        "platform/typescript/kernel-providers/src/provenance"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-*", "platform/typescript/kernel-providers"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["platform/typescript/kernel-artifacts", "platform/typescript/kernel-providers/src/artifacts", "platform/typescript/kernel-providers/src/provenance"],
-        "mustNotOwn": ["fake-artifact-success"]
+        "mayImport": [
+          "platform/typescript/kernel-*",
+          "platform/typescript/kernel-providers"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/kernel-artifacts",
+          "platform/typescript/kernel-providers/src/artifacts",
+          "platform/typescript/kernel-providers/src/provenance"
+        ],
+        "mustNotOwn": [
+          "fake-artifact-success"
+        ]
       },
       "sourceOfTruth": "platform/typescript/kernel-artifacts",
       "independentExecutionChecks": [
@@ -189,13 +420,64 @@
         "pnpm --dir platform/typescript/kernel-providers test",
         "node scripts/check-product-artifact-contracts.mjs"
       ],
-      "reasonCodes": ["artifact-provenance-partial", "supply-chain-tracking-incomplete"],
-      "phase": [3],
-      "journey": ["artifact-provenance"],
-      "exitCriteria": ["Artifact provenance is complete", "Supply chain tracking is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/kernel-artifacts", "platform/typescript/kernel-providers/src/provenance"],
-      "phaseOwner": "platform-kernel"
+      "reasonCodes": [
+        "artifact-provenance-partial",
+        "supply-chain-tracking-incomplete"
+      ],
+      "phase": [
+        3
+      ],
+      "journey": [
+        "artifact-provenance"
+      ],
+      "exitCriteria": [
+        "Artifact provenance is complete",
+        "Supply chain tracking is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/kernel-artifacts",
+        "platform/typescript/kernel-providers/src/provenance"
+      ],
+      "phaseOwner": "platform-kernel",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "pnpm --dir platform/typescript/kernel-artifacts test",
+        "node scripts/check-product-artifact-contracts.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir platform/typescript/kernel-artifacts test",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "node scripts/check-product-artifact-contracts.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/kernel-artifacts"
+      ],
+      "forbiddenOwnership": [
+        "fake-artifact-success"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        },
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "deployment-environment-release",
@@ -212,20 +494,45 @@
         "scripts/check-product-deployment-contracts.mjs",
         "scripts/check-product-environment-contracts.mjs"
       ],
-      "allowedConsumers": ["kernel-lifecycle", "operators", "release-governance"],
-      "forbiddenDependencies": ["fake-promotion-success", "unsupported-environment-defaults"],
+      "allowedConsumers": [
+        "kernel-lifecycle",
+        "operators",
+        "release-governance"
+      ],
+      "forbiddenDependencies": [
+        "fake-promotion-success",
+        "unsupported-environment-defaults"
+      ],
       "requiredChecks": [
         "pnpm --dir platform/typescript/kernel-deployment test",
         "pnpm --dir platform/typescript/kernel-release test",
         "node scripts/check-product-deployment-contracts.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["platform/typescript/kernel-deployment/src", "platform/typescript/kernel-release/src"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/kernel-deployment/src",
+        "platform/typescript/kernel-release/src"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-*", "config/deployment-targets.json"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["platform/typescript/kernel-deployment", "platform/typescript/kernel-release"],
-        "mustNotOwn": ["fake-promotion-success"]
+        "mayImport": [
+          "platform/typescript/kernel-*",
+          "config/deployment-targets.json"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/kernel-deployment",
+          "platform/typescript/kernel-release"
+        ],
+        "mustNotOwn": [
+          "fake-promotion-success"
+        ]
       },
       "sourceOfTruth": "config/deployment-targets.json",
       "independentExecutionChecks": [
@@ -238,13 +545,65 @@
         "node scripts/check-product-deployment-contracts.mjs",
         "node scripts/check-product-environment-contracts.mjs"
       ],
-      "reasonCodes": ["deployment-contracts-partial", "release-promotion-incomplete"],
-      "phase": [3],
-      "journey": ["deployment-release"],
-      "exitCriteria": ["Deployment contracts are complete", "Release promotion is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/kernel-deployment", "platform/typescript/kernel-release"],
-      "phaseOwner": "platform-kernel"
+      "reasonCodes": [
+        "deployment-contracts-partial",
+        "release-promotion-incomplete"
+      ],
+      "phase": [
+        3
+      ],
+      "journey": [
+        "deployment-release"
+      ],
+      "exitCriteria": [
+        "Deployment contracts are complete",
+        "Release promotion is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/kernel-deployment",
+        "platform/typescript/kernel-release"
+      ],
+      "phaseOwner": "platform-kernel",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "pnpm --dir platform/typescript/kernel-deployment test",
+        "node scripts/check-product-deployment-contracts.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir platform/typescript/kernel-deployment test",
+        "pnpm --dir platform/typescript/kernel-release test",
+        "node scripts/check-product-deployment-contracts.mjs",
+        "node scripts/check-product-environment-contracts.mjs"
+      ],
+      "ownedContracts": [
+        "config/deployment-targets.json"
+      ],
+      "forbiddenOwnership": [
+        "fake-promotion-success"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        },
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "data-cloud-runtime-truth",
@@ -260,19 +619,40 @@
         "scripts/check-data-access-contract.mjs",
         "scripts/check-kernel-product-unit-provider-contracts.mjs"
       ],
-      "allowedConsumers": ["kernel-provider-mode", "kernel-runtime-truth", "ci"],
-      "forbiddenDependencies": ["ordinary-lifecycle-enablement", "shared-platform-packaging-of-data-cloud-internals"],
+      "allowedConsumers": [
+        "kernel-provider-mode",
+        "kernel-runtime-truth",
+        "ci"
+      ],
+      "forbiddenDependencies": [
+        "ordinary-lifecycle-enablement",
+        "shared-platform-packaging-of-data-cloud-internals"
+      ],
       "requiredChecks": [
         "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
         "node scripts/check-kernel-provider-mode.mjs"
       ],
-      "productAssociations": ["data-cloud"],
-      "currentStateEvidence": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"],
+      "productAssociations": [
+        "data-cloud"
+      ],
+      "currentStateEvidence": [
+        "products/data-cloud/libs/kernel-bridge-providers",
+        "scripts/check-kernel-provider-mode.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-product-contracts", "platform/java/*"],
-        "mustNotImport": ["other-products/**"],
-        "mayOwn": ["products/data-cloud/**"],
-        "mustNotOwn": ["ordinary-lifecycle-enablement"]
+        "mayImport": [
+          "platform/typescript/kernel-product-contracts",
+          "platform/java/*"
+        ],
+        "mustNotImport": [
+          "other-products/**"
+        ],
+        "mayOwn": [
+          "products/data-cloud/**"
+        ],
+        "mustNotOwn": [
+          "ordinary-lifecycle-enablement"
+        ]
       },
       "sourceOfTruth": "products/data-cloud/libs/kernel-bridge-providers",
       "independentExecutionChecks": [
@@ -284,13 +664,62 @@
         "node scripts/check-kernel-provider-mode.mjs",
         "node scripts/check-data-access-contract.mjs"
       ],
-      "reasonCodes": ["platform-provider-mode-partial", "runtime-truth-provider-incomplete"],
-      "phase": [5, 8],
-      "journey": ["data-cloud-foundation"],
-      "exitCriteria": ["Runtime truth is complete", "Provider mode is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["products/data-cloud/libs/kernel-bridge-providers", "scripts/check-kernel-provider-mode.mjs"],
-      "phaseOwner": "product"
+      "reasonCodes": [
+        "platform-provider-mode-partial",
+        "runtime-truth-provider-incomplete"
+      ],
+      "phase": [
+        5,
+        8
+      ],
+      "journey": [
+        "data-cloud-foundation"
+      ],
+      "exitCriteria": [
+        "Runtime truth is complete",
+        "Provider mode is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "products/data-cloud/libs/kernel-bridge-providers",
+        "scripts/check-kernel-provider-mode.mjs"
+      ],
+      "phaseOwner": "product",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "platform-provider-only",
+      "minimumValidationCommands": [
+        "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
+        "node scripts/check-kernel-provider-mode.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir products/data-cloud/libs/kernel-bridge-providers test",
+        "node scripts/check-kernel-provider-mode.mjs",
+        "node scripts/check-data-access-contract.mjs"
+      ],
+      "ownedContracts": [
+        "products/data-cloud/libs/kernel-bridge-providers"
+      ],
+      "forbiddenOwnership": [
+        "ordinary-lifecycle-enablement"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 5
+        },
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 5
+        }
+      ],
+      "pilotDependency": []
     },
     {
       "id": "aep-agent-runtime-governance",
@@ -305,19 +734,42 @@
       "secondaryLocations": [
         "docs/AI_GOVERNANCE_CONTRACTS.md"
       ],
-      "allowedConsumers": ["aep", "kernel-agentic-actions", "products"],
-      "forbiddenDependencies": ["duplicate-product-local-agent-registries"],
+      "allowedConsumers": [
+        "aep",
+        "kernel-agentic-actions",
+        "products"
+      ],
+      "forbiddenDependencies": [
+        "duplicate-product-local-agent-registries"
+      ],
       "requiredChecks": [
         "node scripts/check-agentic-lifecycle-action-contracts.mjs",
         "./gradlew :platform:java:agent-core:check"
       ],
-      "productAssociations": ["digital-marketing", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"],
+      "productAssociations": [
+        "digital-marketing",
+        "data-cloud",
+        "yappc"
+      ],
+      "currentStateEvidence": [
+        "platform/java/agent-core",
+        "scripts/check-agentic-lifecycle-action-contracts.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/java/agent-core", "platform/java/*"],
-        "mustNotImport": ["duplicate-product-local-agent-registries"],
-        "mayOwn": ["products/data-cloud/planes/action/**", "platform/java/agent-core"],
-        "mustNotOwn": ["duplicate-product-local-agent-registries"]
+        "mayImport": [
+          "platform/java/agent-core",
+          "platform/java/*"
+        ],
+        "mustNotImport": [
+          "duplicate-product-local-agent-registries"
+        ],
+        "mayOwn": [
+          "products/data-cloud/planes/action/**",
+          "platform/java/agent-core"
+        ],
+        "mustNotOwn": [
+          "duplicate-product-local-agent-registries"
+        ]
       },
       "sourceOfTruth": "platform/java/agent-core",
       "independentExecutionChecks": [
@@ -328,13 +780,62 @@
         "node scripts/check-agentic-lifecycle-action-contracts.mjs",
         "./gradlew :platform:java:agent-core:check"
       ],
-      "reasonCodes": ["agent-governance-partial", "central-registry-incomplete"],
-      "phase": [4],
-      "journey": ["agentic-development"],
-      "exitCriteria": ["Agent governance is complete", "Central registry is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/java/agent-core", "scripts/check-agentic-lifecycle-action-contracts.mjs"],
-      "phaseOwner": "product"
+      "reasonCodes": [
+        "agent-governance-partial",
+        "central-registry-incomplete"
+      ],
+      "phase": [
+        4
+      ],
+      "journey": [
+        "agentic-development"
+      ],
+      "exitCriteria": [
+        "Agent governance is complete",
+        "Central registry is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/java/agent-core",
+        "scripts/check-agentic-lifecycle-action-contracts.mjs"
+      ],
+      "phaseOwner": "product",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "digital-marketing",
+      "minimumValidationCommands": [
+        "node scripts/check-agentic-lifecycle-action-contracts.mjs",
+        "./gradlew :platform:java:agent-core:check"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-agentic-lifecycle-action-contracts.mjs",
+        "./gradlew :platform:java:agent-core:check"
+      ],
+      "ownedContracts": [
+        "platform/java/agent-core"
+      ],
+      "forbiddenOwnership": [
+        "duplicate-product-local-agent-registries"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 4
+        },
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 4
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing"
+      ]
     },
     {
       "id": "semantic-artifact-intelligence",
@@ -348,19 +849,39 @@
       "secondaryLocations": [
         "docs/kernel"
       ],
-      "allowedConsumers": ["yappc", "kernel-lifecycle", "governance-review"],
-      "forbiddenDependencies": ["direct-yappc-implementation-coupling"],
+      "allowedConsumers": [
+        "yappc",
+        "kernel-lifecycle",
+        "governance-review"
+      ],
+      "forbiddenDependencies": [
+        "direct-yappc-implementation-coupling"
+      ],
       "requiredChecks": [
         "pnpm --dir platform/typescript/kernel-product-contracts test",
         "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
       ],
-      "productAssociations": ["yappc", "digital-marketing"],
-      "currentStateEvidence": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"],
+      "productAssociations": [
+        "yappc",
+        "digital-marketing"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+        "scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/kernel-product-contracts"],
-        "mustNotImport": ["products/yappc/**"],
-        "mayOwn": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence"],
-        "mustNotOwn": ["direct-yappc-implementation-coupling"]
+        "mayImport": [
+          "platform/typescript/kernel-product-contracts"
+        ],
+        "mustNotImport": [
+          "products/yappc/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+        ],
+        "mustNotOwn": [
+          "direct-yappc-implementation-coupling"
+        ]
       },
       "sourceOfTruth": "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
       "independentExecutionChecks": [
@@ -371,13 +892,62 @@
         "pnpm --dir platform/typescript/kernel-product-contracts test",
         "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
       ],
-      "reasonCodes": ["artifact-intelligence-partial", "yappc-boundary-strict"],
-      "phase": [6],
-      "journey": ["artifact-intelligence"],
-      "exitCriteria": ["Artifact intelligence is complete", "Yappc boundary is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/kernel-product-contracts/src/artifact-intelligence", "scripts/check-yappc-artifact-intelligence-boundary.mjs"],
-      "phaseOwner": "platform-kernel"
+      "reasonCodes": [
+        "artifact-intelligence-partial",
+        "yappc-boundary-strict"
+      ],
+      "phase": [
+        6
+      ],
+      "journey": [
+        "artifact-intelligence"
+      ],
+      "exitCriteria": [
+        "Artifact intelligence is complete",
+        "Yappc boundary is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence",
+        "scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "phaseOwner": "platform-kernel",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "digital-marketing",
+      "minimumValidationCommands": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm --dir platform/typescript/kernel-product-contracts test",
+        "node scripts/check-yappc-artifact-intelligence-boundary.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/kernel-product-contracts/src/artifact-intelligence"
+      ],
+      "forbiddenOwnership": [
+        "direct-yappc-implementation-coupling"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 6
+        },
+        {
+          "owner": "platform-kernel",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 6
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing"
+      ]
     },
     {
       "id": "canvas-diagramming-context",
@@ -391,18 +961,43 @@
       "secondaryLocations": [
         "docs/platform-libraries"
       ],
-      "allowedConsumers": ["ghatana-studio", "products", "design-tooling"],
-      "forbiddenDependencies": ["deprecated-split-canvas-packages", "product-specific-canvas-forks"],
+      "allowedConsumers": [
+        "ghatana-studio",
+        "products",
+        "design-tooling"
+      ],
+      "forbiddenDependencies": [
+        "deprecated-split-canvas-packages",
+        "product-specific-canvas-forks"
+      ],
       "requiredChecks": [
         "node scripts/check-deprecated-imports.mjs"
       ],
-      "productAssociations": ["digital-marketing", "dcmaar", "tutorputor"],
-      "currentStateEvidence": ["platform/typescript/canvas/src", "platform/typescript/ui-builder"],
+      "productAssociations": [
+        "digital-marketing",
+        "dcmaar",
+        "tutorputor"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/canvas/src",
+        "platform/typescript/ui-builder"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*"],
-        "mustNotImport": ["products/**", "@ghatana/canvas-core", "@ghatana/canvas-react"],
-        "mayOwn": ["platform/typescript/canvas", "platform/typescript/ui-builder"],
-        "mustNotOwn": ["deprecated-split-canvas-packages"]
+        "mayImport": [
+          "platform/typescript/*"
+        ],
+        "mustNotImport": [
+          "products/**",
+          "@ghatana/canvas-core",
+          "@ghatana/canvas-react"
+        ],
+        "mayOwn": [
+          "platform/typescript/canvas",
+          "platform/typescript/ui-builder"
+        ],
+        "mustNotOwn": [
+          "deprecated-split-canvas-packages"
+        ]
       },
       "sourceOfTruth": "platform/typescript/canvas",
       "independentExecutionChecks": [
@@ -411,13 +1006,61 @@
       "fullRegressionChecks": [
         "node scripts/check-deprecated-imports.mjs"
       ],
-      "reasonCodes": ["canvas-partial", "deprecated-split-packages-exist"],
-      "phase": [1, 8],
-      "journey": ["studio-shell"],
-      "exitCriteria": ["Canvas is complete", "Diagramming is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/canvas", "platform/typescript/ui-builder"],
-      "phaseOwner": "platform"
+      "reasonCodes": [
+        "canvas-partial",
+        "deprecated-split-packages-exist"
+      ],
+      "phase": [
+        1,
+        8
+      ],
+      "journey": [
+        "studio-shell"
+      ],
+      "exitCriteria": [
+        "Canvas is complete",
+        "Diagramming is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/canvas",
+        "platform/typescript/ui-builder"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "digital-marketing",
+      "minimumValidationCommands": [
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/canvas"
+      ],
+      "forbiddenOwnership": [
+        "deprecated-split-canvas-packages"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        },
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing"
+      ]
     },
     {
       "id": "ui-builder-preview",
@@ -431,18 +1074,40 @@
       "secondaryLocations": [
         "scripts/check-studio-kernel-api.mjs"
       ],
-      "allowedConsumers": ["ghatana-studio", "design-system-registry-generator"],
-      "forbiddenDependencies": ["unsafe-preview-shortcuts", "product-specific-preview-runtimes-in-shared-platform"],
+      "allowedConsumers": [
+        "ghatana-studio",
+        "design-system-registry-generator"
+      ],
+      "forbiddenDependencies": [
+        "unsafe-preview-shortcuts",
+        "product-specific-preview-runtimes-in-shared-platform"
+      ],
       "requiredChecks": [
         "node scripts/check-studio-kernel-api.mjs"
       ],
-      "productAssociations": ["digital-marketing", "flashit", "phr"],
-      "currentStateEvidence": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
+      "productAssociations": [
+        "digital-marketing",
+        "flashit",
+        "phr"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/ui-builder",
+        "platform/typescript/ghatana-studio"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
-        "mustNotOwn": ["unsafe-preview-shortcuts"]
+        "mayImport": [
+          "platform/typescript/*"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/ui-builder",
+          "platform/typescript/ghatana-studio"
+        ],
+        "mustNotOwn": [
+          "unsafe-preview-shortcuts"
+        ]
       },
       "sourceOfTruth": "platform/typescript/ui-builder",
       "independentExecutionChecks": [
@@ -451,13 +1116,61 @@
       "fullRegressionChecks": [
         "node scripts/check-studio-kernel-api.mjs"
       ],
-      "reasonCodes": ["preview-partial", "preview-security-gates-incomplete"],
-      "phase": [1],
-      "journey": ["studio-shell"],
-      "exitCriteria": ["Preview is complete", "Security gates are validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/ui-builder", "platform/typescript/ghatana-studio"],
-      "phaseOwner": "platform"
+      "reasonCodes": [
+        "preview-partial",
+        "preview-security-gates-incomplete"
+      ],
+      "phase": [
+        1
+      ],
+      "journey": [
+        "studio-shell"
+      ],
+      "exitCriteria": [
+        "Preview is complete",
+        "Security gates are validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/ui-builder",
+        "platform/typescript/ghatana-studio"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/ui-builder"
+      ],
+      "forbiddenOwnership": [
+        "unsafe-preview-shortcuts"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        },
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "design-system-registry-generator",
@@ -474,19 +1187,49 @@
         "scripts/check-platform-package-governance.js",
         "scripts/check-deprecated-imports.mjs"
       ],
-      "allowedConsumers": ["all-products", "ghatana-studio", "ui-builder"],
-      "forbiddenDependencies": ["deprecated-package-aliases", "product-prefixed-platform-packages"],
+      "allowedConsumers": [
+        "all-products",
+        "ghatana-studio",
+        "ui-builder"
+      ],
+      "forbiddenDependencies": [
+        "deprecated-package-aliases",
+        "product-prefixed-platform-packages"
+      ],
       "requiredChecks": [
         "node scripts/check-platform-package-governance.js",
         "node scripts/check-deprecated-imports.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "flashit", "tutorputor", "dcmaar"],
-      "currentStateEvidence": ["platform/typescript/LIBRARY_GOVERNANCE.md", "platform/typescript/design-system"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "flashit",
+        "tutorputor",
+        "dcmaar"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/LIBRARY_GOVERNANCE.md",
+        "platform/typescript/design-system"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*"],
-        "mustNotImport": ["products/**", "@ghatana/canvas-core", "@ghatana/canvas-react", "@ghatana/ui", "@ghatana/utils"],
-        "mayOwn": ["platform/typescript/design-system", "platform/typescript/ds-registry", "platform/typescript/ds-generator"],
-        "mustNotOwn": ["deprecated-package-aliases"]
+        "mayImport": [
+          "platform/typescript/*"
+        ],
+        "mustNotImport": [
+          "products/**",
+          "@ghatana/canvas-core",
+          "@ghatana/canvas-react",
+          "@ghatana/ui",
+          "@ghatana/utils"
+        ],
+        "mayOwn": [
+          "platform/typescript/design-system",
+          "platform/typescript/ds-registry",
+          "platform/typescript/ds-generator"
+        ],
+        "mustNotOwn": [
+          "deprecated-package-aliases"
+        ]
       },
       "sourceOfTruth": "platform/typescript/LIBRARY_GOVERNANCE.md",
       "independentExecutionChecks": [
@@ -497,13 +1240,64 @@
         "node scripts/check-platform-package-governance.js",
         "node scripts/check-deprecated-imports.mjs"
       ],
-      "reasonCodes": ["registry-generator-partial", "deprecated-packages-exist"],
-      "phase": [1, 8],
-      "journey": ["studio-shell"],
-      "exitCriteria": ["Registry generator is complete", "Packages are validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/design-system", "platform/typescript/LIBRARY_GOVERNANCE.md"],
-      "phaseOwner": "platform"
+      "reasonCodes": [
+        "registry-generator-partial",
+        "deprecated-packages-exist"
+      ],
+      "phase": [
+        1,
+        8
+      ],
+      "journey": [
+        "studio-shell"
+      ],
+      "exitCriteria": [
+        "Registry generator is complete",
+        "Packages are validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/design-system",
+        "platform/typescript/LIBRARY_GOVERNANCE.md"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-platform-package-governance.js",
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-platform-package-governance.js",
+        "node scripts/check-deprecated-imports.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/LIBRARY_GOVERNANCE.md"
+      ],
+      "forbiddenOwnership": [
+        "deprecated-package-aliases"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        },
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "ghatana-studio",
@@ -517,18 +1311,41 @@
         "scripts/check-studio-kernel-api.mjs",
         "docs/kernel"
       ],
-      "allowedConsumers": ["product-teams", "ui-builder", "kernel-lifecycle"],
-      "forbiddenDependencies": ["direct-product-implementation-imports"],
+      "allowedConsumers": [
+        "product-teams",
+        "ui-builder",
+        "kernel-lifecycle"
+      ],
+      "forbiddenDependencies": [
+        "direct-product-implementation-imports"
+      ],
       "requiredChecks": [
         "node scripts/check-studio-kernel-api.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "flashit", "data-cloud"],
-      "currentStateEvidence": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "flashit",
+        "data-cloud"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/ghatana-studio",
+        "scripts/check-studio-kernel-api.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*", "platform/typescript/kernel-*"],
-        "mustNotImport": ["products/**"],
-        "mayOwn": ["platform/typescript/ghatana-studio"],
-        "mustNotOwn": ["direct-product-implementation-imports"]
+        "mayImport": [
+          "platform/typescript/*",
+          "platform/typescript/kernel-*"
+        ],
+        "mustNotImport": [
+          "products/**"
+        ],
+        "mayOwn": [
+          "platform/typescript/ghatana-studio"
+        ],
+        "mustNotOwn": [
+          "direct-product-implementation-imports"
+        ]
       },
       "sourceOfTruth": "platform/typescript/ghatana-studio",
       "independentExecutionChecks": [
@@ -537,13 +1354,61 @@
       "fullRegressionChecks": [
         "node scripts/check-studio-kernel-api.mjs"
       ],
-      "reasonCodes": ["studio-partial", "kernel-api-integration-incomplete"],
-      "phase": [1],
-      "journey": ["studio-shell"],
-      "exitCriteria": ["Studio is complete", "Kernel API is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/ghatana-studio", "scripts/check-studio-kernel-api.mjs"],
-      "phaseOwner": "platform"
+      "reasonCodes": [
+        "studio-partial",
+        "kernel-api-integration-incomplete"
+      ],
+      "phase": [
+        1
+      ],
+      "journey": [
+        "studio-shell"
+      ],
+      "exitCriteria": [
+        "Studio is complete",
+        "Kernel API is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/ghatana-studio",
+        "scripts/check-studio-kernel-api.mjs"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-studio-kernel-api.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/ghatana-studio"
+      ],
+      "forbiddenOwnership": [
+        "direct-product-implementation-imports"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        },
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 1
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "product-domain-packs",
@@ -560,19 +1425,44 @@
         "scripts/check-product-manifest-contracts.mjs",
         "scripts/check-product-conformance.mjs"
       ],
-      "allowedConsumers": ["product-builds", "product-governance", "kernel-registry"],
-      "forbiddenDependencies": ["platform-wide-product-domain-logic", "fake-manifest-conformance"],
+      "allowedConsumers": [
+        "product-builds",
+        "product-governance",
+        "kernel-registry"
+      ],
+      "forbiddenDependencies": [
+        "platform-wide-product-domain-logic",
+        "fake-manifest-conformance"
+      ],
       "requiredChecks": [
         "node scripts/check-product-manifest-contracts.mjs",
         "node scripts/check-product-conformance.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit"],
-      "currentStateEvidence": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit"
+      ],
+      "currentStateEvidence": [
+        "products/phr/domain-pack-manifest.yaml",
+        "products/finance/domain-pack-manifest.yaml"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*", "platform/java/*"],
-        "mustNotImport": ["other-products/**"],
-        "mayOwn": ["products/*/domain-pack-manifest.*", "products/*/domain-packs/**"],
-        "mustNotOwn": ["platform-wide-product-domain-logic"]
+        "mayImport": [
+          "platform/typescript/*",
+          "platform/java/*"
+        ],
+        "mustNotImport": [
+          "other-products/**"
+        ],
+        "mayOwn": [
+          "products/*/domain-pack-manifest.*",
+          "products/*/domain-packs/**"
+        ],
+        "mustNotOwn": [
+          "platform-wide-product-domain-logic"
+        ]
       },
       "sourceOfTruth": "config/canonical-product-registry.json",
       "independentExecutionChecks": [
@@ -582,13 +1472,62 @@
         "node scripts/check-product-manifest-contracts.mjs",
         "node scripts/check-product-conformance.mjs"
       ],
-      "reasonCodes": ["domain-packs-partial", "manifest-conformance-incomplete"],
-      "phase": [7],
-      "journey": ["future-product-shape"],
-      "exitCriteria": ["Domain packs are complete", "Manifest conformance is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["products/phr/domain-pack-manifest.yaml", "products/finance/domain-pack-manifest.yaml"],
-      "phaseOwner": "product"
+      "reasonCodes": [
+        "domain-packs-partial",
+        "manifest-conformance-incomplete"
+      ],
+      "phase": [
+        7
+      ],
+      "journey": [
+        "future-product-shape"
+      ],
+      "exitCriteria": [
+        "Domain packs are complete",
+        "Manifest conformance is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "products/phr/domain-pack-manifest.yaml",
+        "products/finance/domain-pack-manifest.yaml"
+      ],
+      "phaseOwner": "product",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-product-manifest-contracts.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-product-manifest-contracts.mjs",
+        "node scripts/check-product-conformance.mjs"
+      ],
+      "ownedContracts": [
+        "config/canonical-product-registry.json"
+      ],
+      "forbiddenOwnership": [
+        "platform-wide-product-domain-logic"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 7
+        },
+        {
+          "owner": "product",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 7
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "event-streaming-operational-graph",
@@ -603,18 +1542,43 @@
       "secondaryLocations": [
         "platform/java/workflow"
       ],
-      "allowedConsumers": ["data-cloud", "aep", "products", "observability"],
-      "forbiddenDependencies": ["product-specific-event-schemas-in-generic-platform-packages"],
+      "allowedConsumers": [
+        "data-cloud",
+        "aep",
+        "products",
+        "observability"
+      ],
+      "forbiddenDependencies": [
+        "product-specific-event-schemas-in-generic-platform-packages"
+      ],
       "requiredChecks": [
         "node scripts/check-openapi-contract-canonical.mjs"
       ],
-      "productAssociations": ["data-cloud", "yappc", "digital-marketing"],
-      "currentStateEvidence": ["platform/typescript/realtime", "products/data-cloud/planes/data/entity"],
+      "productAssociations": [
+        "data-cloud",
+        "yappc",
+        "digital-marketing"
+      ],
+      "currentStateEvidence": [
+        "platform/typescript/realtime",
+        "products/data-cloud/planes/data/entity"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/typescript/*", "platform/java/*"],
-        "mustNotImport": ["product-specific-event-schemas-in-generic-platform-packages"],
-        "mayOwn": ["platform/typescript/events", "platform/typescript/realtime", "platform/java/workflow"],
-        "mustNotOwn": ["product-specific-event-schemas-in-generic-platform-packages"]
+        "mayImport": [
+          "platform/typescript/*",
+          "platform/java/*"
+        ],
+        "mustNotImport": [
+          "product-specific-event-schemas-in-generic-platform-packages"
+        ],
+        "mayOwn": [
+          "platform/typescript/events",
+          "platform/typescript/realtime",
+          "platform/java/workflow"
+        ],
+        "mustNotOwn": [
+          "product-specific-event-schemas-in-generic-platform-packages"
+        ]
       },
       "sourceOfTruth": "platform/typescript/events",
       "independentExecutionChecks": [
@@ -623,13 +1587,61 @@
       "fullRegressionChecks": [
         "node scripts/check-openapi-contract-canonical.mjs"
       ],
-      "reasonCodes": ["event-streaming-partial", "operational-graph-incomplete"],
-      "phase": [3, 5],
-      "journey": ["data-cloud-foundation"],
-      "exitCriteria": ["Event streaming is complete", "Operational graph is validated"],
-      "blockingGaps": ["Current-state claims still require manual review in scoped docs", "Boundary enforcement remains partially manual"],
-      "evidenceRequired": ["platform/typescript/events", "platform/typescript/realtime"],
-      "phaseOwner": "platform"
+      "reasonCodes": [
+        "event-streaming-partial",
+        "operational-graph-incomplete"
+      ],
+      "phase": [
+        3,
+        5
+      ],
+      "journey": [
+        "data-cloud-foundation"
+      ],
+      "exitCriteria": [
+        "Event streaming is complete",
+        "Operational graph is validated"
+      ],
+      "blockingGaps": [
+        "Current-state claims still require manual review in scoped docs",
+        "Boundary enforcement remains partially manual"
+      ],
+      "evidenceRequired": [
+        "platform/typescript/events",
+        "platform/typescript/realtime"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "in-progress",
+      "pilotRelevance": "digital-marketing",
+      "minimumValidationCommands": [
+        "node scripts/check-openapi-contract-canonical.mjs"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-openapi-contract-canonical.mjs"
+      ],
+      "ownedContracts": [
+        "platform/typescript/events"
+      ],
+      "forbiddenOwnership": [
+        "product-specific-event-schemas-in-generic-platform-packages"
+      ],
+      "currentBlockingGaps": [
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        },
+        {
+          "owner": "platform",
+          "expiry": "2026-06-30",
+          "classification": "existing-partial",
+          "remediationPhase": 3
+        }
+      ],
+      "pilotDependency": [
+        "digital-marketing"
+      ]
     },
     {
       "id": "security-privacy-policy-compliance",
@@ -645,20 +1657,46 @@
         "scripts/check-secret-default-credentials.mjs",
         "docs/SECRETS_CLASSIFICATION.md"
       ],
-      "allowedConsumers": ["all-products", "deployment", "ci"],
-      "forbiddenDependencies": ["default-credentials", "silent-compliance-bypasses"],
+      "allowedConsumers": [
+        "all-products",
+        "deployment",
+        "ci"
+      ],
+      "forbiddenDependencies": [
+        "default-credentials",
+        "silent-compliance-bypasses"
+      ],
       "requiredChecks": [
         "node scripts/check-security-workflow-coverage.mjs",
         "node scripts/check-secret-default-credentials.mjs",
         "./gradlew :platform:java:security:check"
       ],
-      "productAssociations": ["phr", "finance", "flashit", "digital-marketing"],
-      "currentStateEvidence": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"],
+      "productAssociations": [
+        "phr",
+        "finance",
+        "flashit",
+        "digital-marketing"
+      ],
+      "currentStateEvidence": [
+        "platform/java/security",
+        "scripts/check-security-workflow-coverage.mjs"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/java/*", "config/security-*"],
-        "mustNotImport": ["default-credentials", "silent-compliance-bypasses"],
-        "mayOwn": ["platform/java/security", "config/security-secret-scan.json"],
-        "mustNotOwn": ["default-credentials"]
+        "mayImport": [
+          "platform/java/*",
+          "config/security-*"
+        ],
+        "mustNotImport": [
+          "default-credentials",
+          "silent-compliance-bypasses"
+        ],
+        "mayOwn": [
+          "platform/java/security",
+          "config/security-secret-scan.json"
+        ],
+        "mustNotOwn": [
+          "default-credentials"
+        ]
       },
       "sourceOfTruth": "platform/java/security",
       "independentExecutionChecks": [
@@ -672,12 +1710,45 @@
         "./gradlew :platform:java:security:check"
       ],
       "reasonCodes": [],
-      "journey": ["platform-coherence"],
-      "phase": [8],
-      "exitCriteria": ["Security workflows are complete", "Privacy compliance is validated"],
+      "journey": [
+        "platform-coherence"
+      ],
+      "phase": [
+        8
+      ],
+      "exitCriteria": [
+        "Security workflows are complete",
+        "Privacy compliance is validated"
+      ],
       "blockingGaps": [],
-      "evidenceRequired": ["platform/java/security", "scripts/check-security-workflow-coverage.mjs"],
-      "phaseOwner": "platform"
+      "evidenceRequired": [
+        "platform/java/security",
+        "scripts/check-security-workflow-coverage.mjs"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "executable",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-security-workflow-coverage.mjs",
+        "node scripts/check-secret-default-credentials.mjs",
+        "./gradlew :platform:java:security:check"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-security-workflow-coverage.mjs",
+        "node scripts/check-secret-default-credentials.mjs",
+        "./gradlew :platform:java:security:check"
+      ],
+      "ownedContracts": [
+        "platform/java/security"
+      ],
+      "forbiddenOwnership": [
+        "default-credentials"
+      ],
+      "currentBlockingGaps": [],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "observability-health-operations",
@@ -692,20 +1763,49 @@
       "secondaryLocations": [
         "platform/typescript/kernel-providers/src/health"
       ],
-      "allowedConsumers": ["all-deployable-services", "kernel-lifecycle", "operators"],
-      "forbiddenDependencies": ["silent-health-failures", "unverifiable-deployment-health"],
+      "allowedConsumers": [
+        "all-deployable-services",
+        "kernel-lifecycle",
+        "operators"
+      ],
+      "forbiddenDependencies": [
+        "silent-health-failures",
+        "unverifiable-deployment-health"
+      ],
       "requiredChecks": [
         "node scripts/check-observability-conformance.mjs",
         "pnpm --dir platform/typescript/kernel-providers test",
         "./gradlew :platform:java:observability:check"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc"],
-      "currentStateEvidence": ["platform/java/observability", "platform/typescript/kernel-providers/src/health"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit",
+        "data-cloud",
+        "yappc"
+      ],
+      "currentStateEvidence": [
+        "platform/java/observability",
+        "platform/typescript/kernel-providers/src/health"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/java/*", "platform/typescript/kernel-providers"],
-        "mustNotImport": ["silent-health-failures", "unverifiable-deployment-health"],
-        "mayOwn": ["platform/java/observability", "monitoring", "platform/typescript/kernel-providers/src/health"],
-        "mustNotOwn": ["silent-health-failures"]
+        "mayImport": [
+          "platform/java/*",
+          "platform/typescript/kernel-providers"
+        ],
+        "mustNotImport": [
+          "silent-health-failures",
+          "unverifiable-deployment-health"
+        ],
+        "mayOwn": [
+          "platform/java/observability",
+          "monitoring",
+          "platform/typescript/kernel-providers/src/health"
+        ],
+        "mustNotOwn": [
+          "silent-health-failures"
+        ]
       },
       "sourceOfTruth": "platform/java/observability",
       "independentExecutionChecks": [
@@ -719,12 +1819,45 @@
         "./gradlew :platform:java:observability:check"
       ],
       "reasonCodes": [],
-      "journey": ["platform-coherence"],
-      "phase": [8],
-      "exitCriteria": ["Observability conformance is validated", "Health checks are complete"],
+      "journey": [
+        "platform-coherence"
+      ],
+      "phase": [
+        8
+      ],
+      "exitCriteria": [
+        "Observability conformance is validated",
+        "Health checks are complete"
+      ],
       "blockingGaps": [],
-      "evidenceRequired": ["platform/java/observability", "scripts/check-observability-conformance.mjs"],
-      "phaseOwner": "platform"
+      "evidenceRequired": [
+        "platform/java/observability",
+        "scripts/check-observability-conformance.mjs"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "executable",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "node scripts/check-observability-conformance.mjs",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "./gradlew :platform:java:observability:check"
+      ],
+      "fullRegressionCommands": [
+        "node scripts/check-observability-conformance.mjs",
+        "pnpm --dir platform/typescript/kernel-providers test",
+        "./gradlew :platform:java:observability:check"
+      ],
+      "ownedContracts": [
+        "platform/java/observability"
+      ],
+      "forbiddenOwnership": [
+        "silent-health-failures"
+      ],
+      "currentBlockingGaps": [],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     },
     {
       "id": "testing-verification-quality-gates",
@@ -740,20 +1873,51 @@
         "vitest.shared.config.ts",
         "docs/TESTING.md"
       ],
-      "allowedConsumers": ["all-modules", "ci", "audit"],
-      "forbiddenDependencies": ["test-theatre", "disabled-tests-without-tracking"],
+      "allowedConsumers": [
+        "all-modules",
+        "ci",
+        "audit"
+      ],
+      "forbiddenDependencies": [
+        "test-theatre",
+        "disabled-tests-without-tracking"
+      ],
       "requiredChecks": [
         "pnpm test",
         "./gradlew check",
         "node scripts/check-production-stubs.mjs"
       ],
-      "productAssociations": ["digital-marketing", "phr", "finance", "flashit", "data-cloud", "yappc", "tutorputor", "dcmaar"],
-      "currentStateEvidence": ["scripts/check-production-stubs.mjs", "docs/TESTING.md"],
+      "productAssociations": [
+        "digital-marketing",
+        "phr",
+        "finance",
+        "flashit",
+        "data-cloud",
+        "yappc",
+        "tutorputor",
+        "dcmaar"
+      ],
+      "currentStateEvidence": [
+        "scripts/check-production-stubs.mjs",
+        "docs/TESTING.md"
+      ],
       "boundaryPolicy": {
-        "mayImport": ["platform/java/*", "platform/typescript/*"],
-        "mustNotImport": ["test-theatre", "disabled-tests-without-tracking"],
-        "mayOwn": ["scripts", "integration-tests", "platform/java/testing"],
-        "mustNotOwn": ["test-theatre"]
+        "mayImport": [
+          "platform/java/*",
+          "platform/typescript/*"
+        ],
+        "mustNotImport": [
+          "test-theatre",
+          "disabled-tests-without-tracking"
+        ],
+        "mayOwn": [
+          "scripts",
+          "integration-tests",
+          "platform/java/testing"
+        ],
+        "mustNotOwn": [
+          "test-theatre"
+        ]
       },
       "sourceOfTruth": "docs/TESTING.md",
       "independentExecutionChecks": [
@@ -767,12 +1931,45 @@
         "node scripts/check-production-stubs.mjs"
       ],
       "reasonCodes": [],
-      "journey": ["platform-coherence"],
-      "phase": [8],
-      "exitCriteria": ["Testing infrastructure is complete", "Quality gates are validated"],
+      "journey": [
+        "platform-coherence"
+      ],
+      "phase": [
+        8
+      ],
+      "exitCriteria": [
+        "Testing infrastructure is complete",
+        "Quality gates are validated"
+      ],
       "blockingGaps": [],
-      "evidenceRequired": ["platform/java/testing", "scripts/check-production-stubs.mjs"],
-      "phaseOwner": "platform"
+      "evidenceRequired": [
+        "platform/java/testing",
+        "scripts/check-production-stubs.mjs"
+      ],
+      "phaseOwner": "platform",
+      "phasePlanStatus": "executable",
+      "pilotRelevance": "both",
+      "minimumValidationCommands": [
+        "pnpm test",
+        "./gradlew check",
+        "node scripts/check-production-stubs.mjs"
+      ],
+      "fullRegressionCommands": [
+        "pnpm test",
+        "./gradlew check",
+        "node scripts/check-production-stubs.mjs"
+      ],
+      "ownedContracts": [
+        "docs/TESTING.md"
+      ],
+      "forbiddenOwnership": [
+        "test-theatre"
+      ],
+      "currentBlockingGaps": [],
+      "pilotDependency": [
+        "digital-marketing",
+        "phr"
+      ]
     }
   ]
 }

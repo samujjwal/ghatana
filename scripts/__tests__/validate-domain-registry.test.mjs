@@ -67,6 +67,14 @@ const schema = {
           independentExecutionChecks: { type: 'array', items: { type: 'string' } },
           fullRegressionChecks: { type: 'array', items: { type: 'string' } },
           reasonCodes: { type: 'array', items: { type: 'string' } },
+          phasePlanStatus: { type: 'string' },
+          pilotRelevance: { type: 'string' },
+          minimumValidationCommands: { type: 'array', items: { type: 'string' } },
+          fullRegressionCommands: { type: 'array', items: { type: 'string' } },
+          ownedContracts: { type: 'array', items: { type: 'string' } },
+          forbiddenOwnership: { type: 'array', items: { type: 'string' } },
+          currentBlockingGaps: { type: 'array' },
+          pilotDependency: { type: 'array', items: { type: 'string' } },
         },
       },
     },
@@ -98,7 +106,21 @@ function validDocument() {
         sourceOfTruth: 'platform/typescript/kernel-product-contracts',
         independentExecutionChecks: ['pnpm --dir platform/typescript/kernel-lifecycle test'],
         fullRegressionChecks: ['pnpm --dir platform/typescript/kernel-lifecycle test'],
-        reasonCodes: []
+        reasonCodes: [],
+        journey: ['kernel-lifecycle'],
+        phase: [2],
+        exitCriteria: ['Kernel lifecycle contracts pass validation'],
+        blockingGaps: [],
+        evidenceRequired: ['Kernel lifecycle tests'],
+        phaseOwner: 'Platform Kernel Team',
+        phasePlanStatus: 'executable',
+        pilotRelevance: 'digital-marketing',
+        minimumValidationCommands: ['pnpm --dir platform/typescript/kernel-lifecycle test'],
+        fullRegressionCommands: ['pnpm --dir platform/typescript/kernel-lifecycle test'],
+        ownedContracts: ['platform/typescript/kernel-product-contracts'],
+        forbiddenOwnership: ['product-specific-logic'],
+        currentBlockingGaps: [],
+        pilotDependency: ['digital-marketing']
       }
     ]
   };
@@ -359,6 +381,49 @@ test('empty reasonCodes passes for existing-executable classification', () => {
   });
 
   assert(!issues.some((issue) => issue.field === 'reasonCodes'));
+});
+
+test('missing phasePlanStatus fails', () => {
+  const document = validDocument();
+  delete document.domains[0].phasePlanStatus;
+
+  const issues = validateDomainRegistryDocument(document, {
+    schema,
+    productIds,
+    pathExists: () => true,
+  });
+
+  assert(issues.some((issue) => issue.field === 'phasePlanStatus'));
+});
+
+test('pilot relevance both requires both opening pilot associations', () => {
+  const document = validDocument();
+  document.domains[0].pilotRelevance = 'both';
+  document.domains[0].productAssociations = ['digital-marketing'];
+
+  const issues = validateDomainRegistryDocument(document, {
+    schema,
+    productIds,
+    pathExists: () => true,
+  });
+
+  assert(issues.some((issue) => issue.issue.includes("product association 'phr'")));
+});
+
+test('current blocking gaps require owner expiry classification and remediation phase', () => {
+  const document = validDocument();
+  document.domains[0].currentBlockingGaps = [{ owner: '', expiry: 'soon', classification: 'partial', remediationPhase: 'two' }];
+
+  const issues = validateDomainRegistryDocument(document, {
+    schema,
+    productIds,
+    pathExists: () => true,
+  });
+
+  assert(issues.some((issue) => issue.field === 'currentBlockingGaps[0].owner'));
+  assert(issues.some((issue) => issue.field === 'currentBlockingGaps[0].expiry'));
+  assert(issues.some((issue) => issue.field === 'currentBlockingGaps[0].classification'));
+  assert(issues.some((issue) => issue.field === 'currentBlockingGaps[0].remediationPhase'));
 });
 
 test('all current domain entries pass validation', () => {

@@ -20,7 +20,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, renderHook, waitFor, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter } from 'react-router-dom';
 import { RouteCapabilityNav } from '../components/RouteCapabilityNav';
 import { UnsupportedSurfaceBoundary } from '../components/UnsupportedSurfaceBoundary';
 import { ProductViewModeSelector } from '../components/ProductViewModeSelector';

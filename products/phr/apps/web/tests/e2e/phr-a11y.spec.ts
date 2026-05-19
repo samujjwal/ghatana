@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockPhrEntitlements } from './phr-entitlements';
 
 test.describe('PHR accessibility @a11y', () => {
   test('login screen exposes accessible controls', async ({ page }) => {
@@ -11,6 +12,7 @@ test.describe('PHR accessibility @a11y', () => {
   });
 
   test('dashboard keeps landmark and keyboard navigation visible', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
     await expect(page.getByText('Patient summary')).toBeVisible();
@@ -21,6 +23,7 @@ test.describe('PHR accessibility @a11y', () => {
   });
 
   test('clinician emergency workflow remains keyboard accessible', async ({ page }) => {
+    await mockPhrEntitlements(page, 'clinician');
     await page.goto('/login');
     await page.evaluate(() => {
       window.localStorage.setItem('phr.currentRole', 'clinician');
@@ -34,6 +37,7 @@ test.describe('PHR accessibility @a11y', () => {
   });
 
   test('patient emergency denial stays visible and readable', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.evaluate(() => {
       window.localStorage.setItem('phr.currentRole', 'patient');

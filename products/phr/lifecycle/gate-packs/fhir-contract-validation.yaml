@@ -14,6 +14,9 @@ requiredEvidenceRefs:
 blockingReasonCodes:
   - requires-fhir-contract-validation
   - missing-fhir-contract-validation
+lifecyclePhases:
+  - validate
+  - build
 validationCommands:
   - ./gradlew :products:phr:domains:healthcare:build
 notes:

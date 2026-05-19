@@ -49,8 +49,8 @@ test.describe('Keyboard Navigation @a11y', () => {
 
   test('strategy form controls are keyboard reachable', async ({ page }) => {
     await navigateInApp(page, `/workspaces/${TEST_WORKSPACE}/strategy`);
-    await page.locator('[data-testid="strategy-service-area-input"]').focus();
-    await expect(page.locator('[data-testid="strategy-service-area-input"]')).toBeFocused();
+    await page.locator('[data-testid="strategy-objective-input"]').focus();
+    await expect(page.locator('[data-testid="strategy-objective-input"]')).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator('[data-testid="strategy-offer-input"]')).toBeFocused();
   });

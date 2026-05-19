@@ -13,6 +13,9 @@ requiredEvidenceRefs:
 blockingReasonCodes:
   - requires-audit-evidence
   - missing-audit-evidence
+lifecyclePhases:
+  - validate
+  - build
 validationCommands:
   - ./gradlew :products:phr:build
 notes:

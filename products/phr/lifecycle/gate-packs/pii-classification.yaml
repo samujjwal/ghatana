@@ -13,6 +13,9 @@ requiredEvidenceRefs:
 blockingReasonCodes:
   - requires-pii-classification
   - missing-pii-classification
+lifecyclePhases:
+  - validate
+  - build
 validationCommands:
   - ./gradlew :products:phr:build
 notes:

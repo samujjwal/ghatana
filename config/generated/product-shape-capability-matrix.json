@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-18T20:58:41.783Z",
+  "generated": "2026-05-19T18:08:00.894Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -1255,6 +1255,7 @@
         "execution-ready",
         "fhir-r4-pilot-surfaces-validated",
         "healthcare-pilot-enabled",
+        "phr-rollback-after-stable-deploy-verify",
         "pii-classification-active"
       ],
       "nextActions": [

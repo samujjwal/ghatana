@@ -12,6 +12,7 @@ module.exports = [
       "**/node_modules/**",
       "**/.turbo/**",
       "**/*.d.ts",
+      "src/types/api-generated.ts/**",
     ],
   },
   {

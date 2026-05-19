@@ -42,18 +42,18 @@ class FhirInteropKernelPluginTest {
         // Clear the DEGRADED mode and set STRICT
         System.clearProperty("PHR_DATACLOUD_MODE");
         System.setProperty("PHR_DATACLOUD_MODE", "STRICT");
-        
+
         FhirInteropKernelPlugin strictPlugin = new FhirInteropKernelPlugin();
         KernelContext strictContext = createMockContext();
-        
+
         IllegalStateException exception = assertThrows(
             IllegalStateException.class,
             () -> strictPlugin.initialize(strictContext)
         );
-        
+
         assertTrue(exception.getMessage().contains("DataCloud adapter is required in STRICT mode"));
         assertTrue(exception.getMessage().contains("not available"));
-        
+
         System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
     }
 
@@ -62,10 +62,10 @@ class FhirInteropKernelPluginTest {
     void shouldInitializeInDegradedModeWhenDataCloudUnavailable() {
         System.clearProperty("PHR_DATACLOUD_MODE");
         System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
-        
+
         FhirInteropKernelPlugin degradedPlugin = new FhirInteropKernelPlugin();
         KernelContext degradedContext = createMockContext();
-        
+
         assertDoesNotThrow(() -> degradedPlugin.initialize(degradedContext));
     }
 
@@ -74,18 +74,18 @@ class FhirInteropKernelPluginTest {
     void shouldMakeDataCloudDependencyRequiredInStrictModeInManifest() {
         System.clearProperty("PHR_DATACLOUD_MODE");
         System.setProperty("PHR_DATACLOUD_MODE", "STRICT");
-        
+
         FhirInteropKernelPlugin strictPlugin = new FhirInteropKernelPlugin();
         PluginManifest manifest = strictPlugin.getManifest();
-        
+
         assertNotNull(manifest.getDependencies());
         var dataCloudDep = manifest.getDependencies().stream()
             .filter(d -> "data-storage".equals(d.getDependencyId()))
             .findFirst();
-        
+
         assertTrue(dataCloudDep.isPresent());
         assertFalse(dataCloudDep.get().isOptional(), "DataCloud dependency should be required in STRICT mode");
-        
+
         System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
     }
 
@@ -94,15 +94,15 @@ class FhirInteropKernelPluginTest {
     void shouldMakeDataCloudDependencyOptionalInDegradedModeInManifest() {
         System.clearProperty("PHR_DATACLOUD_MODE");
         System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
-        
+
         FhirInteropKernelPlugin degradedPlugin = new FhirInteropKernelPlugin();
         PluginManifest manifest = degradedPlugin.getManifest();
-        
+
         assertNotNull(manifest.getDependencies());
         var dataCloudDep = manifest.getDependencies().stream()
             .filter(d -> "data-storage".equals(d.getDependencyId()))
             .findFirst();
-        
+
         assertTrue(dataCloudDep.isPresent());
         assertTrue(dataCloudDep.get().isOptional(), "DataCloud dependency should be optional in DEGRADED mode");
     }

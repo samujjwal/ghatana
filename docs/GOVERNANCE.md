@@ -2,9 +2,22 @@
 
 > **Owner:** Platform Team | **Status:** Active | **Effective:** 2026-03-22
 
-**Authoritative Sources:**
-- Repository-wide engineering standards: [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
-- Platform library governance: [`platform/typescript/LIBRARY_GOVERNANCE.md`](platform/typescript/LIBRARY_GOVERNANCE.md)
+## Authority Table
+
+| Governance area | Authoritative source | Validation |
+| --- | --- | --- |
+| Domain workstream map | [`docs/architecture/DOMAIN_WORKSTREAM_MAP.md`](architecture/DOMAIN_WORKSTREAM_MAP.md) | `pnpm check:domain-registry` |
+| Machine-readable domain registry | [`config/domain-registry.json`](../config/domain-registry.json) | `pnpm check:domain-registry` |
+| Machine-readable product registry | [`config/canonical-product-registry.json`](../config/canonical-product-registry.json) | `pnpm check:product-registry` |
+| Repository-wide implementation rules | [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) | `node scripts/check-doc-authority.mjs` |
+| Product architecture direction | [`ghatana_unified_product_development_blueprint_hardened.md`](../ghatana_unified_product_development_blueprint_hardened.md) | `pnpm check:doc-truth` |
+| Platform library governance | [`platform/typescript/LIBRARY_GOVERNANCE.md`](../platform/typescript/LIBRARY_GOVERNANCE.md) | `pnpm check:platform-package-governance` |
+
+Lower-level docs may summarize these rules for local context, but they must reference the authoritative source instead of redefining registry, domain, product, package, or implementation governance.
+
+### Stale-Doc Exceptions
+
+Use a stale-doc exception only when a lower-level document cannot be updated in the same change. The exception must record the doc path, owner, classification, expiry date, replacement document, and validation command. Expired exceptions must fail the relevant doc-governance check rather than silently carrying stale guidance.
 
 ---
 

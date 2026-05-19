@@ -35,6 +35,34 @@ const GENERATED_MANIFEST_KEYS = [
   'lifecycleEvents',
   'rollbackManifest',
 ];
+const REQUIRED_EVIDENCE_CATEGORIES = [
+  'baseline',
+  'plan',
+  'validate',
+  'test',
+  'build',
+  'package',
+  'deploy',
+  'verify',
+  'rollback',
+  'gate-results',
+  'health',
+  'approvals',
+  'provenance',
+  'product-domain-correctness',
+];
+const REQUIRED_PHASE_EVIDENCE_FIELDS = [
+  'runId',
+  'correlationId',
+  'productUnitId',
+  'phase',
+  'providerMode',
+  'status',
+  'startedAt',
+  'completedAt',
+  'durationMs',
+  'evidenceRefs',
+];
 
 function parseArgs(argv) {
   return {
@@ -100,6 +128,19 @@ function asNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function includesAll(label, actual, expected, errors) {
+  const actualSet = new Set(asArray(actual));
+  for (const item of expected) {
+    if (!actualSet.has(item)) {
+      errors.push(`${label} missing required entry: ${item}`);
+    }
+  }
+}
+
 function runKernelProduct(args) {
   const output = execFileSync(
     process.execPath,
@@ -143,9 +184,11 @@ async function main() {
   const errors = [];
   const warnings = [];
   const evidence = {
+    schemaVersion: '1.0.0',
     productId: PRODUCT_ID,
     checkedAt: new Date().toISOString(),
     smokeEnabled: options.smoke,
+    evidenceCategories: REQUIRED_EVIDENCE_CATEGORIES,
     checks: {
       plannedPhases: [],
       smokePhases: [],
@@ -491,6 +534,8 @@ async function main() {
     warnings.push(...composeProofResult.warnings);
   }
 
+  errors.push(...validateEvidencePackShape(PRODUCT_ID, evidence));
+
   if (options.evidencePackDir !== undefined) {
     writeEvidencePack(options.evidencePackDir, {
       ...evidence,
@@ -745,17 +790,71 @@ async function runLifecycleSmoke() {
     }));
     errors.push(...validateGateEvidence(smokeRun.phase, payload));
 
-    phases.push({
-      phase: smokeRun.phase,
-      status: 'ok',
-      runId: payload?.plan?.runId,
-      correlationId: payload?.plan?.correlationId,
-      providerMode: payload?.plan?.providerMode,
-      manifests: payload?.manifests ?? {},
-    });
+    phases.push(buildSmokePhaseEvidence(smokeRun.phase, payload, 'ok'));
   }
 
   return { errors, phases };
+}
+
+function buildSmokePhaseEvidence(phase, payload, status) {
+  const result = payload?.result ?? {};
+  const plan = payload?.plan ?? {};
+  const manifests = payload?.manifests ?? {};
+  const startedAt = result.startedAt ?? new Date().toISOString();
+  const completedAt = result.completedAt ?? startedAt;
+
+  return {
+    phase,
+    status,
+    runId: plan.runId ?? result.runId,
+    correlationId: plan.correlationId ?? result.correlationId,
+    productUnitId: plan.productUnitId ?? result.productUnitId ?? result.productId ?? PRODUCT_ID,
+    providerMode: plan.providerMode ?? result.providerMode,
+    startedAt,
+    completedAt,
+    durationMs: typeof result.durationMs === 'number'
+      ? result.durationMs
+      : Math.max(0, Date.parse(completedAt) - Date.parse(startedAt)),
+    evidenceRefs: collectEvidenceRefs(result, manifests),
+    manifests,
+  };
+}
+
+function collectEvidenceRefs(result, manifests) {
+  const refs = new Set();
+  for (const value of Object.values(manifests ?? {})) {
+    if (typeof value === 'string' && value.trim().length > 0 && value.endsWith('.json')) {
+      refs.add(value);
+    }
+  }
+  for (const value of [result?.eventsRef, result?.healthSnapshotRef]) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      refs.add(value);
+    }
+  }
+  return [...refs].sort();
+}
+
+function validateEvidencePackShape(productId, evidence) {
+  const errors = [];
+
+  if (evidence?.schemaVersion !== '1.0.0') {
+    errors.push(`${productId} evidence pack schemaVersion must be 1.0.0`);
+  }
+  includesAll(`${productId} evidence categories`, evidence?.evidenceCategories, REQUIRED_EVIDENCE_CATEGORIES, errors);
+
+  for (const [index, phaseEvidence] of asArray(evidence?.checks?.smokePhases).entries()) {
+    for (const field of REQUIRED_PHASE_EVIDENCE_FIELDS) {
+      if (phaseEvidence?.[field] === undefined || phaseEvidence?.[field] === null || phaseEvidence?.[field] === '') {
+        errors.push(`${productId} smokePhases[${index}] missing ${field}`);
+      }
+    }
+    if (!Array.isArray(phaseEvidence?.evidenceRefs) || phaseEvidence.evidenceRefs.length === 0) {
+      errors.push(`${productId} smokePhases[${index}].evidenceRefs must include generated manifest refs`);
+    }
+  }
+
+  return errors;
 }
 
 function runFailureScenarios() {

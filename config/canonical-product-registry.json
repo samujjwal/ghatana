@@ -45,23 +45,28 @@
         "pilot": true,
         "lifecycleReadiness": {
           "reasonCodes": [
-            "disabled-observed",
-            "requires-product-owner-executable-surface-definition",
-            "requires-lifecycle-profile",
-            "demo-product-not-execution-ready"
+            "validated-phr-lifecycle-pilot",
+            "healthcare-gates-active",
+            "local-package-deploy-verify-ready",
+            "phr-rollback-after-stable-deploy-verify"
           ],
           "requiredGates": [
-            "org-model-governance",
-            "integration-contract-readiness",
-            "demo-scope-review"
+            "consent",
+            "pii-classification",
+            "audit-evidence",
+            "fhir-contract-validation",
+            "tenant-data-sovereignty"
           ],
           "nextRequiredWork": [
-            "Keep PHR lifecycle disabled until healthcare-specific executable lifecycle surfaces are validated",
-            "Add governance and integration evidence before lifecycle execution"
+            "Keep healthcare gate packs evidence-backed across validate, build, and deploy phases",
+            "Keep generated lifecycle evidence packs current for validate, test, build, package, deploy, and verify",
+            "Enable PHR rollback only after stable deployment manifest history, artifact selection policy, healthcare post-rollback gates, and approval contract are in place"
           ],
           "evidenceRefs": [
             "products/phr/kernel-product.yaml",
-            "products/phr/schema-packs/schema-registry.yaml"
+            "products/phr/schema-packs/schema-registry.yaml",
+            "products/phr/lifecycle/readiness-evidence.yaml",
+            ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
           ]
         },
         "created": "2026-03-19",
@@ -79,11 +84,12 @@
         "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
       },
       "lifecycleReadiness": {
-        "reasonCodes": [
-          "healthcare-pilot-enabled",
-          "fhir-r4-pilot-surfaces-validated",
-          "consent-gate-active",
-          "pii-classification-active"
+          "reasonCodes": [
+            "healthcare-pilot-enabled",
+            "fhir-r4-pilot-surfaces-validated",
+            "consent-gate-active",
+            "pii-classification-active",
+            "phr-rollback-after-stable-deploy-verify"
         ],
         "requiredGates": [
           "consent",
@@ -148,6 +154,21 @@
           ]
         },
         "status": "enabled"
+      },
+      "rollbackReadiness": {
+        "status": "target-partial",
+        "classification": "target/partial",
+        "reasonCode": "phr-rollback-after-stable-deploy-verify",
+        "requiredBeforeEnablement": [
+          "stable-deployment-manifest-history",
+          "previous-artifact-selection-policy",
+          "healthcare-post-rollback-verification-gates",
+          "rollback-approval-contract"
+        ],
+        "evidenceRefs": [
+          "products/phr/kernel-product.yaml",
+          ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
+        ]
       },
       "lifecycleConfigPath": "products/phr/kernel-product.yaml",
       "lifecycle": {

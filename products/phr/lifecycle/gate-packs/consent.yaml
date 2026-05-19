@@ -13,6 +13,10 @@ requiredEvidenceRefs:
 blockingReasonCodes:
   - requires-consent-gate
   - missing-consent-gate
+lifecyclePhases:
+  - validate
+  - build
+  - deploy
 validationCommands:
   - ./gradlew :products:phr:build
 notes:

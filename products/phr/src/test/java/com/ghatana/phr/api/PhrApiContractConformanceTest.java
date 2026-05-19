@@ -5,7 +5,6 @@ import io.activej.http.HttpMethod;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;

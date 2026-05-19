@@ -12,6 +12,21 @@ export const DOMAIN_CLASSIFICATIONS = new Set([
   'target-architecture',
   'anti-pattern',
 ]);
+export const PHASE_PLAN_STATUSES = new Set([
+  'not-started',
+  'in-progress',
+  'pilot-ready',
+  'executable',
+  'blocked',
+]);
+export const PILOT_RELEVANCE_VALUES = new Set([
+  'digital-marketing',
+  'phr',
+  'both',
+  'future-products',
+  'platform-provider-only',
+]);
+export const OPENING_PILOT_PRODUCT_IDS = ['digital-marketing', 'phr'];
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -135,6 +150,36 @@ export function validateDomainRegistryDocument(document, options = {}) {
     validateStringArray(domain, 'requiredChecks', issues);
     validateStringArray(domain, 'productAssociations', issues);
     validateStringArray(domain, 'currentStateEvidence', issues);
+    validateStringArray(domain, 'minimumValidationCommands', issues, { minItems: 1 });
+    validateStringArray(domain, 'fullRegressionCommands', issues, { minItems: 1 });
+    validateStringArray(domain, 'ownedContracts', issues);
+    validateStringArray(domain, 'forbiddenOwnership', issues);
+    validateStringArray(domain, 'pilotDependency', issues);
+
+    if (!PHASE_PLAN_STATUSES.has(domain?.phasePlanStatus)) {
+      issues.push(formatIssue(domainId, 'phasePlanStatus', `unknown phase plan status '${String(domain?.phasePlanStatus)}'`, 'Use one of not-started, in-progress, pilot-ready, executable, or blocked.'));
+    }
+    if (!PILOT_RELEVANCE_VALUES.has(domain?.pilotRelevance)) {
+      issues.push(formatIssue(domainId, 'pilotRelevance', `unknown pilot relevance '${String(domain?.pilotRelevance)}'`, 'Use one of digital-marketing, phr, both, future-products, or platform-provider-only.'));
+    }
+    if (!Array.isArray(domain?.currentBlockingGaps)) {
+      issues.push(formatIssue(domainId, 'currentBlockingGaps', 'must be an array', 'Set currentBlockingGaps to an array of owner/expiry/classification/remediationPhase objects.'));
+    } else {
+      domain.currentBlockingGaps.forEach((gap, index) => {
+        if (!isNonEmptyString(gap?.owner)) {
+          issues.push(formatIssue(domainId, `currentBlockingGaps[${index}].owner`, 'must be a non-empty string', 'Set gap owner to the accountable team.'));
+        }
+        if (!isNonEmptyString(gap?.expiry) || !/^\d{4}-\d{2}-\d{2}$/.test(gap.expiry)) {
+          issues.push(formatIssue(domainId, `currentBlockingGaps[${index}].expiry`, 'must be an ISO date string (YYYY-MM-DD)', 'Set gap expiry to an explicit review date.'));
+        }
+        if (!DOMAIN_CLASSIFICATIONS.has(gap?.classification)) {
+          issues.push(formatIssue(domainId, `currentBlockingGaps[${index}].classification`, `unknown classification '${String(gap?.classification)}'`, 'Use a domain registry classification.'));
+        }
+        if (typeof gap?.remediationPhase !== 'number' || !Number.isInteger(gap.remediationPhase)) {
+          issues.push(formatIssue(domainId, `currentBlockingGaps[${index}].remediationPhase`, 'must be an integer', 'Set remediationPhase to the phase that owns closing the gap.'));
+        }
+      });
+    }
 
     // Validate boundaryPolicy
     if (domain.boundaryPolicy) {
@@ -191,6 +236,37 @@ export function validateDomainRegistryDocument(document, options = {}) {
     for (const productId of domain.productAssociations ?? []) {
       if (isNonEmptyString(productId) && !productIds.has(productId)) {
         issues.push(formatIssue(domainId, 'productAssociations', `unknown product association '${productId}'`, `Replace '${productId}' with a product id from config/canonical-product-registry.json.`));
+      }
+    }
+
+    if (domain.pilotRelevance === 'both') {
+      for (const productId of OPENING_PILOT_PRODUCT_IDS) {
+        if (!domain.productAssociations?.includes(productId)) {
+          issues.push(formatIssue(domainId, 'productAssociations', `pilot relevance "both" requires product association '${productId}'`, `Add '${productId}' to productAssociations or choose narrower pilotRelevance.`));
+        }
+      }
+    } else if (OPENING_PILOT_PRODUCT_IDS.includes(domain.pilotRelevance) && !domain.productAssociations?.includes(domain.pilotRelevance)) {
+      issues.push(formatIssue(domainId, 'productAssociations', `pilot relevance '${domain.pilotRelevance}' requires matching product association`, `Add '${domain.pilotRelevance}' to productAssociations or choose a different pilotRelevance.`));
+    }
+
+    for (const productId of domain.pilotDependency ?? []) {
+      if (!OPENING_PILOT_PRODUCT_IDS.includes(productId)) {
+        issues.push(formatIssue(domainId, 'pilotDependency', `unknown opening pilot dependency '${productId}'`, 'Use digital-marketing or phr.'));
+      }
+      if (!domain.productAssociations?.includes(productId)) {
+        issues.push(formatIssue(domainId, 'pilotDependency', `pilot dependency '${productId}' must also be listed in productAssociations`, `Add '${productId}' to productAssociations or remove it from pilotDependency.`));
+      }
+    }
+
+    for (const command of domain.minimumValidationCommands ?? []) {
+      if (!domain.requiredChecks?.includes(command) && !domain.independentExecutionChecks?.includes(command)) {
+        issues.push(formatIssue(domainId, 'minimumValidationCommands', `command '${command}' is not listed in requiredChecks or independentExecutionChecks`, 'Keep minimum validation commands anchored to executable domain checks.'));
+      }
+    }
+
+    for (const command of domain.fullRegressionCommands ?? []) {
+      if (!domain.fullRegressionChecks?.includes(command)) {
+        issues.push(formatIssue(domainId, 'fullRegressionCommands', `command '${command}' is not listed in fullRegressionChecks`, 'Keep full regression commands anchored to executable domain checks.'));
       }
     }
 

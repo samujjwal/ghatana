@@ -697,6 +697,9 @@ importers:
       '@ghatana/ds-registry':
         specifier: workspace:*
         version: link:../ds-registry
+      '@ghatana/ds-schema':
+        specifier: workspace:*
+        version: link:../ds-schema
       '@ghatana/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -1189,9 +1192,6 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
-      react-router:
-        specifier: ^7.0.0
-        version: 7.14.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 'catalog:'
@@ -1202,6 +1202,9 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
+      react-router-dom:
+        specifier: 'catalog:'
+        version: 7.14.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(@microsoft/api-extractor@7.58.1(@types/node@25.6.0))(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.9.0)
@@ -1742,6 +1745,9 @@ importers:
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
+      '@ghatana/tokens':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/tokens
       '@ghatana/wizard':
         specifier: workspace:*
         version: link:../../../../platform/typescript/wizard
@@ -4021,6 +4027,9 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.2.3(@types/react@19.2.14)
+      '@typescript-eslint/parser':
+        specifier: ^8.58.1
+        version: 8.58.1(eslint@9.39.3(jiti@2.6.1))(typescript@6.0.2)
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.0.1(babel-plugin-react-compiler@1.0.0)(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))

@@ -16,6 +16,13 @@ const REQUIRED_GATES = [
   'fhir-contract-validation',
   'tenant-data-sovereignty',
 ];
+const REQUIRED_GATE_PHASES = {
+  consent: ['validate', 'build', 'deploy'],
+  'pii-classification': ['validate', 'build'],
+  'audit-evidence': ['validate', 'build'],
+  'fhir-contract-validation': ['validate', 'build'],
+  'tenant-data-sovereignty': ['validate', 'build', 'deploy'],
+};
 const REQUIRED_VALIDATION_COMMANDS = [
   './gradlew :products:phr:build',
   './gradlew :products:phr:launcher:build',
@@ -23,6 +30,12 @@ const REQUIRED_VALIDATION_COMMANDS = [
   'pnpm --filter ./products/phr/apps/web type-check',
   'pnpm --filter ./products/phr/apps/web test',
   'pnpm --filter ./products/phr/apps/web build',
+];
+const REQUIRED_ROLLBACK_ENABLEMENT_ITEMS = [
+  'stable-deployment-manifest-history',
+  'previous-artifact-selection-policy',
+  'healthcare-post-rollback-verification-gates',
+  'rollback-approval-contract',
 ];
 
 function readJson(relativePath) {
@@ -68,12 +81,28 @@ function validateGatePack(gateId, gatePath) {
   if (gatePack.executionMode !== 'evidence-backed') {
     fail(`${gatePath} must declare executionMode: evidence-backed`);
   }
+  if (!gatePack.schemaVersion) {
+    fail(`${gatePath} must declare schemaVersion`);
+  }
+  if (!gatePack.owner) {
+    fail(`${gatePath} must declare owner`);
+  }
+  if (!gatePack.title || !gatePack.description) {
+    fail(`${gatePath} must declare title and description`);
+  }
   if (!['active', 'ready'].includes(gatePack.status)) {
     fail(`${gatePath} must declare status: active or ready`);
   }
   if (!Array.isArray(gatePack.requiredEvidenceRefs) || gatePack.requiredEvidenceRefs.length === 0) {
     fail(`${gatePath} must declare requiredEvidenceRefs`);
   }
+  if (!Array.isArray(gatePack.blockingReasonCodes) || gatePack.blockingReasonCodes.length < 2) {
+    fail(`${gatePath} must declare blockingReasonCodes for fail-closed evidence reporting`);
+  }
+  if (!Array.isArray(gatePack.validationCommands) || gatePack.validationCommands.length === 0) {
+    fail(`${gatePath} must declare validationCommands`);
+  }
+  assertIncludesAll(`${gatePath} lifecycle phases`, gatePack.lifecyclePhases, REQUIRED_GATE_PHASES[gateId] ?? []);
   if ('engineRef' in gatePack || 'genericGateEngine' in gatePack) {
     fail(`${gatePath} must not define a generic lifecycle gate engine`);
   }
@@ -117,6 +146,26 @@ function validateReadinessEvidence(readiness) {
   assertIncludesAll('PHR readiness validation commands', readiness.validationCommands, REQUIRED_VALIDATION_COMMANDS);
 }
 
+function validateRollbackReadiness(label, rollbackReadiness) {
+  if (!rollbackReadiness || typeof rollbackReadiness !== 'object') {
+    fail(`${label} must classify PHR rollback readiness while rollback is absent`);
+  }
+  if (rollbackReadiness.status !== 'target-partial') {
+    fail(`${label}.status must be target-partial`);
+  }
+  if (rollbackReadiness.classification !== 'target/partial') {
+    fail(`${label}.classification must be target/partial`);
+  }
+  if (rollbackReadiness.reasonCode !== 'phr-rollback-after-stable-deploy-verify') {
+    fail(`${label}.reasonCode must be phr-rollback-after-stable-deploy-verify`);
+  }
+  assertIncludesAll(
+    `${label}.requiredBeforeEnablement`,
+    rollbackReadiness.requiredBeforeEnablement,
+    REQUIRED_ROLLBACK_ENABLEMENT_ITEMS,
+  );
+}
+
 function main() {
   const registry = readJson('config/canonical-product-registry.json').registry;
   const phr = registry[PRODUCT_ID];
@@ -136,6 +185,11 @@ function main() {
   }
   assertIncludesAll('PHR kernel readiness gates', kernelProduct.readiness?.requiredGates, REQUIRED_GATES);
   assertIncludesAll('PHR registry readiness gates', phr.lifecycleReadiness?.requiredGates, REQUIRED_GATES);
+  validateRollbackReadiness('PHR kernel rollbackReadiness', kernelProduct.rollbackReadiness);
+  validateRollbackReadiness('PHR registry rollbackReadiness', phr.rollbackReadiness);
+  if (kernelProduct.phases?.rollback || kernelProduct.requiredManifests?.rollback) {
+    fail('PHR rollback phase/manifests must remain absent until rollbackReadiness is promoted from target-partial');
+  }
 
   const readinessEvidencePath = 'products/phr/lifecycle/readiness-evidence.yaml';
   const productLocalEvidenceRefs = [

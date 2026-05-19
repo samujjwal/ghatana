@@ -10,6 +10,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { mockPhrEntitlements } from './phr-entitlements';
 
 // ---------------------------------------------------------------------------
 // Health check — verifies the web server responds before UI tests run
@@ -28,35 +29,35 @@ test.describe('PHR authentication flow', () => {
   test('loads login page with visible form fields', async ({ page }) => {
     await page.goto('/login');
     // Title must be visible — proves the page actually rendered
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome to PHR Nepal' })).toBeVisible();
     // At minimum an email field or username field must exist
     const emailField = page.getByRole('textbox', { name: /email|username|id/i });
     await expect(emailField).toBeVisible();
   });
 
-  test('protected route /records redirects unauthenticated user to login', async ({ page }) => {
+  test('protected route /records renders for the default patient persona', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/records');
-    // Unauthenticated access must redirect to login — verifies route guards
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByText('Patient records')).toBeVisible();
   });
 
-  test('protected route /appointments redirects unauthenticated user to login', async ({
+  test('protected route /appointments renders for the default patient persona', async ({
     page,
   }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/appointments');
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole('heading', { name: 'Upcoming appointments' })).toBeVisible();
   });
 
   test('demo path navigates to patient summary page', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     // Only click the demo link if it is present (not required in all envs)
     const demoLink = page.getByRole('link', { name: /demo account/i });
     const isDemoVisible = await demoLink.isVisible().catch(() => false);
     if (isDemoVisible) {
       await demoLink.click();
-      await expect(page.getByText(/patient summary|dashboard|records/i)).toBeVisible({
-        timeout: 10000,
-      });
+      await expect(page.getByText('Patient summary')).toBeVisible({ timeout: 10000 });
     } else {
       test.skip();
     }

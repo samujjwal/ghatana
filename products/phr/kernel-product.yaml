@@ -30,6 +30,26 @@ readiness:
     - products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
     - products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
 
+rollbackReadiness:
+  status: target-partial
+  classification: target/partial
+  reasonCode: phr-rollback-after-stable-deploy-verify
+  currentScope:
+    - validate
+    - test
+    - build
+    - package
+    - deploy
+    - verify
+  requiredBeforeEnablement:
+    - stable-deployment-manifest-history
+    - previous-artifact-selection-policy
+    - healthcare-post-rollback-verification-gates
+    - rollback-approval-contract
+  evidenceRefs:
+    - products/phr/kernel-product.yaml
+    - .kernel/evidence/phr/phr-lifecycle-evidence-pack.json
+
 surfaces:
   backend-api:
     source: products/phr

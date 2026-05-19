@@ -1,0 +1,207 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "checkedAt": "2026-05-19T18:12:06.433Z",
+  "smokeEnabled": true,
+  "evidenceCategories": [
+    "baseline",
+    "plan",
+    "validate",
+    "test",
+    "build",
+    "package",
+    "deploy",
+    "verify",
+    "rollback",
+    "gate-results",
+    "health",
+    "approvals",
+    "provenance",
+    "product-domain-correctness"
+  ],
+  "checks": {
+    "smokePhases": [
+      {
+        "phase": "validate",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-07-01806850",
+        "correlationId": "corr-2026-05-19T18-12-07-01806850",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:08.476Z",
+        "completedAt": "2026-05-19T18:12:08.476Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-result.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/validate/2026-05-19T18-12-07-01806850/phr/2026-05-19T18-12-07-01806850/validate/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-07-01806850",
+          "correlationId": "corr-2026-05-19T18-12-07-01806850",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "test",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-10-e764546e",
+        "correlationId": "corr-2026-05-19T18-12-10-e764546e",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:10.938Z",
+        "completedAt": "2026-05-19T18:12:10.938Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-result.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/test/2026-05-19T18-12-10-e764546e/phr/2026-05-19T18-12-10-e764546e/test/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-10-e764546e",
+          "correlationId": "corr-2026-05-19T18-12-10-e764546e",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "build",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-12-146197f0",
+        "correlationId": "corr-2026-05-19T18-12-12-146197f0",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:14.642Z",
+        "completedAt": "2026-05-19T18:12:14.642Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/artifact-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-result.json",
+          "artifactManifest": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/artifact-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/build/2026-05-19T18-12-12-146197f0/phr/2026-05-19T18-12-12-146197f0/build/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-12-146197f0",
+          "correlationId": "corr-2026-05-19T18-12-12-146197f0",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "package",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-18-12f14687",
+        "correlationId": "corr-2026-05-19T18-12-18-12f14687",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:19.489Z",
+        "completedAt": "2026-05-19T18:12:19.489Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/artifact-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-result.json",
+          "artifactManifest": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/artifact-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/package/2026-05-19T18-12-18-12f14687/phr/2026-05-19T18-12-18-12f14687/package/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-18-12f14687",
+          "correlationId": "corr-2026-05-19T18-12-18-12f14687",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "deploy",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-21-4c40d4ff",
+        "correlationId": "corr-2026-05-19T18-12-21-4c40d4ff",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:22.604Z",
+        "completedAt": "2026-05-19T18:12:22.604Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/deployment-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-result.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-result.json",
+          "deploymentManifest": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/deployment-manifest.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/deploy/2026-05-19T18-12-21-4c40d4ff/phr/2026-05-19T18-12-21-4c40d4ff/deploy/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-21-4c40d4ff",
+          "correlationId": "corr-2026-05-19T18-12-21-4c40d4ff",
+          "providerMode": "bootstrap"
+        }
+      },
+      {
+        "phase": "verify",
+        "status": "ok",
+        "runId": "2026-05-19T18-12-25-898445ee",
+        "correlationId": "corr-2026-05-19T18-12-25-898445ee",
+        "productUnitId": "phr",
+        "providerMode": "bootstrap",
+        "startedAt": "2026-05-19T18:12:26.504Z",
+        "completedAt": "2026-05-19T18:12:26.504Z",
+        "durationMs": 0,
+        "evidenceRefs": [
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/lifecycle-plan.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/gate-result-manifest.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-events.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-health-snapshot.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-result.json",
+          "/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/verify-health-report.json"
+        ],
+        "manifests": {
+          "lifecyclePlan": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/lifecycle-plan.json",
+          "lifecycleResult": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-result.json",
+          "verifyHealthReport": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/verify-health-report.json",
+          "lifecycleHealthSnapshot": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-health-snapshot.json",
+          "gateResultManifest": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/gate-result-manifest.json",
+          "lifecycleEvents": ".kernel/out/products/phr/verify/2026-05-19T18-12-25-898445ee/phr/2026-05-19T18-12-25-898445ee/verify/lifecycle-events.json",
+          "runId": "2026-05-19T18-12-25-898445ee",
+          "correlationId": "corr-2026-05-19T18-12-25-898445ee",
+          "providerMode": "bootstrap"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "status": "passed",
+    "errorCount": 0
+  },
+  "errors": []
+}

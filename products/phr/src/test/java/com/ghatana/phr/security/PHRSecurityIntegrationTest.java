@@ -281,25 +281,45 @@ class PHRSecurityIntegrationTest {
 
     private static class UnauthenticatedContext implements SecurityContext {
         @Override
-        public String getTenantId() { return "tenant-1"; }
+        public String getTenantId() {
+            return "tenant-1";
+        }
         @Override
-        public String getUserId() { return "anonymous"; }
+        public String getUserId() {
+            return "anonymous";
+        }
         @Override
-        public java.util.Set<String> getRoles() { return java.util.Collections.emptySet(); }
+        public java.util.Set<String> getRoles() {
+            return java.util.Collections.emptySet();
+        }
         @Override
-        public Map<String, Object> getAttributes() { return java.util.Collections.emptyMap(); }
+        public Map<String, Object> getAttributes() {
+            return java.util.Collections.emptyMap();
+        }
         @Override
-        public boolean hasRole(String role) { return false; }
+        public boolean hasRole(String role) {
+            return false;
+        }
         @Override
-        public boolean hasPermission(String permission) { return false; }
+        public boolean hasPermission(String permission) {
+            return false;
+        }
         @Override
-        public Object getAttribute(String key) { return null; }
+        public Object getAttribute(String key) {
+            return null;
+        }
         @Override
-        public String getSessionId() { return "none"; }
+        public String getSessionId() {
+            return "none";
+        }
         @Override
-        public boolean isAuthenticated() { return false; }
+        public boolean isAuthenticated() {
+            return false;
+        }
         @Override
-        public long getAuthenticationTime() { return 0; }
+        public long getAuthenticationTime() {
+            return 0;
+        }
     }
 
     private static final class TestConsentService implements ConsentService {

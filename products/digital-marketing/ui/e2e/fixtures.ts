@@ -4,11 +4,37 @@
  * All API responses are routed through page.route() so no real backend is needed.
  */
 import type { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+
+type ValidRole = 'viewer' | 'brand-manager' | 'marketing-director' | 'exec-sponsor' | 'admin';
+
+interface DmosRouteCapability {
+  readonly path: string;
+  readonly label: string;
+  readonly minimumRole: ValidRole;
+  readonly personas?: readonly string[];
+  readonly tiers?: readonly string[];
+  readonly actions?: readonly string[];
+  readonly cards?: readonly string[];
+  readonly capabilityKey?: string;
+}
 
 export const TEST_WORKSPACE = 'ws-e2e';
 export const TEST_TENANT = 'tenant-e2e';
 export const TEST_PRINCIPAL = 'user-e2e';
 export const TEST_TOKEN = 'e2e-test-token';
+
+const DMOS_ROLE_ORDER: Readonly<Record<ValidRole, number>> = {
+  viewer: 0,
+  'brand-manager': 1,
+  'marketing-director': 2,
+  'exec-sponsor': 3,
+  admin: 4,
+};
+
+const dmosRouteManifest = JSON.parse(
+  readFileSync(new URL('../../dm-api/src/main/resources/contracts/dmos-route-capabilities.json', import.meta.url), 'utf8'),
+).routes as readonly DmosRouteCapability[];
 
 export const APPROVAL_PENDING = {
   requestId: 'req-e2e-1',
@@ -137,12 +163,60 @@ export const ENABLED_CAPABILITIES = {
   lastUpdated: '2026-01-10T09:00:00Z',
 };
 
+function isValidRole(value: string | null | undefined): value is ValidRole {
+  return (
+    value === 'viewer' ||
+    value === 'brand-manager' ||
+    value === 'marketing-director' ||
+    value === 'exec-sponsor' ||
+    value === 'admin'
+  );
+}
+
 /**
  * Mock all DMOS API routes needed for E2E tests.
  * Call this in beforeEach for tests that need authenticated state.
  */
 export async function mockDmosApi(page: Page): Promise<void> {
   let approvalState = { ...APPROVAL_PENDING };
+
+  await page.route('**/v1/route-entitlements**', (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const requestedRole = request.headers()['x-role'] ?? url.searchParams.get('role');
+    const role: ValidRole = isValidRole(requestedRole) ? requestedRole : 'viewer';
+    const routes = dmosRouteManifest.filter((entry) => {
+      const requiredRole = entry.minimumRole as ValidRole | undefined;
+      return requiredRole === undefined || DMOS_ROLE_ORDER[role] >= DMOS_ROLE_ORDER[requiredRole];
+    });
+
+    return route.fulfill({
+      json: {
+        product: 'digital-marketing',
+        principalId: TEST_PRINCIPAL,
+        tenantId: TEST_TENANT,
+        role,
+        persona: role,
+        tier: role === 'viewer' ? 'read-only' : 'workspace',
+        routes,
+        actions: routes.flatMap((entry) =>
+          (entry.actions ?? []).map((action) => ({
+            id: action,
+            label: action.replace(/-/g, ' '),
+            routePath: entry.path,
+          })),
+        ),
+        cards: routes.flatMap((entry) =>
+          (entry.cards ?? []).map((card) => ({
+            id: card,
+            title: card.replace(/-/g, ' '),
+            routePath: entry.path,
+            surface: 'dashboard',
+          })),
+        ),
+      },
+    });
+  });
 
   // Workspace capabilities
   await page.route(
@@ -209,7 +283,7 @@ export async function mockDmosApi(page: Page): Promise<void> {
 
   // AI action log
   await page.route(
-    `**/v1/workspaces/${TEST_WORKSPACE}/ai-actions`,
+    `**/v1/workspaces/${TEST_WORKSPACE}/ai-actions**`,
     (route) => route.fulfill({ json: { items: [AI_ACTION] } }),
   );
 }

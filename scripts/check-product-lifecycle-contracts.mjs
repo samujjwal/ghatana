@@ -28,9 +28,25 @@ function loadLifecycleExclusions() {
   return JSON.parse(readFileSync(lifecycleExclusionsPath, 'utf8')).excludedProducts ?? {};
 }
 
-async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts) {
+export async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolchains, excludedProducts, options = {}) {
   const errors = [];
   const warnings = [];
+  const parseLifecycleConfig =
+    options.parseLifecycleConfig ??
+    (async (configPath) => {
+      const { parseDocument } = await import('yaml');
+      const yamlContent = readFileSync(configPath, 'utf8');
+      return parseDocument(yamlContent).toJSON();
+    });
+  const runPlan =
+    options.runPlan ??
+    ((productId, planPhase, extraArgs) => {
+      execFileSync(
+        process.execPath,
+        [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json', ...extraArgs],
+        { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
+      );
+    });
 
   for (const [productId, product] of Object.entries(registry)) {
     const isExcluded = Boolean(excludedProducts[productId]);
@@ -104,14 +120,21 @@ async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolc
         }
       }
 
+      let lifecycleConfig = undefined;
+      try {
+        lifecycleConfig = await parseLifecycleConfig(configPath);
+      } catch (error) {
+        errors.push(`Product ${productId}: lifecycle config failed to parse: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      if (lifecycleConfig !== undefined) {
+        errors.push(...validateExecutableManifestRequirements(productId, lifecycleConfig));
+      }
+
       for (const planPhase of ['validate', 'test', 'build', 'package', 'deploy', 'verify']) {
-        const extraArgs = (planPhase === 'deploy' || planPhase === 'verify') ? ['--env', 'local'] : [];
+        const extraArgs = planPhase === 'deploy' || planPhase === 'verify' ? ['--env', 'local'] : [];
         try {
-          execFileSync(
-            process.execPath,
-            [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json', ...extraArgs],
-            { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
-          );
+          runPlan(productId, planPhase, extraArgs);
         } catch (error) {
           errors.push(`Product ${productId}: ${planPhase} plan generation failed: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -122,10 +145,8 @@ async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolc
         const configPath = join(repoRoot, product.lifecycleConfigPath);
         if (existsSync(configPath)) {
           try {
-            const { parseDocument } = await import('yaml');
-            const yamlContent = readFileSync(configPath, 'utf8');
-            const doc = parseDocument(yamlContent);
-            const yamlProfile = doc.get('lifecycleProfile');
+            const yaml = await parseLifecycleConfig(configPath);
+            const yamlProfile = yaml?.lifecycleProfile;
             if (yamlProfile && yamlProfile !== product.lifecycleProfile) {
               errors.push(
                 `Product ${productId}: registry lifecycleProfile "${product.lifecycleProfile}" does not match YAML lifecycleProfile "${yamlProfile}"`,
@@ -154,6 +175,39 @@ async function checkProductLifecycleContracts(registry, lifecycleProfiles, toolc
   return { errors, warnings };
 }
 
+function validateExecutableManifestRequirements(productId, lifecycleConfig) {
+  const errors = [];
+  const requiredManifests = lifecycleConfig?.requiredManifests ?? {};
+  const packageConfig = lifecycleConfig?.package ?? {};
+  const deploymentConfig = lifecycleConfig?.deployment ?? {};
+  const verifyConfig = lifecycleConfig?.verify ?? {};
+
+  if (Object.keys(packageConfig).length > 0) {
+    assertManifestIncludes(errors, productId, 'package', requiredManifests.package, ['artifact-manifest', 'lifecycle-health-snapshot']);
+  }
+  if (Object.keys(deploymentConfig).length > 0) {
+    assertManifestIncludes(errors, productId, 'deploy', requiredManifests.deploy, ['deployment-manifest', 'lifecycle-health-snapshot']);
+  }
+  if (Object.keys(verifyConfig).length > 0) {
+    assertManifestIncludes(errors, productId, 'verify', requiredManifests.verify, ['verify-health-report', 'lifecycle-health-snapshot']);
+  }
+
+  return errors;
+}
+
+function assertManifestIncludes(errors, productId, phase, actual, expected) {
+  if (!Array.isArray(actual)) {
+    errors.push(`Product ${productId}: enabled lifecycle ${phase} phase must declare requiredManifests.${phase}`);
+    return;
+  }
+  const actualSet = new Set(actual);
+  for (const manifestName of expected) {
+    if (!actualSet.has(manifestName)) {
+      errors.push(`Product ${productId}: requiredManifests.${phase} missing ${manifestName}`);
+    }
+  }
+}
+
 async function main() {
   const registry = loadRegistry();
   const lifecycleProfiles = loadLifecycleProfiles();
@@ -179,9 +233,11 @@ async function main() {
   console.log('All product lifecycle contracts are valid');
 }
 
-try {
-  await main();
-} catch (error) {
-  console.error(`Lifecycle contract check failed: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main();
+  } catch (error) {
+    console.error(`Lifecycle contract check failed: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 }

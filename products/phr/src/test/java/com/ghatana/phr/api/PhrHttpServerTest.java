@@ -12,7 +12,6 @@ import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -57,14 +56,14 @@ class PhrHttpServerTest extends EventloopTestBase {
         runPromise(fhirServer::start);
 
         FhirController controller = new FhirController(fhirServer);
-        
+
         // Create route objects with eventloop
         PhrFhirRoutes fhirRoutes = new PhrFhirRoutes(eventloop(), controller);
         PhrHealthRoutes healthRoutes = new PhrHealthRoutes(eventloop(), fhirServer);
         RouteEntitlementEvaluator routeEntitlementEvaluator = new RouteEntitlementEvaluator(new RoleEvaluator.FailClosed());
         IdentityAwareBoundedCache<String, Map<String, Object>> entitlementCache = new IdentityAwareBoundedCache<>(1000, 300);
         PhrEntitlementRoutes entitlementRoutes = new PhrEntitlementRoutes(eventloop(), routeEntitlementEvaluator, entitlementCache);
-        
+
         server = new PhrHttpServer(eventloop(), fhirRoutes, entitlementRoutes, healthRoutes);
         runPromise(server::start);
         servlet = server.getServlet();

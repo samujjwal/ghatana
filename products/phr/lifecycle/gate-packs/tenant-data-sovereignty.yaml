@@ -13,6 +13,10 @@ requiredEvidenceRefs:
 blockingReasonCodes:
   - requires-data-sovereignty-gate
   - missing-data-sovereignty-gate
+lifecyclePhases:
+  - validate
+  - build
+  - deploy
 validationCommands:
   - ./gradlew :products:phr:build
 notes:

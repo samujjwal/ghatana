@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockPhrEntitlements } from './phr-entitlements';
 
 test.describe('PHR visual regression @visual', () => {
   test('login screen matches baseline', async ({ page }) => {
@@ -7,12 +8,15 @@ test.describe('PHR visual regression @visual', () => {
   });
 
   test('dashboard shell matches baseline', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
+    await expect(page.getByText('Patient summary')).toBeVisible();
     await expect(page).toHaveScreenshot('phr-dashboard.png');
   });
 
   test('permission denied route matches baseline', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
     await page.evaluate(() => {
@@ -24,8 +28,10 @@ test.describe('PHR visual regression @visual', () => {
   });
 
   test('loading state matches baseline', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
+    await expect(page.getByText('Patient summary')).toBeVisible();
     await page.evaluate(() => {
       const main = document.querySelector('main');
       if (!main) {
@@ -38,8 +44,10 @@ test.describe('PHR visual regression @visual', () => {
   });
 
   test('error state matches baseline', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
+    await expect(page.getByText('Patient summary')).toBeVisible();
     await page.evaluate(() => {
       const main = document.querySelector('main');
       if (!main) {
@@ -52,8 +60,10 @@ test.describe('PHR visual regression @visual', () => {
   });
 
   test('empty state matches baseline', async ({ page }) => {
+    await mockPhrEntitlements(page);
     await page.goto('/login');
     await page.getByRole('link', { name: 'Continue with demo account' }).click();
+    await expect(page.getByText('Patient summary')).toBeVisible();
     await page.evaluate(() => {
       const main = document.querySelector('main');
       if (!main) {

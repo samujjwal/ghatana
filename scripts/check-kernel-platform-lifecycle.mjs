@@ -14,6 +14,7 @@ const checks = [
   'check-toolchain-adapter-contracts.mjs',
   'check-product-artifact-contracts.mjs',
   'check-product-deployment-contracts.mjs',
+  'check-product-environment-contracts.mjs',
   'check-kernel-lifecycle-exclusions.mjs',
   'check-lifecycle-registry-config-drift.mjs',
   'check-digital-marketing-lifecycle-pilot.mjs',
