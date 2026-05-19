@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: phr
 gateId: consent
 title: PHR consent gate readiness
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: PHR Team
-status: planned
+status: active
 description: Product policy evidence required for patient consent enforcement before lifecycle execution.
 requiredEvidenceRefs:
   - products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGate.java

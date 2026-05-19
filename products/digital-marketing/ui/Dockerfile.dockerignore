@@ -1,0 +1,61 @@
+# Dockerfile.dockerignore for products/digital-marketing/ui/Dockerfile
+# Applied automatically by Docker 19.03+ when named exactly <Dockerfile>.dockerignore
+# This is used alongside the root .dockerignore to further shrink the build context.
+
+# Local developer config — not needed for web builds
+local.properties
+
+# Exclude all Java build tooling (not needed for Node/pnpm build)
+platform/java/
+platform-kernel/
+platform-plugins/
+build-logic/
+buildSrc/
+gradle/
+gradlew
+gradlew.bat
+gradle.properties
+build.gradle.kts
+settings.gradle.kts
+
+# Exclude other products' source (all have their own Docker builds)
+products/audio-video/
+products/yappc/
+products/phr/
+products/software-org/
+products/virtual-org/
+products/flashit/
+products/tutorputor/
+products/finance/
+products/dcmaar/
+products/security-gateway/
+products/aura/
+
+# Exclude DM Java backend modules (UI build doesn't need them)
+products/digital-marketing/dm-api/
+products/digital-marketing/dm-core-contracts/
+products/digital-marketing/dm-domain/
+products/digital-marketing/dm-domain-packs/
+products/digital-marketing/dm-application/
+products/digital-marketing/dm-infra/
+products/digital-marketing/dm-persistence/
+products/digital-marketing/dm-connector-google-ads/
+products/digital-marketing/dm-kernel-bridge/
+products/digital-marketing/dm-integration-tests/
+
+# Exclude large non-web directories
+shared-services/
+io/
+META-INF/
+integration-tests/
+frontend/
+monitoring/
+code-audits/
+templates/
+docs/
+
+# Misc docs at root
+digital-marketting.md
+CONTRIBUTING.md
+ACCESSIBILITY_TESTING_GUIDE.md
+kernel-dev.md

@@ -46,18 +46,14 @@ export {
   FileBootstrapGateProvider,
   type FileBootstrapGateProviderOptions,
 } from "./gates/FileBootstrapGateProvider.js";
+export { RegistryValidationGateProvider } from "./gates/RegistryValidationGateProvider.js";
+export { ManifestValidationGateProvider } from "./gates/ManifestValidationGateProvider.js";
+export { BridgeComplianceGateProvider } from "./gates/BridgeComplianceGateProvider.js";
+export { UnitTestCoverageGateProvider } from "./gates/UnitTestCoverageGateProvider.js";
 export {
-  RegistryValidationGateProvider,
-} from "./gates/RegistryValidationGateProvider.js";
-export {
-  ManifestValidationGateProvider,
-} from "./gates/ManifestValidationGateProvider.js";
-export {
-  BridgeComplianceGateProvider,
-} from "./gates/BridgeComplianceGateProvider.js";
-export {
-  UnitTestCoverageGateProvider,
-} from "./gates/UnitTestCoverageGateProvider.js";
+  ProductGatePackProvider,
+  type ProductGatePackProviderOptions,
+} from "./gates/ProductGatePackProvider.js";
 export {
   DataCloudLifecycleEventProvider,
   type DataCloudLifecycleEventProviderOptions,

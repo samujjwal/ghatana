@@ -1,0 +1,61 @@
+# Named .dockerignore for products/phr/apps/web/Dockerfile (applied alongside root .dockerignore)
+# This file excludes source directories not needed for the PHR web frontend image.
+# The pnpm build inside Docker needs: products/phr/apps/web/**, platform/typescript/**, pnpm-workspace.yaml, pnpm-lock.yaml
+
+# Exclude all backend Java code
+platform/java/
+platform-kernel/
+platform-plugins/
+build-logic/
+buildSrc/
+gradle/
+gradlew
+gradlew.bat
+*.gradle.kts
+gradle.properties
+local.properties
+
+# Exclude all other product source trees
+products/audio-video/
+products/yappc/
+products/data-cloud/
+products/software-org/
+products/virtual-org/
+products/flashit/
+products/tutorputor/
+products/finance/
+products/dcmaar/
+products/digital-marketing/
+products/security-gateway/
+products/aura/
+
+# Exclude other PHR source that is not the web app
+products/phr/src/
+products/phr/launcher/
+products/phr/domains/
+products/phr/schema-packs/
+products/phr/docs/
+products/phr/lifecycle/
+products/phr/policy-packs/
+
+# Exclude shared-services Java backend
+shared-services/
+
+# Exclude root-level generated and temporary directories
+io/
+META-INF/
+integration-tests/
+frontend/
+monitoring/
+code-audits/
+templates/
+
+# Exclude documentation
+docs/
+digital-marketting.md
+CONTRIBUTING.md
+ACCESSIBILITY_TESTING_GUIDE.md
+kernel-dev.md
+
+# Local developer config — macOS-specific Java home breaks Linux container builds
+local.properties

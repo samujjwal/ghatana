@@ -1,1528 +1,1023 @@
-# Ghatana Five-Phase Platform Implementation Plan
+# Ghatana PHR + Digital Marketing Parallel Pilot Implementation Plan
 
-**Repository:** `samujjwal/ghatana`  
-**Target commit head:** `f9e7f49d6eed70cb6d2c0fa71b1013d42e2e6af3`  
-**Plan mode:** granular, prescriptive, coherent, independently executable  
-**Opening pilots:** `digital-marketing` and `phr`
-
----
-
-## Implementation Progress
-
-| Task | Status | Completed |
-|------|--------|-----------|
-| **Phase 1 — Establish governance truth** | | |
-| Task 1.1 Canonicalize domain map | ✅ COMPLETE | prior session |
-| Task 1.2 Validate product registry against generated includes | ✅ COMPLETE | prior session |
-| Task 1.3 Split lifecycle pilot checks | ✅ COMPLETE | prior session |
-| Task 1.4 Boundary, duplication, and package governance | ✅ COMPLETE | 2026-05-26 |
-| Task 1.5 CI integration | ✅ COMPLETE | 2026-05-26 |
-| **Phase 2 — Stabilize Kernel lifecycle foundation** | | |
-| Task 2.1 Harden `@ghatana/kernel-product-contracts` | ✅ COMPLETE | 2026-05-26 |
-| Task 2.2 Harden lifecycle planning | ✅ COMPLETE | 2026-05-26 |
-| Task 2.3 Harden lifecycle execution and result collection | ✅ COMPLETE | 2026-05-26 |
-| Task 2.4 Harden toolchain adapters | ✅ COMPLETE | 2026-05-26 |
-| Task 2.5 Gate provider and gate result manifests | ✅ COMPLETE | 2026-05-26 |
-| Task 2.6 UI-facing lifecycle summaries | ✅ COMPLETE | 2026-05-26 |
-| **Phase 3 — Stabilize shared UI/intelligence primitives** | | |
-| Task 3.1 Canvas hardening | ✅ COMPLETE | 2026-05-26 |
-| Task 3.2 UI Builder hardening | ✅ COMPLETE | 2026-05-27 |
-| Task 3.3 Design system, registry, and generator | ✅ COMPLETE | 2026-05-27 |
-| Task 3.4 Ghatana Studio pilot lifecycle UI | ✅ DONE | 2026-05-27 |
-| **Phase 4 — Wire runtime truth and provenance** | | |
-| Task 4.1 Provider interfaces | ✅ COMPLETE | 2026-05-19 |
-| Task 4.2 Lifecycle event schemas | ✅ COMPLETE | 2026-05-19 |
-| Task 4.3 Artifact and deployment provenance | ✅ COMPLETE | 2026-05-19 |
-| Task 4.4 Runtime truth read models and Studio integration | ✅ COMPLETE | 2026-05-19 |
-| Task 4.5 Agent action evidence | ✅ COMPLETE | 2026-05-19 |
-| **Phase 5 — Expand product validation** | | |
-| Task 5.1 Digital Marketing validation | ✅ COMPLETE | 2026-05-19 |
-| Task 5.2 PHR validation | ✅ COMPLETE | 2026-05-19 |
-| Task 5.3 Finance shape validation | ✅ COMPLETE | 2026-05-19 |
-| Task 5.4 FlashIt shape validation | ✅ COMPLETE | 2026-05-19 |
-| Task 5.5 YAPPC platform-provider validation | ✅ COMPLETE | 2026-05-19 |
-| Task 5.6 Data Cloud platform-provider validation | ✅ COMPLETE | 2026-05-19 |
-
-> Last updated: 2026-05-27 — All 26 tasks across all 5 phases are COMPLETE. Build health: fixed 5 `@doc.*` tag violations (checkDocTags passes for 6705 files); fixed Checkstyle StackOverflow crash on `LakehouseConnector.java` (simplified `{@code}` Javadoc block, fixed query-method indentation, added `-Xss4m` to Gradle daemon JVM args in `gradle.properties`). Full validation: all governance scripts pass, all lifecycle dry-runs generate valid manifests, all TypeScript package tests pass (123 ghatana-studio + 214 kernel-product-contracts + 133 kernel-providers + 415 kernel-lifecycle + 48 kernel-artifacts + 94 kernel-deployment + 64 kernel-release + 107 platform-events + 45 events), all Java Gradle tests BUILD SUCCESSFUL.
+**Target repo:** `samujjwal/ghatana`  
+**Target commit snapshot:** `04f03168e597cca638110f0025bd6231ac636fe5`  
+**Execution mode:** This file is independently executable by product-pilot teams. It focuses on PHR and Digital Marketing implementation, validation, testing, regression protection, and product correctness while consuming platform contracts rather than modifying platform ownership. It assumes the platform foundation plan may proceed separately.
 
 ---
 
-This plan implements the five phases defined in `ghatana_domain_workstream_map.md`:
+## IMPLEMENTATION PROGRESS (Updated 2026-05-19)
 
-1. Establish governance truth.
-2. Stabilize Kernel lifecycle foundation.
-3. Stabilize shared UI/intelligence primitives.
-4. Wire runtime truth and provenance.
-5. Expand product validation.
+### PHR Lifecycle Phases
 
-The plan must be executed from the target commit snapshot, not from prior TODOs or stale architecture claims.
+| Phase        | Status    | Evidence runId                                          |
+| ------------ | --------- | ------------------------------------------------------- |
+| validate     | ✅ PASSED | `2026-05-19T03-18-16-3d5fd5e0`                          |
+| test         | ✅ PASSED | `2026-05-19T03-19-25-4dc07ea5`                          |
+| build        | ✅ PASSED | `2026-05-19T03-20-01-b94dab22`                          |
+| package      | ✅ PASSED | Docker image `ghatana/phr-api:local` built successfully |
+| deploy:local | ✅ PASSED | `2026-05-19T05-57-30-129cf86e`                          |
+| verify:local | ✅ PASSED | `2026-05-19T05-58-00-9128a962`                          |
 
----
+### Digital Marketing Lifecycle Phases
 
-## 0. Target-commit baseline
+| Phase        | Status    | Evidence runId                 |
+| ------------ | --------- | ------------------------------ |
+| validate     | ✅ PASSED | `2026-05-19T03-57-36-55501824` |
+| test         | ✅ PASSED | `2026-05-19T05-58-09-93b9f81e` |
+| build        | ✅ PASSED | `2026-05-19T05-58-43-417998c4` |
+| package      | ✅ PASSED | `2026-05-19T05-59-26-081c9b81` |
+| deploy:local | ✅ PASSED | `2026-05-19T05-59-55-7d967e22` |
+| verify:local | ✅ PASSED | `2026-05-19T06-00-10-bb0d82dd` |
 
-### 0.1 Repository anchors
+### Phase 1 — Product Truth and Governance Alignment
 
-Use these current files as source-of-truth anchors:
+| Check                                     | Status                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `check:phr-lifecycle-readiness`           | ✅ PASSED                                                                                  |
+| `check:digital-marketing-lifecycle-pilot` | ✅ PASSED                                                                                  |
+| `check:product-workspace-registration`    | ✅ PASSED                                                                                  |
+| `check:bridge-compliance`                 | ✅ PASSED                                                                                  |
+| `check:dmos-boundary-workflow-coverage`   | ✅ PASSED                                                                                  |
+| `check:route-entitlement-contracts`       | ✅ PASSED                                                                                  |
+| `check:design-system-conformance`         | ✅ PASSED (8 UI surfaces, 440 files)                                                       |
+| `check:product-registry`                  | ✅ PASSED                                                                                  |
+| `check:doc-claims-evidence`               | ✅ PASSED                                                                                  |
+| `check:current-state-claims`              | ✅ PASSED                                                                                  |
+| `check:product-doc-taxonomy`              | ✅ PASSED (created 06-IMPLEMENTATION_PLAN.md for phr, finance, digital-marketing, flashit) |
+| `check:domain-boundaries`                 | ✅ PASSED                                                                                  |
+| `check:platform-product-boundaries`       | ✅ PASSED                                                                                  |
+| `check:product-kind-classification`       | ✅ PASSED                                                                                  |
+| `check:secret-default-credentials`        | ✅ PASSED                                                                                  |
+| `check:production-stubs`                  | ✅ PASSED (615 warnings, no critical violations)                                           |
+| `check:production-readiness`              | ✅ PASSED                                                                                  |
+| `check:cleanup-gate`                      | ✅ PASSED                                                                                  |
+| `check:product-manifest-contracts`        | ✅ PASSED                                                                                  |
+| `check:product-ci-matrices`               | ✅ PASSED                                                                                  |
 
-```text
-settings.gradle.kts
-config/generated/settings-gradle-includes.kts
-pnpm-workspace.yaml
-config/canonical-product-registry.json
-config/domain-registry.json
-scripts/kernel-product.mjs
-platform/typescript/kernel-product-contracts
-platform/typescript/kernel-lifecycle
-platform/typescript/kernel-providers
-platform/typescript/kernel-toolchains
-platform/typescript/kernel-artifacts
-platform/typescript/kernel-deployment
-platform/typescript/kernel-release
-platform/typescript/canvas
-platform/typescript/ui-builder
-platform/typescript/ds-schema
-platform/typescript/ds-registry
-platform/typescript/ds-generator
-platform/typescript/ghatana-studio
-products/digital-marketing
-products/phr
-products/data-cloud
-products/yappc
-```
+### Phase 4 — Cross-Product Stability Gates
 
-### 0.2 Important current-state correction
+| Check                                        | Status                               |
+| -------------------------------------------- | ------------------------------------ |
+| `check:kernel-lifecycle-truth`               | ✅ PASSED                            |
+| `check:studio-kernel-api`                    | ✅ PASSED                            |
+| `check:yappc-product-unit-intent-handoff`    | ✅ PASSED (17/17 tests)              |
+| `check:yappc-artifact-intelligence-boundary` | ✅ PASSED (3618 files, 0 violations) |
+| `check:data-cloud-platform-providers`        | ✅ PASSED                            |
 
-The older domain workstream map identified Digital Marketing as the executable pilot and PHR as a shape validator. At the target commit, `config/canonical-product-registry.json` and `products/phr/kernel-product.yaml` show PHR is now enabled as a second parallel lifecycle pilot.
+### Phase 5 — No-Regression Gates
 
-Therefore, implementation must treat:
+| Check                               | Status                                    |
+| ----------------------------------- | ----------------------------------------- |
+| `check:digital-marketing-root-docs` | ✅ PASSED (created 3 redirect stub files) |
+| `check:security-workflow-coverage`  | ✅ PASSED                                 |
 
-```text
-digital-marketing = enabled opening pilot
-phr = enabled opening pilot
-finance = planned/disabled shape validator
-flashit = planned/disabled shape validator
-data-cloud = platform-provider validator
-yappc = platform-provider validator
-```
+### Key Fixes Applied
 
-### 0.3 Immediate consistency defect to fix first
-
-`scripts/check-digital-marketing-lifecycle-pilot.mjs` currently contains a Digital-Marketing-only global exclusivity rule: it fails when another product is lifecycle-enabled. That is now inconsistent with PHR being enabled. Fix this before hardening any other checks.
-
-Required refactor:
-
-```text
-scripts/check-opening-lifecycle-pilots.mjs
-  - validates enabled lifecycle pilot set = [digital-marketing, phr]
-
-scripts/check-digital-marketing-lifecycle-pilot.mjs
-  - validates only Digital Marketing-specific pilot requirements
-
-scripts/check-phr-lifecycle-pilot.mjs
-  - validates only PHR-specific healthcare pilot requirements
-```
-
----
-
-## 1. Universal execution rules
-
-### 1.1 Before editing any file
-
-Run or perform equivalent inspection:
-
-```bash
-git checkout f9e7f49d6eed70cb6d2c0fa71b1013d42e2e6af3
-git status --short
-find platform/typescript -maxdepth 2 -name package.json | sort
-find platform/java -maxdepth 2 -name build.gradle.kts | sort
-find products/digital-marketing -maxdepth 4 -type f | sort
-find products/phr -maxdepth 5 -type f | sort
-```
-
-### 1.2 No-regression implementation rules
-
-Do not introduce:
-
-```text
-- product-specific behavior in platform packages
-- Kernel imports from products/yappc implementation internals
-- Kernel imports from products/data-cloud/planes internals
-- product-local lifecycle runners
-- duplicate gate engines
-- duplicate artifact/deployment manifest schemas
-- deprecated @ghatana package imports
-- TODO/FIXME in production code
-- fake-success adapters
-- object-literal tests
-- tests that import no production code
-- hardcoded secrets or unsafe env defaults
-```
-
-### 1.3 Required PR evidence
-
-Every PR must include:
-
-```text
-- target commit inspected
-- source-of-truth files inspected
-- changed files
-- existing patterns reused
-- boundary impact
-- tests added/updated
-- commands run
-- regression risk
-- rollback/revert notes
-- current-state vs target-state classification
-```
+1. **`local.properties` Docker exclusion**: Added to all 4 `Dockerfile.dockerignore` files — prevents macOS `java.home` path from breaking Linux container Gradle builds.
+2. **`products/phr/apps/web/README.md`**: Created — missing module documentation.
+3. **`products/phr/domains/healthcare/README.md`**: Created — missing module documentation.
+4. **`06-IMPLEMENTATION_PLAN.md`**: Created for `phr`, `finance`, `digital-marketing`, `flashit` — required by `check:product-doc-taxonomy`.
+5. **Digital Marketing root-doc stubs**: Created `digital-marketing-product-architecture{,-canonical,-v2}.md` — required by `check:digital-marketing-root-docs`.
+6. **Dockerfile stub-dir fix**: Added `RUN grep 'include(' ... | mkdir -p` step to PHR and DM Dockerfiles — Gradle requires ALL registered project directories to exist at configuration time; stub dirs prevent ENOENT failures for excluded products.
 
 ---
 
-# Phase 1 — Establish governance truth
+---
 
-## Objective
+## 0. Pilot strategy
 
-Create one executable governance truth layer across domain registry, product registry, generated Gradle includes, pnpm workspace, architecture docs, and validation checks.
+At `04f03168e597cca638110f0025bd6231ac636fe5`, both PHR and Digital Marketing are enabled lifecycle pilots. This plan treats them as parallel first-release pilots:
 
-## Exit criteria
+- **Digital Marketing** proves the standard web + backend API product shape, product bridge conformance, campaign workflow correctness, and non-regulated customer-data policy packs.
+- **PHR** proves the regulated healthcare web + backend API product shape, including consent, PII classification, audit evidence, FHIR R4 contract validation, and tenant data sovereignty.
 
-```text
-- docs/architecture/DOMAIN_WORKSTREAM_MAP.md is canonical.
-- config/domain-registry.json represents real modules and products at the target commit.
-- config/canonical-product-registry.json validates against generated Gradle and pnpm workspace includes.
-- Digital Marketing and PHR are the explicit opening lifecycle pilots.
-- Finance and FlashIt remain disabled/fail-closed.
-- Data Cloud and YAPPC remain platform-provider validators.
-- Current-state vs target-state claims are checked.
-- Deprecated package imports are checked.
-- Product/platform boundaries are checked.
-- Digital Marketing-specific checks no longer reject PHR.
-```
-
-## Task 1.1 Canonicalize domain map
-
-### Files
-
-```text
-docs/architecture/DOMAIN_WORKSTREAM_MAP.md
-config/domain-registry.json
-.github/copilot-instructions.md
-platform/typescript/LIBRARY_GOVERNANCE.md
-```
-
-### Steps
-
-1. Confirm `docs/architecture/DOMAIN_WORKSTREAM_MAP.md` exists.
-2. Ensure it lists all 17 domains.
-3. Ensure each domain entry has:
-   ```text
-   id, name, ownerLayer, classification, primaryLocations, secondaryLocations,
-   sourceOfTruth, allowedConsumers, forbiddenDependencies, requiredChecks,
-   independentExecutionChecks, fullRegressionChecks, productAssociations,
-   boundaryPolicy, phase, journey, exitCriteria, blockingGaps, evidenceRequired
-   ```
-4. Classify each domain as exactly one of:
-   ```text
-   existing-executable, existing-partial, declared-only, target-architecture, anti-pattern
-   ```
-5. Add explicit pilot association:
-   ```text
-   product-development-kernel-lifecycle -> digital-marketing, phr
-   product-domain-packs -> digital-marketing, phr, finance, flashit
-   security-privacy-policy -> phr, digital-marketing
-   observability-health -> phr, digital-marketing
-   ```
-
-### Validation
-
-```bash
-node scripts/validate-domain-registry.mjs
-node scripts/check-doc-authority.mjs
-node scripts/check-current-state-claims.mjs
-```
-
-### Tests to add
-
-```text
-scripts/__tests__/validate-domain-registry.test.mjs
-scripts/__tests__/check-doc-authority.test.mjs
-scripts/__tests__/check-current-state-claims.test.mjs
-```
-
-Minimum assertions:
-
-```text
-- rejects unknown classification
-- rejects missing sourceOfTruth
-- rejects non-existing primary location unless target-architecture
-- accepts Digital Marketing and PHR as opening pilots
-- rejects product runtime ownership inside Platform Coherence & Governance
-```
+Both products must use Product Development Kernel lifecycle execution. Neither product may implement its own lifecycle runner.
 
 ---
 
-## Task 1.2 Validate product registry against generated includes
+## 1. Shared product-pilot rules
 
-### Files
-
-```text
-config/canonical-product-registry.json
-config/generated/settings-gradle-includes.kts
-pnpm-workspace.yaml
-scripts/generate-product-registry-artifacts.mjs
-scripts/validate-product-registry.mjs
-scripts/check-product-generated-includes.mjs
-```
-
-### Steps
-
-1. Validate every product Gradle module in the registry is present in `config/generated/settings-gradle-includes.kts`.
-2. Validate every product pnpm package is present in `pnpm-workspace.yaml`.
-3. For lifecycle-enabled products, enforce:
-   ```text
-   lifecycleStatus = enabled
-   lifecycle.enabled = true
-   lifecycleExecutionAllowed = true
-   lifecycleConfigPath exists
-   surfaces exist
-   toolchain adapters exist
-   artifacts exist
-   deployment targets exist
-   environments exist
-   ```
-4. For lifecycle-disabled products, enforce:
-   ```text
-   lifecycleExecutionAllowed = false
-   reasonCodes exist
-   requiredGates exist where applicable
-   nextRequiredWork exists
-   evidenceRefs exist
-   no safe-by-default use of partial adapters
-   ```
-
-### Validation
-
-```bash
-node scripts/generate-product-registry-artifacts.mjs --check
-node scripts/validate-product-registry.mjs
-node scripts/check-product-generated-includes.mjs
-```
-
-### Tests to add
-
-```text
-- PHR backend-api/web surfaces validate.
-- Digital Marketing backend-api/web surfaces validate.
-- Finance remains lifecycleExecutionAllowed=false.
-- FlashIt remains lifecycleExecutionAllowed=false.
-- Data Cloud and YAPPC are platform-provider products.
-- Generated Gradle includes match registry modules.
-- pnpm workspace includes match registry pnpm packages.
-```
+1. Product-specific behavior stays under `products/phr/**` or `products/digital-marketing/**`.
+2. Generic lifecycle, manifest, artifact, deployment, release, approval, policy, observability, security, privacy, and UI primitives must be consumed from platform packages/contracts.
+3. Product bridge implementations are product-owned but must implement platform contracts.
+4. Product gates must fail closed with actionable reason codes.
+5. PHR healthcare gates may not be bypassed to keep lifecycle green.
+6. Digital Marketing must not shape Kernel around itself.
+7. Product UIs must reuse design-system/product-shell primitives where available.
+8. Product manifests must match `config/canonical-product-registry.json` and `products/*/kernel-product.yaml`.
+9. Product-local tests must test real production code, not object literals or fake success.
+10. Every pilot task must produce evidence in `.kernel/evidence/<product>/<runId>/` or a product-local evidence folder referenced by manifests.
 
 ---
 
-## Task 1.3 Split lifecycle pilot checks
+## 2. Current snapshot facts to preserve
 
-### Files
+## 2.1 PHR
 
-```text
-scripts/check-opening-lifecycle-pilots.mjs
-scripts/check-digital-marketing-lifecycle-pilot.mjs
-scripts/check-phr-lifecycle-pilot.mjs
-scripts/check-kernel-platform-lifecycle.mjs
-```
+Current PHR status at `04f03168e597cca638110f0025bd6231ac636fe5`:
 
-### Steps
-
-1. Add `scripts/check-opening-lifecycle-pilots.mjs`.
-2. Move global enabled-product logic into that script.
-3. Update `scripts/check-digital-marketing-lifecycle-pilot.mjs` so it validates only Digital Marketing-specific requirements.
-4. Add `scripts/check-phr-lifecycle-pilot.mjs`.
-5. Update `scripts/check-kernel-platform-lifecycle.mjs` to call all three.
-
-### `check-opening-lifecycle-pilots.mjs` must validate
-
-```text
-- enabled lifecycle products exactly equal [digital-marketing, phr]
-- both have lifecycleExecutionAllowed=true
-- both have valid kernel-product.yaml
-- both can plan dev, validate, test, build, package, deploy, verify
-- Finance and FlashIt fail closed by default
-- Data Cloud and YAPPC are not treated as ordinary lifecycle products
-```
-
-### `check-digital-marketing-lifecycle-pilot.mjs` must validate
-
-```text
-- lifecycleStatus enabled
-- lifecycleExecutionAllowed true
-- metadata.pilot true
-- standard-web-api-product profile
-- backend-api surface with gradle-java-service adapter
-- web surface with pnpm-vite-react adapter
-- bridge adapter evidence exists
-- required manifests by phase exist
-- package phase uses container artifacts
-- deploy phase uses compose-local
-- health endpoints are declared
-- env example has no unsafe secrets
-- gates include bridge, consent boundary, data minimization, typecheck, a11y, i18n, bundle budget
-```
-
-### `check-phr-lifecycle-pilot.mjs` must validate
-
-```text
-- lifecycleStatus enabled
-- lifecycleExecutionAllowed true
-- status/executionEnabled true in products/phr/kernel-product.yaml
-- backend-api surface with gradle-java-service adapter
-- web surface with pnpm-vite-react adapter
+- product ID: `phr`
+- lifecycle status: `enabled`
+- lifecycle execution allowed: `true`
+- surfaces: `backend-api`, `web`
+- backend source: `products/phr`
+- web source: `products/phr/apps/web`
+- backend adapter: `gradle-java-service`
+- web adapter: `pnpm-vite-react`
+- deployment target: `compose-local`
+- local services: `phr-api`, `phr-web`
 - required healthcare gates:
-  consent
-  pii-classification
-  audit-evidence
-  fhir-contract-validation
-  tenant-data-sovereignty
-- gate pack files exist
-- readiness evidence exists
-- schema registry exists
-- local compose target exists
-- health endpoints are declared
-- required build/deploy manifests are declared
-- no PHR domain code appears in platform Kernel packages
-```
+  - `consent`
+  - `pii-classification`
+  - `audit-evidence`
+  - `fhir-contract-validation`
+  - `tenant-data-sovereignty`
+- evidence refs include readiness evidence and gate packs under `products/phr/lifecycle/**`
 
-### Validation
+## 2.2 Digital Marketing
 
-```bash
-node scripts/check-opening-lifecycle-pilots.mjs
-node scripts/check-digital-marketing-lifecycle-pilot.mjs
-node scripts/check-phr-lifecycle-pilot.mjs
-node scripts/check-kernel-platform-lifecycle.mjs
-```
+Current Digital Marketing status at `04f03168e597cca638110f0025bd6231ac636fe5`:
 
----
-
-## Task 1.4 Boundary, duplication, and package governance
-
-### Files
-
-```text
-scripts/check-domain-boundaries.mjs
-scripts/check-deprecated-imports.mjs
-scripts/check-package-registry.mjs
-scripts/check-duplicate-platform-capabilities.mjs
-config/duplication-exception-registry.json
-platform/typescript/.dependency-cruiser.cjs
-```
-
-### Steps
-
-1. Fail platform packages importing `products/**`.
-2. Fail Kernel packages importing YAPPC or Data Cloud internals.
-3. Fail product-local generic lifecycle runners.
-4. Fail product-local generic gate engines.
-5. Fail duplicate artifact/deployment/health schemas.
-6. Fail deprecated imports:
-   ```text
-   @ghatana/ui
-   @ghatana/utils
-   @ghatana/accessibility-audit
-   @ghatana/canvas-core
-   @ghatana/canvas-react
-   @ghatana/canvas-plugins
-   @ghatana/canvas-tools
-   @ghatana/canvas-chrome
-   ```
-7. Add duplication exception registry with:
-   ```text
-   id, owner, category, affectedPaths, reason, severity, expiryDate, removalPlan, validationCheck
-   ```
-
-### Validation
-
-```bash
-node scripts/check-domain-boundaries.mjs
-node scripts/check-deprecated-imports.mjs
-node scripts/check-package-registry.mjs
-node scripts/check-duplicate-platform-capabilities.mjs
-```
+- product ID: `digital-marketing`
+- lifecycle status: `enabled`
+- lifecycle execution allowed: `true`
+- surfaces: `backend-api`, `web`
+- backend source: `products/digital-marketing/dm-api`
+- web source: `products/digital-marketing/ui`
+- backend adapter: `gradle-java-service`
+- web adapter: `pnpm-vite-react`
+- bridge module: `products/digital-marketing/dm-kernel-bridge`
+- deployment target: `compose-local`
+- local services: `digital-marketing-api`, `digital-marketing-web`
+- policy packs include web/API security baseline, container image integrity, customer-data minimization, and marketing consent boundary
+- approvals exist for deploy/promote/rollback
 
 ---
 
-## Task 1.5 CI integration
+# Phase 1 — Product truth and governance alignment
 
-### Steps
+## Phase objective
 
-Add a governance CI job for changes under:
+Make PHR and Digital Marketing product truth internally consistent across registry, manifests, generated includes, workspaces, product docs, gates, lifecycle configs, and product evidence.
+
+## Shared Phase 1 tasks
+
+### 1.1 Validate product registry entries
+
+Check:
 
 ```text
-config/**
-docs/**
-scripts/**
-platform/**
-products/**
-settings.gradle.kts
+config/canonical-product-registry.json
+config/generated/settings-gradle-includes.kts
 pnpm-workspace.yaml
+products/phr/kernel-product.yaml
+products/digital-marketing/kernel-product.yaml
+products/phr/domain-pack-manifest.yaml
+products/digital-marketing/dm-domain-packs/domain-pack.json
 ```
+
+Required invariants:
+
+- product ID matches path and manifest
+- lifecycle status matches execution flag
+- surface paths exist
+- Gradle modules exist and are included
+- pnpm packages exist and are included
+- required gates are registered
+- expected outputs are declared
+- deployment targets are declared
+- product docs identify owner and status
+
+Validation:
+
+```bash
+pnpm check:product-registry
+pnpm check:product-registry-artifacts
+pnpm check:product-registry-drift
+pnpm check:product-workspace-registration
+pnpm check:product-manifest-contracts
+pnpm check:product-ci-matrices
+```
+
+### 1.2 Validate product boundary modes
+
+PHR and Digital Marketing are business products. They must not import each other. They must not import platform source paths directly if a package export exists.
+
+Validation:
+
+```bash
+pnpm check:domain-boundaries
+pnpm check:platform-product-boundaries
+pnpm check:bridge-compliance
+pnpm check:product-kind-classification
+```
+
+### 1.3 Validate no unsafe defaults
+
+Check:
+
+```bash
+pnpm check:secret-default-credentials
+pnpm check:production-stubs
+pnpm check:production-readiness
+pnpm check:cleanup-gate
+```
+
+Product-specific requirements:
+
+- PHR cannot ship fake consent or fake PII classification as success.
+- Digital Marketing cannot fake connector readiness or approval success.
+- Missing optional external connectors must report `NOT_READY` or degraded state, not success.
+
+---
+
+## Phase 1 — PHR tasks
+
+### PHR-1.1 Harden healthcare gate packs
+
+Files/areas:
+
+```text
+products/phr/lifecycle/readiness-evidence.yaml
+products/phr/lifecycle/gate-packs/consent.yaml
+products/phr/lifecycle/gate-packs/pii-classification.yaml
+products/phr/lifecycle/gate-packs/audit-evidence.yaml
+products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
+products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
+products/phr/schema-packs/schema-registry.yaml
+products/phr/kernel-product.yaml
+```
+
+Tasks:
+
+- verify every required gate has a gate pack
+- verify every gate pack has owner, schema version, purpose, evidence inputs, pass/fail reason codes, and validation command
+- verify gate packs map to lifecycle phases: validate, build, deploy
+- verify missing evidence blocks lifecycle rather than warns
+- verify gate outputs are referenced in lifecycle manifests
+- verify PHR docs do not claim full healthcare production readiness unless evidence proves it
+
+Tests:
+
+- gate pack parser accepts valid gate pack
+- gate pack parser rejects missing evidence inputs
+- lifecycle readiness fails when required gate pack is absent
+- PHR lifecycle readiness passes only with all required gate packs present
+
+Validation:
+
+```bash
+pnpm check:phr-lifecycle-readiness
+pnpm plan:validate:phr
+pnpm validate:phr
+```
+
+### PHR-1.2 Align PHR web/backend product docs
+
+Files/areas:
+
+```text
+products/phr/README.md
+products/phr/apps/web/README.md
+products/phr/domains/healthcare/README.md
+products/phr/domain-pack-manifest.yaml
+```
+
+Tasks:
+
+- identify implemented vs partial vs target capabilities
+- document lifecycle command path
+- document healthcare gates
+- document local deployment/verify behavior
+- document what evidence is required before promoting beyond local pilot
+
+Validation:
+
+```bash
+pnpm check:doc-claims-evidence
+pnpm check:current-state-claims
+pnpm check:product-doc-taxonomy
+```
+
+---
+
+## Phase 1 — Digital Marketing tasks
+
+### DM-1.1 Harden Digital Marketing lifecycle manifest alignment
+
+Files/areas:
+
+```text
+products/digital-marketing/kernel-product.yaml
+products/digital-marketing/dm-domain-packs/domain-pack.json
+products/digital-marketing/README.md
+products/digital-marketing/dm-kernel-bridge/**
+products/digital-marketing/deploy/**
+```
+
+Tasks:
+
+- verify phases include dev, validate, test, build, package, deploy, promote, rollback
+- verify required manifests are declared for build/package/deploy/verify/rollback
+- verify policy packs are product-configured, not implemented in Kernel
+- verify approvals for deploy/promote/rollback are contract-backed
+- verify Digital Marketing bridge is product-owned and Kernel-contract-backed
+
+Validation:
+
+```bash
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:digital-marketing-root-docs
+pnpm check:bridge-compliance
+pnpm plan:validate:digital-marketing
+pnpm validate:digital-marketing
+```
+
+### DM-1.2 Validate bridge adapter evidence
+
+Files/areas:
+
+```text
+products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java
+products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java
+products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java
+```
+
+Tasks:
+
+- verify bridge implements platform contract only
+- verify retries and DLQ behavior are observable
+- verify no product lifecycle runner exists in bridge
+- verify bridge failures return typed reason codes
+- verify bridge tests invoke production bridge logic
+
+Validation:
+
+```bash
+./gradlew :products:digital-marketing:dm-kernel-bridge:test
+pnpm check:bridge-compliance
+pnpm check:dmos-boundary-workflow-coverage
+```
+
+---
+
+# Phase 2 — Lifecycle execution hardening
+
+## Phase objective
+
+Prove PHR and Digital Marketing can execute Kernel lifecycle phases with real adapters, real outputs, real tests, real manifests, and fail-closed behavior.
+
+## Shared lifecycle command matrix
+
+| Phase             | PHR command                  | Digital Marketing command                  |
+| ----------------- | ---------------------------- | ------------------------------------------ |
+| plan dev          | `pnpm plan:dev:phr`          | `pnpm plan:dev:digital-marketing`          |
+| dev               | `pnpm dev:phr`               | `pnpm dev:digital-marketing`               |
+| plan validate     | `pnpm plan:validate:phr`     | `pnpm plan:validate:digital-marketing`     |
+| validate          | `pnpm validate:phr`          | `pnpm validate:digital-marketing`          |
+| plan test         | `pnpm plan:test:phr`         | `pnpm plan:test:digital-marketing`         |
+| test              | `pnpm test:phr`              | `pnpm test:digital-marketing`              |
+| plan build        | `pnpm plan:build:phr`        | `pnpm plan:build:digital-marketing`        |
+| build             | `pnpm build:phr`             | `pnpm build:digital-marketing`             |
+| plan package      | `pnpm plan:package:phr`      | `pnpm plan:package:digital-marketing`      |
+| package           | `pnpm package:phr`           | `pnpm package:digital-marketing`           |
+| plan deploy local | `pnpm plan:deploy:local:phr` | `pnpm plan:deploy:local:digital-marketing` |
+| deploy local      | `pnpm deploy:local:phr`      | `pnpm deploy:local:digital-marketing`      |
+| plan verify local | `pnpm plan:verify:local:phr` | `pnpm plan:verify:local:digital-marketing` |
+| verify local      | `pnpm verify:local:phr`      | `pnpm verify:local:digital-marketing`      |
+
+## Shared Phase 2 tasks
+
+### 2.1 Plan phase proof
+
+For each product:
+
+- plan command emits `lifecycle-plan.json`
+- plan includes product ID, surfaces, adapters, gates, expected outputs, environment, and correlation ID
+- plan rejects unknown surface
+- plan rejects blocked gates before execution
+- plan classifies target/partial capabilities honestly
+
+Test cases:
+
+- valid PHR build plan
+- valid Digital Marketing build plan
+- invalid surface fails
+- missing product manifest fails
+- platform-provider product is not accidentally executed as business product
+
+### 2.2 Validate/test/build proof
+
+For each product:
+
+- validate runs configured gates
+- test runs backend and web tests
+- build produces expected outputs
+- failed backend blocks lifecycle
+- failed web blocks lifecycle
+- missing artifacts block lifecycle
+- results include timings, failure reason codes, and evidence refs
+
+### 2.3 Package/deploy/verify proof
+
+For each product:
+
+- package produces container artifact manifest or `NOT_READY` if Docker path is not implemented
+- deploy uses compose-local adapter
+- verify uses health checks from product manifest
+- health checks have retries/timeouts
+- failure status is explicit
+- rollback readiness is documented if rollback is configured
+
+---
+
+## Phase 2 — PHR tasks
+
+### PHR-2.1 Backend lifecycle execution
+
+Files/areas:
+
+```text
+products/phr/build.gradle.kts
+products/phr/launcher/**
+products/phr/src/main/**
+products/phr/src/test/**
+products/phr/kernel-product.yaml
+```
+
+Tasks:
+
+- verify `:products:phr` builds under Java 21
+- verify health endpoint `/health/ready` exists and is real
+- verify backend tests cover healthcare domain validation, consent enforcement, audit evidence, FHIR schema validation, and tenant scoping
+- verify no blocking I/O in ActiveJ event-loop paths unless wrapped by approved blocking bridge
+- verify public Java APIs have `@doc.*` tags
+
+Validation:
+
+```bash
+./gradlew :products:phr:check
+pnpm test:phr-gateway
+pnpm build:phr-gateway
+```
+
+### PHR-2.2 Web lifecycle execution
+
+Files/areas:
+
+```text
+products/phr/apps/web/package.json
+products/phr/apps/web/src/**
+products/phr/apps/web/vitest.config.*
+products/phr/apps/web/playwright.config.*
+```
+
+Tasks:
+
+- verify React/TypeScript strict typing
+- verify no `any` in new code
+- verify patient/record/consent flows render without backend fake success
+- verify loading/empty/error/forbidden states
+- verify no hardcoded final user-facing strings where i18n path exists
+- verify accessible labels and keyboard navigation for forms
+
+Validation:
+
+```bash
+pnpm --dir products/phr/apps/web type-check
+pnpm --dir products/phr/apps/web test
+pnpm build:phr-web
+pnpm test:phr-web
+```
+
+### PHR-2.3 PHR lifecycle proof
 
 Run:
 
 ```bash
+pnpm plan:validate:phr
+pnpm validate:phr
+pnpm plan:test:phr
+pnpm test:phr
+pnpm plan:build:phr
+pnpm build:phr
+pnpm plan:package:phr
+pnpm package:phr
+pnpm plan:deploy:local:phr
+pnpm deploy:local:phr
+pnpm plan:verify:local:phr
+pnpm verify:local:phr
+```
+
+Acceptance:
+
+- evidence is generated under `.kernel/evidence/phr/<runId>/`
+- healthcare gate results appear in lifecycle result
+- verify report includes backend and web health checks
+- missing consent/FHIR/PII/audit/sovereignty evidence fails closed
+
+---
+
+## Phase 2 — Digital Marketing tasks
+
+### DM-2.1 Backend lifecycle execution
+
+Files/areas:
+
+```text
+products/digital-marketing/dm-api/build.gradle.kts
+products/digital-marketing/dm-api/src/main/**
+products/digital-marketing/dm-api/src/test/**
+products/digital-marketing/dm-application/**
+products/digital-marketing/dm-domain/**
+products/digital-marketing/dm-persistence/**
+products/digital-marketing/dm-infra/**
+products/digital-marketing/dm-connector-google-ads/**
+```
+
+Tasks:
+
+- verify API build/test/check tasks match `kernel-product.yaml`
+- verify `/health/live` and `/health/ready` are real
+- verify campaign/workspace/tenant workflows are covered
+- verify connector readiness reports degraded/NOT_READY when external credentials are absent
+- verify audit/consent/suppression behavior is tested
+- verify no unsafe defaults or fake connector success
+
+Validation:
+
+```bash
+./gradlew :products:digital-marketing:dm-api:check
+./gradlew :products:digital-marketing:dm-integration-tests:check
+pnpm test:digital-marketing-gateway
+pnpm build:digital-marketing-gateway
+```
+
+### DM-2.2 Web lifecycle execution
+
+Files/areas:
+
+```text
+products/digital-marketing/ui/package.json
+products/digital-marketing/ui/src/**
+products/digital-marketing/ui/vitest.config.*
+products/digital-marketing/ui/playwright.config.*
+```
+
+Tasks:
+
+- verify Vite/React build and tests
+- verify route entitlement contracts
+- verify campaign workflow UI states
+- verify bridge/lifecycle status displays if consumed
+- verify a11y/i18n readiness gates
+- verify no duplicate design-system primitives
+
+Validation:
+
+```bash
+pnpm --dir products/digital-marketing/ui type-check
+pnpm --dir products/digital-marketing/ui test
+pnpm build:digital-marketing-web
+pnpm test:digital-marketing-web
+```
+
+### DM-2.3 Digital Marketing lifecycle proof
+
+Run:
+
+```bash
+pnpm plan:validate:digital-marketing
+pnpm validate:digital-marketing
+pnpm plan:test:digital-marketing
+pnpm test:digital-marketing
+pnpm plan:build:digital-marketing
+pnpm build:digital-marketing
+pnpm plan:package:digital-marketing
+pnpm package:digital-marketing
+pnpm plan:deploy:local:digital-marketing
+pnpm deploy:local:digital-marketing
+pnpm plan:verify:local:digital-marketing
+pnpm verify:local:digital-marketing
+```
+
+Acceptance:
+
+- evidence is generated under `.kernel/evidence/digital-marketing/<runId>/`
+- gate results include bridge compliance and marketing consent boundary
+- deployment manifest references expected compose services
+- verify health report includes API and web health checks
+- approvals are required for risky deploy/promote/rollback paths
+
+---
+
+# Phase 3 — Product UI and shared primitive conformance
+
+## Phase objective
+
+Ensure PHR and Digital Marketing UI surfaces are consistent, accessible, i18n-ready, simple, and reusable without leaking product behavior into shared libraries.
+
+## Shared Phase 3 tasks
+
+### 3.1 Design-system usage audit
+
+For both products:
+
+- inventory buttons, inputs, cards, badges, tables, layouts, shells, alerts, modals, navigation, and forms
+- replace product-local duplicates with design-system/product-shell primitives when the shared component exists
+- register legitimate exceptions in duplication exception registry
+- ensure status vocabulary is consistent
+
+Validation:
+
+```bash
+pnpm check:design-system-conformance
+pnpm check:shared-product-shells
+pnpm check:shared-layout-primitives
+pnpm check:product-ui-contracts
+```
+
+### 3.2 Accessibility and i18n audit
+
+For both products:
+
+- all forms have labels and validation messages
+- keyboard navigation works for all flows
+- focus states are visible
+- error messages are not color-only
+- route titles and empty states are readable
+- final UI strings are translation-key ready
+- date/time/number formatting is locale-aware where shown
+
+Validation:
+
+```bash
+pnpm check:audited-ui-workflows
+pnpm check:route-entitlement-contracts
+pnpm check:product-ui-contracts
+```
+
+### 3.3 Product route entitlement audit
+
+For both products:
+
+- routes declare required permissions
+- backend enforces same permissions
+- unauthorized state is explicit
+- forbidden actions are hidden only after server-side denial exists
+- tests cover admin/user/readonly where product roles exist
+
+Validation:
+
+```bash
+pnpm check:route-entitlement-contracts
+pnpm check:security-workflow-coverage
+```
+
+---
+
+## Phase 3 — PHR UI tasks
+
+Required flows to audit/test:
+
+- patient list/dashboard
+- patient detail
+- clinical record/document view
+- consent status
+- data-sharing/sovereignty status
+- audit/evidence view
+- empty patient state
+- unauthorized patient access
+- FHIR validation error state
+- backend degraded/offline state
+
+Tests:
+
+- component tests for core cards/forms
+- integration tests for API validation boundaries
+- Playwright journey for patient/record/consent workflow if configured
+- a11y tests for forms and navigation
+
+---
+
+## Phase 3 — Digital Marketing UI tasks
+
+Required flows to audit/test:
+
+- campaign dashboard
+- campaign create/edit
+- campaign approval state
+- workspace/tenant switching if present
+- connector health/degraded state
+- suppression/consent boundary state
+- audience/segment views if present
+- analytics/reporting cards if present
+- unauthorized route access
+- backend degraded/offline state
+
+Tests:
+
+- component tests for campaign cards/forms
+- integration tests for API validation boundaries
+- Playwright campaign workflow
+- a11y tests for navigation and forms
+
+---
+
+# Phase 4 — Runtime truth, provenance, and visibility
+
+## Phase objective
+
+Make PHR and Digital Marketing lifecycle and domain evidence visible through public truth contracts, not logs or product-private state.
+
+## Shared Phase 4 tasks
+
+### 4.1 Emit product lifecycle evidence
+
+For every lifecycle run:
+
+- product ID
+- run ID
+- correlation ID
+- phase
+- surface
+- adapter
+- gate results
+- artifact refs
+- deployment refs
+- verify health refs
+- reason codes
+- timestamps
+
+### 4.2 Product-specific evidence
+
+PHR evidence:
+
+- consent gate result
+- PII classification result
+- audit evidence result
+- FHIR contract validation result
+- tenant data sovereignty result
+
+Digital Marketing evidence:
+
+- bridge compliance result
+- marketing consent boundary result
+- customer data minimization result
+- campaign workflow coverage result
+- connector readiness result
+
+### 4.3 Data Cloud bridge preparation
+
+Do not make PHR/DM directly depend on Data Cloud internals. Publish through Kernel/Data Cloud bridge contracts.
+
+Required evidence output paths:
+
+```text
+.kernel/evidence/phr/<runId>/**
+.kernel/evidence/digital-marketing/<runId>/**
+products/phr/lifecycle/**
+products/digital-marketing/lifecycle/**  # create only if product-local lifecycle evidence is needed
+```
+
+### 4.4 Studio/YAPPC visibility
+
+YAPPC/Studio must consume:
+
+- public lifecycle result
+- public gate result manifest
+- public artifact/deployment manifests
+- public health snapshot
+- public provider status
+
+They must not:
+
+- parse private logs
+- infer success from stdout/stderr
+- mutate product registry
+- reach into product-private internals
+
+Validation:
+
+```bash
+pnpm check:kernel-lifecycle-truth
+pnpm check:studio-kernel-api
+pnpm check:yappc-product-unit-intent-handoff
+pnpm check:yappc-artifact-intelligence-boundary
+pnpm check:data-cloud-platform-providers
+```
+
+---
+
+# Phase 5 — Product validation and rollout readiness
+
+## Phase objective
+
+Validate that both pilots are product-correct, not merely lifecycle-green.
+
+---
+
+## Phase 5 — PHR rollout readiness
+
+### PHR-5.1 Healthcare correctness
+
+Required review areas:
+
+- FHIR R4 resource shape
+- patient identity and record ownership
+- consent model
+- PII classification
+- audit evidence
+- tenant/workspace/org scoping
+- data sovereignty controls
+- regulated deployment gates
+- health endpoint correctness
+- failure/degraded states
+
+Required tests:
+
+- FHIR contract validation positive/negative cases
+- consent required/denied/granted cases
+- PII classification enforcement
+- tenant isolation tests
+- audit trail written on sensitive access
+- unauthorized record access denied server-side
+- web unauthorized state matches backend denial
+
+Validation:
+
+```bash
+pnpm check:phr-lifecycle-readiness
+./gradlew :products:phr:check
+./gradlew :products:phr:domains:healthcare:check
+pnpm test:phr
+pnpm build:phr
+pnpm validate:phr
+```
+
+### PHR-5.2 PHR no-regression gate
+
+Run before merge:
+
+```bash
+pnpm plan:validate:phr
+pnpm validate:phr
+pnpm plan:test:phr
+pnpm test:phr
+pnpm plan:build:phr
+pnpm build:phr
+pnpm plan:package:phr
+pnpm package:phr
+pnpm plan:deploy:local:phr
+pnpm deploy:local:phr
+pnpm plan:verify:local:phr
+pnpm verify:local:phr
+pnpm check:phr-lifecycle-readiness
+pnpm check:production-readiness
+pnpm check:security-workflow-coverage
+```
+
+PHR is rollout-ready for local pilot only when:
+
+- backend and web surfaces build/test
+- healthcare gates execute and fail closed
+- local deploy/verify works or fails with actionable `NOT_READY`
+- evidence pack is generated
+- no product lifecycle runner exists
+- no healthcare domain behavior leaks into platform packages
+
+---
+
+## Phase 5 — Digital Marketing rollout readiness
+
+### DM-5.1 Business workflow correctness
+
+Required review areas:
+
+- campaign lifecycle
+- workspace/tenant boundaries
+- route entitlement
+- approval workflow
+- audit and consent/suppression handling
+- connector readiness/degraded behavior
+- data minimization
+- local deployment health
+- UI state correctness
+
+Required tests:
+
+- campaign create/update/approve/reject cases
+- workspace/tenant isolation
+- connector missing credentials returns degraded/NOT_READY
+- consent/suppression enforcement
+- route access denied server-side and UI-side
+- audit events emitted for important workflow changes
+- backend health and web health checks pass
+
+Validation:
+
+```bash
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:dmos-boundary-workflow-coverage
+pnpm check:digital-marketing-root-docs
+./gradlew :products:digital-marketing:dm-api:check
+./gradlew :products:digital-marketing:dm-integration-tests:check
+pnpm test:digital-marketing
+pnpm build:digital-marketing
+pnpm validate:digital-marketing
+```
+
+### DM-5.2 Digital Marketing no-regression gate
+
+Run before merge:
+
+```bash
+pnpm plan:validate:digital-marketing
+pnpm validate:digital-marketing
+pnpm plan:test:digital-marketing
+pnpm test:digital-marketing
+pnpm plan:build:digital-marketing
+pnpm build:digital-marketing
+pnpm plan:package:digital-marketing
+pnpm package:digital-marketing
+pnpm plan:deploy:local:digital-marketing
+pnpm deploy:local:digital-marketing
+pnpm plan:verify:local:digital-marketing
+pnpm verify:local:digital-marketing
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm check:bridge-compliance
+pnpm check:production-readiness
+```
+
+Digital Marketing is rollout-ready for local pilot only when:
+
+- backend and web surfaces build/test
+- bridge compliance passes
+- lifecycle phases generate manifests
+- local deploy/verify works or fails with actionable `NOT_READY`
+- campaign workflow tests pass
+- no Digital Marketing-specific lifecycle code leaks into Kernel
+
+---
+
+## 6. Cross-pilot acceptance matrix
+
+| Requirement                  | PHR                     | Digital Marketing                   | Required validation                       |
+| ---------------------------- | ----------------------- | ----------------------------------- | ----------------------------------------- |
+| Registry enabled             | yes                     | yes                                 | `pnpm check:product-registry`             |
+| Lifecycle execution allowed  | yes                     | yes                                 | `pnpm check:product-registry-drift`       |
+| Backend surface              | `products/phr`          | `products/digital-marketing/dm-api` | build/test commands                       |
+| Web surface                  | `products/phr/apps/web` | `products/digital-marketing/ui`     | typecheck/test/build                      |
+| Required gates               | healthcare gates        | marketing/security/bridge gates     | validate commands                         |
+| Artifact manifest            | required                | required                            | `pnpm check:product-artifact-contracts`   |
+| Deployment manifest          | required                | required                            | `pnpm check:product-deployment-contracts` |
+| Health report                | required                | required                            | verify commands                           |
+| Runtime truth evidence       | required                | required                            | `pnpm check:kernel-lifecycle-truth`       |
+| Product-specific correctness | healthcare/FHIR/consent | campaign/tenant/connector           | product tests                             |
+| Boundary safety              | no platform leakage     | no platform leakage                 | boundary checks                           |
+
+---
+
+## 7. Final independent execution checklist
+
+A product-pilot team can execute this plan without owning platform internals by running:
+
+```bash
+git checkout 04f03168e597cca638110f0025bd6231ac636fe5
 pnpm install --frozen-lockfile
-node scripts/validate-domain-registry.mjs
-node scripts/validate-product-registry.mjs
-node scripts/check-product-generated-includes.mjs
-node scripts/check-doc-authority.mjs
-node scripts/check-current-state-claims.mjs
-node scripts/check-domain-boundaries.mjs
-node scripts/check-deprecated-imports.mjs
-node scripts/check-opening-lifecycle-pilots.mjs
+pnpm check:product-registry
+pnpm check:product-registry-artifacts
+pnpm check:product-workspace-registration
+pnpm check:phr-lifecycle-readiness
+pnpm check:digital-marketing-lifecycle-pilot
+pnpm plan:validate:phr && pnpm validate:phr
+pnpm plan:test:phr && pnpm test:phr
+pnpm plan:build:phr && pnpm build:phr
+pnpm plan:validate:digital-marketing && pnpm validate:digital-marketing
+pnpm plan:test:digital-marketing && pnpm test:digital-marketing
+pnpm plan:build:digital-marketing && pnpm build:digital-marketing
+pnpm check:bridge-compliance
+pnpm check:route-entitlement-contracts
+pnpm check:design-system-conformance
+pnpm check:production-readiness
 ```
+
+For full local lifecycle proof, also run package/deploy/verify commands for both products after local Docker/Compose prerequisites are available.
 
 ---
 
-# Phase 2 — Stabilize Kernel lifecycle foundation
-
-## Objective
-
-Make Product Development Kernel executable, deterministic, contract-backed, observable, and safe for both opening pilots.
-
-## Exit criteria
-
-```text
-- Kernel contracts cover ProductUnit, lifecycle, gates, artifacts, deployments, health, events, approvals, and agentic actions.
-- Kernel lifecycle validates registry/config/manifests before execution.
-- Digital Marketing and PHR can plan and dry-run dev, validate, test, build, package, deploy, verify.
-- Disabled products fail closed.
-- Required manifests are produced or execution fails.
-- Gate failures are structured.
-- Correlation IDs are propagated.
-- No product-specific implementation code exists inside Kernel packages.
-```
-
----
-
-## Task 2.1 Harden `@ghatana/kernel-product-contracts`
-
-### Files
-
-```text
-platform/typescript/kernel-product-contracts/src/**
-platform/typescript/kernel-product-contracts/README.md
-```
-
-### Add/harden schemas
-
-```text
-ProductUnit
-ProductUnitSurface
-ProductUnitKind
-ProductUnitIntent
-LifecyclePhase
-LifecyclePlan
-LifecyclePlanStep
-LifecycleExecutionContext
-LifecycleResult
-LifecycleStepResult
-LifecycleFailure
-LifecycleEvent
-GateDefinition
-GateResult
-GateResultManifest
-ArtifactReference
-DeploymentReference
-EnvironmentReference
-HealthSnapshot
-ApprovalRequirement
-AgentLifecycleActionRequest
-SemanticArtifactReference
-```
-
-### Required fields
-
-Execution-related contracts must include:
-
-```text
-schemaVersion
-productUnitId
-phase
-runId
-correlationId
-sourceRef
-createdAt/emittedAt
-status
-reasonCode
-actionableMessage
-evidenceRefs
-diagnostics
-```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/kernel-product-contracts typecheck
-pnpm --dir platform/typescript/kernel-product-contracts test
-pnpm --dir platform/typescript/kernel-product-contracts build
-```
-
-### Tests
-
-```text
-- Digital Marketing fixture parses.
-- PHR fixture parses.
-- Finance disabled fixture parses but is not executable.
-- invalid lifecycle phase fails.
-- missing productUnitId fails.
-- high-risk AgentLifecycleActionRequest requires approval metadata.
-```
-
----
-
-## Task 2.2 Harden lifecycle planning
-
-### Files
-
-```text
-platform/typescript/kernel-lifecycle/src/**
-scripts/kernel-product.mjs
-products/digital-marketing/kernel-product.yaml
-products/phr/kernel-product.yaml
-```
-
-### Plan validation must check
-
-```text
-product exists
-execution allowed
-phase is valid
-phase exists in manifest
-surfaces exist
-adapters exist
-gates exist
-required manifests exist
-default environment exists for deploy/verify/promote/rollback
-```
-
-### Plan output must include
-
-```text
-productUnitId
-phase
-surfaces
-environment
-mode
-ordered steps
-adapter ids
-gates
-requiredManifests
-expectedArtifacts
-health checks
-approval requirements
-correlationId
-warnings
-blockingReasons
-```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/kernel-lifecycle typecheck
-pnpm --dir platform/typescript/kernel-lifecycle test
-node scripts/kernel-product.mjs product plan digital-marketing validate --json
-node scripts/kernel-product.mjs product plan phr validate --json
-node scripts/kernel-product.mjs product plan finance validate --json
-```
-
-Expected: Finance fails closed unless explicit shape-validation mode exists.
-
----
-
-## Task 2.3 Harden lifecycle execution and result collection
-
-### Files
-
-```text
-platform/typescript/kernel-lifecycle/src/service/**
-platform/typescript/kernel-lifecycle/src/execution/**
-platform/typescript/kernel-lifecycle/src/result/**
-platform/typescript/kernel-lifecycle/src/events/**
-```
-
-### Execution rules
-
-```text
-- execution is plan-driven
-- each step produces LifecycleStepResult
-- failures stop downstream risky phases
-- missing required manifest fails execution
-- every run has correlationId
-- every run records sourceRef
-- no success is inferred from unstructured logs alone
-```
-
-### Required output files by phase where applicable
-
-```text
-lifecycle-plan.json
-lifecycle-result.json
-gate-result-manifest.json
-artifact-manifest.json
-deployment-manifest.json
-verify-health-report.json
-rollback-manifest.json
-lifecycle-health-snapshot.json
-lifecycle-events.json
-```
-
-### Validation
-
-```bash
-node scripts/kernel-product.mjs product validate digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/validate
-node scripts/kernel-product.mjs product validate phr --dry-run --json --output-dir .kernel-runs/phr/validate
-node scripts/check-lifecycle-result-manifests.mjs .kernel-runs/digital-marketing/validate
-node scripts/check-lifecycle-result-manifests.mjs .kernel-runs/phr/validate
-```
-
----
-
-## Task 2.4 Harden toolchain adapters
-
-### Files
-
-```text
-platform/typescript/kernel-toolchains/src/**
-config/command-registry-manifest.json
-scripts/check-toolchain-adapter-contracts.mjs
-```
-
-### Adapter metadata must include
-
-```text
-adapterId
-supportedPhases
-supportedSurfaceTypes
-safeForDefault
-requiresApproval
-expectedOutputs
-timeout
-retryPolicy
-environmentPolicy
-outputValidation
-tests
-```
-
-### Initial production-safe adapters
-
-```text
-gradle-java-service
-pnpm-vite-react
-compose-local
-```
-
-### Not safe by default until proven
-
-```text
-xcode-ios
-gradle-android
-kubernetes
-helm
-terraform
-```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/kernel-toolchains typecheck
-pnpm --dir platform/typescript/kernel-toolchains test
-node scripts/check-toolchain-adapter-contracts.mjs
-node scripts/check-toolchain-adapter-registry-schema.mjs
-```
-
----
-
-## Task 2.5 Gate provider and gate result manifests
-
-### Files
-
-```text
-platform/typescript/kernel-product-contracts/src/gates/**
-platform/typescript/kernel-lifecycle/src/gates/**
-platform-plugins/plugin-consent
-platform-plugins/plugin-compliance
-platform-plugins/plugin-audit-trail
-platform-plugins/core-observability
-products/phr/lifecycle/gate-packs/**
-products/digital-marketing/kernel-product.yaml
-```
-
-### Implement generic contracts
-
-```text
-GateProvider
-GateExecutionRequest
-GateExecutionResult
-GateResultManifest
-```
-
-### Required initial providers/configurations
-
-```text
-registry-validation
-manifest-validation
-lifecycle-contract-validation
-bridge-compliance
-consent
-pii-classification
-audit-evidence
-fhir-contract-validation
-tenant-data-sovereignty
-marketing-consent-boundary
-non-regulated-customer-data-minimization
-unit-test-coverage
-integration-test-coverage
-contract-test-coverage
-```
-
-### Validation
-
-```bash
-node scripts/check-gate-result-manifest-completeness.mjs
-node scripts/check-phr-lifecycle-pilot.mjs
-node scripts/check-digital-marketing-lifecycle-pilot.mjs
-```
-
----
-
-## Task 2.6 UI-facing lifecycle summaries
-
-### Files
-
-```text
-platform/typescript/kernel-product-contracts/src/ui-summary/**
-platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts
-platform/typescript/ghatana-studio/src/sections/**
-```
-
-### Add contracts
-
-```text
-LifecycleRunSummary
-LifecycleGateSummary
-LifecycleArtifactSummary
-LifecycleDeploymentSummary
-LifecycleHealthSummary
-```
-
-### Rule
-
-Studio must consume summaries and public lifecycle truth only. It must not parse stdout, private logs, or product implementation files.
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/ghatana-studio type-check
-pnpm --dir platform/typescript/ghatana-studio test
-pnpm --dir platform/typescript/ghatana-studio test:e2e
-```
-
----
-
-# Phase 3 — Stabilize shared UI/intelligence primitives
-
-## Objective
-
-Harden shared primitives used by Studio, YAPPC, Kernel, Data Cloud, Digital Marketing, and PHR without making shared packages product-specific.
-
-## Exit criteria
-
-```text
-- @ghatana/canvas public API is stable and product-neutral.
-- @ghatana/ui-builder BuilderDocument v1 and preview protocol are stable.
-- @ghatana/ds-schema and @ghatana/ds-registry are authoritative.
-- @ghatana/ds-generator is ready for token, docs, examples, and builder binding generation.
-- YAPPC Java BuilderDocument schema aligns with TypeScript schema.
-- Studio uses shared lifecycle/gate/artifact/health summaries.
-- PHR and Digital Marketing use canonical design-system patterns where appropriate.
-```
-
-## Task 3.1 Canvas hardening ✅ COMPLETE (2026-05-26)
-
-### Files
-
-```text
-platform/typescript/canvas/package.json
-platform/typescript/canvas/src/public/index.ts
-platform/typescript/canvas/src/types/**
-platform/typescript/canvas/src/plugins/**
-platform/typescript/canvas/src/hybrid/**
-platform/typescript/canvas/src/telemetry/**
-```
-
-### Steps
-
-1. Keep `src/public/index.ts` as the public API boundary.
-2. Add import boundary tests to prevent products importing internal source paths.
-3. Add semantic zoom types:
-   ```text
-   SemanticZoomLevel
-   ContextShiftPolicy
-   FocusPath
-   DetailLevel
-   ```
-4. Add diagram presets:
-   ```text
-   lifecycle-plan, dependency-graph, topology, provenance-graph, gate-flow
-   ```
-5. Add keyboard graph navigation tests.
-6. Add performance fixture for large lifecycle graphs.
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/canvas type-check
-pnpm --dir platform/typescript/canvas test
-pnpm --dir platform/typescript/canvas build
-```
-
----
-
-## Task 3.2 UI Builder hardening
-
-### Files
-
-```text
-platform/typescript/ui-builder/src/**
-platform/typescript/ui-builder/src/schema/builder-document-v1.schema.json
-products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/BuilderDocumentSchema.java
-platform/typescript/testing/src/builder-preview.ts
-```
-
-### Steps
-
-1. Make BuilderDocument v1 explicit.
-2. Export JSON schema.
-3. Add migrations for schema versions.
-4. Align Java and TypeScript schema.
-5. Add preview protocol:
-   ```text
-   PreviewRequest
-   PreviewResult
-   PreviewSecurityDecision
-   PreviewDiagnostics
-   PreviewArtifactReference
-   ```
-6. Add codegen golden tests.
-7. Add import/export validation.
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/ui-builder type-check
-pnpm --dir platform/typescript/ui-builder test
-pnpm --dir platform/typescript/ui-builder build
-./gradlew :products:yappc:core:yappc-services:test
-```
-
----
-
-## Task 3.3 Design system, registry, and generator
-
-### Files
-
-```text
-platform/typescript/ds-schema
-platform/typescript/ds-registry
-platform/typescript/ds-generator
-platform/typescript/design-system
-platform/typescript/tokens
-platform/typescript/theme
-platform/typescript/domain-components
-platform/typescript/accessibility
-```
-
-### Steps
-
-1. Make `ds-schema` authoritative for component metadata.
-2. Make `ds-registry` authoritative for builder-visible components.
-3. Extend `ds-generator` toward:
-   ```text
-   token output
-   component docs
-   examples
-   builder bindings
-   a11y metadata
-   i18n metadata
-   test scaffold
-   ```
-4. Create reusable lifecycle/status components only after two consumers exist:
-   ```text
-   LifecycleStatusBadge
-   GateResultPanel
-   ArtifactSummaryCard
-   DeploymentHealthCard
-   ApprovalRequirementCard
-   EvidenceReferenceList
-   BlockedState
-   DegradedState
-   PrivacyWarning
-   SecurityWarning
-   ```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/ds-schema type-check
-pnpm --dir platform/typescript/ds-registry type-check
-pnpm --dir platform/typescript/ds-generator test
-pnpm --dir platform/typescript/design-system test
-pnpm --dir platform/typescript/accessibility test
-```
-
----
-
-## Task 3.4 Ghatana Studio pilot lifecycle UI
-
-### Files
-
-```text
-platform/typescript/ghatana-studio/src/**
-```
-
-### Steps
-
-1. Add opening pilot selector:
-   ```text
-   Digital Marketing
-   PHR
-   ```
-2. Add lifecycle views:
-   ```text
-   plan
-   run result
-   gate result
-   artifact manifest
-   deployment manifest
-   health snapshot
-   approval requirements
-   failure diagnostics
-   ```
-3. Add route ownership:
-   ```text
-   Develop/Lifecycle/Artifacts/Deployments = Kernel
-   Health = composed Kernel + Data Cloud + product truth
-   Ideas/Blueprints/Canvas/Learn = YAPPC
-   ```
-4. Add empty/loading/error/degraded/blocked states.
-5. Add a11y and keyboard tests.
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/ghatana-studio type-check
-pnpm --dir platform/typescript/ghatana-studio lint
-pnpm --dir platform/typescript/ghatana-studio test
-pnpm --dir platform/typescript/ghatana-studio test:a11y
-pnpm --dir platform/typescript/ghatana-studio test:e2e
-```
-
----
-
-# Phase 4 — Wire runtime truth and provenance
-
-## Objective
-
-Make lifecycle truth durable, queryable, provenance-backed, and visualizable while preserving Kernel bootstrap mode.
-
-## Exit criteria
-
-```text
-- Kernel can run in bootstrap mode without Data Cloud.
-- Provider interfaces exist for event, artifact, health, provenance, telemetry, policy evidence, memory, knowledge, runtime truth.
-- Data Cloud-backed implementations live under products/data-cloud/*/kernel-bridge only.
-- Lifecycle events, artifact references, health snapshots, and gate evidence can be stored.
-- Studio can show lifecycle truth without log parsing.
-- Agent actions have evidence and provenance references.
-```
-
-## Task 4.1 Provider interfaces
-
-### Files
-
-```text
-platform/typescript/kernel-product-contracts/src/providers/**
-platform/typescript/kernel-providers/src/**
-products/data-cloud/extensions/kernel-bridge/**
-products/data-cloud/planes/action/kernel-bridge/**
-```
-
-### Contracts
-
-```text
-EventProvider
-ArtifactProvider
-HealthProvider
-ProvenanceProvider
-TelemetryProvider
-PolicyEvidenceProvider
-RuntimeTruthProvider
-MemoryProvider
-KnowledgeProvider
-```
-
-### Rules
-
-```text
-platform owns interface
-platform may own bootstrap/file implementation
-Data Cloud owns Data Cloud-backed implementation
-Kernel must not import Data Cloud plane internals
-provider failures must be visible and fail-safe
-```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/kernel-product-contracts test
-pnpm --dir platform/typescript/kernel-providers test
-./gradlew :products:data-cloud:extensions:kernel-bridge:test
-./gradlew :products:data-cloud:planes:action:kernel-bridge:test
-node scripts/check-kernel-data-cloud-boundary.mjs
-```
-
----
-
-## Task 4.2 Lifecycle event schemas
-
-### Files
-
-```text
-platform/typescript/platform-events
-platform/typescript/events
-platform/typescript/kernel-product-contracts/src/events/**
-platform/typescript/kernel-lifecycle/src/events/**
-products/data-cloud/planes/event/core
-products/data-cloud/planes/event/store
-products/data-cloud/planes/action/event-bridge
-```
-
-### Event envelope
-
-```text
-schemaVersion
-eventId
-eventType
-productUnitId
-phase
-runId
-correlationId
-sourceRef
-emittedAt
-actor
-tenant/workspace/project
-payload
-evidenceRefs
-idempotencyKey
-```
-
-### Required events
-
-```text
-lifecycle.plan.created
-lifecycle.run.started
-lifecycle.step.started
-lifecycle.step.completed
-lifecycle.step.failed
-lifecycle.gate.completed
-lifecycle.artifact.created
-lifecycle.deployment.created
-lifecycle.health.snapshot.created
-lifecycle.run.completed
-lifecycle.run.failed
-lifecycle.approval.required
-lifecycle.rollback.ready
-```
-
-### Validation
-
-```bash
-pnpm --dir platform/typescript/platform-events test
-pnpm --dir platform/typescript/events test
-pnpm --dir platform/typescript/kernel-lifecycle test
-./gradlew :products:data-cloud:planes:event:core:test
-./gradlew :products:data-cloud:planes:event:store:test
-```
-
----
-
-## Task 4.3 Artifact and deployment provenance
-
-### Files
-
-```text
-platform/typescript/kernel-artifacts/src/**
-platform/typescript/kernel-deployment/src/**
-platform/typescript/kernel-lifecycle/src/**
-products/data-cloud/extensions/kernel-bridge/**
-```
-
-### Artifact manifest must include
-
-```text
-artifactId
-artifactType
-packaging
-sourceRef
-buildRunId
-digest/fingerprint
-producedBy
-producedAt
-productUnitId
-surfaceId
-evidenceRefs
-```
-
-### Deployment manifest must include
-
-```text
-deploymentId
-environment
-artifactRefs
-artifactDigests
-sourceRef
-deployedBy
-deployedAt
-healthCheckRefs
-rollbackRef
-```
-
-### Validation
-
-```bash
-node scripts/check-package-to-deploy-artifact-linkage.mjs
-node scripts/check-artifact-manifest-completeness.mjs
-node scripts/check-deployment-manifest-completeness.mjs
-node scripts/check-rollback-manifest-completeness.mjs
-```
-
----
-
-## Task 4.4 Runtime truth read models and Studio integration
-
-### Files
-
-```text
-products/data-cloud/extensions/kernel-bridge/**
-platform/typescript/kernel-product-contracts/src/ui-summary/**
-platform/typescript/ghatana-studio/src/**
-```
-
-### Read models
-
-```text
-LifecycleRunReadModel
-ProductUnitHealthReadModel
-GateResultReadModel
-ArtifactLineageReadModel
-DeploymentReadModel
-ProvenanceReadModel
-```
-
-### Studio must show
-
-```text
-opening pilot lifecycle status
-latest runs
-failed gates
-produced artifacts
-active deployments
-health snapshots
-provenance links
-degraded provider state
-```
-
-### Validation
-
-```bash
-node scripts/check-runtime-truth-provider-contracts.mjs
-pnpm --dir platform/typescript/ghatana-studio test
-pnpm --dir platform/typescript/ghatana-studio test:e2e
-```
-
----
-
-## Task 4.5 Agent action evidence
-
-### Files
-
-```text
-platform/typescript/kernel-product-contracts/src/agentic/**
-products/data-cloud/planes/action/**
-```
-
-### Requirements
-
-`AgentLifecycleActionRequest` must include:
-
-```text
-actionId
-productUnitId
-requested phase/action
-tool permissions
-risk level
-approval requirements
-expected artifacts
-verification proof
-rollback plan
-evidenceRefs
-correlationId
-agent identity
-```
-
-Agents must not run raw Gradle/pnpm/Docker commands directly.
-
-### Validation
-
-```bash
-node scripts/check-agentic-lifecycle-action-contracts.mjs
-./gradlew :products:data-cloud:planes:action:agent-runtime:test
-./gradlew :products:data-cloud:planes:action:orchestrator:test
-```
-
----
-
-# Phase 5 — Expand product validation
-
-## Objective
-
-Use product shapes to prove Kernel is generic without turning it into a god product.
-
-## Exit criteria
-
-```text
-- Digital Marketing remains executable and correct.
-- PHR remains executable and healthcare-gate-correct.
-- Finance has multi-module/operator/portal/SDK readiness validation but remains disabled.
-- FlashIt has mobile/API/privacy/preview shape validation but remains disabled.
-- YAPPC has creator lifecycle and artifact intelligence separated from Kernel lifecycle.
-- Data Cloud has bootstrap/platform mode and runtime truth provider validation.
-- Product shape capability matrix is generated and checked.
-```
-
-## Task 5.1 Digital Marketing validation
-
-```bash
-node scripts/check-digital-marketing-lifecycle-pilot.mjs
-node scripts/kernel-product.mjs product plan digital-marketing validate --json
-node scripts/kernel-product.mjs product validate digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/validate
-node scripts/kernel-product.mjs product build digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/build
-node scripts/kernel-product.mjs product deploy digital-marketing --dry-run --json --env local --output-dir .kernel-runs/digital-marketing/deploy
-./gradlew :products:digital-marketing:dm-api:test
-./gradlew :products:digital-marketing:dm-kernel-bridge:test
-pnpm --dir products/digital-marketing/ui type-check
-pnpm --dir products/digital-marketing/ui test
-pnpm --dir products/digital-marketing/ui build
-```
-
-## Task 5.2 PHR validation
-
-```bash
-node scripts/check-phr-lifecycle-pilot.mjs
-node scripts/kernel-product.mjs product plan phr validate --json
-node scripts/kernel-product.mjs product validate phr --dry-run --json --output-dir .kernel-runs/phr/validate
-node scripts/kernel-product.mjs product build phr --dry-run --json --output-dir .kernel-runs/phr/build
-node scripts/kernel-product.mjs product deploy phr --dry-run --json --env local --output-dir .kernel-runs/phr/deploy
-./gradlew :products:phr:test
-./gradlew :products:phr:domains:healthcare:test
-pnpm --dir products/phr/apps/web type-check
-pnpm --dir products/phr/apps/web test
-pnpm --dir products/phr/apps/web build
-```
-
-## Task 5.3 Finance shape validation
-
-Keep default lifecycle disabled until blockers resolve.
-
-Validate:
-
-```text
-multi-module Gradle graph
-operator surface
-portal surface
-SDK packaging
-regulatory-compliance gate
-risk-controls gate
-promotion-approval gate
-multi-module-build gate
-domain dependency rules
-reporting evidence
-```
-
-Commands:
-
-```bash
-node scripts/check-product-shape-capability-matrix.mjs --product finance
-node scripts/kernel-product.mjs product plan finance build --json
-./gradlew :products:finance:build
-./gradlew :products:finance:integration-testing:test
-```
-
-Expected: Kernel command fails closed unless explicit shape-validation mode exists.
-
-## Task 5.4 FlashIt shape validation
-
-Keep default lifecycle disabled until mobile adapters and mobile artifact contracts are executable.
-
-Validate:
-
-```text
-backend API
-web
-mobile
-privacy gate
-preview-security gate
-personal-data-classification gate
-mobile ipa/aab artifact manifests
-xcode-ios adapter readiness
-gradle-android adapter readiness
-```
-
-Commands:
-
-```bash
-node scripts/check-product-shape-capability-matrix.mjs --product flashit
-node scripts/kernel-product.mjs product plan flashit build --json
-```
-
-Expected: Kernel command fails closed unless explicit shape-validation mode exists.
-
-## Task 5.5 YAPPC platform-provider validation
-
-Validate:
-
-```text
-creator lifecycle distinct from Kernel lifecycle
-ProductUnitIntent export
-artifact intelligence evidence contracts
-no Kernel lifecycle execution reimplementation
-no private Kernel log parsing
-public Kernel/Data Cloud truth consumption only
-```
-
-Commands:
-
-```bash
-node scripts/check-yappc-kernel-boundary.mjs
-node scripts/check-yappc-artifact-intelligence-boundary.mjs
-./gradlew :products:yappc:core:yappc-api:test
-pnpm --dir products/yappc/frontend test
-```
-
-## Task 5.6 Data Cloud platform-provider validation
-
-Validate:
-
-```text
-bootstrap mode separation
-platform mode provider bridge
-runtime truth provider
-event provider
-artifact provider
-health provider
-provenance provider
-policy evidence provider
-no product business logic in Data Cloud core
-```
-
-Commands:
-
-```bash
-node scripts/check-data-cloud-foundation-boundary.mjs
-node scripts/check-runtime-truth-provider-contracts.mjs
-./gradlew :products:data-cloud:delivery:api:test
-./gradlew :products:data-cloud:extensions:kernel-bridge:test
-./gradlew :products:data-cloud:planes:action:kernel-bridge:test
-```
-
----
-
-# Full platform no-regression suite
-
-Run before declaring any phase complete:
-
-```bash
-# Governance
-node scripts/validate-domain-registry.mjs
-node scripts/validate-product-registry.mjs
-node scripts/check-product-generated-includes.mjs
-node scripts/check-doc-authority.mjs
-node scripts/check-current-state-claims.mjs
-node scripts/check-domain-boundaries.mjs
-node scripts/check-deprecated-imports.mjs
-node scripts/check-opening-lifecycle-pilots.mjs
-
-# Kernel
-pnpm --dir platform/typescript/kernel-product-contracts test
-pnpm --dir platform/typescript/kernel-product-contracts typecheck
-pnpm --dir platform/typescript/kernel-lifecycle test
-pnpm --dir platform/typescript/kernel-lifecycle typecheck
-pnpm --dir platform/typescript/kernel-providers test
-pnpm --dir platform/typescript/kernel-toolchains test
-pnpm --dir platform/typescript/kernel-artifacts test
-pnpm --dir platform/typescript/kernel-deployment test
-pnpm --dir platform/typescript/kernel-release test
-node scripts/check-kernel-platform-lifecycle.mjs
-
-# Shared primitives
-pnpm --dir platform/typescript/canvas type-check
-pnpm --dir platform/typescript/canvas test
-pnpm --dir platform/typescript/ui-builder type-check
-pnpm --dir platform/typescript/ui-builder test
-pnpm --dir platform/typescript/ds-schema type-check
-pnpm --dir platform/typescript/ds-registry type-check
-pnpm --dir platform/typescript/ds-generator test
-pnpm --dir platform/typescript/ghatana-studio type-check
-pnpm --dir platform/typescript/ghatana-studio test
-pnpm --dir platform/typescript/ghatana-studio test:e2e
-
-# Opening pilots
-node scripts/check-digital-marketing-lifecycle-pilot.mjs
-node scripts/check-phr-lifecycle-pilot.mjs
-./gradlew :products:digital-marketing:dm-api:test
-./gradlew :products:digital-marketing:dm-kernel-bridge:test
-pnpm --dir products/digital-marketing/ui type-check
-pnpm --dir products/digital-marketing/ui test
-./gradlew :products:phr:test
-./gradlew :products:phr:domains:healthcare:test
-pnpm --dir products/phr/apps/web type-check
-pnpm --dir products/phr/apps/web test
-
-# Shape validators
-node scripts/check-product-shape-capability-matrix.mjs
-node scripts/check-yappc-kernel-boundary.mjs
-node scripts/check-data-cloud-foundation-boundary.mjs
-```
-
----
-
-# Final acceptance criteria
-
-This five-phase implementation is complete when:
-
-```text
-1. Domain, product, Gradle, and pnpm registries agree.
-2. Digital Marketing and PHR are the only opening lifecycle pilots.
-3. Digital Marketing and PHR can plan and dry-run lifecycle phases through Kernel.
-4. Finance and FlashIt fail closed by default.
-5. Kernel lifecycle contracts and outputs are typed, versioned, and test-backed.
-6. Every lifecycle phase emits structured truth or fails closed.
-7. Shared primitives remain product-neutral.
-8. Studio consumes public lifecycle truth only.
-9. Data Cloud provider bridge is contract-backed.
-10. Agents request lifecycle actions through Kernel contracts.
-11. Security, privacy, i18n, a11y, resilience, and observability are included in touched surfaces.
-12. No duplicate platform capability is unregistered.
-13. No product reimplements Kernel lifecycle.
-14. No Kernel/shared package imports product implementation internals.
-```
+## 8. Final acceptance criteria
+
+The PHR + Digital Marketing pilot plan is complete when:
+
+1. both products validate, test, build, package, deploy local, and verify local through Kernel commands
+2. PHR healthcare gates are active and fail closed
+3. Digital Marketing bridge and campaign workflow gates pass
+4. both products generate lifecycle evidence packs
+5. both products use platform/shared UI primitives where appropriate
+6. both products preserve domain ownership and do not leak product logic into platform packages
+7. Studio/YAPPC can consume public lifecycle truth without private log parsing
+8. Data Cloud bridge can accept product lifecycle evidence through provider contracts when enabled
+9. all product no-regression gates pass
+10. failures are actionable, observable, and test-covered

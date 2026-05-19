@@ -22,6 +22,20 @@ COPY settings.gradle.kts build.gradle.kts ./
 # Copy full monorepo source required by root settings/includes
 COPY . .
 
+# Create stub directories for any Gradle-included projects excluded from Docker context.
+# settings.gradle.kts applies config/generated/settings-gradle-includes.kts which
+# registers all product subprojects. Gradle requires each registered directory to exist
+# at configuration time, even when no tasks from those projects are being run.
+RUN grep 'include(' config/generated/settings-gradle-includes.kts | \
+    sed "s/.*include(\"://; s/\").*//" | \
+    tr ':' '/' | \
+    xargs -I{} mkdir -p {} 2>/dev/null; \
+    grep 'include(' settings.gradle.kts | \
+    sed "s/.*include(\"://; s/\").*//" | \
+    tr ':' '/' | \
+    xargs -I{} mkdir -p {} 2>/dev/null; \
+    true
+
 # Build the shadow/fat JAR (Gradle task: shadowJar or jar; depends on plugin)
 # Tests run during build to ensure lifecycle correctness
 RUN ./gradlew \

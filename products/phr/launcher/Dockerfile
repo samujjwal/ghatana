@@ -5,6 +5,20 @@ WORKDIR /workspace
 
 COPY . .
 
+# Create stub directories for any Gradle-included projects excluded from Docker context.
+# settings.gradle.kts applies config/generated/settings-gradle-includes.kts which
+# registers all product subprojects. Gradle requires each registered directory to exist
+# at configuration time, even when no tasks from those projects are being run.
+RUN grep 'include(' config/generated/settings-gradle-includes.kts | \
+    sed "s/.*include(\"://; s/\").*//" | \
+    tr ':' '/' | \
+    xargs -I{} mkdir -p {} 2>/dev/null; \
+    grep 'include(' settings.gradle.kts | \
+    sed "s/.*include(\"://; s/\").*//" | \
+    tr ':' '/' | \
+    xargs -I{} mkdir -p {} 2>/dev/null; \
+    true
+
 ENV GRADLE_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
 
 RUN chmod +x gradlew && ./gradlew \

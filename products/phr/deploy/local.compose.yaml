@@ -11,12 +11,15 @@ services:
       - "${PHR_API_PORT:-8085}:8085"
     environment:
       - PHR_ENV=${PHR_ENV:-development}
+      - PHR_ENVIRONMENT=${PHR_ENV:-development}
+      - PHR_HTTP_PORT=8085
+      - PHR_HTTP_HOST=0.0.0.0
       - PHR_DATABASE_URL=${PHR_DATABASE_URL:?PHR_DATABASE_URL is required for PHR local deploy}
       - PHR_DATABASE_USERNAME=${PHR_DATABASE_USERNAME:-phr}
       - PHR_DATABASE_PASSWORD=${PHR_DATABASE_PASSWORD}
       - PHR_LOG_LEVEL=${PHR_LOG_LEVEL:-info}
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8085/health/ready"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8085/ready"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -28,8 +31,8 @@ services:
       ghatana.kernel.lifecycle: "true"
       ghatana.kernel.environment: local
       ghatana.kernel.artifactRef: "kernel://artifacts/phr/backend-api:local"
-      ghatana.kernel.health.livePath: /health/live
-      ghatana.kernel.health.readyPath: /health/ready
+      ghatana.kernel.health.livePath: /health
+      ghatana.kernel.health.readyPath: /ready
     networks:
       - phr-network
     depends_on:
@@ -78,7 +81,11 @@ services:
     volumes:
       - phr-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PHR_DATABASE_USERNAME:-phr} -d ${POSTGRES_DB:-phr}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${PHR_DATABASE_USERNAME:-phr} -d ${POSTGRES_DB:-phr}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

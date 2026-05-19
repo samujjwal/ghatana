@@ -18,6 +18,18 @@ function fileExists(relativePath) {
 const LIFECYCLE_ENABLED_KINDS = new Set(['business-product', 'shared-service']);
 const PLATFORM_PROVIDER_KINDS = new Set(['platform-provider']);
 
+function readReleasePlan(root) {
+  const releasePlanPath = path.join(root, 'config/platform-release-plan.json');
+  if (!existsSync(releasePlanPath)) {
+    return {
+      openingLifecyclePilots: ['digital-marketing'],
+      disabledUntilReady: ['phr', 'finance', 'flashit'],
+      platformProviderValidators: ['data-cloud', 'yappc'],
+    };
+  }
+  return JSON.parse(readFileSync(releasePlanPath, 'utf8'));
+}
+
 export function checkProductRegistryDrift(options = {}) {
   const registryPath = options.registryPath ?? 'config/canonical-product-registry.json';
   const root = options.repoRoot ?? repoRoot;
@@ -31,6 +43,9 @@ export function checkProductRegistryDrift(options = {}) {
   }
 
   const violations = [];
+  const releasePlan = options.releasePlan ?? readReleasePlan(root);
+  const openingLifecyclePilots = new Set(releasePlan.openingLifecyclePilots ?? ['digital-marketing']);
+  const disabledUntilReady = releasePlan.disabledUntilReady ?? ['finance', 'flashit'];
 
   if (!registry.registry || typeof registry.registry !== 'object') {
     violations.push('Product registry missing "registry" object.');
@@ -197,30 +212,33 @@ export function checkProductRegistryDrift(options = {}) {
     }
   }
 
-  // Validate Digital Marketing remains the executable pilot
-  const digitalMarketing = registry.registry['digital-marketing'];
-  if (digitalMarketing) {
-    if (digitalMarketing.lifecycleStatus !== 'enabled') {
+  // Validate release-plan lifecycle pilots remain executable.
+  for (const productId of openingLifecyclePilots) {
+    const product = registry.registry[productId];
+    if (!product) {
+      violations.push(`${productId}: opening lifecycle pilot is missing from canonical registry.`);
+      continue;
+    }
+    if (product.lifecycleStatus !== 'enabled') {
       violations.push(
-        'digital-marketing: must remain lifecycleStatus "enabled" as the executable pilot. ' +
-          `Current status: '${digitalMarketing.lifecycleStatus}'.`,
+        `${productId}: must remain lifecycleStatus "enabled" as an opening lifecycle pilot. ` +
+          `Current status: '${product.lifecycleStatus}'.`,
       );
     }
-    if (digitalMarketing.lifecycle?.enabled !== true) {
+    if (product.lifecycle?.enabled !== true || product.lifecycleExecutionAllowed !== true) {
       violations.push(
-        'digital-marketing: must remain lifecycle.enabled: true as the executable pilot.',
+        `${productId}: must keep lifecycle.enabled and lifecycleExecutionAllowed true as an opening lifecycle pilot.`,
       );
     }
   }
 
-  // Validate PHR/Finance/FlashIt remain disabled/planned
-  const disabledProducts = ['phr', 'finance', 'flashit'];
-  for (const productId of disabledProducts) {
+  // Validate non-pilot products remain disabled/planned until their readiness gates change.
+  for (const productId of disabledUntilReady) {
     const product = registry.registry[productId];
-    if (product && product.lifecycle?.enabled === true) {
+    if (product && (product.lifecycle?.enabled === true || product.lifecycleExecutionAllowed === true)) {
       violations.push(
-        `${productId}: lifecycle must remain disabled until Phase 5 validation. ` +
-          'Current lifecycle.enabled is true.',
+        `${productId}: lifecycle must remain disabled until release-plan readiness changes. ` +
+          'Current lifecycle execution is enabled.',
       );
     }
   }

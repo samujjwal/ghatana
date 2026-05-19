@@ -65,8 +65,14 @@ function validateGatePack(gateId, gatePath) {
   if (gatePack.gateId !== gateId) {
     fail(`${gatePath} must declare gateId: ${gateId}`);
   }
-  if (gatePack.executionMode !== 'declarative-only') {
-    fail(`${gatePath} must stay declarative-only until regulated gates are executable`);
+  if (gatePack.executionMode !== 'evidence-backed') {
+    fail(`${gatePath} must declare executionMode: evidence-backed`);
+  }
+  if (!['active', 'ready'].includes(gatePack.status)) {
+    fail(`${gatePath} must declare status: active or ready`);
+  }
+  if (!Array.isArray(gatePack.requiredEvidenceRefs) || gatePack.requiredEvidenceRefs.length === 0) {
+    fail(`${gatePath} must declare requiredEvidenceRefs`);
   }
   if ('engineRef' in gatePack || 'genericGateEngine' in gatePack) {
     fail(`${gatePath} must not define a generic lifecycle gate engine`);
@@ -82,8 +88,11 @@ function validateReadinessEvidence(readiness) {
   if (readiness.productId !== PRODUCT_ID) {
     fail('PHR readiness evidence must declare productId: phr');
   }
-  if (readiness.lifecycleExecutionAllowed !== false) {
-    fail('PHR readiness evidence must keep lifecycleExecutionAllowed: false');
+  if (readiness.status !== 'enabled') {
+    fail('PHR readiness evidence must declare status: enabled');
+  }
+  if (readiness.lifecycleExecutionAllowed !== true) {
+    fail('PHR readiness evidence must declare lifecycleExecutionAllowed: true');
   }
 
   const modules = asArray(readiness.moduleGraph?.requiredModules);
@@ -114,13 +123,16 @@ function main() {
   if (!phr) {
     fail('PHR missing from canonical product registry');
   }
-  if (phr.lifecycleExecutionAllowed !== false || phr.lifecycle?.enabled === true || phr.lifecycleStatus === 'enabled') {
-    fail('PHR lifecycle must remain disabled until regulated gates are executable');
+  if (phr.kind !== 'business-product') {
+    fail('PHR must remain a business-product, not a platform-provider');
+  }
+  if (phr.lifecycleExecutionAllowed !== true || phr.lifecycle?.enabled !== true || phr.lifecycleStatus !== 'enabled') {
+    fail('PHR lifecycle must be enabled as a regulated executable pilot');
   }
 
   const kernelProduct = readYaml('products/phr/kernel-product.yaml');
-  if (kernelProduct.executionEnabled !== false) {
-    fail('products/phr/kernel-product.yaml must set executionEnabled: false');
+  if (kernelProduct.executionEnabled !== true || kernelProduct.status !== 'enabled') {
+    fail('products/phr/kernel-product.yaml must set status: enabled and executionEnabled: true');
   }
   assertIncludesAll('PHR kernel readiness gates', kernelProduct.readiness?.requiredGates, REQUIRED_GATES);
   assertIncludesAll('PHR registry readiness gates', phr.lifecycleReadiness?.requiredGates, REQUIRED_GATES);
@@ -140,6 +152,10 @@ function main() {
   for (const gateId of REQUIRED_GATES) {
     const gatePath = kernelProduct.gates?.gatePacks?.[gateId] ?? gatePackRefs.get(gateId);
     validateGatePack(gateId, gatePath);
+    const readinessGatePack = asArray(readiness.gatePacks).find((gatePack) => gatePack.gateId === gateId);
+    if (readinessGatePack?.executionMode !== 'evidence-backed') {
+      fail(`PHR readiness evidence gate ${gateId} must declare executionMode: evidence-backed`);
+    }
   }
 
   console.log('PHR lifecycle readiness checks passed.');

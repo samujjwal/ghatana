@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: phr
 gateId: tenant-data-sovereignty
 title: PHR tenant data sovereignty readiness
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: PHR Team
-status: planned
+status: active
 description: Product evidence required for tenant isolation, data residency, retention, and deletion controls.
 requiredEvidenceRefs:
   - products/phr/docs/03_architecture/phr_multi_tenancy_enforcement_spec.md

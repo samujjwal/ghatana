@@ -47,6 +47,9 @@ surfaces:
     runtime: static-web
     adapter: pnpm-vite-react
     packagePath: products/phr/apps/web/package.json
+    validateScript: type-check
+    buildScript: build
+    testScript: test
     expectedOutputs:
       build:
         - products/phr/apps/web/dist
@@ -115,7 +118,7 @@ deployment:
     healthChecks:
       backend-api:
         type: http
-        url: http://localhost:${PHR_API_PORT:-8085}/health/ready
+        url: http://localhost:${PHR_API_PORT:-8085}/ready
         retries: 10
         intervalMs: 3000
       web:
@@ -152,14 +155,17 @@ package:
     adapter: docker-buildx
     image: ghatana/phr-api
     tag: local
+    builder: desktop-linux
     dockerfile: products/phr/launcher/Dockerfile
     context: .
+    timeoutMs: 1800000
   web:
     adapter: docker-buildx
     image: ghatana/phr-web
     tag: local
+    builder: desktop-linux
     dockerfile: products/phr/apps/web/Dockerfile
-    context: .
+    context: products/phr/apps/web
 
 verify:
   local:
@@ -177,7 +183,7 @@ verify:
     healthChecks:
       backend-api:
         type: http
-        url: http://localhost:${PHR_API_PORT:-8085}/health/ready
+        url: http://localhost:${PHR_API_PORT:-8085}/ready
         retries: 10
         intervalMs: 3000
       web:

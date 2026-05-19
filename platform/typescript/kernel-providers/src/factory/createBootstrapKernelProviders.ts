@@ -8,7 +8,10 @@
  */
 
 import * as path from "node:path";
-import type { KernelLifecycleProviderContext, GateProvider } from "@ghatana/kernel-product-contracts";
+import type {
+  KernelLifecycleProviderContext,
+  GateProvider,
+} from "@ghatana/kernel-product-contracts";
 import { FileApprovalProvider } from "../approvals/FileApprovalProvider.js";
 import { FileArtifactProvider } from "../artifacts/FileArtifactProvider.js";
 import { FileLifecycleEventProvider } from "../events/FileLifecycleEventProvider.js";
@@ -17,6 +20,7 @@ import { RegistryValidationGateProvider } from "../gates/RegistryValidationGateP
 import { ManifestValidationGateProvider } from "../gates/ManifestValidationGateProvider.js";
 import { BridgeComplianceGateProvider } from "../gates/BridgeComplianceGateProvider.js";
 import { UnitTestCoverageGateProvider } from "../gates/UnitTestCoverageGateProvider.js";
+import { ProductGatePackProvider } from "../gates/ProductGatePackProvider.js";
 import { FileHealthProvider } from "../health/FileHealthProvider.js";
 import { FileMemoryProvider } from "../memory/FileMemoryProvider.js";
 import { FileProvenanceProvider } from "../provenance/FileProvenanceProvider.js";
@@ -39,14 +43,16 @@ import { GhatanaFileRegistryProvider } from "../registry/GhatanaFileRegistryProv
  * @doc.pattern Guard Function
  */
 export function assertBootstrapOnly(
-  environment: string = process.env.NODE_ENV ?? process.env.GHATANA_ENV ?? 'development',
-  allowBootstrapInProduction: boolean = false
+  environment: string = process.env.NODE_ENV ??
+    process.env.GHATANA_ENV ??
+    "development",
+  allowBootstrapInProduction: boolean = false,
 ): void {
-  const isProduction = environment === 'production' || environment === 'prod';
+  const isProduction = environment === "production" || environment === "prod";
   if (isProduction && !allowBootstrapInProduction) {
     throw new Error(
-      'Bootstrap mode is not allowed in production environment. Use platform mode with Data Cloud-backed providers. ' +
-      'Set allowBootstrapInProduction=true to bypass this guard (for testing only).'
+      "Bootstrap mode is not allowed in production environment. Use platform mode with Data Cloud-backed providers. " +
+        "Set allowBootstrapInProduction=true to bypass this guard (for testing only).",
     );
   }
 }
@@ -82,48 +88,62 @@ export interface BootstrapKernelProviders {
 }
 
 const SYNTHETIC_BOOTSTRAP_PILOT_GATES = new Set([
-  'backend-check',
-  'web-route-contract',
-  'typecheck',
-  'unit-test',
-  'conformance',
-  'web-typecheck',
-  'web-bundle-budget',
-  'web-a11y-readiness',
-  'web-i18n-readiness',
-  'container-image-integrity',
-  'lifecycle-contract-validation',
-  'dmos-boundary-workflow-coverage',
-  'marketing-consent-boundary',
-  'non-regulated-customer-data-minimization',
-  'integration-test-coverage',
-  'contract-test-coverage',
-  'container-scan',
-  'image-vulnerability-scan',
-  'artifact-validation',
-  'environment-validation',
-  'health-check',
-  'observability-check',
-  'deployment-readiness',
-  'environment-configuration-validation',
+  "backend-check",
+  "web-route-contract",
+  "typecheck",
+  "unit-test",
+  "conformance",
+  "web-typecheck",
+  "web-bundle-budget",
+  "web-a11y-readiness",
+  "web-i18n-readiness",
+  "container-image-integrity",
+  "lifecycle-contract-validation",
+  "dmos-boundary-workflow-coverage",
+  "marketing-consent-boundary",
+  "non-regulated-customer-data-minimization",
+  "integration-test-coverage",
+  "contract-test-coverage",
+  "container-scan",
+  "image-vulnerability-scan",
+  "artifact-validation",
+  "environment-validation",
+  "health-check",
+  "observability-check",
+  "deployment-readiness",
+  "environment-configuration-validation",
 ]);
 
-function createBootstrapPilotGateProvider(gateId: string): FileBootstrapGateProvider {
+const PRODUCT_GATE_PACK_GATES = [
+  "consent",
+  "pii-classification",
+  "audit-evidence",
+  "fhir-contract-validation",
+  "tenant-data-sovereignty",
+] as const;
+
+function createBootstrapPilotGateProvider(
+  gateId: string,
+): FileBootstrapGateProvider {
   return new FileBootstrapGateProvider({
     supportedGates: SYNTHETIC_BOOTSTRAP_PILOT_GATES.has(gateId) ? [gateId] : [],
   });
 }
 
 export function createBootstrapKernelProviders(
-  options: BootstrapKernelProvidersOptions
+  options: BootstrapKernelProvidersOptions,
 ): BootstrapKernelProviders {
   const repoRoot = path.resolve(options.repoRoot);
   const outputRoot = path.resolve(
     repoRoot,
-    options.outputRoot ?? path.join(".kernel", "out")
+    options.outputRoot ?? path.join(".kernel", "out"),
   );
 
-  validateOutputRoot(repoRoot, outputRoot, options.allowOutputOutsideKernelOut ?? false);
+  validateOutputRoot(
+    repoRoot,
+    outputRoot,
+    options.allowOutputOutsideKernelOut ?? false,
+  );
 
   const events = new FileLifecycleEventProvider({
     outputDirectory: outputRoot,
@@ -137,65 +157,124 @@ export function createBootstrapKernelProviders(
   const approvals = new FileApprovalProvider({ outputDirectory: outputRoot });
   // Register concrete gate providers for supported gates
   // Gates without concrete providers will return NOT_READY
+  const productGatePackProviders = Object.fromEntries(
+    PRODUCT_GATE_PACK_GATES.map((gateId) => [
+      gateId,
+      new ProductGatePackProvider({ repoRoot, gateId }),
+    ]),
+  );
+
   const gates = {
     // Concrete implementations for critical gates
     "registry-validation": new RegistryValidationGateProvider(),
     "manifest-validation": new ManifestValidationGateProvider(),
     "bridge-compliance": new BridgeComplianceGateProvider(),
     "unit-test-coverage": new UnitTestCoverageGateProvider(),
-    
+
     // Fallback providers for gates not yet implemented with concrete checks
     // These will return NOT_READY when evaluated
-    "dev-environment-check": createBootstrapPilotGateProvider("dev-environment-check"),
-    "local-dependency-resolution": createBootstrapPilotGateProvider("local-dependency-resolution"),
-    "lifecycle-contract-validation": createBootstrapPilotGateProvider("lifecycle-contract-validation"),
-    "dmos-boundary-workflow-coverage": createBootstrapPilotGateProvider("dmos-boundary-workflow-coverage"),
-    "marketing-consent-boundary": createBootstrapPilotGateProvider("marketing-consent-boundary"),
-    "non-regulated-customer-data-minimization": createBootstrapPilotGateProvider("non-regulated-customer-data-minimization"),
-    "integration-test-coverage": createBootstrapPilotGateProvider("integration-test-coverage"),
-    "contract-test-coverage": createBootstrapPilotGateProvider("contract-test-coverage"),
+    "dev-environment-check": createBootstrapPilotGateProvider(
+      "dev-environment-check",
+    ),
+    "local-dependency-resolution": createBootstrapPilotGateProvider(
+      "local-dependency-resolution",
+    ),
+    "lifecycle-contract-validation": createBootstrapPilotGateProvider(
+      "lifecycle-contract-validation",
+    ),
+    "dmos-boundary-workflow-coverage": createBootstrapPilotGateProvider(
+      "dmos-boundary-workflow-coverage",
+    ),
+    "marketing-consent-boundary": createBootstrapPilotGateProvider(
+      "marketing-consent-boundary",
+    ),
+    "non-regulated-customer-data-minimization":
+      createBootstrapPilotGateProvider(
+        "non-regulated-customer-data-minimization",
+      ),
+    "integration-test-coverage": createBootstrapPilotGateProvider(
+      "integration-test-coverage",
+    ),
+    "contract-test-coverage": createBootstrapPilotGateProvider(
+      "contract-test-coverage",
+    ),
     "backend-check": createBootstrapPilotGateProvider("backend-check"),
-    "web-route-contract": createBootstrapPilotGateProvider("web-route-contract"),
-    "typecheck": createBootstrapPilotGateProvider("typecheck"),
+    "web-route-contract":
+      createBootstrapPilotGateProvider("web-route-contract"),
+    typecheck: createBootstrapPilotGateProvider("typecheck"),
     "unit-test": createBootstrapPilotGateProvider("unit-test"),
-    "conformance": createBootstrapPilotGateProvider("conformance"),
+    conformance: createBootstrapPilotGateProvider("conformance"),
     "web-typecheck": createBootstrapPilotGateProvider("web-typecheck"),
-    "lint": createBootstrapPilotGateProvider("lint"),
+    lint: createBootstrapPilotGateProvider("lint"),
     "web-bundle-budget": createBootstrapPilotGateProvider("web-bundle-budget"),
-    "web-a11y-readiness": createBootstrapPilotGateProvider("web-a11y-readiness"),
-    "web-i18n-readiness": createBootstrapPilotGateProvider("web-i18n-readiness"),
-    "container-image-integrity": createBootstrapPilotGateProvider("container-image-integrity"),
+    "web-a11y-readiness":
+      createBootstrapPilotGateProvider("web-a11y-readiness"),
+    "web-i18n-readiness":
+      createBootstrapPilotGateProvider("web-i18n-readiness"),
+    "container-image-integrity": createBootstrapPilotGateProvider(
+      "container-image-integrity",
+    ),
     "security-scan": createBootstrapPilotGateProvider("security-scan"),
     "license-policy": createBootstrapPilotGateProvider("license-policy"),
     "bundle-budget": createBootstrapPilotGateProvider("bundle-budget"),
     "container-scan": createBootstrapPilotGateProvider("container-scan"),
-    "image-vulnerability-scan": createBootstrapPilotGateProvider("image-vulnerability-scan"),
-    "artifact-validation": createBootstrapPilotGateProvider("artifact-validation"),
-    "environment-validation": createBootstrapPilotGateProvider("environment-validation"),
+    "image-vulnerability-scan": createBootstrapPilotGateProvider(
+      "image-vulnerability-scan",
+    ),
+    "artifact-validation": createBootstrapPilotGateProvider(
+      "artifact-validation",
+    ),
+    "environment-validation": createBootstrapPilotGateProvider(
+      "environment-validation",
+    ),
     "health-check": createBootstrapPilotGateProvider("health-check"),
-    "observability-check": createBootstrapPilotGateProvider("observability-check"),
+    "observability-check": createBootstrapPilotGateProvider(
+      "observability-check",
+    ),
     "privacy-check": createBootstrapPilotGateProvider("privacy-check"),
-    "e2e": createBootstrapPilotGateProvider("e2e"),
-    "performance": createBootstrapPilotGateProvider("performance"),
+    e2e: createBootstrapPilotGateProvider("e2e"),
+    performance: createBootstrapPilotGateProvider("performance"),
     "rollback-plan": createBootstrapPilotGateProvider("rollback-plan"),
-    "approval": createBootstrapPilotGateProvider("approval"),
-    "artifact-manifest-integrity": createBootstrapPilotGateProvider("artifact-manifest-integrity"),
-    "supply-chain-provenance": createBootstrapPilotGateProvider("supply-chain-provenance"),
-    "deployment-readiness": createBootstrapPilotGateProvider("deployment-readiness"),
-    "environment-configuration-validation": createBootstrapPilotGateProvider("environment-configuration-validation"),
+    approval: createBootstrapPilotGateProvider("approval"),
+    "artifact-manifest-integrity": createBootstrapPilotGateProvider(
+      "artifact-manifest-integrity",
+    ),
+    "supply-chain-provenance": createBootstrapPilotGateProvider(
+      "supply-chain-provenance",
+    ),
+    "deployment-readiness": createBootstrapPilotGateProvider(
+      "deployment-readiness",
+    ),
+    "environment-configuration-validation": createBootstrapPilotGateProvider(
+      "environment-configuration-validation",
+    ),
     "promotion-policy": createBootstrapPilotGateProvider("promotion-policy"),
-    "promotion-readiness": createBootstrapPilotGateProvider("promotion-readiness"),
-    "target-environment-validation": createBootstrapPilotGateProvider("target-environment-validation"),
-    "data-migration-validation": createBootstrapPilotGateProvider("data-migration-validation"),
+    "promotion-readiness": createBootstrapPilotGateProvider(
+      "promotion-readiness",
+    ),
+    "target-environment-validation": createBootstrapPilotGateProvider(
+      "target-environment-validation",
+    ),
+    "data-migration-validation": createBootstrapPilotGateProvider(
+      "data-migration-validation",
+    ),
     "runtime-readiness": createBootstrapPilotGateProvider("runtime-readiness"),
     "health-slo": createBootstrapPilotGateProvider("health-slo"),
     "rollback-safety": createBootstrapPilotGateProvider("rollback-safety"),
-    "rollback-readiness": createBootstrapPilotGateProvider("rollback-readiness"),
-    "rollback-impact-analysis": createBootstrapPilotGateProvider("rollback-impact-analysis"),
+    "rollback-readiness":
+      createBootstrapPilotGateProvider("rollback-readiness"),
+    "rollback-impact-analysis": createBootstrapPilotGateProvider(
+      "rollback-impact-analysis",
+    ),
+    ...productGatePackProviders,
   } as const;
-  const provenance = new FileProvenanceProvider({ outputDirectory: outputRoot });
+  const provenance = new FileProvenanceProvider({
+    outputDirectory: outputRoot,
+  });
   const memory = new FileMemoryProvider({ outputDirectory: outputRoot });
-  const runtimeTruth = new FileRuntimeTruthProvider({ outputDirectory: outputRoot });
+  const runtimeTruth = new FileRuntimeTruthProvider({
+    outputDirectory: outputRoot,
+  });
   const registryProvider =
     options.includeRegistryProvider === true
       ? new GhatanaFileRegistryProvider({
@@ -236,7 +315,7 @@ export function createBootstrapKernelProviders(
 function validateOutputRoot(
   repoRoot: string,
   outputRoot: string,
-  allowOutputOutsideKernelOut: boolean
+  allowOutputOutsideKernelOut: boolean,
 ): void {
   const expectedRoot = path.join(repoRoot, ".kernel", "out");
   if (allowOutputOutsideKernelOut) {
@@ -244,12 +323,15 @@ function validateOutputRoot(
   }
   if (!isSamePathOrChild(outputRoot, expectedRoot)) {
     throw new Error(
-      `Bootstrap Kernel outputRoot must be inside ${expectedRoot}; received ${outputRoot}`
+      `Bootstrap Kernel outputRoot must be inside ${expectedRoot}; received ${outputRoot}`,
     );
   }
 }
 
 function isSamePathOrChild(candidate: string, parent: string): boolean {
   const relativePath = path.relative(parent, candidate);
-  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+  return (
+    relativePath === "" ||
+    (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+  );
 }

@@ -1,0 +1,7 @@
+{
+  "snapshot": "04f03168e597cca638110f0025bd6231ac636fe5",
+  "registryPath": "config/domain-registry.json",
+  "domainCount": 17,
+  "validationCommand": "pnpm check:domain-registry",
+  "validationStatus": "passed"
+}

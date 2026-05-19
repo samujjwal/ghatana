@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: phr
 gateId: pii-classification
 title: PHR PII classification readiness
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: PHR Team
-status: planned
+status: active
 description: Product evidence required for PHI/PII field classification and handling.
 requiredEvidenceRefs:
   - products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrDataClassification.java

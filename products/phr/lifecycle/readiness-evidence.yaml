@@ -1,7 +1,7 @@
 schemaVersion: 1.0.0
 productId: phr
-status: planned
-lifecycleExecutionAllowed: false
+status: enabled
+lifecycleExecutionAllowed: true
 truthSource:
   registry: config/canonical-product-registry.json
   lifecycleConfig: products/phr/kernel-product.yaml
@@ -26,29 +26,20 @@ moduleGraph:
 gatePacks:
   - gateId: consent
     path: products/phr/lifecycle/gate-packs/consent.yaml
-    executionMode: declarative-only
+    executionMode: evidence-backed
   - gateId: pii-classification
     path: products/phr/lifecycle/gate-packs/pii-classification.yaml
-    executionMode: declarative-only
+    executionMode: evidence-backed
   - gateId: audit-evidence
     path: products/phr/lifecycle/gate-packs/audit-evidence.yaml
-    executionMode: declarative-only
+    executionMode: evidence-backed
   - gateId: fhir-contract-validation
     path: products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
-    executionMode: declarative-only
+    executionMode: evidence-backed
   - gateId: tenant-data-sovereignty
     path: products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
-    executionMode: declarative-only
-blockers:
-  - gate:consent
-  - gate:pii-classification
-  - gate:audit-evidence
-  - gate:fhir-contract-validation
-  - gate:tenant-data-sovereignty
-  - missing-manifest:lifecycle-plan
-  - missing-manifest:lifecycle-result
-  - missing-manifest:artifact-manifest
-  - missing-manifest:deployment-manifest
+    executionMode: evidence-backed
+blockers: []
 validationCommands:
   - ./gradlew :products:phr:build
   - ./gradlew :products:phr:launcher:build

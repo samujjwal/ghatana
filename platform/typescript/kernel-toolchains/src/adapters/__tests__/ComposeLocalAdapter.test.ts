@@ -1,21 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { promises as fs } from 'node:fs';
-import { ComposeLocalAdapter } from '../ComposeLocalAdapter.js';
-import type { ToolchainAdapterContext, AdapterLogger } from '../../ToolchainAdapter.js';
-import { FakeCommandRunner } from '../../execution/FakeCommandRunner.js';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { promises as fs } from "node:fs";
+import { ComposeLocalAdapter } from "../ComposeLocalAdapter.js";
+import type {
+  ToolchainAdapterContext,
+  AdapterLogger,
+} from "../../ToolchainAdapter.js";
+import { FakeCommandRunner } from "../../execution/FakeCommandRunner.js";
 
 // Mock fs.access so validatePrerequisites succeeds in unit tests.
 // ComposeLocalAdapter imports { promises as fs } from 'node:fs'.
-vi.mock('node:fs', async (importOriginal: () => Promise<Record<string, unknown>>) => {
-  const actual = await importOriginal();
-  const promises = (actual['promises'] ?? {}) as Record<string, unknown>;
-  return {
-    ...actual,
-    promises: {
-      ...promises,
-      access: vi.fn().mockResolvedValue(undefined),
-      mkdir: vi.fn().mockResolvedValue(undefined),
-      readFile: vi.fn().mockResolvedValue(`
+vi.mock(
+  "node:fs",
+  async (importOriginal: () => Promise<Record<string, unknown>>) => {
+    const actual = await importOriginal();
+    const promises = (actual["promises"] ?? {}) as Record<string, unknown>;
+    return {
+      ...actual,
+      promises: {
+        ...promises,
+        access: vi.fn().mockResolvedValue(undefined),
+        mkdir: vi.fn().mockResolvedValue(undefined),
+        readFile: vi.fn().mockResolvedValue(`
 services:
   api:
     labels:
@@ -23,10 +28,11 @@ services:
       ghatana.kernel.surface: backend-api
       ghatana.kernel.lifecycle: "true"
 `),
-      writeFile: vi.fn().mockResolvedValue(undefined),
-    },
-  };
-});
+        writeFile: vi.fn().mockResolvedValue(undefined),
+      },
+    };
+  },
+);
 
 const noop = (): void => {};
 
@@ -43,16 +49,16 @@ function makeContext(
   overrides: Partial<ToolchainAdapterContext> = {},
 ): ToolchainAdapterContext {
   return {
-    productId: 'digital-marketing',
-    phase: 'deploy',
+    productId: "digital-marketing",
+    phase: "deploy",
     surface: {
-      type: 'backend-api',
-      adapter: 'compose-local',
-      path: 'products/digital-marketing/dm-api',
+      type: "backend-api",
+      adapter: "compose-local",
+      path: "products/digital-marketing/dm-api",
     },
     dryRun: false,
     surfaceConfig: {
-      composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
+      composeFile: "products/digital-marketing/deploy/local.compose.yaml",
     },
     phaseConfig: {},
     logger: makeLogger(),
@@ -78,168 +84,255 @@ services:
   vi.mocked(fs.writeFile).mockResolvedValue(undefined);
 }
 
-describe('ComposeLocalAdapter', () => {
+describe("ComposeLocalAdapter", () => {
   let commandRunner: FakeCommandRunner;
   let adapter: ComposeLocalAdapter;
 
   beforeEach(() => {
     resetFsMocks();
     commandRunner = new FakeCommandRunner([
-      { exitCode: 0, stdout: '', stderr: '', durationMs: 50 },
+      { exitCode: 0, stdout: "", stderr: "", durationMs: 50 },
     ]);
-    adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+    adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
   });
 
-  describe('identity', () => {
-    it('has id compose-local', () => {
-      expect(adapter.id).toBe('compose-local');
+  describe("identity", () => {
+    it("has id compose-local", () => {
+      expect(adapter.id).toBe("compose-local");
     });
 
-    it('supports deploy / verify / rollback / operate phases', () => {
+    it("supports deploy / verify / rollback / operate phases", () => {
       expect(adapter.supportedPhases).toEqual(
-        expect.arrayContaining(['deploy', 'verify', 'rollback', 'operate']),
+        expect.arrayContaining(["deploy", "verify", "rollback", "operate"]),
       );
     });
 
-    it('supports backend-api, web, worker, operator surface types', () => {
+    it("supports backend-api, web, worker, operator surface types", () => {
       expect(adapter.supportedSurfaceTypes).toEqual(
-        expect.arrayContaining(['backend-api', 'web', 'worker', 'operator']),
+        expect.arrayContaining(["backend-api", "web", "worker", "operator"]),
       );
     });
   });
 
-  describe('plan()', () => {
-    it('generates docker compose up -d for deploy', async () => {
-      const ctx = makeContext({ phase: 'deploy' });
+  describe("plan()", () => {
+    it("generates docker compose up -d for deploy", async () => {
+      const ctx = makeContext({ phase: "deploy" });
       const [step] = await adapter.plan(ctx);
 
       expect(step.command).toEqual(
-        expect.arrayContaining(['docker', 'compose', '-f', expect.stringContaining('local.compose.yaml'), 'up', '-d']),
+        expect.arrayContaining([
+          "docker",
+          "compose",
+          "-p",
+          "ghatana-digital-marketing-local",
+          "-f",
+          expect.stringContaining("local.compose.yaml"),
+          "up",
+          "-d",
+        ]),
       );
     });
 
-    it('generates docker compose down for rollback', async () => {
-      const ctx = makeContext({ phase: 'rollback' });
-      const [step] = await adapter.plan(ctx);
-
-      expect(step.command).toContain('down');
-    });
-
-    it('includes --env-file when envFile is configured', async () => {
+    it("uses explicit compose project name when configured", async () => {
       const ctx = makeContext({
-        phase: 'deploy',
+        phase: "deploy",
         surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          envFile: 'products/digital-marketing/deploy/local.env',
+          composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+          projectName: "custom-project",
         },
       });
       const [step] = await adapter.plan(ctx);
 
-      expect(step.command).toContain('--env-file');
+      expect(step.command).toEqual(
+        expect.arrayContaining(["docker", "compose", "-p", "custom-project"]),
+      );
     });
 
-    it('does not include --env-file when no envFile is configured', async () => {
-      const ctx = makeContext({ phase: 'deploy' });
+    it("sanitizes generated compose project names", async () => {
+      const ctx = makeContext({
+        productId: "Digital Marketing!",
+        environment: "Local Dev",
+        phase: "verify",
+      });
       const [step] = await adapter.plan(ctx);
 
-      expect(step.command).not.toContain('--env-file');
+      expect(step.command).toEqual(
+        expect.arrayContaining([
+          "docker",
+          "compose",
+          "-p",
+          "ghatana-digital-marketing-local-dev",
+        ]),
+      );
     });
 
-    it('generates ps command for verify plan', async () => {
-      const ctx = makeContext({ phase: 'verify' });
+    it("generates docker compose down for rollback", async () => {
+      const ctx = makeContext({ phase: "rollback" });
       const [step] = await adapter.plan(ctx);
 
-      expect(step.command).toContain('ps');
+      expect(step.command).toContain("down");
+    });
+
+    it("includes --env-file when envFile is configured", async () => {
+      const ctx = makeContext({
+        phase: "deploy",
+        surfaceConfig: {
+          composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+          envFile: "products/digital-marketing/deploy/local.env",
+        },
+      });
+      const [step] = await adapter.plan(ctx);
+
+      expect(step.command).toContain("--env-file");
+    });
+
+    it("does not include --env-file when no envFile is configured", async () => {
+      const ctx = makeContext({ phase: "deploy" });
+      const [step] = await adapter.plan(ctx);
+
+      expect(step.command).not.toContain("--env-file");
+    });
+
+    it("generates ps command for verify plan", async () => {
+      const ctx = makeContext({ phase: "verify" });
+      const [step] = await adapter.plan(ctx);
+
+      expect(step.command).toContain("ps");
     });
   });
 
-  describe('execute() — deploy', () => {
-    it('calls docker compose up and returns succeeded on exit 0', async () => {
+  describe("execute() — deploy", () => {
+    it("calls docker compose up and returns succeeded on exit 0", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
         // Second call: docker compose ps inside writeDeploymentManifest
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 5 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 5,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const ctx = makeContext({ phase: 'deploy' });
+      const ctx = makeContext({ phase: "deploy" });
       const result = await adapter.execute(ctx);
 
-      expect(result.status).toBe('succeeded');
-      expect(result.manifestRefs?.deploymentManifest).toBe('.kernel/out/deploy/deployment-manifest.json');
-      expect(result.evidenceRefs).toContain('manifest:.kernel/out/deploy/deployment-manifest.json');
+      expect(result.status).toBe("succeeded");
+      expect(result.manifestRefs?.deploymentManifest).toBe(
+        ".kernel/out/deploy/deployment-manifest.json",
+      );
+      expect(result.evidenceRefs).toContain(
+        "manifest:.kernel/out/deploy/deployment-manifest.json",
+      );
       expect(commandRunner.invocations).toHaveLength(2);
       const [inv] = commandRunner.invocations;
-      expect(inv.command).toBe('docker');
-      expect(inv.args).toContain('up');
+      expect(inv.command).toBe("docker");
+      expect(inv.args).toEqual(
+        expect.arrayContaining([
+          "compose",
+          "-p",
+          "ghatana-digital-marketing-local",
+        ]),
+      );
+      expect(inv.args).toContain("up");
     });
 
-    it('records health URLs in deployment manifest details', async () => {
+    it("records health URLs in deployment manifest details", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 5 },
-      ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
-
-      const result = await adapter.execute(makeContext({
-        phase: 'deploy',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: { type: 'http', url: 'http://localhost:8080/health/ready' },
-            ignored: { type: 'tcp', url: 'localhost:8080' },
-          },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 5,
         },
-      }));
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      expect(result.status).toBe('succeeded');
+      const result = await adapter.execute(
+        makeContext({
+          phase: "deploy",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:8080/health/ready",
+              },
+              ignored: { type: "tcp", url: "localhost:8080" },
+            },
+          },
+        }),
+      );
+
+      expect(result.status).toBe("succeeded");
       const writePayload = vi.mocked(fs.writeFile).mock.calls.at(-1)?.[1];
-      expect(String(writePayload)).toContain('http://localhost:8080/health/ready');
+      expect(String(writePayload)).toContain(
+        "http://localhost:8080/health/ready",
+      );
       expect(String(writePayload)).not.toContain('"ignored"');
     });
 
-    it('records run and correlation metadata in deployment manifests', async () => {
+    it("records run and correlation metadata in deployment manifests", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 5 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 5,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'deploy',
-        runId: 'run-1',
-        correlationId: 'corr-1',
-      }));
+      const result = await adapter.execute(
+        makeContext({
+          phase: "deploy",
+          runId: "run-1",
+          correlationId: "corr-1",
+        }),
+      );
 
-      expect(result.status).toBe('succeeded');
+      expect(result.status).toBe("succeeded");
       const writePayload = vi.mocked(fs.writeFile).mock.calls.at(-1)?.[1];
       expect(String(writePayload)).toContain('"runId": "run-1"');
       expect(String(writePayload)).toContain('"correlationId": "corr-1"');
-      expect(String(writePayload)).toContain('"productUnitId": "digital-marketing"');
+      expect(String(writePayload)).toContain(
+        '"productUnitId": "digital-marketing"',
+      );
+      expect(String(writePayload)).toContain(
+        '"project": "ghatana-digital-marketing-local"',
+      );
     });
 
-    it('returns failed when docker compose exits non-zero', async () => {
+    it("returns failed when docker compose exits non-zero", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 1, stdout: '', stderr: 'Error: network not found', durationMs: 50 },
+        {
+          exitCode: 1,
+          stdout: "",
+          stderr: "Error: network not found",
+          durationMs: 50,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const ctx = makeContext({ phase: 'deploy' });
+      const ctx = makeContext({ phase: "deploy" });
       const result = await adapter.execute(ctx);
 
-      expect(result.status).toBe('failed');
-      expect(result.failure?.message).toContain('exit');
+      expect(result.status).toBe("failed");
+      expect(result.failure?.message).toContain("exit");
     });
 
-    it('skips execution in dryRun mode', async () => {
-      const ctx = makeContext({ phase: 'deploy', dryRun: true });
+    it("skips execution in dryRun mode", async () => {
+      const ctx = makeContext({ phase: "deploy", dryRun: true });
       const result = await adapter.execute(ctx);
 
-      expect(result.status).toBe('skipped');
+      expect(result.status).toBe("skipped");
       expect(commandRunner.invocations).toHaveLength(0);
     });
 
-    it('redacts env file paths in logs', async () => {
+    it("redacts env file paths in logs", async () => {
       const logger = {
         info: vi.fn(),
         warn: vi.fn(),
@@ -247,54 +340,75 @@ describe('ComposeLocalAdapter', () => {
         debug: vi.fn(),
       };
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 5 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 5,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
       const ctx = makeContext({
-        phase: 'deploy',
+        phase: "deploy",
         logger,
         surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          envFile: 'products/digital-marketing/deploy/local.env',
+          composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+          envFile: "products/digital-marketing/deploy/local.env",
         },
       });
       await adapter.execute(ctx);
 
-      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('[REDACTED_ENV_FILE]'));
-      expect(logger.info).not.toHaveBeenCalledWith(expect.stringContaining('local.env'));
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining("[REDACTED_ENV_FILE]"),
+      );
+      expect(logger.info).not.toHaveBeenCalledWith(
+        expect.stringContaining("local.env"),
+      );
     });
 
-    it('fails when compose file is missing', async () => {
-      vi.mocked(fs.access).mockRejectedValueOnce(new Error('missing'));
+    it("fails when compose file is missing", async () => {
+      vi.mocked(fs.access).mockRejectedValueOnce(new Error("missing"));
 
-      await expect(adapter.execute(makeContext({ phase: 'deploy' }))).rejects.toThrow('Compose file not found');
+      await expect(
+        adapter.execute(makeContext({ phase: "deploy" })),
+      ).rejects.toThrow("Compose file not found");
     });
 
-    it('respects requireEnvFile', async () => {
+    it("respects requireEnvFile", async () => {
       vi.mocked(fs.access)
         .mockResolvedValueOnce(undefined)
-        .mockRejectedValueOnce(new Error('missing env'));
+        .mockRejectedValueOnce(new Error("missing env"));
 
-      await expect(adapter.execute(makeContext({
-        phase: 'deploy',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          envFile: 'products/digital-marketing/deploy/local.env',
-          envExampleFile: 'products/digital-marketing/deploy/local.env.example',
-          requireEnvFile: true,
-        },
-      }))).rejects.toThrow('Env file not found');
+      await expect(
+        adapter.execute(
+          makeContext({
+            phase: "deploy",
+            surfaceConfig: {
+              composeFile:
+                "products/digital-marketing/deploy/local.compose.yaml",
+              envFile: "products/digital-marketing/deploy/local.env",
+              envExampleFile:
+                "products/digital-marketing/deploy/local.env.example",
+              requireEnvFile: true,
+            },
+          }),
+        ),
+      ).rejects.toThrow("Env file not found");
     });
 
-    it('fails when required Ghatana labels are missing', async () => {
-      vi.mocked(fs.readFile).mockResolvedValueOnce('services: { api: { image: test } }');
+    it("fails when required Ghatana labels are missing", async () => {
+      vi.mocked(fs.readFile).mockResolvedValueOnce(
+        "services: { api: { image: test } }",
+      );
 
-      await expect(adapter.execute(makeContext({ phase: 'deploy' }))).rejects.toThrow('must declare ghatana.kernel.productUnit');
+      await expect(
+        adapter.execute(makeContext({ phase: "deploy" })),
+      ).rejects.toThrow("must declare ghatana.kernel.productUnit");
     });
 
-    it('warns when optional env example file is missing', async () => {
+    it("warns when optional env example file is missing", async () => {
       const logger = {
         info: vi.fn(),
         warn: vi.fn(),
@@ -303,41 +417,50 @@ describe('ComposeLocalAdapter', () => {
       };
       vi.mocked(fs.access)
         .mockResolvedValueOnce(undefined)
-        .mockRejectedValueOnce(new Error('missing example'));
+        .mockRejectedValueOnce(new Error("missing example"));
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '', stderr: '', durationMs: 5 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        { exitCode: 0, stdout: "", stderr: "", durationMs: 5 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'deploy',
-        logger,
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          envExampleFile: 'products/digital-marketing/deploy/local.env.example',
-        },
-      }));
+      const result = await adapter.execute(
+        makeContext({
+          phase: "deploy",
+          logger,
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            envExampleFile:
+              "products/digital-marketing/deploy/local.env.example",
+          },
+        }),
+      );
 
-      expect(result.status).toBe('succeeded');
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Env example file declared but not found'));
+      expect(result.status).toBe("succeeded");
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("Env example file declared but not found"),
+      );
     });
 
-    it('does not require Ghatana labels for non-pilot products unless configured', async () => {
-      vi.mocked(fs.readFile).mockRejectedValueOnce(new Error('should not be read'));
+    it("does not require Ghatana labels for non-pilot products unless configured", async () => {
+      vi.mocked(fs.readFile).mockRejectedValueOnce(
+        new Error("should not be read"),
+      );
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '', stderr: '', durationMs: 5 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        { exitCode: 0, stdout: "", stderr: "", durationMs: 5 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({ productId: 'other-product' }));
+      const result = await adapter.execute(
+        makeContext({ productId: "other-product" }),
+      );
 
-      expect(result.status).toBe('succeeded');
+      expect(result.status).toBe("succeeded");
       resetFsMocks();
     });
 
-    it('accepts compose labels declared as key=value array entries', async () => {
+    it("accepts compose labels declared as key=value array entries", async () => {
       vi.mocked(fs.readFile).mockResolvedValueOnce(`
 services:
   api:
@@ -347,243 +470,317 @@ services:
       - ghatana.kernel.lifecycle=true
 `);
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
-        { exitCode: 0, stdout: '{"Service":"api","Status":"running"}', stderr: '', durationMs: 5 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
+        {
+          exitCode: 0,
+          stdout: '{"Service":"api","Status":"running"}',
+          stderr: "",
+          durationMs: 5,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({ phase: 'deploy' }));
+      const result = await adapter.execute(makeContext({ phase: "deploy" }));
 
-      expect(result.status).toBe('succeeded');
+      expect(result.status).toBe("succeeded");
     });
 
-    it('still writes deployment manifest when compose ps cannot be read after deploy', async () => {
+    it("still writes deployment manifest when compose ps cannot be read after deploy", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'Started', stderr: '', durationMs: 100 },
+        { exitCode: 0, stdout: "Started", stderr: "", durationMs: 100 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({ phase: 'deploy' }));
+      const result = await adapter.execute(makeContext({ phase: "deploy" }));
 
-      expect(result.status).toBe('succeeded');
-      expect(result.manifestRefs?.deploymentManifest).toBe('.kernel/out/deploy/deployment-manifest.json');
+      expect(result.status).toBe("succeeded");
+      expect(result.manifestRefs?.deploymentManifest).toBe(
+        ".kernel/out/deploy/deployment-manifest.json",
+      );
     });
   });
 
-  describe('execute() — rollback', () => {
-    it('calls docker compose down', async () => {
+  describe("execute() — rollback", () => {
+    it("calls docker compose down", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '', stderr: '', durationMs: 80 },
+        { exitCode: 0, stdout: "", stderr: "", durationMs: 80 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const ctx = makeContext({ phase: 'rollback' });
+      const ctx = makeContext({ phase: "rollback" });
       const result = await adapter.execute(ctx);
 
-      expect(result.status).toBe('succeeded');
+      expect(result.status).toBe("succeeded");
       const [inv] = commandRunner.invocations;
-      expect(inv.args).toContain('down');
+      expect(inv.args).toContain("down");
     });
   });
 
-  describe('execute() — verify', () => {
-    it('returns verify health report data on success', async () => {
+  describe("execute() — verify", () => {
+    it("returns verify health report data on success", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '[{"Name":"api","State":"running"}]', stderr: '', durationMs: 20 },
-        { exitCode: 0, stdout: 'ok', stderr: '', durationMs: 5 },
-      ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
-
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: { type: 'http', url: 'http://localhost:8080/health/ready', retries: 1 },
-          },
+        {
+          exitCode: 0,
+          stdout: '[{"Name":"api","State":"running"}]',
+          stderr: "",
+          durationMs: 20,
         },
-      }));
+        { exitCode: 0, stdout: "ok", stderr: "", durationMs: 5 },
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      expect(result.status).toBe('succeeded');
-      expect(result.manifestRefs?.verifyHealthReport).toBe('.kernel/out/verify/verify-health-report.json');
-      expect(result.evidenceRefs).toContain('manifest:.kernel/out/verify/verify-health-report.json');
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:8080/health/ready",
+                retries: 1,
+              },
+            },
+          },
+        }),
+      );
+
+      expect(result.status).toBe("succeeded");
+      expect(result.manifestRefs?.verifyHealthReport).toBe(
+        ".kernel/out/verify/verify-health-report.json",
+      );
+      expect(result.evidenceRefs).toContain(
+        "manifest:.kernel/out/verify/verify-health-report.json",
+      );
     });
 
-    it('resolves shell-style default variables in verify health URLs', async () => {
+    it("resolves shell-style default variables in verify health URLs", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '[{"Name":"api","State":"running"}]', stderr: '', durationMs: 20 },
-        { exitCode: 0, stdout: 'ok', stderr: '', durationMs: 5 },
-      ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
-
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: { type: 'http', url: 'http://localhost:${DMOS_API_PORT:-8080}/health/ready', retries: 1 },
-          },
+        {
+          exitCode: 0,
+          stdout: '[{"Name":"api","State":"running"}]',
+          stderr: "",
+          durationMs: 20,
         },
-      }));
+        { exitCode: 0, stdout: "ok", stderr: "", durationMs: 5 },
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      expect(result.status).toBe('succeeded');
-      expect(commandRunner.invocations[1].args).toContain('http://localhost:8080/health/ready');
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:${DMOS_API_PORT:-8080}/health/ready",
+                retries: 1,
+              },
+            },
+          },
+        }),
+      );
+
+      expect(result.status).toBe("succeeded");
+      expect(commandRunner.invocations[1].args).toContain(
+        "http://localhost:8080/health/ready",
+      );
       const writePayload = vi.mocked(fs.writeFile).mock.calls.at(-1)?.[1];
-      expect(String(writePayload)).toContain('http://localhost:8080/health/ready');
+      expect(String(writePayload)).toContain(
+        "http://localhost:8080/health/ready",
+      );
     });
 
-    it('fails verify when an expected service is absent from compose ps', async () => {
+    it("fails verify when an expected service is absent from compose ps", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '[{"Name":"api","State":"running"}]', stderr: '', durationMs: 20 },
-      ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
-
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          expectedServices: ['api', 'web'],
+        {
+          exitCode: 0,
+          stdout: '[{"Name":"api","State":"running"}]',
+          stderr: "",
+          durationMs: 20,
         },
-      }));
+      ]);
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      expect(result.status).toBe('failed');
-      expect(result.failure?.message).toContain('expected service web is missing');
-      expect(result.manifestRefs?.verifyHealthReport).toBe('.kernel/out/verify/verify-health-report.json');
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            expectedServices: ["api", "web"],
+          },
+        }),
+      );
+
+      expect(result.status).toBe("failed");
+      expect(result.failure?.message).toContain(
+        "expected service web is missing",
+      );
+      expect(result.manifestRefs?.verifyHealthReport).toBe(
+        ".kernel/out/verify/verify-health-report.json",
+      );
     });
 
-    it('returns failed verify health report data on failed health check', async () => {
+    it("returns failed verify health report data on failed health check", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 20 },
-        { exitCode: 1, stdout: '', stderr: 'unhealthy', durationMs: 5 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 20,
+        },
+        { exitCode: 1, stdout: "", stderr: "unhealthy", durationMs: 5 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: {
-              type: 'http',
-              url: 'http://localhost:8080/health/ready',
-              retries: 1,
-              intervalMs: 0,
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:8080/health/ready",
+                retries: 1,
+                intervalMs: 0,
+              },
             },
           },
-        },
-      }));
+        }),
+      );
 
-      expect(result.status).toBe('failed');
-      expect(result.manifestRefs?.verifyHealthReport).toBe('.kernel/out/verify/verify-health-report.json');
-      expect(result.failure?.cause).toBe('unhealthy');
+      expect(result.status).toBe("failed");
+      expect(result.manifestRefs?.verifyHealthReport).toBe(
+        ".kernel/out/verify/verify-health-report.json",
+      );
+      expect(result.failure?.cause).toBe("unhealthy");
     });
 
-    it('retries failed health checks and records thrown errors', async () => {
+    it("retries failed health checks and records thrown errors", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: 'not-json\n{"Service":"api","State":"running"}', stderr: '', durationMs: 20 },
+        {
+          exitCode: 0,
+          stdout: 'not-json\n{"Service":"api","State":"running"}',
+          stderr: "",
+          durationMs: 20,
+        },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: {
-              type: 'http',
-              url: 'http://localhost:8080/health/ready',
-              retries: 1,
-              intervalMs: 0,
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:8080/health/ready",
+                retries: 1,
+                intervalMs: 0,
+              },
             },
           },
-        },
-      }));
+        }),
+      );
 
-      expect(result.status).toBe('failed');
-      expect(result.failure?.cause).toContain('No fake command result configured');
+      expect(result.status).toBe("failed");
+      expect(result.failure?.cause).toContain(
+        "No fake command result configured",
+      );
     });
 
-    it('waits between failed health check attempts', async () => {
+    it("waits between failed health check attempts", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '{"Name":"api","State":"running"}', stderr: '', durationMs: 20 },
-        { exitCode: 1, stdout: '', stderr: 'first failure', durationMs: 5 },
-        { exitCode: 1, stdout: '', stderr: 'second failure', durationMs: 5 },
+        {
+          exitCode: 0,
+          stdout: '{"Name":"api","State":"running"}',
+          stderr: "",
+          durationMs: 20,
+        },
+        { exitCode: 1, stdout: "", stderr: "first failure", durationMs: 5 },
+        { exitCode: 1, stdout: "", stderr: "second failure", durationMs: 5 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            readiness: {
-              type: 'http',
-              url: 'http://localhost:8080/health/ready',
-              retries: 2,
-              intervalMs: 0,
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              readiness: {
+                type: "http",
+                url: "http://localhost:8080/health/ready",
+                retries: 2,
+                intervalMs: 0,
+              },
             },
           },
-        },
-      }));
+        }),
+      );
 
-      expect(result.status).toBe('failed');
-      expect(result.failure?.cause).toBe('second failure');
+      expect(result.status).toBe("failed");
+      expect(result.failure?.cause).toBe("second failure");
       expect(commandRunner.invocations).toHaveLength(3);
     });
 
-    it('ignores non-http health checks', async () => {
+    it("ignores non-http health checks", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 0, stdout: '', stderr: '', durationMs: 20 },
+        { exitCode: 0, stdout: "", stderr: "", durationMs: 20 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({
-        phase: 'verify',
-        surfaceConfig: {
-          composeFile: 'products/digital-marketing/deploy/local.compose.yaml',
-          healthChecks: {
-            tcp: { type: 'tcp', url: 'localhost:8080' },
+      const result = await adapter.execute(
+        makeContext({
+          phase: "verify",
+          surfaceConfig: {
+            composeFile: "products/digital-marketing/deploy/local.compose.yaml",
+            healthChecks: {
+              tcp: { type: "tcp", url: "localhost:8080" },
+            },
           },
-        },
-      }));
+        }),
+      );
 
-      expect(result.status).toBe('succeeded');
+      expect(result.status).toBe("succeeded");
     });
 
-    it('fails when docker compose ps exits non-zero', async () => {
+    it("fails when docker compose ps exits non-zero", async () => {
       commandRunner = new FakeCommandRunner([
-        { exitCode: 1, stdout: '', stderr: 'compose failed', durationMs: 20 },
+        { exitCode: 1, stdout: "", stderr: "compose failed", durationMs: 20 },
       ]);
-      adapter = new ComposeLocalAdapter({ repoRoot: '/repo', commandRunner });
+      adapter = new ComposeLocalAdapter({ repoRoot: "/repo", commandRunner });
 
-      const result = await adapter.execute(makeContext({ phase: 'verify' }));
+      const result = await adapter.execute(makeContext({ phase: "verify" }));
 
-      expect(result.status).toBe('failed');
-      expect(result.failure?.message).toContain('docker compose ps failed');
+      expect(result.status).toBe("failed");
+      expect(result.failure?.message).toContain("docker compose ps failed");
     });
   });
 
-  describe('validateOutputs()', () => {
-    it('returns valid status — compose-local validates container state, not config files', async () => {
+  describe("validateOutputs()", () => {
+    it("returns valid status — compose-local validates container state, not config files", async () => {
       // compose-local output validation checks deployment state, not config file existence.
       // Config file existence is a prerequisite checked during execute().
       const ctx = makeContext({
         surfaceConfig: {
-          composeFile: '/nonexistent/path/docker-compose.yaml',
+          composeFile: "/nonexistent/path/docker-compose.yaml",
         },
       });
 
       const validation = await adapter.validateOutputs(ctx);
 
-      expect(validation.status).toBe('valid');
+      expect(validation.status).toBe("valid");
       expect(Array.isArray(validation.errors)).toBe(true);
       expect(Array.isArray(validation.missingArtifacts)).toBe(true);
     });
   });
 });
 
-
-describe('ComposeLocalAdapter', () => {
+describe("ComposeLocalAdapter", () => {
   let adapter: ComposeLocalAdapter;
   let context: ToolchainAdapterContext;
   let mockLogger: any;
@@ -599,96 +796,96 @@ describe('ComposeLocalAdapter', () => {
     };
 
     context = {
-      productId: 'test-product',
-      phase: 'deploy',
+      productId: "test-product",
+      phase: "deploy",
       surface: {
-        type: 'backend-api',
-        adapter: 'compose-local',
-        path: 'products/test-product/dm-api',
+        type: "backend-api",
+        adapter: "compose-local",
+        path: "products/test-product/dm-api",
       },
       surfaceConfig: {
-        id: 'backend-api',
-        type: 'backend-api',
-        composeFile: 'docker-compose.yaml',
+        id: "backend-api",
+        type: "backend-api",
+        composeFile: "docker-compose.yaml",
       },
       phaseConfig: {},
-      outputDir: '/tmp/test',
+      outputDir: "/tmp/test",
       dryRun: false,
       logger: mockLogger,
     };
   });
 
-  describe('initialization', () => {
-    it('should have correct id', () => {
-      expect(adapter.id).toBe('compose-local');
+  describe("initialization", () => {
+    it("should have correct id", () => {
+      expect(adapter.id).toBe("compose-local");
     });
 
-    it('should support deploy, operate, and rollback phases', () => {
-      expect(adapter.supportedPhases).toContain('deploy');
-      expect(adapter.supportedPhases).toContain('operate');
-      expect(adapter.supportedPhases).toContain('rollback');
+    it("should support deploy, operate, and rollback phases", () => {
+      expect(adapter.supportedPhases).toContain("deploy");
+      expect(adapter.supportedPhases).toContain("operate");
+      expect(adapter.supportedPhases).toContain("rollback");
     });
 
-    it('should support backend-api, web, worker, and operator surface types', () => {
-      expect(adapter.supportedSurfaceTypes).toContain('backend-api');
-      expect(adapter.supportedSurfaceTypes).toContain('web');
-      expect(adapter.supportedSurfaceTypes).toContain('worker');
-      expect(adapter.supportedSurfaceTypes).toContain('operator');
+    it("should support backend-api, web, worker, and operator surface types", () => {
+      expect(adapter.supportedSurfaceTypes).toContain("backend-api");
+      expect(adapter.supportedSurfaceTypes).toContain("web");
+      expect(adapter.supportedSurfaceTypes).toContain("worker");
+      expect(adapter.supportedSurfaceTypes).toContain("operator");
     });
   });
 
-  describe('plan()', () => {
-    it('should generate correct plan for deploy phase', async () => {
-      context.phase = 'deploy';
+  describe("plan()", () => {
+    it("should generate correct plan for deploy phase", async () => {
+      context.phase = "deploy";
       const plan = await adapter.plan(context);
 
       expect(plan).toHaveLength(1);
-      expect(plan[0].id).toContain('compose-deploy');
-      expect(plan[0].description).toContain('up');
-      expect(plan[0].command).toContain('docker');
-      expect(plan[0].command).toContain('compose');
-      expect(plan[0].command).toContain('up');
-      expect(plan[0].command.join(' ')).toContain('docker-compose.yaml');
+      expect(plan[0].id).toContain("compose-deploy");
+      expect(plan[0].description).toContain("up");
+      expect(plan[0].command).toContain("docker");
+      expect(plan[0].command).toContain("compose");
+      expect(plan[0].command).toContain("up");
+      expect(plan[0].command.join(" ")).toContain("docker-compose.yaml");
     });
 
-    it('should generate correct plan for rollback phase', async () => {
-      context.phase = 'rollback';
+    it("should generate correct plan for rollback phase", async () => {
+      context.phase = "rollback";
       const plan = await adapter.plan(context);
 
       expect(plan).toHaveLength(1);
-      expect(plan[0].id).toContain('compose-rollback');
-      expect(plan[0].command.join(' ')).toContain('docker-compose.yaml');
-      expect(plan[0].command).toContain('down');
+      expect(plan[0].id).toContain("compose-rollback");
+      expect(plan[0].command.join(" ")).toContain("docker-compose.yaml");
+      expect(plan[0].command).toContain("down");
     });
 
-    it('should generate correct plan for operate phase', async () => {
-      context.phase = 'operate';
+    it("should generate correct plan for operate phase", async () => {
+      context.phase = "operate";
       const plan = await adapter.plan(context);
 
       expect(plan).toHaveLength(1);
-      expect(plan[0].command).toContain('ps');
-      expect(plan[0].command.join(' ')).toContain('docker-compose.yaml');
+      expect(plan[0].command).toContain("ps");
+      expect(plan[0].command.join(" ")).toContain("docker-compose.yaml");
     });
 
-    it('should use default compose file if not specified', async () => {
-      context.surfaceConfig = { id: 'web', type: 'web' };
+    it("should use default compose file if not specified", async () => {
+      context.surfaceConfig = { id: "web", type: "web" };
       const plan = await adapter.plan(context);
 
-      expect(plan[0].command.join(' ')).toContain('docker-compose.yaml');
+      expect(plan[0].command.join(" ")).toContain("docker-compose.yaml");
     });
 
-    it('should use custom compose file if specified', async () => {
+    it("should use custom compose file if specified", async () => {
       context.surfaceConfig = {
-        id: 'backend-api',
-        type: 'backend-api',
-        composeFile: 'custom-compose.yml',
+        id: "backend-api",
+        type: "backend-api",
+        composeFile: "custom-compose.yml",
       };
       const plan = await adapter.plan(context);
 
-      expect(plan[0].command.join(' ')).toContain('custom-compose.yml');
+      expect(plan[0].command.join(" ")).toContain("custom-compose.yml");
     });
 
-    it('should use current directory as working directory if not specified', async () => {
+    it("should use current directory as working directory if not specified", async () => {
       context.outputDir = undefined;
       const plan = await adapter.plan(context);
 
@@ -696,18 +893,20 @@ describe('ComposeLocalAdapter', () => {
     });
   });
 
-  describe('execute()', () => {
-    it('should skip execution in dry-run mode', async () => {
+  describe("execute()", () => {
+    it("should skip execution in dry-run mode", async () => {
       context.dryRun = true;
       const result = await adapter.execute(context);
 
-      expect(result.status).toBe('skipped');
+      expect(result.status).toBe("skipped");
       expect(result.steps).toHaveLength(1);
-      expect(result.steps[0].status).toBe('skipped');
-      expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('[DRY-RUN]'));
+      expect(result.steps[0].status).toBe("skipped");
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining("[DRY-RUN]"),
+      );
     });
 
-    it('should log execution start', async () => {
+    it("should log execution start", async () => {
       context.dryRun = true;
       await adapter.execute(context);
 
@@ -715,26 +914,41 @@ describe('ComposeLocalAdapter', () => {
     });
   });
 
-  describe('validateOutputs()', () => {
-    it('should return valid status', async () => {
+  describe("validateOutputs()", () => {
+    it("should return valid status", async () => {
       const result = await adapter.validateOutputs(context);
 
-      expect(result.status).toBe('valid');
+      expect(result.status).toBe("valid");
       expect(Array.isArray(result.errors)).toBe(true);
       expect(Array.isArray(result.missingArtifacts)).toBe(true);
       expect(Array.isArray(result.unexpectedArtifacts)).toBe(true);
     });
 
-    it('should log validation debug info', async () => {
+    it("should log validation debug info", async () => {
       await adapter.validateOutputs(context);
 
       expect(mockLogger.debug).toHaveBeenCalled();
     });
   });
 
-  describe('phase mapping', () => {
-    it('should map all supported phases to valid arguments', async () => {
-      const phases = ['deploy', 'operate', 'rollback', 'dev', 'validate', 'test', 'build', 'package', 'release', 'verify', 'promote', 'retire', 'create', 'bootstrap'] as const;
+  describe("phase mapping", () => {
+    it("should map all supported phases to valid arguments", async () => {
+      const phases = [
+        "deploy",
+        "operate",
+        "rollback",
+        "dev",
+        "validate",
+        "test",
+        "build",
+        "package",
+        "release",
+        "verify",
+        "promote",
+        "retire",
+        "create",
+        "bootstrap",
+      ] as const;
 
       for (const phase of phases) {
         context.phase = phase;
@@ -745,19 +959,19 @@ describe('ComposeLocalAdapter', () => {
     });
   });
 
-  describe('command safety', () => {
-    it('should use command arrays instead of shell strings', async () => {
+  describe("command safety", () => {
+    it("should use command arrays instead of shell strings", async () => {
       const plan = await adapter.plan(context);
 
       // Verify command is an array, not a string with spaces
       expect(Array.isArray(plan[0].command)).toBe(true);
-      expect(typeof plan[0].command).not.toBe('string');
+      expect(typeof plan[0].command).not.toBe("string");
 
       // Verify first element is executable
-      expect(plan[0].command[0]).toBe('docker');
+      expect(plan[0].command[0]).toBe("docker");
 
       // Verify arguments are separate array elements
-      expect(plan[0].command).toContain('compose');
+      expect(plan[0].command).toContain("compose");
     });
   });
 });

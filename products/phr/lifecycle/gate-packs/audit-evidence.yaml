@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: phr
 gateId: audit-evidence
 title: PHR audit evidence readiness
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: PHR Team
-status: planned
+status: active
 description: Product evidence required for audit trail and emergency access review before lifecycle execution.
 requiredEvidenceRefs:
   - products/phr/src/main/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewAuditLogger.java

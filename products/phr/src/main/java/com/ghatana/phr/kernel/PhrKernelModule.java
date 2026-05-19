@@ -274,9 +274,7 @@ public class PhrKernelModule implements KernelModule {
         PhrHttpServer phrHttpServer = new PhrHttpServer(eventloop, fhirRoutes, entitlementRoutes, healthRoutes);
         context.registerService(PhrHttpServer.class, phrHttpServer);
         context.registerService(PhrFhirR4Server.class, fhirServer);
-        context.registerService(FhirController.class, fhirController);
         context.registerService(NepalHieIntegrationService.class, nepalHieIntegration);
-        context.registerService(NepalHieController.class, nepalHieController);
         context.registerService(Hl7LabResultIntegrationService.class, hl7LabIntegration);
 
         serviceCatalog = new PhrServiceCatalog(

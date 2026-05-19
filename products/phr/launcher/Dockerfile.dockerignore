@@ -1,0 +1,78 @@
+# Named .dockerignore for products/phr/launcher/Dockerfile (applied alongside root .dockerignore)
+# This file excludes source directories that are not needed to build the PHR Java backend image.
+# The Gradle build inside Docker only needs: products/phr/**, platform/java/**, build-logic/**, buildSrc/**, gradle/
+
+# Exclude all other product source trees (not PHR dependencies)
+products/audio-video/
+products/yappc/
+products/data-cloud/
+products/software-org/
+products/virtual-org/
+products/flashit/
+products/tutorputor/
+products/finance/
+products/dcmaar/
+products/digital-marketing/
+products/security-gateway/
+products/aura/
+
+# Exclude platform/typescript (not needed for Java backend build)
+platform/typescript/
+
+# Exclude shared-services source (resolved via Gradle, not direct source copy)
+shared-services/
+
+# Exclude frontend apps inside PHR (not needed for launcher JAR)
+products/phr/apps/
+
+# Exclude root-level generated and temporary directories
+io/
+META-INF/
+integration-tests/
+frontend/
+monitoring/
+code-audits/
+templates/
+
+# Exclude documentation and scripts that add bulk
+docs/
+digital-marketting.md
+CONTRIBUTING.md
+ACCESSIBILITY_TESTING_GUIDE.md
+kernel-dev.md
+
+# Local developer config — macOS-specific Java home breaks Linux container builds
+local.properties
+
+# Volatile local lifecycle/build outputs must never enter Docker context.
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+**/.DS_Store
+.kernel/
+build/
+**/build/
+dist/
+**/dist/
+out/
+**/out/
+coverage/
+**/coverage/
+node_modules/
+**/node_modules/
+.gradle/
+**/.gradle/
+**/.cache/
+**/.turbo/
+**/.pnpm-store/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+tmp/
+temp/
+logs/
+reports/
+**/*.log

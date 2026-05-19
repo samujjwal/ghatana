@@ -1,0 +1,74 @@
+# Dockerfile.dockerignore for products/digital-marketing/dm-api/Dockerfile
+# Applied automatically by Docker 19.03+ when named exactly <Dockerfile>.dockerignore
+# This is used alongside the root .dockerignore to further shrink the build context.
+
+# Local developer config — macOS-specific Java home breaks Linux container builds
+local.properties
+
+# Exclude other products' source (all have their own Docker builds)
+products/audio-video/
+products/yappc/
+products/phr/
+products/software-org/
+products/virtual-org/
+products/flashit/
+products/tutorputor/
+products/finance/
+products/dcmaar/
+products/security-gateway/
+products/aura/
+
+# Exclude TypeScript platform packages (not needed for Java build)
+platform/typescript/
+
+# Exclude shared-services (not needed for DM API build)
+shared-services/
+
+# Exclude large non-Java directories
+io/
+META-INF/
+integration-tests/
+frontend/
+monitoring/
+code-audits/
+templates/
+docs/
+
+# Misc docs at root
+digital-marketting.md
+CONTRIBUTING.md
+ACCESSIBILITY_TESTING_GUIDE.md
+kernel-dev.md
+
+# Volatile local lifecycle/build outputs must never enter Docker context.
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+**/.DS_Store
+.kernel/
+build/
+**/build/
+dist/
+**/dist/
+out/
+**/out/
+coverage/
+**/coverage/
+node_modules/
+**/node_modules/
+.gradle/
+**/.gradle/
+**/.cache/
+**/.turbo/
+**/.pnpm-store/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+tmp/
+temp/
+logs/
+reports/
+**/*.log

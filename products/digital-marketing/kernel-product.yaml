@@ -455,14 +455,16 @@ package:
     context: .
     image: ghatana/digital-marketing-api
     tag: local
+    builder: desktop-linux
     timeoutMs: 2700000
     buildArgs: {}
   web:
     adapter: docker-buildx
     dockerfile: products/digital-marketing/ui/Dockerfile
-    context: .
+    context: products/digital-marketing/ui
     image: ghatana/digital-marketing-web
     tag: local
+    builder: desktop-linux
     timeoutMs: 2700000
     buildArgs: {}
 
@@ -491,9 +493,11 @@ deployment:
 
 providerModes:
   bootstrap:
-    requiredProviders: [events, artifacts, health, approvals, provenance, runtimeTruth]
+    requiredProviders:
+      [events, artifacts, health, approvals, provenance, runtimeTruth]
   platform:
-    requiredProviders: [events, artifacts, health, approvals, provenance, memory, runtimeTruth]
+    requiredProviders:
+      [events, artifacts, health, approvals, provenance, memory, runtimeTruth]
 
 retentionPolicyId: digital-marketing-lifecycle-evidence
 
