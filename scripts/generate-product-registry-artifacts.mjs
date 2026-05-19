@@ -342,6 +342,10 @@ function generatePackageScripts(registry, lifecycleExclusions) {
       scripts[`package:${productId}`] = `node scripts/kernel-product.mjs product package ${productId}`;
       scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs product deploy ${productId} --env local`;
       scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs product verify ${productId} --env local`;
+      if (productId === 'digital-marketing') {
+        scripts[`promote:local:${productId}`] = `node scripts/kernel-product.mjs product promote ${productId} --env local`;
+        scripts[`rollback:local:${productId}`] = `node scripts/kernel-product.mjs product rollback ${productId} --env local`;
+      }
       scripts[`plan:build:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} build`;
       scripts[`plan:test:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} test`;
       scripts[`plan:dev:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} dev`;
@@ -349,6 +353,10 @@ function generatePackageScripts(registry, lifecycleExclusions) {
       scripts[`plan:package:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} package`;
       scripts[`plan:deploy:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} deploy --env local`;
       scripts[`plan:verify:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} verify --env local`;
+      if (productId === 'digital-marketing') {
+        scripts[`plan:promote:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} promote --env local`;
+        scripts[`plan:rollback:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} rollback --env local`;
+      }
     } else {
       scripts[`build:${productId}`] = `pnpm product ${productId} build`;
       scripts[`test:${productId}`] = `pnpm product ${productId} test`;

@@ -397,3 +397,43 @@ test('PHR evidence pack shape rejects missing evidence refs', () => {
   assert(errors.some((error) => error.includes('evidence categories missing required entry: plan')));
   assert(errors.some((error) => error.includes('smokePhases[0] missing evidenceRefs')));
 });
+
+test('PHR evidence pack shape rejects absolute evidence refs', () => {
+  const errors = validateEvidencePackShape('phr', {
+    schemaVersion: '1.0.0',
+    evidenceCategories: [
+      'baseline',
+      'plan',
+      'validate',
+      'test',
+      'build',
+      'package',
+      'deploy',
+      'verify',
+      'rollback',
+      'gate-results',
+      'health',
+      'approvals',
+      'provenance',
+      'product-domain-correctness',
+    ],
+    checks: {
+      smokePhases: [
+        {
+          phase: 'validate',
+          status: 'ok',
+          runId: 'run-1',
+          correlationId: 'corr-1',
+          productUnitId: 'phr',
+          providerMode: 'bootstrap',
+          startedAt: '2026-05-19T00:00:00.000Z',
+          completedAt: '2026-05-19T00:00:01.000Z',
+          durationMs: 1000,
+          evidenceRefs: ['/Users/samujjwal/Development/ghatana/.kernel/out/products/phr/validate/run-1/lifecycle-plan.json'],
+        },
+      ],
+    },
+  });
+
+  assert(errors.some((error) => error.includes('smokePhases[0].evidenceRefs[0] must be repo-relative')));
+});

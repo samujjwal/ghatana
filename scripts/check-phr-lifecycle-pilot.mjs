@@ -311,7 +311,7 @@ function collectEvidenceRefs(result, manifests) {
       refs.add(value);
     }
   }
-  return [...refs].sort();
+  return [...refs].map(normalizeManifestRefsToRepoRelative).sort();
 }
 
 export function validateEvidencePackShape(productId, evidence) {
@@ -331,12 +331,29 @@ export function validateEvidencePackShape(productId, evidence) {
     if (!Array.isArray(phaseEvidence?.evidenceRefs) || phaseEvidence.evidenceRefs.length === 0) {
       errors.push(`${productId} smokePhases[${index}].evidenceRefs must include generated manifest refs`);
     }
+    for (const [refIndex, ref] of asArray(phaseEvidence?.evidenceRefs).entries()) {
+      if (typeof ref === 'string' && isAbsoluteRepoPath(ref)) {
+        errors.push(`${productId} smokePhases[${index}].evidenceRefs[${refIndex}] must be repo-relative`);
+      }
+    }
   }
 
   return errors;
 }
 
+function isAbsoluteRepoPath(value) {
+  const normalized = value.replaceAll('\\', '/');
+  return normalized.startsWith('/') || /^[A-Za-z]:\//.test(normalized);
+}
+
 function normalizeManifestRefsToRepoRelative(value) {
+  if (typeof value === 'string') {
+    const normalizedValue = value.replaceAll('\\', '/');
+    const normalizedRepoRoot = repoRoot.replaceAll('\\', '/');
+    return normalizedValue.startsWith(normalizedRepoRoot)
+      ? normalizedValue.slice(normalizedRepoRoot.length + 1)
+      : value;
+  }
   if (!value || typeof value !== 'object') {
     return value;
   }
@@ -345,15 +362,7 @@ function normalizeManifestRefsToRepoRelative(value) {
   }
 
   const normalized = {};
-  const normalizedRepoRoot = repoRoot.replaceAll('\\', '/');
   for (const [key, entry] of Object.entries(value)) {
-    if (typeof entry === 'string') {
-      const normalizedEntry = entry.replaceAll('\\', '/');
-      normalized[key] = normalizedEntry.startsWith(normalizedRepoRoot)
-        ? normalizedEntry.slice(normalizedRepoRoot.length + 1)
-        : entry;
-      continue;
-    }
     normalized[key] = normalizeManifestRefsToRepoRelative(entry);
   }
   return normalized;

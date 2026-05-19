@@ -513,6 +513,7 @@ async function main() {
       errors.push(`Product lifecycle runner script found at ${scriptPath} - lifecycle execution must use Kernel, not product-specific scripts`);
     }
   }
+  errors.push(...validateDigitalMarketingRootScripts());
 
   errors.push(...validateProvenanceAndStudioContracts());
 
@@ -550,6 +551,26 @@ async function main() {
   }
 
   reportAndExit(errors, warnings);
+}
+
+function validateDigitalMarketingRootScripts() {
+  const errors = [];
+  const packageJson = readJson(join(repoRoot, 'package.json'));
+  const scripts = packageJson.scripts ?? {};
+  const requiredScripts = {
+    'plan:promote:local:digital-marketing': 'node scripts/kernel-product.mjs product plan digital-marketing promote --env local',
+    'plan:rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product plan digital-marketing rollback --env local',
+    'promote:local:digital-marketing': 'node scripts/kernel-product.mjs product promote digital-marketing --env local',
+    'rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product rollback digital-marketing --env local',
+  };
+
+  for (const [scriptName, expectedCommand] of Object.entries(requiredScripts)) {
+    if (scripts[scriptName] !== expectedCommand) {
+      errors.push(`package.json script "${scriptName}" must be "${expectedCommand}"`);
+    }
+  }
+
+  return errors;
 }
 
 function runComposeProof(config) {
@@ -832,7 +853,7 @@ function collectEvidenceRefs(result, manifests) {
       refs.add(value);
     }
   }
-  return [...refs].sort();
+  return [...refs].map(normalizeManifestRefsToRepoRelative).sort();
 }
 
 function validateEvidencePackShape(productId, evidence) {
@@ -851,6 +872,11 @@ function validateEvidencePackShape(productId, evidence) {
     }
     if (!Array.isArray(phaseEvidence?.evidenceRefs) || phaseEvidence.evidenceRefs.length === 0) {
       errors.push(`${productId} smokePhases[${index}].evidenceRefs must include generated manifest refs`);
+    }
+    for (const [refIndex, ref] of asArray(phaseEvidence?.evidenceRefs).entries()) {
+      if (typeof ref === 'string' && isAbsoluteRepoPath(ref)) {
+        errors.push(`${productId} smokePhases[${index}].evidenceRefs[${refIndex}] must be repo-relative`);
+      }
     }
   }
 
@@ -921,7 +947,15 @@ function toRepoRelativePath(absolutePath) {
   return absolutePath; // Return as-is if not under repo root
 }
 
+function isAbsoluteRepoPath(value) {
+  const normalized = value.replace(/\\/g, '/');
+  return normalized.startsWith('/') || /^[A-Za-z]:\//.test(normalized);
+}
+
 function normalizeManifestRefsToRepoRelative(obj) {
+  if (typeof obj === 'string') {
+    return toRepoRelativePath(obj);
+  }
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
