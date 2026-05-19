@@ -1,5 +1,6 @@
 package com.ghatana.phr.api;
 
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import io.activej.promise.Promise;
 
@@ -11,7 +12,7 @@ import java.util.Map;
  * @doc.layer product
  * @doc.pattern Controller
  */
-public final class FhirController {
+public final class FhirController implements KernelLifecycleAware {
 
     private final PhrFhirR4Server server;
 
@@ -29,5 +30,25 @@ public final class FhirController {
 
     public Promise<PhrApiResponse> searchResources(String resourceType, Map<String, String> searchParams) {
         return server.searchResources(resourceType, searchParams);
+    }
+
+    @Override
+    public Promise<Void> start() {
+        return server.start();
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        return server.stop();
+    }
+
+    @Override
+    public boolean isHealthy() {
+        return server.isHealthy();
+    }
+
+    @Override
+    public String getName() {
+        return "FhirController";
     }
 }

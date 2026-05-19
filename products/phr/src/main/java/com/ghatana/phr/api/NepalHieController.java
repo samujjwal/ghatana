@@ -2,6 +2,7 @@ package com.ghatana.phr.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hie.NepalHieSyncResult;
 import io.activej.promise.Promise;
@@ -12,7 +13,7 @@ import io.activej.promise.Promise;
  * @doc.layer product
  * @doc.pattern Facade
  */
-public final class NepalHieController {
+public final class NepalHieController implements KernelLifecycleAware {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -33,5 +34,25 @@ public final class NepalHieController {
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Unable to serialize Nepal HIE sync result", exception);
         }
+    }
+
+    @Override
+    public Promise<Void> start() {
+        return integrationService.start();
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        return integrationService.stop();
+    }
+
+    @Override
+    public boolean isHealthy() {
+        return integrationService.isHealthy();
+    }
+
+    @Override
+    public String getName() {
+        return "NepalHieController";
     }
 }

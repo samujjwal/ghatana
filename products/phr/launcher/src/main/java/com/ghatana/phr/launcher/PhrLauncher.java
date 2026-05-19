@@ -3,10 +3,25 @@ package com.ghatana.phr.launcher;
 import com.ghatana.core.activej.http.HttpServerBinding;
 import com.ghatana.core.activej.http.HttpServerBindingFactory;
 import com.ghatana.core.activej.promise.PromiseUtils;
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataDeleteRequest;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataResult;
+import com.ghatana.kernel.adapter.datacloud.DataStream;
+import com.ghatana.kernel.adapter.datacloud.DataStreamRequest;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.DatasetInfo;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
+import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
+import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
+import com.ghatana.kernel.bridge.port.BridgeContext;
 import com.ghatana.kernel.config.HierarchicalKernelConfigResolver;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.DefaultKernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
+import com.ghatana.kernel.registry.KernelRegistry;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.policy.BoundaryPolicyRuntimeGuards;
@@ -16,8 +31,15 @@ import com.ghatana.phr.kernel.PhrKernelModule;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,9 +129,20 @@ public final class PhrLauncher {
         configResolver.addConfigProvider(new EnvironmentConfigProvider());
 
         Eventloop eventloop = Eventloop.create();
-        DefaultKernelContext context = new DefaultKernelContext(registry, configResolver, eventloop, "1.0.0", environment);
+        KernelTenantContext localTenant = createLocalTenantContext(ForkJoinPool.commonPool());
+        DefaultKernelContext context = new LocalLauncherKernelContext(
+            registry,
+            configResolver,
+            eventloop,
+            "1.0.0",
+            environment,
+            localTenant
+        );
+        context.registerTenantContext(localTenant.getTenantId(), localTenant);
         context.registerDependency(KernelConfigResolver.class, configResolver);
         context.registerDependency(ContractRegistry.class, new ContractRegistry());
+        context.registerDependency(Eventloop.class, eventloop);
+        context.registerDependency(DataCloudKernelAdapter.class, new LocalDataCloudKernelAdapter());
         return context;
     }
 
@@ -146,6 +179,193 @@ public final class PhrLauncher {
     private static void await(String operation, Promise<Void> promise, Duration timeout) throws Exception {
         PromiseUtils.toCompletableFuture(promise).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         log.info("Completed {}", operation);
+    }
+
+    private static KernelTenantContext createLocalTenantContext(Executor executor) {
+        return new KernelTenantContext(
+            "phr-local",
+            KernelTenantContext.TenantType.STANDARD,
+            Map.of("product", "phr"),
+            Set.of("phr.local.lifecycle"),
+            new LocalSecurityContext(),
+            executor
+        );
+    }
+
+    private static final class LocalLauncherKernelContext extends DefaultKernelContext {
+
+        private final KernelTenantContext localTenant;
+
+        private LocalLauncherKernelContext(
+                KernelRegistry registry,
+                KernelConfigResolver configResolver,
+                Eventloop eventloop,
+                String kernelVersion,
+                String environment,
+                KernelTenantContext localTenant) {
+            super(registry, configResolver, eventloop, kernelVersion, environment);
+            this.localTenant = localTenant;
+        }
+
+        @Override
+        public KernelTenantContext getTenantContext() {
+            return localTenant;
+        }
+    }
+
+    private static final class LocalSecurityContext implements KernelTenantContext.SecurityContext {
+
+        @Override
+        public String getUserId() {
+            return "phr-local-launcher";
+        }
+
+        @Override
+        public Set<String> getRoles() {
+            return Set.of("system", "phr-local");
+        }
+
+        @Override
+        public Set<String> getPermissions() {
+            return Set.of("phr:read", "phr:write", "phr:admin");
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return true;
+        }
+
+        @Override
+        public boolean hasRole(String role) {
+            return getRoles().contains(role);
+        }
+
+        @Override
+        public boolean hasPermission(String permission) {
+            return getPermissions().contains(permission);
+        }
+    }
+
+    private record StoredData(byte[] data, Map<String, String> metadata) {
+    }
+
+    private static final class LocalDataCloudKernelAdapter implements DataCloudKernelAdapter {
+
+        private final ConcurrentHashMap<String, StoredData> records = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, SchemaInfo> schemas = new ConcurrentHashMap<>();
+
+        @Override
+        public Promise<DataResult> readData(DataReadRequest request) {
+            StoredData stored = records.get(storeKey(request.getDatasetId(), request.getRecordId()));
+            if (stored == null) {
+                return Promise.of(null);
+            }
+            return Promise.of(new DataResult(
+                request.getRecordId(),
+                stored.data(),
+                stored.metadata(),
+                System.currentTimeMillis()
+            ));
+        }
+
+        @Override
+        public Promise<Void> writeData(DataWriteRequest request) {
+            Map<String, String> metadata = new HashMap<>(request.getMetadata());
+            metadata.putIfAbsent("tenantId", "local");
+            metadata.putIfAbsent("principalId", "phr-local-launcher");
+            records.put(
+                storeKey(request.getDatasetId(), request.getRecordId()),
+                new StoredData(request.getData(), Map.copyOf(metadata))
+            );
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> deleteData(DataDeleteRequest request) {
+            records.remove(storeKey(request.getDatasetId(), request.getRecordId()));
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<QueryResult> queryData(DataQueryRequest request) {
+            String prefix = request.getDatasetId() + ":";
+            Map<String, Object> parameters = request.getParameters();
+            List<DataResult> results = records.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(prefix))
+                .filter(entry -> metadataMatches(entry.getValue().metadata(), parameters))
+                .map(entry -> {
+                    String recordId = entry.getKey().substring(prefix.length());
+                    StoredData stored = entry.getValue();
+                    return new DataResult(recordId, stored.data(), stored.metadata(), System.currentTimeMillis());
+                })
+                .toList();
+            return Promise.of(new QueryResult(results, results.size(), false));
+        }
+
+        @Override
+        public Promise<Void> createSchema(SchemaCreateRequest request) {
+            long now = System.currentTimeMillis();
+            schemas.put(request.getDatasetId(), new SchemaInfo(request.getDatasetId(), request.getSchema(), now, now));
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<SchemaInfo> getSchema(BridgeContext context, String datasetId) {
+            return Promise.of(schemas.get(datasetId));
+        }
+
+        @Override
+        public Promise<List<DatasetInfo>> listDatasets(BridgeContext context) {
+            List<DatasetInfo> datasets = schemas.values().stream()
+                .map(schema -> new DatasetInfo(
+                    schema.getDatasetId(),
+                    schema.getDatasetId(),
+                    "Local PHR dataset",
+                    countRecords(schema.getDatasetId()),
+                    schema.getCreatedAt()
+                ))
+                .toList();
+            return Promise.of(datasets);
+        }
+
+        @Override
+        public Promise<TransactionHandle> beginTransaction(BridgeContext context) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> commitTransaction(BridgeContext context, TransactionHandle transaction) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> rollbackTransaction(BridgeContext context, TransactionHandle transaction) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<DataStream> openStream(DataStreamRequest request) {
+            return Promise.of(null);
+        }
+
+        private long countRecords(String datasetId) {
+            String prefix = datasetId + ":";
+            return records.keySet().stream().filter(key -> key.startsWith(prefix)).count();
+        }
+
+        private static boolean metadataMatches(Map<String, String> metadata, Map<String, Object> parameters) {
+            for (Map.Entry<String, Object> parameter : parameters.entrySet()) {
+                String storedValue = metadata.get(parameter.getKey());
+                if (storedValue == null || !storedValue.equals(String.valueOf(parameter.getValue()))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static String storeKey(String datasetId, String recordId) {
+            return datasetId + ":" + recordId;
+        }
     }
 
     private record PhrLauncherConfig(String environment, int httpPort, String httpHost) {
