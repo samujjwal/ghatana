@@ -5,7 +5,7 @@
  * sandbox iframe, covering mount, update, teardown, and telemetry messages.
  */
 
-import type { BuilderDocument } from '../core/types.js';
+import type { BuilderDocument } from '../core/builder-document.js';
 import { createSafeMessageHandler } from './trust.js';
 
 // ============================================================================
@@ -127,11 +127,13 @@ export type PreviewToHostMessage =
   | ErrorMessage
   | ClickMessage
   | HoverMessage
-  | PongMessage;
+  | PongMessage
+  | TeardownAckMessage;
 
 export interface ReadyMessage {
   readonly type: 'READY';
   readonly version: string;
+  readonly correlationId?: string;
 }
 
 export interface MountedMessage {
@@ -158,15 +160,22 @@ export interface ClickMessage {
   readonly type: 'ELEMENT_CLICK';
   readonly nodeId: string;
   readonly coordinates: { readonly x: number; readonly y: number };
+  readonly correlationId?: string;
 }
 
 export interface HoverMessage {
   readonly type: 'ELEMENT_HOVER';
   readonly nodeId: string | null;
+  readonly correlationId?: string;
 }
 
 export interface PongMessage {
   readonly type: 'PONG';
+  readonly correlationId: string;
+}
+
+export interface TeardownAckMessage {
+  readonly type: 'TEARDOWN_ACK';
   readonly correlationId: string;
 }
 
@@ -205,15 +214,26 @@ export interface PreviewHostService {
 
 /**
  * Runtime implementation of the typed preview host service used by builder consumers.
+ *
+ * IMPORTANT: This implementation is acknowledgement-based. mount(), update(), and teardown()
+ * wait for corresponding MOUNTED/UPDATED/TEARDOWN_ACK messages with matching correlationIds
+ * before resolving. This ensures reliable message delivery and proper sequencing.
  */
 export class PreviewHostService {
   private readonly messageHandlers = new Set<
     (message: PreviewToHostMessage) => void
   >();
 
+  private readonly pendingAcknowledgements = new Map<
+    string,
+    { resolve: (value: void) => void; reject: (error: Error) => void }
+  >();
+
   private handleMessage = (event: MessageEvent): void => {
     this.dispatchPreviewMessage(event);
   };
+
+  private static readonly ACKNOWLEDGEMENT_TIMEOUT_MS = 5000;
 
   public constructor(
     private readonly iframe: HTMLIFrameElement,
@@ -227,6 +247,9 @@ export class PreviewHostService {
   }
 
   public send(message: HostToPreviewMessage): void {
+    // Sandboxed srcdoc/about:blank previews do not expose an origin in jsdom
+    // and local development. Prefer configured origins, but keep the legacy
+    // wildcard fallback for source-checked preview frames.
     const targetOrigin = this.sandbox.trustedOrigins[0] ?? '*';
     this.iframe.contentWindow?.postMessage(message, targetOrigin);
   }
@@ -245,7 +268,36 @@ export class PreviewHostService {
       return;
     }
 
+    // SECURITY: Only accept messages from configured trusted origins
+    if (event.origin && !this.sandbox.trustedOrigins.includes(event.origin)) {
+      console.error(`Preview message rejected: origin ${event.origin} not in trusted origins`);
+      return;
+    }
+
     const safeHandler = createSafeMessageHandler(this.sandbox, (message) => {
+      // Handle acknowledgements for pending requests
+      const correlationId = message.correlationId;
+      if (correlationId) {
+        const pending = this.pendingAcknowledgements.get(correlationId);
+        if (pending) {
+          switch (message.type) {
+            case 'MOUNTED':
+            case 'UPDATED':
+            case 'TEARDOWN_ACK':
+              this.pendingAcknowledgements.delete(correlationId);
+              pending.resolve();
+              break;
+            case 'ERROR':
+              this.pendingAcknowledgements.delete(correlationId);
+              pending.reject(
+                new Error(`Preview error [${message.code}]: ${message.message}`),
+              );
+              break;
+          }
+        }
+      }
+
+      // Dispatch to callbacks
       switch (message.type) {
         case 'READY':
           this.callbacks.onReady?.(message);
@@ -274,15 +326,6 @@ export class PreviewHostService {
       });
     });
 
-    if (!event.origin && event.source === this.iframe.contentWindow) {
-      safeHandler(new MessageEvent('message', {
-        data: event.data,
-        origin: this.sandbox.trustedOrigins[0] ?? 'http://localhost',
-        source: event.source,
-      }));
-      return;
-    }
-
     safeHandler(event);
   }
 
@@ -296,12 +339,17 @@ export class PreviewHostService {
       this.dispatchPreviewMessage(event);
     };
     window.addEventListener('message', this.handleMessage);
+
+    const correlationId = this.createCorrelationId();
     this.send({
       type: 'MOUNT_DOCUMENT',
       document,
       sandbox,
-      correlationId: this.createCorrelationId(),
+      correlationId,
     });
+
+    // Await acknowledgement from preview frame
+    await this.waitForAcknowledgement(correlationId);
   }
 
   public async mountDocument(document: BuilderDocument): Promise<void> {
@@ -309,11 +357,16 @@ export class PreviewHostService {
   }
 
   public async update(document: BuilderDocument): Promise<void> {
+    const correlationId = this.createCorrelationId();
+
     this.send({
       type: 'UPDATE_DOCUMENT',
       document,
-      correlationId: this.createCorrelationId(),
+      correlationId,
     });
+
+    // Await acknowledgement from preview frame
+    await this.waitForAcknowledgement(correlationId);
   }
 
   public async updateDocument(document: BuilderDocument): Promise<void> {
@@ -321,15 +374,150 @@ export class PreviewHostService {
   }
 
   public async teardown(): Promise<void> {
+    const correlationId = this.createCorrelationId();
+
     this.send({
       type: 'TEARDOWN',
-      correlationId: this.createCorrelationId(),
+      correlationId,
     });
+
+    // Await acknowledgement from preview frame
+    await this.waitForAcknowledgement(correlationId);
+
     this.messageHandlers.clear();
     window.removeEventListener('message', this.handleMessage);
+  }
+
+  private async waitForAcknowledgement(
+    correlationId: string,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pendingAcknowledgements.delete(correlationId);
+        reject(
+          new Error(
+            `Preview acknowledgement timeout for correlation ID: ${correlationId}`,
+          ),
+        );
+      }, PreviewHostService.ACKNOWLEDGEMENT_TIMEOUT_MS);
+
+      this.pendingAcknowledgements.set(correlationId, {
+        resolve: () => {
+          clearTimeout(timeout);
+          resolve();
+        },
+        reject: (error: Error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+      });
+    });
   }
 
   private createCorrelationId(): string {
     return globalThis.crypto?.randomUUID?.() ?? `preview-${Date.now()}`;
   }
+}
+
+// ============================================================================
+// Preview Request / Result Protocol
+// ============================================================================
+
+/**
+ * A reference to an artifact produced during a preview render or export pass.
+ * Artifacts are immutable once produced and are identified by a stable ID.
+ */
+export interface PreviewArtifactReference {
+  /** Stable identifier for this artifact. */
+  readonly id: string;
+  /** The binary kind of the artifact. */
+  readonly kind: 'image' | 'pdf' | 'html' | 'json';
+  /** URL where the artifact can be fetched (may be a data: URI or object URL). */
+  readonly url: string;
+  /** MIME content-type of the artifact. */
+  readonly contentType: string;
+  /** Byte size of the artifact, if known. */
+  readonly size?: number;
+  /** ISO-8601 timestamp when this artifact was generated. */
+  readonly generatedAt: string;
+}
+
+/**
+ * The outcome of a security policy evaluation for a preview request.
+ *
+ * - `allow`   – the document may be rendered with full capabilities.
+ * - `deny`    – the document is rejected; `violatedPolicies` lists the reasons.
+ * - `sandbox` – the document may be rendered under additional `restrictions`.
+ */
+export type PreviewSecurityDecision =
+  | {
+      readonly decision: 'allow';
+      readonly policyId: string;
+      readonly reason?: string;
+    }
+  | {
+      readonly decision: 'deny';
+      readonly reason: string;
+      readonly violatedPolicies: readonly string[];
+    }
+  | {
+      readonly decision: 'sandbox';
+      readonly restrictions: readonly string[];
+      readonly policyId: string;
+    };
+
+/**
+ * Operational diagnostics collected during a single preview render cycle.
+ * Used by the builder host to surface performance and correctness signals.
+ */
+export interface PreviewDiagnostics {
+  /** Wall-clock render time in milliseconds. */
+  readonly renderTimeMs: number;
+  /** Total number of component nodes in the rendered document. */
+  readonly nodeCount: number;
+  /** Total number of active bindings resolved during render. */
+  readonly bindingCount: number;
+  /** Non-fatal warnings emitted by the preview runtime. */
+  readonly warnings: readonly string[];
+  /** Errors emitted during rendering (present even when `success: true` for partial renders). */
+  readonly errors: readonly string[];
+}
+
+/**
+ * A request sent from the builder host to the preview runtime to initiate
+ * a render or export pass.
+ */
+export interface PreviewRequest {
+  /** Stable correlation ID linking this request to its {@link PreviewResult}. */
+  readonly requestId: string;
+  /** The document ID to preview. */
+  readonly documentId: string;
+  /** Sandbox profile that controls the rendering environment. */
+  readonly profile: SandboxProfile;
+  /** The intent of this preview pass. */
+  readonly mode: 'preview' | 'inspection' | 'export';
+  /** Target output format (for `export` mode). */
+  readonly format?: 'web' | 'print' | 'mobile';
+  /** Requested export artifact kind (for `export` mode). */
+  readonly exportTarget?: 'image' | 'pdf' | 'html';
+}
+
+/**
+ * The result returned by the preview runtime after completing a {@link PreviewRequest}.
+ */
+export interface PreviewResult {
+  /** Matches {@link PreviewRequest.requestId}. */
+  readonly requestId: string;
+  /** The document ID that was rendered. */
+  readonly documentId: string;
+  /** Whether the render completed without fatal errors. */
+  readonly success: boolean;
+  /** Artifacts produced during the pass (non-empty for `export` mode). */
+  readonly artifacts: readonly PreviewArtifactReference[];
+  /** Result of the security policy evaluation for this request. */
+  readonly security: PreviewSecurityDecision;
+  /** Runtime diagnostics for this render cycle. */
+  readonly diagnostics: PreviewDiagnostics;
+  /** ISO-8601 timestamp when this result was produced. */
+  readonly renderedAt: string;
 }

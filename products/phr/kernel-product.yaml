@@ -36,11 +36,21 @@ surfaces:
     runtime: java-service
     adapter: gradle-java-service
     gradleModule: :products:phr
+    expectedOutputs:
+      build:
+        - products/phr/build/libs/*.jar
+      test:
+        - products/phr/build/test-results/test
+        - products/phr/build/reports/tests
   web:
     source: products/phr/apps/web
     runtime: static-web
     adapter: pnpm-vite-react
     packagePath: products/phr/apps/web/package.json
+    expectedOutputs:
+      build:
+        - products/phr/apps/web/dist
+        - products/phr/apps/web/dist/index.html
 
 phases:
   dev:
@@ -66,6 +76,30 @@ gates:
   deploy:
     - consent
     - tenant-data-sovereignty
+
+artifacts:
+  build:
+    backend-api:
+      type: jvm-service
+      packaging: jar
+      required: true
+      paths:
+        - products/phr/build/libs/*.jar
+    web:
+      type: static-web-bundle
+      packaging: static-files
+      required: true
+      paths:
+        - products/phr/apps/web/dist
+  package:
+    backend-api:
+      type: container-image
+      packaging: container
+      required: true
+    web:
+      type: container-image
+      packaging: container
+      required: true
 
 deployment:
   local:
@@ -95,6 +129,59 @@ requiredManifests:
     - lifecycle-result
     - artifact-manifest
     - lifecycle-health-snapshot
+  package:
+    - artifact-manifest
+    - lifecycle-health-snapshot
   deploy:
     - deployment-manifest
     - lifecycle-health-snapshot
+  verify:
+    - verify-health-report
+    - lifecycle-health-snapshot
+
+manifestSchemaVersions:
+  lifecycle-result: 1.0.0
+  artifact-manifest: 1.0.0
+  lifecycle-health-snapshot: 1.0.0
+  deployment-manifest: 1.0.0
+  verify-health-report: 1.0.0
+  lifecycle-events: 1.0.0
+
+package:
+  backend-api:
+    adapter: docker-buildx
+    image: ghatana/phr-api
+    tag: local
+    dockerfile: products/phr/launcher/Dockerfile
+    context: .
+  web:
+    adapter: docker-buildx
+    image: ghatana/phr-web
+    tag: local
+    dockerfile: products/phr/apps/web/Dockerfile
+    context: .
+
+verify:
+  local:
+    adapter: compose-local
+    expectedReportFields:
+      - schemaVersion
+      - productUnitId
+      - runId
+      - correlationId
+      - environment
+      - status
+      - checkedAt
+      - checks
+      - evidenceRefs
+    healthChecks:
+      backend-api:
+        type: http
+        url: http://localhost:${PHR_API_PORT:-8085}/health/ready
+        retries: 10
+        intervalMs: 3000
+      web:
+        type: http
+        url: http://localhost:${PHR_WEB_PORT:-5178}/
+        retries: 5
+        intervalMs: 2000

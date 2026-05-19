@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,6 +73,232 @@ class DataCloudProviderTest extends EventloopTestBase {
             provider.appendEvent("event-2", Map.of("eventType", "kernel.lifecycle.failed"))))
             .isInstanceOf(DataCloudProviderException.class)
             .hasMessageContaining("boom");
+    }
+
+    @Test
+    @DisplayName("event provider accepts opening pilot lifecycle events")
+    void eventProviderAcceptsOpeningPilotLifecycleEvents() {
+        when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))
+            .thenReturn(Promise.complete());
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-dm-1",
+            "1.0.0",
+            "lifecycle.gate.evaluated",
+            "digital-marketing",
+            "run-1",
+            "validate",
+            "kernel-lifecycle",
+            "corr-dm-1",
+            Map.of(
+                "gateId", "bridge-compliance",
+                "evidenceRefs", java.util.List.of("dry-run:gate:bridge-compliance")
+            )
+        ));
+        runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-phr-1",
+            "1.0.0",
+            "lifecycle.gate.evaluated",
+            "phr",
+            "run-2",
+            "validate",
+            "kernel-lifecycle",
+            "corr-phr-1",
+            Map.of(
+                "gateId", "consent",
+                "evidenceRefs", java.util.List.of("dry-run:gate:consent")
+            )
+        ));
+
+        ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
+        verify(adapter, org.mockito.Mockito.times(2)).writeData(captor.capture());
+        assertThat(captor.getAllValues())
+            .extracting(DataWriteRequest::getRecordId)
+            .containsExactly("evt-dm-1", "evt-phr-1");
+        assertThat(new String(captor.getAllValues().get(1).getData(), StandardCharsets.UTF_8))
+            .contains("\"productUnitId\":\"phr\"")
+            .contains("\"correlationId\":\"corr-phr-1\"");
+    }
+
+    @Test
+    @DisplayName("event provider rejects lifecycle event without productUnitId")
+    void eventProviderRejectsLifecycleEventWithoutProductUnitId() {
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-missing-product",
+            "1.0.0",
+            "lifecycle.plan.created",
+            "",
+            "run-1",
+            "build",
+            "kernel-lifecycle",
+            "corr-1",
+            Map.of("planRunId", "run-1")
+        )))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("productUnitId is required");
+    }
+
+    @Test
+    @DisplayName("event provider rejects lifecycle event without correlationId")
+    void eventProviderRejectsLifecycleEventWithoutCorrelationId() {
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-missing-correlation",
+            "1.0.0",
+            "lifecycle.plan.created",
+            "digital-marketing",
+            "run-1",
+            "build",
+            "kernel-lifecycle",
+            "",
+            Map.of("planRunId", "run-1")
+        )))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("correlationId is required");
+    }
+
+    @Test
+    @DisplayName("event provider rejects PHR healthcare gate event without evidence refs")
+    void eventProviderRejectsPhrHealthcareGateWithoutEvidenceRefs() {
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-phr-missing-evidence",
+            "1.0.0",
+            "lifecycle.gate.evaluated",
+            "phr",
+            "run-1",
+            "validate",
+            "kernel-lifecycle",
+            "corr-phr-missing-evidence",
+            Map.of("gateId", "consent", "evidenceRefs", java.util.List.of())
+        )))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("PHR healthcare gate events require evidenceRefs");
+    }
+
+    @Test
+    @DisplayName("event provider preserves lifecycle correlation ID")
+    void eventProviderPreservesCorrelationId() {
+        when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))
+            .thenReturn(Promise.complete());
+        DataCloudEventProvider provider = new DataCloudEventProvider(adapter, context);
+
+        runPromise(() -> provider.appendKernelLifecycleEvent(
+            "evt-correlation",
+            "1.0.0",
+            "lifecycle.run.completed",
+            "digital-marketing",
+            "run-correlation",
+            "verify",
+            "kernel-lifecycle",
+            "corr-preserved",
+            Map.of("status", "healthy")
+        ));
+
+        ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
+        verify(adapter).writeData(captor.capture());
+        assertThat(new String(captor.getValue().getData(), StandardCharsets.UTF_8))
+            .contains("\"correlationId\":\"corr-preserved\"");
+    }
+
+    @Test
+    @DisplayName("artifact provider validates typed artifact references")
+    void artifactProviderValidatesTypedArtifactReferences() {
+        when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))
+            .thenReturn(Promise.complete());
+        DataCloudArtifactProvider provider = new DataCloudArtifactProvider(adapter, context);
+
+        runPromise(() -> provider.persistArtifactManifestTyped(
+            new DataCloudArtifactProvider.ArtifactManifestPersistRequest(
+                "artifact-phr-web",
+                "phr",
+                "web",
+                "build",
+                "git:f9e7f49",
+                "sha256:abc123",
+                Map.of("manifestRef", "artifact-manifest://phr/build"),
+                Instant.parse("2026-05-18T00:00:00.000Z"),
+                "corr-artifact"
+            )
+        ));
+
+        ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
+        verify(adapter).writeData(captor.capture());
+        assertThat(captor.getValue().getRecordId()).isEqualTo("artifact-phr-web");
+        assertThat(new String(captor.getValue().getData(), StandardCharsets.UTF_8))
+            .contains("\"productUnitId\":\"phr\"")
+            .contains("\"digest\":\"sha256:abc123\"")
+            .contains("\"correlationId\":\"corr-artifact\"");
+    }
+
+    @Test
+    @DisplayName("artifact provider rejects typed artifact reference without digest")
+    void artifactProviderRejectsTypedArtifactReferenceWithoutDigest() {
+        DataCloudArtifactProvider provider = new DataCloudArtifactProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.persistArtifactManifestTyped(
+            new DataCloudArtifactProvider.ArtifactManifestPersistRequest(
+                "artifact-phr-web",
+                "phr",
+                "web",
+                "build",
+                "git:f9e7f49",
+                "",
+                Map.of("manifestRef", "artifact-manifest://phr/build"),
+                Instant.parse("2026-05-18T00:00:00.000Z"),
+                "corr-artifact"
+            )
+        )))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("digest is required");
+    }
+
+    @Test
+    @DisplayName("health provider validates typed health snapshots")
+    void healthProviderValidatesTypedHealthSnapshots() {
+        when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))
+            .thenReturn(Promise.complete());
+        DataCloudHealthProvider provider = new DataCloudHealthProvider(adapter, context);
+
+        runPromise(() -> provider.persistHealthSnapshotTyped(
+            new DataCloudHealthProvider.HealthSnapshotPersistRequest(
+                "health-phr-verify",
+                "healthy",
+                Map.of("healthCheckRef", "health://phr/verify"),
+                Instant.parse("2026-05-18T00:00:00.000Z"),
+                "corr-health"
+            )
+        ));
+
+        ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
+        verify(adapter).writeData(captor.capture());
+        assertThat(captor.getValue().getRecordId()).isEqualTo("health-phr-verify");
+        assertThat(new String(captor.getValue().getData(), StandardCharsets.UTF_8))
+            .contains("\"status\":\"healthy\"")
+            .contains("\"correlationId\":\"corr-health\"");
+    }
+
+    @Test
+    @DisplayName("health provider rejects typed health snapshot without correlation ID")
+    void healthProviderRejectsTypedHealthSnapshotWithoutCorrelationId() {
+        DataCloudHealthProvider provider = new DataCloudHealthProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.persistHealthSnapshotTyped(
+            new DataCloudHealthProvider.HealthSnapshotPersistRequest(
+                "health-phr-verify",
+                "healthy",
+                Map.of("healthCheckRef", "health://phr/verify"),
+                Instant.parse("2026-05-18T00:00:00.000Z"),
+                ""
+            )
+        )))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("correlationId is required");
     }
 
     @Test

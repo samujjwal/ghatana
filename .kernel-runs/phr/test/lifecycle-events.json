@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-46-f55ec80d:test",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "timestamp": "2026-05-18T20:21:46.052Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:46.052Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-46-f55ec80d:test",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "timestamp": "2026-05-18T20:21:46.054Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+      },
+      "payload": {
+        "phase": "test",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.054Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T20-21-46-f55ec80d:test",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "timestamp": "2026-05-18T20:21:46.055Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+      },
+      "payload": {
+        "phase": "test",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:46.055Z"
+      }
+    }
+  ]
+}

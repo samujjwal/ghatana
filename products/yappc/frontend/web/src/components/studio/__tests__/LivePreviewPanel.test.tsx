@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { render } from '@/test-utils/test-utils';
 import { LivePreviewPanel } from '../LivePreviewPanel';
 
@@ -69,6 +69,14 @@ const securePreviewContext = {
   projectId: 'proj-1',
   artifactId: 'artifact-1',
 };
+
+async function changeSelectValue(label: string, value: string) {
+  await act(async () => {
+    fireEvent.change(screen.getByDisplayValue(label), {
+      target: { value },
+    });
+  });
+}
 
 describe('LivePreviewPanel - Platform Preview Protocol', () => {
   beforeEach(() => {
@@ -168,12 +176,11 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
   });
 
   describe('Viewport Controls', () => {
-    it('updates the selected viewport through the control', () => {
+    it('updates the selected viewport through the control', async () => {
       render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
+      await screen.findByTitle('Live Preview');
 
-      fireEvent.change(screen.getByDisplayValue('Desktop (1440px)'), {
-        target: { value: 'mobile' },
-      });
+      await changeSelectValue('Desktop (1440px)', 'mobile');
 
       expect(resolvePreviewExecutionPolicyMock).toHaveBeenLastCalledWith(
         baseDocument,
@@ -198,15 +205,9 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       });
       sendMock.mockClear();
 
-      fireEvent.change(screen.getByDisplayValue('Desktop (1440px)'), {
-        target: { value: 'mobile' },
-      });
-      fireEvent.change(screen.getByDisplayValue('Default theme'), {
-        target: { value: 'editorial' },
-      });
-      fireEvent.change(screen.getByDisplayValue('en-US · English (US)'), {
-        target: { value: 'ar-SA' },
-      });
+      await changeSelectValue('Desktop (1440px)', 'mobile');
+      await changeSelectValue('Default theme', 'editorial');
+      await changeSelectValue('en-US · English (US)', 'ar-SA');
 
       await waitFor(() => {
         expect(sendMock).toHaveBeenCalledWith(
@@ -230,20 +231,20 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       });
     });
 
-    it('offers token theme packs and RTL locale fixtures in the preview controls', () => {
+    it('offers token theme packs and RTL locale fixtures in the preview controls', async () => {
       render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
+      await screen.findByTitle('Live Preview');
 
       expect(screen.getByText('Editorial warmth')).toBeInTheDocument();
       expect(screen.getByText('ar-SA · Arabic (Saudi Arabia)')).toBeInTheDocument();
       expect(screen.getByText('he-IL · Hebrew (Israel)')).toBeInTheDocument();
     });
 
-    it('renders localized fixture content for the selected preview locale', () => {
+    it('renders localized fixture content for the selected preview locale', async () => {
       render(<LivePreviewPanel document={baseDocument} previewContext={securePreviewContext} />);
+      await screen.findByTitle('Live Preview');
 
-      fireEvent.change(screen.getByDisplayValue('en-US · English (US)'), {
-        target: { value: 'he-IL' },
-      });
+      await changeSelectValue('en-US · English (US)', 'he-IL');
 
       const fixture = screen.getByTestId('live-preview-locale-fixture');
       expect(fixture).toHaveAttribute('dir', 'rtl');

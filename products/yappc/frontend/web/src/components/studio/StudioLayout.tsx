@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
-import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Studio Mode Layout component.
@@ -34,7 +33,6 @@ export function StudioLayout({
   onClose,
   className,
 }: StudioLayoutProps) {
-  const { t } = useTranslation('common');
   const { toggleStudioMode } = useStudioMode();
   const [leftPanelWidth, setLeftPanelWidth] = useState(250);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
@@ -110,7 +108,7 @@ export function StudioLayout({
   return (
     <div
       data-testid="studio-layout"
-      aria-label={t('studio.layout')}
+      aria-label="Studio Mode Layout"
       className={cn('fixed inset-0 bg-white dark:bg-surface z-40', isCompact && 'studio-layout--compact', className)}
     >
       {/* Screen reader announcer */}
@@ -127,7 +125,7 @@ export function StudioLayout({
         </div>
         <Button
           onClick={() => { toggleStudioMode(); onClose?.(); }}
-          aria-label={t('studio.closeMode')}
+          aria-label="Close Studio Mode"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') { toggleStudioMode(); onClose?.(); } }}
           className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
@@ -143,7 +141,7 @@ export function StudioLayout({
         {/* Left Panel - File Tree */}
         <div
           data-testid="studio-file-tree"
-          aria-label={t('studio.fileTreePanel')}
+          aria-label="File tree panel"
           className="border-r border-border dark:border-border overflow-auto"
           style={{ width: `${leftPanelWidth}px` }}
         >
@@ -165,7 +163,7 @@ export function StudioLayout({
           {/* Top Panel - Code Editor */}
           <div
             data-testid="studio-code-editor"
-            aria-label={t('studio.codeEditorPanel')}
+            aria-label="Code editor panel"
             className="flex-1 overflow-auto"
             style={{ height: `calc(100% - ${bottomPanelHeight}px)` }}
           >
@@ -190,7 +188,7 @@ export function StudioLayout({
             {/* Live Preview */}
             <div
               data-testid="studio-live-preview"
-              aria-label={t('studio.livePreviewPanel')}
+              aria-label="Live preview panel"
               className="flex-1 border-r border-border dark:border-border overflow-auto"
             >
               {livePreview}
@@ -199,7 +197,7 @@ export function StudioLayout({
             {/* Validation */}
             <div
               data-testid="studio-validation"
-              aria-label={t('studio.validationPanel')}
+              aria-label="Validation panel"
               className="flex-1 overflow-auto"
             >{validation}</div>
           </div>

@@ -41,18 +41,18 @@ describe('GraphQuerySchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept nodeKinds filter', () => {
+  it('should accept nodeTypes filter', () => {
     const query = {
-      nodeKinds: ['component', 'page', 'route'],
+      nodeTypes: ['component', 'page', 'route'],
     };
 
     const result = GraphQuerySchema.safeParse(query);
     expect(result.success).toBe(true);
   });
 
-  it('should accept edgeKinds filter', () => {
+  it('should accept edgeTypes filter', () => {
     const query = {
-      edgeKinds: ['imports', 'exports', 'calls'],
+      edgeTypes: ['imports', 'exports', 'calls'],
     };
 
     const result = GraphQuerySchema.safeParse(query);
@@ -129,9 +129,9 @@ describe('GraphQuerySchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject invalid nodeKinds (not an array)', () => {
+  it('should reject invalid nodeTypes (not an array)', () => {
     const query = {
-      nodeKinds: 'component' as any,
+      nodeTypes: 'component' as any,
     };
 
     const result = GraphQuerySchema.safeParse(query);

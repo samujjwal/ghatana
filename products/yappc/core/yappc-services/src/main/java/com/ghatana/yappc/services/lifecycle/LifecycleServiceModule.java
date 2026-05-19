@@ -14,6 +14,7 @@ import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ArtifactGraphController;
+import com.ghatana.yappc.api.ArtifactPatchController;
 import com.ghatana.yappc.api.ImportController;
 import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.api.RunApiController;
@@ -45,15 +46,23 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.ArtifactGraphRepository;
+import com.ghatana.yappc.storage.ArtifactPatchJobRepository;
 import com.ghatana.yappc.storage.ArtifactModelVersionRepository;
+import com.ghatana.yappc.storage.PatchSetRepository;
 import com.ghatana.yappc.storage.RepositorySnapshotRepository;
 import com.ghatana.yappc.storage.SemanticModelRepository;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphServiceImpl;
+import com.ghatana.yappc.services.artifact.compileback.ChangePlanService;
+import com.ghatana.yappc.services.artifact.compileback.ChangePlanServiceImpl;
+import com.ghatana.yappc.services.artifact.compileback.PatchSetService;
+import com.ghatana.yappc.services.artifact.compileback.PatchSetServiceImpl;
 import com.ghatana.yappc.services.artifact.parser.JavaSourceParser;
 import com.ghatana.yappc.services.compiler.ArtifactCompileJobService;
 import com.ghatana.yappc.services.compiler.JavaArtifactExtractorImpl;
+import com.ghatana.yappc.services.patch.ArtifactPatchJobService;
+import com.ghatana.yappc.services.patch.PatchReviewService;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
 import com.ghatana.yappc.services.platform.PlatformIntegrationClient;
 import com.ghatana.yappc.services.metrics.BusinessMetrics;
@@ -701,6 +710,59 @@ public class LifecycleServiceModule extends AbstractModule {
     ArtifactGraphController artifactGraphController(ArtifactGraphService service) {
         logger.info("Creating ArtifactGraphController (YAPPC-ArtifactCompiler)");
         return new ArtifactGraphController(service);
+    }
+
+    @Provides
+    PatchSetRepository patchSetRepository(DataSource dataSource, ObjectMapper objectMapper, Executor executor) {
+        logger.info("Creating PatchSetRepository (YAPPC-ArtifactCompiler)");
+        return new PatchSetRepository(dataSource, objectMapper, executor);
+    }
+
+    @Provides
+    ChangePlanService changePlanService(ArtifactGraphService artifactGraphService, PatchSetRepository patchSetRepository) {
+        logger.info("Creating ChangePlanService (YAPPC-ArtifactCompiler)");
+        return new ChangePlanServiceImpl(artifactGraphService, patchSetRepository);
+    }
+
+    @Provides
+    PatchSetService patchSetService(PatchSetRepository patchSetRepository) {
+        logger.info("Creating PatchSetService (YAPPC-ArtifactCompiler)");
+        return new PatchSetServiceImpl(patchSetRepository);
+    }
+
+    @Provides
+    PatchReviewService patchReviewService(PatchSetRepository patchSetRepository) {
+        logger.info("Creating PatchReviewService (YAPPC-ArtifactCompiler)");
+        return new PatchReviewService(patchSetRepository);
+    }
+
+    @Provides
+    ArtifactPatchJobRepository artifactPatchJobRepository(
+        DataSource dataSource,
+        ObjectMapper objectMapper,
+        Executor executor
+    ) {
+        logger.info("Creating ArtifactPatchJobRepository (YAPPC-ArtifactCompiler)");
+        return new ArtifactPatchJobRepository(dataSource, objectMapper, executor);
+    }
+
+    @Provides
+    ArtifactPatchJobService artifactPatchJobService(
+        PatchSetService patchSetService,
+        ArtifactPatchJobRepository artifactPatchJobRepository
+    ) {
+        logger.info("Creating ArtifactPatchJobService (YAPPC-ArtifactCompiler)");
+        return new ArtifactPatchJobService(patchSetService, artifactPatchJobRepository);
+    }
+
+    @Provides
+    ArtifactPatchController artifactPatchController(
+        PatchReviewService patchReviewService,
+        PatchSetService patchSetService,
+        ChangePlanService changePlanService
+    ) {
+        logger.info("Creating ArtifactPatchController (YAPPC-ArtifactCompiler)");
+        return new ArtifactPatchController(patchReviewService, patchSetService, changePlanService);
     }
 
     // ========== Phase Cockpit Packet (Task 5.A.1) ==========

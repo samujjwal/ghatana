@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-46-2f90cd4c:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-2f90cd4c",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:21:46.684Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-46-2f90cd4c",
+        "phase": "deploy",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:46.684Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-46-2f90cd4c:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-2f90cd4c",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:21:46.686Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+      },
+      "payload": {
+        "phase": "deploy",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.686Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T20-21-46-2f90cd4c:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-2f90cd4c",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:21:46.688Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+      },
+      "payload": {
+        "phase": "deploy",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:46.688Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-59-43-bb8f4dc5:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-43-bb8f4dc5",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:59:43.817Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-59-43-bb8f4dc5",
+        "phase": "deploy",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:59:43.817Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-59-43-bb8f4dc5:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-43-bb8f4dc5",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:59:43.820Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5"
+      },
+      "payload": {
+        "phase": "deploy",
+        "status": "running",
+        "startedAt": "2026-05-18T20:59:43.820Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T20-59-43-bb8f4dc5:deploy",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-43-bb8f4dc5",
+        "phase": "deploy",
+        "timestamp": "2026-05-18T20:59:43.823Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5"
+      },
+      "payload": {
+        "phase": "deploy",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:59:43.823Z"
+      }
+    }
+  ]
+}

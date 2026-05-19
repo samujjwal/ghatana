@@ -10,6 +10,7 @@ export type StudioRouteId =
   | "deployments"
   | "health"
   | "learn"
+  | "design-system"
   | "settings";
 
 export type StudioRouteOwnership =
@@ -304,6 +305,19 @@ export const STUDIO_ROUTE_OWNERSHIP_METADATA: Readonly<
     supportedUxStates: COMMON_UX_STATES,
     previewTrustState: "controlled",
   },
+  "design-system": {
+    routeId: "design-system",
+    path: "/design-system",
+    ownerDomain: "studio",
+    ownerProduct: "Ghatana Studio",
+    permissions: ["studio.design-system.view"],
+    featureFlags: ["studio.design-system"],
+    requiredProviders: [],
+    lifecycleTruthSource: "none",
+    status: "ready",
+    supportedUxStates: COMMON_UX_STATES,
+    previewTrustState: "trusted",
+  },
   settings: {
     routeId: "settings",
     path: "/settings",
@@ -515,10 +529,12 @@ export const STUDIO_NAV_ITEMS = [
     statusReasonCode: "pilot-only",
     statusMessageKey: "studio.navigation.status.deployments",
     requiredNextAction:
-      "Keep deployment execution limited to the Digital Marketing pilot.",
+      "Keep deployment execution limited to the Digital Marketing and PHR opening pilots.",
     evidenceRefs: [
       "config/canonical-product-registry.json",
+      "scripts/check-opening-lifecycle-pilots.mjs",
       "scripts/check-digital-marketing-lifecycle-pilot.mjs",
+      "scripts/check-phr-lifecycle-pilot.mjs",
     ],
     evidenceRequired: [
       "platform/typescript/kernel-deployment",
@@ -570,6 +586,26 @@ export const STUDIO_NAV_ITEMS = [
     evidenceRequired: [],
     journey: ["learning-adaptation"],
     dimension: "learning",
+    isCustomerVisible: true,
+    exposure: "visible",
+  },
+  {
+    id: "design-system",
+    path: "/design-system",
+    label: "Design System",
+    labelKey: "studio.navigation.design-system",
+    ownership: "studio",
+    requiredCapability: "studio.design-system.view",
+    status: "ready",
+    statusReasonCode: "available",
+    statusMessageKey: "studio.navigation.status.design-system",
+    requiredNextAction: "None",
+    evidenceRefs: [
+      "platform/typescript/ds-generator/src",
+    ],
+    evidenceRequired: [],
+    journey: ["direct-kernel-usage"],
+    dimension: "development",
     isCustomerVisible: true,
     exposure: "visible",
   },
@@ -628,6 +664,7 @@ function resolveRouteExposure(
     route.id === "blueprints" ||
     route.id === "canvas" ||
     route.id === "learn" ||
+    route.id === "design-system" ||
     route.id === "settings"
   ) {
     return "visible";

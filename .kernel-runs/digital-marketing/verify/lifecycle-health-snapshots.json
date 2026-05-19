@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-45-c32d52ed",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/verify/digital-marketing/2026-05-18T20-21-45-c32d52ed/verify/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-45-c32d52ed",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

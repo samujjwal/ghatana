@@ -17,7 +17,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { BuilderDocument } from '@ghatana/ui-builder';
+import { normalizeBuilderDocument, type BuilderDocument, type NodeId } from '@ghatana/ui-builder';
 import type {
   HostToPreviewMessage,
   MountedMessage,
@@ -51,6 +51,7 @@ export const PREVIEW_BUILDER_RESPONSE_HEADERS = {
     baseUri: ["'none'"],
     formAction: ["'none'"],
     frameAncestors: ["'self'"],
+    sandbox: ['allow-scripts', 'allow-same-origin'],
   }),
   'Cross-Origin-Resource-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
@@ -129,15 +130,35 @@ function isPreviewSandboxProfile(value: unknown): value is { readonly viewport: 
 }
 
 function isBuilderDocument(value: unknown): value is BuilderDocument {
-  return isRecord(value) &&
+  if (!isRecord(value) || !isRecord(value.metadata)) {
+    return false;
+  }
+
+  const hasLegacyIdentity =
     isNonEmptyString(value.id) &&
     isNonEmptyString(value.version) &&
-    isNonEmptyString(value.name) &&
+    isNonEmptyString(value.name);
+  const hasCanonicalIdentity =
+    isNonEmptyString(value.documentId) &&
+    isNonEmptyString(value.schemaVersion) &&
+    isNonEmptyString(value.owner);
+  const hasLegacyRoots =
     Array.isArray(value.rootNodes) &&
-    value.rootNodes.every((nodeId) => typeof nodeId === 'string') &&
-    value.nodes instanceof Map &&
-    isRecord(value.designSystem) &&
-    isRecord(value.metadata);
+    value.rootNodes.every((nodeId) => typeof nodeId === 'string');
+  const hasCanonicalLayout =
+    isRecord(value.layout) &&
+    isNonEmptyString(value.layout.rootId) &&
+    isRecord(value.layout.nodes);
+  const hasNodeStore = value.nodes instanceof Map || isRecord(value.nodes);
+
+  return (hasLegacyIdentity || hasCanonicalIdentity) &&
+    (hasLegacyRoots || hasCanonicalLayout) &&
+    hasNodeStore;
+}
+
+function getPreviewRootNodeIds(document: BuilderDocument): readonly NodeId[] {
+  const rootLayoutNode = document.layout.nodes[document.layout.rootId];
+  return rootLayoutNode?.children ?? [];
 }
 
 function sendPreviewError(correlationId: string, code: string, message: string): void {
@@ -292,7 +313,7 @@ export default function BuilderPreviewRoute() {
         }
 
         pendingCorrelationRef.current = message.correlationId;
-        setDocument(message.document);
+        setDocument(normalizeBuilderDocument(message.document));
         setRuntimeEnvironment({
           viewport: message.sandbox.viewport,
           theme: message.sandbox.theme,
@@ -318,7 +339,7 @@ export default function BuilderPreviewRoute() {
           break;
         }
 
-        setDocument(message.document);
+        setDocument(normalizeBuilderDocument(message.document));
         const correlationId = message.correlationId;
         void Promise.resolve().then(() => {
           const updated: UpdatedMessage = {
@@ -476,7 +497,7 @@ export default function BuilderPreviewRoute() {
         >
           {localeFixture.headline} {localeFixture.primaryCta} {localeFixture.dateExample} {localeFixture.currencyExample}
         </div>
-        {document.rootNodes.map((nodeId) => (
+        {getPreviewRootNodeIds(document).map((nodeId) => (
           <ComponentRenderer
             key={nodeId}
             document={document}

@@ -62,10 +62,10 @@ public final class PatchSetRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO change_plans (
-                    plan_id, tenant_id, workspace_id, project_id, base_model_id, target_model_id,
+                    id, plan_id, tenant_id, workspace_id, project_id, base_model_id, target_model_id,
                     operation_count, auto_applicable_count, review_required_count,
                     impact_assessment_json, validation_result_json, created_at, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (plan_id) DO UPDATE SET
                     impact_assessment_json = EXCLUDED.impact_assessment_json,
                     validation_result_json = EXCLUDED.validation_result_json
@@ -74,18 +74,19 @@ public final class PatchSetRepository {
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, plan.planId());
-                statement.setString(2, plan.tenantId());
-                statement.setString(3, plan.workspaceId());
-                statement.setString(4, plan.projectId());
-                statement.setString(5, plan.baseModelId());
-                statement.setString(6, plan.targetModelId());
-                statement.setInt(7, plan.getOperationCount());
-                statement.setInt(8, plan.getAutoApplicableCount());
-                statement.setInt(9, plan.getReviewRequiredCount());
-                statement.setString(10, writeJson(plan.impact()));
-                statement.setString(11, null);
-                statement.setTimestamp(12, Timestamp.from(plan.createdAt()));
-                statement.setString(13, plan.createdBy());
+                statement.setString(2, plan.planId());
+                statement.setString(3, plan.tenantId());
+                statement.setString(4, plan.workspaceId());
+                statement.setString(5, plan.projectId());
+                statement.setString(6, plan.baseModelId());
+                statement.setString(7, plan.targetModelId());
+                statement.setInt(8, plan.getOperationCount());
+                statement.setInt(9, plan.getAutoApplicableCount());
+                statement.setInt(10, plan.getReviewRequiredCount());
+                statement.setString(11, writeJson(plan.impact()));
+                statement.setString(12, null);
+                statement.setTimestamp(13, Timestamp.from(plan.createdAt()));
+                statement.setString(14, plan.createdBy());
                 statement.executeUpdate();
             }
             return plan;
@@ -163,10 +164,10 @@ public final class PatchSetRepository {
         return Promise.ofBlocking(executor, () -> {
             String patchSetSql = """
                 INSERT INTO patch_sets (
-                    patch_set_id, tenant_id, workspace_id, project_id, plan_id, snapshot_id,
+                    id, patch_set_id, tenant_id, workspace_id, project_id, change_plan_id, plan_id, snapshot_id,
                     status, preserved_residuals_json, review_required_patches_json,
                     stats_json, created_at, created_by, applied_at, applied_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (patch_set_id) DO UPDATE SET
                     status = EXCLUDED.status,
                     preserved_residuals_json = EXCLUDED.preserved_residuals_json,
@@ -193,19 +194,21 @@ public final class PatchSetRepository {
                     // Insert/update patch set
                     try (PreparedStatement statement = connection.prepareStatement(patchSetSql)) {
                         statement.setString(1, patchSet.patchSetId());
-                        statement.setString(2, patchSet.tenantId());
-                        statement.setString(3, patchSet.workspaceId());
-                        statement.setString(4, patchSet.projectId());
-                        statement.setString(5, patchSet.planId());
-                        statement.setString(6, patchSet.snapshotId());
-                        statement.setString(7, patchSet.status().name());
-                        statement.setString(8, writeJson(patchSet.preservedResiduals()));
-                        statement.setString(9, writeJson(patchSet.reviewRequiredPatches()));
-                        statement.setString(10, writeStats(patchSet.stats()));
-                        statement.setTimestamp(11, Timestamp.from(patchSet.createdAt()));
-                        statement.setString(12, patchSet.createdBy());
-                        statement.setTimestamp(13, patchSet.appliedAt() != null ? Timestamp.from(patchSet.appliedAt()) : null);
-                        statement.setString(14, patchSet.appliedBy());
+                        statement.setString(2, patchSet.patchSetId());
+                        statement.setString(3, patchSet.tenantId());
+                        statement.setString(4, patchSet.workspaceId());
+                        statement.setString(5, patchSet.projectId());
+                        statement.setString(6, patchSet.planId());
+                        statement.setString(7, patchSet.planId());
+                        statement.setString(8, patchSet.snapshotId());
+                        statement.setString(9, patchSet.status().name());
+                        statement.setString(10, writeJson(patchSet.preservedResiduals()));
+                        statement.setString(11, writeJson(patchSet.reviewRequiredPatches()));
+                        statement.setString(12, writeStats(patchSet.stats()));
+                        statement.setTimestamp(13, Timestamp.from(patchSet.createdAt()));
+                        statement.setString(14, patchSet.createdBy());
+                        statement.setTimestamp(15, patchSet.appliedAt() != null ? Timestamp.from(patchSet.appliedAt()) : null);
+                        statement.setString(16, patchSet.appliedBy());
                         statement.executeUpdate();
                     }
 

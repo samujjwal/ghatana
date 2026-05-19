@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-59-44-e63e3010",
+  "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "phase": "verify",
+  "lifecycleProfile": "standard-web-api-product",
+  "environment": "local",
+  "requestedPhases": [
+    "verify"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:59:44.109Z",
+  "completedAt": "2026-05-18T20:59:44.109Z",
+  "steps": [
+    {
+      "stepId": "verify-local-0",
+      "phase": "verify",
+      "surface": "local",
+      "adapter": "compose-local",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:59:44.109Z",
+      "completedAt": "2026-05-18T20:59:44.109Z",
+      "exitCode": 0,
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-59-44-e63e3010"
+    }
+  ],
+  "gates": [],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify",
+  "manifestRefs": {
+    "verifyHealthReport": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/verify-health-report.json",
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-health-snapshot.json"
+}

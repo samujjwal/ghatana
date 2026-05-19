@@ -23,6 +23,7 @@ const MockPreview = ({ locale, direction, theme }: { locale: string; direction: 
     lang={locale}
     dir={direction}
     data-theme={theme}
+    className={[direction === 'rtl' ? 'rtl' : 'ltr', theme].join(' ')}
   >
     <div data-testid="preview-content">
       <h1 data-testid="title">Preview Title</h1>

@@ -31,7 +31,11 @@ interface TabsListProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const TabsList: React.FC<TabsListProps> = ({ children, className = '', ...props }) => (
-  <div className={['inline-flex gap-2 rounded-md bg-zinc-100 p-1', className].filter(Boolean).join(' ')} {...props}>
+  <div
+    role="tablist"
+    className={['inline-flex gap-2 rounded-md bg-zinc-100 p-1', className].filter(Boolean).join(' ')}
+    {...props}
+  >
     {children}
   </div>
 );
@@ -51,7 +55,9 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({ value, children, class
 
   return (
     <button
+      role="tab"
       type="button"
+      aria-selected={active}
       onClick={() => context.setValue(value)}
       className={[
         'rounded px-3 py-1.5 text-sm',
@@ -79,7 +85,7 @@ export const TabsContent: React.FC<TabsContentProps> = ({ value, children, class
   }
 
   return (
-    <div className={className} {...props}>
+    <div role="tabpanel" className={className} {...props}>
       {children}
     </div>
   );

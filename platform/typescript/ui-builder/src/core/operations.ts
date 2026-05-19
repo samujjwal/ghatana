@@ -8,7 +8,9 @@
  */
 
 import { produce } from 'immer';
-import type { BuilderDocument, ComponentInstance, NodeId, Binding } from './types';
+import type { BuilderDocument } from './builder-document.js';
+import { attachBuilderDocumentCompatibility, normalizeBuilderDocument } from './builder-document.js';
+import type { ComponentInstance, NodeId, Binding } from './types';
 import { createNodeId } from './types';
 
 // ============================================================================
@@ -95,6 +97,14 @@ export interface OperationEventBus {
 /** A no-op event bus for use in tests or environments without observability. */
 export const noopEventBus: OperationEventBus = {};
 
+function nextUpdatedAt(previous?: string): string {
+  const now = new Date();
+  if (previous && now.toISOString() === previous) {
+    now.setTime(now.getTime() + 1);
+  }
+  return now.toISOString();
+}
+
 // ============================================================================
 // Document Operations
 // ============================================================================
@@ -107,20 +117,33 @@ export function insertNode(
   slotName?: string,
   bus?: OperationEventBus,
 ): BuilderDocument {
+  if (!instance.contractName) {
+    throw new Error('insertNode: contractName is required');
+  }
+  document = normalizeBuilderDocument(document);
   let insertedId: NodeId | undefined;
   // Capture contractName before produce to avoid any Immer freeze issues.
   const { contractName } = instance;
   const next = produce(document, (draft) => {
     const id = createNodeId();
     insertedId = id;
-    const newInstance: ComponentInstance = { ...instance, id };
+    const newInstance: ComponentInstance = {
+      ...instance,
+      id,
+      slots: { ...instance.slots },
+      bindings: [...instance.bindings],
+      metadata: {
+        ...instance.metadata,
+      },
+    };
     
-    // Add to nodes map
-    (draft.nodes as Map<NodeId, ComponentInstance>).set(id, newInstance);
+    // Add to nodes record (canonical uses Record, not Map)
+    // Spread metadata to create mutable copy for Immer compatibility with platform-events readonly arrays
+    draft.nodes[id] = newInstance as unknown as typeof draft.nodes[string];
     
-    // Add to parent's slot or root
+    // Add to parent's slot or root layout
     if (parentId && slotName) {
-      const parent = draft.nodes.get(parentId);
+      const parent = draft.nodes[parentId];
       if (parent) {
         const slots = { ...parent.slots };
         const slot = slots[slotName] ?? [];
@@ -128,19 +151,23 @@ export function insertNode(
         parent.slots = slots;
       }
     } else {
-      draft.rootNodes = [...draft.rootNodes, id];
+      // Add to root layout children
+      const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+      if (rootLayoutNode) {
+        rootLayoutNode.children = [...(rootLayoutNode.children ?? []), id];
+      }
     }
     
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt) };
   });
   bus?.onNodeInserted?.({
-    documentId: document.id,
+    documentId: document.documentId,
     nodeId: insertedId!,
     contractName,
     parentId,
     slotName,
   });
-  return next;
+  return attachBuilderDocumentCompatibility(next);
 }
 
 /** Move a node to a new parent or slot. */
@@ -151,11 +178,12 @@ export function moveNode(
   newSlotName?: string,
   bus?: OperationEventBus,
 ): BuilderDocument {
+  document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
-    // Remove from current location
+    // Remove from current location (canonical uses Record and layout structure)
     const currentParent = findParent(draft, nodeId);
     if (currentParent) {
-      const parent = draft.nodes.get(currentParent);
+      const parent = draft.nodes[currentParent];
       if (parent) {
         for (const [slotName, children] of Object.entries(parent.slots)) {
           if (children.includes(nodeId)) {
@@ -167,12 +195,16 @@ export function moveNode(
         }
       }
     } else {
-      draft.rootNodes = draft.rootNodes.filter((id) => id !== nodeId);
+      // Remove from root layout children
+      const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+      if (rootLayoutNode?.children) {
+        rootLayoutNode.children = rootLayoutNode.children.filter((id) => id !== nodeId);
+      }
     }
     
     // Add to new location
     if (newParentId && newSlotName) {
-      const parent = draft.nodes.get(newParentId);
+      const parent = draft.nodes[newParentId];
       if (parent) {
         const slots = { ...parent.slots };
         const slot = slots[newSlotName] ?? [];
@@ -180,23 +212,92 @@ export function moveNode(
         parent.slots = slots;
       }
     } else {
-      draft.rootNodes = [...draft.rootNodes, nodeId];
+      // Add to root layout children
+      const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+      if (rootLayoutNode) {
+        rootLayoutNode.children = [...(rootLayoutNode.children ?? []), nodeId];
+      }
     }
     
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
-  bus?.onNodeMoved?.({ documentId: document.id, nodeId, newParentId, newSlotName });
-  return next;
+  bus?.onNodeMoved?.({ documentId: document.documentId, nodeId, newParentId, newSlotName });
+  return attachBuilderDocumentCompatibility(next);
+}
+
+/** Update the visual position of a node stored in its metadata. */
+export function setNodePosition(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  position: { x: number; y: number },
+): BuilderDocument {
+  document = normalizeBuilderDocument(document);
+  const next = produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
+    if (node) {
+      node.metadata = { ...node.metadata, position };
+    }
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+  return attachBuilderDocumentCompatibility(next);
+}
+
+/** Duplicate a node, giving the copy a new unique ID and inserting it at the same level. */
+export function duplicateNode(
+  document: BuilderDocument,
+  nodeId: NodeId,
+): BuilderDocument {
+  document = normalizeBuilderDocument(document);
+  const source = document.nodes[nodeId];
+  if (!source) return document;
+  const newId = createNodeId();
+  const next = produce(document, (draft) => {
+    draft.nodes[newId] = {
+      ...source,
+      id: newId,
+      metadata: { ...source.metadata, name: `${source.metadata?.name ?? source.contractName} Copy` },
+      slots: Object.fromEntries(Object.entries(source.slots).map(([k, v]) => [k, [...v]])),
+      bindings: [...source.bindings],
+    } as typeof draft.nodes[string];
+    // Insert after the original in root layout
+    const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+    if (rootLayoutNode) {
+      const idx = (rootLayoutNode.children ?? []).indexOf(nodeId);
+      const children = [...(rootLayoutNode.children ?? [])];
+      if (idx >= 0) {
+        children.splice(idx + 1, 0, newId);
+      } else {
+        children.push(newId);
+      }
+      rootLayoutNode.children = children;
+    }
+    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+  });
+  return attachBuilderDocumentCompatibility(next);
+}
+
+/**
+ * Apply multiple operations atomically inside a callback.
+ * The callback receives the current document and must return the updated document.
+ */
+export function batchOperations(
+  document: BuilderDocument,
+  callback: (draft: BuilderDocument) => BuilderDocument,
+): BuilderDocument {
+  document = normalizeBuilderDocument(document);
+  const result = callback(document);
+  return attachBuilderDocumentCompatibility(normalizeBuilderDocument(result));
 }
 
 /** Delete a node and its children. */
 export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: OperationEventBus): BuilderDocument {
+  document = normalizeBuilderDocument(document);
   const idsToDelete = collectNodeIds(document, nodeId);
   const next = produce(document, (draft) => {
-    // Remove from parent
+    // Remove from parent (canonical uses Record and layout structure)
     const currentParent = findParent(draft, nodeId);
     if (currentParent) {
-      const parent = draft.nodes.get(currentParent);
+      const parent = draft.nodes[currentParent];
       if (parent) {
         for (const [slotName, children] of Object.entries(parent.slots)) {
           if (children.includes(nodeId)) {
@@ -208,18 +309,22 @@ export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: Oper
         }
       }
     } else {
-      draft.rootNodes = draft.rootNodes.filter((id) => !idsToDelete.includes(id));
+      // Remove from root layout children
+      const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+      if (rootLayoutNode?.children) {
+        rootLayoutNode.children = rootLayoutNode.children.filter((id) => !idsToDelete.includes(id));
+      }
     }
     
-    // Delete all nodes
+    // Delete all nodes (canonical uses Record, not Map)
     for (const id of idsToDelete) {
-      (draft.nodes as Map<NodeId, ComponentInstance>).delete(id);
+      delete draft.nodes[id];
     }
     
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
-  bus?.onNodeDeleted?.({ documentId: document.id, nodeId, deletedCount: idsToDelete.length });
-  return next;
+  bus?.onNodeDeleted?.({ documentId: document.documentId, nodeId, deletedCount: idsToDelete.length });
+  return attachBuilderDocumentCompatibility(next);
 }
 
 /** Update a node's props. */
@@ -229,15 +334,16 @@ export function updateNodeProps(
   props: Record<string, unknown>,
   bus?: OperationEventBus,
 ): BuilderDocument {
+  document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+    const node = draft.nodes[nodeId];
     if (node) {
       node.props = { ...node.props, ...props };
     }
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
-  bus?.onNodePropsUpdated?.({ documentId: document.id, nodeId, updatedKeys: Object.keys(props) });
-  return next;
+  bus?.onNodePropsUpdated?.({ documentId: document.documentId, nodeId, updatedKeys: Object.keys(props) });
+  return attachBuilderDocumentCompatibility(next);
 }
 
 /** Add a binding to a node. */
@@ -247,21 +353,22 @@ export function addBinding(
   binding: Binding,
   bus?: OperationEventBus,
 ): BuilderDocument {
+  document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+    const node = draft.nodes[nodeId];
     if (node) {
       node.bindings = [...node.bindings, binding];
     }
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
   bus?.onBindingAdded?.({
-    documentId: document.id,
+    documentId: document.documentId,
     nodeId,
     bindingId: binding.id,
     propPath: binding.target,
     kind: binding.type,
   });
-  return next;
+  return attachBuilderDocumentCompatibility(next);
 }
 
 /** Remove a binding from a node. */
@@ -271,15 +378,16 @@ export function removeBinding(
   bindingId: string,
   bus?: OperationEventBus,
 ): BuilderDocument {
+  document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+    const node = draft.nodes[nodeId];
     if (node) {
       node.bindings = node.bindings.filter((b) => b.id !== bindingId);
     }
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
-  bus?.onBindingRemoved?.({ documentId: document.id, nodeId, bindingId });
-  return next;
+  bus?.onBindingRemoved?.({ documentId: document.documentId, nodeId, bindingId });
+  return attachBuilderDocumentCompatibility(next);
 }
 
 // ============================================================================
@@ -292,19 +400,22 @@ export function reorderNode(
   nodeId: NodeId,
   toIndex: number,
 ): BuilderDocument {
-  return produce(document, (draft) => {
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
     const parentId = findParent(draft, nodeId);
 
     if (parentId === null) {
-      // Root-level reorder
-      const list = [...draft.rootNodes];
+      // Root-level reorder (canonical uses layout structure)
+      const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
+      if (!rootLayoutNode?.children) return;
+      const list = [...rootLayoutNode.children];
       const from = list.indexOf(nodeId);
       if (from === -1) return;
       list.splice(from, 1);
       list.splice(Math.min(toIndex, list.length), 0, nodeId);
-      draft.rootNodes = list;
+      rootLayoutNode.children = list;
     } else {
-      const parent = draft.nodes.get(parentId);
+      const parent = draft.nodes[parentId];
       if (!parent) return;
       for (const [slotName, children] of Object.entries(parent.slots)) {
         const from = children.indexOf(nodeId);
@@ -320,7 +431,7 @@ export function reorderNode(
     }
 
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 // ============================================================================
@@ -333,13 +444,14 @@ export function resizeNode(
   nodeId: NodeId,
   size: { readonly width: number; readonly height: number },
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (node) {
       node.metadata = { ...node.metadata, size };
     }
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 /** Update the position of a node in the builder canvas. */
@@ -348,13 +460,14 @@ export function repositionNode(
   nodeId: NodeId,
   position: { readonly x: number; readonly y: number },
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (node) {
       node.metadata = { ...node.metadata, position };
     }
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 // ============================================================================
@@ -372,8 +485,9 @@ export function setResponsiveVariant(
   nodeId: NodeId,
   variant: ResponsiveVariant,
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (!node) return;
     const existing = node.metadata.responsiveVariants ?? [];
     const filtered = existing.filter((v) => v.breakpoint !== variant.breakpoint);
@@ -382,7 +496,7 @@ export function setResponsiveVariant(
       responsiveVariants: [...filtered, variant],
     };
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 /**
@@ -393,8 +507,9 @@ export function removeResponsiveVariant(
   nodeId: NodeId,
   breakpoint: string,
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (!node) return;
     const existing = node.metadata.responsiveVariants ?? [];
     node.metadata = {
@@ -402,7 +517,7 @@ export function removeResponsiveVariant(
       responsiveVariants: existing.filter((v) => v.breakpoint !== breakpoint),
     };
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 // ============================================================================
@@ -421,8 +536,9 @@ export function upsertAction(
   nodeId: NodeId,
   action: ActionDefinition,
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (!node) return;
     const existing = node.metadata.actions ?? [];
     const idx = existing.findIndex((a) => a.id === action.id);
@@ -434,7 +550,7 @@ export function upsertAction(
     }
     node.metadata = { ...node.metadata, actions: next };
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 /**
@@ -445,15 +561,16 @@ export function removeAction(
   nodeId: NodeId,
   actionId: string,
 ): BuilderDocument {
-  return produce(document, (draft) => {
-    const node = draft.nodes.get(nodeId);
+  document = normalizeBuilderDocument(document);
+  return attachBuilderDocumentCompatibility(produce(document, (draft) => {
+    const node = draft.nodes[nodeId];
     if (!node) return;
     node.metadata = {
       ...node.metadata,
       actions: (node.metadata.actions ?? []).filter((a) => a.id !== actionId),
     };
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }));
 }
 
 // ============================================================================
@@ -476,7 +593,7 @@ export function batchUpdate(
   document: BuilderDocument,
   operations: ReadonlyArray<(doc: BuilderDocument) => BuilderDocument>,
 ): BuilderDocument {
-  return operations.reduce((doc, op) => op(doc), document);
+  return attachBuilderDocumentCompatibility(operations.reduce((doc, op) => op(doc), normalizeBuilderDocument(document)));
 }
 
 // ============================================================================
@@ -526,7 +643,7 @@ export function createUndoStack(
   const maxDepth = options.maxDepth ?? 100;
   // Past snapshots (most recent at the end), current document, future snapshots
   let past: BuilderDocument[] = [];
-  let present: BuilderDocument = initial;
+  let present: BuilderDocument = normalizeBuilderDocument(initial);
   let future: BuilderDocument[] = [];
 
   return {
@@ -536,7 +653,7 @@ export function createUndoStack(
 
     push(document) {
       past = [...past, present].slice(-maxDepth);
-      present = document;
+      present = normalizeBuilderDocument(document);
       future = [];
     },
 
@@ -546,7 +663,7 @@ export function createUndoStack(
       past = past.slice(0, -1);
       future = [present, ...future];
       present = prev;
-      return present;
+      return attachBuilderDocumentCompatibility(present);
     },
 
     redo() {
@@ -555,7 +672,7 @@ export function createUndoStack(
       past = [...past, present];
       future = rest;
       present = next;
-      return present;
+      return attachBuilderDocumentCompatibility(present);
     },
 
     clear() {
@@ -621,17 +738,19 @@ export function mergeDocuments(
   remote: BuilderDocument,
   resolver: ConflictResolver = lastWriteWins,
 ): { readonly merged: BuilderDocument; readonly conflicts: readonly DocumentConflict[] } {
+  local = normalizeBuilderDocument(local);
+  remote = normalizeBuilderDocument(remote);
   const detectedConflicts: DocumentConflict[] = [];
 
   const merged = produce(local, (draft) => {
     // Merge in nodes that exist in remote but not in local (additions)
-    for (const [nodeId, remoteNode] of remote.nodes) {
-      if (!draft.nodes.has(nodeId)) {
-        (draft.nodes as Map<NodeId, ComponentInstance>).set(nodeId, remoteNode);
+    for (const [nodeId, remoteNode] of Object.entries(remote.nodes)) {
+      if (!(nodeId in draft.nodes)) {
+        draft.nodes[nodeId] = remoteNode as unknown as typeof draft.nodes[string];
         continue;
       }
 
-      const localNode = draft.nodes.get(nodeId)!;
+      const localNode = draft.nodes[nodeId];
 
       // Merge props field-by-field
       const mergedProps: Record<string, unknown> = { ...localNode.props };
@@ -641,7 +760,7 @@ export function mergeDocuments(
           const localTs = local.metadata.updatedAt;
           const remoteTs = remote.metadata.updatedAt;
           const conflict: DocumentConflict = {
-            nodeId,
+            nodeId: nodeId as NodeId,
             path: `props.${key}`,
             localValue: localVal,
             remoteValue: remoteVal,
@@ -674,7 +793,7 @@ export function mergeDocuments(
     };
   });
 
-  return { merged, conflicts: detectedConflicts };
+  return { merged: attachBuilderDocumentCompatibility(merged), conflicts: detectedConflicts };
 }
 
 // ============================================================================
@@ -683,16 +802,17 @@ export function mergeDocuments(
 
 /** Find the parent node ID of a given node. */
 function findParent(document: BuilderDocument, nodeId: NodeId): NodeId | null {
-  // Check root nodes
-  if (document.rootNodes.includes(nodeId)) {
+  // Check root layout children (canonical uses layout structure)
+  const rootLayoutNode = document.layout.nodes[document.layout.rootId];
+  if (rootLayoutNode?.children?.includes(nodeId)) {
     return null;
   }
   
   // Search through all nodes' slots
-  for (const [id, node] of document.nodes) {
+  for (const [id, node] of Object.entries(document.nodes)) {
     for (const children of Object.values(node.slots)) {
       if (children.includes(nodeId)) {
-        return id;
+        return id as NodeId;
       }
     }
   }
@@ -703,7 +823,7 @@ function findParent(document: BuilderDocument, nodeId: NodeId): NodeId | null {
 /** Collect all node IDs in a subtree (including the root). */
 function collectNodeIds(document: BuilderDocument, rootId: NodeId): readonly NodeId[] {
   const ids: NodeId[] = [rootId];
-  const node = document.nodes.get(rootId);
+  const node = document.nodes[rootId];
   
   if (node) {
     for (const children of Object.values(node.slots)) {

@@ -36,6 +36,23 @@ class ProcessTsExtractorWorkerContractTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("redacts credentials from worker diagnostics")
+    void redactsCredentialsFromWorkerDiagnostics() {
+        String output = """
+            Authorization: Bearer github_pat_1234567890abcdefghijklmnopqrstuvwxyz
+            token=ghp_1234567890abcdefghijklmnopqrstuvwxyz
+            api_key=plain-secret-value
+            """;
+
+        String redacted = ProcessTsExtractorWorker.redactWorkerOutput(output);
+
+        assertThat(redacted).doesNotContain("github_pat_1234567890abcdefghijklmnopqrstuvwxyz");
+        assertThat(redacted).doesNotContain("ghp_1234567890abcdefghijklmnopqrstuvwxyz");
+        assertThat(redacted).doesNotContain("plain-secret-value");
+        assertThat(redacted).contains("[REDACTED]");
+    }
+
+    @Test
     @DisplayName("rejects edge with legacy 'source' alias instead of 'sourceNodeId'")
     void rejectsLegacySourceAlias() throws Exception {
         String json = """

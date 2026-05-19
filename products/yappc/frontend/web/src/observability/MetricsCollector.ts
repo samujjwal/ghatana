@@ -253,7 +253,7 @@ export class MetricsCollector {
     }
 
     const tagParts = Object.entries(tags)
-      .sort(([keyA], [keyB]) => keyA.i18n.languageCompare(keyB))
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .map(([key, value]) => `${key}=${value}`)
       .join(',');
 

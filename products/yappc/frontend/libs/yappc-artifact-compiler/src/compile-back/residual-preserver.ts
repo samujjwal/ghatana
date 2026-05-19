@@ -36,6 +36,17 @@ export function preserveResidual(
   island: ResidualIsland,
   _patchedFileContent: string,
 ): PreservationResult {
+  if ((island.regenerationStrategy as string) === 'placeholder-stub') {
+    return {
+      preserved: false,
+      blocked: true,
+      reviewRequired: true,
+      strategy: 'require-manual-impl',
+      content: island.originalSource,
+      warning: `Residual island "${island.normalizedSummary}" requires manual review; placeholder stub generation is blocked in production mode.`,
+    };
+  }
+
   switch (island.regenerationStrategy) {
     case 'verbatim-preserve':
       return {
@@ -74,16 +85,6 @@ export function preserveResidual(
         strategy: 'require-manual-impl',
         content: island.originalSource,
         warning: `Residual island "${island.normalizedSummary}" requires manual review; synthetic implementation stubs are blocked in production mode.`,
-      };
-
-    case 'placeholder-stub':
-      return {
-        preserved: false,
-        blocked: true,
-        reviewRequired: true,
-        strategy: 'placeholder-stub',
-        content: island.originalSource,
-        warning: `Residual island "${island.normalizedSummary}" requires manual review; placeholder stub generation is blocked in production mode.`,
       };
 
     default: {

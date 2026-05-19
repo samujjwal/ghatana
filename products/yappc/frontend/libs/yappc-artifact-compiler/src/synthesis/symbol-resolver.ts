@@ -76,7 +76,7 @@ function resolveRef(
 
   // Filter by kind hint if provided
   const filtered = kindHint
-    ? candidates.filter(c => c.kind === kindHint)
+    ? candidates.filter(c => c.type === kindHint)
     : candidates;
 
   // Exclude self-references
@@ -152,7 +152,7 @@ export function resolveSymbols(
   const index = buildSymbolIndex(nodes);
 
   // Build a map of node ID to source path for relative resolution
-  const nodePathMap = new Map(nodes.map(n => [n.id, n.sourceLocation.filePath]));
+  const nodePathMap = new Map(nodes.map(n => [n.id, (n.sourceLocation?.filePath ?? '')]));
 
   const resolvedEdges: GraphEdge[] = [];
   const resolutionRecords: EdgeResolutionRecord[] = [];
@@ -183,7 +183,7 @@ export function resolveSymbols(
       const edgeId = buildDeterministicEdgeId(
         edge.sourceId,
         result.resolvedId,
-        edge.relationship,
+        edge.relationshipType,
       );
 
       // P1-9: Include source location and resolver version in metadata
@@ -194,7 +194,7 @@ export function resolveSymbols(
         id: edgeId,
         sourceId: edge.sourceId,
         targetId: result.resolvedId,
-        kind: edge.relationship as import('../graph/types').GraphEdgeKind,
+        relationshipType: edge.relationshipType as import('../graph/types').GraphEdgeKind,
         confidence: edge.confidence,
         bidirectional: false,
         metadata: {

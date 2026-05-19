@@ -17,7 +17,6 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
-import { useTranslation } from '@ghatana/i18n';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -45,7 +44,6 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
   onError,
   readOnly = false,
 }) => {
-  const { t } = useTranslation('common');
   const [mode, setMode] = useState<EditorMode>('json');
 
   const handleModeChange = useCallback(
@@ -71,15 +69,15 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
           value={mode}
           exclusive
           onChange={handleModeChange}
-          aria-label={t('config.editorMode')}
+          aria-label="Config editor mode"
         >
-          <ToggleButton value="json" aria-label={t('config.jsonMode')}>
+          <ToggleButton value="json" aria-label="JSON mode">
             <Stack direction="row" spacing={1} alignItems="center">
               <JsonIcon size={16} />
               <span>JSON</span>
             </Stack>
           </ToggleButton>
-          <ToggleButton value="yaml" aria-label={t('config.yamlMode')}>
+          <ToggleButton value="yaml" aria-label="YAML mode">
             <Stack direction="row" spacing={1} alignItems="center">
               <YamlIcon size={16} />
               <span>YAML</span>

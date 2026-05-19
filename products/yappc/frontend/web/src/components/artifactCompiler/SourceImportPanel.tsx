@@ -33,7 +33,11 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
 import { getArtifactCompilerClient } from '@/clients/artifactCompiler/ArtifactCompilerClient';
-import type { ArtifactGraphIngestRequest, ArtifactGraphIngestResponse } from '@/clients/artifactCompiler/ArtifactCompilerClient';
+import type {
+  ArtifactGraphIngestResponse,
+  SourceImportJob as ApiSourceImportJob,
+  SourceImportRequest,
+} from '@/clients/artifactCompiler/ArtifactCompilerClient';
 
 // ============================================================================
 // Types
@@ -63,6 +67,7 @@ export interface ImportJob {
 export interface SourceImportPanelProps {
   open: boolean;
   onClose: () => void;
+  workspaceId: string;
   projectId: string;
   tenantId: string;
   onImportComplete?: (jobId: string, result: ArtifactGraphIngestResponse) => void;
@@ -75,6 +80,7 @@ export interface SourceImportPanelProps {
 export function SourceImportPanel({
   open,
   onClose,
+  workspaceId,
   projectId,
   tenantId,
   onImportComplete,
@@ -87,7 +93,6 @@ export function SourceImportPanel({
   const [job, setJob] = useState<ImportJob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Poll job status
   useEffect(() => {
     if (!job || job.status !== 'running') {
       return;
@@ -95,34 +100,38 @@ export function SourceImportPanel({
 
     const pollInterval = setInterval(async () => {
       try {
-        // In a real implementation, this would poll the job status endpoint
-        // For now, we'll simulate progress
-        setJob((prev) => {
-          if (!prev || prev.status !== 'running') {
-            return prev;
-          }
-          const newProgress = Math.min(prev.progress + 10, 100);
-          if (newProgress === 100) {
-            return {
-              ...prev,
-              status: 'completed',
-              progress: 100,
-              message: 'Import completed successfully',
-            };
-          }
-          return {
-            ...prev,
-            progress: newProgress,
-            message: `Processing... ${newProgress}%`,
-          };
+        const client = getArtifactCompilerClient({
+          baseUrl: '/api',
+          authToken: '',
+          tenantId,
         });
+        client.setScope({ workspaceId, projectId });
+        const response = await client.getSourceImportJob(job.id);
+        const nextJob = toImportJob(response.job, provider);
+        setJob(nextJob);
+
+        if (nextJob.status === 'completed') {
+          onImportComplete?.(nextJob.id, {
+            success: true,
+            message: nextJob.message,
+            snapshotId: nextJob.snapshotId,
+            versionId: nextJob.versionId,
+            nodeCount: nextJob.nodeCount,
+            edgeCount: nextJob.edgeCount,
+          });
+        }
       } catch (error) {
-        console.error('Error polling job status:', error);
+        setJob((prev) => prev ? {
+          ...prev,
+          status: 'failed',
+          message: 'Unable to read import job status',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        } : prev);
       }
     }, 1000);
 
     return () => clearInterval(pollInterval);
-  }, [job]);
+  }, [job, onImportComplete, projectId, provider, tenantId, workspaceId]);
 
   if (!open) {
     return null;
@@ -138,52 +147,29 @@ export function SourceImportPanel({
         authToken: '',
         tenantId,
       });
+      client.setScope({ workspaceId, projectId });
 
-      // Create import job
-      const newJob: ImportJob = {
-        id: `job-${Date.now()}`,
+      const response = await client.importSource(buildImportRequest({
         provider,
-        status: 'pending',
+        repoUrl,
+        ref,
+        archiveFile,
+        localPath,
+        projectId,
+        workspaceId,
+      }));
+      const apiJob = response.job ?? {
+        jobId: response.jobId ?? response.id,
+        status: response.status ?? 'PENDING',
         progress: 0,
-        message: 'Initializing import...',
+        message: response.message ?? 'Import job submitted',
       };
-      setJob(newJob);
-
-      // Simulate starting the job
-      setTimeout(() => {
-        setJob((prev) => ({
-          ...prev!,
-          status: 'running',
-          progress: 10,
-          message: 'Scanning source files...',
-        }));
-      }, 500);
-
-      // In a real implementation, this would call the actual import API
-      // For now, we'll simulate the process
-      setTimeout(() => {
-        const mockResponse: ArtifactGraphIngestResponse = {
-          success: true,
-          message: 'Import completed successfully',
-          snapshotId: 'snapshot-123',
-          versionId: 'version-456',
-          nodeCount: 100,
-          edgeCount: 200,
-        };
-
-        setJob((prev) => ({
-          ...prev!,
-          status: 'completed',
-          progress: 100,
-          ...mockResponse,
-        }));
-
-        onImportComplete?.(newJob.id, mockResponse);
-      }, 3000);
+      setJob(toImportJob(apiJob, provider));
 
     } catch (error) {
       setJob((prev) => ({
-        ...prev!,
+        id: prev?.id ?? `failed-${Date.now()}`,
+        provider,
         status: 'failed',
         progress: 0,
         message: 'Import failed',
@@ -558,4 +544,81 @@ export function SourceImportPanel({
       </div>
     </aside>
   );
+}
+
+function buildImportRequest({
+  provider,
+  repoUrl,
+  ref,
+  archiveFile,
+  localPath,
+  projectId,
+  workspaceId,
+}: {
+  provider: ImportProvider;
+  repoUrl: string;
+  ref: string;
+  archiveFile: File | null;
+  localPath: string;
+  projectId: string;
+  workspaceId: string;
+}): SourceImportRequest {
+  if (provider === 'github' || provider === 'gitlab') {
+    return {
+      sourceType: provider,
+      sourceUrl: repoUrl,
+      source: repoUrl,
+      projectId,
+      workspaceId,
+      options: { ref: ref || 'main' },
+    };
+  }
+
+  if (provider === 'archive') {
+    return {
+      sourceType: 'file',
+      sourceData: archiveFile?.name ?? '',
+      source: archiveFile?.name ?? '',
+      projectId,
+      workspaceId,
+      options: { mode: 'archive' },
+    };
+  }
+
+  return {
+    sourceType: 'file',
+    sourceData: localPath,
+    source: localPath,
+    projectId,
+    workspaceId,
+    options: { mode: 'local-folder' },
+  };
+}
+
+function toImportJob(apiJob: ApiSourceImportJob, provider: ImportProvider): ImportJob {
+  const rawStatus = String(apiJob.status ?? '').toUpperCase();
+  const status: ImportJob['status'] = rawStatus === 'COMPLETED'
+    ? 'completed'
+    : rawStatus === 'FAILED' || rawStatus === 'REJECTED' || rawStatus === 'CANCELLED'
+      ? 'failed'
+      : rawStatus === 'UNSUPPORTED'
+        ? 'unsupported'
+        : 'running';
+
+  return {
+    id: apiJob.jobId ?? apiJob.id ?? '',
+    provider,
+    status,
+    progress: apiJob.progress ?? apiJob.percentComplete ?? 0,
+    message: apiJob.message ?? apiJob.currentStep ?? (rawStatus || 'Import job updated'),
+    error: status === 'failed' ? apiJob.reason : undefined,
+    snapshotId: apiJob.snapshotId,
+    versionId: apiJob.versionId,
+    nodeCount: apiJob.nodeCount,
+    edgeCount: apiJob.edgeCount,
+    confidence: apiJob.confidence,
+    residualCount: apiJob.residualCount,
+    skippedCount: apiJob.skippedCount,
+    skippedReasons: apiJob.skippedReasons ? new Map(Object.entries(apiJob.skippedReasons)) : undefined,
+  };
 }

@@ -18,6 +18,12 @@ import {
   ProductUnitIntentSchema,
   ProductUnit,
   ProductUnitSchema,
+  parseLifecycleRunSummary,
+  type LifecycleRunSummary,
+  type LifecycleGateSummary,
+  type LifecycleArtifactSummary,
+  type LifecycleDeploymentSummary,
+  type LifecycleHealthSummary,
 } from '@ghatana/kernel-product-contracts';
 import type { ProductApprovalGate } from '@ghatana/kernel-release';
 import { z } from 'zod';
@@ -498,6 +504,15 @@ export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;
 export type VerifyHealthReport = z.infer<typeof VerifyHealthReportSchema>;
 export type ApprovalRequest = z.infer<typeof ApprovalRequestSchema>;
 export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
+
+// Re-export UI-facing summary types so Studio sections only import from this client module.
+export type {
+  LifecycleRunSummary,
+  LifecycleGateSummary,
+  LifecycleArtifactSummary,
+  LifecycleDeploymentSummary,
+  LifecycleHealthSummary,
+} from '@ghatana/kernel-product-contracts';
 export type ProductLifecyclePhase = (typeof PRODUCT_LIFECYCLE_PHASES)[number];
 
 export interface KernelLifecycleClientOptions {
@@ -565,6 +580,11 @@ export interface KernelLifecycleClient {
     query?: DeploymentManifestQuery,
   ): Promise<DeploymentManifest>;
   getVerifyHealthReport(productUnitId: string, runId: string): Promise<VerifyHealthReport>;
+  /**
+   * Returns a UI-facing LifecycleRunSummary built entirely from public lifecycle truth.
+   * Does not parse stdout, private logs, or product implementation files.
+   */
+  getLifecycleRunSummary(productUnitId: string, runId: string): Promise<LifecycleRunSummary>;
   listPendingApprovals(query?: PendingApprovalQuery): Promise<readonly ApprovalRequest[]>;
   requestApproval(actionRequest: ApprovalRequest): Promise<ProductApprovalGate>;
   submitApprovalDecision(
@@ -751,6 +771,101 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
       },
     );
     return response.data;
+  }
+
+  async getLifecycleRunSummary(
+    productUnitId: string,
+    runId: string,
+  ): Promise<LifecycleRunSummary> {
+    // Fetch run record first; this is the single source of truth for the run.
+    const run = await this.getLifecycleRun(productUnitId, runId);
+
+    // Attempt to fetch gate result manifest if a ref is available.
+    let gates: LifecycleGateSummary[] | undefined;
+    if (run.manifestRefs?.['gateResultManifest'] !== undefined) {
+      try {
+        const gateManifest = await this.getGateResultManifest(productUnitId, runId);
+        gates = gateManifest.gates.map((g) => ({
+          gateId: g.gateId,
+          passed: g.status === 'passed',
+          required: g.required ?? true,
+        }));
+      } catch {
+        // Non-fatal: gate manifest may not be available yet.
+      }
+    }
+
+    // Attempt to fetch artifact manifest if a ref is available.
+    let artifacts: LifecycleArtifactSummary[] | undefined;
+    if (run.manifestRefs?.['artifactManifest'] !== undefined) {
+      try {
+        const artifactManifest = await this.getArtifactManifest(productUnitId, runId);
+        artifacts = artifactManifest.artifacts.map((a) => ({
+          artifactType: a.metadata.type,
+          packaging: a.metadata.packaging,
+          paths: [a.path],
+          required: a.expected,
+          produced: a.found,
+          digest: a.fingerprint?.hash,
+        }));
+      } catch {
+        // Non-fatal: artifact manifest may not be available yet.
+      }
+    }
+
+    // Attempt to fetch deployment summary if a ref is available.
+    let deployment: LifecycleDeploymentSummary | undefined;
+    if (run.manifestRefs?.['deploymentManifest'] !== undefined) {
+      try {
+        const deploymentManifest = await this.getDeploymentManifest(productUnitId, runId);
+        deployment = {
+          environment: deploymentManifest.environment,
+          adapter: deploymentManifest.target,
+          succeeded: deploymentManifest.overallStatus === 'deployed',
+          deployedAt: deploymentManifest.deployedAt,
+        };
+      } catch {
+        // Non-fatal: deployment manifest may not be available yet.
+      }
+    }
+
+    // Attempt to fetch health summary from the verify health report.
+    let health: LifecycleHealthSummary | undefined;
+    if (run.healthSnapshotRef !== undefined || run.manifestRefs?.['verifyHealthReport'] !== undefined) {
+      try {
+        const healthReport = await this.getVerifyHealthReport(productUnitId, runId);
+        health = {
+          status: healthReport.status === 'healthy'
+            ? 'healthy'
+            : healthReport.status === 'degraded'
+              ? 'degraded'
+              : healthReport.status === 'failed'
+                ? 'unhealthy'
+                : 'unknown',
+          checkedAt: healthReport.checkedAt,
+        };
+      } catch {
+        // Non-fatal: health report may not be available yet.
+      }
+    }
+
+    const failedRequiredGateCount =
+      gates === undefined
+        ? undefined
+        : gates.filter((g) => g.required && !g.passed).length;
+
+    return parseLifecycleRunSummary({
+      runId: run.runId,
+      correlationId: run.correlationId,
+      productUnitId: run.productUnitId,
+      phase: run.phase ?? 'unknown',
+      status: run.status,
+      gates,
+      artifacts,
+      deployment,
+      health,
+      failedRequiredGateCount,
+    });
   }
 
   async listPendingApprovals(query: PendingApprovalQuery = {}): Promise<readonly ApprovalRequest[]> {

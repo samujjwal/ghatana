@@ -99,13 +99,46 @@ export const GateResultManifestSchema = z.object({
   correlationId: z.string().min(1),
   createdAt: z.string().datetime(),
   productId: z.string().min(1),
+  /** Canonical product unit identifier. Preferred over productId for new contracts. */
+  productUnitId: z.string().min(1).optional(),
   phase: z.string().min(1),
   overallPassed: z.boolean(),
   gates: z.array(GateResultEntrySchema),
+  reasonCode: z.string().optional(),
+  actionableMessage: z.string().optional(),
+  evidenceRefs: z.array(z.string()).optional(),
+  diagnostics: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;
 
+/**
+ * GateResult is the canonical alias for GateResultEntry.
+ * Prefer GateResult in new code when referring to a single gate's result.
+ */
+export type GateResult = GateResultEntry;
+export const GateResultSchema = GateResultEntrySchema;
+
 export function parseGateResultManifest(input: unknown): GateResultManifest {
   return GateResultManifestSchema.parse(input);
 }
+
+// ---------------------------------------------------------------------------
+// ApprovalRequirement — standalone approval contract
+// ---------------------------------------------------------------------------
+
+/**
+ * ApprovalRequirement defines the criteria for a required approval gate
+ * within a lifecycle execution. Used in plan outputs and gate results.
+ */
+export const ApprovalRequirementSchema = z.object({
+  approvalId: z.string().min(1),
+  approverRole: z.string().min(1),
+  required: z.boolean(),
+  phase: z.string().optional(),
+  gateId: z.string().optional(),
+  description: z.string().optional(),
+  evidenceRefs: z.array(z.string()).optional(),
+});
+
+export type ApprovalRequirement = z.infer<typeof ApprovalRequirementSchema>;

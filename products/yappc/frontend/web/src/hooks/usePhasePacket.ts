@@ -62,6 +62,13 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
   const [error, setError] = useState<Error | null>(null);
 
   const fetchPacket = async () => {
+    if (!request.projectId || !request.workspaceId) {
+      setPacket(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -83,7 +90,7 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
   };
 
   useEffect(() => {
-    fetchPacket();
+    void fetchPacket();
   }, [request.phase, request.projectId, request.workspaceId]);
 
   return {

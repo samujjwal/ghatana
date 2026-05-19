@@ -57,7 +57,11 @@ export const KPICard: React.FC<KPICardProps> = ({
   }
 
   const trendColor =
-    trend === 'up' ? 'text-success-color' : trend === 'down' ? 'text-destructive' : 'text-fg-muted';
+    trend === 'up'
+      ? 'text-success-color text-green-600'
+      : trend === 'down'
+        ? 'text-destructive text-red-600'
+        : 'text-fg-muted';
 
   const formattedChange =
     changePercent !== undefined

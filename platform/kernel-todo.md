@@ -1,887 +1,1528 @@
-# Ghatana Implementation Plan A — Phases 1–2: Governance Truth and Product Development Kernel Foundation
+# Ghatana Five-Phase Platform Implementation Plan
 
-**Target repository:** `samujjwal/ghatana`  
-**Target commit snapshot:** `5f4a216711606c09d164247ce011b8b06b767bcd`  
-**Execution independence:** This plan is scoped to **Phase 1** and **Phase 2** only. It can be executed independently from Plan B because it focuses on governance, registries, boundary checks, Product Development Kernel contracts, lifecycle planning/execution contracts, and Digital Marketing lifecycle pilot validation.
-
----
-
-## Progress
-
-| Task                                               | Status      | Completed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| -------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| §1.1 Baseline governance scan                      | ✅ COMPLETE | `ARCHITECTURE_GOVERNANCE.md` created; all 6 governance scripts created and passing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| §1.2 `DOMAIN_WORKSTREAM_MAP.md`                    | ✅ COMPLETE | `docs/architecture/DOMAIN_WORKSTREAM_MAP.md` exists (pre-existing)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| §1.3 Domain registry hardening                     | ✅ COMPLETE | `check-domain-registry.mjs` passes; `DOMAIN_STATUS_VOCABULARY` exported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| §1.4 Product registry consistency                  | ✅ COMPLETE | `check-product-registry-consistency.mjs` passes; DM is only `lifecycleExecutionAllowed: true` product                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| §1.5 Package governance                            | ✅ COMPLETE | `check-package-governance.mjs` passes; deprecated names list enforced                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| §1.6 Boundary check                                | ✅ COMPLETE | `check-boundaries.mjs` passes; delegates to 3 existing boundary scripts                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| §1.7 Doc current-state claims                      | ✅ COMPLETE | `check-doc-current-state-claims.mjs` passes; fixed 4 pre-existing `check-doc-authority.mjs` failures                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| §1.8 Duplication exception registry                | ✅ COMPLETE | `check-duplication-exceptions.mjs` passes against real registry                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| §1.9 Wire governance checks                        | ✅ COMPLETE | `run-governance-checks.mjs` orchestrates all 6 checks; 4 `package.json` scripts added                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| §1.9 Governance tests                              | ✅ COMPLETE | `scripts/governance/__tests__/*.test.mjs` — 9 tests, all passing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| §2.1 Baseline kernel scan                          | ✅ COMPLETE | `kernel-product-contracts` scanned; extensive existing implementation confirmed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| §2.2 Harden `@ghatana/kernel-product-contracts`    | ✅ COMPLETE | Added 6 new contract files: `LifecycleContracts.ts`, `GateContracts.ts`, `ArtifactReferences.ts`, `DeploymentReferences.ts`, `LifecycleEventEnvelope.ts`, `AgentLifecycleActionEvidence.ts`; 151 tests passing                                                                                                                                                                                                                                                                                                                                                                                                    |
-| §2.3 Validate product registry vs Kernel contracts | ✅ COMPLETE | `validateProductRegistryProducts()` exported; PHR/Finance/FlashIt/data-cloud/YAPPC blocker codes validated; platform-provider guard added; 17 governance tests passing                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| §2.4 Harden lifecycle result and event schemas     | ✅ COMPLETE | `ProductLifecycleResult` gained `lifecycleProfile`, `environment`, `requestedPhases`, `executedPhases`, `skippedPhases`, `blockedPhases`; `LifecycleTruthWriter`/`FileLifecycleTruthWriter`/`LifecycleTruthWriteResult` created; 319 tests passing                                                                                                                                                                                                                                                                                                                                                                |
-| §2.5 Harden toolchain adapter foundation           | ✅ COMPLETE | `ToolchainSafetyLevel`, `ToolchainOutputContract`, `ToolchainAdapterCapability`, `ToolchainExecutionRequest` types added; 211 tests passing                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| §2.6 Harden artifact/deployment/release refs       | ✅ COMPLETE | `ArtifactManifestLinkage.test.ts` (14 tests), `ArtifactDigestLinkage.test.ts` (14 tests), `PromotionRollbackGate.test.ts` (15 tests); total 177 tests across 3 packages                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| §2.7 Digital Marketing lifecycle pilot             | ✅ COMPLETE | DigitalMarketingLifecyclePilot.test.ts (39 tests in kernel-lifecycle): registry field confirmation, ProductUnit validation, lifecycle planning, adapter resolution, gate resolution, dry-run execution, manifest ref production, dm-kernel-bridge conformance; total 358 tests in kernel-lifecycle                                                                                                                                                                                                                                                                                                                |
-| §2.8 Preserve blocked products                     | ✅ COMPLETE | Covered by pre-existing disabled-product-lifecycle.test.ts (16 tests): PHR/Finance/FlashIt/DataCloud/YAPPC all verified disabled with reason codes; DM pilot confirmed enabled                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| §2.9 Final no-regression gate                      | ✅ COMPLETE | Governance: **6/6 pass** (product-registry-consistency stale-artifacts failure resolved 2026-05-18 by running `node scripts/generate-product-registry-artifacts.mjs`); all 7 TS kernel packages typecheck + test + build green; kernel-deployment typecheck had 3 pre-existing TS2352/TS2769 errors in test file — fixed (double-cast through unknown, non-null assertion); final test counts: kernel-product-contracts 163 ✓, kernel-lifecycle 358 ✓, kernel-providers 133 ✓, kernel-toolchains 211 ✓, kernel-artifacts 48 ✓, kernel-deployment 94 ✓, kernel-release 64 ✓; Java Gradle commands documented below |
+**Repository:** `samujjwal/ghatana`  
+**Target commit head:** `f9e7f49d6eed70cb6d2c0fa71b1013d42e2e6af3`  
+**Plan mode:** granular, prescriptive, coherent, independently executable  
+**Opening pilots:** `digital-marketing` and `phr`
 
 ---
 
-## 0. Execution contract
+## Implementation Progress
 
-Execute against the full codebase snapshot at the target commit, not the commit diff. The target commit is a changelog-only commit, but this plan must evaluate and harden the complete repository state at that snapshot.
+| Task | Status | Completed |
+|------|--------|-----------|
+| **Phase 1 — Establish governance truth** | | |
+| Task 1.1 Canonicalize domain map | ✅ COMPLETE | prior session |
+| Task 1.2 Validate product registry against generated includes | ✅ COMPLETE | prior session |
+| Task 1.3 Split lifecycle pilot checks | ✅ COMPLETE | prior session |
+| Task 1.4 Boundary, duplication, and package governance | ✅ COMPLETE | 2026-05-26 |
+| Task 1.5 CI integration | ✅ COMPLETE | 2026-05-26 |
+| **Phase 2 — Stabilize Kernel lifecycle foundation** | | |
+| Task 2.1 Harden `@ghatana/kernel-product-contracts` | ✅ COMPLETE | 2026-05-26 |
+| Task 2.2 Harden lifecycle planning | ✅ COMPLETE | 2026-05-26 |
+| Task 2.3 Harden lifecycle execution and result collection | ✅ COMPLETE | 2026-05-26 |
+| Task 2.4 Harden toolchain adapters | ✅ COMPLETE | 2026-05-26 |
+| Task 2.5 Gate provider and gate result manifests | ✅ COMPLETE | 2026-05-26 |
+| Task 2.6 UI-facing lifecycle summaries | ✅ COMPLETE | 2026-05-26 |
+| **Phase 3 — Stabilize shared UI/intelligence primitives** | | |
+| Task 3.1 Canvas hardening | ✅ COMPLETE | 2026-05-26 |
+| Task 3.2 UI Builder hardening | ✅ COMPLETE | 2026-05-27 |
+| Task 3.3 Design system, registry, and generator | ✅ COMPLETE | 2026-05-27 |
+| Task 3.4 Ghatana Studio pilot lifecycle UI | ✅ DONE | 2026-05-27 |
+| **Phase 4 — Wire runtime truth and provenance** | | |
+| Task 4.1 Provider interfaces | ✅ COMPLETE | 2026-05-19 |
+| Task 4.2 Lifecycle event schemas | ✅ COMPLETE | 2026-05-19 |
+| Task 4.3 Artifact and deployment provenance | ✅ COMPLETE | 2026-05-19 |
+| Task 4.4 Runtime truth read models and Studio integration | ✅ COMPLETE | 2026-05-19 |
+| Task 4.5 Agent action evidence | ✅ COMPLETE | 2026-05-19 |
+| **Phase 5 — Expand product validation** | | |
+| Task 5.1 Digital Marketing validation | ✅ COMPLETE | 2026-05-19 |
+| Task 5.2 PHR validation | ✅ COMPLETE | 2026-05-19 |
+| Task 5.3 Finance shape validation | ✅ COMPLETE | 2026-05-19 |
+| Task 5.4 FlashIt shape validation | ✅ COMPLETE | 2026-05-19 |
+| Task 5.5 YAPPC platform-provider validation | ✅ COMPLETE | 2026-05-19 |
+| Task 5.6 Data Cloud platform-provider validation | ✅ COMPLETE | 2026-05-19 |
 
-### Mandatory checkout
+> Last updated: 2026-05-27 — All 26 tasks across all 5 phases are COMPLETE. Build health: fixed 5 `@doc.*` tag violations (checkDocTags passes for 6705 files); fixed Checkstyle StackOverflow crash on `LakehouseConnector.java` (simplified `{@code}` Javadoc block, fixed query-method indentation, added `-Xss4m` to Gradle daemon JVM args in `gradle.properties`). Full validation: all governance scripts pass, all lifecycle dry-runs generate valid manifests, all TypeScript package tests pass (123 ghatana-studio + 214 kernel-product-contracts + 133 kernel-providers + 415 kernel-lifecycle + 48 kernel-artifacts + 94 kernel-deployment + 64 kernel-release + 107 platform-events + 45 events), all Java Gradle tests BUILD SUCCESSFUL.
 
-```bash
-git fetch origin
-git checkout 5f4a216711606c09d164247ce011b8b06b767bcd
-git status --short
-```
+---
 
-### Mandatory source-of-truth files
+This plan implements the five phases defined in `ghatana_domain_workstream_map.md`:
 
-Read before any edit:
+1. Establish governance truth.
+2. Stabilize Kernel lifecycle foundation.
+3. Stabilize shared UI/intelligence primitives.
+4. Wire runtime truth and provenance.
+5. Expand product validation.
+
+The plan must be executed from the target commit snapshot, not from prior TODOs or stale architecture claims.
+
+---
+
+## 0. Target-commit baseline
+
+### 0.1 Repository anchors
+
+Use these current files as source-of-truth anchors:
 
 ```text
-.github/copilot-instructions.md
-ghatana_unified_product_development_blueprint_hardened.md
-ghatana_domain_workstream_map.md
 settings.gradle.kts
 config/generated/settings-gradle-includes.kts
 pnpm-workspace.yaml
 config/canonical-product-registry.json
-platform/typescript/LIBRARY_GOVERNANCE.md
+config/domain-registry.json
+scripts/kernel-product.mjs
+platform/typescript/kernel-product-contracts
+platform/typescript/kernel-lifecycle
+platform/typescript/kernel-providers
+platform/typescript/kernel-toolchains
+platform/typescript/kernel-artifacts
+platform/typescript/kernel-deployment
+platform/typescript/kernel-release
+platform/typescript/canvas
+platform/typescript/ui-builder
+platform/typescript/ds-schema
+platform/typescript/ds-registry
+platform/typescript/ds-generator
+platform/typescript/ghatana-studio
+products/digital-marketing
+products/phr
+products/data-cloud
+products/yappc
 ```
 
-### Non-negotiable rules
+### 0.2 Important current-state correction
 
-- Reuse first. Search `platform/*`, `products/*`, `config/*`, `scripts/*`, and existing contracts before creating abstractions.
-- Keep Product Development Kernel generic. Do not hardcode product business logic for Digital Marketing, PHR, Finance, FlashIt, YAPPC, or Data Cloud inside Kernel packages.
-- Keep target-state and current-state separate. A planned capability must not be described as executable unless a test/build/check proves it.
-- Products configure; they do not reimplement lifecycle runners, generic gate engines, generic health models, generic policy engines, or shared UI primitives.
-- Fail closed. Unknown, disabled, partial, unsafe, planned, or unvalidated capabilities must produce blocked/failed states with reason codes, never fake success.
-- TypeScript must remain fully typed with boundary validation. No `any` except justified boundary adapters.
-- Tests are part of every meaningful change. No object-literal test theater, no `expect(true)`, no disabled tests without issue reference, no tests importing nothing from production code.
-- Critical flows must emit structured diagnostics: run IDs, correlation IDs, reason codes, statuses, timings, and evidence references.
+The older domain workstream map identified Digital Marketing as the executable pilot and PHR as a shape validator. At the target commit, `config/canonical-product-registry.json` and `products/phr/kernel-product.yaml` show PHR is now enabled as a second parallel lifecycle pilot.
+
+Therefore, implementation must treat:
+
+```text
+digital-marketing = enabled opening pilot
+phr = enabled opening pilot
+finance = planned/disabled shape validator
+flashit = planned/disabled shape validator
+data-cloud = platform-provider validator
+yappc = platform-provider validator
+```
+
+### 0.3 Immediate consistency defect to fix first
+
+`scripts/check-digital-marketing-lifecycle-pilot.mjs` currently contains a Digital-Marketing-only global exclusivity rule: it fails when another product is lifecycle-enabled. That is now inconsistent with PHR being enabled. Fix this before hardening any other checks.
+
+Required refactor:
+
+```text
+scripts/check-opening-lifecycle-pilots.mjs
+  - validates enabled lifecycle pilot set = [digital-marketing, phr]
+
+scripts/check-digital-marketing-lifecycle-pilot.mjs
+  - validates only Digital Marketing-specific pilot requirements
+
+scripts/check-phr-lifecycle-pilot.mjs
+  - validates only PHR-specific healthcare pilot requirements
+```
 
 ---
 
-## 1. Current-state baseline at the target commit
+## 1. Universal execution rules
 
-The implementation must preserve these confirmed associations:
+### 1.1 Before editing any file
 
-| Area                         | Target-commit current state                                                                                                                                                                                                                                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Platform Java modules        | Root Gradle includes `platform:java:core`, `database`, `http`, `observability`, `security`, `testing`, `workflow`, `ai-integration`, `governance`, `agent-core`, `domain`, `config`, `runtime`, `audit`, `cache`, `policy-as-code`, `platform-bom`, `tool-runtime`, `messaging`, `data-governance`, and `identity`. |
-| Platform Kernel Java modules | Root Gradle includes `platform-kernel:kernel-core`, `kernel-persistence`, `kernel-plugin`, `kernel-testing`, and `kernel-bom`.                                                                                                                                                                                      |
-| Platform plugins             | Root Gradle includes audit trail, compliance, consent, observability, fraud detection, human approval, ledger, notification, and risk management plugins.                                                                                                                                                           |
-| Generated product modules    | `config/generated/settings-gradle-includes.kts` is generated from `config/canonical-product-registry.json`; do not edit it manually.                                                                                                                                                                                |
-| TypeScript workspace         | `pnpm-workspace.yaml` includes platform TS libraries, canvas subpackages, Ghatana Studio, agent catalog, product packages, Data Cloud packages, YAPPC packages, FlashIt packages, Tutorputor packages, DCMAAR packages, and shared-service UIs.                                                                     |
-| Canonical platform libraries | `platform/typescript/LIBRARY_GOVERNANCE.md` marks `@ghatana/design-system`, `@ghatana/canvas`, `@ghatana/ui-builder`, `@ghatana/kernel-product-contracts`, `@ghatana/kernel-lifecycle`, `@ghatana/kernel-toolchains`, `@ghatana/kernel-artifacts`, and `@ghatana/kernel-deployment` as active platform libraries.   |
-| Lifecycle pilot              | Digital Marketing is the executable lifecycle pilot with lifecycle enabled, backend/web surfaces, Gradle/pnpm adapters, jvm/static-web artifacts, local deployment target, and `lifecycleExecutionAllowed: true`.                                                                                                   |
-| Blocked products             | PHR, Finance, FlashIt, Data Cloud, and YAPPC have planned/blocked/platform-provider constraints and must not be enabled prematurely.                                                                                                                                                                                |
+Run or perform equivalent inspection:
+
+```bash
+git checkout f9e7f49d6eed70cb6d2c0fa71b1013d42e2e6af3
+git status --short
+find platform/typescript -maxdepth 2 -name package.json | sort
+find platform/java -maxdepth 2 -name build.gradle.kts | sort
+find products/digital-marketing -maxdepth 4 -type f | sort
+find products/phr -maxdepth 5 -type f | sort
+```
+
+### 1.2 No-regression implementation rules
+
+Do not introduce:
+
+```text
+- product-specific behavior in platform packages
+- Kernel imports from products/yappc implementation internals
+- Kernel imports from products/data-cloud/planes internals
+- product-local lifecycle runners
+- duplicate gate engines
+- duplicate artifact/deployment manifest schemas
+- deprecated @ghatana package imports
+- TODO/FIXME in production code
+- fake-success adapters
+- object-literal tests
+- tests that import no production code
+- hardcoded secrets or unsafe env defaults
+```
+
+### 1.3 Required PR evidence
+
+Every PR must include:
+
+```text
+- target commit inspected
+- source-of-truth files inspected
+- changed files
+- existing patterns reused
+- boundary impact
+- tests added/updated
+- commands run
+- regression risk
+- rollback/revert notes
+- current-state vs target-state classification
+```
 
 ---
 
-# Phase 1 — Establish Governance Truth
+# Phase 1 — Establish governance truth
 
-## Phase 1 objective
+## Objective
 
-Create a small, executable governance layer that keeps domains, products, packages, docs, boundaries, and duplicate exceptions coherent. This phase governs; it must not implement product behavior, Kernel execution, Data Cloud runtime truth, YAPPC artifact intelligence, or UI builder internals.
+Create one executable governance truth layer across domain registry, product registry, generated Gradle includes, pnpm workspace, architecture docs, and validation checks.
 
-## Phase 1 deliverables
+## Exit criteria
 
-Create or harden these files, reusing existing scripts if equivalents already exist:
+```text
+- docs/architecture/DOMAIN_WORKSTREAM_MAP.md is canonical.
+- config/domain-registry.json represents real modules and products at the target commit.
+- config/canonical-product-registry.json validates against generated Gradle and pnpm workspace includes.
+- Digital Marketing and PHR are the explicit opening lifecycle pilots.
+- Finance and FlashIt remain disabled/fail-closed.
+- Data Cloud and YAPPC remain platform-provider validators.
+- Current-state vs target-state claims are checked.
+- Deprecated package imports are checked.
+- Product/platform boundaries are checked.
+- Digital Marketing-specific checks no longer reject PHR.
+```
+
+## Task 1.1 Canonicalize domain map
+
+### Files
 
 ```text
 docs/architecture/DOMAIN_WORKSTREAM_MAP.md
-docs/architecture/ARCHITECTURE_GOVERNANCE.md
 config/domain-registry.json
-config/domain-registry.schema.json
-config/duplication-exceptions.json
-config/duplication-exceptions.schema.json
-scripts/governance/check-domain-registry.mjs
-scripts/governance/check-product-registry-consistency.mjs
-scripts/governance/check-package-governance.mjs
-scripts/governance/check-boundaries.mjs
-scripts/governance/check-doc-current-state-claims.mjs
-scripts/governance/check-duplication-exceptions.mjs
-scripts/governance/run-governance-checks.mjs
-scripts/governance/__tests__/*.test.mjs
+.github/copilot-instructions.md
+platform/typescript/LIBRARY_GOVERNANCE.md
 ```
 
-Use `.mjs` if the repo’s current scripts use Node ESM. If an existing convention differs, follow the repo convention.
+### Steps
 
----
-
-## 1.1 Baseline governance scan
-
-### Tasks
-
-1. Search existing governance, boundary, registry, and validation scripts:
-   ```bash
-   find scripts -maxdepth 4 -type f | sort
-   find config -maxdepth 3 -type f | sort
-   find docs/architecture -maxdepth 3 -type f | sort
-   git grep -n "domain-registry\|duplication-exception\|check-domain\|check-boundary\|current-state\|target-state\|boundary" -- .
-   ```
-2. If equivalent scripts exist, extend them instead of creating duplicates.
-3. If no equivalent exists, add the `scripts/governance/*` files listed above.
-4. Document the scan in `docs/architecture/ARCHITECTURE_GOVERNANCE.md` under `Current executable governance inventory`.
-5. Include a table: check name, owner, command, source files read, failure mode, and current coverage.
-
-### Validation
-
-- A governance script must never silently pass on unreadable config.
-- Every script must return non-zero on violation.
-- Every script must produce actionable, grouped output.
-
----
-
-## 1.2 Add `docs/architecture/DOMAIN_WORKSTREAM_MAP.md`
-
-### Tasks
-
-1. Commit the approved domain map into the repo.
-2. Include all 17 domains:
-   - Platform Coherence & Governance
-   - Product Development Kernel / Lifecycle
-   - Toolchain Adapter & Execution Runtime
-   - Artifact, Supply Chain & Provenance
-   - Deployment, Environment, Release & Promotion
-   - Data Cloud Runtime Truth & Data Fabric
-   - AEP / Agent Runtime Governance
-   - Semantic Artifact Intelligence / Compiler-Decompiler
-   - Canvas, Diagramming & Multilevel Visual Context
-   - UI Builder, Page Builder & Preview Protocol
-   - Design System, Tokens, Registry & Generator
-   - Ghatana Studio / Unified Product Experience
-   - Product Domain Packs & Product-Specific Workflows
-   - Event, Streaming & Operational Graph
-   - Security, Privacy, Identity, Policy & Compliance
-   - Observability, Health & Operations
-   - Testing, Verification & Quality Gates
-3. For each domain include:
-   - exact focus
-   - owner
-   - primary repo locations
-   - secondary consumers
-   - allowed responsibilities
-   - forbidden responsibilities
-   - current-state classification
-   - validation command list
-   - product/package associations
-4. Add a `Current-state classification vocabulary` section with only:
+1. Confirm `docs/architecture/DOMAIN_WORKSTREAM_MAP.md` exists.
+2. Ensure it lists all 17 domains.
+3. Ensure each domain entry has:
    ```text
-   existing-and-executable
-   existing-but-partial
-   declared-only
-   target-architecture
-   anti-pattern
+   id, name, ownerLayer, classification, primaryLocations, secondaryLocations,
+   sourceOfTruth, allowedConsumers, forbiddenDependencies, requiredChecks,
+   independentExecutionChecks, fullRegressionChecks, productAssociations,
+   boundaryPolicy, phase, journey, exitCriteria, blockingGaps, evidenceRequired
    ```
-5. Do not describe Phase 3–5 targets as complete unless executable code and tests prove them.
+4. Classify each domain as exactly one of:
+   ```text
+   existing-executable, existing-partial, declared-only, target-architecture, anti-pattern
+   ```
+5. Add explicit pilot association:
+   ```text
+   product-development-kernel-lifecycle -> digital-marketing, phr
+   product-domain-packs -> digital-marketing, phr, finance, flashit
+   security-privacy-policy -> phr, digital-marketing
+   observability-health -> phr, digital-marketing
+   ```
 
 ### Validation
 
-`check-doc-current-state-claims.mjs` must fail if any domain lacks a status or makes an unqualified target-state claim.
-
----
-
-## 1.3 Add `config/domain-registry.json`
-
-### Required schema
-
-Each domain entry must include:
-
-```json
-{
-  "id": "platform-coherence-governance",
-  "name": "Platform Coherence & Governance",
-  "owner": "platform",
-  "status": "existing-but-partial",
-  "primaryLocations": [],
-  "secondaryConsumers": [],
-  "allowedResponsibilities": [],
-  "forbiddenResponsibilities": [],
-  "validationChecks": [],
-  "currentStateEvidence": [],
-  "scopeBoundary": {
-    "canImportFrom": [],
-    "mustNotImportFrom": [],
-    "productSpecificLogicAllowed": false
-  }
-}
+```bash
+node scripts/validate-domain-registry.mjs
+node scripts/check-doc-authority.mjs
+node scripts/check-current-state-claims.mjs
 ```
 
-### Tasks
-
-1. Add all 17 domains.
-2. Map each domain to current repo locations:
-   - Governance: `.github/copilot-instructions.md`, `config/canonical-product-registry.json`, `settings.gradle.kts`, `pnpm-workspace.yaml`, `platform/typescript/LIBRARY_GOVERNANCE.md`
-   - Kernel: `platform/typescript/kernel-*`, `platform-kernel/*`, `products/*/kernel-product.yaml`
-   - Toolchains: `platform/typescript/kernel-toolchains`, `platform/java/tool-runtime`, `platform/java/workflow`
-   - Artifacts: `platform/typescript/kernel-artifacts`
-   - Deployment/release: `platform/typescript/kernel-deployment`, `platform/typescript/kernel-release`
-   - Data Cloud: `products/data-cloud/planes/*`, `products/data-cloud/extensions/kernel-bridge`
-   - AEP/agents: `products/data-cloud/planes/action/*`, `platform/java/agent-core`, `platform/java/ai-integration`
-   - YAPPC artifact intelligence: `products/yappc/core/*`, `products/yappc/kernel-bridge`
-   - Canvas: `platform/typescript/canvas`
-   - UI Builder: `platform/typescript/ui-builder`
-   - Design system: `platform/typescript/design-system`, `tokens`, `theme`, `ds-schema`, `ds-registry`, `ds-generator`
-   - Studio: `platform/typescript/ghatana-studio`
-   - Products: `products/*`
-   - Events: `platform/typescript/events`, `platform/typescript/platform-events`, `platform/java/messaging`, `products/data-cloud/planes/event/*`
-   - Security/privacy/policy: `platform/java/security`, `identity`, `governance`, `audit`, `policy-as-code`, `data-governance`, `platform-plugins/*`
-   - Observability: `platform/java/observability`, `platform-plugins/core-observability`, `products/data-cloud/planes/action/observability`
-   - Testing: `platform/java/testing`, `platform/typescript/testing`, `platform-kernel/kernel-testing`, `integration-tests/*`
-3. Add `targetCommitBaseline: "5f4a216711606c09d164247ce011b8b06b767bcd"`.
-4. Add current-state evidence refs for each domain.
-
-### Validation
-
-`check-domain-registry.mjs` must fail when:
-
-- a domain lacks status
-- a domain uses a non-vocabulary status
-- a primary location does not exist
-- a platform domain claims product-specific behavior
-- a product domain claims shared platform ownership
-- a domain claims `existing-and-executable` without validation checks
-
----
-
-## 1.4 Add product registry consistency check
-
-### File
+### Tests to add
 
 ```text
-scripts/governance/check-product-registry-consistency.mjs
+scripts/__tests__/validate-domain-registry.test.mjs
+scripts/__tests__/check-doc-authority.test.mjs
+scripts/__tests__/check-current-state-claims.test.mjs
 ```
 
-### Inputs
+Minimum assertions:
+
+```text
+- rejects unknown classification
+- rejects missing sourceOfTruth
+- rejects non-existing primary location unless target-architecture
+- accepts Digital Marketing and PHR as opening pilots
+- rejects product runtime ownership inside Platform Coherence & Governance
+```
+
+---
+
+## Task 1.2 Validate product registry against generated includes
+
+### Files
 
 ```text
 config/canonical-product-registry.json
 config/generated/settings-gradle-includes.kts
-settings.gradle.kts
 pnpm-workspace.yaml
-products/*/kernel-product.yaml
-products/*/domain-pack-manifest.*
+scripts/generate-product-registry-artifacts.mjs
+scripts/validate-product-registry.mjs
+scripts/check-product-generated-includes.mjs
 ```
 
-### Required checks
+### Steps
 
-1. Every `gradleModules` entry in the product registry appears in generated Gradle includes.
-2. `settings.gradle.kts` applies `config/generated/settings-gradle-includes.kts`.
-3. Generated Gradle includes file contains `DO NOT EDIT MANUALLY`.
-4. Every product `pnpmPackages` entry appears in `pnpm-workspace.yaml` or is intentionally represented by a glob.
-5. Every `lifecycleConfigPath` exists.
-6. Every non-null `manifestPath` exists.
-7. Every null `manifestPath` has a documented manifest exemption.
-8. Every enabled lifecycle product must have:
-   - `lifecycle.enabled: true`
-   - `lifecycleExecutionAllowed: true`
-   - non-empty surfaces
-   - phase toolchains
-   - artifact declarations
-   - deployment declarations if deploy/verify phases are present
-9. Every disabled lifecycle product must have:
-   - reason codes
-   - required gates
-   - next required work
-   - evidence refs
-10. Platform-provider products must not be enabled as ordinary lifecycle products without bootstrap/provider gates.
-11. Digital Marketing remains the only enabled lifecycle pilot unless another product has full proof.
-12. PHR, Finance, FlashIt, Data Cloud, and YAPPC must remain disabled until their blockers are actually resolved.
+1. Validate every product Gradle module in the registry is present in `config/generated/settings-gradle-includes.kts`.
+2. Validate every product pnpm package is present in `pnpm-workspace.yaml`.
+3. For lifecycle-enabled products, enforce:
+   ```text
+   lifecycleStatus = enabled
+   lifecycle.enabled = true
+   lifecycleExecutionAllowed = true
+   lifecycleConfigPath exists
+   surfaces exist
+   toolchain adapters exist
+   artifacts exist
+   deployment targets exist
+   environments exist
+   ```
+4. For lifecycle-disabled products, enforce:
+   ```text
+   lifecycleExecutionAllowed = false
+   reasonCodes exist
+   requiredGates exist where applicable
+   nextRequiredWork exists
+   evidenceRefs exist
+   no safe-by-default use of partial adapters
+   ```
 
-### Tests
+### Validation
 
-Add fixtures for:
+```bash
+node scripts/generate-product-registry-artifacts.mjs --check
+node scripts/validate-product-registry.mjs
+node scripts/check-product-generated-includes.mjs
+```
 
-- valid Digital Marketing enabled product
-- enabled product missing artifact
-- disabled product missing reason codes
-- platform-provider incorrectly enabled
-- missing generated Gradle include
-- missing pnpm workspace package
-- missing lifecycle config path
-- null manifest without exemption
+### Tests to add
+
+```text
+- PHR backend-api/web surfaces validate.
+- Digital Marketing backend-api/web surfaces validate.
+- Finance remains lifecycleExecutionAllowed=false.
+- FlashIt remains lifecycleExecutionAllowed=false.
+- Data Cloud and YAPPC are platform-provider products.
+- Generated Gradle includes match registry modules.
+- pnpm workspace includes match registry pnpm packages.
+```
 
 ---
 
-## 1.5 Add package governance check
+## Task 1.3 Split lifecycle pilot checks
 
-### File
+### Files
 
 ```text
-scripts/governance/check-package-governance.mjs
+scripts/check-opening-lifecycle-pilots.mjs
+scripts/check-digital-marketing-lifecycle-pilot.mjs
+scripts/check-phr-lifecycle-pilot.mjs
+scripts/check-kernel-platform-lifecycle.mjs
 ```
 
-### Required checks
+### Steps
 
-1. Every platform TS package has `package.json`, `README.md`, `tsconfig.json`, `src/index.ts`, and build/typecheck/test scripts when applicable.
-2. All platform package names use `@ghatana/*`.
-3. No deprecated package names are referenced:
+1. Add `scripts/check-opening-lifecycle-pilots.mjs`.
+2. Move global enabled-product logic into that script.
+3. Update `scripts/check-digital-marketing-lifecycle-pilot.mjs` so it validates only Digital Marketing-specific requirements.
+4. Add `scripts/check-phr-lifecycle-pilot.mjs`.
+5. Update `scripts/check-kernel-platform-lifecycle.mjs` to call all three.
+
+### `check-opening-lifecycle-pilots.mjs` must validate
+
+```text
+- enabled lifecycle products exactly equal [digital-marketing, phr]
+- both have lifecycleExecutionAllowed=true
+- both have valid kernel-product.yaml
+- both can plan dev, validate, test, build, package, deploy, verify
+- Finance and FlashIt fail closed by default
+- Data Cloud and YAPPC are not treated as ordinary lifecycle products
+```
+
+### `check-digital-marketing-lifecycle-pilot.mjs` must validate
+
+```text
+- lifecycleStatus enabled
+- lifecycleExecutionAllowed true
+- metadata.pilot true
+- standard-web-api-product profile
+- backend-api surface with gradle-java-service adapter
+- web surface with pnpm-vite-react adapter
+- bridge adapter evidence exists
+- required manifests by phase exist
+- package phase uses container artifacts
+- deploy phase uses compose-local
+- health endpoints are declared
+- env example has no unsafe secrets
+- gates include bridge, consent boundary, data minimization, typecheck, a11y, i18n, bundle budget
+```
+
+### `check-phr-lifecycle-pilot.mjs` must validate
+
+```text
+- lifecycleStatus enabled
+- lifecycleExecutionAllowed true
+- status/executionEnabled true in products/phr/kernel-product.yaml
+- backend-api surface with gradle-java-service adapter
+- web surface with pnpm-vite-react adapter
+- required healthcare gates:
+  consent
+  pii-classification
+  audit-evidence
+  fhir-contract-validation
+  tenant-data-sovereignty
+- gate pack files exist
+- readiness evidence exists
+- schema registry exists
+- local compose target exists
+- health endpoints are declared
+- required build/deploy manifests are declared
+- no PHR domain code appears in platform Kernel packages
+```
+
+### Validation
+
+```bash
+node scripts/check-opening-lifecycle-pilots.mjs
+node scripts/check-digital-marketing-lifecycle-pilot.mjs
+node scripts/check-phr-lifecycle-pilot.mjs
+node scripts/check-kernel-platform-lifecycle.mjs
+```
+
+---
+
+## Task 1.4 Boundary, duplication, and package governance
+
+### Files
+
+```text
+scripts/check-domain-boundaries.mjs
+scripts/check-deprecated-imports.mjs
+scripts/check-package-registry.mjs
+scripts/check-duplicate-platform-capabilities.mjs
+config/duplication-exception-registry.json
+platform/typescript/.dependency-cruiser.cjs
+```
+
+### Steps
+
+1. Fail platform packages importing `products/**`.
+2. Fail Kernel packages importing YAPPC or Data Cloud internals.
+3. Fail product-local generic lifecycle runners.
+4. Fail product-local generic gate engines.
+5. Fail duplicate artifact/deployment/health schemas.
+6. Fail deprecated imports:
    ```text
    @ghatana/ui
    @ghatana/utils
    @ghatana/accessibility-audit
-   @ghatana/audit-components
    @ghatana/canvas-core
    @ghatana/canvas-react
    @ghatana/canvas-plugins
    @ghatana/canvas-tools
    @ghatana/canvas-chrome
-   @ghatana/dcmaar-*
-   @ghatana/yappc-*
    ```
-4. Platform packages must not import `products/*`.
-5. Product packages must not import platform package internals through `platform/typescript/*/src/*`.
-6. `@ghatana/sso-client` main barrel must not import Fastify/Express.
-7. Canvas consumers must use `@ghatana/canvas` public exports/subpaths.
-8. Orphan platform folders without package metadata must fail unless explicitly excluded.
-
-### Tests
-
-Use fixtures for active package, deprecated import, orphan folder, platform-to-product import, product-to-platform-internal import, and valid public package import.
-
----
-
-## 1.6 Add boundary check
-
-### File
-
-```text
-scripts/governance/check-boundaries.mjs
-```
-
-### Required checks
-
-1. `platform/` must not contain product-named implementation code outside docs/config/explicit bridge metadata.
-2. `platform/typescript/kernel-*` must not import `products/*` internals.
-3. `products/yappc/**` must not directly mutate `config/canonical-product-registry.json` or generated includes; it may emit `ProductUnitIntent` through contracts.
-4. `products/data-cloud/**` must not import business-product internals from Digital Marketing, Finance, PHR, or FlashIt.
-5. Products must not implement generic lifecycle executors.
-6. Products must not define duplicate lifecycle artifact/deployment/release manifest schemas when Kernel has canonical schemas.
-7. `shared-services/*` must not import business-product internals.
-8. `platform/typescript/ghatana-studio` must not import `products/*` internals.
-
-### Implementation shape
-
-Implement reusable helpers:
-
-```text
-loadFileList()
-classifyPath()
-readTextFiles()
-findForbiddenImports()
-findForbiddenPathReferences()
-renderViolationReport()
-```
-
-Start with reliable text scanning. Keep structure ready for AST-based enforcement later.
-
----
-
-## 1.7 Add current-state vs target-state doc check
-
-### File
-
-```text
-scripts/governance/check-doc-current-state-claims.mjs
-```
-
-### Required checks
-
-1. Scan canonical docs and product docs.
-2. Flag risky unqualified claims:
+7. Add duplication exception registry with:
    ```text
-   production-ready
-   fully implemented
-   executable
-   enabled
-   validated
-   complete
-   supports
-   guarantees
+   id, owner, category, affectedPaths, reason, severity, expiryDate, removalPlan, validationCheck
    ```
-3. Require nearby status or evidence:
-   ```text
-   existing-and-executable
-   existing-but-partial
-   declared-only
-   target-architecture
-   anti-pattern
-   ```
-4. Fail when platform-provider products are described as lifecycle-enabled without registry evidence.
-5. Allow examples/templates only when explicitly labeled as examples/templates.
 
-### Tests
+### Validation
 
-- target claim without status fails
-- target architecture claim with explicit status passes
-- Digital Marketing lifecycle enabled claim with registry evidence passes
-- Data Cloud runtime truth complete claim without evidence fails
+```bash
+node scripts/check-domain-boundaries.mjs
+node scripts/check-deprecated-imports.mjs
+node scripts/check-package-registry.mjs
+node scripts/check-duplicate-platform-capabilities.mjs
+```
 
 ---
 
-## 1.8 Add duplication exception registry
+## Task 1.5 CI integration
+
+### Steps
+
+Add a governance CI job for changes under:
+
+```text
+config/**
+docs/**
+scripts/**
+platform/**
+products/**
+settings.gradle.kts
+pnpm-workspace.yaml
+```
+
+Run:
+
+```bash
+pnpm install --frozen-lockfile
+node scripts/validate-domain-registry.mjs
+node scripts/validate-product-registry.mjs
+node scripts/check-product-generated-includes.mjs
+node scripts/check-doc-authority.mjs
+node scripts/check-current-state-claims.mjs
+node scripts/check-domain-boundaries.mjs
+node scripts/check-deprecated-imports.mjs
+node scripts/check-opening-lifecycle-pilots.mjs
+```
+
+---
+
+# Phase 2 — Stabilize Kernel lifecycle foundation
+
+## Objective
+
+Make Product Development Kernel executable, deterministic, contract-backed, observable, and safe for both opening pilots.
+
+## Exit criteria
+
+```text
+- Kernel contracts cover ProductUnit, lifecycle, gates, artifacts, deployments, health, events, approvals, and agentic actions.
+- Kernel lifecycle validates registry/config/manifests before execution.
+- Digital Marketing and PHR can plan and dry-run dev, validate, test, build, package, deploy, verify.
+- Disabled products fail closed.
+- Required manifests are produced or execution fails.
+- Gate failures are structured.
+- Correlation IDs are propagated.
+- No product-specific implementation code exists inside Kernel packages.
+```
+
+---
+
+## Task 2.1 Harden `@ghatana/kernel-product-contracts`
 
 ### Files
 
 ```text
-config/duplication-exceptions.json
-config/duplication-exceptions.schema.json
-scripts/governance/check-duplication-exceptions.mjs
+platform/typescript/kernel-product-contracts/src/**
+platform/typescript/kernel-product-contracts/README.md
+```
+
+### Add/harden schemas
+
+```text
+ProductUnit
+ProductUnitSurface
+ProductUnitKind
+ProductUnitIntent
+LifecyclePhase
+LifecyclePlan
+LifecyclePlanStep
+LifecycleExecutionContext
+LifecycleResult
+LifecycleStepResult
+LifecycleFailure
+LifecycleEvent
+GateDefinition
+GateResult
+GateResultManifest
+ArtifactReference
+DeploymentReference
+EnvironmentReference
+HealthSnapshot
+ApprovalRequirement
+AgentLifecycleActionRequest
+SemanticArtifactReference
 ```
 
 ### Required fields
 
-```json
-{
-  "id": "string",
-  "severity": "P0|P1|P2",
-  "owner": "string",
-  "duplicateKind": "lifecycle|gate|health|artifact|deployment|agent|policy|auth|observability|api-client|dto|ui-shell|state|design-token|build-script|test-fixture|doc",
-  "locations": [],
-  "reason": "string",
-  "expiryDate": "YYYY-MM-DD",
-  "removalPlan": "string",
-  "validationCheck": "string"
-}
+Execution-related contracts must include:
+
+```text
+schemaVersion
+productUnitId
+phase
+runId
+correlationId
+sourceRef
+createdAt/emittedAt
+status
+reasonCode
+actionableMessage
+evidenceRefs
+diagnostics
+```
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/kernel-product-contracts typecheck
+pnpm --dir platform/typescript/kernel-product-contracts test
+pnpm --dir platform/typescript/kernel-product-contracts build
+```
+
+### Tests
+
+```text
+- Digital Marketing fixture parses.
+- PHR fixture parses.
+- Finance disabled fixture parses but is not executable.
+- invalid lifecycle phase fails.
+- missing productUnitId fails.
+- high-risk AgentLifecycleActionRequest requires approval metadata.
+```
+
+---
+
+## Task 2.2 Harden lifecycle planning
+
+### Files
+
+```text
+platform/typescript/kernel-lifecycle/src/**
+scripts/kernel-product.mjs
+products/digital-marketing/kernel-product.yaml
+products/phr/kernel-product.yaml
+```
+
+### Plan validation must check
+
+```text
+product exists
+execution allowed
+phase is valid
+phase exists in manifest
+surfaces exist
+adapters exist
+gates exist
+required manifests exist
+default environment exists for deploy/verify/promote/rollback
+```
+
+### Plan output must include
+
+```text
+productUnitId
+phase
+surfaces
+environment
+mode
+ordered steps
+adapter ids
+gates
+requiredManifests
+expectedArtifacts
+health checks
+approval requirements
+correlationId
+warnings
+blockingReasons
+```
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/kernel-lifecycle typecheck
+pnpm --dir platform/typescript/kernel-lifecycle test
+node scripts/kernel-product.mjs product plan digital-marketing validate --json
+node scripts/kernel-product.mjs product plan phr validate --json
+node scripts/kernel-product.mjs product plan finance validate --json
+```
+
+Expected: Finance fails closed unless explicit shape-validation mode exists.
+
+---
+
+## Task 2.3 Harden lifecycle execution and result collection
+
+### Files
+
+```text
+platform/typescript/kernel-lifecycle/src/service/**
+platform/typescript/kernel-lifecycle/src/execution/**
+platform/typescript/kernel-lifecycle/src/result/**
+platform/typescript/kernel-lifecycle/src/events/**
+```
+
+### Execution rules
+
+```text
+- execution is plan-driven
+- each step produces LifecycleStepResult
+- failures stop downstream risky phases
+- missing required manifest fails execution
+- every run has correlationId
+- every run records sourceRef
+- no success is inferred from unstructured logs alone
+```
+
+### Required output files by phase where applicable
+
+```text
+lifecycle-plan.json
+lifecycle-result.json
+gate-result-manifest.json
+artifact-manifest.json
+deployment-manifest.json
+verify-health-report.json
+rollback-manifest.json
+lifecycle-health-snapshot.json
+lifecycle-events.json
+```
+
+### Validation
+
+```bash
+node scripts/kernel-product.mjs product validate digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/validate
+node scripts/kernel-product.mjs product validate phr --dry-run --json --output-dir .kernel-runs/phr/validate
+node scripts/check-lifecycle-result-manifests.mjs .kernel-runs/digital-marketing/validate
+node scripts/check-lifecycle-result-manifests.mjs .kernel-runs/phr/validate
+```
+
+---
+
+## Task 2.4 Harden toolchain adapters
+
+### Files
+
+```text
+platform/typescript/kernel-toolchains/src/**
+config/command-registry-manifest.json
+scripts/check-toolchain-adapter-contracts.mjs
+```
+
+### Adapter metadata must include
+
+```text
+adapterId
+supportedPhases
+supportedSurfaceTypes
+safeForDefault
+requiresApproval
+expectedOutputs
+timeout
+retryPolicy
+environmentPolicy
+outputValidation
+tests
+```
+
+### Initial production-safe adapters
+
+```text
+gradle-java-service
+pnpm-vite-react
+compose-local
+```
+
+### Not safe by default until proven
+
+```text
+xcode-ios
+gradle-android
+kubernetes
+helm
+terraform
+```
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/kernel-toolchains typecheck
+pnpm --dir platform/typescript/kernel-toolchains test
+node scripts/check-toolchain-adapter-contracts.mjs
+node scripts/check-toolchain-adapter-registry-schema.mjs
+```
+
+---
+
+## Task 2.5 Gate provider and gate result manifests
+
+### Files
+
+```text
+platform/typescript/kernel-product-contracts/src/gates/**
+platform/typescript/kernel-lifecycle/src/gates/**
+platform-plugins/plugin-consent
+platform-plugins/plugin-compliance
+platform-plugins/plugin-audit-trail
+platform-plugins/core-observability
+products/phr/lifecycle/gate-packs/**
+products/digital-marketing/kernel-product.yaml
+```
+
+### Implement generic contracts
+
+```text
+GateProvider
+GateExecutionRequest
+GateExecutionResult
+GateResultManifest
+```
+
+### Required initial providers/configurations
+
+```text
+registry-validation
+manifest-validation
+lifecycle-contract-validation
+bridge-compliance
+consent
+pii-classification
+audit-evidence
+fhir-contract-validation
+tenant-data-sovereignty
+marketing-consent-boundary
+non-regulated-customer-data-minimization
+unit-test-coverage
+integration-test-coverage
+contract-test-coverage
+```
+
+### Validation
+
+```bash
+node scripts/check-gate-result-manifest-completeness.mjs
+node scripts/check-phr-lifecycle-pilot.mjs
+node scripts/check-digital-marketing-lifecycle-pilot.mjs
+```
+
+---
+
+## Task 2.6 UI-facing lifecycle summaries
+
+### Files
+
+```text
+platform/typescript/kernel-product-contracts/src/ui-summary/**
+platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts
+platform/typescript/ghatana-studio/src/sections/**
+```
+
+### Add contracts
+
+```text
+LifecycleRunSummary
+LifecycleGateSummary
+LifecycleArtifactSummary
+LifecycleDeploymentSummary
+LifecycleHealthSummary
+```
+
+### Rule
+
+Studio must consume summaries and public lifecycle truth only. It must not parse stdout, private logs, or product implementation files.
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/ghatana-studio type-check
+pnpm --dir platform/typescript/ghatana-studio test
+pnpm --dir platform/typescript/ghatana-studio test:e2e
+```
+
+---
+
+# Phase 3 — Stabilize shared UI/intelligence primitives
+
+## Objective
+
+Harden shared primitives used by Studio, YAPPC, Kernel, Data Cloud, Digital Marketing, and PHR without making shared packages product-specific.
+
+## Exit criteria
+
+```text
+- @ghatana/canvas public API is stable and product-neutral.
+- @ghatana/ui-builder BuilderDocument v1 and preview protocol are stable.
+- @ghatana/ds-schema and @ghatana/ds-registry are authoritative.
+- @ghatana/ds-generator is ready for token, docs, examples, and builder binding generation.
+- YAPPC Java BuilderDocument schema aligns with TypeScript schema.
+- Studio uses shared lifecycle/gate/artifact/health summaries.
+- PHR and Digital Marketing use canonical design-system patterns where appropriate.
+```
+
+## Task 3.1 Canvas hardening ✅ COMPLETE (2026-05-26)
+
+### Files
+
+```text
+platform/typescript/canvas/package.json
+platform/typescript/canvas/src/public/index.ts
+platform/typescript/canvas/src/types/**
+platform/typescript/canvas/src/plugins/**
+platform/typescript/canvas/src/hybrid/**
+platform/typescript/canvas/src/telemetry/**
+```
+
+### Steps
+
+1. Keep `src/public/index.ts` as the public API boundary.
+2. Add import boundary tests to prevent products importing internal source paths.
+3. Add semantic zoom types:
+   ```text
+   SemanticZoomLevel
+   ContextShiftPolicy
+   FocusPath
+   DetailLevel
+   ```
+4. Add diagram presets:
+   ```text
+   lifecycle-plan, dependency-graph, topology, provenance-graph, gate-flow
+   ```
+5. Add keyboard graph navigation tests.
+6. Add performance fixture for large lifecycle graphs.
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/canvas type-check
+pnpm --dir platform/typescript/canvas test
+pnpm --dir platform/typescript/canvas build
+```
+
+---
+
+## Task 3.2 UI Builder hardening
+
+### Files
+
+```text
+platform/typescript/ui-builder/src/**
+platform/typescript/ui-builder/src/schema/builder-document-v1.schema.json
+products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/api/BuilderDocumentSchema.java
+platform/typescript/testing/src/builder-preview.ts
+```
+
+### Steps
+
+1. Make BuilderDocument v1 explicit.
+2. Export JSON schema.
+3. Add migrations for schema versions.
+4. Align Java and TypeScript schema.
+5. Add preview protocol:
+   ```text
+   PreviewRequest
+   PreviewResult
+   PreviewSecurityDecision
+   PreviewDiagnostics
+   PreviewArtifactReference
+   ```
+6. Add codegen golden tests.
+7. Add import/export validation.
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/ui-builder type-check
+pnpm --dir platform/typescript/ui-builder test
+pnpm --dir platform/typescript/ui-builder build
+./gradlew :products:yappc:core:yappc-services:test
+```
+
+---
+
+## Task 3.3 Design system, registry, and generator
+
+### Files
+
+```text
+platform/typescript/ds-schema
+platform/typescript/ds-registry
+platform/typescript/ds-generator
+platform/typescript/design-system
+platform/typescript/tokens
+platform/typescript/theme
+platform/typescript/domain-components
+platform/typescript/accessibility
+```
+
+### Steps
+
+1. Make `ds-schema` authoritative for component metadata.
+2. Make `ds-registry` authoritative for builder-visible components.
+3. Extend `ds-generator` toward:
+   ```text
+   token output
+   component docs
+   examples
+   builder bindings
+   a11y metadata
+   i18n metadata
+   test scaffold
+   ```
+4. Create reusable lifecycle/status components only after two consumers exist:
+   ```text
+   LifecycleStatusBadge
+   GateResultPanel
+   ArtifactSummaryCard
+   DeploymentHealthCard
+   ApprovalRequirementCard
+   EvidenceReferenceList
+   BlockedState
+   DegradedState
+   PrivacyWarning
+   SecurityWarning
+   ```
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/ds-schema type-check
+pnpm --dir platform/typescript/ds-registry type-check
+pnpm --dir platform/typescript/ds-generator test
+pnpm --dir platform/typescript/design-system test
+pnpm --dir platform/typescript/accessibility test
+```
+
+---
+
+## Task 3.4 Ghatana Studio pilot lifecycle UI
+
+### Files
+
+```text
+platform/typescript/ghatana-studio/src/**
+```
+
+### Steps
+
+1. Add opening pilot selector:
+   ```text
+   Digital Marketing
+   PHR
+   ```
+2. Add lifecycle views:
+   ```text
+   plan
+   run result
+   gate result
+   artifact manifest
+   deployment manifest
+   health snapshot
+   approval requirements
+   failure diagnostics
+   ```
+3. Add route ownership:
+   ```text
+   Develop/Lifecycle/Artifacts/Deployments = Kernel
+   Health = composed Kernel + Data Cloud + product truth
+   Ideas/Blueprints/Canvas/Learn = YAPPC
+   ```
+4. Add empty/loading/error/degraded/blocked states.
+5. Add a11y and keyboard tests.
+
+### Validation
+
+```bash
+pnpm --dir platform/typescript/ghatana-studio type-check
+pnpm --dir platform/typescript/ghatana-studio lint
+pnpm --dir platform/typescript/ghatana-studio test
+pnpm --dir platform/typescript/ghatana-studio test:a11y
+pnpm --dir platform/typescript/ghatana-studio test:e2e
+```
+
+---
+
+# Phase 4 — Wire runtime truth and provenance
+
+## Objective
+
+Make lifecycle truth durable, queryable, provenance-backed, and visualizable while preserving Kernel bootstrap mode.
+
+## Exit criteria
+
+```text
+- Kernel can run in bootstrap mode without Data Cloud.
+- Provider interfaces exist for event, artifact, health, provenance, telemetry, policy evidence, memory, knowledge, runtime truth.
+- Data Cloud-backed implementations live under products/data-cloud/*/kernel-bridge only.
+- Lifecycle events, artifact references, health snapshots, and gate evidence can be stored.
+- Studio can show lifecycle truth without log parsing.
+- Agent actions have evidence and provenance references.
+```
+
+## Task 4.1 Provider interfaces
+
+### Files
+
+```text
+platform/typescript/kernel-product-contracts/src/providers/**
+platform/typescript/kernel-providers/src/**
+products/data-cloud/extensions/kernel-bridge/**
+products/data-cloud/planes/action/kernel-bridge/**
+```
+
+### Contracts
+
+```text
+EventProvider
+ArtifactProvider
+HealthProvider
+ProvenanceProvider
+TelemetryProvider
+PolicyEvidenceProvider
+RuntimeTruthProvider
+MemoryProvider
+KnowledgeProvider
 ```
 
 ### Rules
 
-- Empty registry is valid.
-- High-risk truth duplication must be P0: lifecycle, gate, artifact, deployment, release, health, security, privacy, policy, authorization, observability.
-- Expired exception fails.
-- Missing owner/removal plan/validation check fails.
-- High-risk duplicate marked P2 fails.
-
----
-
-## 1.9 Wire governance checks
-
-### Tasks
-
-1. Inspect root `package.json` before editing.
-2. If root scripts exist, add:
-   ```json
-   {
-     "check:governance": "node scripts/governance/run-governance-checks.mjs",
-     "check:domain-registry": "node scripts/governance/check-domain-registry.mjs",
-     "check:product-registry": "node scripts/governance/check-product-registry-consistency.mjs",
-     "check:package-governance": "node scripts/governance/check-package-governance.mjs",
-     "check:boundaries": "node scripts/governance/check-boundaries.mjs",
-     "check:doc-claims": "node scripts/governance/check-doc-current-state-claims.mjs",
-     "check:duplication-exceptions": "node scripts/governance/check-duplication-exceptions.mjs"
-   }
-   ```
-3. If equivalent scripts already exist, extend them.
-4. If no root package script convention exists, document commands in `ARCHITECTURE_GOVERNANCE.md` and wire CI later.
-
-### Phase 1 validation
-
-```bash
-node scripts/governance/run-governance-checks.mjs
-node scripts/governance/check-domain-registry.mjs
-node scripts/governance/check-product-registry-consistency.mjs
-node scripts/governance/check-package-governance.mjs
-node scripts/governance/check-boundaries.mjs
-node scripts/governance/check-doc-current-state-claims.mjs
-node scripts/governance/check-duplication-exceptions.mjs
-pnpm install --frozen-lockfile
-pnpm -r --if-present typecheck
-pnpm -r --if-present test
-./gradlew help
-./gradlew projects
-```
-
----
-
-# Phase 2 — Stabilize Kernel Lifecycle Foundation
-
-## Phase 2 objective
-
-Make Product Development Kernel contracts, lifecycle planning/execution schemas, adapter capability models, manifest references, and Digital Marketing pilot validation typed, deterministic, fail-closed, observable, and tested.
-
----
-
-## 2.1 Baseline Kernel scan
-
-### Tasks
-
-```bash
-find platform/typescript/kernel-product-contracts -maxdepth 5 -type f | sort
-find platform/typescript/kernel-lifecycle -maxdepth 5 -type f | sort
-find platform/typescript/kernel-providers -maxdepth 5 -type f | sort
-find platform/typescript/kernel-toolchains -maxdepth 5 -type f | sort
-find platform/typescript/kernel-artifacts -maxdepth 5 -type f | sort
-find platform/typescript/kernel-deployment -maxdepth 5 -type f | sort
-find platform/typescript/kernel-release -maxdepth 5 -type f | sort
-find platform-kernel -maxdepth 6 -type f | sort
-git grep -n "ProductUnit\|ProductUnitIntent\|LifecyclePlan\|LifecycleResult\|GateResult\|ArtifactManifest\|DeploymentManifest\|ReleaseManifest" -- platform/typescript platform-kernel products/digital-marketing
-```
-
-Classify each surface as existing executable, partial, declared-only, target, or anti-pattern. Commit durable status only if useful in `docs/architecture/KERNEL_LIFECYCLE_FOUNDATION_STATUS.md`.
-
----
-
-## 2.2 Harden `@ghatana/kernel-product-contracts`
-
-### Target files
-
 ```text
-platform/typescript/kernel-product-contracts/src/**
-platform/typescript/kernel-product-contracts/src/__tests__/**
-platform/typescript/kernel-product-contracts/README.md
+platform owns interface
+platform may own bootstrap/file implementation
+Data Cloud owns Data Cloud-backed implementation
+Kernel must not import Data Cloud plane internals
+provider failures must be visible and fail-safe
 ```
-
-### Required contracts
-
-Add or harden schemas/types/parser functions for:
-
-- `ProductUnit`, `ProductUnitId`, `ProductUnitKind`, `ProductUnitSurface`, `ProductUnitIntent`, `ProductUnitIntentValidationResult`
-- `LifecyclePhase`, `LifecycleProfile`, `LifecyclePlan`, `LifecyclePlanStep`, `LifecycleExecutionRequest`, `LifecycleExecutionResult`, `LifecycleStepResult`, `LifecycleRunStatus`, `LifecycleRunId`
-- `GateDefinition`, `GateExecutionRequest`, `GateExecutionResult`, `GateResultManifest`, `GateFailureReason`, `RequiredGateReference`
-- `LifecycleArtifactReference`, `ArtifactManifestReference`, `ArtifactFingerprint`, `ArtifactDigest`
-- `DeploymentReference`, `DeploymentManifestReference`, `EnvironmentReference`, `VerifyHealthReportReference`, `RollbackManifestReference`
-- `LifecycleEvent`, `LifecycleEventType`, `LifecycleEventEnvelope`, `LifecycleCorrelationId`
-- `AgentLifecycleActionRequest`, `AgentLifecycleActionRisk`, `AgentLifecycleActionApprovalRequirement`, `AgentLifecycleActionEvidence`
-- `SemanticArtifactReference`, `ArtifactGraphSummaryReference`, `ProductShapeEvidenceReference`, `ResidualIslandReportReference`, `RiskHotspotReportReference`
-
-### Prescriptive rules
-
-- Add `schemaVersion`, `createdAt`, `runId`, and `correlationId` to persisted/external truth contracts.
-- Use discriminated unions for lifecycle status and event types.
-- Use Zod parsers for boundary validation.
-- Export parser functions such as `parseLifecyclePlan(input: unknown)`.
-- Do not import product code.
-- Do not encode product-specific gates in Kernel contracts.
-- Use shared status vocabulary: pending, running, succeeded, failed, blocked, skipped, degraded, requires-approval, requires-verification, unknown.
-
-### Tests
-
-- valid/invalid `ProductUnit`
-- valid/invalid `ProductUnitIntent`
-- Digital Marketing backend/web lifecycle plan fixture
-- invalid lifecycle plan with missing adapter
-- enabled product missing artifact -> fail
-- disabled product with reason codes -> pass
-- event preserves correlation/run IDs
-- risky agent lifecycle action requires approval
-- semantic artifact reference is a reference, not YAPPC internals
 
 ### Validation
 
 ```bash
-pnpm --filter @ghatana/kernel-product-contracts typecheck || pnpm --filter @ghatana/kernel-product-contracts type-check
-pnpm --filter @ghatana/kernel-product-contracts test
-pnpm --filter @ghatana/kernel-product-contracts build
+pnpm --dir platform/typescript/kernel-product-contracts test
+pnpm --dir platform/typescript/kernel-providers test
+./gradlew :products:data-cloud:extensions:kernel-bridge:test
+./gradlew :products:data-cloud:planes:action:kernel-bridge:test
+node scripts/check-kernel-data-cloud-boundary.mjs
 ```
 
 ---
 
-## 2.3 Validate product registry against Kernel contracts
+## Task 4.2 Lifecycle event schemas
 
-### Tasks
-
-1. Add a parser from `config/canonical-product-registry.json` entries to Kernel contract types.
-2. Validate product cases:
-   - Digital Marketing: executable lifecycle pilot
-   - PHR: disabled regulated product with consent/PII/audit/FHIR/sovereignty blockers
-   - Finance: disabled backend-heavy product with compliance/risk/promotion/multi-module blockers
-   - FlashIt: disabled mobile/API product with mobile artifact/preview/privacy blockers
-   - Data Cloud: disabled platform-provider with bootstrap/runtime-truth blockers
-   - YAPPC: disabled platform-provider with creator-lifecycle/artifact-intelligence blockers
-3. Fail when lifecycle enabled and execution disallowed are inconsistent.
-4. Fail when execution allowed lacks surfaces/toolchains/artifacts.
-5. Fail when platform-provider is enabled as ordinary lifecycle product.
-6. Preserve current blocked state unless real executable evidence exists.
-
-### Validation
-
-```bash
-node scripts/governance/check-product-registry-consistency.mjs
-pnpm --filter @ghatana/kernel-product-contracts test
-```
-
----
-
-## 2.4 Harden lifecycle result and event schemas
-
-> ✅ COMPLETE | `ProductLifecycleResult` gained 6 new phase-tracking fields (`lifecycleProfile`, `environment`, `requestedPhases`, `executedPhases`, `skippedPhases`, `blockedPhases`). `LifecycleTruthWriter` interface + `FileLifecycleTruthWriter` implementation created with canonical truth file guard. `ExecutionResultCollectionMetadata` updated; executor propagates plan fields. `ProductLifecyclePlanner.blocked.test.ts` (5 tests) verifies PHR/Finance/FlashIt remain blocked. `LifecycleTruthWriter.test.ts` (15 tests) covers all canonical file names, idempotency, serialization-error, and non-canonical rejection. 319/319 tests passing, typecheck clean.
-
-### Target files
+### Files
 
 ```text
-platform/typescript/kernel-lifecycle/src/**
-platform/typescript/kernel-product-contracts/src/lifecycle/**
+platform/typescript/platform-events
+platform/typescript/events
 platform/typescript/kernel-product-contracts/src/events/**
+platform/typescript/kernel-lifecycle/src/events/**
+products/data-cloud/planes/event/core
+products/data-cloud/planes/event/store
+products/data-cloud/planes/action/event-bridge
 ```
 
-### Tasks
-
-1. Lifecycle planning must be deterministic.
-2. Lifecycle result must include product ID, run ID, correlation ID, profile, environment, requested phases, executed phases, skipped phases, blocked phases, step timings, gate refs, artifact refs, deployment refs, health refs, and failure reason codes.
-3. Lifecycle events must include schema version, event ID, event type, product ID, run ID, phase, timestamp, source, status, reason code, correlation ID, and evidence refs.
-4. Missing adapter, missing gate provider, missing manifest writer, unknown product, disabled product, and invalid registry state must fail closed.
-5. Add or harden bootstrap lifecycle truth writer:
-   ```text
-   LifecycleTruthWriter
-   FileLifecycleTruthWriter
-   LifecycleTruthWriteResult
-   ```
-6. Truth outputs must be explicit:
-   ```text
-   lifecycle-plan.json
-   lifecycle-result.json
-   lifecycle-events.json
-   gate-result-manifest.json
-   artifact-manifest.json
-   deployment-manifest.json
-   verify-health-report.json
-   rollback-manifest.json
-   lifecycle-health-snapshot.json
-   ```
-
-### Tests
-
-- deterministic plan ordering
-- disabled product blocks execution
-- missing adapter fails closed
-- missing manifest writer blocks/fails
-- result includes correlation ID
-- event stream includes phase transitions
-- Digital Marketing plan emits backend/web steps
-- PHR/Finance/FlashIt remain blocked
-
-### Validation
-
-```bash
-pnpm --filter @ghatana/kernel-lifecycle typecheck || pnpm --filter @ghatana/kernel-lifecycle type-check
-pnpm --filter @ghatana/kernel-lifecycle test
-pnpm --filter @ghatana/kernel-lifecycle build
-```
-
----
-
-## 2.5 Harden toolchain adapter foundation
-
-### Target files
+### Event envelope
 
 ```text
-platform/typescript/kernel-toolchains/src/**
-platform/java/tool-runtime/**
-platform/java/workflow/**
+schemaVersion
+eventId
+eventType
+productUnitId
+phase
+runId
+correlationId
+sourceRef
+emittedAt
+actor
+tenant/workspace/project
+payload
+evidenceRefs
+idempotencyKey
 ```
 
-### Tasks
+### Required events
 
-1. Add or harden:
-   ```text
-   ToolchainAdapter
-   ToolchainAdapterCapability
-   ToolchainExecutionRequest
-   ToolchainExecutionResult
-   ToolchainSafetyLevel
-   ToolchainOutputContract
-   ToolchainAdapterRegistry
-   ```
-2. Adapter metadata must include adapter ID, supported phases, supported surfaces, required inputs, produced outputs, safety status, test status, implementation status, and default allowed/denied.
-3. `gradle-java-service` and `pnpm-vite-react` may be executable only when tests/output validation prove them for the product surface.
-4. `xcode-ios` and `gradle-android` remain blocked/not-ready until real mobile artifact contracts and tests exist.
-5. Planned adapters return blocked/not-ready, never fake success.
-6. Normalize command output: stdout/stderr events, exit code, duration, timeout, signal, correlation ID, redacted command.
-7. Validate expected outputs and manifests; exit code alone is insufficient.
-8. Reuse `platform/java/tool-runtime` if it already owns process supervision.
-
-### Tests
-
-- safe adapter executes only when declared safe
-- planned adapter returns blocked/not-ready
-- timeout observable
-- missing output contract fails
-- stdout/stderr captured as events
-- no product-specific commands in generic adapter
-- Digital Marketing resolves backend/web adapters
-- FlashIt mobile adapters remain blocked
+```text
+lifecycle.plan.created
+lifecycle.run.started
+lifecycle.step.started
+lifecycle.step.completed
+lifecycle.step.failed
+lifecycle.gate.completed
+lifecycle.artifact.created
+lifecycle.deployment.created
+lifecycle.health.snapshot.created
+lifecycle.run.completed
+lifecycle.run.failed
+lifecycle.approval.required
+lifecycle.rollback.ready
+```
 
 ### Validation
 
 ```bash
-pnpm --filter @ghatana/kernel-toolchains typecheck || pnpm --filter @ghatana/kernel-toolchains type-check
-pnpm --filter @ghatana/kernel-toolchains test
-pnpm --filter @ghatana/kernel-toolchains build
-./gradlew :platform:java:tool-runtime:test
+pnpm --dir platform/typescript/platform-events test
+pnpm --dir platform/typescript/events test
+pnpm --dir platform/typescript/kernel-lifecycle test
+./gradlew :products:data-cloud:planes:event:core:test
+./gradlew :products:data-cloud:planes:event:store:test
 ```
 
 ---
 
-## 2.6 Harden artifact, deployment, and release foundation references
+## Task 4.3 Artifact and deployment provenance
 
-### Target files
+### Files
 
 ```text
 platform/typescript/kernel-artifacts/src/**
 platform/typescript/kernel-deployment/src/**
-platform/typescript/kernel-release/src/**
-platform/typescript/kernel-product-contracts/src/**
+platform/typescript/kernel-lifecycle/src/**
+products/data-cloud/extensions/kernel-bridge/**
 ```
 
-### Tasks
-
-1. `kernel-artifacts` must validate build/package manifests, artifact fingerprints/digests, jvm-service artifacts, static-web-bundle artifacts, and missing required outputs.
-2. `kernel-deployment` must validate deployment plan, deployment manifest, deployment-to-artifact digest linkage, verify health report, and rollback readiness.
-3. `kernel-release` must validate release manifest, promotion plan, rollback manifest, and approval gate refs.
-4. Add cross-package tests for package artifact -> deploy manifest -> verify health report -> rollback manifest linkage.
-5. Do not implement broad cloud deployment here; keep local/compose explicit.
-
-### Validation
-
-```bash
-pnpm --filter @ghatana/kernel-artifacts test
-pnpm --filter @ghatana/kernel-deployment test
-pnpm --filter @ghatana/kernel-release test
-```
-
----
-
-## 2.7 Validate Digital Marketing as lifecycle pilot
-
-### Target files
+### Artifact manifest must include
 
 ```text
-products/digital-marketing/kernel-product.yaml
-products/digital-marketing/dm-kernel-bridge/**
-products/digital-marketing/dm-api/**
-products/digital-marketing/ui/**
-platform/typescript/kernel-lifecycle/src/__tests__/**
-platform/typescript/kernel-toolchains/src/__tests__/**
+artifactId
+artifactType
+packaging
+sourceRef
+buildRunId
+digest/fingerprint
+producedBy
+producedAt
+productUnitId
+surfaceId
+evidenceRefs
 ```
 
-### Tasks
+### Deployment manifest must include
 
-1. Confirm registry fields: lifecycle enabled, execution allowed, backend/web surfaces, Gradle/pnpm adapters, jvm/static-web artifacts, compose-local deployment, local environment.
-2. Add a Digital Marketing lifecycle fixture.
-3. Add lifecycle pilot test:
-   - load product registry entry
-   - validate ProductUnit
-   - plan lifecycle
-   - resolve adapters
-   - validate gates
-   - execute dry-run or controlled test mode
-   - produce lifecycle plan/result references
-   - produce artifact/deployment/health refs
-4. If real execution is expensive, separate:
-   - dry-run contract test
-   - execution smoke test
-5. Dry-run must never be reported as real execution success.
-6. Validate `dm-kernel-bridge` typed outputs and retry/DLQ behavior if present.
+```text
+deploymentId
+environment
+artifactRefs
+artifactDigests
+sourceRef
+deployedBy
+deployedAt
+healthCheckRefs
+rollbackRef
+```
 
 ### Validation
 
 ```bash
-node scripts/governance/check-product-registry-consistency.mjs
-pnpm --filter @ghatana/kernel-lifecycle test
-pnpm --filter @ghatana/kernel-toolchains test
-./gradlew :products:digital-marketing:dm-kernel-bridge:test
+node scripts/check-package-to-deploy-artifact-linkage.mjs
+node scripts/check-artifact-manifest-completeness.mjs
+node scripts/check-deployment-manifest-completeness.mjs
+node scripts/check-rollback-manifest-completeness.mjs
+```
+
+---
+
+## Task 4.4 Runtime truth read models and Studio integration
+
+### Files
+
+```text
+products/data-cloud/extensions/kernel-bridge/**
+platform/typescript/kernel-product-contracts/src/ui-summary/**
+platform/typescript/ghatana-studio/src/**
+```
+
+### Read models
+
+```text
+LifecycleRunReadModel
+ProductUnitHealthReadModel
+GateResultReadModel
+ArtifactLineageReadModel
+DeploymentReadModel
+ProvenanceReadModel
+```
+
+### Studio must show
+
+```text
+opening pilot lifecycle status
+latest runs
+failed gates
+produced artifacts
+active deployments
+health snapshots
+provenance links
+degraded provider state
+```
+
+### Validation
+
+```bash
+node scripts/check-runtime-truth-provider-contracts.mjs
+pnpm --dir platform/typescript/ghatana-studio test
+pnpm --dir platform/typescript/ghatana-studio test:e2e
+```
+
+---
+
+## Task 4.5 Agent action evidence
+
+### Files
+
+```text
+platform/typescript/kernel-product-contracts/src/agentic/**
+products/data-cloud/planes/action/**
+```
+
+### Requirements
+
+`AgentLifecycleActionRequest` must include:
+
+```text
+actionId
+productUnitId
+requested phase/action
+tool permissions
+risk level
+approval requirements
+expected artifacts
+verification proof
+rollback plan
+evidenceRefs
+correlationId
+agent identity
+```
+
+Agents must not run raw Gradle/pnpm/Docker commands directly.
+
+### Validation
+
+```bash
+node scripts/check-agentic-lifecycle-action-contracts.mjs
+./gradlew :products:data-cloud:planes:action:agent-runtime:test
+./gradlew :products:data-cloud:planes:action:orchestrator:test
+```
+
+---
+
+# Phase 5 — Expand product validation
+
+## Objective
+
+Use product shapes to prove Kernel is generic without turning it into a god product.
+
+## Exit criteria
+
+```text
+- Digital Marketing remains executable and correct.
+- PHR remains executable and healthcare-gate-correct.
+- Finance has multi-module/operator/portal/SDK readiness validation but remains disabled.
+- FlashIt has mobile/API/privacy/preview shape validation but remains disabled.
+- YAPPC has creator lifecycle and artifact intelligence separated from Kernel lifecycle.
+- Data Cloud has bootstrap/platform mode and runtime truth provider validation.
+- Product shape capability matrix is generated and checked.
+```
+
+## Task 5.1 Digital Marketing validation
+
+```bash
+node scripts/check-digital-marketing-lifecycle-pilot.mjs
+node scripts/kernel-product.mjs product plan digital-marketing validate --json
+node scripts/kernel-product.mjs product validate digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/validate
+node scripts/kernel-product.mjs product build digital-marketing --dry-run --json --output-dir .kernel-runs/digital-marketing/build
+node scripts/kernel-product.mjs product deploy digital-marketing --dry-run --json --env local --output-dir .kernel-runs/digital-marketing/deploy
 ./gradlew :products:digital-marketing:dm-api:test
-pnpm --filter ./products/digital-marketing/ui test
-pnpm --filter ./products/digital-marketing/ui build
+./gradlew :products:digital-marketing:dm-kernel-bridge:test
+pnpm --dir products/digital-marketing/ui type-check
+pnpm --dir products/digital-marketing/ui test
+pnpm --dir products/digital-marketing/ui build
 ```
 
----
-
-## 2.8 Preserve blocked products and platform-provider boundaries
-
-### Tasks
-
-Add tests/validators ensuring:
-
-- PHR remains disabled until consent, PII classification, audit evidence, FHIR validation, and data sovereignty gates are executable.
-- Finance remains disabled until regulatory compliance, risk controls, promotion approval, multi-module build validation, and portal/operator/SDK adapters are executable.
-- FlashIt remains disabled until mobile adapters, preview security, personal data classification, and IPA/AAB artifacts are executable.
-- Data Cloud remains disabled as ordinary lifecycle product until bootstrap/platform separation and runtime truth provider gates pass.
-- YAPPC remains disabled as ordinary lifecycle product until ProductUnitIntent export, artifact intelligence boundary, and creator/Kernel lifecycle separation are proven.
-
-### Validation
+## Task 5.2 PHR validation
 
 ```bash
-node scripts/governance/check-product-registry-consistency.mjs
-pnpm --filter @ghatana/kernel-product-contracts test
-pnpm --filter @ghatana/kernel-lifecycle test
+node scripts/check-phr-lifecycle-pilot.mjs
+node scripts/kernel-product.mjs product plan phr validate --json
+node scripts/kernel-product.mjs product validate phr --dry-run --json --output-dir .kernel-runs/phr/validate
+node scripts/kernel-product.mjs product build phr --dry-run --json --output-dir .kernel-runs/phr/build
+node scripts/kernel-product.mjs product deploy phr --dry-run --json --env local --output-dir .kernel-runs/phr/deploy
+./gradlew :products:phr:test
+./gradlew :products:phr:domains:healthcare:test
+pnpm --dir products/phr/apps/web type-check
+pnpm --dir products/phr/apps/web test
+pnpm --dir products/phr/apps/web build
+```
+
+## Task 5.3 Finance shape validation
+
+Keep default lifecycle disabled until blockers resolve.
+
+Validate:
+
+```text
+multi-module Gradle graph
+operator surface
+portal surface
+SDK packaging
+regulatory-compliance gate
+risk-controls gate
+promotion-approval gate
+multi-module-build gate
+domain dependency rules
+reporting evidence
+```
+
+Commands:
+
+```bash
+node scripts/check-product-shape-capability-matrix.mjs --product finance
+node scripts/kernel-product.mjs product plan finance build --json
+./gradlew :products:finance:build
+./gradlew :products:finance:integration-testing:test
+```
+
+Expected: Kernel command fails closed unless explicit shape-validation mode exists.
+
+## Task 5.4 FlashIt shape validation
+
+Keep default lifecycle disabled until mobile adapters and mobile artifact contracts are executable.
+
+Validate:
+
+```text
+backend API
+web
+mobile
+privacy gate
+preview-security gate
+personal-data-classification gate
+mobile ipa/aab artifact manifests
+xcode-ios adapter readiness
+gradle-android adapter readiness
+```
+
+Commands:
+
+```bash
+node scripts/check-product-shape-capability-matrix.mjs --product flashit
+node scripts/kernel-product.mjs product plan flashit build --json
+```
+
+Expected: Kernel command fails closed unless explicit shape-validation mode exists.
+
+## Task 5.5 YAPPC platform-provider validation
+
+Validate:
+
+```text
+creator lifecycle distinct from Kernel lifecycle
+ProductUnitIntent export
+artifact intelligence evidence contracts
+no Kernel lifecycle execution reimplementation
+no private Kernel log parsing
+public Kernel/Data Cloud truth consumption only
+```
+
+Commands:
+
+```bash
+node scripts/check-yappc-kernel-boundary.mjs
+node scripts/check-yappc-artifact-intelligence-boundary.mjs
+./gradlew :products:yappc:core:yappc-api:test
+pnpm --dir products/yappc/frontend test
+```
+
+## Task 5.6 Data Cloud platform-provider validation
+
+Validate:
+
+```text
+bootstrap mode separation
+platform mode provider bridge
+runtime truth provider
+event provider
+artifact provider
+health provider
+provenance provider
+policy evidence provider
+no product business logic in Data Cloud core
+```
+
+Commands:
+
+```bash
+node scripts/check-data-cloud-foundation-boundary.mjs
+node scripts/check-runtime-truth-provider-contracts.mjs
+./gradlew :products:data-cloud:delivery:api:test
+./gradlew :products:data-cloud:extensions:kernel-bridge:test
+./gradlew :products:data-cloud:planes:action:kernel-bridge:test
 ```
 
 ---
 
-## 2.9 Final no-regression gate for Plan A — ✅ COMPLETE
+# Full platform no-regression suite
 
-### TypeScript kernel packages — all green
+Run before declaring any phase complete:
 
-| Package                             | Typecheck           | Tests    | Build |
-| ----------------------------------- | ------------------- | -------- | ----- |
-| `@ghatana/kernel-product-contracts` | ✅                  | ✅ (151) | ✅    |
-| `@ghatana/kernel-lifecycle`         | ✅                  | ✅ (358) | ✅    |
-| `@ghatana/kernel-providers`         | ✅                  | ✅ (133) | ✅    |
-| `@ghatana/kernel-toolchains`        | ✅                  | ✅ (211) | ✅    |
-| `@ghatana/kernel-artifacts`         | ✅                  | ✅ (48)  | ✅    |
-| `@ghatana/kernel-deployment`        | ✅ (fixed 3 errors) | ✅ (94)  | ✅    |
-| `@ghatana/kernel-release`           | ✅                  | ✅ (49)  | ✅    |
+```bash
+# Governance
+node scripts/validate-domain-registry.mjs
+node scripts/validate-product-registry.mjs
+node scripts/check-product-generated-includes.mjs
+node scripts/check-doc-authority.mjs
+node scripts/check-current-state-claims.mjs
+node scripts/check-domain-boundaries.mjs
+node scripts/check-deprecated-imports.mjs
+node scripts/check-opening-lifecycle-pilots.mjs
 
-**kernel-deployment typecheck fix**: `ArtifactDigestLinkage.test.ts` had 3 pre-existing type errors introduced with §2.6 tests:
+# Kernel
+pnpm --dir platform/typescript/kernel-product-contracts test
+pnpm --dir platform/typescript/kernel-product-contracts typecheck
+pnpm --dir platform/typescript/kernel-lifecycle test
+pnpm --dir platform/typescript/kernel-lifecycle typecheck
+pnpm --dir platform/typescript/kernel-providers test
+pnpm --dir platform/typescript/kernel-toolchains test
+pnpm --dir platform/typescript/kernel-artifacts test
+pnpm --dir platform/typescript/kernel-deployment test
+pnpm --dir platform/typescript/kernel-release test
+node scripts/check-kernel-platform-lifecycle.mjs
 
-- TS2352: `delete (rollbackManifest as Record<string, unknown>)` — fixed with double-cast through `unknown`
-- TS2769: `fs.readFile(deployManifest.artifactManifestRef, ...)` where `artifactManifestRef` is `string | undefined` — fixed with non-null assertion `!`
+# Shared primitives
+pnpm --dir platform/typescript/canvas type-check
+pnpm --dir platform/typescript/canvas test
+pnpm --dir platform/typescript/ui-builder type-check
+pnpm --dir platform/typescript/ui-builder test
+pnpm --dir platform/typescript/ds-schema type-check
+pnpm --dir platform/typescript/ds-registry type-check
+pnpm --dir platform/typescript/ds-generator test
+pnpm --dir platform/typescript/ghatana-studio type-check
+pnpm --dir platform/typescript/ghatana-studio test
+pnpm --dir platform/typescript/ghatana-studio test:e2e
 
-### Governance checks — 6/6 pass ✅
+# Opening pilots
+node scripts/check-digital-marketing-lifecycle-pilot.mjs
+node scripts/check-phr-lifecycle-pilot.mjs
+./gradlew :products:digital-marketing:dm-api:test
+./gradlew :products:digital-marketing:dm-kernel-bridge:test
+pnpm --dir products/digital-marketing/ui type-check
+pnpm --dir products/digital-marketing/ui test
+./gradlew :products:phr:test
+./gradlew :products:phr:domains:healthcare:test
+pnpm --dir products/phr/apps/web type-check
+pnpm --dir products/phr/apps/web test
 
-| Check                          | Result  | Notes                                                                                           |
-| ------------------------------ | ------- | ----------------------------------------------------------------------------------------------- |
-| `product-registry-consistency` | ✅ PASS | Fixed: ran `node scripts/generate-product-registry-artifacts.mjs` and committed generated files |
-| `domain-boundaries`            | ✅ PASS |                                                                                                 |
-| `doc-current-state-claims`     | ✅ PASS |                                                                                                 |
-| `duplication-exceptions`       | ✅ PASS |                                                                                                 |
-| `package-governance`           | ✅ PASS |                                                                                                 |
-| `boundaries`                   | ✅ PASS |                                                                                                 |
-
-### Java Gradle commands — cannot run locally
-
-The following Gradle commands cannot run in the current local environment (Gradle daemon / JVM toolchain not available in this workspace session):
-
-| Command                                                       | Owner                  | Alternative validation                                                                                                          | Follow-up          |
-| ------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `./gradlew :platform:java:tool-runtime:test`                  | Platform Java Team     | Java unit tests verified in CI                                                                                                  | Run in CI pipeline |
-| `./gradlew :platform-kernel:kernel-core:test`                 | Platform Kernel Team   | Java unit tests verified in CI                                                                                                  | Run in CI pipeline |
-| `./gradlew :platform-kernel:kernel-plugin:test`               | Platform Kernel Team   | Java unit tests verified in CI                                                                                                  | Run in CI pipeline |
-| `./gradlew :products:digital-marketing:dm-kernel-bridge:test` | Digital Marketing Team | `DigitalMarketingKernelAdapterImplTest.java` and `NotificationRetryAndDlqTest.java` verified referenced in registry conformance | Run in CI pipeline |
+# Shape validators
+node scripts/check-product-shape-capability-matrix.mjs
+node scripts/check-yappc-kernel-boundary.mjs
+node scripts/check-data-cloud-foundation-boundary.mjs
+```
 
 ---
 
-## 2.10 Plan A definition of done — ✅ COMPLETE (all gates clean)
+# Final acceptance criteria
 
-Plan A is done only when:
+This five-phase implementation is complete when:
 
-- [x] Domain registry exists and validates. — **§1.x complete; domain-boundaries governance check ✅**
-- [x] Domain map exists and uses current-state classification. — **§1.x complete; doc-current-state-claims ✅**
-- [x] Product registry consistency check passes. — **RESOLVED: ran `node scripts/generate-product-registry-artifacts.mjs` and committed; 6/6 governance checks now clean ✅**
-- [x] Package governance check passes. — **✅**
-- [x] Boundary check passes. — **✅**
-- [x] Doc current-state claim check passes. — **✅**
-- [x] Duplication exception check passes. — **✅**
-- [x] Kernel contracts validate product/lifecycle/gate/artifact/deployment/event/agent references. — **§2.2 163 tests + §2.4 358 tests ✅**
-- [x] Lifecycle results contain structured statuses, reason codes, run IDs, correlation IDs, timings, and evidence refs. — **§2.4 ✅**
-- [x] Toolchain adapters cannot fake success. — **§2.5 211 tests ✅**
-- [x] Digital Marketing remains the only enabled lifecycle pilot unless another product has full proof. — **§2.7 + §2.8 ✅**
-- [x] PHR, Finance, FlashIt, Data Cloud, and YAPPC remain disabled/blocked with explicit reason codes. — **§2.8 16 tests ✅**
-- [x] No product-specific behavior is moved into Kernel. — **✅ confirmed; all new code in test files**
-- [x] No new production TODO/FIXME/stub/unsafe default is introduced. — **✅ confirmed**
-
-**All gates clean.** The pre-existing `product-registry-consistency` stale-artifacts failure was resolved by running `node scripts/generate-product-registry-artifacts.mjs` and committing the generated files. Full Plan A gate is declared clean as of 2026-05-18.
+```text
+1. Domain, product, Gradle, and pnpm registries agree.
+2. Digital Marketing and PHR are the only opening lifecycle pilots.
+3. Digital Marketing and PHR can plan and dry-run lifecycle phases through Kernel.
+4. Finance and FlashIt fail closed by default.
+5. Kernel lifecycle contracts and outputs are typed, versioned, and test-backed.
+6. Every lifecycle phase emits structured truth or fails closed.
+7. Shared primitives remain product-neutral.
+8. Studio consumes public lifecycle truth only.
+9. Data Cloud provider bridge is contract-backed.
+10. Agents request lifecycle actions through Kernel contracts.
+11. Security, privacy, i18n, a11y, resilience, and observability are included in touched surfaces.
+12. No duplicate platform capability is unregistered.
+13. No product reimplements Kernel lifecycle.
+14. No Kernel/shared package imports product implementation internals.
+```

@@ -17,7 +17,6 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Button, IconButton, Divider } from '@ghatana/design-system';
 import { AlertTriangle, RefreshCw as Refresh, GitCompare as Compare, Trash2 as Discard, X, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
-import { useTranslation } from '@ghatana/i18n';
 
 export interface ArtifactVersionConflict {
   artifactId: string;
@@ -53,62 +52,51 @@ export function ArtifactVersionConflictResolver({
   onDismiss,
   className = '',
 }: ArtifactVersionConflictResolverProps) {
-  const { t } = useTranslation('common');
   const [showDetails, setShowDetails] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const runAction = useCallback(async (action: string, operation: () => Promise<void>) => {
+    setActiveAction(action);
+    setActionError(null);
+    try {
+      await operation();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Action failed. Please try again.');
+    } finally {
+      setActiveAction(null);
+    }
+  }, []);
 
   const handleReload = useCallback(async () => {
-    setActiveAction('reload');
-    try {
-      await onReload(conflict.artifactId);
-    } finally {
-      setActiveAction(null);
-    }
-  }, [conflict.artifactId, onReload]);
+    await runAction('reload', () => onReload(conflict.artifactId));
+  }, [conflict.artifactId, onReload, runAction]);
 
   const handleCompare = useCallback(async () => {
-    setActiveAction('compare');
-    try {
-      await onCompare(conflict.artifactId);
-    } finally {
-      setActiveAction(null);
-    }
-  }, [conflict.artifactId, onCompare]);
+    await runAction('compare', () => onCompare(conflict.artifactId));
+  }, [conflict.artifactId, onCompare, runAction]);
 
   const handleReapply = useCallback(async () => {
-    setActiveAction('reapply');
-    try {
-      await onReapply(conflict.artifactId, conflict.localContent);
-    } finally {
-      setActiveAction(null);
-    }
-  }, [conflict.artifactId, conflict.localContent, onReapply]);
+    await runAction('reapply', () => onReapply(conflict.artifactId, conflict.localContent));
+  }, [conflict.artifactId, conflict.localContent, onReapply, runAction]);
 
   const handleDiscard = useCallback(async () => {
-    setActiveAction('discard');
-    try {
-      await onDiscard(conflict.artifactId);
-    } finally {
-      setActiveAction(null);
-    }
-  }, [conflict.artifactId, onDiscard]);
+    await runAction('discard', () => onDiscard(conflict.artifactId));
+  }, [conflict.artifactId, onDiscard, runAction]);
 
   const handleRetry = useCallback(async () => {
-    setActiveAction('retry');
-    try {
-      await onRetry(conflict.artifactId);
-    } finally {
-      setActiveAction(null);
-    }
-  }, [conflict.artifactId, onRetry]);
+    await runAction('retry', () => onRetry(conflict.artifactId));
+  }, [conflict.artifactId, onRetry, runAction]);
 
   const formatTimestamp = (timestamp: number): string => {
     return new Date(timestamp).toLocaleString();
   };
 
   const isActionLoading = (action: string): boolean => {
-    return activeAction === action && isResolving;
+    return activeAction === action;
   };
+
+  const actionsDisabled = isResolving || activeAction !== null;
 
   return (
     <Paper
@@ -142,7 +130,7 @@ export function ArtifactVersionConflictResolver({
             size="small"
             onClick={onDismiss}
             aria-label="Dismiss conflict"
-            disabled={isResolving}
+            disabled={actionsDisabled}
           >
             <X size={16} />
           </IconButton>
@@ -156,7 +144,7 @@ export function ArtifactVersionConflictResolver({
           size="small"
           onClick={() => setShowDetails(!showDetails)}
           className="flex items-center gap-1 px-2 py-1"
-          disabled={isResolving}
+          disabled={actionsDisabled}
         >
           {showDetails ? <ExpandLess size={14} /> : <ExpandMore size={14} />}
           <Typography variant="caption">
@@ -169,7 +157,10 @@ export function ArtifactVersionConflictResolver({
             {/* Local Version */}
             <Box className="rounded border border-border bg-surface p-3">
               <Typography variant="caption" style={{ fontWeight: 600 }}>
-                Local version ({conflict.localVersion})
+                Local version
+              </Typography>
+              <Typography variant="caption" className="block mt-1 text-muted">
+                {conflict.localVersion}
               </Typography>
               <Typography variant="caption" className="block mt-2 text-muted break-all">
                 {conflict.localContent.substring(0, 200)}
@@ -180,7 +171,10 @@ export function ArtifactVersionConflictResolver({
             {/* Remote Version */}
             <Box className="rounded border border-border bg-surface p-3">
               <Typography variant="caption" style={{ fontWeight: 600 }}>
-                Remote version ({conflict.remoteVersion})
+                Remote version
+              </Typography>
+              <Typography variant="caption" className="block mt-1 text-muted">
+                {conflict.remoteVersion}
               </Typography>
               <Typography variant="caption" className="block mt-2 text-muted break-all">
                 {conflict.remoteContent.substring(0, 200)}
@@ -193,13 +187,22 @@ export function ArtifactVersionConflictResolver({
 
       <Divider />
 
+      {actionError ? (
+        <Box
+          role="alert"
+          className="rounded border border-danger-border bg-danger-bg p-3 text-danger"
+        >
+          <Typography variant="caption">{actionError}</Typography>
+        </Box>
+      ) : null}
+
       {/* Action Buttons */}
       <Box className="flex flex-wrap gap-2">
         <Button
           variant="outline"
           size="small"
           onClick={handleReload}
-          disabled={isResolving}
+          disabled={actionsDisabled}
           startIcon={<Refresh size={14} />}
           loading={isActionLoading('reload')}
         >
@@ -210,7 +213,7 @@ export function ArtifactVersionConflictResolver({
           variant="outline"
           size="small"
           onClick={handleCompare}
-          disabled={isResolving}
+          disabled={actionsDisabled}
           startIcon={<Compare size={14} />}
           loading={isActionLoading('compare')}
         >
@@ -221,7 +224,7 @@ export function ArtifactVersionConflictResolver({
           variant="outline"
           size="small"
           onClick={handleReapply}
-          disabled={isResolving}
+          disabled={actionsDisabled}
           loading={isActionLoading('reapply')}
         >
           Reapply local
@@ -231,7 +234,7 @@ export function ArtifactVersionConflictResolver({
           variant="outline"
           size="small"
           onClick={handleDiscard}
-          disabled={isResolving}
+          disabled={actionsDisabled}
           startIcon={<Discard size={14} />}
           loading={isActionLoading('discard')}
           className="border-danger-border text-danger hover:bg-danger-bg"
@@ -243,7 +246,7 @@ export function ArtifactVersionConflictResolver({
           variant="outline"
           size="small"
           onClick={handleRetry}
-          disabled={isResolving}
+          disabled={actionsDisabled}
           loading={isActionLoading('retry')}
         >
           Retry sync

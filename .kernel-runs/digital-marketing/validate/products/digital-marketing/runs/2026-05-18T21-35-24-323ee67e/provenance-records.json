@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "records": [
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-35-24-323ee67e",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-24-323ee67e",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-35-24-323ee67e"
+      ],
+      "recordedAt": "2026-05-18T21:35:24.309Z",
+      "correlationId": "corr-2026-05-18T21-35-24-323ee67e"
+    }
+  ]
+}

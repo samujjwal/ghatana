@@ -44,6 +44,7 @@ export interface DiagramToolbarProps {
  */
 export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => {
     const { t } = useTranslation('common');
+    const mermaidCodePlaceholder = t('canvas.diagram.mermaidCodePlaceholder');
     // ── Global atoms (type + zoom are per-session config, not per-node) ──
     const [diagramType, setDiagramType] = useAtom(diagramTypeAtom);
     const [zoom, setZoom] = useAtom(diagramZoomAtom);
@@ -138,19 +139,19 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         }
                     }}
                     size="sm"
-                    aria-label={t('canvas.diagram.type')}
+                    aria-label="Diagram type"
                 >
-                    <ToggleButton value="flowchart" aria-label={t('canvas.diagram.flowchart')}>
+                    <ToggleButton value="flowchart" aria-label="Flowchart">
                         <Tooltip title="Flowchart">
                             <FlowchartIcon />
                         </Tooltip>
                     </ToggleButton>
-                    <ToggleButton value="sequence" aria-label={t('canvas.diagram.sequence')}>
+                    <ToggleButton value="sequence" aria-label="Sequence diagram">
                         <Tooltip title="Sequence Diagram">
                             <SequenceIcon />
                         </Tooltip>
                     </ToggleButton>
-                    <ToggleButton value="class" aria-label={t('canvas.diagram.class')}>
+                    <ToggleButton value="class" aria-label="Class diagram">
                         <Tooltip title="Class Diagram">
                             <ClassIcon />
                         </Tooltip>
@@ -198,8 +199,8 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
 
                 {/* Zoom Controls */}
                 <Box className="flex gap-1 items-center">
-                    <Tooltip title={t('canvas.diagram.zoomOut')}>
-                        <IconButton size="sm" aria-label={t('canvas.diagram.zoomOut')} onClick={handleZoomOut} disabled={zoom <= 0.5}>
+                    <Tooltip title="Zoom out">
+                        <IconButton size="sm" aria-label="Zoom out" onClick={handleZoomOut} disabled={zoom <= 0.5}>
                             <ZoomOutIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -208,14 +209,14 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         {Math.round(zoom * 100)}%
                     </Box>
 
-                    <Tooltip title={t('canvas.diagram.zoomIn')}>
-                        <IconButton size="sm" aria-label={t('canvas.diagram.zoomIn')} onClick={handleZoomIn} disabled={zoom >= 2}>
+                    <Tooltip title="Zoom in">
+                        <IconButton size="sm" aria-label="Zoom in" onClick={handleZoomIn} disabled={zoom >= 2}>
                             <ZoomInIcon size={16} />
                         </IconButton>
                     </Tooltip>
 
-                    <Tooltip title={t('canvas.diagram.resetZoom')}>
-                        <IconButton size="sm" aria-label={t('canvas.diagram.resetZoom')} onClick={handleResetZoom}>
+                    <Tooltip title="Reset zoom">
+                        <IconButton size="sm" aria-label="Reset zoom" onClick={handleResetZoom}>
                             <ResetIcon size={16} />
                         </IconButton>
                     </Tooltip>
@@ -234,11 +235,11 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                     <label htmlFor="mermaid-code-editor" className="block text-sm font-medium mb-1">Mermaid code</label>
                     <Textarea
                         id="mermaid-code-editor"
-                        aria-label={t('canvas.diagram.mermaidCode')}
+                        aria-label="Mermaid code"
                         rows={15}
                         value={editBuffer}
                         onChange={(e) => setEditBuffer(e.target.value)}
-                        placeholder={t('canvas.diagram.mermaidCodePlaceholder')}
+                        placeholder={mermaidCodePlaceholder === 'canvas.diagram.mermaidCodePlaceholder' ? 'Enter Mermaid diagram code' : mermaidCodePlaceholder}
                         fullWidth
                         className="w-full font-mono text-sm border border-border rounded p-2 resize-y"
                     />

@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-19T00-31-27-20a5599f",
+  "correlationId": "corr-2026-05-19T00-31-27-20a5599f",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "productUnitId": "phr",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "validate",
+  "phaseMode": "sequential",
+  "lifecycleProfile": "standard-web-api-product",
+  "sourceRef": "local",
+  "surfaces": [
+    {
+      "surface": "backend-api",
+      "type": "backend-api",
+      "adapter": "gradle-java-service",
+      "config": {
+        "source": "products/phr",
+        "runtime": "java-service",
+        "adapter": "gradle-java-service",
+        "gradleModule": ":products:phr",
+        "expectedOutputs": {
+          "build": [
+            "products/phr/build/libs/*.jar"
+          ],
+          "test": [
+            "products/phr/build/test-results/test",
+            "products/phr/build/reports/tests"
+          ]
+        }
+      }
+    },
+    {
+      "surface": "web",
+      "type": "web",
+      "adapter": "pnpm-vite-react",
+      "config": {
+        "source": "products/phr/apps/web",
+        "runtime": "static-web",
+        "adapter": "pnpm-vite-react",
+        "packagePath": "products/phr/apps/web/package.json",
+        "expectedOutputs": {
+          "build": [
+            "products/phr/apps/web/dist",
+            "products/phr/apps/web/dist/index.html"
+          ]
+        }
+      }
+    }
+  ],
+  "gates": [
+    {
+      "gateId": "registry-validation",
+      "gateName": "registry-validation",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "manifest-validation",
+      "gateName": "manifest-validation",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "lifecycle-contract-validation",
+      "gateName": "lifecycle-contract-validation",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "consent",
+      "gateName": "consent",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "pii-classification",
+      "gateName": "pii-classification",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "audit-evidence",
+      "gateName": "audit-evidence",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "fhir-contract-validation",
+      "gateName": "fhir-contract-validation",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "tenant-data-sovereignty",
+      "gateName": "tenant-data-sovereignty",
+      "required": true,
+      "phase": "validate",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    }
+  ],
+  "steps": [
+    {
+      "id": "validate-backend-api-0",
+      "stepKind": "surface",
+      "phase": "validate",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "adapterSelectionSource": "profile-default",
+      "description": "validate backend-api via gradle-java-service",
+      "dependsOn": [],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/phr",
+          "runtime": "java-service",
+          "adapter": "gradle-java-service",
+          "gradleModule": ":products:phr",
+          "expectedOutputs": {
+            "build": [
+              "products/phr/build/libs/*.jar"
+            ],
+            "test": [
+              "products/phr/build/test-results/test",
+              "products/phr/build/reports/tests"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "validate-web-1",
+      "stepKind": "surface",
+      "phase": "validate",
+      "surface": "web",
+      "adapter": "pnpm-vite-react",
+      "adapterSelectionSource": "profile-default",
+      "description": "validate web via pnpm-vite-react",
+      "dependsOn": [
+        "validate-backend-api-0"
+      ],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/phr/apps/web",
+          "runtime": "static-web",
+          "adapter": "pnpm-vite-react",
+          "packagePath": "products/phr/apps/web/package.json",
+          "expectedOutputs": {
+            "build": [
+              "products/phr/apps/web/dist",
+              "products/phr/apps/web/dist/index.html"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "adapterIds": [
+    "gradle-java-service",
+    "pnpm-vite-react"
+  ],
+  "expectedArtifacts": [],
+  "requiredManifests": [],
+  "requiredPlugins": [],
+  "approvalRequirements": [],
+  "healthChecks": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate",
+  "estimatedDurationMs": 60000,
+  "warnings": [],
+  "blockingReasons": []
+}

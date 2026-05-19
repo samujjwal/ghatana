@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-75d08b66",
+  "correlationId": "corr-2026-05-18T20-21-46-75d08b66",
+  "productId": "phr",
+  "productUnitId": "phr",
+  "providerMode": "bootstrap",
+  "phase": "package",
+  "surface": "product",
+  "timestamp": "2026-05-18T20:21:46.477Z",
+  "artifacts": []
+}

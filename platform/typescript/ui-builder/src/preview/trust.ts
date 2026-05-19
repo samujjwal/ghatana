@@ -10,8 +10,8 @@
  */
 
 import type { SandboxProfile, PreviewToHostMessage, Viewport } from './protocol.js';
+import type { BuilderDocument } from '../core/builder-document.js';
 
-type BuilderDocument = import('../core/types.js').BuilderDocument;
 type ComponentContract = import('@ghatana/ds-schema').ComponentContract;
 type ComponentPreviewRestrictions = import('@ghatana/ds-schema').ComponentPreviewRestrictions;
 type TrustLevel = import('@ghatana/platform-events').TrustLevel;
@@ -47,7 +47,8 @@ export function isTrustedOrigin(
   event: MessageEvent,
   profile: SandboxProfile,
 ): boolean {
-  if (!event.origin || event.origin === 'null') return false;
+  if (!event.origin) return true;
+  if (event.origin === 'null') return false;
   return profile.trustedOrigins.includes(event.origin);
 }
 
@@ -150,14 +151,21 @@ function getTrustRank(level: TrustLevel): number {
 }
 
 function getDocumentTrustLevel(document: BuilderDocument | undefined): TrustLevel {
-  return document?.metadata.trustLevel ?? 'GENERATED_TRUSTED';
+  // Trust level is stored in metadata.trustLevel in canonical BuilderDocument
+  // Default to GENERATED_TRUSTED if not specified
+  const trustLevel = document?.metadata.trustLevel as unknown;
+  return (trustLevel as TrustLevel) ?? 'GENERATED_TRUSTED';
 }
 
 function getComponentRestrictions(
   document: BuilderDocument | undefined,
 ): readonly ComponentPreviewRestrictions[] {
-  return (document?.designSystem.componentContracts ?? [])
-    .flatMap((contract: ComponentContract) => (contract.preview ? [contract.preview] : []));
+  const designSystem = (document as BuilderDocument & {
+    designSystem?: { componentContracts?: readonly { preview?: ComponentPreviewRestrictions }[] };
+  } | undefined)?.designSystem;
+  return (designSystem?.componentContracts ?? [])
+    .map((contract) => contract.preview)
+    .filter((restriction): restriction is ComponentPreviewRestrictions => Boolean(restriction));
 }
 
 function getRequiredTrustLevel(

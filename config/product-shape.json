@@ -3,12 +3,17 @@
     "phr": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented"
       },
-      "clientPackages": ["products/phr/apps/web/package.json"],
+      "clientPackages": [
+        "products/phr/apps/web/package.json"
+      ],
       "lifecycle": {
         "profile": "standard-web-api-product",
         "enabled": true,
@@ -18,7 +23,12 @@
     "finance": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api", "portal", "operator", "sdk"],
+      "surfaces": [
+        "backend-api",
+        "portal",
+        "operator",
+        "sdk"
+      ],
       "surfaceStatuses": {
         "backend-api": "backend-only",
         "portal": "backend-only",
@@ -39,12 +49,17 @@
     "digital-marketing": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented"
       },
-      "clientPackages": ["products/digital-marketing/ui/package.json"],
+      "clientPackages": [
+        "products/digital-marketing/ui/package.json"
+      ],
       "lifecycle": {
         "profile": "standard-web-api-product",
         "enabled": true,
@@ -54,7 +69,11 @@
     "flashit": {
       "ui": true,
       "uiMode": "multi-surface",
-      "surfaces": ["backend-api", "web", "mobile"],
+      "surfaces": [
+        "backend-api",
+        "web",
+        "mobile"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented",
@@ -73,28 +92,41 @@
     "data-cloud": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web", "sdk"],
+      "surfaces": [
+        "backend-api",
+        "web",
+        "sdk"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented",
         "sdk": "implemented"
       },
-      "clientPackages": ["products/data-cloud/delivery/ui/package.json"]
+      "clientPackages": [
+        "products/data-cloud/delivery/ui/package.json"
+      ]
     },
     "yappc": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented"
       },
-      "clientPackages": ["products/yappc/frontend/package.json"]
+      "clientPackages": [
+        "products/yappc/frontend/package.json"
+      ]
     },
     "audio-video": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented"
       },
@@ -107,22 +139,32 @@
     "dcmaar": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented"
       },
-      "clientPackages": ["products/dcmaar/apps/package.json"]
+      "clientPackages": [
+        "products/dcmaar/apps/package.json"
+      ]
     },
     "tutorputor": {
       "ui": true,
       "uiMode": "web",
-      "surfaces": ["backend-api", "web"],
+      "surfaces": [
+        "backend-api",
+        "web"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented",
         "web": "implemented"
       },
-      "clientPackages": ["products/tutorputor/apps/package.json"],
+      "clientPackages": [
+        "products/tutorputor/apps/package.json"
+      ],
       "lifecycle": {
         "profile": "standard-web-api-product",
         "enabled": false,
@@ -132,7 +174,9 @@
     "aura": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented"
       },
@@ -145,7 +189,9 @@
     "software-org": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented"
       },
@@ -158,7 +204,9 @@
     "virtual-org": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented"
       },
@@ -171,7 +219,9 @@
     "security-gateway": {
       "ui": false,
       "uiMode": "backend-only",
-      "surfaces": ["backend-api"],
+      "surfaces": [
+        "backend-api"
+      ],
       "surfaceStatuses": {
         "backend-api": "implemented"
       },

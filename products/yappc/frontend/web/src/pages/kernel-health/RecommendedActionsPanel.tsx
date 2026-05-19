@@ -65,7 +65,7 @@ export const RecommendedActionsPanel: React.FC<RecommendedActionsPanelProps> = (
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No action recommendations for {productUnitId}. The ProductUnit appears healthy.
+            No recommendations for {productUnitId}. The ProductUnit appears healthy.
           </p>
         </CardContent>
       </Card>

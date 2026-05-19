@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-2f90cd4c",
+      "phase": "deploy",
+      "status": "execution-failed",
+      "observedAt": "2026-05-18T20:21:46.692Z",
+      "evidenceRefs": [
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-result.json",
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/deployment-manifest.json"
+      ],
+      "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+    },
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-59-43-bb8f4dc5",
+      "phase": "deploy",
+      "status": "execution-failed",
+      "observedAt": "2026-05-18T20:59:43.830Z",
+      "evidenceRefs": [
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-59-43-bb8f4dc5/deploy/lifecycle-result.json",
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-59-43-bb8f4dc5/deploy/deployment-manifest.json"
+      ],
+      "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5"
+    }
+  ]
+}

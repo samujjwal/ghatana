@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-75d08b66",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-46-75d08b66",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

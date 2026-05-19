@@ -3,6 +3,7 @@ package com.ghatana.yappc.services.artifact.compileback;
 import com.ghatana.yappc.domain.artifact.ArtifactGraphQueryResponse;
 import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
+import com.ghatana.yappc.storage.PatchSetRepository;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +31,15 @@ public final class ChangePlanServiceImpl implements ChangePlanService {
     private static final Logger log = LoggerFactory.getLogger(ChangePlanServiceImpl.class);
 
     private final ArtifactGraphService artifactGraphService;
+    private final PatchSetRepository repository;
 
     public ChangePlanServiceImpl(ArtifactGraphService artifactGraphService) {
+        this(artifactGraphService, null);
+    }
+
+    public ChangePlanServiceImpl(ArtifactGraphService artifactGraphService, PatchSetRepository repository) {
         this.artifactGraphService = Objects.requireNonNull(artifactGraphService, "artifactGraphService must not be null");
+        this.repository = repository;
     }
 
     @Override
@@ -75,13 +82,19 @@ public final class ChangePlanServiceImpl implements ChangePlanService {
         );
 
         log.info("Created change plan {} with {} operations", planId, operations.size());
+        if (repository != null) {
+            return repository.saveChangePlan(plan);
+        }
         return Promise.of(plan);
     }
 
     @Override
     public Promise<Optional<ChangePlan>> getChangePlan(String planId, String tenantId) {
         log.debug("Fetching change plan {} for tenant {}", planId, tenantId);
-        // In production, fetch from persistent store
+        if (repository != null) {
+            return repository.findChangePlanById(planId)
+                .map(found -> found.filter(plan -> plan.tenantId().equals(tenantId)));
+        }
         return Promise.of(Optional.empty());
     }
 
@@ -113,7 +126,9 @@ public final class ChangePlanServiceImpl implements ChangePlanService {
     public Promise<List<ChangePlan>> listChangePlans(String tenantId, String workspaceId, String projectId) {
         log.debug("Listing change plans for tenant {}, workspace {}, project {}",
             tenantId, workspaceId, projectId);
-        // In production, fetch from persistent store with filters
+        if (repository != null) {
+            return repository.listChangePlansByScope(tenantId, workspaceId, projectId, 100);
+        }
         return Promise.of(Collections.emptyList());
     }
 

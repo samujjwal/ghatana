@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-45-e87a9330",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-45-e87a9330",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T21-36-46-05a6fbd0",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T21-36-46-05a6fbd0/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T21-44-08-5e5c1541",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T21-44-08-5e5c1541/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-44-08-5e5c1541",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-19T00-31-27-20a5599f",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-19T00-31-27-20a5599f/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-19T00-31-27-20a5599f",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

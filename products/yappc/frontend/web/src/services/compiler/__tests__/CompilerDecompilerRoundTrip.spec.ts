@@ -26,7 +26,7 @@ describe('Compiler/Decompiler Round-Trip Golden Tests', () => {
       expect(artifacts).toHaveLength(1);
       expect(artifacts[0].artifactId).toBeDefined();
       expect(artifacts[0].documentId).toBeDefined();
-      expect(artifacts[0].source).toBe('test');
+      expect(artifacts[0].source).toBe('decompiled');
     });
 
     it('should handle component with props correctly', () => {

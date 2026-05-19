@@ -227,14 +227,21 @@ async function main() {
     validatePublicMatrixRows(publicMatrix.matrix, registry, errors);
   }
 
-  // 5. Check Digital Marketing is the only enabled lifecycle proof target
+  // 5. Check exactly the two opening lifecycle pilots are enabled
+  const OPENING_PILOTS = ['digital-marketing', 'phr'];
   const enabledProducts = matrix.matrix.filter(m => m.lifecycleStatus === 'enabled');
+  const enabledProductIds = enabledProducts.map(m => m.productId).sort();
   if (enabledProducts.length === 0) {
     warnings.push('No products with lifecycleStatus="enabled" found in matrix');
-  } else if (enabledProducts.length > 1) {
-    warnings.push(`Multiple products with lifecycleStatus="enabled": ${enabledProducts.map(m => m.productId).join(', ')}. Expected only Digital Marketing as pilot.`);
-  } else if (enabledProducts.length === 1 && enabledProducts[0].productId !== 'digital-marketing') {
-    warnings.push(`Enabled lifecycle product is "${enabledProducts[0].productId}" but expected "digital-marketing" as pilot.`);
+  } else {
+    const missingPilots = OPENING_PILOTS.filter(id => !enabledProductIds.includes(id));
+    const unexpectedPilots = enabledProductIds.filter(id => !OPENING_PILOTS.includes(id));
+    if (missingPilots.length > 0) {
+      warnings.push(`Opening lifecycle pilot(s) missing from enabled set: ${missingPilots.join(', ')}`);
+    }
+    if (unexpectedPilots.length > 0) {
+      warnings.push(`Unexpected products have lifecycleStatus="enabled" (not opening pilots): ${unexpectedPilots.join(', ')}`);
+    }
   }
 
   const digitalMarketing = matrix.matrix.find(m => m.productId === 'digital-marketing');
@@ -242,16 +249,20 @@ async function main() {
     errors.push('Digital Marketing has an avoidable deployment adapter finding');
   }
 
-  // 6. Check PHR/Finance/FlashIt have planned status (not enabled)
-  const plannedProducts = ['phr', 'finance', 'flashit'];
+  // 6. Check Finance/FlashIt have planned status (not enabled) — PHR is now an opening pilot
+  const plannedProducts = ['finance', 'flashit'];
   for (const productId of plannedProducts) {
     const matrixRow = matrix.matrix.find(m => m.productId === productId);
     if (matrixRow && matrixRow.lifecycleStatus === 'enabled') {
-      errors.push(`Product "${productId}" has lifecycleStatus="enabled" but should be "planned" (not lifecycle execution pilot)`);
+      errors.push(`Product "${productId}" has lifecycleStatus="enabled" but should be "planned" (not a lifecycle execution pilot)`);
     }
     if (!registry[productId]?.lifecycleReadiness) {
       errors.push(`Product "${productId}" is missing lifecycleReadiness guardrails in the canonical registry`);
     }
+  }
+  // Also ensure PHR (opening pilot) has lifecycleReadiness in the registry
+  if (!registry['phr']?.lifecycleReadiness) {
+    errors.push(`Opening pilot "phr" is missing lifecycleReadiness guardrails in the canonical registry`);
   }
 
   // 7. Check YAPPC/Data Cloud platform-provider status is visible

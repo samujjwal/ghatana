@@ -35,11 +35,13 @@ function renderRoute() {
 describe('project settings route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('yappc:currentWorkspaceId', JSON.stringify('ws-9'));
     vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it('loads the wrapped project envelope and hides unsupported admin sections', async () => {
@@ -131,7 +133,7 @@ describe('project settings route', () => {
     expect(patchOptions).toEqual(
       expect.objectContaining({
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
       })
     );
 

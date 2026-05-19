@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-18T21-36-46-05a6fbd0",
+  "phase": "validate",
+  "eventCount": 17,
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-36-46-05a6fbd0:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:36:46.348Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:36:46.348Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-36-46-05a6fbd0:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:36:46.361Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:36:46.361Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:plan-created:2026-05-18T21-36-46-05a6fbd0:validate",
+        "eventType": "lifecycle.plan.created",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:36:46.367Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:phase-started:2026-05-18T21-36-46-05a6fbd0:validate",
+        "eventType": "lifecycle.phase.started",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:36:46.367Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:registry-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.366Z"
+      },
+      "payload": {
+        "gateId": "registry-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for registry-validation",
+        "evidenceRefs": [
+          "dry-run:gate:registry-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:manifest-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.366Z"
+      },
+      "payload": {
+        "gateId": "manifest-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for manifest-validation",
+        "evidenceRefs": [
+          "dry-run:gate:manifest-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:lifecycle-contract-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.366Z"
+      },
+      "payload": {
+        "gateId": "lifecycle-contract-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for lifecycle-contract-validation",
+        "evidenceRefs": [
+          "dry-run:gate:lifecycle-contract-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:consent",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.366Z"
+      },
+      "payload": {
+        "gateId": "consent",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for consent",
+        "evidenceRefs": [
+          "dry-run:gate:consent"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:pii-classification",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "gateId": "pii-classification",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for pii-classification",
+        "evidenceRefs": [
+          "dry-run:gate:pii-classification"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:audit-evidence",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "gateId": "audit-evidence",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for audit-evidence",
+        "evidenceRefs": [
+          "dry-run:gate:audit-evidence"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:fhir-contract-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "gateId": "fhir-contract-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for fhir-contract-validation",
+        "evidenceRefs": [
+          "dry-run:gate:fhir-contract-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:gate:2026-05-18T21-36-46-05a6fbd0:validate:tenant-data-sovereignty",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "gateId": "tenant-data-sovereignty",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for tenant-data-sovereignty",
+        "evidenceRefs": [
+          "dry-run:gate:tenant-data-sovereignty"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:step-started:2026-05-18T21-36-46-05a6fbd0:validate-backend-api-0",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "stepId": "validate-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "running",
+        "startedAt": "2026-05-18T21:36:46.367Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:step-completed:2026-05-18T21-36-46-05a6fbd0:validate-backend-api-0",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "stepId": "validate-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T21:36:46.367Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:step-started:2026-05-18T21-36-46-05a6fbd0:validate-web-1",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "stepId": "validate-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "running",
+        "startedAt": "2026-05-18T21:36:46.367Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:step-completed:2026-05-18T21-36-46-05a6fbd0:validate-web-1",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "stepId": "validate-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:36:46.367Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0",
+        "eventId": "derived:phase-completed:2026-05-18T21-36-46-05a6fbd0:validate",
+        "eventType": "lifecycle.phase.completed",
+        "timestamp": "2026-05-18T21:36:46.367Z"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:36:46.367Z"
+      }
+    }
+  ],
+  "writtenAt": "2026-05-18T21:36:46.379Z"
+}

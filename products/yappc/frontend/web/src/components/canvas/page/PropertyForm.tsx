@@ -757,7 +757,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">State</Typography>
           <Select
-            aria-label={t('canvas.property.stateVariantAria')}
+            aria-label="State variant"
             value={stateVariantState}
             disabled={readOnly}
             onChange={(event) => setStateVariantState(event.target.value as EditableStateVariant)}
@@ -779,7 +779,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <label style={{ display: 'block', marginTop: 8 }}>
           <Typography variant="caption" color="subtle">State props JSON</Typography>
           <Textarea
-            aria-label={t('canvas.property.statePropsJsonAria')}
+            aria-label="State props JSON"
             value={stateVariantPropsJson}
             disabled={readOnly}
             placeholder={'{\n  "variant": "outline"\n}'}
@@ -811,7 +811,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Data target prop</Typography>
           <Select
-            aria-label={t('canvas.property.dataTargetPropAria')}
+            aria-label="Data target prop"
             value={dataBindingTarget}
             disabled={readOnly}
             onChange={(event) => setDataBindingTarget(event.target.value)}
@@ -859,7 +859,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         <Box className="flex flex-col gap-1">
           <Typography variant="caption" color="subtle">Action event</Typography>
           <Select
-            aria-label={t('canvas.property.actionEventAria')}
+            aria-label="Action event"
             value={actionBindingEvent}
             disabled={readOnly}
             onChange={(event) => setActionBindingEvent(event.target.value)}
@@ -904,7 +904,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
           Privacy classification
         </Typography>
         <Select
-          aria-label={t('canvas.property.privacyClassificationAria')}
+          aria-label="Privacy classification"
           value={privacyClassification}
           disabled={readOnly}
           onChange={(event) =>

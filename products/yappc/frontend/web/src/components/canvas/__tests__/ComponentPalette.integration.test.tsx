@@ -1,5 +1,5 @@
 // All tests skipped - incomplete feature
-import { render, fireEvent, screen, within } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { mockUseDraggableWithPayload } from '../../../test-utils';
@@ -52,8 +52,10 @@ describe('ComponentPalette integration', () => {
         expect(addButton).toBeTruthy();
 
         // Activate the button (click simulates activation reliably in this environment)
-        (addButton as HTMLElement).focus();
-        fireEvent.click(addButton as HTMLElement);
+        act(() => {
+            (addButton as HTMLElement).focus();
+            fireEvent.click(addButton as HTMLElement);
+        });
 
         expect(mockAdd).toHaveBeenCalledTimes(1);
         const [componentArg, positionArg] = mockAdd.mock.calls[0];

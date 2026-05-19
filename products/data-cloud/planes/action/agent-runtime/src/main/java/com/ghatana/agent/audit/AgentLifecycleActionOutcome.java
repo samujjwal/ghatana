@@ -10,6 +10,7 @@ package com.ghatana.agent.audit;
  * @doc.type enum
  * @doc.purpose Normalized trace outcomes for Kernel-governed agent lifecycle actions
  * @doc.layer agent-runtime
+ * @doc.pattern Value Object
  */
 public enum AgentLifecycleActionOutcome {
     RECEIVED,

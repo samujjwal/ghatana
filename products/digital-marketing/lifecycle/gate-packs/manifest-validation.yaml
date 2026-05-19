@@ -1,0 +1,20 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: manifest-validation
+title: Digital Marketing manifest validation gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that all required lifecycle manifests (artifact-manifest,
+  deployment-manifest, lifecycle-health-snapshot, verify-health-report) are
+  produced with correct schema versions after each lifecycle phase.
+requiredEvidenceRefs:
+  - products/digital-marketing/kernel-product.yaml
+blockingReasonCodes:
+  - requires-manifest-validation
+  - missing-manifest-validation
+validationCommands:
+  - node scripts/check-gate-result-manifest-completeness.mjs
+notes:
+  - Manifest validation ensures all lifecycle phase outputs are schema-compliant.

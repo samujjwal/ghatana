@@ -218,6 +218,9 @@ export {
   type KernelHealthSnapshot,
 } from "./health/index.js";
 
+// HealthSnapshot is the canonical alias for LifecycleHealthSnapshot
+export type { LifecycleHealthSnapshot as HealthSnapshot } from "./health/LifecycleHealthSnapshot.js";
+
 export {
   ProvenanceReferenceSchema,
   ProvenanceSubjectSchema,
@@ -346,6 +349,7 @@ export {
   createLifecycleRunId,
   createLifecycleCorrelationId,
   LIFECYCLE_RUN_STATUSES,
+  LIFECYCLE_FAILURE_REASON_CODES,
   LifecycleRunStatusSchema,
   LifecycleProfileSchema,
   parseLifecycleProfile,
@@ -356,6 +360,9 @@ export {
   parseLifecycleExecutionRequest,
   LifecycleStepResultSchema,
   LifecycleExecutionResultSchema,
+  LifecycleFailureSchema,
+  LifecycleResultSchema,
+  LifecycleExecutionContextSchema,
   parseLifecycleExecutionResult,
   type LifecycleRunId,
   type LifecycleCorrelationId,
@@ -364,10 +371,17 @@ export {
   type LifecyclePlanStep,
   type LifecyclePlan,
   type LifecycleExecutionRequest,
+  type LifecycleExecutionContext,
   type LifecycleStepResult,
   type LifecycleExecutionResult,
+  type LifecycleResult,
+  type LifecycleFailure,
   type LifecycleFailureReasonCode,
 } from "./lifecycle/LifecycleContracts.js";
+
+// Canonical alias: LifecyclePhase = ProductLifecyclePhase
+// Re-exported for convenience and spec alignment
+export type { ProductLifecyclePhase as LifecyclePhase } from "./lifecycle/ProductLifecyclePhase.js";
 
 // Gate definition, result manifest, and reference contracts (§2.2)
 export {
@@ -375,14 +389,18 @@ export {
   GateDefinitionSchema,
   RequiredGateReferenceSchema,
   GateResultEntrySchema,
+  GateResultSchema,
   GateResultManifestSchema,
+  ApprovalRequirementSchema,
   parseGateResultManifest,
   type GateKind,
   type GateDefinition,
   type GateFailureReason,
   type RequiredGateReference,
   type GateResultEntry,
+  type GateResult,
   type GateResultManifest,
+  type ApprovalRequirement,
 } from "./gate/GateContracts.js";
 
 // Artifact reference and fingerprint contracts (§2.2)
@@ -401,6 +419,9 @@ export {
   type LifecycleArtifactReference,
   type ArtifactManifestReference,
 } from "./artifact/ArtifactReferences.js";
+
+// ArtifactReference is the canonical alias for LifecycleArtifactReference
+export type { LifecycleArtifactReference as ArtifactReference } from "./artifact/ArtifactReferences.js";
 
 // Deployment, environment, health report, and rollback reference contracts (§2.2)
 export {
@@ -435,3 +456,18 @@ export {
   type AgentEvidenceKind,
   type AgentLifecycleActionEvidence,
 } from "./agentic/AgentLifecycleActionEvidence.js";
+
+// UI-facing lifecycle summary contracts (§2.6)
+export {
+  LifecycleGateSummarySchema,
+  LifecycleArtifactSummarySchema,
+  LifecycleDeploymentSummarySchema,
+  LifecycleHealthSummarySchema,
+  LifecycleRunSummarySchema,
+  parseLifecycleRunSummary,
+  type LifecycleGateSummary,
+  type LifecycleArtifactSummary,
+  type LifecycleDeploymentSummary,
+  type LifecycleHealthSummary,
+  type LifecycleRunSummary,
+} from "./ui-summary/LifecycleSummaries.js";

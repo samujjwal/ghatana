@@ -15,9 +15,13 @@ import type {
   BuilderDocument,
   ComponentInstance,
   NodeId,
-  DesignSystemModel,
 } from '@ghatana/ui-builder';
-import { createDocumentId } from '@ghatana/ui-builder';
+import {
+  attachBuilderDocumentCompatibility,
+  createBuilderDocument,
+  createDocumentId,
+  normalizeBuilderDocument,
+} from '@ghatana/ui-builder';
 
 import type {
   BoxData,
@@ -27,16 +31,10 @@ import type {
   TextFieldData,
   TypographyData,
 } from './schemas';
-import {
-  getContractMap,
-  migrateRegistryContractInstance,
-  toLegacyComponentType,
-} from './registry';
+import { getContractMap, migrateRegistryContractInstance, toLegacyComponentType } from './registry';
 
 const LEGACY_DOCUMENT_TAG = 'legacy-component-data-v1';
 const LEGACY_DOCUMENT_AUTHOR = 'yappc-page-designer-adapter';
-const DEFAULT_ADAPTER_TRUST_LEVEL =
-  'trusted-local' as NonNullable<BuilderDocument['metadata']['trustLevel']>;
 
 const CANONICAL_BUTTON_VARIANTS = {
   solid: 'contained',
@@ -64,19 +62,6 @@ function mapRecordValue<TValue>(
 interface BuilderDocumentAdapterOptions {
   readonly documentName?: string;
   readonly existingDocument?: BuilderDocument;
-}
-
-function createDesignSystemModel(existingDocument?: BuilderDocument): DesignSystemModel {
-  const componentContracts = [...getContractMap().values()];
-
-  return existingDocument?.designSystem ?? {
-    id: 'ghatana-ds-v1',
-    name: 'Ghatana Design System',
-    version: '1.0.0',
-    tokenSetIds: [],
-    componentContracts,
-    themeId: 'default',
-  };
 }
 
 function toComponentProps(comp: ComponentData): Record<string, unknown> {
@@ -258,8 +243,11 @@ export function componentDataToBuilderDocument(
   components: ComponentData[],
   options: BuilderDocumentAdapterOptions = {},
 ): BuilderDocument {
+  if (!Array.isArray(components)) {
+    return normalizeBuilderDocument(components as unknown as BuilderDocument);
+  }
   const existingDocument = options.existingDocument;
-  const nodes = new Map<NodeId, ComponentInstance>();
+  const nodes: Record<string, ComponentInstance> = {};
   const rootNodes: NodeId[] = [];
   const createdAt = existingDocument?.metadata.createdAt ?? new Date().toISOString();
   const updatedAt = new Date().toISOString();
@@ -269,31 +257,53 @@ export function componentDataToBuilderDocument(
 
   components.forEach((comp) => {
     const nodeId = comp.id as NodeId;
-    const componentInstance = componentDataToInstance(
-      comp,
-      existingDocument?.nodes.get(nodeId),
-    );
-    nodes.set(nodeId, componentInstance);
+    const componentInstance = componentDataToInstance(comp, getDocumentNode(existingDocument, nodeId));
+    nodes[nodeId] = componentInstance;
     rootNodes.push(nodeId);
   });
 
-  return {
-    id: existingDocument?.id ?? createDocumentId(),
-    version: existingDocument?.version ?? '1',
-    name: options.documentName ?? existingDocument?.name ?? 'Untitled Page',
-    designSystem: createDesignSystemModel(existingDocument),
-    rootNodes,
-    nodes,
+  const baseDocument = createBuilderDocument(LEGACY_DOCUMENT_AUTHOR, {
+    documentId: existingDocument?.documentId ?? createDocumentId(),
+  });
+  const rootLayoutNode = baseDocument.layout.nodes[baseDocument.layout.rootId];
+
+  const document = attachBuilderDocumentCompatibility({
+    ...baseDocument,
+    nodes: {
+      ...baseDocument.nodes,
+      ...nodes,
+    },
+    layout: {
+      ...baseDocument.layout,
+      nodes: {
+        ...baseDocument.layout.nodes,
+        [baseDocument.layout.rootId]: {
+          ...rootLayoutNode,
+          children: rootNodes,
+        },
+      },
+    },
     metadata: {
       ...existingDocument?.metadata,
       createdAt,
       updatedAt,
       author: existingDocument?.metadata.author ?? LEGACY_DOCUMENT_AUTHOR,
-      dataClassification: existingDocument?.metadata.dataClassification ?? 'INTERNAL',
-      trustLevel: existingDocument?.metadata.trustLevel ?? DEFAULT_ADAPTER_TRUST_LEVEL,
+      description: options.documentName ?? existingDocument?.metadata.description ?? 'Untitled Page',
       tags: Array.from(tags),
+      trustLevel: existingDocument?.metadata.trustLevel ?? 'TRUSTED_WORKSPACE',
     },
-  };
+  });
+  defineAdapterCompatProperty(document, 'name', options.documentName ?? existingDocument?.metadata.description ?? 'Untitled Page');
+  defineAdapterCompatProperty(document, 'version', '1');
+  defineAdapterCompatProperty(document, 'designSystem', {
+    id: 'ghatana-ds-v1',
+    name: 'Ghatana Design System',
+    version: '1.0.0',
+    tokenSetIds: [],
+    componentContracts: Array.from(getContractMap().values()),
+    themeId: 'default',
+  });
+  return document;
 }
 
 /**
@@ -364,16 +374,18 @@ function componentDataToInstance(
 export function builderDocumentToComponentData(
   document: BuilderDocument
 ): ComponentData[] {
+  document = normalizeBuilderDocument(document);
   const components: ComponentData[] = [];
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
 
   const orderedIds = [
-    ...document.rootNodes,
-    ...Array.from(document.nodes.keys()).filter((nodeId) => !document.rootNodes.includes(nodeId)),
+    ...rootNodeIds,
+    ...(Object.keys(document.nodes) as NodeId[]).filter((nodeId) => !rootNodeIds.includes(nodeId)),
   ];
 
   orderedIds.forEach((nodeId) => {
-    const instance = document.nodes.get(nodeId);
-    if (!instance) {
+    const instance = document.nodes[nodeId];
+    if (!instance || instance.contractName === 'RootContainer') {
       return;
     }
 
@@ -381,6 +393,27 @@ export function builderDocumentToComponentData(
   });
 
   return components;
+}
+
+function getDocumentNode(document: BuilderDocument | undefined, nodeId: NodeId): ComponentInstance | undefined {
+  if (!document) return undefined;
+  const nodes = document.nodes as unknown;
+  if (nodes instanceof Map) {
+    return nodes.get(nodeId) as ComponentInstance | undefined;
+  }
+  return (nodes as Record<string, ComponentInstance>)[nodeId];
+}
+
+function defineAdapterCompatProperty<T>(
+  target: BuilderDocument,
+  propertyName: string,
+  value: T,
+): void {
+  Object.defineProperty(target, propertyName, {
+    get: () => value,
+    configurable: true,
+    enumerable: false,
+  });
 }
 
 /**
@@ -393,11 +426,11 @@ export function isBuilderDocument(data: unknown): data is BuilderDocument {
     doc.nodes instanceof Map ||
     (typeof doc.nodes === 'object' && doc.nodes !== null && !Array.isArray(doc.nodes));
   return (
-    typeof doc.id === 'string' &&
-    typeof doc.version === 'string' &&
-    typeof doc.name === 'string' &&
-    typeof doc.designSystem === 'object' &&
-    Array.isArray(doc.rootNodes) &&
+    typeof doc.schemaVersion === 'string' &&
+    typeof doc.documentId === 'string' &&
+    typeof doc.owner === 'string' &&
+    typeof doc.root === 'string' &&
+    typeof doc.layout === 'object' &&
     hasNodeShape
   );
 }

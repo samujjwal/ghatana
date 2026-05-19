@@ -22,6 +22,7 @@
     "@ghatana/design-system": "workspace:*",
     "@ghatana/ds-generator": "workspace:*",
     "@ghatana/ds-registry": "workspace:*",
+    "@ghatana/ds-schema": "workspace:*",
     "@ghatana/kernel-artifacts": "workspace:*",
     "@ghatana/kernel-deployment": "workspace:*",
     "@ghatana/kernel-lifecycle": "workspace:*",

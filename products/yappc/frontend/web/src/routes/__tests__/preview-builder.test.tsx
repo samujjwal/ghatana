@@ -114,9 +114,11 @@ describe('BuilderPreviewRoute', () => {
     });
   });
 
-  it('renders the waiting state before any document is mounted', () => {
+  it('renders the waiting state before any document is mounted', async () => {
+    const postMessageSpy = vi.spyOn(window, 'postMessage');
     render(<BuilderPreviewRoute />);
     expect(screen.getByText('Waiting for document…')).toBeInTheDocument();
+    await waitForPreviewReady(postMessageSpy);
   });
 
   it('renders nodes after MOUNT_DOCUMENT and posts MOUNTED', async () => {

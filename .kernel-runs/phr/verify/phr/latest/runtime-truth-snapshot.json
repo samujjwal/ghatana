@@ -1,0 +1,12 @@
+{
+  "productUnitId": "phr",
+  "runId": "2026-05-18T20-59-44-e63e3010",
+  "phase": "verify",
+  "status": "execution-failed",
+  "observedAt": "2026-05-18T20:59:44.118Z",
+  "evidenceRefs": [
+    "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/lifecycle-result.json",
+    "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify/phr/2026-05-18T20-59-44-e63e3010/verify/verify-health-report.json"
+  ],
+  "correlationId": "corr-2026-05-18T20-59-44-e63e3010"
+}

@@ -217,9 +217,9 @@ describe('UI Components Accessibility Tests', () => {
       expect(codeEditor).toBeInTheDocument();
 
       // Check buttons
-      const formatButton = screen.getByText('Format');
-      const runButton = screen.getByText('Run');
-      const toggleButton = screen.getByText('Hide Code Panel');
+      const formatButton = screen.getByText('Format').closest('button');
+      const runButton = screen.getByText('Run').closest('button');
+      const toggleButton = screen.getByText('Hide Code Panel').closest('button');
 
       [formatButton, runButton, toggleButton].forEach((button) => {
         expect(button).toHaveAttribute('tabIndex', '0');
@@ -252,14 +252,15 @@ describe('UI Components Accessibility Tests', () => {
       render(<KeyboardShortcutsHelp isOpen={true} onClose={() => {}} />);
 
       // Close button should be keyboard accessible
-      const closeButton = screen.getByText('Close');
+      const closeButton = screen.getByText('Close').closest('button');
+      expect(closeButton).not.toBeNull();
       expect(closeButton).toHaveAttribute('tabIndex', '0');
 
-      closeButton.focus();
+      closeButton?.focus();
       expect(document.activeElement).toBe(closeButton);
 
-      fireEvent.keyDown(closeButton, { key: 'Enter' });
-      fireEvent.keyDown(closeButton, { key: 'Escape' });
+      fireEvent.keyDown(closeButton as HTMLButtonElement, { key: 'Enter' });
+      fireEvent.keyDown(closeButton as HTMLButtonElement, { key: 'Escape' });
     });
   });
 
@@ -482,8 +483,9 @@ describe('UI Components Accessibility Tests', () => {
       expect(helpDialog).toBeInTheDocument();
 
       // Focus should be trapped within the dialog
-      const closeButton = screen.getByText('Close');
-      closeButton.focus();
+      const closeButton = screen.getByText('Close').closest('button');
+      expect(closeButton).not.toBeNull();
+      closeButton?.focus();
       expect(document.activeElement).toBe(closeButton);
 
       // Tab should stay within dialog

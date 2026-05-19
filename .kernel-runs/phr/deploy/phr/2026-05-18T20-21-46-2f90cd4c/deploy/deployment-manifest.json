@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-2f90cd4c",
+  "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c",
+  "productId": "phr",
+  "productUnitId": "phr",
+  "version": "2026-05-18T20-21-46-2f90cd4c",
+  "environment": "local",
+  "environmentSafety": "local",
+  "deploymentId": "deploy-1779135706688",
+  "surfaces": [
+    {
+      "surface": "product",
+      "status": "pending",
+      "artifactId": "none",
+      "deploymentTarget": "compose-local",
+      "deployedAt": null,
+      "healthCheckPassed": false
+    }
+  ],
+  "deployedAt": "2026-05-18T20:21:46.688Z",
+  "rollbackPlan": {
+    "strategy": "previous-artifact",
+    "targetVersion": "2026-05-18T20-21-46-2f90cd4c",
+    "reason": "Lifecycle deployment rollback plan",
+    "steps": [
+      "restore previous artifact",
+      "verify health"
+    ]
+  },
+  "target": "compose-local"
+}

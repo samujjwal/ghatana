@@ -469,7 +469,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const sortedCategories = Object.keys(groupedActions).sort((a, b) => {
     const aIndex = categoryOrder.indexOf(a);
     const bIndex = categoryOrder.indexOf(b);
-    if (aIndex === -1 && bIndex === -1) return a.i18n.languageCompare(b);
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
     if (aIndex === -1) return 1;
     if (bIndex === -1) return -1;
     return aIndex - bIndex;

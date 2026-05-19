@@ -1,0 +1,12 @@
+{
+  "productUnitId": "digital-marketing",
+  "runId": "2026-05-19T00-32-08-6f80d3d3",
+  "phase": "deploy",
+  "status": "execution-failed",
+  "observedAt": "2026-05-19T00:32:08.068Z",
+  "evidenceRefs": [
+    "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/deploy/digital-marketing/2026-05-19T00-32-08-6f80d3d3/deploy/lifecycle-result.json",
+    "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/deploy/digital-marketing/2026-05-19T00-32-08-6f80d3d3/deploy/deployment-manifest.json"
+  ],
+  "correlationId": "corr-2026-05-19T00-32-08-6f80d3d3"
+}

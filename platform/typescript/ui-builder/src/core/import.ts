@@ -4,11 +4,16 @@
  * Parses external code (TSX/HTML/JSON) and reconciles it against an existing
  * BuilderDocument, preserving ownership markers for regions that originated
  * from user edits and flagging conflicts requiring human review.
+ *
+ * TSX import uses TypeScript compiler API for accurate AST parsing instead of regex.
  */
 
-import type { BuilderDocument, ComponentInstance, NodeId, RoundTripFidelity, LossPoint } from './types.js';
+import type { BuilderDocument } from './builder-document.js';
+import { attachBuilderDocumentCompatibility, normalizeBuilderDocument } from './builder-document.js';
+import type { ComponentInstance, NodeId, RoundTripFidelity, LossPoint } from './types.js';
 import { createNodeId } from './types.js';
 import { produce } from 'immer';
+import * as ts from 'typescript';
 
 // ============================================================================
 // Import Source
@@ -52,11 +57,14 @@ export interface ImportResult {
 /**
  * Imports a BuilderDocument serialised as JSON. Lossless and always produces
  * a `clean` result if the JSON is structurally valid.
+ *
+ * Uses canonical BuilderDocument structure with Record-based nodes and layout.
  */
 export function importFromJson(
   source: ImportSource,
   existing: BuilderDocument,
 ): ImportResult {
+  existing = normalizeBuilderDocument(existing);
   let parsed: unknown;
   try {
     parsed = JSON.parse(source.content);
@@ -75,6 +83,21 @@ export function importFromJson(
     typeof parsed !== 'object' ||
     parsed === null ||
     !('rootNodes' in parsed) ||
+    !Array.isArray((parsed as Record<string, unknown>)['rootNodes'])
+  ) {
+    return {
+      status: 'failed',
+      document: existing,
+      addedNodeIds: [],
+      conflicts: [],
+      fidelity: { canRoundTrip: false, lossPoints: [], confidence: 0 },
+      errorMessage: 'JSON does not look like a BuilderDocument — missing rootNodes',
+    };
+  }
+
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
     !('nodes' in parsed)
   ) {
     return {
@@ -83,30 +106,74 @@ export function importFromJson(
       addedNodeIds: [],
       conflicts: [],
       fidelity: { canRoundTrip: false, lossPoints: [], confidence: 0 },
-      errorMessage: 'JSON does not look like a BuilderDocument — missing rootNodes or nodes',
+      errorMessage: 'JSON does not look like a BuilderDocument — missing nodes',
     };
   }
 
   const raw = parsed as Record<string, unknown>;
-  const rawNodes = raw['nodes'] as Record<string, ComponentInstance>;
+  const rawNodes = raw['nodes'] as Record<string, unknown>;
   const addedIds: NodeId[] = [];
 
-  const updated = produce(existing, (draft) => {
-    for (const [id, node] of Object.entries(rawNodes)) {
-      if (!draft.nodes.has(id as NodeId)) {
-        (draft.nodes as Map<NodeId, ComponentInstance>).set(id as NodeId, node);
-        addedIds.push(id as NodeId);
+  // Import without immer to avoid complex type compatibility issues
+  // Import is a merge operation, not a mutation of existing state
+  // Use plain object for construction to avoid readonly/mutable array mismatch
+  const updated: Record<string, unknown> = {
+    ...existing,
+    nodes: {
+      ...existing.nodes,
+    },
+    layout: {
+      ...existing.layout,
+      nodes: {
+        ...existing.layout.nodes,
+      },
+    },
+    metadata: {
+      ...existing.metadata,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  // Import nodes using canonical Record structure
+  for (const [id, node] of Object.entries(rawNodes)) {
+    if (!(id in (updated.nodes as Record<string, unknown>))) {
+      (updated.nodes as Record<string, unknown>)[id] = node;
+      addedIds.push(id as NodeId);
+    }
+  }
+
+  // Handle root children from layout structure (canonical)
+  if ('layout' in raw && typeof raw.layout === 'object' && raw.layout !== null) {
+    const layout = raw.layout as Record<string, unknown>;
+    if ('rootId' in layout && 'nodes' in layout) {
+      const rootId = layout.rootId as string;
+      const layoutNodes = layout.nodes as Record<string, unknown>;
+      const rootLayoutNode = layoutNodes[rootId] as Record<string, unknown>;
+
+      if (rootLayoutNode && 'children' in rootLayoutNode && Array.isArray(rootLayoutNode.children)) {
+        const importedRootChildren = rootLayoutNode.children as NodeId[];
+        const updatedLayout = updated.layout as Record<string, unknown>;
+        const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
+        const currentRootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
+
+        if (currentRootLayoutNode) {
+          const newRootChildren = importedRootChildren.filter(
+            (id) => !((currentRootLayoutNode.children as NodeId[] | undefined)?.includes(id))
+          );
+          currentRootLayoutNode.children = [
+            ...(currentRootLayoutNode.children as NodeId[] | undefined ?? []),
+            ...newRootChildren,
+          ];
+        }
       }
     }
-    const importedRoots = raw['rootNodes'] as NodeId[];
-    const newRoots = importedRoots.filter((id) => !draft.rootNodes.includes(id));
-    draft.rootNodes = [...draft.rootNodes, ...newRoots];
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }
 
   return {
     status: 'clean',
-    document: updated,
+    // Cast through unknown to handle readonly/mutable array mismatch
+    // External JSON has mutable arrays, canonical schema uses readonly
+    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
     addedNodeIds: addedIds,
     conflicts: [],
     fidelity: { canRoundTrip: true, lossPoints: [], confidence: 1 },
@@ -114,11 +181,88 @@ export function importFromJson(
 }
 
 // ============================================================================
-// TSX import (heuristic, review-required)
+// TSX import (AST-based, review-required)
 // ============================================================================
 
 /**
- * Parses a TSX string with a heuristic JSX element scanner and creates
+ * Parse JSX attributes from a TypeScript AST node.
+ */
+function parseJsxAttributes(node: ts.JsxOpeningLikeElement): Record<string, unknown> {
+  const props: Record<string, unknown> = {};
+
+  for (const prop of node.attributes.properties) {
+    if (ts.isJsxAttribute(prop)) {
+      const propName = prop.name.getText();
+
+      if (prop.initializer) {
+        if (ts.isStringLiteral(prop.initializer)) {
+          props[propName] = prop.initializer.text;
+        } else if (ts.isJsxExpression(prop.initializer)) {
+          // For expressions, try to evaluate simple literals
+          const expr = prop.initializer.expression;
+          if (!expr) {
+            // Empty expression - skip
+            continue;
+          }
+          if (ts.isNumericLiteral(expr)) {
+            props[propName] = Number(expr.text);
+          } else if (expr.kind === ts.SyntaxKind.TrueKeyword) {
+            props[propName] = true;
+          } else if (expr.kind === ts.SyntaxKind.FalseKeyword) {
+            props[propName] = false;
+          } else if (ts.isIdentifier(expr)) {
+            // Keep as identifier for review
+            props[propName] = `{${expr.getText()}}`;
+          } else {
+            // Complex expression - flag as loss point
+            props[propName] = `{${expr.getText()}}`;
+          }
+        }
+      } else {
+        // Boolean attribute without value (e.g., disabled)
+        props[propName] = true;
+      }
+    }
+  }
+
+  return props;
+}
+
+/**
+ * Recursively traverse the TypeScript AST to extract JSX elements.
+ */
+function extractJsxElements(
+  node: ts.Node,
+  designSystemContractNames: ReadonlySet<string>,
+  results: Array<{ componentName: string; props: Record<string, unknown>; location: number }>,
+): void {
+  if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) {
+    const tagName = node.tagName.getText();
+
+    // Only process PascalCase components (likely design system components)
+    if (/^[A-Z]/.test(tagName)) {
+      const location = node.getStart();
+      const props = ts.isJsxSelfClosingElement(node)
+        ? parseJsxAttributes(node)
+        : parseJsxAttributes(node);
+
+      if (!designSystemContractNames.has(tagName)) {
+        // Still collect but will be flagged as conflict
+        results.push({ componentName: tagName, props, location });
+      } else {
+        results.push({ componentName: tagName, props, location });
+      }
+    }
+  }
+
+  // Recursively process children
+  ts.forEachChild(node, (child) => {
+    extractJsxElements(child, designSystemContractNames, results);
+  });
+}
+
+/**
+ * Parses a TSX string using TypeScript compiler API AST parsing and creates
  * BuilderDocument nodes for discovered components. Always flags `review-required`
  * because TSX may contain arbitrary custom code not representable in the model.
  */
@@ -127,22 +271,48 @@ export function importFromTsx(
   existing: BuilderDocument,
   designSystemContractNames: ReadonlySet<string>,
 ): ImportResult {
+  existing = normalizeBuilderDocument(existing);
   const addedIds: NodeId[] = [];
   const conflicts: ImportConflict[] = [];
   const lossPoints: LossPoint[] = [];
-
-  // Heuristic: match self-closing and opening JSX tags for known contract names
-  // e.g. <Button variant="primary" /> or <Card>
-  const tagRe = /<([A-Z][A-Za-z0-9]*)(\s[^>]*)?\s*\/?>/g;
-  let match: RegExpExecArray | null;
   const insertedComponents: ComponentInstance[] = [];
 
-  while ((match = tagRe.exec(source.content)) !== null) {
-    const componentName = match[1] as string;
+  // Create TypeScript compiler instance
+  const compilerOptions: ts.CompilerOptions = {
+    jsx: ts.JsxEmit.React,
+    target: ts.ScriptTarget.ESNext,
+    module: ts.ModuleKind.ESNext,
+  };
+
+  // Parse TSX source into AST
+  const sourceFile = ts.createSourceFile(
+    'temp.tsx',
+    source.content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+
+  // Extract JSX elements from AST
+  const extractedElements: Array<{ componentName: string; props: Record<string, unknown>; location: number }> = [];
+  extractJsxElements(sourceFile, designSystemContractNames, extractedElements);
+
+  // Process extracted elements
+  for (const { componentName, props, location } of extractedElements) {
+    const expressionPropNames = Object.entries(props)
+      .filter(([, value]) => typeof value === 'string' && /^\{.*\}$/.test(value))
+      .map(([propName]) => propName);
+    if (expressionPropNames.length > 0) {
+      lossPoints.push({
+        type: 'custom-code',
+        location: `char ${location}`,
+        description: `Expression prop(s) require review: ${expressionPropNames.join(', ')}`,
+      });
+    }
     if (!designSystemContractNames.has(componentName)) {
       lossPoints.push({
         type: 'unsupported-pattern',
-        location: `char ${match.index}`,
+        location: `char ${location}`,
         description: `Unknown component <${componentName}> not in design system contracts`,
       });
       conflicts.push({
@@ -153,10 +323,6 @@ export function importFromTsx(
       continue;
     }
 
-    // Parse inline props with a simple key="value" scanner
-    const propsRaw = match[2] ?? '';
-    const props: Record<string, unknown> = parseInlineProps(propsRaw);
-
     const id = createNodeId();
     insertedComponents.push({
       id,
@@ -164,7 +330,7 @@ export function importFromTsx(
       props,
       slots: {},
       bindings: [],
-      metadata: { ownership: 'user-authored' as const },
+      metadata: { ownership: { author: 'user' } as Record<string, unknown> },
     });
     addedIds.push(id);
   }
@@ -178,17 +344,39 @@ export function importFromTsx(
     });
   }
 
-  const updated = produce(existing, (draft) => {
-    for (const node of insertedComponents) {
-      (draft.nodes as Map<NodeId, ComponentInstance>).set(node.id, node);
-      draft.rootNodes = [...draft.rootNodes, node.id];
+  // Import without immer to avoid complex type compatibility issues
+  // Use plain object for construction to avoid readonly/mutable array mismatch
+  const updated: Record<string, unknown> = {
+    ...existing,
+    nodes: { ...existing.nodes },
+    layout: {
+      ...existing.layout,
+      nodes: { ...existing.layout.nodes },
+    },
+    metadata: {
+      ...existing.metadata,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  for (const node of insertedComponents) {
+    (updated.nodes as Record<string, unknown>)[node.id] = node;
+    // Add to root layout children (canonical structure)
+    const updatedLayout = updated.layout as Record<string, unknown>;
+    const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
+    const rootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
+    if (rootLayoutNode) {
+      rootLayoutNode.children = [
+        ...(rootLayoutNode.children as NodeId[] | undefined ?? []),
+        node.id,
+      ];
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }
 
   return {
     status: conflicts.length > 0 ? 'review-required' : 'clean',
-    document: updated,
+    // Cast through unknown to handle readonly/mutable array mismatch
+    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
     addedNodeIds: addedIds,
     conflicts,
     fidelity: {
@@ -211,6 +399,7 @@ export function importFromHtml(
   source: ImportSource,
   existing: BuilderDocument,
 ): ImportResult {
+  existing = normalizeBuilderDocument(existing);
   const addedIds: NodeId[] = [];
   const lossPoints: LossPoint[] = [];
 
@@ -237,7 +426,7 @@ export function importFromHtml(
       props,
       slots: {},
       bindings: [],
-      metadata: { ownership: 'user-authored' as const },
+      metadata: { ownership: { author: 'user' } as Record<string, unknown> },
     });
     addedIds.push(id);
   }
@@ -252,17 +441,39 @@ export function importFromHtml(
     });
   }
 
-  const updated = produce(existing, (draft) => {
-    for (const node of insertedComponents) {
-      (draft.nodes as Map<NodeId, ComponentInstance>).set(node.id, node);
-      draft.rootNodes = [...draft.rootNodes, node.id];
+  // Import without immer to avoid complex type compatibility issues
+  // Use plain object for construction to avoid readonly/mutable array mismatch
+  const updated: Record<string, unknown> = {
+    ...existing,
+    nodes: { ...existing.nodes },
+    layout: {
+      ...existing.layout,
+      nodes: { ...existing.layout.nodes },
+    },
+    metadata: {
+      ...existing.metadata,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+
+  for (const node of insertedComponents) {
+    (updated.nodes as Record<string, unknown>)[node.id] = node;
+    // Add to root layout children (canonical structure)
+    const updatedLayout = updated.layout as Record<string, unknown>;
+    const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
+    const rootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
+    if (rootLayoutNode) {
+      rootLayoutNode.children = [
+        ...(rootLayoutNode.children as NodeId[] | undefined ?? []),
+        node.id,
+      ];
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
-  });
+  }
 
   return {
     status: lossPoints.length > 0 ? 'review-required' : 'clean',
-    document: updated,
+    // Cast through unknown to handle readonly/mutable array mismatch
+    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
     addedNodeIds: addedIds,
     conflicts: [],
     fidelity: {

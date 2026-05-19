@@ -33,7 +33,6 @@ import {
 import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
 import type { BacklogItem, ItemStatus } from './BacklogBoard';
-import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -153,7 +152,6 @@ async function fetchSprint(projectId: string, sprintId: string): Promise<Sprint 
  * SprintView — Detailed view of a sprint with items, metrics, and capacity tracking.
  */
 export function SprintView({ projectId, sprintId, className = '' }: SprintViewProps): ReactNode {
-  const { t } = useTranslation('common');
   const queryClient: QueryClient = useQueryClient();
 
   const {
@@ -223,7 +221,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
         <div
           className="flex items-center justify-center gap-2 text-fg-muted"
           role="status"
-          aria-label={t('planning.sprint.loading')}
+          aria-label="Loading sprint"
         >
           <SprintIcon className="h-5 w-5 animate-pulse" aria-hidden="true" />
           <Typography variant="body2">Loading sprint…</Typography>
@@ -257,7 +255,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
           </Typography>
           <span
             className={`text-xs font-medium px-2 py-0.5 rounded-full ${getSprintStatusBadgeColor(sprint.status)}`}
-            aria-label={`${t('planning.sprint.status')}: ${sprint.status}`}
+            aria-label={`Sprint status: ${sprint.status}`}
           >
             {sprint.status}
           </span>
@@ -271,7 +269,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
               variant="default"
               onClick={handleStartSprint}
               disabled={startSprintMutation.isPending}
-              aria-label={t('planning.sprint.start')}
+              aria-label="Start Sprint"
             >
               <SprintIcon className="h-4 w-4 mr-1" aria-hidden="true" />
               Start Sprint
@@ -283,7 +281,7 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
               variant="outline"
               onClick={handleCompleteSprint}
               disabled={completeSprintMutation.isPending}
-              aria-label={t('planning.sprint.complete')}
+              aria-label="Complete Sprint"
             >
               <DoneIcon className="h-4 w-4 mr-1" aria-hidden="true" />
               Complete Sprint
@@ -397,12 +395,14 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
               </div>
               <Typography variant="body2" className="text-fg-muted">
                 {metrics.completedPoints}/{metrics.totalPoints > 0 ? metrics.totalPoints : '?'}pt
-                &nbsp;({metrics.progressPercent}%)
+                &nbsp;(
+                <span>{metrics.progressPercent}%</span>
+                )
               </Typography>
             </div>
             <Progress
               value={metrics.progressPercent}
-              aria-label={`${t('planning.sprint.progress')}: ${metrics.progressPercent}%`}
+              aria-label={`Sprint progress: ${metrics.progressPercent}%`}
             />
           </CardContent>
         </Card>
@@ -441,13 +441,13 @@ export function SprintView({ projectId, sprintId, className = '' }: SprintViewPr
                       <Chip
                         label={`${item.storyPoints}pt`}
                         size="small"
-                        aria-label={`${item.storyPoints} ${t('planning.sprint.storyPoints')}`}
+                        aria-label={`${item.storyPoints} story points`}
                       />
                     )}
                     <Chip
                       label={item.type}
                       size="small"
-                      aria-label={`${t('planning.sprint.itemType')}: ${item.type}`}
+                      aria-label={`Item type: ${item.type}`}
                     />
                   </div>
                 </div>

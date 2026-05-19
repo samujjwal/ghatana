@@ -19,15 +19,8 @@ import {
   TextField,
   Typography,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  CircularProgress,
-  Alert,
   Card,
   CardContent,
-  Tooltip,
 } from '@ghatana/design-system';
 import {
   Search as SearchIcon,
@@ -76,6 +69,78 @@ interface Props {
   projectId?: string;
   className?: string;
 }
+
+interface ListItemTextProps {
+  primary: React.ReactNode;
+  secondary?: React.ReactNode;
+}
+
+const List: React.FC<React.HTMLAttributes<HTMLUListElement> & { dense?: boolean }> = ({
+  dense: _dense,
+  children,
+  ...props
+}) => <ul {...props}>{children}</ul>;
+
+const ListItem: React.FC<
+  React.LiHTMLAttributes<HTMLLIElement> & {
+    button?: boolean;
+    selected?: boolean;
+  }
+> = ({ button: _button, selected, children, className = '', ...props }) => (
+  <li
+    {...props}
+    className={`${selected ? 'bg-info-bg' : ''} ${className}`.trim()}
+  >
+    {children}
+  </li>
+);
+
+const ListItemText: React.FC<ListItemTextProps> = ({ primary, secondary }) => (
+  <div>
+    <div>{primary}</div>
+    {secondary && <div className="text-sm text-fg-muted">{secondary}</div>}
+  </div>
+);
+
+const IconButton: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { size?: 'small' | 'medium' | 'large'; sx?: unknown }
+> = ({ size: _size, sx: _sx, children, type = 'button', ...props }) => (
+  <button type={type} {...props}>
+    {children}
+  </button>
+);
+
+const CircularProgress: React.FC<{ size?: number }> = ({ size = 24 }) => (
+  <span
+    role="status"
+    aria-label="Loading"
+    className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent"
+    style={{ width: size, height: size }}
+  />
+);
+
+const Alert: React.FC<
+  React.HTMLAttributes<HTMLDivElement> & {
+    severity?: 'error' | 'info' | 'warning' | 'success';
+    action?: React.ReactNode;
+    sx?: unknown;
+  }
+> = ({ severity = 'info', action, sx: _sx, children, className = '', ...props }) => (
+  <div
+    role={severity === 'error' ? 'alert' : 'status'}
+    className={`rounded-md border p-3 ${className}`.trim()}
+    {...props}
+  >
+    <div className="flex items-center justify-between gap-3">
+      <span>{children}</span>
+      {action}
+    </div>
+  </div>
+);
+
+const Tooltip: React.FC<{ title: string; children: React.ReactElement }> = ({ title, children }) => (
+  <span title={title}>{children}</span>
+);
 
 /**
  * Knowledge Graph Panel Component

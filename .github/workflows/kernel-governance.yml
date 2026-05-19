@@ -1,0 +1,68 @@
+name: Kernel Platform Governance
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'config/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'platform/**'
+      - 'products/**'
+      - 'settings.gradle.kts'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'config/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'platform/**'
+      - 'products/**'
+      - 'settings.gradle.kts'
+      - 'pnpm-workspace.yaml'
+
+jobs:
+  kernel-governance:
+    name: Kernel Platform Governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate domain registry
+        run: node scripts/validate-domain-registry.mjs
+
+      - name: Validate product registry
+        run: node scripts/validate-product-registry.mjs
+
+      - name: Check product generated includes
+        run: node scripts/check-product-generated-includes.mjs
+
+      - name: Check documentation authority
+        run: node scripts/check-doc-authority.mjs
+
+      - name: Check current-state claims
+        run: node scripts/check-current-state-claims.mjs
+
+      - name: Check domain boundaries
+        run: node scripts/check-domain-boundaries.mjs
+
+      - name: Check deprecated imports
+        run: node scripts/check-deprecated-imports.mjs
+
+      - name: Check opening lifecycle pilots
+        run: node scripts/check-opening-lifecycle-pilots.mjs

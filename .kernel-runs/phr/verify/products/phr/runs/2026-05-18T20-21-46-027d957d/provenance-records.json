@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "records": [
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T20-21-46-027d957d",
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-027d957d",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T20-21-46-027d957d"
+      ],
+      "recordedAt": "2026-05-18T20:21:46.858Z",
+      "correlationId": "corr-2026-05-18T20-21-46-027d957d"
+    }
+  ]
+}

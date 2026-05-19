@@ -147,8 +147,8 @@ export interface ComponentInstance {
   readonly id: NodeId;
   readonly contractName: string;
   readonly props: Record<string, unknown>;
-  readonly slots: Record<string, readonly NodeId[]>;
-  readonly bindings: readonly Binding[];
+  readonly slots: Record<string, NodeId[]>;
+  readonly bindings: Binding[];
   readonly metadata: InstanceMetadata;
 }
 
@@ -159,15 +159,15 @@ export interface InstanceMetadata {
   readonly size?: { readonly width: number; readonly height: number };
   readonly locked?: boolean;
   readonly hidden?: boolean;
-  readonly ownership?: CodeOwnership;
+  readonly ownership?: Record<string, unknown>;
   /** Layout constraints for the canvas editor. */
   readonly layout?: LayoutConstraints;
   /** Per-breakpoint prop/size/position overrides. */
-  readonly responsiveVariants?: readonly ResponsiveVariant[];
+  readonly responsiveVariants?: ResponsiveVariant[];
   /** Interactive state overrides. */
-  readonly stateVariants?: readonly StateVariant[];
+  readonly stateVariants?: StateVariant[];
   /** Wired action definitions for component events. */
-  readonly actions?: readonly ActionDefinition[];
+  readonly actions?: ActionDefinition[];
   /** Review / approval gate for this node. */
   readonly reviewStatus?: ReviewStatus;
   /** Pending changes not yet persisted or approved. */
@@ -175,9 +175,9 @@ export interface InstanceMetadata {
   /** Privacy / data classification of props. */
   readonly privacyMetadata?: PrivacyMetadata;
   /** Data sensitivity classification. */
-  readonly dataClassification?: DataClassification;
+  readonly dataClassification?: Record<string, unknown>;
   /** AI-initiated changes affecting this node. */
-  readonly aiLineage?: readonly AIChangeRecord[];
+  readonly aiLineage?: AIChangeRecord[];
   /** Collaboration session node identity (for CRDT merging). */
   readonly collaborationId?: string;
   /** Provenance record (who created / last modified this node). */
@@ -219,16 +219,12 @@ export interface DesignSystemModel {
 // Builder Document
 // ============================================================================
 
-/** Root document type for the UI Builder. */
-export interface BuilderDocument {
-  readonly id: DocumentId;
-  readonly version: string;
-  readonly name: string;
-  readonly designSystem: DesignSystemModel;
-  readonly rootNodes: readonly NodeId[];
-  readonly nodes: ReadonlyMap<NodeId, ComponentInstance>;
-  readonly metadata: DocumentMetadata;
-}
+/**
+ * BuilderDocument is now defined canonically in builder-document.ts with full Zod schema validation.
+ * This file only exports supporting types. Import BuilderDocument from './builder-document' instead.
+ *
+ * @deprecated Import BuilderDocument from './builder-document' for the canonical schema-based definition.
+ */
 
 /** Document-level metadata. */
 export interface DocumentMetadata {

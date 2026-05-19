@@ -120,6 +120,46 @@ class RepositoryInventoryScannerTest {
     }
 
     @Test
+    @DisplayName("honors gitignore negation with last-rule-wins semantics")
+    void honorsGitignoreNegation(@TempDir Path root) throws Exception {
+        Files.createDirectories(root.resolve("logs"));
+        Files.writeString(root.resolve("logs/debug.log"), "debug");
+        Files.writeString(root.resolve("logs/important.log"), "keep");
+        Files.createDirectories(root.resolve("src"));
+        Files.writeString(root.resolve("src/app.ts"), "export {};");
+
+        RepositoryInventoryScanner.InventoryResult result = scanner.scanRepository(
+            root,
+            new java.util.LinkedHashSet<>(List.of("logs/", "!logs/important.log"))
+        );
+
+        assertThat(result.files()).anyMatch(f -> f.relativePath().equals("logs/important.log"));
+        assertThat(result.skipped()).anyMatch(s ->
+            s.reason() == RepositoryInventoryScanner.SkipReason.GITIGNORE
+                && s.relativePath().equals("logs/debug.log")
+                && "logs/".equals(s.matchedPattern())
+        );
+    }
+
+    @Test
+    @DisplayName("bare gitignore directory pattern excludes descendants")
+    void bareGitignoreDirectoryPatternExcludesDescendants(@TempDir Path root) throws Exception {
+        Files.createDirectories(root.resolve("cache"));
+        Files.writeString(root.resolve("cache/result.json"), "{}");
+        Files.createDirectories(root.resolve("src"));
+        Files.writeString(root.resolve("src/app.ts"), "export {};");
+
+        RepositoryInventoryScanner.InventoryResult result = scanner.scanRepository(root, Set.of("cache"));
+
+        assertThat(result.files()).noneMatch(f -> f.relativePath().startsWith("cache/"));
+        assertThat(result.skipped()).anyMatch(s ->
+            s.reason() == RepositoryInventoryScanner.SkipReason.GITIGNORE
+                && s.relativePath().equals("cache/result.json")
+                && "cache".equals(s.matchedPattern())
+        );
+    }
+
+    @Test
     @DisplayName("skipReasonSummary groups skip entries by reason")
     void skipReasonSummaryGroupsByReason(@TempDir Path root) throws Exception {
         Path nm = root.resolve("node_modules/pkg/index.js");

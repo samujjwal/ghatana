@@ -9,14 +9,12 @@
 import React, { useState } from 'react';
 import { Box, Card, CardContent, Typography, Button, Stepper, Step, StepLabel, TextField, Chip, Avatar } from '@ghatana/design-system';
 import { Sparkles as AutoAwesome, ArrowRight as ArrowForward, ArrowLeft as ArrowBack, CheckCircle } from 'lucide-react';
-import { useTranslation } from '@ghatana/i18n';
 
 interface IntelligentOnboardingProps {
     onComplete: () => void;
 }
 
 export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps) {
-    const { t } = useTranslation('common');
     const [currentStep, setCurrentStep] = useState(0);
     const [userData, setUserData] = useState({
         name: '',
@@ -27,24 +25,24 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
     });
 
     const steps = [
-        { title: t('onboarding.step.welcome'), description: t('onboarding.stepDesc.welcome') },
-        { title: t('onboarding.step.yourRole'), description: t('onboarding.stepDesc.yourRole') },
-        { title: t('onboarding.step.projectSetup'), description: t('onboarding.stepDesc.projectSetup') },
-        { title: t('onboarding.step.readyToGo'), description: t('onboarding.stepDesc.readyToGo') }
+        { title: 'Welcome', description: 'Start your workspace setup' },
+        { title: 'Your Role', description: 'Personalize guidance around your role' },
+        { title: 'Project Setup', description: 'Tell us what you are building' },
+        { title: 'Ready to Go!', description: 'Finish onboarding' }
     ];
 
     const roleOptions = [
-        { id: 'developer', name: t('onboarding.role.developer.name'), description: t('onboarding.role.developer.desc') },
-        { id: 'designer', name: t('onboarding.role.designer.name'), description: t('onboarding.role.designer.desc') },
-        { id: 'product_manager', name: t('onboarding.role.pm.name'), description: t('onboarding.role.pm.desc') },
-        { id: 'full_stack', name: t('onboarding.role.fullStack.name'), description: t('onboarding.role.fullStack.desc') }
+        { id: 'developer', name: 'Developer', description: 'Build and ship application features' },
+        { id: 'designer', name: 'Designer', description: 'Shape product flows and UI systems' },
+        { id: 'product_manager', name: 'Product Manager', description: 'Plan, prioritize, and coordinate delivery' },
+        { id: 'full_stack', name: 'Full Stack', description: 'Work across frontend, backend, and deployment' }
     ];
 
     const projectTypes = [
-        { id: 'webapp', name: t('onboarding.project.webApp'), emoji: '⚡' },
-        { id: 'mobile', name: t('onboarding.project.mobile'), emoji: '✨' },
-        { id: 'api', name: t('onboarding.project.api'), emoji: '🚀' },
-        { id: 'library', name: t('onboarding.project.library'), emoji: '📁' }
+        { id: 'webapp', name: 'Web Application', emoji: '⚡' },
+        { id: 'mobile', name: 'Mobile App', emoji: '✨' },
+        { id: 'api', name: 'API Service', emoji: '🚀' },
+        { id: 'library', name: 'Library', emoji: '📁' }
     ];
 
     const handleNext = () => {
@@ -70,24 +68,24 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                             <AutoAwesome size={32} />
                         </Avatar>
                         <Typography as="h4" fontWeight="bold" mb={2}>
-                            {t('onboarding.welcomeTitle')}
+                            Welcome to Yappc
                         </Typography>
                         <Typography as="p" color="text.secondary" mb={4}>
-                            {t('onboarding.welcomeSubtitle')}
+                            Get guided recommendations tailored to your project and workflow.
                         </Typography>
                         <TextField
                             fullWidth
-                            label={t('onboarding.yourName')}
+                            label="Your Name"
                             value={userData.name}
                             onChange={(e) => setUserData({ ...userData, name: e.target.value })}
                             className="mb-6"
                         />
                         <TextField
                             fullWidth
-                            label={t('onboarding.experienceQuestion')}
+                            label="Experience Level"
                             value={userData.experience}
                             onChange={(e) => setUserData({ ...userData, experience: e.target.value })}
-                            placeholder={t('onboarding.experiencePlaceholder')}
+                            placeholder="e.g., Beginner, Intermediate, Advanced"
                             className="mb-6"
                         />
                     </Box>
@@ -97,10 +95,10 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                 return (
                     <Box py={4}>
                         <Typography as="h5" fontWeight="bold" mb={2}>
-                            {t('onboarding.primaryRole')}
+                            What's your primary role?
                         </Typography>
                         <Typography as="p" color="text.secondary" mb={4}>
-                            {t('onboarding.personalizeText')}
+                            We will personalize the workspace around how you build.
                         </Typography>
                         <Box display="grid" gap={2}>
                             {roleOptions.map(role => (
@@ -128,10 +126,10 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                 return (
                     <Box py={4}>
                         <Typography as="h5" fontWeight="bold" mb={2}>
-                            {t('onboarding.projectTypeQuestion')}
+                            What are you building?
                         </Typography>
                         <Typography as="p" color="text.secondary" mb={4}>
-                            {t('onboarding.projectTypeSubtitle')}
+                            Choose the closest project type so we can tune the starting point.
                         </Typography>
                         <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={2}>
                             {projectTypes.map(type => (
@@ -162,18 +160,18 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                             <CheckCircle size={32} />
                         </Avatar>
                         <Typography as="h4" fontWeight="bold" mb={2}>
-                            {t('onboarding.allSet')}
+                            Your workspace is ready
                         </Typography>
                         <Typography as="p" color="text.secondary" mb={4}>
-                            {t('onboarding.readySubtitle')}
+                            You can start shaping your product with the context you shared.
                         </Typography>
                         <Box display="flex" justifyContent="center" gap={2} mb={4}>
-                            <Chip label={`${userData.name || t('onboarding.defaultUser')}`} variant="outlined" />
-                            <Chip label={roleOptions.find(r => r.id === userData.role)?.name || t('onboarding.defaultRole')} variant="outlined" />
-                            <Chip label={projectTypes.find(p => p.id === userData.projectType)?.name || t('onboarding.defaultProject')} variant="outlined" />
+                            <Chip label={`${userData.name || 'New user'}`} variant="outlined" />
+                            <Chip label={roleOptions.find(r => r.id === userData.role)?.name || 'Role'} variant="outlined" />
+                            <Chip label={projectTypes.find(p => p.id === userData.projectType)?.name || 'Project'} variant="outlined" />
                         </Box>
                         <Typography as="p" className="text-sm" color="text.secondary">
-                            {t('onboarding.continueJourney')}
+                            Continue your journey from the workspace dashboard.
                         </Typography>
                     </Box>
                 );
@@ -207,7 +205,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                             disabled={currentStep === 0}
                             startIcon={<ArrowBack />}
                         >
-                            {t('onboarding.nav.back')}
+                            Back
                         </Button>
                         <Button
                             variant="solid"
@@ -215,7 +213,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                             endIcon={<ArrowForward />}
                             disabled={currentStep === 1 && !userData.role}
                         >
-                            {currentStep === steps.length - 1 ? t('onboarding.nav.startJourney') : t('onboarding.nav.next')}
+                            {currentStep === steps.length - 1 ? 'Start Journey' : 'Next'}
                         </Button>
                     </Box>
                 </CardContent>

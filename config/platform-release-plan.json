@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "1.0.0",
+  "targetCommit": "f9e7f49d6eed70cb6d2c0fa71b1013d42e2e6af3",
+  "openingLifecyclePilots": ["digital-marketing", "phr"],
+  "disabledUntilReady": ["finance", "flashit"],
+  "platformProviderValidators": ["data-cloud", "yappc"]
+}

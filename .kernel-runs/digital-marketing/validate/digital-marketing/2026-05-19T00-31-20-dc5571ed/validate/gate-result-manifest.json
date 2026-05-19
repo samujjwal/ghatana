@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "runId": "2026-05-19T00-31-20-dc5571ed",
+  "phase": "validate",
+  "status": "skipped",
+  "gates": [
+    {
+      "gateId": "registry-validation",
+      "gateName": "registry-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for registry-validation",
+      "evidenceRefs": [
+        "dry-run:gate:registry-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "registry-validation"
+    },
+    {
+      "gateId": "manifest-validation",
+      "gateName": "manifest-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for manifest-validation",
+      "evidenceRefs": [
+        "dry-run:gate:manifest-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "manifest-validation"
+    },
+    {
+      "gateId": "lifecycle-contract-validation",
+      "gateName": "lifecycle-contract-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for lifecycle-contract-validation",
+      "evidenceRefs": [
+        "dry-run:gate:lifecycle-contract-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "lifecycle-contract-validation"
+    },
+    {
+      "gateId": "bridge-compliance",
+      "gateName": "bridge-compliance",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for bridge-compliance",
+      "evidenceRefs": [
+        "dry-run:gate:bridge-compliance"
+      ],
+      "durationMs": 0,
+      "providerId": "bridge-compliance"
+    },
+    {
+      "gateId": "dmos-boundary-workflow-coverage",
+      "gateName": "dmos-boundary-workflow-coverage",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for dmos-boundary-workflow-coverage",
+      "evidenceRefs": [
+        "dry-run:gate:dmos-boundary-workflow-coverage"
+      ],
+      "durationMs": 0,
+      "providerId": "dmos-boundary-workflow-coverage"
+    },
+    {
+      "gateId": "marketing-consent-boundary",
+      "gateName": "marketing-consent-boundary",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for marketing-consent-boundary",
+      "evidenceRefs": [
+        "dry-run:gate:marketing-consent-boundary"
+      ],
+      "durationMs": 0,
+      "providerId": "marketing-consent-boundary"
+    },
+    {
+      "gateId": "non-regulated-customer-data-minimization",
+      "gateName": "non-regulated-customer-data-minimization",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:20.335Z",
+      "details": "Dry-run gate evaluation for non-regulated-customer-data-minimization",
+      "evidenceRefs": [
+        "dry-run:gate:non-regulated-customer-data-minimization"
+      ],
+      "durationMs": 0,
+      "providerId": "non-regulated-customer-data-minimization"
+    }
+  ],
+  "writtenAt": "2026-05-19T00:31:20.336Z"
+}

@@ -49,7 +49,7 @@ export function PersonaSwitcher({
 
   if (variant === 'compact' && !isExpanded) {
     return (
-      <div className={`${className}`} role="region" aria-label={t('persona.currentRole', { role: PERSONA_DEFINITIONS[primaryPersona].name, count: virtualPersonas.length })}>
+      <div className={`${className}`} role="region" aria-label={t('persona.personaLabel')}>
         {/* Compact view - show active persona icons */}
         <Button
           onClick={() => setIsExpanded(true)}

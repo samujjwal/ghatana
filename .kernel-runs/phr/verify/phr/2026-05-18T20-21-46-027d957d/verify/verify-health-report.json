@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "productUnitId": "phr",
+  "runId": "2026-05-18T20-21-46-027d957d",
+  "correlationId": "corr-2026-05-18T20-21-46-027d957d",
+  "environment": "local",
+  "phase": "verify",
+  "status": "skipped",
+  "checkedAt": "2026-05-18T20:21:46.862Z",
+  "checks": [
+    {
+      "checkId": "verify-local-0",
+      "status": "skipped",
+      "durationMs": 0
+    }
+  ],
+  "evidenceRefs": []
+}

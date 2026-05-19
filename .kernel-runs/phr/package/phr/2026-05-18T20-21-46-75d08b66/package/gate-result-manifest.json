@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-18T20-21-46-75d08b66",
+  "phase": "package",
+  "status": "skipped",
+  "gates": [],
+  "writtenAt": "2026-05-18T20:21:46.478Z"
+}

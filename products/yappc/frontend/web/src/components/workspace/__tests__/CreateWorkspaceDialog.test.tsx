@@ -103,7 +103,7 @@ describe('CreateWorkspaceDialog', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:7002/api/workspaces',
+        '/api/workspaces',
         expect.objectContaining({ method: 'POST' })
       );
     });

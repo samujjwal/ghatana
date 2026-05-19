@@ -112,7 +112,8 @@ export const GateHealthPanel: React.FC<GateHealthPanelProps> = ({
             </div>
 
             <div className="text-sm text-muted-foreground">
-              <span>Phase: {gate.phase}</span>
+              <span>Phase: </span>
+              <span>{gate.phase}</span>
             </div>
 
             {gate.criteria && gate.criteria.length > 0 && (

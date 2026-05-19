@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-75d08b66",
+  "correlationId": "corr-2026-05-18T20-21-46-75d08b66",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "package",
+  "phaseMode": "sequential",
+  "lifecycleProfile": "standard-web-api-product",
+  "surfaces": [
+    {
+      "surface": "backend-api",
+      "type": "backend-api",
+      "adapter": "docker-buildx",
+      "config": {
+        "adapter": "docker-buildx",
+        "image": "ghatana/phr-api",
+        "tag": "local",
+        "dockerfile": "products/phr/launcher/Dockerfile",
+        "context": "."
+      }
+    },
+    {
+      "surface": "web",
+      "type": "web",
+      "adapter": "docker-buildx",
+      "config": {
+        "adapter": "docker-buildx",
+        "image": "ghatana/phr-web",
+        "tag": "local",
+        "dockerfile": "products/phr/apps/web/Dockerfile",
+        "context": "."
+      }
+    }
+  ],
+  "gates": [],
+  "steps": [
+    {
+      "id": "package-backend-api-0",
+      "stepKind": "package",
+      "phase": "package",
+      "surface": "backend-api",
+      "adapter": "docker-buildx",
+      "adapterSelectionSource": "profile-default",
+      "description": "package backend-api container image via docker-buildx",
+      "dependsOn": [],
+      "estimatedDurationMs": 120000,
+      "adapterContext": {
+        "packageConfig": {
+          "adapter": "docker-buildx",
+          "image": "ghatana/phr-api",
+          "tag": "local",
+          "dockerfile": "products/phr/launcher/Dockerfile",
+          "context": "."
+        },
+        "artifactConfig": {
+          "type": "container-image",
+          "packaging": "container",
+          "required": true
+        }
+      }
+    },
+    {
+      "id": "package-web-1",
+      "stepKind": "package",
+      "phase": "package",
+      "surface": "web",
+      "adapter": "docker-buildx",
+      "adapterSelectionSource": "profile-default",
+      "description": "package web container image via docker-buildx",
+      "dependsOn": [
+        "package-backend-api-0"
+      ],
+      "estimatedDurationMs": 120000,
+      "adapterContext": {
+        "packageConfig": {
+          "adapter": "docker-buildx",
+          "image": "ghatana/phr-web",
+          "tag": "local",
+          "dockerfile": "products/phr/apps/web/Dockerfile",
+          "context": "."
+        },
+        "artifactConfig": {
+          "type": "container-image",
+          "packaging": "container",
+          "required": true
+        }
+      }
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "surface": "backend-api",
+      "type": "container-image",
+      "required": true,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://phr/package/backend-api/container-image"
+    },
+    {
+      "surface": "web",
+      "type": "container-image",
+      "required": true,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://phr/package/web/container-image"
+    }
+  ],
+  "requiredManifests": [
+    "artifact-manifest",
+    "lifecycle-health-snapshot"
+  ],
+  "requiredPlugins": [],
+  "approvalRequirements": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package",
+  "estimatedDurationMs": 240000
+}

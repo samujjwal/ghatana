@@ -20,7 +20,8 @@
  * - action-wiring: Suggest event→action bindings based on contract patterns
  */
 
-import type { BuilderDocument, ComponentInstance, NodeId } from '../core/types.js';
+import type { BuilderDocument } from '../core/builder-document.js';
+import type { ComponentInstance, NodeId } from '../core/types.js';
 import type { AIActionLineage, AIHookKind } from './lineage.js';
 import type { ComponentContract } from '@ghatana/ds-schema';
 
@@ -82,8 +83,12 @@ function getNodeById(document: BuilderDocument, nodeId: NodeId): ComponentInstan
   return undefined;
 }
 
-function getContractByName(document: BuilderDocument, contractName: string): ComponentContract | undefined {
-  return document.designSystem.componentContracts.find((contract) => contract.name === contractName);
+function getContractByName(context: AIHookContext, contractName: string): ComponentContract | undefined {
+  const documentContracts = (context.document as BuilderDocument & {
+    designSystem?: { componentContracts?: readonly ComponentContract[] };
+  }).designSystem?.componentContracts;
+  return [...(context.contracts ?? []), ...(documentContracts ?? [])]
+    .find((contract: ComponentContract) => contract.name === contractName);
 }
 
 function applyContractPolicy(result: AIHookResult, context: AIHookContext): AIHookResult {
@@ -104,7 +109,7 @@ function applyContractPolicy(result: AIHookResult, context: AIHookContext): AIHo
       return true;
     }
 
-    const contract = getContractByName(context.document, node.contractName);
+    const contract = getContractByName(context, node.contractName);
     if (!contract) {
       return true;
     }
@@ -188,6 +193,8 @@ export interface AIHookContext {
   readonly rootNodeId?: NodeId;
   /** Correlation ID for linking the proposal to a platform event. */
   readonly correlationId?: string;
+  /** Component contracts available to policy checks. */
+  readonly contracts?: readonly ComponentContract[];
 }
 
 /** A pluggable AI hook function. */

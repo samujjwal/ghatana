@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "runId": "2026-05-18T20-21-45-98e6a1d0",
+  "phase": "deploy",
+  "status": "skipped",
+  "gates": [
+    {
+      "gateId": "artifact-validation",
+      "gateName": "artifact-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.504Z",
+      "details": "Dry-run gate evaluation for artifact-validation",
+      "evidenceRefs": [
+        "dry-run:gate:artifact-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "artifact-validation"
+    },
+    {
+      "gateId": "environment-validation",
+      "gateName": "environment-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.504Z",
+      "details": "Dry-run gate evaluation for environment-validation",
+      "evidenceRefs": [
+        "dry-run:gate:environment-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "environment-validation"
+    },
+    {
+      "gateId": "health-check",
+      "gateName": "health-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.504Z",
+      "details": "Dry-run gate evaluation for health-check",
+      "evidenceRefs": [
+        "dry-run:gate:health-check"
+      ],
+      "durationMs": 0,
+      "providerId": "health-check"
+    },
+    {
+      "gateId": "observability-check",
+      "gateName": "observability-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.504Z",
+      "details": "Dry-run gate evaluation for observability-check",
+      "evidenceRefs": [
+        "dry-run:gate:observability-check"
+      ],
+      "durationMs": 0,
+      "providerId": "observability-check"
+    }
+  ],
+  "writtenAt": "2026-05-18T20:21:45.506Z"
+}

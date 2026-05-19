@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Data Cloud-backed lifecycle event provider with kernel lifecycle event integration.
@@ -18,6 +19,14 @@ import java.util.Map;
  * @doc.pattern Provider
  */
 public final class DataCloudEventProvider extends DataCloudKernelProviderSupport {
+
+    private static final Set<String> PHR_HEALTHCARE_GATE_IDS = Set.of(
+        "consent",
+        "pii-classification",
+        "audit-evidence",
+        "fhir-contract-validation",
+        "tenant-data-sovereignty"
+    );
 
     /**
      * Typed record for event append requests.
@@ -123,6 +132,17 @@ public final class DataCloudEventProvider extends DataCloudKernelProviderSupport
         String correlationId,
         Map<String, Object> payload
     ) {
+        DataCloudProviderException validationError = validateKernelLifecycleEvent(
+            eventId,
+            eventType,
+            productUnitId,
+            correlationId,
+            payload
+        );
+        if (validationError != null) {
+            return Promise.ofException(validationError);
+        }
+
         KernelLifecycleEventRecord eventRecord = new KernelLifecycleEventRecord(
             eventId,
             schemaVersion,
@@ -160,6 +180,50 @@ public final class DataCloudEventProvider extends DataCloudKernelProviderSupport
 
         return persistRecord(eventId, eventMap)
             .map($ -> new EventAppendResponse(true, eventId, eventRecord.persistedAt()));
+    }
+
+    private DataCloudProviderException validateKernelLifecycleEvent(
+        String eventId,
+        String eventType,
+        String productUnitId,
+        String correlationId,
+        Map<String, Object> payload
+    ) {
+        if (isBlank(eventId)) {
+            return invalidLifecycleEvent("eventId is required");
+        }
+        if (isBlank(eventType)) {
+            return invalidLifecycleEvent("eventType is required");
+        }
+        if (isBlank(productUnitId)) {
+            return invalidLifecycleEvent("productUnitId is required");
+        }
+        if (isBlank(correlationId)) {
+            return invalidLifecycleEvent("correlationId is required");
+        }
+        if ("phr".equals(productUnitId) && "lifecycle.gate.evaluated".equals(eventType)) {
+            Object gateId = payload == null ? null : payload.get("gateId");
+            if (gateId instanceof String gate && PHR_HEALTHCARE_GATE_IDS.contains(gate)) {
+                Object evidenceRefs = payload.get("evidenceRefs");
+                if (!(evidenceRefs instanceof List<?> refs) || refs.isEmpty()) {
+                    return invalidLifecycleEvent("PHR healthcare gate events require evidenceRefs");
+                }
+            }
+        }
+        return null;
+    }
+
+    private DataCloudProviderException invalidLifecycleEvent(String message) {
+        return new DataCloudProviderException(
+            "events",
+            "append-kernel-lifecycle-event",
+            message,
+            DataCloudProviderException.ReasonCode.SCHEMA
+        );
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     /**

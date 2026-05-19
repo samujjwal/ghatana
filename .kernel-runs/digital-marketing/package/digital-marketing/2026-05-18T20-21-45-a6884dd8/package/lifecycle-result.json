@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-45-a6884dd8",
+  "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+  "providerMode": "bootstrap",
+  "productId": "digital-marketing",
+  "phase": "package",
+  "lifecycleProfile": "standard-web-api-product",
+  "requestedPhases": [
+    "package"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:45.322Z",
+  "completedAt": "2026-05-18T20:21:45.322Z",
+  "steps": [
+    {
+      "stepId": "package-backend-api-0",
+      "phase": "package",
+      "surface": "backend-api",
+      "adapter": "docker-buildx",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:45.322Z",
+      "completedAt": "2026-05-18T20:21:45.322Z",
+      "exitCode": 0,
+      "stdout": "[DRY-RUN] package phase for backend-api via docker-buildx",
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-45-a6884dd8"
+    },
+    {
+      "stepId": "package-web-1",
+      "status": "skipped",
+      "durationMs": 0
+    }
+  ],
+  "gates": [],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package",
+  "manifestRefs": {
+    "artifactManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/artifact-manifest.json",
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-health-snapshot.json"
+}

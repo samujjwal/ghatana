@@ -648,7 +648,7 @@ public final class ArtifactGraphRepository {
     public Promise<SnapshotDiffResult> computeSnapshotDiff(
             String projectId, String tenantId, String workspaceId, String fromSnapshotId, String toSnapshotId) {
         return Promise.ofBlocking(executor, () -> {
-            String sql = """
+            String nodeSql = """
                 SELECT node_id, node_type, node_name, file_path, content_snippet,
                       properties_json, tags_json, tenant_id, workspace_id, project_id, snapshot_id,
                       source_location_json, extractor_id, extractor_version, confidence, provenance,
@@ -659,7 +659,7 @@ public final class ArtifactGraphRepository {
                 """;
             
             try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                 PreparedStatement statement = connection.prepareStatement(nodeSql)) {
                 statement.setString(1, tenantId);
                 statement.setString(2, workspaceId);
                 statement.setString(3, projectId);
@@ -703,11 +703,91 @@ public final class ArtifactGraphRepository {
                         }
                     }
                     
-                    return new SnapshotDiffResult(addedNodes, removedNodes, modifiedNodes, List.of(), List.of(), List.of());
+                    EdgeDiff edgeDiff = computeEdgeDiff(connection, tenantId, workspaceId, projectId, fromSnapshotId, toSnapshotId);
+                    return new SnapshotDiffResult(
+                            addedNodes,
+                            removedNodes,
+                            modifiedNodes,
+                            edgeDiff.addedEdges(),
+                            edgeDiff.removedEdges(),
+                            edgeDiff.modifiedEdges());
                 }
             }
         });
     }
+
+    private EdgeDiff computeEdgeDiff(
+            Connection connection,
+            String tenantId,
+            String workspaceId,
+            String projectId,
+            String fromSnapshotId,
+            String toSnapshotId) throws SQLException {
+        String edgeSql = """
+            SELECT edge_id, source_node_id, target_node_id, relationship_type,
+                   properties_json, confidence, bidirectional, edge_metadata_json, snapshot_id, version_id
+            FROM artifact_edges
+            WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND snapshot_id IN (?, ?)
+            ORDER BY snapshot_id
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(edgeSql)) {
+            statement.setString(1, tenantId);
+            statement.setString(2, workspaceId);
+            statement.setString(3, projectId);
+            statement.setString(4, fromSnapshotId);
+            statement.setString(5, toSnapshotId);
+
+            Map<String, ArtifactEdgeDto> fromEdges = new HashMap<>();
+            Map<String, ArtifactEdgeDto> toEdges = new HashMap<>();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String snapshotId = resultSet.getString("snapshot_id");
+                    ArtifactEdgeDto edge = mapEdge(resultSet);
+                    String key = edgeDiffKey(edge);
+                    if (Objects.equals(snapshotId, fromSnapshotId)) {
+                        fromEdges.put(key, edge);
+                    } else {
+                        toEdges.put(key, edge);
+                    }
+                }
+            }
+
+            List<ArtifactEdgeDto> addedEdges = new ArrayList<>();
+            List<ArtifactEdgeDto> removedEdges = new ArrayList<>();
+            List<ArtifactEdgeDto> modifiedEdges = new ArrayList<>();
+
+            for (Map.Entry<String, ArtifactEdgeDto> entry : toEdges.entrySet()) {
+                ArtifactEdgeDto fromEdge = fromEdges.get(entry.getKey());
+                ArtifactEdgeDto toEdge = entry.getValue();
+                if (fromEdge == null) {
+                    addedEdges.add(toEdge);
+                } else if (!Objects.equals(fromEdge.properties(), toEdge.properties())
+                        || !Objects.equals(fromEdge.metadata(), toEdge.metadata())
+                        || !Objects.equals(fromEdge.confidence(), toEdge.confidence())
+                        || !Objects.equals(fromEdge.bidirectional(), toEdge.bidirectional())) {
+                    modifiedEdges.add(toEdge);
+                }
+            }
+
+            for (Map.Entry<String, ArtifactEdgeDto> entry : fromEdges.entrySet()) {
+                if (!toEdges.containsKey(entry.getKey())) {
+                    removedEdges.add(entry.getValue());
+                }
+            }
+
+            return new EdgeDiff(addedEdges, removedEdges, modifiedEdges);
+        }
+    }
+
+    private String edgeDiffKey(ArtifactEdgeDto edge) {
+        return edge.sourceNodeId() + "\u0000" + edge.targetNodeId() + "\u0000" + edge.relationshipType();
+    }
+
+    private record EdgeDiff(
+            List<ArtifactEdgeDto> addedEdges,
+            List<ArtifactEdgeDto> removedEdges,
+            List<ArtifactEdgeDto> modifiedEdges
+    ) {}
 
     /**
      * P4-4: Page result container for cursor-based pagination.
@@ -910,7 +990,7 @@ public final class ArtifactGraphRepository {
      * P1-12: Save unresolved edges to the artifact_unresolved_edges table.
      */
     public Promise<Void> saveUnresolvedEdges(
-            String projectId, String tenantId, String snapshotId,
+            String projectId, String tenantId, String workspaceId, String snapshotId,
             List<UnresolvedEdgeRecord> unresolvedEdges) {
         if (unresolvedEdges == null || unresolvedEdges.isEmpty()) {
             return Promise.of(null);
@@ -918,9 +998,9 @@ public final class ArtifactGraphRepository {
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO artifact_unresolved_edges (
-                    id, tenant_id, project_id, snapshot_id, source_node_id, target_ref, relationship,
+                    id, tenant_id, project_id, workspace_id, snapshot_id, source_node_id, target_ref, relationship,
                     target_kind_hint, confidence, metadata_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -928,18 +1008,19 @@ public final class ArtifactGraphRepository {
                     statement.setString(1, edge.id());
                     statement.setString(2, tenantId);
                     statement.setString(3, projectId);
-                    statement.setString(4, snapshotId);
-                    statement.setString(5, edge.sourceNodeId());
-                    statement.setString(6, edge.targetRef());
-                    statement.setString(7, edge.relationship());
-                    statement.setString(8, edge.targetKindHint());
+                    statement.setString(4, workspaceId);
+                    statement.setString(5, snapshotId);
+                    statement.setString(6, edge.sourceNodeId());
+                    statement.setString(7, edge.targetRef());
+                    statement.setString(8, edge.relationship());
+                    statement.setString(9, edge.targetKindHint());
                     if (edge.confidence() != null) {
-                        statement.setBigDecimal(9, java.math.BigDecimal.valueOf(edge.confidence()));
+                        statement.setBigDecimal(10, java.math.BigDecimal.valueOf(edge.confidence()));
                     } else {
-                        statement.setNull(9, java.sql.Types.NUMERIC);
+                        statement.setNull(10, java.sql.Types.NUMERIC);
                     }
-                    statement.setString(10, writeJson(edge.metadata()));
-                    statement.setTimestamp(11, Timestamp.from(Instant.now()));
+                    statement.setString(11, writeJson(edge.metadata()));
+                    statement.setTimestamp(12, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -954,16 +1035,16 @@ public final class ArtifactGraphRepository {
      * P1-12: Save edge resolution records to the artifact_edge_resolution_records table.
      */
     public Promise<Void> saveEdgeResolutionRecords(
-            String projectId, String tenantId, List<EdgeResolutionRecord> records) {
+            String projectId, String tenantId, String workspaceId, List<EdgeResolutionRecord> records) {
         if (records == null || records.isEmpty()) {
             return Promise.of(null);
         }
         return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO artifact_edge_resolution_records (
-                    id, tenant_id, project_id, unresolved_edge_id, status, resolved_target_id,
+                    id, tenant_id, project_id, workspace_id, unresolved_edge_id, status, resolved_target_id,
                     candidate_ids_json, review_required, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
             try (Connection connection = dataSource.getConnection();
                  PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -971,12 +1052,13 @@ public final class ArtifactGraphRepository {
                     statement.setString(1, record.id());
                     statement.setString(2, tenantId);
                     statement.setString(3, projectId);
-                    statement.setString(4, record.unresolvedEdgeId());
-                    statement.setString(5, record.status());
-                    statement.setString(6, record.resolvedTargetId());
-                    statement.setString(7, writeJson(record.candidateIds()));
-                    statement.setBoolean(8, record.reviewRequired());
-                    statement.setTimestamp(9, Timestamp.from(Instant.now()));
+                    statement.setString(4, workspaceId);
+                    statement.setString(5, record.unresolvedEdgeId());
+                    statement.setString(6, record.status());
+                    statement.setString(7, record.resolvedTargetId());
+                    statement.setString(8, writeJson(record.candidateIds()));
+                    statement.setBoolean(9, record.reviewRequired());
+                    statement.setTimestamp(10, Timestamp.from(Instant.now()));
                     statement.addBatch();
                 }
                 statement.executeBatch();

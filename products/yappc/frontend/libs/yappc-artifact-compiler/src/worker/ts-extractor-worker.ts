@@ -464,7 +464,7 @@ async function main(): Promise<void> {
     process.stdin.on('error', reject);
   });
 
-  const payload: unknown = JSON.parse(input);
+  const payload = CanonicalExtractorWorkerRequestSchema.parse(JSON.parse(input));
   const response = await runExtractionWorker(payload);
   process.stdout.write(JSON.stringify(response));
 }

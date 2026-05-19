@@ -5,7 +5,9 @@ import type {
   ComponentContract,
 } from '@ghatana/ds-schema';
 
-import type { BuilderDocument, ComponentInstance, NodeId, Binding } from './types';
+import type { BuilderDocument } from './builder-document.js';
+import { normalizeBuilderDocument } from './builder-document.js';
+import type { ComponentInstance, NodeId, Binding } from './types';
 
 export type BuilderPlatformTarget =
   | 'react'
@@ -276,7 +278,7 @@ export function projectInstanceToPlatformPlan(
     targets,
     features,
     dataClassification:
-      instance.metadata.dataClassification ?? manifest?.dataClassification,
+      stringifyDataClassification(instance.metadata.dataClassification) ?? manifest?.dataClassification,
     reviewRequired:
       instance.metadata.reviewStatus?.status === 'requires-manual' || manifest?.reviewRequired === true,
     props,
@@ -308,12 +310,17 @@ export function projectDocumentToPlatformPlan(
   contracts?: ContractLookup,
   manifests?: ManifestLookup,
 ): BuilderPlatformDocumentPlan {
-  const contractMap = toContractMap(contracts ?? document.designSystem.componentContracts);
+  const legacyDesignSystem = (document as BuilderDocument & {
+    designSystem?: { componentContracts?: readonly ComponentContract[] };
+  }).designSystem;
+  document = normalizeBuilderDocument(document);
+  const contractMap = toContractMap(contracts ?? legacyDesignSystem?.componentContracts);
   const manifestMap = toManifestMap(manifests);
   const plans = new Map<NodeId, BuilderPlatformNodePlan>();
   const targets = new Set<BuilderPlatformTarget>();
 
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    if (instance.contractName === 'RootContainer') continue;
     const plan = projectInstanceToPlatformPlan(
       instance,
       contractMap.get(instance.contractName),
@@ -326,8 +333,19 @@ export function projectDocumentToPlatformPlan(
   }
 
   return {
-    documentId: document.id,
+    documentId: document.documentId,
     targets: Array.from(targets),
     nodes: plans,
   };
+}
+
+function stringifyDataClassification(value: ComponentInstance['metadata']['dataClassification']): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (!value) {
+    return undefined;
+  }
+  const classification = value.classification ?? value.dataClassification ?? value.type;
+  return typeof classification === 'string' ? classification : undefined;
 }

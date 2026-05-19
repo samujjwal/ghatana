@@ -33,6 +33,8 @@ export interface I18nConfig {
   resources?: Record<string, Record<string, Record<string, string>>>;
   /** Enable debug logging. Defaults to false. */
   debug?: boolean;
+  /** Disable browser language detection. Useful for deterministic Node tests. */
+  disableLanguageDetection?: boolean;
 }
 
 /**
@@ -54,6 +56,7 @@ export async function initI18n(config: I18nConfig = {}): Promise<I18nInstance> {
     loadPath = '/locales/{{lng}}/{{ns}}.json',
     resources,
     debug = false,
+    disableLanguageDetection = false,
   } = config;
 
   const instance = i18n.createInstance();
@@ -63,7 +66,11 @@ export async function initI18n(config: I18nConfig = {}): Promise<I18nInstance> {
     instance.use(HttpBackend);
   }
 
-  instance.use(LanguageDetector).use(initReactI18next);
+  if (!disableLanguageDetection) {
+    instance.use(LanguageDetector);
+  }
+
+  instance.use(initReactI18next);
 
   await instance.init({
     fallbackLng,

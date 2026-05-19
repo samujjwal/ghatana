@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-45-98e6a1d0",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/deploy/digital-marketing/2026-05-18T20-21-45-98e6a1d0/deploy/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-45-98e6a1d0",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-19T00-32-08-6f80d3d3",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/deploy/digital-marketing/2026-05-19T00-32-08-6f80d3d3/deploy/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-19T00-32-08-6f80d3d3",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

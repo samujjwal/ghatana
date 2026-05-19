@@ -24,7 +24,12 @@ import type {
   RepositorySnapshot,
   ProviderDiagnostic,
 } from './types';
-import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
+import {
+  assertTsSourceProviderWorkerOnly,
+  SourceProviderError,
+  sourceLocatorToString,
+  validateCredentialPolicy,
+} from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -74,7 +79,6 @@ class ZipParser implements ArchiveParser {
       if (pos + 46 > buffer.length) break;
       if (buffer.readUInt32LE(pos) !== 0x02014b50) break;
 
-      const compressedSize = buffer.readUInt32LE(pos + 20);
       const uncompressedSize = buffer.readUInt32LE(pos + 24);
       const fileNameLength = buffer.readUInt16LE(pos + 28);
       const extraFieldLength = buffer.readUInt16LE(pos + 30);
@@ -205,6 +209,7 @@ export class ArchiveProvider implements SourceProvider {
 
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    assertTsSourceProviderWorkerOnly(this.providerId, options);
     const normalizedLocator = sourceLocatorToString(locator);
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 10 * 1024 * 1024;
     const maxFiles = options?.maxFiles ?? 20_000;
@@ -289,6 +294,7 @@ export class ArchiveProvider implements SourceProvider {
           materialized: false,
           sizeBytes: entry.size,
           lastModifiedAt: new Date().toISOString(),
+          checksum: `archive-entry:${contentSha}:${entry.name}`,
         });
         diagnostics.push({
           level: 'warning',
@@ -316,6 +322,7 @@ export class ArchiveProvider implements SourceProvider {
           materialized: false,
           sizeBytes: entry.size,
           lastModifiedAt: new Date().toISOString(),
+          checksum: `archive-entry:${contentSha}:${entry.name}`,
         });
         diagnostics.push({
           level: 'warning',
@@ -343,6 +350,7 @@ export class ArchiveProvider implements SourceProvider {
           materialized: true,
           sizeBytes: content.byteLength,
           lastModifiedAt: new Date().toISOString(),
+          checksum: createHash('sha256').update(content).digest('hex'),
         });
         fileCount++;
       } catch (err) {
@@ -351,6 +359,7 @@ export class ArchiveProvider implements SourceProvider {
           materialized: false,
           sizeBytes: entry.size,
           lastModifiedAt: new Date().toISOString(),
+          checksum: `archive-entry:${contentSha}:${entry.name}`,
         });
         diagnostics.push({
           level: 'warning',
@@ -372,13 +381,23 @@ export class ArchiveProvider implements SourceProvider {
       commitSha: contentSha.slice(0, 40),
     };
 
+    const snapshotContentHash = createHash('sha256')
+      .update(files.map(file => `${file.relativePath}:${file.checksum}`).sort().join('\n'))
+      .digest('hex');
+
     const snapshot = {
+      snapshotId: `archive:${archiveName}:${snapshotContentHash.slice(0, 32)}`,
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
       diagnostics,
+      contentHash: snapshotContentHash,
+      contentChecksum: snapshotContentHash,
+      tenantId: options?.scope?.tenantId ?? 'worker-local-tenant',
+      workspaceId: options?.scope?.workspaceId ?? 'worker-local-workspace',
+      projectId: options?.scope?.projectId ?? 'worker-local-project',
     };
 
     // Cleanup contract

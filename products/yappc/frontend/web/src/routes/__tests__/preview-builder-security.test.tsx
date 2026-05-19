@@ -50,7 +50,12 @@ describe('BuilderPreviewRoute security', () => {
 
     render(<BuilderPreviewRoute />);
 
-    await Promise.resolve();
+    await waitFor(() => {
+      expect(postMessageSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'READY' }),
+        window.location.origin,
+      );
+    });
 
     const message: HostToPreviewMessage = {
       type: 'MOUNT_DOCUMENT',
@@ -203,7 +208,7 @@ describe('BuilderPreviewRoute security', () => {
     const cspHeader = PREVIEW_BUILDER_RESPONSE_HEADERS['Content-Security-Policy'];
     
     // Verify sandbox restrictions are enforced
-    expect(cspHeader).toContain("sandbox 'allow-scripts allow-same-origin'");
+    expect(cspHeader).toContain('sandbox allow-scripts allow-same-origin');
     expect(cspHeader).not.toContain('allow-popups');
     expect(cspHeader).not.toContain('allow-forms');
     expect(cspHeader).not.toContain('allow-top-navigation');

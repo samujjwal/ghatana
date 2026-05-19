@@ -41,6 +41,9 @@ export const Dialog: React.FC<DialogProps> = ({
     isOpen,
     onClose,
     children,
+    maxWidth: _maxWidth,
+    fullWidth: _fullWidth,
+    fullScreen: _fullScreen,
     ...rest
 }) => {
     const resolvedOpen = isOpen ?? open ?? false;

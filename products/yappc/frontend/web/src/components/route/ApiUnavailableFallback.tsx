@@ -11,8 +11,7 @@
  */
 
 import { CloudOff, RefreshCw as Refresh, AlertTriangle as WarningAmber } from 'lucide-react';
-import { Box, Container, Typography, Stack, Button, Surface as Paper, Alert } from '@ghatana/design-system';
-import { useTranslation } from '@ghatana/i18n';
+import { Box, Container, Typography, Button, Surface as Paper, Alert } from '@ghatana/design-system';
 
 export interface ApiUnavailableFallbackProps {
     /** Error message to display */
@@ -34,7 +33,6 @@ export function ApiUnavailableFallback({
   onRetry,
   isRetrying = false,
 }: ApiUnavailableFallbackProps): React.JSX.Element {
-  const { t } = useTranslation('common');
   return (
     <Box
       className="flex min-h-screen items-center justify-center p-4"
@@ -49,12 +47,12 @@ export function ApiUnavailableFallback({
 
           {/* Title */}
           <Typography variant="h4" className="mb-4 font-semibold text-[#1f2937]">
-            {t('apiUnavailable.title')}
+            Service Unavailable
           </Typography>
 
           {/* Subtitle */}
           <Typography className="mb-6 leading-relaxed text-[#6b7280]">
-            {t('apiUnavailable.subtitle')}
+            We could not reach the backend service. Check your connection, then try again.
           </Typography>
 
           {/* Error Alert */}
@@ -73,13 +71,13 @@ export function ApiUnavailableFallback({
           {/* Troubleshooting Steps */}
           <Box className="mb-6 rounded bg-[#f3f4f6] p-4 text-left">
             <Typography className="mb-3 font-semibold text-[#1f2937]">
-              {t('apiUnavailable.troubleshootingTitle')}
+              Troubleshooting
             </Typography>
             <ol className="space-y-1 pl-4">
-              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step1')}</li>
-              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step2')}</li>
-              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step3')}</li>
-              <li className="text-sm text-[#4b5563]">{t('apiUnavailable.step4')}</li>
+              <li className="text-sm text-[#4b5563]">Confirm the API server is running.</li>
+              <li className="text-sm text-[#4b5563]">Verify your network connection.</li>
+              <li className="text-sm text-[#4b5563]">Refresh the page after the service recovers.</li>
+              <li className="text-sm text-[#4b5563]">Contact support if the problem continues.</li>
             </ol>
           </Box>
 
@@ -95,7 +93,7 @@ export function ApiUnavailableFallback({
               fullWidth
               className="bg-[#3b82f6] hover:bg-[#2563eb]"
             >
-              {isRetrying ? t('apiUnavailable.retrying') : t('apiUnavailable.retry')}
+              {isRetrying ? 'Retrying...' : 'Retry'}
             </Button>
             <Button
               variant="outlined"
@@ -103,13 +101,13 @@ export function ApiUnavailableFallback({
               onClick={() => window.location.reload()}
               fullWidth
             >
-              {t('apiUnavailable.reloadPage')}
+              Reload Page
             </Button>
           </Box>
 
           {/* Help Text */}
           <Typography className="mt-6 block text-xs text-[#9ca3af]">
-            {t('apiUnavailable.helpText')}
+            If this keeps happening, share the error details with your administrator.
           </Typography>
         </Paper>
       </Container>

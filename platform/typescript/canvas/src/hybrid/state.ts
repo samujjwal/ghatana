@@ -27,6 +27,8 @@ import type {
   HistoryEntry,
 } from "./types";
 
+export type { HistoryEntry } from "./types";
+
 // =============================================================================
 // DEFAULT VALUES
 // =============================================================================
@@ -364,30 +366,29 @@ export const canUndoAtom = atom((get) => get(historyAtom).past.length > 0);
 export const canRedoAtom = atom((get) => get(historyAtom).future.length > 0);
 
 /**
- * Push history entry
+ * Push history entry with pre-mutation snapshot.
+ * IMPORTANT: This must be called BEFORE the state mutation to capture the correct state for undo.
  */
-export const pushHistoryAtom = atom(null, (get, set, action: string) => {
-  const state = get(hybridCanvasStateAtom);
-  const history = get(historyAtom);
+export const pushHistoryAtom = atom(
+  null,
+  (get, set, { action, snapshot }: { action: string; snapshot: HistoryEntry['snapshot'] }) => {
+    const history = get(historyAtom);
 
-  const entry: HistoryEntry = {
-    timestamp: Date.now(),
-    action,
-    snapshot: {
-      elements: state.elements,
-      nodes: state.nodes,
-      edges: state.edges,
-    },
-  };
+    const entry: HistoryEntry = {
+      timestamp: Date.now(),
+      action,
+      snapshot,
+    };
 
-  const past = [entry, ...history.past].slice(0, history.maxSize);
+    const past = [entry, ...history.past].slice(0, history.maxSize);
 
-  set(historyAtom, {
-    ...history,
-    past,
-    future: [], // Clear redo stack on new action
-  });
-});
+    set(historyAtom, {
+      ...history,
+      past,
+      future: [], // Clear redo stack on new action
+    });
+  },
+);
 
 /**
  * Undo action

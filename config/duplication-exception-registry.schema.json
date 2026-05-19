@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "duplication-exception-registry.schema.json",
+  "title": "Duplication Exception Registry",
+  "description": "Schema for config/duplication-exception-registry.json — tracks approved exceptions to platform duplication governance rules.",
+  "type": "object",
+  "required": ["version", "description", "exceptions"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semver version of this registry format.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "exceptions": {
+      "type": "array",
+      "description": "List of approved duplication exceptions.",
+      "items": {
+        "$ref": "#/definitions/Exception"
+      }
+    }
+  },
+  "definitions": {
+    "Exception": {
+      "type": "object",
+      "required": ["id", "owner", "category", "affectedPaths", "reason", "severity", "expiryDate", "removalPlan", "validationCheck"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this exception (e.g., 'EXC-001-yappc-gate-evaluator').",
+          "pattern": "^[A-Z]+-\\d{3}-[a-z0-9-]+$"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Team or individual responsible for resolving this exception."
+        },
+        "category": {
+          "type": "string",
+          "description": "Type of duplication exception.",
+          "enum": [
+            "lifecycle-runner",
+            "gate-engine",
+            "schema-duplication",
+            "capability-duplication"
+          ]
+        },
+        "affectedPaths": {
+          "type": "array",
+          "description": "Workspace-relative file paths suppressed by this exception.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "reason": {
+          "type": "string",
+          "description": "Justification for why this duplication is temporarily allowed."
+        },
+        "severity": {
+          "type": "string",
+          "description": "Impact level of this exception.",
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "expiryDate": {
+          "type": "string",
+          "description": "ISO 8601 date after which this exception must be resolved (YYYY-MM-DD).",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "removalPlan": {
+          "type": "string",
+          "description": "Concrete plan for removing this exception and migrating to the canonical platform implementation."
+        },
+        "validationCheck": {
+          "type": "string",
+          "description": "The script or check this exception suppresses (e.g., 'check-duplicate-platform-capabilities.mjs')."
+        }
+      }
+    }
+  }
+}

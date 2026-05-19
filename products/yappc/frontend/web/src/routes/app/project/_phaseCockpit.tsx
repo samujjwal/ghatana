@@ -9,6 +9,7 @@ import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep, type SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
+import type { Blocker } from '../../../components/phase/PhaseBlockerPanel';
 import {
   describePhaseActionError,
   executeGenerateReviewDecision,
@@ -27,7 +28,12 @@ import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
 import { currentUserAtom } from '../../../stores/user.store';
 import { Button } from '../../../components/ui/Button';
-import type { PhaseActionResult } from '../../../services/phase';
+import type {
+  PhaseActionResult,
+  PhaseActivityEvent,
+  PhaseIconId,
+  PhaseTransitionPreviewSnapshot,
+} from '../../../services/phase';
 
 
 interface PhaseDetailCopy {
@@ -70,6 +76,55 @@ const PHASE_DETAIL_COPY: Record<MountedPhase, PhaseDetailCopy> = {
     description: 'Use this when roadmap or backlog decisions need deeper planning context.',
   },
 };
+
+const PRIMARY_ACTION_TEST_IDS: Partial<Record<MountedPhase, string>> = {
+  intent: 'define-requirements',
+  shape: 'add-components',
+  validate: 'approve-changes',
+  generate: 'generate-code',
+  run: 'check-readiness',
+};
+
+const PHASE_ICON_IDS: Record<MountedPhase, PhaseIconId> = {
+  intent: 'target',
+  shape: 'layers',
+  validate: 'check-circle',
+  generate: 'code-2',
+  run: 'play-circle',
+  observe: 'eye',
+  learn: 'lightbulb',
+  evolve: 'arrow-up-right',
+};
+
+function phaseBlockerSeverity(severity: string): Blocker['severity'] {
+  if (severity === 'CRITICAL') {
+    return 'critical';
+  }
+  if (severity === 'ERROR' || severity === 'HIGH') {
+    return 'high';
+  }
+  if (severity === 'WARNING' || severity === 'MEDIUM') {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function phasePacketToPreview(packet: PhaseCockpitPacket): PhaseTransitionPreviewSnapshot {
+  return {
+    projectId: packet.projectId,
+    currentPhase: packet.lifecyclePhase ?? packet.phase.toUpperCase(),
+    nextPhase: packet.readiness.nextPhase ?? null,
+    canAdvance: packet.readiness.canAdvance,
+    readiness: Math.round(packet.readiness.completenessScore * 100),
+    blockers: packet.blockers.map((blocker) => blocker.title),
+    requiredArtifacts: packet.requiredArtifacts.map((artifact) => artifact.title),
+    completedArtifacts: packet.completedArtifacts.map((artifact) => artifact.title),
+    estimatedReadyIn: null,
+    estimatedReadyInHours: null,
+    predictionConfidence: null,
+    checkedAt: new Date(packet.timestamp).toISOString(),
+  };
+}
 
 function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | null }) {
   if (!packet) {
@@ -158,29 +213,6 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState<string | null>(null);
 
-  // TRACK-008: Verify scope and phase capability before allowing access
-  if (!projectId) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-          <h2 className="font-semibold">Project context required</h2>
-          <p className="mt-1 text-sm">Project ID is missing from the URL. Please navigate to a valid project page.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentWorkspaceId) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-          <h2 className="font-semibold">Workspace context required</h2>
-          <p className="mt-1 text-sm">Workspace context is required to access this phase. Please select a workspace first.</p>
-        </div>
-      </div>
-    );
-  }
-
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
       behavior: 'smooth',
@@ -197,8 +229,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
 
   const { packet, isLoading, error, refetch } = usePhasePacket({
     phase,
-    projectId,
-    workspaceId: currentWorkspaceId,
+    projectId: projectId ?? '',
+    workspaceId: currentWorkspaceId ?? undefined,
   });
 
   const actionMutation = useMutation({
@@ -272,10 +304,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       projectId,
       tenantId: currentUser?.tenantId,
       actorId: currentUser?.id,
-      preview: packet ? {
-        canAdvance: packet.readiness.canAdvance,
-        readiness: Math.round(packet.readiness.completenessScore * 100),
-      } as any : undefined,
+      preview: packet ? phasePacketToPreview(packet) : null,
     });
   }, [
     actionMutation,
@@ -338,6 +367,30 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
 
   const phaseDetailCopy = PHASE_DETAIL_COPY[phase];
 
+  // TRACK-008: Verify scope and phase capability before allowing access.
+  // Keep this after hooks so async workspace hydration cannot change hook order.
+  if (!projectId) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold">Project context required</h2>
+          <p className="mt-1 text-sm">Project ID is missing from the URL. Please navigate to a valid project page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentWorkspaceId) {
+    return (
+      <div className="p-6">
+        <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
+          <h2 className="font-semibold">Workspace context required</h2>
+          <p className="mt-1 text-sm">Workspace context is required to access this phase. Please select a workspace first.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Check phase capability from packet
   if (packet && !packet.capabilities.canRead) {
     return (
@@ -353,7 +406,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     );
   }
 
-  if (isLoading || !packet) {
+  if (isLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -368,13 +421,25 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     );
   }
 
+  if (!packet) {
+    return (
+      <div className="p-6">
+        <PhasePacketErrorPanel
+          error={error ?? new Error('Phase packet is unavailable.')}
+          onRetry={refetch}
+        />
+      </div>
+    );
+  }
+
   const projectName = packet.projectName ?? 'this project';
+  const preview = phasePacketToPreview(packet);
   
   // Map packet blockers to component format
   const blockers = packet.blockers.map(b => ({
     id: b.id,
     title: b.title,
-    severity: (b.severity === 'CRITICAL' ? 'critical' : b.severity === 'WARNING' ? 'medium' : 'low') as 'critical' | 'medium' | 'high' | 'low',
+    severity: phaseBlockerSeverity(b.severity),
     description: b.description,
     source: b.type,
   }));
@@ -402,42 +467,36 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   }));
   
   // Map packet actions to suggestions format
-  const suggestions = packet.availableActions.map(a => ({
+  const suggestions: SuggestedStep[] = packet.availableActions.map(a => ({
     id: a.actionId,
     title: a.label,
-    type: 'suggestion' as const,
-    label: a.label,
+    type: a.enabled ? 'automation' : 'review',
     description: a.description,
     confidence: 0.5,
-    evidence: [] as any,
-    action: () => handleSuggestionAction(a),
-    priority: a.enabled ? 'high' : 'low',
-    kind: 'suggestion' as const,
-    enabled: a.enabled,
-    metadata: a.parameters,
-    applyMode: a.enabled ? 'one-click' as const : 'manual' as const,
+    evidence: [],
+    riskLevel: a.enabled ? 'low' : 'medium',
+    applyMode: a.enabled ? 'one-click' : 'manual',
     approvalRequired: !a.enabled,
-  })) as any;
+    rollbackSupported: false,
+    onAccept: () => handleSuggestionAction(a),
+  }));
   
   // Map packet activity to component format
-  const activity = packet.activityFeed.map(entry => ({
+  const activity: PhaseActivityEvent[] = packet.activityFeed.map(entry => ({
     id: entry.id,
-    source: 'lifecycle' as const,
+    source: 'lifecycle',
     action: entry.action,
     summary: entry.summary,
     timestamp: new Date(entry.timestamp).toISOString(),
     actor: entry.actor,
-    severity: entry.severity as any,
+    severity: entry.severity,
     success: true,
   }));
   
   const statusPanels = (
     <PhaseStatusPanels
       phase={phase}
-      preview={{
-        canAdvance: packet.readiness.canAdvance,
-        readiness: Math.round(packet.readiness.completenessScore * 100),
-      } as any}
+      preview={preview}
       blockers={blockers}
       activity={activity}
     />
@@ -464,7 +523,10 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     </div>
   );
 
-  const isCtaDisabled = !packet.readiness.canAdvance || packet.blockers.length > 0 || actionMutation.isPending;
+  const isCtaDisabled = !packet.readiness.canAdvance
+    || packet.blockers.length > 0
+    || !packet.capabilities.canUpdate
+    || actionMutation.isPending;
   const showGenerateReviewActions = phase === 'generate'
     && actionResult?.kind === 'generate-review'
     && Boolean(actionResult.runId)
@@ -476,24 +538,11 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const isRunPostActionPending = runPostActionMutation.isPending;
   const disabledReason = actionMutation.isPending
     ? 'The phase action is running. Keep this page open while the backend responds.'
+    : !packet.capabilities.canUpdate
+      ? 'You have view-only access to this project.'
     : packet.blockers.length > 0
       ? `${packet.blockers.length} blocker${packet.blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
       : undefined;
-
-  if (isLoading || !packet) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 rounded bg-surface-muted" />
-          <div className="h-28 rounded-xl bg-surface-muted" />
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="h-40 rounded-xl bg-surface-muted" />
-            <div className="h-40 rounded-xl bg-surface-muted" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -511,11 +560,11 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             onAction={packet.readiness.canAdvance ? handlePrimaryAction : scrollToBlockerPanel}
             secondaryActionLabel="Review Details"
             onSecondaryAction={handleSecondaryAction}
-            icon={resolvePhaseIcon(phase as any)}
+            icon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
             disabled={isCtaDisabled}
             disabledReason={disabledReason}
             testId={`${phase}-primary-action-card`}
-            actionTestId={`${phase}-advance-action`}
+            actionTestId={PRIMARY_ACTION_TEST_IDS[phase] ?? `${phase}-advance-action`}
             secondaryActionTestId={`${phase}-review-action`}
             actionAriaLabel={`${phase} primary action`}
           />
@@ -536,6 +585,20 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
               {feedback}
             </div>
           ) : null}
+          <section
+            className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
+            data-testid="phase-contract-summary"
+            aria-label="Phase contract summary"
+          >
+            <div data-testid="phase-contract-persisted">{packet.projectName ?? 'Project'}</div>
+            <div data-testid="phase-contract-derived">{packet.evidence.length} evidence item(s)</div>
+            <div data-testid="phase-contract-suggested">
+              {packet.availableActions[0]?.label ?? 'No suggested action'}
+            </div>
+            <div data-testid="phase-contract-review">
+              {packet.governance[0]?.outcome ?? 'Ready without extra review'}
+            </div>
+          </section>
           {actionResult ? (
             <div
               className="rounded-xl border border-success-border bg-success-bg p-4 text-sm text-success-color"

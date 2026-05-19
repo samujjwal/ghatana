@@ -282,7 +282,18 @@ components:
           type: string
         type:
           type: string
-          enum: [POSTGRESQL, MYSQL, MONGODB, S3, REST_API, KAFKA, SNOWFLAKE, BIGQUERY, CUSTOM]
+          enum:
+            [
+              POSTGRESQL,
+              MYSQL,
+              MONGODB,
+              S3,
+              REST_API,
+              KAFKA,
+              SNOWFLAKE,
+              BIGQUERY,
+              CUSTOM,
+            ]
         credentials:
           type: object
           description: Connector-specific credential blob (never returned in GET)
@@ -674,7 +685,17 @@ components:
 
     WorkflowExecutionDetail:
       type: object
-      required: [id, pipelineId, pipelineName, status, startTime, completedNodes, totalNodes, nodes]
+      required:
+        [
+          id,
+          pipelineId,
+          pipelineName,
+          status,
+          startTime,
+          completedNodes,
+          totalNodes,
+          nodes,
+        ]
       properties:
         id:
           type: string
@@ -761,7 +782,18 @@ components:
 
     MemoryItem:
       type: object
-      required: [id, tenantId, agentId, type, content, tags, salience, createdAt, metadata]
+      required:
+        [
+          id,
+          tenantId,
+          agentId,
+          type,
+          content,
+          tags,
+          salience,
+          createdAt,
+          metadata,
+        ]
       properties:
         id:
           type: string
@@ -837,7 +869,8 @@ components:
 
     AgentMemorySummaryResponse:
       type: object
-      required: [agentId, tenantId, total, items, contextWindowSize, byType, timestamp]
+      required:
+        [agentId, tenantId, total, items, contextWindowSize, byType, timestamp]
       properties:
         agentId:
           type: string
@@ -867,7 +900,8 @@ components:
 
     MemoryTierResponse:
       type: object
-      required: [agentId, tenantId, tier, items, count, offset, limit, timestamp]
+      required:
+        [agentId, tenantId, tier, items, count, offset, limit, timestamp]
       properties:
         agentId:
           type: string
@@ -899,7 +933,17 @@ components:
           type: string
         type:
           type: string
-          enum: [EPISODIC, SEMANTIC, PROCEDURAL, PREFERENCE, episodic, semantic, procedural, preference]
+          enum:
+            [
+              EPISODIC,
+              SEMANTIC,
+              PROCEDURAL,
+              PREFERENCE,
+              episodic,
+              semantic,
+              procedural,
+              preference,
+            ]
         limit:
           type: integer
           default: 100
@@ -970,7 +1014,18 @@ components:
 
     BrainRuntimeStats:
       type: object
-      required: [totalRecordsProcessed, activePatterns, activeRules, hotTierRecords, warmTierRecords, avgProcessingTimeMs, uptimeSeconds, tenantId, timestamp]
+      required:
+        [
+          totalRecordsProcessed,
+          activePatterns,
+          activeRules,
+          hotTierRecords,
+          warmTierRecords,
+          avgProcessingTimeMs,
+          uptimeSeconds,
+          tenantId,
+          timestamp,
+        ]
       properties:
         totalRecordsProcessed:
           type: integer
@@ -1014,7 +1069,8 @@ components:
 
     BrainAttentionThresholds:
       type: object
-      required: [elevationThreshold, emergencyThreshold, salienceThreshold, timestamp]
+      required:
+        [elevationThreshold, emergencyThreshold, salienceThreshold, timestamp]
       properties:
         elevationThreshold:
           type: number
@@ -1053,7 +1109,8 @@ components:
 
     BrainElevationResult:
       type: object
-      required: [elevated, emergency, action, recordId, reason, tenantId, timestamp]
+      required:
+        [elevated, emergency, action, recordId, reason, tenantId, timestamp]
       properties:
         elevated:
           type: boolean
@@ -1073,7 +1130,17 @@ components:
 
     BrainPattern:
       type: object
-      required: [id, name, type, description, confidence, observations, discoveredAt, updatedAt]
+      required:
+        [
+          id,
+          name,
+          type,
+          description,
+          confidence,
+          observations,
+          discoveredAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: string
@@ -1151,7 +1218,18 @@ components:
 
     BrainSalienceResponse:
       type: object
-      required: [itemId, salienceScore, isHigh, isEmergency, priority, summary, tenantId, spotlightedAt, timestamp]
+      required:
+        [
+          itemId,
+          salienceScore,
+          isHigh,
+          isEmergency,
+          priority,
+          summary,
+          tenantId,
+          spotlightedAt,
+          timestamp,
+        ]
       properties:
         itemId:
           type: string
@@ -1202,7 +1280,15 @@ components:
 
     LearningStatusResponse:
       type: object
-      required: [running, lastRunTime, nextScheduledRun, intervalMinutes, pendingReviews, timestamp]
+      required:
+        [
+          running,
+          lastRunTime,
+          nextScheduledRun,
+          intervalMinutes,
+          pendingReviews,
+          timestamp,
+        ]
       properties:
         running:
           type: boolean
@@ -1236,7 +1322,17 @@ components:
 
     AnalyticsSqlQueryResponse:
       type: object
-      required: [queryId, queryType, rowCount, columnCount, rows, executionTimeMs, optimized, timestamp]
+      required:
+        [
+          queryId,
+          queryType,
+          rowCount,
+          columnCount,
+          rows,
+          executionTimeMs,
+          optimized,
+          timestamp,
+        ]
       properties:
         queryId:
           type: string
@@ -1330,7 +1426,8 @@ components:
       properties:
         data:
           type: object
-          required: [workflowId, name, description, reviewRequired, provenance, steps]
+          required:
+            [workflowId, name, description, reviewRequired, provenance, steps]
           properties:
             workflowId:
               type: string
@@ -1358,7 +1455,8 @@ components:
 
     Alert:
       type: object
-      required: [id, tenantId, title, description, severity, status, source, createdAt]
+      required:
+        [id, tenantId, title, description, severity, status, source, createdAt]
       properties:
         id:
           type: string
@@ -1412,7 +1510,16 @@ components:
 
     AlertGroup:
       type: object
-      required: [id, title, rootCause, alertIds, aiConfidence, suggestedAction, suggestedActionType]
+      required:
+        [
+          id,
+          title,
+          rootCause,
+          alertIds,
+          aiConfidence,
+          suggestedAction,
+          suggestedActionType,
+        ]
       properties:
         id:
           type: string
@@ -1494,7 +1601,20 @@ components:
 
     AlertRule:
       type: object
-      required: [id, tenantId, name, enabled, severity, conditionType, metric, operator, threshold, duration, channels]
+      required:
+        [
+          id,
+          tenantId,
+          name,
+          enabled,
+          severity,
+          conditionType,
+          metric,
+          operator,
+          threshold,
+          duration,
+          channels,
+        ]
       properties:
         id:
           type: string
@@ -1775,7 +1895,19 @@ components:
 
     CollectionContextResponse:
       type: object
-      required: [collection, tenantId, requestId, generatedAt, generationTimeMs, schema, lineage, governance, freshness, statisticalProfile]
+      required:
+        [
+          collection,
+          tenantId,
+          requestId,
+          generatedAt,
+          generationTimeMs,
+          schema,
+          lineage,
+          governance,
+          freshness,
+          statisticalProfile,
+        ]
       properties:
         collection:
           type: string
@@ -1888,7 +2020,8 @@ components:
 
     AnomalyQueryItem:
       type: object
-      required: [eventId, eventType, timestamp, collection, tenantId, anomalyPayload]
+      required:
+        [eventId, eventType, timestamp, collection, tenantId, anomalyPayload]
       properties:
         eventId:
           type: string
@@ -1999,7 +2132,22 @@ components:
 
     DataProductDescriptor:
       type: object
-      required: [id, tenantId, name, collection, description, publishedAt, schema, governance, access, sla, quality, qualityStatus, lineage]
+      required:
+        [
+          id,
+          tenantId,
+          name,
+          collection,
+          description,
+          publishedAt,
+          schema,
+          governance,
+          access,
+          sla,
+          quality,
+          qualityStatus,
+          lineage,
+        ]
       properties:
         id:
           type: string
@@ -2050,7 +2198,8 @@ components:
 
     PublishDataProductResponse:
       type: object
-      required: [productId, collection, name, descriptor, requestId, publishedAt]
+      required:
+        [productId, collection, name, descriptor, requestId, publishedAt]
       properties:
         productId:
           type: string
@@ -2133,7 +2282,16 @@ components:
 
     LineageDagResponse:
       type: object
-      required: [collection, tenantId, direction, timestamp, dag, upstreamCount, downstreamCount]
+      required:
+        [
+          collection,
+          tenantId,
+          direction,
+          timestamp,
+          dag,
+          upstreamCount,
+          downstreamCount,
+        ]
       properties:
         collection:
           type: string
@@ -2165,7 +2323,15 @@ components:
 
     LineageImpactResponse:
       type: object
-      required: [collection, tenantId, impactLevel, affectedCount, affectedCollections, timestamp]
+      required:
+        [
+          collection,
+          tenantId,
+          impactLevel,
+          affectedCount,
+          affectedCollections,
+          timestamp,
+        ]
       properties:
         collection:
           type: string
@@ -2230,7 +2396,16 @@ components:
 
     PluginCategory:
       type: string
-      enum: [connector, transformer, quality, governance, visualization, integration, ai]
+      enum:
+        [
+          connector,
+          transformer,
+          quality,
+          governance,
+          visualization,
+          integration,
+          ai,
+        ]
       description: Category of a plugin
 
     MemoryType:
@@ -2799,14 +2974,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/AlertListResponse"
 
-  /api/v1/alerts/{id}/acknowledge:
+  /api/v1/alerts/{alertId}/acknowledge:
     post:
       summary: Acknowledge an alert
-      operationId: apiV1AlertsIdAcknowledgePost
+      operationId: apiV1AlertsAlertIdAcknowledgePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: id
+        - name: alertId
           in: path
           required: true
           schema:
@@ -2820,14 +2995,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{id}/resolve:
+  /api/v1/alerts/{alertId}/resolve:
     post:
       summary: Resolve an alert
-      operationId: apiV1AlertsIdResolvePost
+      operationId: apiV1AlertsAlertIdResolvePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: id
+        - name: alertId
           in: path
           required: true
           schema:
@@ -5964,7 +6139,10 @@ paths:
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "200": { description: "Governance inventory with collections, policies, holds, audit events." }
+        "200":
+          {
+            description: "Governance inventory with collections, policies, holds, audit events.",
+          }
         "400": { $ref: "#/components/responses/BadRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
@@ -6738,7 +6916,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DataProductSubscriptionResponse"
-        "403": { description: Consumer is not allowed to subscribe to this data product }
+        "403":
+          {
+            description: Consumer is not allowed to subscribe to this data product,
+          }
         "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/data-products/{productId}/sla-monitor:
@@ -6906,7 +7087,7 @@ paths:
       operationId: apiV1ConnectorsGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200": { description: Connector list. }
     post:
@@ -6914,12 +7095,12 @@ paths:
       operationId: apiV1ConnectorsPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+              $ref: "#/components/schemas/ConnectionRegistrationRequest"
       responses:
         "201": { description: Connector registered. }
         "400": { description: Invalid payload. }
@@ -6929,7 +7110,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -6943,7 +7124,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdTestPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -6956,7 +7137,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdEnablePost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -6969,7 +7150,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdDisablePost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -6982,7 +7163,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdRotateCredentialsPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -6995,7 +7176,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdHealthGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7008,7 +7189,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdSchemaGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7021,7 +7202,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdSyncPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7034,7 +7215,7 @@ paths:
       operationId: apiV1ConnectorsConnectionIdSyncStatusGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7050,7 +7231,7 @@ paths:
       operationId: dataFabricConnectorsGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200": { description: Connector list. }
     post:
@@ -7058,12 +7239,12 @@ paths:
       operationId: dataFabricConnectorsPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+              $ref: "#/components/schemas/ConnectionRegistrationRequest"
       responses:
         "201": { description: Connector registered. }
         "400": { description: Invalid payload. }
@@ -7074,7 +7255,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7087,7 +7268,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdPut
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7096,7 +7277,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+              $ref: "#/components/schemas/ConnectionRegistrationRequest"
       responses:
         "200": { description: Connector updated. }
     delete:
@@ -7104,7 +7285,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdDelete
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7125,7 +7306,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdTestPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7139,7 +7320,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdDisablePost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7153,7 +7334,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdEnablePost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7167,7 +7348,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdStatisticsGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7181,7 +7362,7 @@ paths:
       operationId: dataFabricConnectorsConnectionIdSyncPost
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId
           in: path
           required: true
@@ -7195,14 +7376,14 @@ paths:
       operationId: dataFabricMetricsGet
       tags: [connectors]
       parameters:
-        - $ref: '#/components/parameters/tenantIdQuery'
+        - $ref: "#/components/parameters/tenantIdQuery"
       responses:
         "200":
           description: Data fabric metrics including connector health and sync statistics.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FreeformObject'
+                $ref: "#/components/schemas/FreeformObject"
         "503": { description: Connector registry not available. }
 
   # ── User activity tracking ───────────────────────────────────────────────────
@@ -7629,5 +7810,3 @@ paths:
       responses:
         "200": { description: Migration scheduled or completed. }
         "503": { description: Tier migration scheduler not configured. }
-
-

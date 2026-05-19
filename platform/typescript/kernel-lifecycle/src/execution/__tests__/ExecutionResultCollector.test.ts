@@ -256,4 +256,63 @@ describe("ExecutionResultCollector", () => {
     expect(result.requestedPhases).toBeUndefined();
     expect(result.executedPhases).toBeUndefined();
   });
+
+  // -------------------------------------------------------------------------
+  // §2.3 — execution hardening: sourceRef recorded on every run
+  // -------------------------------------------------------------------------
+
+  it("propagates sourceRef into the collected result", () => {
+    const collector = new ExecutionResultCollector(createLogger());
+    collector.addStepResult({
+      stepId: "validate-schema",
+      status: "succeeded",
+      durationMs: 10,
+    });
+
+    const result = collector.collect(
+      "phr",
+      "validate",
+      "/tmp/out",
+      "run-src-1",
+      { sourceRef: "abc123def456" },
+    );
+
+    expect(result.sourceRef).toBe("abc123def456");
+  });
+
+  it("omits sourceRef from result when not provided in metadata", () => {
+    const collector = new ExecutionResultCollector(createLogger());
+    collector.addStepResult({
+      stepId: "validate-schema",
+      status: "succeeded",
+      durationMs: 10,
+    });
+
+    const result = collector.collect("phr", "validate", "/tmp/out", "run-src-2");
+
+    expect(result.sourceRef).toBeUndefined();
+  });
+
+  it("propagates sourceRef alongside correlationId when both are provided", () => {
+    const collector = new ExecutionResultCollector(createLogger());
+    collector.addStepResult({
+      stepId: "gate-check",
+      status: "succeeded",
+      durationMs: 5,
+    });
+
+    const result = collector.collect(
+      "digital-marketing",
+      "validate",
+      "/tmp/out",
+      "run-src-3",
+      {
+        correlationId: "corr-xyz",
+        sourceRef: "v1.2.3-commit-sha",
+      },
+    );
+
+    expect(result.correlationId).toBe("corr-xyz");
+    expect(result.sourceRef).toBe("v1.2.3-commit-sha");
+  });
 });

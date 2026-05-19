@@ -195,6 +195,8 @@ export const GraphEdgeSchema = z.object({
   confidence: z.number().min(0).max(1),
   bidirectional: z.boolean().default(false),
   metadata: z.record(z.string(), z.unknown()).default({}),
+  snapshotId: z.string().optional(),
+  versionId: z.string().optional(),
 });
 
 export type GraphEdge = z.infer<typeof GraphEdgeSchema>;
@@ -324,7 +326,7 @@ export const GraphQuerySchema = z.object({
   limit: z.number().int().nonnegative().optional(),
   includeUnresolvedEdges: z.boolean().optional(),
   unresolvedStatuses: z.array(EdgeResolutionStatusSchema).optional(),
-});
+}).strict();
 
 export type GraphQuery = z.infer<typeof GraphQuerySchema>;
 

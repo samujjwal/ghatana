@@ -1,0 +1,21 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: bridge-compliance
+title: Digital Marketing kernel bridge compliance gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that the digital-marketing product's kernel bridge adapter correctly
+  integrates with the kernel lifecycle, exposes required health endpoints, and
+  does not bypass kernel lifecycle authority through direct cross-product calls.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-kernel-bridge
+  - products/digital-marketing/kernel-product.yaml
+blockingReasonCodes:
+  - requires-bridge-compliance
+  - missing-bridge-compliance
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-kernel-bridge:build
+notes:
+  - Bridge compliance ensures the product does not bypass kernel lifecycle authority.

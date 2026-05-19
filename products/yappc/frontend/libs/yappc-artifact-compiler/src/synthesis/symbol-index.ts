@@ -6,7 +6,7 @@ export interface SymbolIndexEntry {
   readonly symbolRef: string | undefined;
   readonly label: string;
   readonly relativePath: string;
-  readonly kind: string;
+  readonly type: string;
   readonly baseName: string;
 }
 
@@ -52,7 +52,7 @@ export function buildSymbolIndex(nodes: readonly GraphNode[]): SymbolIndex {
   };
 
   for (const node of nodes) {
-    const filePath = node.sourceLocation.filePath;
+    const filePath = (node.sourceLocation?.filePath ?? '');
     const base = filePath.split('/').pop() ?? '';
     const nameNoExt = base.includes('.') ? base.slice(0, base.lastIndexOf('.')) : base;
 
@@ -61,7 +61,7 @@ export function buildSymbolIndex(nodes: readonly GraphNode[]): SymbolIndex {
       symbolRef: node.symbolRef,
       label: node.label,
       relativePath: filePath,
-      kind: node.kind,
+      type: node.type,
       baseName: nameNoExt,
     };
 

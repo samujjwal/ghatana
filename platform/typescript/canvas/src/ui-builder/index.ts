@@ -1,11 +1,17 @@
 /**
  * UI Builder - Component Palette and Property System
- * 
+ *
+ * @deprecated This module is deprecated. Use @ghatana/ui-builder instead.
+ * The @ghatana/canvas/ui-builder subpath is kept only for backward compatibility
+ * and will be removed in a future release. New code should use:
+ * - @ghatana/ui-builder for BuilderDocument, scene projection, codegen, and contract-aware builder operations
+ * - @ghatana/canvas/hybrid for canvas rendering and interaction
+ *
  * @doc.type module
  * @doc.purpose Provides UI Builder capabilities for high-fidelity UI design on canvas
  * @doc.layer core
  * @doc.pattern Builder
- * 
+ *
  * Implements UI building features for:
  * - Pre-built component library
  * - Drag-and-drop component placement

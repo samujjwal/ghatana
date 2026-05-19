@@ -12,7 +12,6 @@
 
 import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react';
 import React, { useRef, useEffect } from 'react';
-import { useTranslation } from '@ghatana/i18n';
 
 import { Button } from '@ghatana/design-system';
 import { Textarea } from '../ui/Textarea';
@@ -125,7 +124,6 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
   isLoading = false,
   className = '',
 }) => {
-  const { t } = useTranslation('common');
   const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -204,14 +202,14 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder={t('aiChat.placeholder')}
+            placeholder="Ask the assistant… (Shift+Enter for new line)"
             className="flex-1 bg-transparent text-sm text-fg placeholder-fg-muted focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
             resize="none"
           />
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            aria-label={t('aiChat.sendMessage')}
+            aria-label="Send message"
             variant="primary"
             className="flex-shrink-0 h-8 min-w-8 px-2"
           >

@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-59-44-e63e3010",
+  "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "verify",
+  "phaseMode": "sequential",
+  "lifecycleProfile": "standard-web-api-product",
+  "environment": "local",
+  "surfaces": [
+    {
+      "surface": "local",
+      "type": "backend-api",
+      "adapter": "compose-local",
+      "config": {
+        "adapter": "compose-local",
+        "target": "compose-local",
+        "composeFile": "products/phr/deploy/local.compose.yaml",
+        "envFile": "products/phr/deploy/local.env",
+        "envExampleFile": "products/phr/deploy/local.env.example",
+        "requireEnvFile": false,
+        "expectedServices": [
+          "phr-api",
+          "phr-web"
+        ],
+        "healthChecks": {
+          "backend-api": {
+            "type": "http",
+            "url": "http://localhost:${PHR_API_PORT:-8085}/health/ready",
+            "retries": 10,
+            "intervalMs": 3000
+          },
+          "web": {
+            "type": "http",
+            "url": "http://localhost:${PHR_WEB_PORT:-5178}/",
+            "retries": 5,
+            "intervalMs": 2000
+          }
+        }
+      }
+    }
+  ],
+  "gates": [],
+  "steps": [
+    {
+      "id": "verify-local-0",
+      "stepKind": "verify",
+      "phase": "verify",
+      "surface": "local",
+      "adapter": "compose-local",
+      "adapterSelectionSource": "product-config-override",
+      "description": "verify to local via compose-local",
+      "dependsOn": [],
+      "estimatedDurationMs": 60000,
+      "adapterContext": {
+        "deploymentConfig": {
+          "adapter": "compose-local",
+          "target": "compose-local",
+          "composeFile": "products/phr/deploy/local.compose.yaml",
+          "envFile": "products/phr/deploy/local.env",
+          "envExampleFile": "products/phr/deploy/local.env.example",
+          "requireEnvFile": false,
+          "expectedServices": [
+            "phr-api",
+            "phr-web"
+          ],
+          "healthChecks": {
+            "backend-api": {
+              "type": "http",
+              "url": "http://localhost:${PHR_API_PORT:-8085}/health/ready",
+              "retries": 10,
+              "intervalMs": 3000
+            },
+            "web": {
+              "type": "http",
+              "url": "http://localhost:${PHR_WEB_PORT:-5178}/",
+              "retries": 5,
+              "intervalMs": 2000
+            }
+          }
+        },
+        "environmentConfig": {
+          "environment": "local"
+        },
+        "surfaceConfig": {
+          "adapter": "compose-local",
+          "expectedReportFields": [
+            "schemaVersion",
+            "productUnitId",
+            "runId",
+            "correlationId",
+            "environment",
+            "status",
+            "checkedAt",
+            "checks",
+            "evidenceRefs"
+          ],
+          "healthChecks": {
+            "backend-api": {
+              "type": "http",
+              "url": "http://localhost:${PHR_API_PORT:-8085}/health/ready",
+              "retries": 10,
+              "intervalMs": 3000
+            },
+            "web": {
+              "type": "http",
+              "url": "http://localhost:${PHR_WEB_PORT:-5178}/",
+              "retries": 5,
+              "intervalMs": 2000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "expectedArtifacts": [],
+  "requiredManifests": [
+    "verify-health-report",
+    "lifecycle-health-snapshot"
+  ],
+  "requiredPlugins": [],
+  "approvalRequirements": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/verify",
+  "estimatedDurationMs": 60000
+}

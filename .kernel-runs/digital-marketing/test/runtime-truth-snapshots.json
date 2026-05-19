@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-44-44c4bef9",
+      "phase": "test",
+      "status": "execution-failed",
+      "observedAt": "2026-05-18T20:21:44.965Z",
+      "evidenceRefs": [
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-result.json"
+      ],
+      "correlationId": "corr-2026-05-18T20-21-44-44c4bef9"
+    }
+  ]
+}

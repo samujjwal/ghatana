@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-2f90cd4c",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-59-43-bb8f4dc5",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-59-43-bb8f4dc5/deploy/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

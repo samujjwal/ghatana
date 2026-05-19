@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-f55ec80d",
+  "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "test",
+  "phaseMode": "sequential",
+  "lifecycleProfile": "standard-web-api-product",
+  "surfaces": [
+    {
+      "surface": "backend-api",
+      "type": "backend-api",
+      "adapter": "gradle-java-service",
+      "config": {
+        "source": "products/phr",
+        "runtime": "java-service",
+        "adapter": "gradle-java-service",
+        "gradleModule": ":products:phr",
+        "expectedOutputs": {
+          "build": [
+            "products/phr/build/libs/*.jar"
+          ],
+          "test": [
+            "products/phr/build/test-results/test",
+            "products/phr/build/reports/tests"
+          ]
+        }
+      }
+    },
+    {
+      "surface": "web",
+      "type": "web",
+      "adapter": "pnpm-vite-react",
+      "config": {
+        "source": "products/phr/apps/web",
+        "runtime": "static-web",
+        "adapter": "pnpm-vite-react",
+        "packagePath": "products/phr/apps/web/package.json",
+        "expectedOutputs": {
+          "build": [
+            "products/phr/apps/web/dist",
+            "products/phr/apps/web/dist/index.html"
+          ]
+        }
+      }
+    }
+  ],
+  "gates": [],
+  "steps": [
+    {
+      "id": "test-backend-api-0",
+      "stepKind": "surface",
+      "phase": "test",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "adapterSelectionSource": "profile-default",
+      "description": "test backend-api via gradle-java-service",
+      "dependsOn": [],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/phr",
+          "runtime": "java-service",
+          "adapter": "gradle-java-service",
+          "gradleModule": ":products:phr",
+          "expectedOutputs": {
+            "build": [
+              "products/phr/build/libs/*.jar"
+            ],
+            "test": [
+              "products/phr/build/test-results/test",
+              "products/phr/build/reports/tests"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "test-web-1",
+      "stepKind": "surface",
+      "phase": "test",
+      "surface": "web",
+      "adapter": "pnpm-vite-react",
+      "adapterSelectionSource": "profile-default",
+      "description": "test web via pnpm-vite-react",
+      "dependsOn": [
+        "test-backend-api-0"
+      ],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/phr/apps/web",
+          "runtime": "static-web",
+          "adapter": "pnpm-vite-react",
+          "packagePath": "products/phr/apps/web/package.json",
+          "expectedOutputs": {
+            "build": [
+              "products/phr/apps/web/dist",
+              "products/phr/apps/web/dist/index.html"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "surface": "backend-api",
+      "type": "test-report",
+      "required": false,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://phr/test/backend-api/test-report"
+    },
+    {
+      "surface": "web",
+      "type": "test-report",
+      "required": false,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://phr/test/web/test-report"
+    }
+  ],
+  "requiredManifests": [],
+  "requiredPlugins": [],
+  "approvalRequirements": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test",
+  "estimatedDurationMs": 60000
+}

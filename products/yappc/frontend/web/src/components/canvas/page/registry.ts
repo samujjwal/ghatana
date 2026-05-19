@@ -129,7 +129,7 @@ function matchesPaletteContext(entry: BuilderPaletteEntry, contextTags: readonly
 export function getBuilderPaletteCategories(
   entries: readonly BuilderPaletteEntry[] = getBuilderPalette()
 ): readonly string[] {
-  return Array.from(new Set(entries.map((entry) => entry.group))).sort((a, b) => a.i18n.languageCompare(b));
+  return Array.from(new Set(entries.map((entry) => entry.group))).sort((a, b) => a.localeCompare(b));
 }
 
 export function getFilteredBuilderPalette(
@@ -153,11 +153,11 @@ export function getFilteredBuilderPalette(
       if (a.featured !== b.featured) {
         return a.featured ? -1 : 1;
       }
-      const groupCmp = a.group.i18n.languageCompare(b.group);
+      const groupCmp = a.group.localeCompare(b.group);
       if (groupCmp !== 0) return groupCmp;
       const rankCmp = a.rank - b.rank;
       if (rankCmp !== 0) return rankCmp;
-      return a.displayName.i18n.languageCompare(b.displayName);
+      return a.displayName.localeCompare(b.displayName);
     });
 }
 

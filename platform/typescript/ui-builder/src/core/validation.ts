@@ -2,15 +2,16 @@
  * @fileoverview Builder document validation - contract compliance and structure.
  */
 
-import type { ComponentContract } from '@ghatana/ds-schema';
 import type {
-  BuilderDocument,
   ComponentInstance,
   NodeId,
   ValidationResult,
   ValidationError,
   ValidationWarning,
-} from './types';
+} from './types.js';
+import type { BuilderDocument } from './builder-document.js';
+import { normalizeBuilderDocument } from './builder-document.js';
+import type { ComponentContract } from '@ghatana/ds-schema';
 
 // ============================================================================
 // Document Validation
@@ -20,11 +21,13 @@ export function validateDocument(
   document: BuilderDocument,
   contracts: ReadonlyMap<string, ComponentContract>,
 ): ValidationResult {
+  document = normalizeBuilderDocument(document);
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
 
   // Validate all nodes
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    if (instance.contractName === 'RootContainer') continue;
     const contract = contracts.get(instance.contractName);
     
     if (!contract) {
@@ -73,7 +76,7 @@ export function validateDocument(
       // Validate allowed/disallowed components
       if (slot.allowedComponents) {
         for (const childId of children) {
-          const child = document.nodes.get(childId);
+          const child = document.nodes[childId];
           if (child && !slot.allowedComponents.includes(child.contractName)) {
             errors.push({
               code: 'DISALLOWED_COMPONENT',
@@ -87,8 +90,9 @@ export function validateDocument(
   }
 
   // Validate root nodes exist
-  for (const rootId of document.rootNodes) {
-    if (!document.nodes.has(rootId)) {
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
+    if (!document.nodes[rootId]) {
       errors.push({
         code: 'MISSING_ROOT_NODE',
         message: `Root node ${rootId} not found in nodes map`,
@@ -99,7 +103,8 @@ export function validateDocument(
 
   // Validate no orphaned nodes
   const reachable = collectReachableNodes(document);
-  for (const nodeId of document.nodes.keys()) {
+  for (const nodeId of Object.keys(document.nodes) as NodeId[]) {
+    if (document.nodes[nodeId]?.contractName === 'RootContainer') continue;
     if (!reachable.has(nodeId)) {
       warnings.push({
         code: 'ORPHANED_NODE',
@@ -134,7 +139,8 @@ function validateResponsiveConsistency(
   contracts: ReadonlyMap<string, ComponentContract>,
   warnings: ValidationWarning[],
 ): void {
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    if (instance.contractName === 'RootContainer') continue;
     const contract = contracts.get(instance.contractName);
     const responsiveMeta = contract?.responsive;
     if (!responsiveMeta || !instance.metadata.responsiveVariants?.length) continue;
@@ -172,7 +178,8 @@ function validateActionBindings(
   contracts: ReadonlyMap<string, ComponentContract>,
   warnings: ValidationWarning[],
 ): void {
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    if (instance.contractName === 'RootContainer') continue;
     const contract = contracts.get(instance.contractName);
     if (!contract || !instance.metadata.actions?.length) continue;
 
@@ -250,7 +257,8 @@ function validatePreviewTrustPolicy(
   const docTrustRaw = document.metadata.trustLevel;
   const docRank = docTrustRaw ? platformTrustRank(String(docTrustRaw)) : 0;
 
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    if (instance.contractName === 'RootContainer') continue;
     const contract = contracts.get(instance.contractName);
     const previewRestrictions = contract?.preview;
     if (!previewRestrictions) continue;
@@ -294,7 +302,7 @@ function collectReachableNodes(document: BuilderDocument): Set<NodeId> {
     if (reachable.has(nodeId)) return;
     reachable.add(nodeId);
 
-    const node = document.nodes.get(nodeId);
+    const node = document.nodes[nodeId];
     if (node) {
       for (const children of Object.values(node.slots)) {
         for (const childId of children) {
@@ -304,7 +312,8 @@ function collectReachableNodes(document: BuilderDocument): Set<NodeId> {
     }
   }
 
-  for (const rootId of document.rootNodes) {
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
     visit(rootId);
   }
 

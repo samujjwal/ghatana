@@ -262,6 +262,15 @@ export interface SourceProviderOptions {
   readonly requestTimeoutMs?: number;
   /** Governed scope for this resolution request. */
   readonly scope?: SourceScopeContext;
+  /**
+   * TS source providers are worker-local helpers. Production source acquisition
+   * must go through the Java source-provider registry and durable import jobs.
+   */
+  readonly artifactCompiler?: {
+    readonly tsSourceProviders?: {
+      readonly workerOnly?: boolean;
+    };
+  };
 }
 
 export type SourceProviderLocator = string | SourceLocator;
@@ -311,6 +320,19 @@ export function validateCredentialPolicy(scope: SourceScopeContext | undefined, 
   if (scope?.executionEnvironment === 'test' && hasRaw) {
     // Log warning but allow for test environment
     console.warn('[CredentialPolicy] Raw credentials used in test environment. This should not happen in production.');
+  }
+}
+
+export function assertTsSourceProviderWorkerOnly(providerId: string, options: SourceProviderOptions | undefined): void {
+  const environment = options?.scope?.executionEnvironment;
+  const explicitlyWorkerOnly = options?.artifactCompiler?.tsSourceProviders?.workerOnly === true;
+
+  if ((environment === 'server' || environment === 'browser') && !explicitlyWorkerOnly) {
+    throw new Error(
+      `[${providerId}] TypeScript source providers are worker-only. ` +
+      'Production source acquisition must use the Java SourceProviderRegistry; ' +
+      'set artifactCompiler.tsSourceProviders.workerOnly=true only inside governed extractor workers.',
+    );
   }
 }
 

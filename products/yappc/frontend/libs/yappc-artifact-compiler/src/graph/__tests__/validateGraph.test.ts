@@ -16,7 +16,7 @@ import type { ArtifactGraph } from '../types';
 describe('validateGraph', () => {
   const createNode = (id: string, kind: string, label: string, confidence: number) => ({
     id,
-    kind: kind as any,
+    type: kind as any,
     label,
     confidence,
     sourceLocation: { filePath: 'src/test.tsx', startLine: 1, startColumn: 1, endLine: 10, endColumn: 1 },
@@ -44,7 +44,7 @@ describe('validateGraph', () => {
           id: 'edge-1',
           sourceId: 'node-1',
           targetId: 'node-2',
-          kind: 'imports',
+          relationshipType: 'imports',
           confidence: 0.85,
           bidirectional: false,
           metadata: {},
@@ -66,6 +66,47 @@ describe('validateGraph', () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(result.warnings).toHaveLength(0);
+  });
+
+  it('uses canonical type and relationshipType fields', () => {
+    const graph: ArtifactGraph = {
+      id: 'graph-1',
+      repositoryRoot: '/repo',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1,
+      nodes: [createNode('node-1', 'component', 'Button', 0.9)],
+      edges: [],
+      nodeIndex: { component: ['node-1'] },
+      edgeIndex: {},
+      unresolvedEdges: [],
+      edgeResolutionRecords: [],
+    };
+
+    expect(validateGraph(graph).valid).toBe(true);
+
+    const legacyGraph = {
+      ...graph,
+      nodes: [{ ...graph.nodes[0], type: undefined, kind: 'component' }],
+      edges: [
+        {
+          id: 'edge-1',
+          sourceId: 'node-1',
+          targetId: 'node-1',
+          kind: 'imports',
+          confidence: 0.85,
+          bidirectional: false,
+          metadata: {},
+        },
+      ],
+      edgeIndex: { imports: ['edge-1'] },
+    } as unknown as ArtifactGraph;
+
+    const result = validateGraph(legacyGraph);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((error) => error.context?.field)).toContain('type');
+    expect(result.errors.map((error) => error.context?.field)).toContain('relationshipType');
   });
 
   it('should detect duplicate node IDs', () => {
@@ -106,7 +147,7 @@ describe('validateGraph', () => {
           id: 'edge-1',
           sourceId: 'node-missing', // Non-existent source
           targetId: 'node-1',
-          kind: 'imports',
+          relationshipType: 'imports',
           confidence: 0.85,
           bidirectional: false,
           metadata: {},
@@ -138,7 +179,7 @@ describe('validateGraph', () => {
           id: 'edge-1',
           sourceId: 'node-1',
           targetId: 'node-missing', // Non-existent target
-          kind: 'imports',
+          relationshipType: 'imports',
           confidence: 0.85,
           bidirectional: false,
           metadata: {},

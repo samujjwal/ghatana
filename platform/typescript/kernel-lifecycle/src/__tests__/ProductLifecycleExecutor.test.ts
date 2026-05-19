@@ -763,4 +763,113 @@ describe('ProductLifecycleExecutor', () => {
       ]);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // §2.3 — execution hardening: sourceRef recorded on every run
+  // -------------------------------------------------------------------------
+
+  describe('sourceRef execution hardening', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await mkdtemp(path.join(os.tmpdir(), 'kernel-src-test-'));
+    });
+
+    afterEach(async () => {
+      rm(tmpDir, { recursive: true, force: true });
+    });
+
+    it('defaults sourceRef to "local" when not provided in execution options', async () => {
+      const plan = makePlan({
+        productId: 'test-product',
+        phase: 'validate' as ProductLifecyclePhase,
+        steps: [makeStep({ id: 'validate-step', adapter: 'gradle-java-service', phase: 'validate' })],
+      });
+
+      const result = await executor.executePlan(plan, {
+        dryRun: false,
+        outputDirectory: tmpDir,
+        logger,
+      });
+
+      expect(result.sourceRef).toBe('local');
+    });
+
+    it('propagates sourceRef from execution options into result', async () => {
+      const plan = makePlan({
+        productId: 'test-product',
+        phase: 'validate' as ProductLifecyclePhase,
+        steps: [makeStep({ id: 'validate-step', adapter: 'gradle-java-service', phase: 'validate' })],
+      });
+
+      const result = await executor.executePlan(plan, {
+        dryRun: false,
+        outputDirectory: tmpDir,
+        logger,
+        sourceRef: 'commit-sha-abc123',
+      });
+
+      expect(result.sourceRef).toBe('commit-sha-abc123');
+    });
+
+    it('falls back to plan sourceRef when execution options does not specify sourceRef', async () => {
+      const plan = makePlan({
+        productId: 'test-product',
+        phase: 'validate' as ProductLifecyclePhase,
+        sourceRef: 'plan-sha-xyz789',
+        steps: [makeStep({ id: 'validate-step', adapter: 'gradle-java-service', phase: 'validate' })],
+      });
+
+      const result = await executor.executePlan(plan, {
+        dryRun: false,
+        outputDirectory: tmpDir,
+        logger,
+      });
+
+      expect(result.sourceRef).toBe('plan-sha-xyz789');
+    });
+
+    it('execution options sourceRef takes precedence over plan sourceRef', async () => {
+      const plan = makePlan({
+        productId: 'test-product',
+        phase: 'validate' as ProductLifecyclePhase,
+        sourceRef: 'plan-sha-xyz789',
+        steps: [makeStep({ id: 'validate-step', adapter: 'gradle-java-service', phase: 'validate' })],
+      });
+
+      const result = await executor.executePlan(plan, {
+        dryRun: false,
+        outputDirectory: tmpDir,
+        logger,
+        sourceRef: 'options-sha-aaa111',
+      });
+
+      expect(result.sourceRef).toBe('options-sha-aaa111');
+    });
+
+    it('records sourceRef in written lifecycle-result.json', async () => {
+      const plan = makePlan({
+        productId: 'src-ref-product',
+        phase: 'validate' as ProductLifecyclePhase,
+        steps: [makeStep({ id: 'validate-step', adapter: 'gradle-java-service', phase: 'validate' })],
+      });
+
+      await executor.executePlan(plan, {
+        dryRun: false,
+        outputDirectory: tmpDir,
+        logger,
+        sourceRef: 'written-ref-999',
+      });
+
+      const resultPath = path.join(
+        tmpDir,
+        'src-ref-product',
+        'run-001',
+        'validate',
+        'lifecycle-result.json',
+      );
+      const written = JSON.parse(await readFile(resultPath, 'utf-8')) as Record<string, unknown>;
+      expect(written['sourceRef']).toBe('written-ref-999');
+    });
+  });
 });

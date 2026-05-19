@@ -139,6 +139,8 @@ export const LifecyclePlanSchema = z.object({
   correlationId: z.string().min(1),
   createdAt: z.string().datetime(),
   productId: z.string().min(1),
+  /** Canonical product unit identifier. Preferred over productId for new contracts. */
+  productUnitId: z.string().min(1).optional(),
   productUnitRef: z.string().optional(),
   phase: z.string().min(1),
   phaseMode: z.enum(["parallel", "sequential", "dag"]),
@@ -149,6 +151,15 @@ export const LifecyclePlanSchema = z.object({
   outputDirectory: z.string().min(1),
   estimatedDurationMs: z.number().int().nonnegative(),
   semanticArtifactRefs: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+  blockingReasons: z.array(z.string()).optional(),
+  surfaces: z.array(z.string()).optional(),
+  adapterIds: z.array(z.string()).optional(),
+  gates: z.array(z.string()).optional(),
+  requiredManifests: z.array(z.string()).optional(),
+  expectedArtifacts: z.array(z.string()).optional(),
+  healthChecks: z.array(z.string()).optional(),
+  approvalRequirements: z.array(z.string()).optional(),
 });
 
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;
@@ -187,6 +198,37 @@ export function parseLifecycleExecutionRequest(
 }
 
 // ---------------------------------------------------------------------------
+// LifecycleFailure — standalone failure contract
+// ---------------------------------------------------------------------------
+
+/** Canonical set of lifecycle failure reason codes. */
+export const LIFECYCLE_FAILURE_REASON_CODES = [
+  "adapter-failed",
+  "gate-failed",
+  "artifact-missing",
+  "manifest-write-failed",
+  "approval-required",
+  "policy-denied",
+  "provider-unavailable",
+  "disabled-product",
+  "missing-adapter",
+  "invalid-registry-state",
+  "unknown",
+] as const;
+
+export const LifecycleFailureSchema = z.object({
+  reasonCode: z.enum(LIFECYCLE_FAILURE_REASON_CODES).optional(),
+  stepId: z.string().optional(),
+  message: z.string(),
+  actionableMessage: z.string().optional(),
+  cause: z.string().optional(),
+  evidenceRefs: z.array(z.string()).optional(),
+  diagnostics: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type LifecycleFailure = z.infer<typeof LifecycleFailureSchema>;
+
+// ---------------------------------------------------------------------------
 // LifecycleStepResult
 // ---------------------------------------------------------------------------
 
@@ -214,11 +256,18 @@ export const LifecycleExecutionResultSchema = z.object({
   correlationId: z.string().min(1),
   createdAt: z.string().datetime(),
   productId: z.string().min(1),
+  /** Canonical product unit identifier. Preferred over productId for new contracts. */
+  productUnitId: z.string().min(1).optional(),
   productUnitRef: z.string().optional(),
   phase: z.string().min(1),
   environment: z.string().optional(),
+  sourceRef: z.string().optional(),
   lifecycleProfile: z.string().min(1),
   status: LifecycleRunStatusSchema,
+  reasonCode: z.string().optional(),
+  actionableMessage: z.string().optional(),
+  evidenceRefs: z.array(z.string()).optional(),
+  diagnostics: z.record(z.string(), z.unknown()).optional(),
   startedAt: z.string().datetime(),
   completedAt: z.string().datetime(),
   durationMs: z.number().int().nonnegative(),
@@ -240,28 +289,7 @@ export const LifecycleExecutionResultSchema = z.object({
       lifecycleHealthSnapshot: z.string().optional(),
     })
     .optional(),
-  failure: z
-    .object({
-      reasonCode: z
-        .enum([
-          "adapter-failed",
-          "gate-failed",
-          "artifact-missing",
-          "manifest-write-failed",
-          "approval-required",
-          "policy-denied",
-          "provider-unavailable",
-          "disabled-product",
-          "missing-adapter",
-          "invalid-registry-state",
-          "unknown",
-        ])
-        .optional(),
-      stepId: z.string().optional(),
-      message: z.string(),
-      cause: z.string().optional(),
-    })
-    .optional(),
+  failure: LifecycleFailureSchema.optional(),
   dryRun: z.boolean().optional(),
 });
 
@@ -270,9 +298,21 @@ export type LifecycleExecutionResult = z.infer<
 >;
 
 /** Canonical failure reason codes for lifecycle execution. */
-export type LifecycleFailureReasonCode = NonNullable<
-  NonNullable<LifecycleExecutionResult["failure"]>["reasonCode"]
->;
+export type LifecycleFailureReasonCode = (typeof LIFECYCLE_FAILURE_REASON_CODES)[number];
+
+/**
+ * LifecycleResult is the canonical alias for LifecycleExecutionResult.
+ * Prefer LifecycleResult in new code.
+ */
+export type LifecycleResult = LifecycleExecutionResult;
+export const LifecycleResultSchema = LifecycleExecutionResultSchema;
+
+/**
+ * LifecycleExecutionContext is the canonical alias for LifecycleExecutionRequest.
+ * Prefer LifecycleExecutionContext in new code.
+ */
+export type LifecycleExecutionContext = LifecycleExecutionRequest;
+export const LifecycleExecutionContextSchema = LifecycleExecutionRequestSchema;
 
 export function parseLifecycleExecutionResult(
   input: unknown,

@@ -20,7 +20,11 @@ import { X, Check, X as XIcon, AlertTriangle, Layers, FileDiff, ChevronDown, Che
 
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
-import { getArtifactCompilerClient, ApproveBundleRequest, RejectBundleRequest } from '@/clients/artifactCompiler/ArtifactCompilerClient';
+import {
+  getLegacyArtifactPatchBundleClient,
+  type ApproveBundleRequest,
+  type RejectBundleRequest,
+} from '@/clients/artifactCompiler/LegacyArtifactPatchBundleClient';
 import { useAuth } from '@/hooks/useAuth';
 
 // ============================================================================
@@ -108,7 +112,7 @@ export function PatchReviewPanel({
     setError(null);
     
     try {
-      const client = getArtifactCompilerClient();
+      const client = getLegacyArtifactPatchBundleClient();
       const request: ApproveBundleRequest = { reviewer };
       await client.approveBundle(bundleId, request);
       
@@ -136,7 +140,7 @@ export function PatchReviewPanel({
     setError(null);
     
     try {
-      const client = getArtifactCompilerClient();
+      const client = getLegacyArtifactPatchBundleClient();
       const request: RejectBundleRequest = { 
         reviewer,
         reason: 'User rejected the patch' 
@@ -163,7 +167,7 @@ export function PatchReviewPanel({
     setError(null);
     
     try {
-      const client = getArtifactCompilerClient();
+      const client = getLegacyArtifactPatchBundleClient();
       await client.applyBundle(bundleId);
       
       if (onApply) {

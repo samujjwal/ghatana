@@ -130,9 +130,8 @@ export function PriorityTasksList({
         setProcessingTasks(prev => new Set(prev).add(taskId));
         try {
             await onApprove(taskId);
-        } catch (error) {
+        } catch {
             // Keep UI stable when task actions fail; caller can surface errors externally.
-            console.error('[PriorityTasksList] approve failed', error);
         } finally {
             setProcessingTasks(prev => {
                 const next = new Set(prev);
@@ -149,9 +148,8 @@ export function PriorityTasksList({
         setProcessingTasks(prev => new Set(prev).add(taskId));
         try {
             await onReject(taskId);
-        } catch (error) {
+        } catch {
             // Keep UI stable when task actions fail; caller can surface errors externally.
-            console.error('[PriorityTasksList] reject failed', error);
         } finally {
             setProcessingTasks(prev => {
                 const next = new Set(prev);
@@ -197,7 +195,7 @@ export function PriorityTasksList({
         <div className="mb-10">
             <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
-                    <Typography className="flex items-center gap-2 font-bold text-lg">
+                    <Typography as="div" className="flex items-center gap-2 font-bold text-lg">
                         My Priority Tasks
                         <Chip label={tasks.length} size="sm" />
                     </Typography>

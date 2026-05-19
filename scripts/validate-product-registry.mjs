@@ -15,6 +15,19 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
 }
 
+function readReleasePlan(root) {
+  const releasePlanPath = path.join(root, 'config/platform-release-plan.json');
+  if (!existsSync(releasePlanPath)) {
+    return {
+      openingLifecyclePilots: ['digital-marketing'],
+      disabledUntilReady: [],
+      platformProviderValidators: [],
+    };
+  }
+
+  return readJson(releasePlanPath);
+}
+
 function issue(productId, field, message, remediation) {
   return { productId, field, message, remediation };
 }
@@ -98,6 +111,8 @@ export function validateProductRegistryDocument(registry, options = {}) {
   const schema = options.schema ?? readJson(path.join(root, 'config/canonical-product-registry-schema.json'));
   const runArtifactCheck = options.runArtifactCheck ?? (() => execFileSync(process.execPath, [path.join(root, 'scripts/generate-product-registry-artifacts.mjs'), '--check'], { cwd: root, encoding: 'utf8' }));
   const packageDirectories = options.packageDirectories ?? listPackageJsonDirectories(root);
+  const releasePlan = options.releasePlan ?? readReleasePlan(root);
+  const openingLifecyclePilots = new Set(releasePlan.openingLifecyclePilots ?? ['digital-marketing']);
   const issues = [];
 
   const schemaErrors = validateJsonSchemaLite(schema, registry);
@@ -159,8 +174,8 @@ export function validateProductRegistryDocument(registry, options = {}) {
       }
     }
 
-    if (productId !== 'digital-marketing' && (lifecycleEnabled || lifecycleStatus === 'enabled' || lifecycleExecutionAllowed)) {
-      issues.push(issue(productId, 'lifecycle', 'Only digital-marketing may be lifecycle-enabled or lifecycleExecutionAllowed=true until explicitly promoted', 'Set lifecycle.enabled, lifecycleStatus, and lifecycleExecutionAllowed to disabled/false unless this is the Digital Marketing pilot.'));
+    if (!openingLifecyclePilots.has(productId) && (lifecycleEnabled || lifecycleStatus === 'enabled' || lifecycleExecutionAllowed)) {
+      issues.push(issue(productId, 'lifecycle', `Only opening lifecycle pilots may be lifecycle-enabled or lifecycleExecutionAllowed=true; allowed pilots: ${[...openingLifecyclePilots].join(', ')}`, 'Set lifecycle.enabled, lifecycleStatus, and lifecycleExecutionAllowed to disabled/false unless this product is listed in config/platform-release-plan.json.'));
     }
 
     // Data Cloud-specific: lifecycle must stay disabled until bootstrap/platform proof exists

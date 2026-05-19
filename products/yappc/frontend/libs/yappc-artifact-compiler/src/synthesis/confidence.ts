@@ -78,7 +78,7 @@ export class ConfidenceScorer {
    * Calculate field completeness based on metadata presence.
    */
   private calculateFieldCompleteness(node: GraphNode): number {
-    const requiredFields = this.getRequiredFields(node.kind);
+    const requiredFields = this.getRequiredFields(node.type);
     const presentFields = requiredFields.filter(field => {
       const value = node.metadata[field];
       return value !== undefined && value !== null && value !== '';
@@ -120,7 +120,7 @@ export class ConfidenceScorer {
     }
 
     // Check source location follows conventions
-    const filePath = node.sourceLocation.filePath;
+    const filePath = (node.sourceLocation?.filePath ?? '');
     if (filePath.includes('node_modules') || filePath.includes('.next') || filePath.includes('dist')) {
       score -= 0.5;
     }
@@ -131,7 +131,7 @@ export class ConfidenceScorer {
   /**
    * Get required fields for a given node kind.
    */
-  private getRequiredFields(kind: GraphNode['kind']): string[] {
+  private getRequiredFields(kind: GraphNode['type']): string[] {
     switch (kind) {
       case 'component':
         return ['props', 'name'];
@@ -169,7 +169,7 @@ export class ConfidenceScorer {
   /**
    * Determine if an element requires human review based on confidence.
    */
-  requiresReview(element: SemanticModelElement, graph: ArtifactGraph): boolean {
+  requiresReview(element: SemanticModelElement, _graph: ArtifactGraph): boolean {
     const threshold = 0.7;
     return element.confidence < threshold;
   }

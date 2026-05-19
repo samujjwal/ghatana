@@ -1,4 +1,3 @@
-import { useTranslation } from '@ghatana/i18n';
 /**
  * ExportDialog
  *
@@ -130,7 +129,6 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   pastExports = [],
   className = '',
 }) => {
-  const { t } = useTranslation('common');
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('MARKDOWN');
   const [includeRequirements, setIncludeRequirements] = useState(true);
   const [includeDiagrams, setIncludeDiagrams] = useState(true);
@@ -190,7 +188,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <Button
               variant="ghost"
               size="small"
-              aria-label={t('export.closeDialog')}
+              aria-label="Close export dialog"
               onClick={onClose}
             >
               <X className="h-4 w-4" />
@@ -340,7 +338,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                         <Button
                           variant="ghost"
                           size="small"
-                          aria-label={t('export.download')}
+                          aria-label="Download export"
                           onClick={() => handleDownload(exp.downloadUrl!)}
                         >
                           <Download className="h-3 w-3" />

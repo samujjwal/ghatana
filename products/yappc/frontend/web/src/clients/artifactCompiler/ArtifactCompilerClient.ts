@@ -21,9 +21,9 @@ import {
   type ArtifactGraphMergeRequest,
   type ArtifactGraphQueryRequest,
   type ResidualAnalysisRequest,
-  type SourceImportJob,
-  type SourceImportRequest,
-  type SourceImportResponse,
+  type SourceImportJob as GeneratedSourceImportJob,
+  type SourceImportRequest as GeneratedSourceImportRequest,
+  type SourceImportResponse as GeneratedSourceImportResponse,
 } from '@/clients/generated/api';
 
 export interface ArtifactCompilerConfig {
@@ -53,6 +53,56 @@ export interface ApiError {
 }
 
 export type { ArtifactGraphIngestRequest };
+
+export interface SourceImportRequest {
+  sourceType: string;
+  source?: string;
+  sourceUrl?: string;
+  sourceData?: string;
+  projectId: string;
+  workspaceId?: string;
+  targetComponentName?: string;
+  options?: Record<string, string>;
+  correlationId?: string;
+}
+
+export interface SourceImportJob {
+  id?: string;
+  jobId?: string;
+  status: string;
+  reason?: string;
+  progress?: number;
+  percentComplete?: number;
+  totalSteps?: number;
+  message?: string;
+  currentStep?: string;
+  snapshotId?: string;
+  versionId?: string;
+  nodeCount?: number;
+  edgeCount?: number;
+  confidence?: number;
+  residualCount?: number;
+  skippedCount?: number;
+  skippedReasons?: Record<string, number>;
+}
+
+export interface SourceImportResponse {
+  success?: boolean;
+  jobId?: string;
+  id?: string;
+  projectId?: string;
+  sourceType?: string;
+  status?: string;
+  message?: string;
+  createdAt?: string;
+  tenantId?: string;
+  createdBy?: string;
+  job?: SourceImportJob | GeneratedSourceImportJob;
+  files?: GeneratedSourceImportResponse['files'];
+  warnings?: GeneratedSourceImportResponse['warnings'];
+  errors?: GeneratedSourceImportResponse['errors'];
+  metadata?: GeneratedSourceImportResponse['metadata'];
+}
 
 export interface ArtifactGraphIngestResponse {
   success: boolean;
@@ -210,8 +260,8 @@ export class ArtifactCompilerClient {
         this.requireTenantId(),
         this.requireWorkspaceId(),
         this.requireProjectId(),
-        request,
-      );
+        request as unknown as GeneratedSourceImportRequest,
+      ) as unknown as SourceImportResponse;
     } catch (error: unknown) {
       throw this.toApiError(error);
     }
@@ -220,12 +270,16 @@ export class ArtifactCompilerClient {
   async getSourceImportJob(jobId: string): Promise<{ job: SourceImportJob }> {
     try {
       this.configureGeneratedClient();
-      return await ArtifactGraphService.getSourceImportJob(
+      const response = await ArtifactGraphService.getSourceImportJob(
         jobId,
         this.requireTenantId(),
         this.requireWorkspaceId(),
         this.requireProjectId(),
-      );
+      ) as unknown as { job?: SourceImportJob | GeneratedSourceImportJob } | SourceImportJob;
+      if (response && typeof response === 'object' && 'job' in response && response.job) {
+        return { job: response.job as SourceImportJob };
+      }
+      return { job: response as SourceImportJob };
     } catch (error: unknown) {
       throw this.toApiError(error);
     }

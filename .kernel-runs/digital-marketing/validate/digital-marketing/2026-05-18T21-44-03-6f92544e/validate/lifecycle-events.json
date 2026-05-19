@@ -1,0 +1,354 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "runId": "2026-05-18T21-44-03-6f92544e",
+  "phase": "validate",
+  "eventCount": 16,
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-44-03-6f92544e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:03.062Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:44:03.062Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-44-03-6f92544e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:03.066Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:03.066Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:plan-created:2026-05-18T21-44-03-6f92544e:validate",
+        "eventType": "lifecycle.plan.created",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:44:03.070Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:phase-started:2026-05-18T21-44-03-6f92544e:validate",
+        "eventType": "lifecycle.phase.started",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:03.070Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:registry-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "registry-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for registry-validation",
+        "evidenceRefs": [
+          "dry-run:gate:registry-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:manifest-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "manifest-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for manifest-validation",
+        "evidenceRefs": [
+          "dry-run:gate:manifest-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:lifecycle-contract-validation",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "lifecycle-contract-validation",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for lifecycle-contract-validation",
+        "evidenceRefs": [
+          "dry-run:gate:lifecycle-contract-validation"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:bridge-compliance",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "bridge-compliance",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for bridge-compliance",
+        "evidenceRefs": [
+          "dry-run:gate:bridge-compliance"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:dmos-boundary-workflow-coverage",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "dmos-boundary-workflow-coverage",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for dmos-boundary-workflow-coverage",
+        "evidenceRefs": [
+          "dry-run:gate:dmos-boundary-workflow-coverage"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:marketing-consent-boundary",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "marketing-consent-boundary",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for marketing-consent-boundary",
+        "evidenceRefs": [
+          "dry-run:gate:marketing-consent-boundary"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:gate:2026-05-18T21-44-03-6f92544e:validate:non-regulated-customer-data-minimization",
+        "eventType": "lifecycle.gate.evaluated",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "gateId": "non-regulated-customer-data-minimization",
+        "status": "passed",
+        "required": true,
+        "reason": "Dry-run gate evaluation for non-regulated-customer-data-minimization",
+        "evidenceRefs": [
+          "dry-run:gate:non-regulated-customer-data-minimization"
+        ],
+        "durationMs": 0
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:step-started:2026-05-18T21-44-03-6f92544e:validate-backend-api-0",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "stepId": "validate-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:03.070Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:step-completed:2026-05-18T21-44-03-6f92544e:validate-backend-api-0",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "stepId": "validate-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T21:44:03.070Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:step-started:2026-05-18T21-44-03-6f92544e:validate-web-1",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "stepId": "validate-web-1",
+        "stepKind": "surface",
+        "surface": "web",
+        "adapter": "pnpm-vite-react",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:03.070Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:step-completed:2026-05-18T21-44-03-6f92544e:validate-web-1",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "stepId": "validate-web-1",
+        "stepKind": "surface",
+        "surface": "web",
+        "adapter": "pnpm-vite-react",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T21:44:03.070Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+        "eventId": "derived:phase-completed:2026-05-18T21-44-03-6f92544e:validate",
+        "eventType": "lifecycle.phase.completed",
+        "timestamp": "2026-05-18T21:44:03.070Z"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:44:03.070Z"
+      }
+    }
+  ],
+  "writtenAt": "2026-05-18T21:44:03.080Z"
+}

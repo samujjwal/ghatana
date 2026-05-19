@@ -211,6 +211,12 @@ function createClient(overrides: Partial<KernelLifecycleClient> = {}): KernelLif
       status: 'healthy',
       checkedAt: '2026-05-14T00:00:00.000Z',
     }),
+    getLifecycleRunSummary: vi.fn().mockResolvedValue({
+      runId: 'run-1',
+      productUnitId: 'digital-marketing',
+      phase: 'verify',
+      status: 'healthy',
+    }),
     listPendingApprovals: vi.fn().mockResolvedValue([
       {
         approvalId: 'approval-1',
@@ -226,7 +232,7 @@ function createClient(overrides: Partial<KernelLifecycleClient> = {}): KernelLif
     requestApproval: vi.fn(),
     submitApprovalDecision: vi.fn(),
     ...overrides,
-  };
+  } as unknown as KernelLifecycleClient;
 }
 
 describe('StudioLifecycleDataProvider', () => {

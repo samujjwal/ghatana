@@ -32,6 +32,7 @@ import type {
   LossPoint,
   RoundTripFidelity,
 } from '@ghatana/ui-builder';
+import { attachBuilderDocumentCompatibility, createBuilderDocument } from '@ghatana/ui-builder';
 import { ComponentContractSchema } from '@ghatana/ds-schema';
 import type { ComponentContract } from '@ghatana/ds-schema';
 import type { SemanticProductModel, ComponentModel, PageModel, TokenModel, ThemeModel, PropSchema } from '../model/types';
@@ -75,14 +76,14 @@ export function toBuilderDocument(model: SemanticProductModel): ToBuilderDocumen
   const rootPageComponentIds = new Set<string>(rootPage?.componentIds ?? []);
 
   // Build node map (root page components first, then orphans)
-  const nodes = new Map<NodeId, ComponentInstance>();
+  const nodes: Record<string, ComponentInstance> = {};
   const orphanNodeIds: NodeId[] = [];
   const lossPoints: LossPoint[] = [];
 
   // Always include all components (root-referenced + orphans)
   for (const comp of components) {
     const instance = componentModelToInstance(comp);
-    nodes.set(instance.id, instance);
+    nodes[instance.id] = instance;
     if (!rootPageComponentIds.has(comp.id)) {
       orphanNodeIds.push(instance.id);
     }
@@ -105,7 +106,7 @@ export function toBuilderDocument(model: SemanticProductModel): ToBuilderDocumen
 
   // Root nodes = the page's component IDs that exist in our map, in order
   const rootNodes: NodeId[] = rootPage
-    ? rootPage.componentIds.filter((id) => nodes.has(id as NodeId)).map((id) => id as NodeId)
+    ? rootPage.componentIds.filter((id) => nodes[id]).map((id) => id as NodeId)
     : (components.length > 0 ? [components[0]!.id as NodeId] : []);
 
   const designSystem = buildDesignSystem(tokens, themes, components);
@@ -118,8 +119,8 @@ export function toBuilderDocument(model: SemanticProductModel): ToBuilderDocumen
     createdAt: model.createdAt,
     updatedAt: model.updatedAt,
     description: rootPage
-      ? `Converted from SemanticProductModel ${model.id}. Route: ${rootPage.routePath}.`
-      : `Converted from SemanticProductModel ${model.id}. No page found.`,
+      ? `${documentName}: converted from SemanticProductModel ${model.id}. Route: ${rootPage.routePath}.`
+      : `${documentName}: converted from SemanticProductModel ${model.id}. No page found.`,
     tags: rootPage
       ? [rootPage.routePath, `v${model.version}`, ...rootPage.tags]
       : [`v${model.version}`],
@@ -131,17 +132,41 @@ export function toBuilderDocument(model: SemanticProductModel): ToBuilderDocumen
     confidence: lossPoints.length === 0 ? 1 : Math.max(0.3, 1 - lossPoints.length * 0.2),
   };
 
+  const baseDocument = createBuilderDocument(model.repositoryRoot, {
+    documentId: model.id as DocumentId,
+  });
+  const rootLayoutNode = baseDocument.layout.nodes[baseDocument.layout.rootId] ?? {
+    id: baseDocument.layout.rootId,
+    type: 'root' as const,
+    layout: 'flex' as const,
+    children: [],
+  };
+
   const document: BuilderDocument = {
-    id: model.id as DocumentId,
-    version: String(model.version),
-    name: documentName,
-    designSystem,
-    rootNodes,
-    nodes: nodes as ReadonlyMap<NodeId, ComponentInstance>,
+    ...baseDocument,
+    nodes: {
+      ...baseDocument.nodes,
+      ...nodes,
+    },
+    layout: {
+      ...baseDocument.layout,
+      nodes: {
+        ...baseDocument.layout.nodes,
+        [baseDocument.layout.rootId]: {
+          ...rootLayoutNode,
+          children: rootNodes,
+        },
+      },
+    },
     metadata,
   };
 
-  return { document, additionalPages, roundTripFidelity };
+  const compatibleDocument = attachBuilderDocumentCompatibility(document);
+  defineLegacyCompatProperty(compatibleDocument, 'version', String(model.version));
+  defineLegacyCompatProperty(compatibleDocument, 'name', documentName);
+  defineLegacyCompatProperty(compatibleDocument, 'designSystem', designSystem);
+
+  return { document: compatibleDocument, additionalPages, roundTripFidelity };
 }
 
 // ============================================================================
@@ -174,7 +199,7 @@ function componentModelToInstance(comp: ComponentModel): ComponentInstance {
   }
 
   // Build slots map
-  const slots: Record<string, readonly NodeId[]> = {};
+  const slots: Record<string, NodeId[]> = {};
   for (const slotSchema of comp.slots) {
     slots[slotSchema.name] = [];
   }
@@ -245,6 +270,18 @@ function buildDesignSystem(
     componentContracts,
     themeId,
   };
+}
+
+function defineLegacyCompatProperty<T>(
+  target: BuilderDocument,
+  propertyName: string,
+  value: T,
+): void {
+  Object.defineProperty(target, propertyName, {
+    get: () => value,
+    configurable: true,
+    enumerable: false,
+  });
 }
 
 /** Infer a design-system category from the component's name or tags. */

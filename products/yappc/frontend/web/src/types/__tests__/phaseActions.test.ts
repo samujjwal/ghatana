@@ -40,8 +40,8 @@ describe('Phase Actions', () => {
       const capture = INTENT_PHASE_ACTIONS.find((a) => a.actionId === 'intent.capture');
       expect(capture?.requiredPermission).toBe('PROJECT_UPDATE');
 
-      const delete = INTENT_PHASE_ACTIONS.find((a) => a.actionId === 'intent.delete');
-      expect(delete?.requiredPermission).toBe('PROJECT_DELETE');
+      const deleteAction = INTENT_PHASE_ACTIONS.find((a) => a.actionId === 'intent.delete');
+      expect(deleteAction?.requiredPermission).toBe('PROJECT_DELETE');
     });
   });
 

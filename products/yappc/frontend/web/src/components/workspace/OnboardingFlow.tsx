@@ -23,7 +23,6 @@ import { useOnboardingStatus } from '../../services/onboarding/OnboardingStatusS
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -183,7 +182,6 @@ function WorkspaceStep({
     onNext: () => void;
     onBack: () => void;
 }) {
-    const { t } = useTranslation('common');
     const useSuggestion = useCallback(() => {
         if (suggestedName) {
             setWorkspaceName(suggestedName);
@@ -220,13 +218,13 @@ function WorkspaceStep({
                 )}
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">
-                        {t('workspace.onboarding.workspaceName')}
+                        Workspace Name
                     </label>
                     <Input
                         type="text"
                         value={workspaceName}
                         onChange={(e) => setWorkspaceName(e.target.value)}
-                        placeholder={t('workspace.onboarding.workspacePlaceholder')}
+                        placeholder="My Awesome Workspace"
                         className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         autoFocus
                     />
@@ -339,7 +337,6 @@ function ProjectStep({
     onNext: () => void;
     onBack: () => void;
 }) {
-    const { t } = useTranslation('common');
     const useSuggestion = useCallback(() => {
         if (suggestedName) {
             setProjectName(suggestedName);
@@ -388,13 +385,13 @@ function ProjectStep({
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-text-primary mb-1">
-                        {t('workspace.onboarding.projectName')}
+                        Project Name
                     </label>
                     <Input
                         type="text"
                         value={projectName}
                         onChange={(e) => setProjectName(e.target.value)}
-                        placeholder={t('workspace.onboarding.projectPlaceholder')}
+                        placeholder="My First Project"
                         className="w-full px-4 py-3 border border-border dark:border-border rounded-xl bg-white dark:bg-surface text-text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                 </div>

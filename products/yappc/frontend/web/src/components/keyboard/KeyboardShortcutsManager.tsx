@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
 import { useTranslation } from '@ghatana/i18n';
@@ -321,6 +321,7 @@ export function KeyboardShortcutsHelp({
   onClose: () => void;
 }) {
   const { t } = useTranslation('common');
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const shortcuts = DEFAULT_SHORTCUTS;
 
   const categorizedShortcuts = {
@@ -342,6 +343,12 @@ export function KeyboardShortcutsHelp({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (isOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -352,15 +359,21 @@ export function KeyboardShortcutsHelp({
       {/* Modal */}
       <div
         data-testid="keyboard-shortcuts-help"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="keyboard-shortcuts-title"
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div className="bg-white dark:bg-surface rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
           {/* Header */}
           <div className="px-6 py-4 border-b border-border dark:border-border flex items-center justify-between">
             <h2 className="text-xl font-bold text-fg dark:text-fg-muted">
+              <span id="keyboard-shortcuts-title">
               {t('keyboardShortcuts.title')}
+              </span>
             </h2>
             <Button
+              ref={closeButtonRef}
               variant="ghost"
               size="sm"
               onClick={onClose}

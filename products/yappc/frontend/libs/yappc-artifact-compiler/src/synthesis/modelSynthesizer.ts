@@ -29,7 +29,7 @@ export class ComponentSynthesizer {
   readonly targetModelKinds = ['component'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'component';
+    return node.type === 'component';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -47,11 +47,14 @@ export class ComponentSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'component',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       contractName: node.label,
       props: props.map(p => ({
         name: p.name,
@@ -85,7 +88,7 @@ export class ComponentSynthesizer {
 
   private findConnectedNodeIds(nodeId: string, graph: ArtifactGraph, edgeKind: string): string[] {
     return graph.edges
-      .filter(e => e.sourceId === nodeId && e.kind === edgeKind)
+      .filter(e => e.sourceId === nodeId && e.relationshipType === edgeKind)
       .map(e => e.targetId);
   }
 }
@@ -100,7 +103,7 @@ export class PageSynthesizer {
   readonly targetModelKinds = ['page'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'page' || node.kind === 'route';
+    return node.type === 'page' || node.type === 'route';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -112,11 +115,14 @@ export class PageSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'page',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       routePath: (node.metadata['routePath'] as string) ?? `/${node.label.toLowerCase()}`,
       layoutId: this.findFirstConnectedNodeId(node.id, graph, 'layout-of'),
       componentIds: this.findConnectedNodeIds(node.id, graph, 'contains'),
@@ -139,12 +145,12 @@ export class PageSynthesizer {
 
   private findConnectedNodeIds(nodeId: string, graph: ArtifactGraph, edgeKind: string): string[] {
     return graph.edges
-      .filter(e => e.sourceId === nodeId && e.kind === edgeKind)
+      .filter(e => e.sourceId === nodeId && e.relationshipType === edgeKind)
       .map(e => e.targetId);
   }
 
   private findFirstConnectedNodeId(nodeId: string, graph: ArtifactGraph, edgeKind: string): string | undefined {
-    const edge = graph.edges.find(e => e.sourceId === nodeId && e.kind === edgeKind);
+    const edge = graph.edges.find(e => e.sourceId === nodeId && e.relationshipType === edgeKind);
     return edge?.targetId;
   }
 }
@@ -159,7 +165,7 @@ export class DataEntitySynthesizer {
   readonly targetModelKinds = ['data-entity'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'entity' || node.kind === 'database-object';
+    return node.type === 'entity' || node.type === 'database-object';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -172,11 +178,14 @@ export class DataEntitySynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'data-entity',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       tableName: (node.metadata['tableName'] as string) ?? node.label.toLowerCase(),
       fields: (node.metadata['fields'] as DataModel['fields']) ?? [],
       relations: (node.metadata['relations'] as DataModel['relations']) ?? [],
@@ -208,7 +217,7 @@ export class StateStoreSynthesizer {
   readonly targetModelKinds = ['state-store'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'state-store';
+    return node.type === 'state-store';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -220,11 +229,14 @@ export class StateStoreSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'state-store',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       storeType: (node.metadata['storeType'] as StateStoreModel['storeType']) ?? 'unknown',
       stateTree: (node.metadata['stateTree'] as Record<string, unknown>) ?? undefined,
       actionTypes: (node.metadata['actions'] as StateStoreModel['actionTypes']) ?? [],
@@ -246,7 +258,7 @@ export class StateStoreSynthesizer {
 
   private findConnectedNodeIds(nodeId: string, graph: ArtifactGraph, edgeKind: string): string[] {
     return graph.edges
-      .filter(e => e.sourceId === nodeId && e.kind === edgeKind)
+      .filter(e => e.sourceId === nodeId && e.relationshipType === edgeKind)
       .map(e => e.targetId);
   }
 }
@@ -261,7 +273,7 @@ export class TokenSynthesizer {
   readonly targetModelKinds = ['token'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'token';
+    return node.type === 'token';
   }
 
   synthesize(node: GraphNode, _graph: ArtifactGraph): SynthesisResult {
@@ -273,11 +285,14 @@ export class TokenSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'token',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       tokenPath: (node.metadata['tokenPath'] as string[]) ?? [node.label],
       value: {
         value: (node.metadata['value'] as string | number) ?? '',
@@ -309,7 +324,7 @@ export class ApiEndpointSynthesizer {
   readonly targetModelKinds = ['api-endpoint'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'api-endpoint';
+    return node.type === 'api-endpoint';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -322,11 +337,14 @@ export class ApiEndpointSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'api-endpoint',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       path: (node.metadata['path'] as string) ?? '/',
       methods: (node.metadata['methods'] as string[]) ?? ['GET'],
       additionalOperations: [],
@@ -359,7 +377,7 @@ export class WorkflowSynthesizer {
   readonly targetModelKinds = ['workflow-job'] as const;
 
   canSynthesize(node: GraphNode, _graph: ArtifactGraph): boolean {
-    return node.kind === 'workflow-job';
+    return node.type === 'workflow-job';
   }
 
   synthesize(node: GraphNode, graph: ArtifactGraph): SynthesisResult {
@@ -372,11 +390,14 @@ export class WorkflowSynthesizer {
       provenance: {
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         kind: node.provenance,
         extractedAt: new Date().toISOString(),
       },
       kind: 'workflow',
+      graphNodeIds: [node.id],
+      sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+      residualIslandIds: node.residualFragmentIds,
       trigger: (node.metadata['trigger'] as WorkflowModel['trigger']) ?? 'manual',
       branchFilter: (node.metadata['branchFilter'] as string[]) ?? [],
       jobs: jobs.map(job => ({

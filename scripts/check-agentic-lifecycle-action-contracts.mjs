@@ -74,9 +74,9 @@ requireAll('platform/typescript/kernel-lifecycle/src/agentic/AgentLifecycleActio
 ]);
 
 requireAll('products/data-cloud/planes/action/gateway/src/__tests__/agentic-lifecycle-actions.test.ts', [
-  'schemaVersion: \'1.0.0\'',
-  'requestedAction: \'create-lifecycle-plan\'',
-  'lifecyclePhase: \'build\'',
+  'schemaVersion: "1.0.0"',
+  'requestedAction: "create-lifecycle-plan"',
+  'lifecyclePhase: "build"',
   'without proxying to raw backend tools',
   'fails closed when the governed Kernel service is not configured',
   'surfaces service validation failures for raw command attempts',

@@ -45,36 +45,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * <b>Usage</b><br>
  *
  * <pre>{@code
- * LakehouseConnector connector = new LakehouseConnector(
- *         metricsCollector);
+ * LakehouseConnector connector = new LakehouseConnector(metricsCollector);
  *
  * // Create analytical event
  * Entity event = Entity.builder()
- *         .tenantId("tenant-123")
- *         .collectionName("analytics")
- *         .data(Map.of(
- *                 "date", LocalDate.now(),
- *                 "region", "US-WEST",
- *                 "revenue", 150000.00,
- *                 "quantity", 500))
- *         .build();
- *
- * connector.create(event)
- *         .thenApply(saved -> {
- *             System.out.println("Record stored: " + saved.getId());
- *             return saved;
- *         });
+ *     .tenantId("tenant-123")
+ *     .collectionName("analytics")
+ *     .data(Map.of("region", "US-WEST", "revenue", 150000.00))
+ *     .build();
+ * connector.create(event).whenResult(saved -> log.info("stored: {}", saved.getId()));
  *
  * // Complex analytical query
  * QuerySpec query = QuerySpec.builder()
- *         .filter("date >= '2025-01-01' AND region = 'US-WEST'")
- *         .aggregation("sum", "revenue", "region") // Sum by region
- *         .sort("revenue", QuerySpec.SortDirection.DESC)
- *         .limit(100)
- *         .build();
- *
- * connector.query(collectionId, tenantId, query)
- *         .thenApply(result -> result.entities());
+ *     .filter("date >= '2025-01-01' AND region = 'US-WEST'")
+ *     .sort("revenue", QuerySpec.SortDirection.DESC)
+ *     .limit(100)
+ *     .build();
+ * connector.query(collectionId, tenantId, query).map(QueryResult::entities);
  * }</pre>
  *
  * <p>
@@ -309,13 +296,13 @@ public class LakehouseConnector implements StorageConnector {
                     .filter(e -> applyFilter(e, spec.getFilterOptional().orElse(null)))
                     .toList();
 
-                List<Entity> sorted = applySorts(filtered, spec.getSortFields());
+            List<Entity> sorted = applySorts(filtered, spec.getSortFields());
 
             // Apply pagination
             int limit = spec.getLimitInt() > 0 ? spec.getLimitInt() : 100;
             int offset = spec.getOffsetInt() >= 0 ? spec.getOffsetInt() : 0;
 
-                List<Entity> paginated = sorted.stream()
+            List<Entity> paginated = sorted.stream()
                     .skip(offset)
                     .limit(limit)
                     .toList();

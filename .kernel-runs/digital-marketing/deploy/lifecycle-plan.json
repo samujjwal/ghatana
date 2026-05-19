@@ -1,0 +1,217 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-19T00-32-08-6f80d3d3",
+  "correlationId": "corr-2026-05-19T00-32-08-6f80d3d3",
+  "providerMode": "bootstrap",
+  "productId": "digital-marketing",
+  "productUnitId": "digital-marketing",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "deploy",
+  "phaseMode": "sequential",
+  "lifecycleProfile": "standard-web-api-product",
+  "sourceRef": "local",
+  "surfaces": [
+    {
+      "surface": "local",
+      "type": "backend-api",
+      "adapter": "compose-local",
+      "config": {
+        "adapter": "compose-local",
+        "target": "compose-local",
+        "composeFile": "products/digital-marketing/deploy/local.compose.yaml",
+        "envFile": "products/digital-marketing/deploy/local.env",
+        "envExampleFile": "products/digital-marketing/deploy/local.env.example",
+        "requireEnvFile": false,
+        "expectedServices": [
+          "digital-marketing-api",
+          "digital-marketing-web"
+        ],
+        "healthChecks": {
+          "backend-api": {
+            "type": "http",
+            "url": "http://localhost:${DMOS_API_PORT:-8080}/health/ready",
+            "retries": 10,
+            "intervalMs": 3000
+          },
+          "web": {
+            "type": "http",
+            "url": "http://localhost:${DMOS_WEB_PORT:-5173}/",
+            "retries": 5,
+            "intervalMs": 2000
+          }
+        }
+      }
+    }
+  ],
+  "gates": [
+    {
+      "gateId": "artifact-validation",
+      "gateName": "artifact-validation",
+      "required": true,
+      "phase": "deploy",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "environment-validation",
+      "gateName": "environment-validation",
+      "required": true,
+      "phase": "deploy",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "health-check",
+      "gateName": "health-check",
+      "required": true,
+      "phase": "deploy",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    },
+    {
+      "gateId": "observability-check",
+      "gateName": "observability-check",
+      "required": true,
+      "phase": "deploy",
+      "source": "lifecycle-profile",
+      "status": "pending"
+    }
+  ],
+  "steps": [
+    {
+      "id": "deploy-local-0",
+      "stepKind": "deploy",
+      "phase": "deploy",
+      "surface": "local",
+      "adapter": "compose-local",
+      "adapterSelectionSource": "product-config-override",
+      "description": "deploy to local via compose-local",
+      "dependsOn": [],
+      "estimatedDurationMs": 90000,
+      "adapterContext": {
+        "deploymentConfig": {
+          "adapter": "compose-local",
+          "target": "compose-local",
+          "composeFile": "products/digital-marketing/deploy/local.compose.yaml",
+          "envFile": "products/digital-marketing/deploy/local.env",
+          "envExampleFile": "products/digital-marketing/deploy/local.env.example",
+          "requireEnvFile": false,
+          "expectedServices": [
+            "digital-marketing-api",
+            "digital-marketing-web"
+          ],
+          "healthChecks": {
+            "backend-api": {
+              "type": "http",
+              "url": "http://localhost:${DMOS_API_PORT:-8080}/health/ready",
+              "retries": 10,
+              "intervalMs": 3000
+            },
+            "web": {
+              "type": "http",
+              "url": "http://localhost:${DMOS_WEB_PORT:-5173}/",
+              "retries": 5,
+              "intervalMs": 2000
+            }
+          }
+        },
+        "environmentConfig": {
+          "environment": "local"
+        },
+        "surfaceConfig": {
+          "adapter": "compose-local",
+          "expectedServices": [
+            "digital-marketing-api",
+            "digital-marketing-web"
+          ],
+          "expectedReportFields": [
+            "schemaVersion",
+            "productUnitId",
+            "runId",
+            "correlationId",
+            "environment",
+            "status",
+            "checkedAt",
+            "checks",
+            "evidenceRefs"
+          ],
+          "healthChecks": {
+            "backend-api": {
+              "type": "http",
+              "url": "http://localhost:${DMOS_API_PORT:-8080}/health/ready",
+              "retries": 10,
+              "intervalMs": 3000,
+              "timeoutMs": 30000
+            },
+            "web": {
+              "type": "http",
+              "url": "http://localhost:${DMOS_WEB_PORT:-5173}/",
+              "retries": 5,
+              "intervalMs": 2000,
+              "timeoutMs": 15000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "adapterIds": [
+    "compose-local"
+  ],
+  "expectedArtifacts": [],
+  "requiredManifests": [
+    "deployment-manifest",
+    "lifecycle-health-snapshot"
+  ],
+  "requiredPlugins": [
+    {
+      "pluginId": "audit",
+      "required": true
+    },
+    {
+      "pluginId": "observability",
+      "required": true
+    },
+    {
+      "pluginId": "data-access",
+      "required": true
+    },
+    {
+      "pluginId": "identity-entitlement",
+      "required": true
+    },
+    {
+      "pluginId": "security",
+      "required": true
+    },
+    {
+      "pluginId": "preview-security",
+      "required": false
+    }
+  ],
+  "approvalRequirements": [
+    {
+      "approvalId": "deploy-deploy:local",
+      "action": "deploy:local",
+      "riskLevel": "high",
+      "required": true,
+      "requiredApprovers": [
+        "product-owner",
+        "release-captain"
+      ],
+      "source": "kernel-product.approvals.deploy"
+    }
+  ],
+  "healthChecks": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/deploy",
+  "estimatedDurationMs": 90000,
+  "warnings": [],
+  "blockingReasons": []
+}

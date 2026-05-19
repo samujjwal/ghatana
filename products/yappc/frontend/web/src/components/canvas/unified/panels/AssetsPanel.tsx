@@ -118,7 +118,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
       if (aPriority !== -1) return -1;
       if (bPriority !== -1) return 1;
 
-      return a.i18n.languageCompare(b);
+      return a.localeCompare(b);
     });
   }, [assetsByCategory, prioritizedCategories]);
 

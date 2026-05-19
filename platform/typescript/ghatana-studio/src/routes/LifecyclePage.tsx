@@ -28,6 +28,7 @@ const LIFECYCLE_PHASES = [
 ] as const;
 const DEFAULT_ENVIRONMENTS = ["local"] as const;
 const PROVIDER_MODES = ["bootstrap", "platform"] as const;
+const OPENING_LIFECYCLE_PILOT_IDS = ["digital-marketing", "phr"] as const;
 
 type LifecyclePhase = (typeof LIFECYCLE_PHASES)[number];
 type ProviderMode = (typeof PROVIDER_MODES)[number];
@@ -295,8 +296,10 @@ export default function LifecyclePage(): ReactElement {
   });
   const currentProductUnitId =
     lifecycleData.snapshot.productUnit?.id ?? "unknown";
-  const isDigitalMarketingPilot = currentProductUnitId === "digital-marketing";
-  const pilotReadinessLabel = isDigitalMarketingPilot
+  const isOpeningLifecyclePilot = OPENING_LIFECYCLE_PILOT_IDS.some(
+    (pilotId) => pilotId === currentProductUnitId,
+  );
+  const pilotReadinessLabel = isOpeningLifecyclePilot
     ? readinessState.lifecycleExecutionAllowed
       ? t("studio.route.lifecycle.pilotReadiness.ready")
       : t("studio.route.lifecycle.pilotReadiness.blocked")
@@ -413,7 +416,7 @@ export default function LifecyclePage(): ReactElement {
           </h3>
           <Badge
             tone={
-              isDigitalMarketingPilot &&
+              isOpeningLifecyclePilot &&
               readinessState.lifecycleExecutionAllowed
                 ? "success"
                 : "warning"
@@ -431,7 +434,7 @@ export default function LifecyclePage(): ReactElement {
           )}{" "}
           {currentProductUnitId}
         </p>
-        {!isDigitalMarketingPilot && (
+        {!isOpeningLifecyclePilot && (
           <p className="mt-1 text-xs text-blue-900">
             {translateWithCatalogFallback(
               t,
@@ -1010,7 +1013,7 @@ function translateWithCatalogFallback(
     case "studio.route.lifecycle.currentProductUnitPrefix":
       return "Current product unit:";
     case "studio.route.lifecycle.nonPilotExplanation":
-      return "Only Digital Marketing is lifecycle-enabled in this phase. Non-pilot products remain fail-closed until promotion gates pass.";
+      return "Only Digital Marketing and PHR are lifecycle-enabled opening pilots. Non-pilot products remain fail-closed until promotion gates pass.";
     default:
       return translated;
   }

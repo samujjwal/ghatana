@@ -50,4 +50,32 @@ test.describe("Ghatana Studio navigation", () => {
       page.getByText("Required capability: kernel.lifecycle.view"),
     ).toBeVisible();
   });
+
+  test("shows opening lifecycle pilots with actionable bootstrap truth", async ({
+    page,
+  }) => {
+    await page.goto("/lifecycle/pilots");
+
+    await expect(
+      page.getByRole("heading", { name: "Opening lifecycle pilots" }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel("Digital Marketing opening pilot"),
+    ).toBeVisible();
+    await expect(page.getByLabel("PHR opening pilot")).toBeVisible();
+    await expect(page.getByText("gate:bridge-compliance")).toBeVisible();
+    await expect(page.getByText("gate:consent")).toBeVisible();
+    await expect(page.getByText("not reported").first()).toBeVisible();
+
+    await page.getByLabel("Pilot filter").selectOption("phr");
+    await expect(page.getByLabel("PHR opening pilot")).toBeVisible();
+    await expect(
+      page.getByLabel("Digital Marketing opening pilot"),
+    ).toHaveCount(0);
+
+    await page.getByLabel("Pilot filter").focus();
+    await expect(page.getByLabel("Pilot filter")).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByLabel("PHR opening pilot")).toBeFocused();
+  });
 });

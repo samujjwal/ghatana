@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-44-a461019e",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T20-21-44-a461019e/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T20-21-44-a461019e",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-24-323ee67e",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T21-35-24-323ee67e/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-35-24-323ee67e",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-30-291614c1",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T21-35-30-291614c1/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-35-30-291614c1",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-37-1cd771b4",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T21-35-37-1cd771b4/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-35-37-1cd771b4",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-43-41-6cd86cf4",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T21-43-41-6cd86cf4/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-43-41-6cd86cf4",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-44-03-6f92544e",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-18T21-44-03-6f92544e/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-18T21-44-03-6f92544e",
+      "reasonCode": "health-skipped"
+    },
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-19T00-31-20-dc5571ed",
+      "status": "skipped",
+      "snapshotPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/validate/digital-marketing/2026-05-19T00-31-20-dc5571ed/validate/lifecycle-health-snapshot.json",
+      "correlationId": "corr-2026-05-19T00-31-20-dc5571ed",
+      "reasonCode": "health-skipped"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: unit-test-coverage
+title: Digital Marketing unit test coverage gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that the digital-marketing product's unit test coverage meets the
+  required threshold before a build or package phase proceeds. Coverage reports
+  must be present in the expected output paths.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-api/build/reports/jacoco/test/html
+  - products/digital-marketing/ui/coverage
+blockingReasonCodes:
+  - requires-unit-test-coverage
+  - missing-unit-test-coverage
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-api:test :products:digital-marketing:dm-api:jacocoTestReport
+  - pnpm --filter dm-ui test --coverage
+notes:
+  - Coverage threshold enforcement is product-configured; kernel enforces evidence presence.

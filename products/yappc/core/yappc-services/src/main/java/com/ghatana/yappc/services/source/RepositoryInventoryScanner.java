@@ -223,9 +223,9 @@ public final class RepositoryInventoryScanner {
             }
 
             // Skip .gitignore-matched paths
-            String matchedGitignorePattern = findMatchingPattern(relative, gitignorePatterns);
-            if (matchedGitignorePattern != null) {
-                skipped.add(new SkippedEntry(relative, SkipReason.GITIGNORE, matchedGitignorePattern));
+            PatternDecision gitignoreDecision = evaluateGitignore(relative, gitignorePatterns);
+            if (gitignoreDecision.ignored()) {
+                skipped.add(new SkippedEntry(relative, SkipReason.GITIGNORE, gitignoreDecision.matchedPattern()));
                 continue;
             }
 
@@ -349,12 +349,19 @@ public final class RepositoryInventoryScanner {
      * @return true if path matches any pattern
      */
     private static boolean matchesGitignore(String relativePath, Set<String> patterns) {
+        return evaluateGitignore(relativePath, patterns).ignored();
+    }
+
+    private record PatternDecision(boolean ignored, String matchedPattern) {}
+
+    private static PatternDecision evaluateGitignore(String relativePath, Set<String> patterns) {
         if (patterns.isEmpty()) {
-            return false;
+            return new PatternDecision(false, null);
         }
 
         String normalizedPath = relativePath.replace('\\', '/');
         boolean ignored = false;
+        String matchedPattern = null;
 
         for (String pattern : patterns) {
             String candidate = pattern.trim();
@@ -372,9 +379,10 @@ public final class RepositoryInventoryScanner {
 
             if (matchesPattern(normalizedPath, candidate)) {
                 ignored = !negated;
+                matchedPattern = pattern;
             }
         }
-        return ignored;
+        return new PatternDecision(ignored, ignored ? matchedPattern : null);
     }
 
     /**
@@ -434,12 +442,17 @@ public final class RepositoryInventoryScanner {
             candidate = candidate.substring(1);
         }
 
+        boolean bareLiteral = !candidate.contains("/") &&
+            candidate.indexOf('*') < 0 &&
+            candidate.indexOf('?') < 0 &&
+            candidate.indexOf('[') < 0;
+
         String regexBody = globToRegex(candidate);
         String regex;
         if (anchored) {
-            regex = "^" + regexBody + (directoryOnly ? "(?:/.*)?$" : "$");
+            regex = "^" + regexBody + (directoryOnly || bareLiteral ? "(?:/.*)?$" : "$");
         } else {
-            regex = "^(?:.*/)?" + regexBody + (directoryOnly ? "(?:/.*)?$" : "$");
+            regex = "^(?:.*/)?" + regexBody + (directoryOnly || bareLiteral ? "(?:/.*)?$" : "$");
         }
 
         return normalizedPath.matches(regex);

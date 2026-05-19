@@ -1,0 +1,22 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: contract-test-coverage
+title: Digital Marketing contract test coverage gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that API contract tests against the digital-marketing OpenAPI
+  specification are executed. All declared endpoints must be covered with at
+  least one contract-level assertion. Pact or schema-based consumer tests are accepted.
+requiredEvidenceRefs:
+  - products/digital-marketing/docs/openapi.yaml
+  - products/digital-marketing/dm-api/src/test
+blockingReasonCodes:
+  - requires-contract-test-coverage
+  - missing-contract-test-coverage
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-api:test -Dtest.type=contract
+notes:
+  - Contract test coverage is enforced by OpenAPI schema validation + Pact broker.
+  - All registered API surface endpoints must have consumer contract evidence.

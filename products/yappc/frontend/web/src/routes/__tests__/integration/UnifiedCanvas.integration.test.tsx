@@ -1,192 +1,74 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Provider, createStore, atom } from 'jotai';
+import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Mock localStorage for atomWithStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(),
-  length: 0,
-};
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+import CanvasRedirectRoute from '../../app/project/canvas';
 
-// Mock atomWithStorage to behave like a regular atom
-vi.mock('jotai/utils', async () => {
-  const actual = await vi.importActual('jotai/utils');
-  return {
-    ...actual,
-    atomWithStorage: (key: string, initialValue: unknown) => {
-      const baseAtom = atom(initialValue);
-      return atom(
-        (get) => get(baseAtom),
-        (get, set, update) => {
-          const nextValue =
-            typeof update === 'function'
-              ? (update as unknown)(get(baseAtom))
-              : update;
-          set(baseAtom, nextValue);
-        }
-      );
-    },
-  };
-});
+const navigateSpy = vi.fn();
 
-import UnifiedCanvas from '../../app/project/canvas';
-import {
-  activeToolAtom,
-  canvasAtom,
-} from '../../../state/atoms/unifiedCanvasAtom';
-import { MemoryRouter, Routes, Route } from 'react-router';
-
-// Mock params
 vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+  const actual = await vi.importActual<typeof import('react-router')>('react-router');
   return {
     ...actual,
-    useParams: () => ({ projectId: 'test-project-1' }),
+    useNavigate: () => navigateSpy,
   };
 });
 
-// Mock React Flow to avoid canvas rendering issues in JSDOM
-vi.mock('@xyflow/react', async () => {
-  const actual = await vi.importActual('@xyflow/react');
-  return {
-    ...actual,
-    ReactFlow: ({ children, onPaneClick }: unknown) => (
-      <div
-        data-testid="react-flow-canvas"
-        onClick={(e) => onPaneClick && onPaneClick(e)}
-      >
-        Mocked React Flow
-        {children}
-      </div>
-    ),
-    ReactFlowProvider: ({ children }: unknown) => <div>{children}</div>,
-    useReactFlow: () => ({
-      screenToFlowPosition: (pos: { x: number; y: number }) => pos,
-      project: (pos: { x: number; y: number }) => pos,
-      getNodes: () => [],
-      setNodes: () => {},
-      addNodes: () => {},
-      fitView: () => {},
-    }),
-    Controls: () => <div data-testid="rf-controls">Controls</div>,
-    Background: () => <div data-testid="rf-background">Background</div>,
-    MiniMap: () => <div data-testid="rf-minimap">MiniMap</div>,
-    Panel: ({ children }: unknown) => <div>{children}</div>,
-  };
-});
+function LocationProbe() {
+  const location = useLocation();
+  return <div data-testid="current-location">{location.pathname}</div>;
+}
 
-describe('Unified Canvas Integration', () => {
-  let store: ReturnType<typeof createStore>;
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
-    store = createStore();
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+describe('legacy canvas route', () => {
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    queryClient.clear();
-    cleanup();
-  });
-
-  const renderCanvas = () => {
-    return render(
-      <QueryClientProvider client={queryClient}>
-        <Provider store={store}>
-          <MemoryRouter initialEntries={['/project/test-project-1']}>
-            <Routes>
-              <Route path="/project/:projectId" element={<UnifiedCanvas />} />
-            </Routes>
-          </MemoryRouter>
-        </Provider>
-      </QueryClientProvider>
+  it('renders redirect affordance and sends legacy canvas traffic to Shape', async () => {
+    render(
+      <MemoryRouter initialEntries={['/project/test-project-1/canvas']}>
+        <Routes>
+          <Route
+            path="/project/:projectId/canvas"
+            element={(
+              <>
+                <CanvasRedirectRoute />
+                <LocationProbe />
+              </>
+            )}
+          />
+        </Routes>
+      </MemoryRouter>,
     );
-  };
 
-  it('renders the main canvas components', async () => {
-    renderCanvas();
-
-    // Use getAllByTestId in case of multiple renders, but expect at least one
-    const canvases = screen.getAllByTestId('react-flow-canvas');
-    expect(canvases.length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('rf-controls').length).toBeGreaterThan(0);
+    expect(screen.getByText('Redirecting to Shape phase...')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(navigateSpy).toHaveBeenCalledWith('/p/test-project-1/shape', { replace: true });
+    });
   });
 
-  it('allows tool selection from the toolbar', async () => {
-    renderCanvas();
-
-    // Find tools by their title which includes the shortcut
-    const drawBtns = screen.getAllByTitle(/Draw/i);
-    const rectBtns = screen.getAllByTitle(/Rectangle/i);
-
-    // Initial state should be 'select'
-    expect(store.get(activeToolAtom)).toBe('select');
-
-    // Click draw tool (use the first visible one)
-    fireEvent.click(drawBtns[0]);
-
-    // Use waitFor just in case the atom update is batched or async
-    expect(store.get(activeToolAtom)).toBe('draw');
-
-    // Click rectangle tool
-    fireEvent.click(rectBtns[0]);
-    expect(store.get(activeToolAtom)).toBe('rectangle');
-  });
-
-  it('opens export dialog from top bar', async () => {
-    renderCanvas();
-
-    // Top bar is not rendered (topBar={null} in canvas.tsx), so export dialog
-    // is triggered via a different mechanism. Verify canvas renders without errors.
-    const canvases = screen.getAllByTestId('react-flow-canvas');
-    expect(canvases.length).toBeGreaterThan(0);
-  });
-
-  it('renders the left rail and right panel', async () => {
-    renderCanvas();
-    // Assuming they have some identifiable text or structure
-  });
-
-  it('initializes canvas state correctly', async () => {
-    renderCanvas();
-
-    const canvasState = store.get(canvasAtom);
-    expect(canvasState.nodes).toBeDefined();
-    expect(canvasState.viewport).toEqual(
-      expect.objectContaining({ zoom: 0.5 })
+  it('does not navigate when the project id is absent', async () => {
+    render(
+      <MemoryRouter initialEntries={['/project/canvas']}>
+        <Routes>
+          <Route
+            path="/project/canvas"
+            element={(
+              <>
+                <CanvasRedirectRoute />
+                <LocationProbe />
+              </>
+            )}
+          />
+        </Routes>
+      </MemoryRouter>,
     );
-  });
 
-  it('handles pane click for shape creation', async () => {
-    renderCanvas();
-
-    const rectBtns = screen.getAllByTitle(/Rectangle/i);
-    fireEvent.click(rectBtns[0]);
-
-    // Click on the canvas (mocked)
-    const canvases = screen.getAllByTestId('react-flow-canvas');
-    // Ensure we click the one that is likely active/visible
-    const canvas = canvases[0];
-
-    // One click creation usually works with Sticky tool
-    const stickyBtns = screen.getAllByTitle(/Sticky/i);
-    fireEvent.click(stickyBtns[0]);
-
-    // Mock clientX/Y
-    fireEvent.click(canvas, { clientX: 100, clientY: 100 });
-
-    const canvasState = store.get(canvasAtom);
-    expect(canvasState.nodes).toBeDefined();
+    expect(screen.getByText('Redirecting to Shape phase...')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(navigateSpy).not.toHaveBeenCalled();
+    });
   });
 });

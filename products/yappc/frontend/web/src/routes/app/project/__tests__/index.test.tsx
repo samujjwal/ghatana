@@ -45,11 +45,13 @@ function renderRoute() {
 describe('project overview route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('yappc:currentWorkspaceId', JSON.stringify('ws-9'));
     vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    localStorage.clear();
   });
 
   it('renders the mounted cockpit with blockers and recent activity', async () => {

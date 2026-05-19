@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-45-e87a9330:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-45-e87a9330",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:45.875Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-45-e87a9330"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-45-e87a9330",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:45.875Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-45-e87a9330:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-45-e87a9330",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:45.877Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-45-e87a9330"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:45.877Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T20-21-45-e87a9330:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-45-e87a9330",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:45.878Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-45-e87a9330"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:45.878Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-36-46-05a6fbd0:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:36:46.348Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:36:46.348Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-36-46-05a6fbd0:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:36:46.361Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:36:46.361Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-36-46-05a6fbd0:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-36-46-05a6fbd0",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:36:46.367Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-36-46-05a6fbd0"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:36:46.367Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-44-08-5e5c1541:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-44-08-5e5c1541",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:08.626Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-08-5e5c1541"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-44-08-5e5c1541",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:44:08.626Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-44-08-5e5c1541:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-44-08-5e5c1541",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:08.630Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-08-5e5c1541"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:08.630Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-44-08-5e5c1541:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T21-44-08-5e5c1541",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:08.632Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-08-5e5c1541"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:44:08.632Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-19T00-31-27-20a5599f:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-19T00-31-27-20a5599f",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:27.272Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-27-20a5599f"
+      },
+      "payload": {
+        "planRunId": "2026-05-19T00-31-27-20a5599f",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-19T00:31:27.272Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-19T00-31-27-20a5599f:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-19T00-31-27-20a5599f",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:27.275Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-27-20a5599f"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-19T00:31:27.275Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-19T00-31-27-20a5599f:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "phr",
+        "runId": "2026-05-19T00-31-27-20a5599f",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:27.277Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-27-20a5599f"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-19T00:31:27.277Z"
+      }
+    }
+  ]
+}

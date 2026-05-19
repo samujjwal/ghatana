@@ -2,16 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockAuthApi } = vi.hoisted(() => ({
   mockAuthApi: {
-    loginSession: vi.fn(),
-    refresh: vi.fn(),
+    login: vi.fn(),
+    currentUser: vi.fn(),
     logout: vi.fn(),
-    updateProfile: vi.fn(),
   },
 }));
 
-vi.mock('../../../lib/api/client', () => ({
-  yappcApi: {
-    auth: mockAuthApi,
+vi.mock('@/clients/generated/api', () => ({
+  AuthService: mockAuthApi,
+  ApiError: class MockApiError extends Error {
+    status: number;
+    constructor(message: string, status = 500) {
+      super(message);
+      this.status = status;
+    }
   },
 }));
 
@@ -41,10 +45,9 @@ describe('AuthService', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', fetchMock);
     fetchMock.mockReset();
-    mockAuthApi.loginSession.mockReset();
-    mockAuthApi.refresh.mockReset();
+    mockAuthApi.login.mockReset();
+    mockAuthApi.currentUser.mockReset();
     mockAuthApi.logout.mockReset();
-    mockAuthApi.updateProfile.mockReset();
     localStorage.clear();
     resetAuthServiceState();
   });
@@ -57,7 +60,7 @@ describe('AuthService', () => {
   });
 
   it('maps the BFF login response into the stored auth-session shape', async () => {
-    mockAuthApi.loginSession.mockResolvedValue({
+    mockAuthApi.login.mockResolvedValue({
       user: {
         id: 'user-1',
         email: 'sam@yappc.local',
@@ -70,14 +73,21 @@ describe('AuthService', () => {
         expiresIn: 900,
       },
     });
+    mockAuthApi.currentUser.mockResolvedValue({
+      id: 'user-1',
+      email: 'sam@yappc.local',
+      name: 'Sam User',
+      role: 'ADMIN',
+    });
 
     const result = await authService.login({ email: 'sam@yappc.local', password: 'secret' });
-    const storedSession = JSON.parse(localStorage.getItem('auth-session') ?? '{}') as Record<string, unknown>;
+    const storedMetadata = JSON.parse(localStorage.getItem('auth-session-meta') ?? '{}') as Record<string, unknown>;
 
-    expect(mockAuthApi.loginSession).toHaveBeenCalledWith({
+    expect(mockAuthApi.login).toHaveBeenCalledWith({
         email: 'sam@yappc.local',
         password: 'secret',
       });
+    expect(mockAuthApi.currentUser).toHaveBeenCalled();
     expect(result).toMatchObject({
       success: true,
       token: 'access-token-1',
@@ -86,11 +96,10 @@ describe('AuthService', () => {
         role: 'admin',
       },
     });
-    expect(storedSession).toMatchObject({
-      token: 'access-token-1',
-      refreshToken: 'refresh-token-1',
-      permissions: ['*'],
+    expect(storedMetadata).toMatchObject({
+      userId: 'user-1',
     });
+    expect(localStorage.getItem('auth-session')).toBeNull();
   });
 
   it('returns an error when registration endpoint is unavailable', async () => {
@@ -108,7 +117,7 @@ describe('AuthService', () => {
   });
 
   it('refreshes tokens with the canonical refresh payload', async () => {
-    localStorage.setItem('auth-session', JSON.stringify({
+    const session = {
       user: {
         id: 'user-1',
         username: 'sam@yappc.local',
@@ -124,23 +133,26 @@ describe('AuthService', () => {
       refreshToken: 'refresh-token-1',
       expiresAt: new Date(Date.now() + 30000).toISOString(),
       permissions: ['*'],
+    };
+    Reflect.set(authService, 'currentSession', session);
+    fetchMock.mockResolvedValue(jsonResponse({
+      expiresAt: new Date(Date.now() + 1800_000).toISOString(),
+      authMode: 'cookie',
     }));
-    Reflect.set(authService, 'currentSession', JSON.parse(localStorage.getItem('auth-session') ?? '{}'));
-    mockAuthApi.refresh.mockResolvedValue({
-      accessToken: 'access-token-2',
-      refreshToken: 'refresh-token-2',
-      expiresIn: 1800,
-    });
 
     const refreshed = await authService.refreshToken();
-    const storedSession = JSON.parse(localStorage.getItem('auth-session') ?? '{}') as Record<string, unknown>;
+    const storedMetadata = JSON.parse(localStorage.getItem('auth-session-meta') ?? '{}') as Record<string, unknown>;
 
     expect(refreshed).toBe(true);
-    expect(mockAuthApi.refresh).toHaveBeenCalledWith({ refreshToken: 'refresh-token-1' });
-    expect(storedSession).toMatchObject({
-      token: 'access-token-2',
-      refreshToken: 'refresh-token-2',
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/refresh', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({}),
+    }));
+    expect(storedMetadata).toMatchObject({
+      userId: 'user-1',
     });
+    expect(localStorage.getItem('auth-session')).toBeNull();
   });
 
   it('posts the refresh token on logout and clears the browser session', async () => {
@@ -167,8 +179,9 @@ describe('AuthService', () => {
 
     await authService.logout();
 
-    expect(mockAuthApi.logout).toHaveBeenCalledWith({ refreshToken: 'refresh-token-1' });
+    expect(mockAuthApi.logout).toHaveBeenCalledWith();
     expect(localStorage.getItem('auth-session')).toBeNull();
+    expect(localStorage.getItem('auth-session-meta')).toBeNull();
     expect(authService.getCurrentUser()).toBeNull();
   });
 

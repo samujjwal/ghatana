@@ -232,8 +232,10 @@ describe('ArtifactVersionConflictResolver', () => {
     const showDetailsButton = screen.getByText('Show details');
     fireEvent.click(showDetailsButton);
 
-    expect(screen.getByText(`Local version (${mockConflict.localVersion})`)).toBeInTheDocument();
-    expect(screen.getByText(`Remote version (${mockConflict.remoteVersion})`)).toBeInTheDocument();
+    expect(screen.getByText('Local version')).toBeInTheDocument();
+    expect(screen.getByText(mockConflict.localVersion)).toBeInTheDocument();
+    expect(screen.getByText('Remote version')).toBeInTheDocument();
+    expect(screen.getByText(mockConflict.remoteVersion)).toBeInTheDocument();
   });
 
   it('truncates long content in details view', () => {
@@ -267,11 +269,11 @@ describe('ArtifactVersionConflictResolver', () => {
       />
     );
 
-    expect(screen.getByText('Reload')).toBeDisabled();
-    expect(screen.getByText('Compare')).toBeDisabled();
-    expect(screen.getByText('Reapply local')).toBeDisabled();
-    expect(screen.getByText('Discard local')).toBeDisabled();
-    expect(screen.getByText('Retry sync')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reload' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Compare' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reapply local' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Discard local' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Retry sync' })).toBeDisabled();
   });
 
   it('shows loading state for active action', async () => {
@@ -284,12 +286,11 @@ describe('ArtifactVersionConflictResolver', () => {
     render(
       <ArtifactVersionConflictResolver
         conflict={mockConflict}
-        isResolving={true}
         {...mockHandlers}
       />
     );
 
-    const reloadButton = screen.getByText('Reload');
+    const reloadButton = screen.getByRole('button', { name: 'Reload' });
     fireEvent.click(reloadButton);
 
     // Button should be in loading state

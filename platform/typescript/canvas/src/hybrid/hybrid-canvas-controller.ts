@@ -10,7 +10,7 @@
  * @doc.pattern Controller
  */
 
-import { getDefaultStore } from "jotai";
+import { createStore } from "jotai";
 import type {
   HybridCanvasState,
   ViewportState,
@@ -40,6 +40,7 @@ import {
   redoAtom,
   canUndoAtom,
   canRedoAtom,
+  type HistoryEntry,
 } from "./state";
 import {
   screenToCanvas,
@@ -48,6 +49,54 @@ import {
   getBoundingRect,
   calculateZoomToFit,
 } from "./coordinates";
+
+// ============================================================================
+// DEPENDENCY INTERFACES
+// ============================================================================
+
+/**
+ * Clock interface for time-based operations.
+ * Allows deterministic time injection for testing.
+ */
+export interface Clock {
+  readonly now: () => number;
+}
+
+/**
+ * Default clock using Date.now().
+ */
+export const defaultClock: Clock = {
+  now: () => Date.now(),
+};
+
+/**
+ * ID provider interface for generating unique identifiers.
+ * Allows deterministic ID generation for testing.
+ */
+export interface IdProvider {
+  readonly generate: (prefix: string) => string;
+}
+
+/**
+ * Default ID provider using timestamp + random.
+ * Note: This is non-deterministic and should be replaced with
+ * a proper UUID generator in production.
+ */
+export const defaultIdProvider: IdProvider = {
+  generate: (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+};
+
+/**
+ * Controller dependencies.
+ */
+export interface HybridCanvasControllerDependencies {
+  /** Jotai store for state management. Defaults to a fresh createStore(). */
+  readonly store?: ReturnType<typeof createStore>;
+  /** Clock for time-based operations. Defaults to Date.now(). */
+  readonly clock?: Clock;
+  /** ID provider for generating unique identifiers. Defaults to timestamp + random. */
+  readonly idProvider?: IdProvider;
+}
 
 /**
  * Public API for hybrid canvas operations
@@ -132,7 +181,7 @@ export interface HybridCanvasAPI {
   canRedo(): boolean;
   undo(): void;
   redo(): void;
-  pushHistory(action: string): void;
+  pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void;
 
   // Utilities
   screenToCanvas(point: Point): Point;
@@ -148,10 +197,24 @@ export interface HybridCanvasAPI {
  * Hybrid Canvas Controller
  *
  * Manages all canvas operations through Jotai store.
+ * Instance-scoped with injectable dependencies for testability.
  */
 export class HybridCanvasController implements HybridCanvasAPI {
-  private store = getDefaultStore();
+  private readonly store: ReturnType<typeof createStore>;
+  private readonly clock: Clock;
+  private readonly idProvider: IdProvider;
   private containerRef: HTMLElement | null = null;
+
+  /**
+   * Create a new hybrid canvas controller with optional dependencies.
+   *
+   * @param dependencies - Optional dependencies (store, clock, ID provider)
+   */
+  constructor(dependencies: HybridCanvasControllerDependencies = {}) {
+    this.store = dependencies.store ?? createStore();
+    this.clock = dependencies.clock ?? defaultClock;
+    this.idProvider = dependencies.idProvider ?? defaultIdProvider;
+  }
 
   /**
    * Set the container reference for viewport calculations
@@ -401,41 +464,71 @@ export class HybridCanvasController implements HybridCanvasAPI {
       id: element.id ?? this.generateId("element"),
     };
 
+    // Snapshot state BEFORE mutation for correct undo behavior
     const elements = this.getElements();
+    const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     this.store.set(elementsAtom, [...elements, newElement]);
-    this.pushHistory(`Add element: ${newElement.type}`);
+    this.pushHistory({
+      action: `Add element: ${newElement.type}`,
+      snapshot: { elements, nodes, edges },
+    });
 
     return newElement;
   }
 
   updateElement(id: string, updates: Partial<CanvasElement>): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
     const elements = this.getElements();
+    const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     const index = elements.findIndex((e) => e.id === id);
     if (index === -1) return;
 
     const newElements = [...elements];
     newElements[index] = { ...newElements[index], ...updates };
     this.store.set(elementsAtom, newElements);
+
+    this.pushHistory({
+      action: `Update element: ${id}`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteElement(id: string): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
     const elements = this.getElements();
+    const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     this.store.set(
       elementsAtom,
       elements.filter((e) => e.id !== id),
     );
     this.removeFromSelection({ elements: [id] });
-    this.pushHistory("Delete element");
+    this.pushHistory({
+      action: "Delete element",
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteElements(ids: string[]): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
     const elements = this.getElements();
+    const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     this.store.set(
       elementsAtom,
       elements.filter((e) => !ids.includes(e.id)),
     );
     this.removeFromSelection({ elements: ids });
-    this.pushHistory(`Delete ${ids.length} elements`);
+    this.pushHistory({
+      action: `Delete ${ids.length} elements`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   // ===========================================================================
@@ -456,24 +549,42 @@ export class HybridCanvasController implements HybridCanvasAPI {
       id: node.id ?? this.generateId("node"),
     };
 
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
     const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     this.store.set(nodesAtom, [...nodes, newNode]);
-    this.pushHistory(`Add node: ${newNode.type ?? "default"}`);
+    this.pushHistory({
+      action: `Add node: ${newNode.type ?? "default"}`,
+      snapshot: { elements, nodes, edges },
+    });
 
     return newNode;
   }
 
   updateNode(id: string, updates: Partial<CanvasNode>): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
     const nodes = this.getNodes();
+    const edges = this.getEdges();
+
     const index = nodes.findIndex((n) => n.id === id);
     if (index === -1) return;
 
     const newNodes = [...nodes];
     newNodes[index] = { ...newNodes[index], ...updates };
     this.store.set(nodesAtom, newNodes);
+
+    this.pushHistory({
+      action: `Update node: ${id}`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteNode(id: string): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
     const nodes = this.getNodes();
     const edges = this.getEdges();
 
@@ -491,10 +602,15 @@ export class HybridCanvasController implements HybridCanvasAPI {
       edges.filter((e) => !connectedEdgeIds.includes(e.id)),
     );
     this.removeFromSelection({ nodes: [id], edges: connectedEdgeIds });
-    this.pushHistory("Delete node");
+    this.pushHistory({
+      action: "Delete node",
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteNodes(ids: string[]): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
     const nodes = this.getNodes();
     const edges = this.getEdges();
 
@@ -512,7 +628,10 @@ export class HybridCanvasController implements HybridCanvasAPI {
       edges.filter((e) => !connectedEdgeIds.includes(e.id)),
     );
     this.removeFromSelection({ nodes: ids, edges: connectedEdgeIds });
-    this.pushHistory(`Delete ${ids.length} nodes`);
+    this.pushHistory({
+      action: `Delete ${ids.length} nodes`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   // ===========================================================================
@@ -533,41 +652,71 @@ export class HybridCanvasController implements HybridCanvasAPI {
       id: edge.id ?? this.generateId("edge"),
     };
 
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
+    const nodes = this.getNodes();
     const edges = this.getEdges();
+
     this.store.set(edgesAtom, [...edges, newEdge]);
-    this.pushHistory("Add edge");
+    this.pushHistory({
+      action: "Add edge",
+      snapshot: { elements, nodes, edges },
+    });
 
     return newEdge;
   }
 
   updateEdge(id: string, updates: Partial<CanvasEdge>): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
+    const nodes = this.getNodes();
     const edges = this.getEdges();
+
     const index = edges.findIndex((e) => e.id === id);
     if (index === -1) return;
 
     const newEdges = [...edges];
     newEdges[index] = { ...newEdges[index], ...updates };
     this.store.set(edgesAtom, newEdges);
+
+    this.pushHistory({
+      action: `Update edge: ${id}`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteEdge(id: string): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
+    const nodes = this.getNodes();
     const edges = this.getEdges();
+
     this.store.set(
       edgesAtom,
       edges.filter((e) => e.id !== id),
     );
     this.removeFromSelection({ edges: [id] });
-    this.pushHistory("Delete edge");
+    this.pushHistory({
+      action: "Delete edge",
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   deleteEdges(ids: string[]): void {
+    // Snapshot state BEFORE mutation for correct undo behavior
+    const elements = this.getElements();
+    const nodes = this.getNodes();
     const edges = this.getEdges();
+
     this.store.set(
       edgesAtom,
       edges.filter((e) => !ids.includes(e.id)),
     );
     this.removeFromSelection({ edges: ids });
-    this.pushHistory(`Delete ${ids.length} edges`);
+    this.pushHistory({
+      action: `Delete ${ids.length} edges`,
+      snapshot: { elements, nodes, edges },
+    });
   }
 
   // ===========================================================================
@@ -625,8 +774,8 @@ export class HybridCanvasController implements HybridCanvasAPI {
     this.store.set(redoAtom);
   }
 
-  pushHistory(action: string): void {
-    this.store.set(pushHistoryAtom, action);
+  pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void {
+    this.store.set(pushHistoryAtom, params);
   }
 
   // ===========================================================================
@@ -765,7 +914,14 @@ export class HybridCanvasController implements HybridCanvasAPI {
 
     if (ungroupedIds.length > 0) {
       this.select({ elements: ungroupedIds });
-      this.pushHistory(`Ungroup ${ungroupedIds.length} elements`);
+      // Snapshot state BEFORE mutation for correct undo behavior
+      const elements = this.getElements();
+      const nodes = this.getNodes();
+      const edges = this.getEdges();
+      this.pushHistory({
+        action: `Ungroup ${ungroupedIds.length} elements`,
+        snapshot: { elements, nodes, edges },
+      });
     }
   }
 
@@ -774,26 +930,23 @@ export class HybridCanvasController implements HybridCanvasAPI {
   // ===========================================================================
 
   private generateId(prefix: string): string {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    return this.idProvider.generate(prefix);
   }
 }
 
-// Singleton instance
-let controllerInstance: HybridCanvasController | null = null;
-
 /**
- * Get the hybrid canvas controller singleton
+ * @deprecated Use `new HybridCanvasController()` directly.
+ * Singleton pattern is deprecated in favor of instance-scoped controllers.
+ * This function is kept for backward compatibility and will be removed in a future version.
  */
 export function getHybridCanvasController(): HybridCanvasController {
-  if (!controllerInstance) {
-    controllerInstance = new HybridCanvasController();
-  }
-  return controllerInstance;
+  return new HybridCanvasController();
 }
 
 /**
- * Reset the controller (for testing)
+ * @deprecated No longer needed with instance-scoped controllers.
+ * This function is kept for backward compatibility and will be removed in a future version.
  */
 export function resetHybridCanvasController(): void {
-  controllerInstance = null;
+  // No-op with instance-scoped controllers
 }

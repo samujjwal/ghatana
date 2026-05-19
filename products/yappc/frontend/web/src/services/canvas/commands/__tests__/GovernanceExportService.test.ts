@@ -12,7 +12,7 @@ import {
   fetchGovernanceExport,
   downloadGovernanceExport,
   GovernanceExportError,
-} from '../../services/canvas/commands/GovernanceExportService';
+} from '../GovernanceExportService';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

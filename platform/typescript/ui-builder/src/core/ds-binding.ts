@@ -8,8 +8,9 @@
  */
 
 import type { ComponentContract, ComponentProp } from '@ghatana/ds-schema';
+import type { BuilderDocument } from './builder-document.js';
+import { normalizeBuilderDocument } from './builder-document.js';
 import type {
-  BuilderDocument,
   ComponentInstance,
   ValidationResult,
   ValidationError,
@@ -49,12 +50,14 @@ export function validateDocumentAgainstDS(
   document: BuilderDocument,
   contracts: readonly ComponentContract[],
 ): DSBindingValidationResult {
+  document = normalizeBuilderDocument(document);
   const contractMap = new Map<string, ComponentContract>(
     contracts.map((c) => [c.name, c]),
   );
   const violations: DSBindingViolation[] = [];
 
-  for (const [, node] of document.nodes) {
+  for (const node of Object.values(document.nodes)) {
+    if (node.contractName === 'RootContainer') continue;
     validateNodeAgainstContract(node, contractMap, violations);
   }
 

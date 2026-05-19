@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-18T18:59:25.860Z",
+  "generated": "2026-05-18T20:58:41.783Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -313,7 +313,7 @@
         "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
       "validationCommands": [
-        "pnpm check:digital-marketing-lifecycle-pilot --smoke"
+        "node scripts/check-digital-marketing-lifecycle-pilot.mjs"
       ]
     },
     {
@@ -503,10 +503,11 @@
         "backend-api",
         "web"
       ],
-      "lifecycleStatus": "planned",
-      "lifecycleExecutionAllowed": false,
+      "lifecycleStatus": "enabled",
+      "lifecycleExecutionAllowed": true,
       "requiredKernelCapabilities": [
         "backend-api:gradle-java-service",
+        "deploy:compose-local",
         "gate:a11y",
         "gate:audit-evidence",
         "gate:consent",
@@ -519,6 +520,7 @@
         "web:pnpm-vite-react"
       ],
       "requiredToolchainAdapters": [
+        "compose-local",
         "gradle-java-service",
         "pnpm-vite-react"
       ],
@@ -542,7 +544,12 @@
         "security",
         "tenant-data-sovereignty"
       ],
-      "requiredDataCloudSupport": [],
+      "requiredDataCloudSupport": [
+        "runtime-truth",
+        "lifecycle-events",
+        "artifact-references",
+        "health-snapshots"
+      ],
       "requiredYappcVisibility": [
         "product-unit-summary-visible"
       ],
@@ -561,29 +568,24 @@
         "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
       ],
       "missingEvidenceRefs": [
-        "manifest:artifact-manifest",
-        "manifest:deployment-manifest",
-        "manifest:lifecycle-plan",
-        "manifest:lifecycle-result"
+        "provider:platform-artifacts",
+        "provider:platform-events",
+        "provider:platform-health"
       ],
       "blockers": [
         "gate:missing-consent-gate",
         "gate:missing-data-sovereignty-gate",
-        "missing-manifest:artifact-manifest",
-        "missing-manifest:deployment-manifest",
-        "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result",
         "product-owner:missing-audit-evidence",
         "product-owner:missing-fhir-contract-validation",
         "product-owner:missing-pii-classification"
       ],
       "nextActions": [
-        "Keep PHR lifecycle execution disabled until regulated healthcare gates are executable",
+        "Develop PHR features in parallel with Digital Marketing under kernel lifecycle",
         "Validate healthcare-specific gate-packs against real FHIR evidence as features mature",
-        "Keep shape-only until required adapters and manifests are executable"
+        "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
       "validationCommands": [
-        "pnpm check:product-shape-capability-matrix"
+        "node scripts/check-phr-lifecycle-pilot.mjs"
       ]
     },
     {

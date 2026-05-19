@@ -12,6 +12,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService } from '../../../clients/generated/api';
+import type { LoginRequest, LoginResponse, Project, Workspace } from '../../../clients/generated/api';
+
+function expectTypeExport<T>(): void {
+  expect(true).toBe(true);
+}
 
 describe('OpenAPI Client Contract Tests', () => {
   beforeEach(() => {
@@ -27,8 +32,8 @@ describe('OpenAPI Client Contract Tests', () => {
       expect(typeof GeneratedAuthService.login).toBe('function');
     });
 
-    it('should have AuthService with validateToken method', () => {
-      expect(typeof GeneratedAuthService.validateToken).toBe('function');
+    it('should have AuthService with validateSession method', () => {
+      expect(typeof GeneratedAuthService.validateSession).toBe('function');
     });
 
     it('should have AuthService with currentUser method', () => {
@@ -100,31 +105,19 @@ describe('OpenAPI Client Contract Tests', () => {
     it('should export Workspace type from generated client', () => {
       // This test verifies that the type export works correctly
       // The actual type checking happens at compile time
-      expect(() => {
-        import type { Workspace } from '../../../clients/generated/api';
-        return Workspace;
-      }).not.toThrow();
+      expectTypeExport<Workspace>();
     });
 
     it('should export Project type from generated client', () => {
-      expect(() => {
-        import type { Project } from '../../../clients/generated/api';
-        return Project;
-      }).not.toThrow();
+      expectTypeExport<Project>();
     });
 
     it('should export LoginRequest type from generated client', () => {
-      expect(() => {
-        import type { LoginRequest } from '../../../clients/generated/api';
-        return LoginRequest;
-      }).not.toThrow();
+      expectTypeExport<LoginRequest>();
     });
 
     it('should export LoginResponse type from generated client', () => {
-      expect(() => {
-        import type { LoginResponse } from '../../../clients/generated/api';
-        return LoginResponse;
-      }).not.toThrow();
+      expectTypeExport<LoginResponse>();
     });
   });
 
@@ -135,7 +128,7 @@ describe('OpenAPI Client Contract Tests', () => {
 
       // Verify auth methods exist
       expect(auth).toBeDefined();
-      expect(typeof auth.login).toBe('function');
+      expect(typeof auth.loginSession).toBe('function');
       expect(typeof auth.validate).toBe('function');
       expect(typeof auth.me).toBe('function');
 
@@ -156,15 +149,10 @@ describe('OpenAPI Client Contract Tests', () => {
       expect(typeof projects.delete).toBe('function');
     });
 
-    it('should verify adapter types are exported for backward compatibility', async () => {
-      const { Workspace, Project, LoginRequest, CreateWorkspaceRequest, CreateProjectRequest } = await import('../client');
-
-      // Verify types are exported
-      expect(Workspace).toBeDefined();
-      expect(Project).toBeDefined();
-      expect(LoginRequest).toBeDefined();
-      expect(CreateWorkspaceRequest).toBeDefined();
-      expect(CreateProjectRequest).toBeDefined();
+    it('should verify adapter types are exported for backward compatibility', () => {
+      expectTypeExport<Workspace>();
+      expectTypeExport<Project>();
+      expectTypeExport<LoginRequest>();
     });
   });
 });

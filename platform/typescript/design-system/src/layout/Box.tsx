@@ -73,6 +73,16 @@ export interface BoxProps extends React.HTMLAttributes<HTMLElement> {
   shadow?: string | number;
 
   display?: React.CSSProperties['display'];
+  alignItems?: React.CSSProperties['alignItems'];
+  justifyContent?: React.CSSProperties['justifyContent'];
+  gap?: SpacingValue;
+  rowGap?: SpacingValue;
+  columnGap?: SpacingValue;
+  flexWrap?: React.CSSProperties['flexWrap'];
+  flexDirection?: React.CSSProperties['flexDirection'];
+  flex?: React.CSSProperties['flex'];
+  gridTemplateColumns?: React.CSSProperties['gridTemplateColumns'];
+  textAlign?: React.CSSProperties['textAlign'];
 
   width?: number | string;
   w?: number | string;
@@ -317,6 +327,16 @@ export const Box = React.forwardRef<HTMLElement, BoxProps>((props, ref) => {
     border,
     shadow,
     display,
+    alignItems,
+    justifyContent,
+    gap,
+    rowGap,
+    columnGap,
+    flexWrap,
+    flexDirection,
+    flex,
+    gridTemplateColumns,
+    textAlign,
     width,
     w,
     height,
@@ -346,6 +366,13 @@ export const Box = React.forwardRef<HTMLElement, BoxProps>((props, ref) => {
 
   const computedStyle: React.CSSProperties = {
     display,
+    alignItems,
+    justifyContent,
+    flexWrap,
+    flexDirection,
+    flex,
+    gridTemplateColumns,
+    textAlign,
     width: normalizeSize(w ?? width),
     height: normalizeSize(h ?? height),
     maxWidth: normalizeSize(maxW ?? maxWidth),
@@ -392,6 +419,9 @@ export const Box = React.forwardRef<HTMLElement, BoxProps>((props, ref) => {
   if (marginRightValue !== undefined) computedStyle.marginRight = resolveSpacing(marginRightValue);
   if (marginBottomValue !== undefined) computedStyle.marginBottom = resolveSpacing(marginBottomValue);
   if (marginLeftValue !== undefined) computedStyle.marginLeft = resolveSpacing(marginLeftValue);
+  if (gap !== undefined) computedStyle.gap = resolveSpacing(gap);
+  if (rowGap !== undefined) computedStyle.rowGap = resolveSpacing(rowGap);
+  if (columnGap !== undefined) computedStyle.columnGap = resolveSpacing(columnGap);
 
   const resolvedBackground = resolvePaletteColor(bg ?? background ?? backgroundColor) ?? background ?? backgroundColor;
   if (resolvedBackground) computedStyle.background = resolvedBackground;

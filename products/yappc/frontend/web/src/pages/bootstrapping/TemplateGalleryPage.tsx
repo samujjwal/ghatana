@@ -79,7 +79,7 @@ const TemplateGalleryPage: React.FC = () => {
       );
     }
     return [...list].sort((a, b) =>
-      sortBy === 'stars' ? b.stars - a.stars : a.name.i18n.languageCompare(b.name),
+      sortBy === 'stars' ? b.stars - a.stars : a.name.localeCompare(b.name),
     );
   }, [templates, category, search, sortBy]);
 

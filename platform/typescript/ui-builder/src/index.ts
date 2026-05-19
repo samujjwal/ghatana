@@ -10,3 +10,8 @@
 
 export * from './core/index';
 export * from './ai/index';
+export {
+  builderDocumentV1Schema,
+  BUILDER_DOCUMENT_V1_SCHEMA_ID,
+  BUILDER_DOCUMENT_V1_VERSION,
+} from './schema/index';

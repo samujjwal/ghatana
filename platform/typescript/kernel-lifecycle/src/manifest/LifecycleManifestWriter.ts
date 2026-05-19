@@ -13,7 +13,7 @@ import {
   type DeploymentEnvironment,
   type DeploymentTargetType,
 } from '@ghatana/kernel-deployment';
-import type { KernelLifecycleProviderContext } from '@ghatana/kernel-product-contracts';
+import type { KernelLifecycleEvent, KernelLifecycleProviderContext } from '@ghatana/kernel-product-contracts';
 import { validateKernelLifecycleEvent } from '@ghatana/kernel-product-contracts';
 import type {
   ProductArtifact,
@@ -256,7 +256,10 @@ export class LifecycleManifestWriter {
         ];
 
     const manifest = this.deploymentManifestGenerator.createManifest({
+      runId: result.runId,
+      ...(result.correlationId === undefined ? {} : { correlationId: result.correlationId }),
       productId: result.productId,
+      productUnitId: result.productUnitRef ?? result.productId,
       version: result.runId,
       environment: deploymentEnvironment,
       surfaces,
@@ -375,13 +378,14 @@ export class LifecycleManifestWriter {
   private async writeLifecycleEventsManifest(
     result: ProductLifecycleResult,
   ): Promise<{ readonly ref: string }> {
-    const events = this.providerContext?.events === undefined
+    const providerEvents = this.providerContext?.events === undefined
       ? []
       : await this.providerContext.events.listEvents({
           productUnitId: result.productId,
           runId: result.runId,
           ...(result.correlationId !== undefined ? { correlationId: result.correlationId } : {}),
         });
+    const events = this.mergeLifecycleEvents(providerEvents, this.deriveLifecycleEvents(result));
     const invalidEvent = events.find((event) => !validateKernelLifecycleEvent(event).valid);
     if (invalidEvent !== undefined) {
       throw new Error(`lifecycle events provider returned invalid event ${invalidEvent.metadata.eventId}`);
@@ -399,6 +403,146 @@ export class LifecycleManifestWriter {
     const manifestPath = this.manifestPath(result.productId, result.runId, result.phase, 'lifecycle-events.json');
     await this.writeJson(manifestPath, manifest);
     return { ref: manifestPath };
+  }
+
+  private mergeLifecycleEvents(
+    providerEvents: readonly KernelLifecycleEvent[],
+    derivedEvents: readonly KernelLifecycleEvent[],
+  ): readonly KernelLifecycleEvent[] {
+    const seen = new Set<string>();
+    const events: KernelLifecycleEvent[] = [];
+    for (const event of [...providerEvents, ...derivedEvents]) {
+      if (seen.has(event.metadata.eventId)) {
+        continue;
+      }
+      seen.add(event.metadata.eventId);
+      events.push(event);
+    }
+    return events;
+  }
+
+  private deriveLifecycleEvents(result: ProductLifecycleResult): readonly KernelLifecycleEvent[] {
+    const productUnitId = result.productUnitRef ?? result.productId;
+    const correlationId = result.correlationId ?? result.runId;
+    const baseMetadata = {
+      schemaVersion: '1.0.0' as const,
+      productUnitId,
+      runId: result.runId,
+      phase: result.phase,
+      source: 'kernel-lifecycle-manifest-writer',
+      correlationId,
+    };
+    const phaseCompletedStatus = result.status === 'succeeded' ? 'succeeded' : result.status === 'failed' ? 'failed' : 'skipped';
+    const events: KernelLifecycleEvent[] = [
+      {
+        metadata: {
+          ...baseMetadata,
+          eventId: `derived:plan-created:${result.runId}:${result.phase}`,
+          eventType: 'lifecycle.plan.created',
+          timestamp: result.startedAt,
+        },
+        payload: {
+          planRunId: result.runId,
+          phase: result.phase,
+          providerMode: result.providerMode ?? 'bootstrap',
+          ...(result.environment === undefined ? {} : { environment: result.environment }),
+          createdAt: result.startedAt,
+        },
+      },
+      {
+        metadata: {
+          ...baseMetadata,
+          eventId: `derived:phase-started:${result.runId}:${result.phase}`,
+          eventType: 'lifecycle.phase.started',
+          timestamp: result.startedAt,
+        },
+        payload: {
+          phase: result.phase,
+          status: 'running',
+          startedAt: result.startedAt,
+        },
+      },
+    ];
+
+    for (const gate of result.gates) {
+      events.push({
+        metadata: {
+          ...baseMetadata,
+          eventId: `derived:gate:${result.runId}:${result.phase}:${gate.gateId}`,
+          eventType: 'lifecycle.gate.evaluated',
+          timestamp: gate.checkedAt,
+        },
+        payload: {
+          gateId: gate.gateId,
+          status: gate.status,
+          required: true,
+          reason: gate.details ?? `${gate.gateId} ${gate.status}`,
+          evidenceRefs: gate.evidenceRefs ?? [],
+          durationMs: gate.durationMs ?? 0,
+        },
+      });
+    }
+
+    for (const step of result.steps) {
+      const stepKind = step.phase === 'deploy' || step.phase === 'verify' || step.phase === 'rollback'
+        ? step.phase
+        : 'surface';
+      events.push({
+        metadata: {
+          ...baseMetadata,
+          eventId: `derived:step-started:${result.runId}:${step.stepId}`,
+          eventType: 'lifecycle.step.started',
+          timestamp: step.startedAt ?? result.startedAt,
+        },
+        payload: {
+          stepId: step.stepId,
+          stepKind,
+          surface: step.surface ?? 'product',
+          adapter: step.adapter ?? 'unknown',
+          status: 'running',
+          startedAt: step.startedAt ?? result.startedAt,
+        },
+      });
+      events.push({
+        metadata: {
+          ...baseMetadata,
+          eventId: `derived:step-completed:${result.runId}:${step.stepId}`,
+          eventType: 'lifecycle.step.completed',
+          timestamp: step.completedAt ?? result.completedAt,
+        },
+        payload: {
+          stepId: step.stepId,
+          stepKind,
+          surface: step.surface ?? 'product',
+          adapter: step.adapter ?? 'unknown',
+          status: step.status,
+          durationMs: step.durationMs,
+          ...(step.exitCode === undefined ? {} : { exitCode: step.exitCode }),
+          completedAt: step.completedAt ?? result.completedAt,
+          evidenceRefs: [
+            ...(step.artifacts ?? []).map((artifact) => `artifact:${artifact.id}`),
+            ...(step.warnings ?? []).map((warning) => `warning:${warning}`),
+          ],
+        },
+      });
+    }
+
+    events.push({
+      metadata: {
+        ...baseMetadata,
+        eventId: `derived:phase-completed:${result.runId}:${result.phase}`,
+        eventType: 'lifecycle.phase.completed',
+        timestamp: result.completedAt,
+      },
+      payload: {
+        phase: result.phase,
+        status: phaseCompletedStatus,
+        durationMs: Math.max(0, Date.parse(result.completedAt) - Date.parse(result.startedAt)),
+        completedAt: result.completedAt,
+      },
+    });
+
+    return events;
   }
 
   private async writeLifecycleResult(

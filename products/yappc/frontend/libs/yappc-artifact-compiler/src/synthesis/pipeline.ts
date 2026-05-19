@@ -13,7 +13,7 @@
  * identical deterministic output (given the same snapshotRef).
  */
 
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import type { ArtifactRecord } from '../inventory/types';
 import { scanRepository, type ScannerConfig } from '../inventory/scanner';
 import type { ExtractionContext, ExtractionResult, ArtifactExtractor } from '../extractors/types';
@@ -135,7 +135,7 @@ function buildFileSourceLocation(relativePath: string, source: string): {
   endColumn: number;
 } {
   const lines = source.split('\n');
-  const lastLine = lines.at(-1) ?? '';
+  const lastLine = lines.length > 0 ? lines[lines.length - 1]! : '';
 
   return {
     filePath: relativePath,
@@ -160,16 +160,16 @@ function assembleGraph(
 ): ArtifactGraph {
   const now = new Date().toISOString();
 
-  // Build nodeIndex (kind → nodeIds) and edgeIndex (kind → edgeIds)
+  // Build nodeIndex (type -> nodeIds) and edgeIndex (relationshipType -> edgeIds)
   const nodeIndex: Record<string, string[]> = {};
   for (const node of allNodes) {
-    const list = nodeIndex[node.kind] ?? (nodeIndex[node.kind] = []);
+    const list = nodeIndex[node.type] ?? (nodeIndex[node.type] = []);
     list.push(node.id);
   }
 
   const edgeIndex: Record<string, string[]> = {};
   for (const edge of resolvedEdges) {
-    const list = edgeIndex[edge.kind] ?? (edgeIndex[edge.kind] = []);
+    const list = edgeIndex[edge.relationshipType] ?? (edgeIndex[edge.relationshipType] = []);
     list.push(edge.id);
   }
 
@@ -222,7 +222,6 @@ function buildSemanticProductModel(
 
   // P1-8: Deterministic SemanticProductModel.id from snapshot + element checksum
   // Compute a deterministic hash of all element IDs and snapshot info
-  const { createHash } = require('crypto');
   const hashInput = [
     snapshotRef ? `${snapshotRef.provider}:${snapshotRef.repoId}:${snapshotRef.commitSha}` : 'no-snapshot',
     rootPath,

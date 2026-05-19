@@ -19,7 +19,12 @@ import type {
   RepositorySnapshot,
   ProviderDiagnostic,
 } from './types';
-import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
+import {
+  assertTsSourceProviderWorkerOnly,
+  SourceProviderError,
+  sourceLocatorToString,
+  validateCredentialPolicy,
+} from './types';
 import type { SnapshotRef } from '../graph/types';
 
 const execFileAsync = promisify(execFile);
@@ -114,6 +119,7 @@ async function* walkForSnapshot(
       const relativePath = relative(root, absolutePath).replace(/\\/g, '/');
       try {
         const s = await stat(absolutePath);
+        const checksum = createHash('sha256').update(await readFile(absolutePath)).digest('hex');
         count.value++;
         yield {
           relativePath,
@@ -121,6 +127,7 @@ async function* walkForSnapshot(
           materialized: true,
           sizeBytes: s.size,
           lastModifiedAt: s.mtime.toISOString(),
+          checksum,
         };
       } catch {
         // Skip files we can't stat
@@ -129,27 +136,29 @@ async function* walkForSnapshot(
   }
 }
 
-async function buildContentSnapshotSha(files: readonly SnapshotFile[]): Promise<string> {
+function buildContentSnapshotSha(files: readonly SnapshotFile[]): string {
   const hash = createHash('sha256');
 
   for (const file of [...files].sort((left, right) => left.relativePath.localeCompare(right.relativePath))) {
     hash.update(file.relativePath);
     hash.update('\0');
-
-    if (file.absolutePath && file.materialized) {
-      try {
-        hash.update(await readFile(file.absolutePath));
-      } catch {
-        hash.update(`missing:${file.sizeBytes}:${file.lastModifiedAt}`);
-      }
-    } else {
-      hash.update(`unmaterialized:${file.sizeBytes}:${file.lastModifiedAt}`);
-    }
-
+    hash.update(file.checksum);
     hash.update('\0');
   }
 
-  return hash.digest('hex').slice(0, 40);
+  return hash.digest('hex');
+}
+
+function resolveSnapshotScope(options: SourceProviderOptions | undefined): {
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+} {
+  return {
+    tenantId: options?.scope?.tenantId ?? 'worker-local-tenant',
+    workspaceId: options?.scope?.workspaceId ?? 'worker-local-workspace',
+    projectId: options?.scope?.projectId ?? 'worker-local-project',
+  };
 }
 
 // ============================================================================
@@ -171,6 +180,7 @@ export class LocalFolderProvider implements SourceProvider {
 
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    assertTsSourceProviderWorkerOnly(this.providerId, options);
     const maxFiles = options?.maxFiles ?? 50_000;
     const normalizedLocator = sourceLocatorToString(locator);
     const rawPath = normalizedLocator.startsWith('file://') ? new URL(normalizedLocator).pathname : normalizedLocator;
@@ -214,9 +224,10 @@ export class LocalFolderProvider implements SourceProvider {
 
     const diagnostics: ProviderDiagnostic[] = [];
     let resolvedCommitSha = commitSha;
+    const contentHash = buildContentSnapshotSha(files);
 
     if (dirtyWorktree === true || !commitSha) {
-      resolvedCommitSha = await buildContentSnapshotSha(files);
+      resolvedCommitSha = contentHash.slice(0, 40);
     }
 
     if (dirtyWorktree === true) {
@@ -249,14 +260,19 @@ export class LocalFolderProvider implements SourceProvider {
       repoId,
       commitSha: resolvedCommitSha,
     };
+    const scope = resolveSnapshotScope(options);
 
     return {
+      snapshotId: `local-folder:${contentHash.slice(0, 32)}`,
       snapshotRef,
       localRootPath: rootPath,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
       diagnostics,
+      contentHash,
+      contentChecksum: contentHash,
+      ...scope,
     };
   }
 }

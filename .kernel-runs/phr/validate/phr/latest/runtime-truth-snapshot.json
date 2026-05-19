@@ -1,0 +1,11 @@
+{
+  "productUnitId": "phr",
+  "runId": "2026-05-19T00-31-27-20a5599f",
+  "phase": "validate",
+  "status": "execution-failed",
+  "observedAt": "2026-05-19T00:31:27.281Z",
+  "evidenceRefs": [
+    "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-19T00-31-27-20a5599f/validate/lifecycle-result.json"
+  ],
+  "correlationId": "corr-2026-05-19T00-31-27-20a5599f"
+}

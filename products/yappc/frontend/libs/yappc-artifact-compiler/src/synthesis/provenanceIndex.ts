@@ -191,7 +191,7 @@ export class ProvenanceIndex {
     for (const node of nodes) {
       const entry: ProvenanceEntry = {
         elementId: node.id,
-        sourcePaths: [node.sourceLocation.filePath],
+        sourcePaths: [(node.sourceLocation?.filePath ?? '')],
         extractorId: node.extractorId,
         extractorVersion: node.extractorVersion,
         extractedAt: new Date().toISOString(),

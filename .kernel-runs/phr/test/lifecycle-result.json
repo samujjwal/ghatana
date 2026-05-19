@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-f55ec80d",
+  "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "phase": "test",
+  "lifecycleProfile": "standard-web-api-product",
+  "requestedPhases": [
+    "test"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:46.055Z",
+  "completedAt": "2026-05-18T20:21:46.055Z",
+  "steps": [
+    {
+      "stepId": "test-backend-api-0",
+      "phase": "test",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:46.055Z",
+      "completedAt": "2026-05-18T20:21:46.055Z",
+      "exitCode": 0,
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+    },
+    {
+      "stepId": "test-web-1",
+      "status": "skipped",
+      "durationMs": 0
+    }
+  ],
+  "gates": [],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test",
+  "manifestRefs": {
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/test/phr/2026-05-18T20-21-46-f55ec80d/test/lifecycle-health-snapshot.json"
+}

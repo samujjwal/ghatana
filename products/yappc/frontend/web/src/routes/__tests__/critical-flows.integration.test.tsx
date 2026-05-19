@@ -726,7 +726,11 @@ describe('Yappc mounted critical flows', () => {
           });
         }
 
-        if (url === '/api/projects/proj-1' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1' ||
+            url === '/api/projects/proj-1?workspaceId=ws-1') &&
+          method === 'GET'
+        ) {
           return jsonResponse({
             project: {
               ...buildProjectRecord('proj-1'),
@@ -735,7 +739,11 @@ describe('Yappc mounted critical flows', () => {
           });
         }
 
-        if (url === '/api/projects/proj-1/activity' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1/activity' ||
+            url === '/api/projects/proj-1/activity?workspaceId=ws-1') &&
+          method === 'GET'
+        ) {
           return jsonResponse({
             projectId: 'proj-1',
             activity: [
@@ -752,19 +760,35 @@ describe('Yappc mounted critical flows', () => {
           });
         }
 
-        if (url === '/api/projects/proj-1/artifacts' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1/artifacts' ||
+            url === '/api/projects/proj-1/artifacts?workspaceId=ws-1') &&
+          method === 'GET'
+        ) {
           return jsonResponse({ artifacts: [] });
         }
 
-        if (url === '/api/projects/proj-1/sprints/current' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1/sprints/current' ||
+            url === '/api/projects/proj-1/sprints/current?workspaceId=ws-1') &&
+          method === 'GET'
+        ) {
           return jsonResponse({ sprint: null });
         }
 
-        if (url === '/api/projects/proj-1/backlog?limit=20' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1/backlog?limit=20' ||
+            url === '/api/projects/proj-1/backlog?workspaceId=ws-1&limit=20') &&
+          method === 'GET'
+        ) {
           return jsonResponse({ items: [] });
         }
 
-        if (url === '/api/projects/proj-1/runs?limit=10' && method === 'GET') {
+        if (
+          (url === '/api/projects/proj-1/runs?limit=10' ||
+            url === '/api/projects/proj-1/runs?workspaceId=ws-1&limit=10') &&
+          method === 'GET'
+        ) {
           return jsonResponse({ runs: [] });
         }
 

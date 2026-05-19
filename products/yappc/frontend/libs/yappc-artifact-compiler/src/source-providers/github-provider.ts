@@ -18,6 +18,7 @@
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { createHash } from 'crypto';
 import type {
   SourceProvider,
   SourceProviderOptions,
@@ -26,7 +27,12 @@ import type {
   RepositorySnapshot,
   ProviderDiagnostic,
 } from './types';
-import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
+import {
+  assertTsSourceProviderWorkerOnly,
+  SourceProviderError,
+  sourceLocatorToString,
+  validateCredentialPolicy,
+} from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -90,6 +96,33 @@ interface GitHubBlobResponse {
   readonly content: string;
   readonly encoding: 'base64' | 'utf-8';
   readonly size: number;
+}
+
+function sha256(content: Buffer | string): string {
+  return createHash('sha256').update(content).digest('hex');
+}
+
+function buildSnapshotContentHash(files: readonly SnapshotFile[]): string {
+  const hash = createHash('sha256');
+  for (const file of [...files].sort((left, right) => left.relativePath.localeCompare(right.relativePath))) {
+    hash.update(file.relativePath);
+    hash.update('\0');
+    hash.update(file.checksum);
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
+function resolveSnapshotScope(options: SourceProviderOptions | undefined): {
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+} {
+  return {
+    tenantId: options?.scope?.tenantId ?? 'worker-local-tenant',
+    workspaceId: options?.scope?.workspaceId ?? 'worker-local-workspace',
+    projectId: options?.scope?.projectId ?? 'worker-local-project',
+  };
 }
 
 // ============================================================================
@@ -221,6 +254,7 @@ export class GitHubProvider implements SourceProvider {
 
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    assertTsSourceProviderWorkerOnly(this.providerId, options);
     const normalizedInput = sourceLocatorToString(locator);
     // Normalize github: prefix
     const normalizedLocator = normalizedInput.startsWith('github:') ? normalizedInput.slice('github:'.length) : normalizedInput;
@@ -356,6 +390,7 @@ export class GitHubProvider implements SourceProvider {
           materialized: true,
           sizeBytes: content.byteLength,
           lastModifiedAt: new Date().toISOString(),
+          checksum: sha256(content),
         });
         fileCount++;
       } catch (err) {
@@ -365,6 +400,7 @@ export class GitHubProvider implements SourceProvider {
           materialized: false,
           sizeBytes: entry.size ?? 0,
           lastModifiedAt: new Date().toISOString(),
+          checksum: `github-blob:${entry.sha}`,
         });
         diagnostics.push({
           level: 'warning',
@@ -379,15 +415,20 @@ export class GitHubProvider implements SourceProvider {
         });
       }
     }
+    const contentHash = buildSnapshotContentHash(files);
+    const scope = resolveSnapshotScope(options);
 
     return {
+      snapshotId: `github:${parsed.owner}/${parsed.repo}:${commitSha}:${contentHash.slice(0, 32)}`,
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
       diagnostics,
+      contentHash,
+      contentChecksum: contentHash,
+      ...scope,
     };
   }
 }
-

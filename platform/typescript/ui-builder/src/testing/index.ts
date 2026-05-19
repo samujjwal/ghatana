@@ -16,8 +16,8 @@ export {
   createDocumentId,
 } from '../core/types.js';
 export type {
-  BuilderDocument,
   ComponentInstance,
   NodeId,
   DocumentId,
 } from '../core/types.js';
+export type { BuilderDocument } from '../core/builder-document.js';

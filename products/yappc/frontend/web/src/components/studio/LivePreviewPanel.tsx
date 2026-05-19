@@ -16,7 +16,6 @@ import {
 } from '@/services/preview/PreviewSessionApi';
 import { type PreviewSessionContext } from '@/lib/api/client';
 import { getPreviewLocaleFixture, getPreviewLocaleFixtures } from '@/services/preview/PreviewLocaleFixtures';
-import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Live Preview Panel component.
@@ -65,7 +64,6 @@ export function LivePreviewPanel({
   onElementClick,
   onElementHover,
 }: LivePreviewPanelProps) {
-  const { t } = useTranslation('common');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -132,7 +130,7 @@ export function LivePreviewPanel({
         setResolvedPreviewUrl(null);
         setError(
           document || componentPath
-            ? 'Secure preview session is required. Provide previewContext or enable explicit dev-only mode (VITE_FEATURE_PREVIEW_DEV_MODE=true).'
+            ? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'
             : null,
         );
       }
@@ -238,9 +236,9 @@ export function LivePreviewPanel({
       return;
     }
 
-    if (mountedDocumentIdRef.current !== document.id) {
+    if (mountedDocumentIdRef.current !== document.documentId) {
       setIsLoading(true);
-      mountedDocumentIdRef.current = document.id;
+      mountedDocumentIdRef.current = document.documentId;
       void previewServiceRef.current.mountDocument(document);
       return;
     }
@@ -274,7 +272,7 @@ export function LivePreviewPanel({
     setIsLoading(true);
     setError(null);
     if (previewServiceRef.current && document) {
-      mountedDocumentIdRef.current = document.id;
+      mountedDocumentIdRef.current = document.documentId;
       void previewServiceRef.current.mountDocument(document);
     }
     onRefresh?.();
@@ -414,7 +412,7 @@ export function LivePreviewPanel({
               <AlertTriangle
                 className="mx-auto mb-2 h-10 w-10 text-destructive"
                 role="img"
-                aria-label={t('studio.previewUnavailable')}
+                aria-label="Preview unavailable"
               />
               <p className="text-sm text-destructive dark:text-destructive">
                 {error ?? 'Preview is paused until validation errors are resolved.'}
@@ -435,7 +433,7 @@ export function LivePreviewPanel({
               <Eye
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label={t('studio.previewEmpty')}
+                aria-label="Preview empty"
               />
               <p className="text-sm">Select a document or component to preview</p>
             </div>
@@ -446,7 +444,7 @@ export function LivePreviewPanel({
               <LockKeyhole
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label={t('studio.preparingSecurePreview')}
+                aria-label="Preparing secure preview"
               />
               <p className="text-sm">Preparing secure preview session…</p>
             </div>
@@ -457,7 +455,7 @@ export function LivePreviewPanel({
               <LockKeyhole
                 className="mx-auto mb-2 h-10 w-10 text-fg-muted"
                 role="img"
-                aria-label={t('studio.previewUnavailable')}
+                aria-label="Preview unavailable"
               />
               <p className="text-sm">
                 {error ?? 'Secure preview session is required. Provide previewContext or enable explicit dev preview mode.'}

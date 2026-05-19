@@ -13,10 +13,11 @@ import React, { useMemo } from 'react';
 import type { ComponentContract } from '@ghatana/ds-schema';
 import type {
   ComponentInstance,
-  BuilderDocument,
   NodeId,
   Binding,
 } from '../core/types';
+import type { BuilderDocument } from '../core/builder-document.js';
+import { normalizeBuilderDocument } from '../core/builder-document.js';
 import {
   type ManifestLookup,
   projectInstanceToPlatformPlan,
@@ -59,6 +60,7 @@ export function ComponentRenderer({
   manifests,
   className,
 }: ComponentRendererProps): React.ReactElement {
+  const normalizedDocument = useMemo(() => normalizeBuilderDocument(document), [document]);
   const contractMap = useMemo(() => {
     if (!contracts) {
       return new Map<string, ComponentContract>();
@@ -132,14 +134,14 @@ export function ComponentRenderer({
 
     for (const slotPlan of platformPlan.slots) {
       const renderedChildren = slotPlan.childIds.map((childId: NodeId) => {
-        const child = document.nodes.get(childId);
+        const child = normalizedDocument.nodes[childId];
         if (!child) return null;
 
         return (
           <ComponentRenderer
             key={childId}
             instance={child}
-            document={document}
+            document={normalizedDocument}
             bindingContext={bindingContext}
             eventContext={eventContext}
             componentRegistry={componentRegistry}
@@ -162,7 +164,7 @@ export function ComponentRenderer({
     bindingContext,
     componentRegistry,
     contracts,
-    document,
+    normalizedDocument,
     eventContext,
     manifests,
     platformPlan.slots,

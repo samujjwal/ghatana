@@ -1,8 +1,10 @@
 # Artifact Compiler/Decompiler Architecture
 
-> **Package**: `@yappc/artifact-compiler` (TypeScript) + `products/yappc/core/yappc-services` (Java)
+> **Package**: `yappc-artifact-compiler` (TypeScript workspace package) + `products/yappc/core/yappc-services` (Java)
 > **Location**: `products/yappc/frontend/libs/yappc-artifact-compiler` + `products/yappc/core/yappc-services/`
-> **Principle**: TypeScript handles lightweight extraction and orchestration; Java handles computation-heavy graph, merge, and indexing workloads using the ArtifactGraphService in yappc-services module.
+> **Principle**: Java owns governed source acquisition, durable jobs, persisted inventory, graph storage, residual governance, and patch lifecycle. TypeScript is worker-local for TS/TSX extraction and patch emission under Java orchestration.
+
+> **Code-truth status (May 2026)**: P0 schema/scope/residual/graph-field blockers are implemented. Durable Java patch lifecycle storage is implemented through JDBC repositories and forward migrations. Remaining work is primarily UI/E2E coverage, broader patch emitter depth, and continued docs consolidation.
 
 ---
 
@@ -57,7 +59,7 @@
 **Location**: `products/yappc/frontend/libs/yappc-artifact-compiler/`
 
 **Deliverables**:
-- `package.json` with `@yappc/artifact-compiler` name, zod + nanoid deps
+- `package.json` with `yappc-artifact-compiler` workspace name, zod + nanoid deps
 - `tsconfig.json` with strict mode, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`
 - `vitest.config.ts` with `pool: 'forks'` and `deps.interopDefault: true`
 - Core schema definitions in `src/{inventory,graph,model,provenance,residual,merge,synthesis,extractors}/types.ts`:
@@ -457,10 +459,11 @@
 - P2-2: Added SourceImportPanel.tsx with provider selector, repo/ref/archive input, progress, job polling, unsupported-state display
 - P2-3: Added ImportSummaryPanel.tsx showing understood vs skipped vs residual, confidence, review requirements
 - P2-4: Added PatchReviewPanel.tsx with unified diff, validation results, residual overlaps, approve/reject
+- P2-5: Added focused artifact compiler client/panel tests for Java import API submission and patch review approval wiring
 - P2-7: Update ARTIFACT_COMPILER_DECOMPILER_ARCHITECTURE.md (completed)
 
 ### Remaining (P2 - Medium Priority)
-- P2-5: Write P2 tests (artifactCompilerClient.test.ts, Playwright import flow, component + E2E for ImportSummaryPanel, Playwright patch review)
+- Playwright import flow and patch review E2E coverage
 
 ### Remaining (P2 - Low Priority)
 - P2-6: Document/consolidate V11/V14 duplicate snapshot columns (not applicable - V11/V14 migrations don't exist)

@@ -15,6 +15,7 @@ import React, {
   useRef,
   forwardRef,
   useImperativeHandle,
+  useMemo,
   type ComponentType,
 } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -42,7 +43,7 @@ import { LayerContainer } from "./LayerContainer";
 import { FreeformLayer, type FreeformLayerRef } from "./FreeformLayer";
 import { GraphLayer, type GraphLayerRef } from "./GraphLayer";
 import {
-  getHybridCanvasController,
+  HybridCanvasController,
   type HybridCanvasAPI,
 } from "./hybrid-canvas-controller";
 import { useCanvasKeyboardShortcuts, useCanvasDrop } from "./hooks";
@@ -114,7 +115,7 @@ const HybridCanvasInner = React.memo(
       const viewport = useAtomValue(viewportAtom);
       const selection = useAtomValue(selectionAtom);
 
-      const controller = getHybridCanvasController();
+      const controller = useMemo(() => new HybridCanvasController(), []);
 
       // Initialize state from props
       useEffect(() => {
@@ -243,7 +244,13 @@ const HybridCanvasInner = React.memo(
       );
 
       const handleElementDragEnd = useCallback(() => {
-        controller.pushHistory("Move elements");
+        const elements = controller.getElements();
+        const nodes = controller.getNodes();
+        const edges = controller.getEdges();
+        controller.pushHistory({
+          action: "Move elements",
+          snapshot: { elements, nodes, edges },
+        });
       }, [controller]);
 
       return (

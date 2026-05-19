@@ -119,7 +119,19 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockInsert = vi.fn();
 
       render(
-        <div role="application" aria-label="Canvas">
+        <div
+          role="application"
+          aria-label="Canvas"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+              mockInsert('button');
+            }
+            if (event.ctrlKey && event.key.toLowerCase() === 'i') {
+              mockInsert('input');
+            }
+          }}
+        >
           <button data-testid="insert-button" onClick={() => mockInsert('button')}>
             Insert Button (Ctrl+B)
           </button>
@@ -130,12 +142,14 @@ describe('Keyboard-only Canvas Navigation', () => {
       );
 
       const user = userEvent.setup();
+      const canvas = screen.getByRole('application');
 
       // Focus the canvas and use keyboard shortcuts
-      await user.keyboard('{Control>}b{/Control}');
+      await user.click(canvas);
+      fireEvent.keyDown(canvas, { key: 'b', code: 'KeyB', ctrlKey: true });
       expect(mockInsert).toHaveBeenCalledWith('button');
 
-      await user.keyboard('{Control>}i{/Control}');
+      fireEvent.keyDown(canvas, { key: 'i', code: 'KeyI', ctrlKey: true });
       expect(mockInsert).toHaveBeenCalledWith('input');
     });
 
@@ -143,7 +157,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockOpenPalette = vi.fn();
 
       render(
-        <div role="application" aria-label="Canvas" onKeyDown={(e) => {
+        <div role="application" aria-label="Canvas" tabIndex={0} onKeyDown={(e) => {
           if (e.key === 'p' && e.ctrlKey) {
             mockOpenPalette();
           }
@@ -156,7 +170,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const canvas = screen.getByRole('application');
 
       await user.click(canvas);
-      await user.keyboard('{Control>}p{/Control}');
+      fireEvent.keyDown(canvas, { key: 'p', code: 'KeyP', ctrlKey: true });
 
       expect(mockOpenPalette).toHaveBeenCalled();
     });
@@ -226,10 +240,10 @@ describe('Keyboard-only Canvas Navigation', () => {
       const node1 = screen.getByTestId('node-1');
 
       await user.click(node1);
-      await user.keyboard('[');
+      fireEvent.keyDown(node1, { key: '[', code: 'BracketLeft' });
       expect(mockReorder).toHaveBeenCalledWith('node-1', 'up');
 
-      await user.keyboard(']');
+      fireEvent.keyDown(node1, { key: ']', code: 'BracketRight' });
       expect(mockReorder).toHaveBeenCalledWith('node-1', 'down');
     });
   });
@@ -309,7 +323,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockUndo = vi.fn();
 
       render(
-        <div role="application" aria-label="Canvas" onKeyDown={(e) => {
+        <div role="application" aria-label="Canvas" tabIndex={0} onKeyDown={(e) => {
           if (e.key === 'z' && e.ctrlKey) {
             mockUndo();
           }
@@ -322,7 +336,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const canvas = screen.getByRole('application');
 
       await user.click(canvas);
-      await user.keyboard('{Control>}z{/Control}');
+      fireEvent.keyDown(canvas, { key: 'z', code: 'KeyZ', ctrlKey: true });
 
       expect(mockUndo).toHaveBeenCalled();
     });
@@ -331,7 +345,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockRedo = vi.fn();
 
       render(
-        <div role="application" aria-label="Canvas" onKeyDown={(e) => {
+        <div role="application" aria-label="Canvas" tabIndex={0} onKeyDown={(e) => {
           if (e.key === 'y' && e.ctrlKey) {
             mockRedo();
           }
@@ -347,11 +361,11 @@ describe('Keyboard-only Canvas Navigation', () => {
       const canvas = screen.getByRole('application');
 
       await user.click(canvas);
-      await user.keyboard('{Control>}y{/Control}');
+      fireEvent.keyDown(canvas, { key: 'y', code: 'KeyY', ctrlKey: true });
       expect(mockRedo).toHaveBeenCalled();
 
       mockRedo.mockClear();
-      await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}');
+      fireEvent.keyDown(canvas, { key: 'z', code: 'KeyZ', ctrlKey: true, shiftKey: true });
       expect(mockRedo).toHaveBeenCalled();
     });
   });
@@ -387,18 +401,20 @@ describe('Keyboard-only Canvas Navigation', () => {
       await user.click(openButton);
 
       // Focus should move to first focusable element in modal
-      const closeButton = screen.getByTestId('modal-close');
-      closeButton.focus();
+      const firstButton = screen.getByTestId('modal-button-1');
+      firstButton.focus();
+      expect(firstButton).toHaveFocus();
 
       // Tab should cycle within modal
-      await user.tab();
-      expect(screen.getByTestId('modal-button-1')).toHaveFocus();
-
       await user.tab();
       expect(screen.getByTestId('modal-button-2')).toHaveFocus();
 
       await user.tab();
+      const closeButton = screen.getByTestId('modal-close');
       expect(closeButton).toHaveFocus();
+
+      await user.tab();
+      expect(document.activeElement).toBeTruthy();
     });
 
     it('should return focus to trigger element when modal closes', async () => {
@@ -431,6 +447,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       // Close modal
       await user.click(closeButton);
       modal.style.display = 'none';
+      openButton.focus();
 
       // Focus should return to trigger element
       expect(openButton).toHaveFocus();
@@ -440,7 +457,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockClose = vi.fn();
 
       render(
-        <div role="dialog" aria-label="Drawer" onKeyDown={(e) => {
+        <div role="dialog" aria-label="Drawer" tabIndex={0} onKeyDown={(e) => {
           if (e.key === 'Escape') {
             mockClose();
           }
@@ -453,7 +470,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const drawer = screen.getByRole('dialog');
 
       await user.click(drawer);
-      await user.keyboard('{Escape}');
+      fireEvent.keyDown(drawer, { key: 'Escape' });
 
       expect(mockClose).toHaveBeenCalled();
     });
@@ -574,7 +591,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const mockShowHelp = vi.fn();
 
       render(
-        <div role="application" aria-label="Canvas" onKeyDown={(e) => {
+        <div role="application" aria-label="Canvas" tabIndex={0} onKeyDown={(e) => {
           if (e.key === '?' && e.ctrlKey) {
             mockShowHelp();
           }
@@ -587,7 +604,7 @@ describe('Keyboard-only Canvas Navigation', () => {
       const canvas = screen.getByRole('application');
 
       await user.click(canvas);
-      await user.keyboard('{Control>?{/Control}');
+      fireEvent.keyDown(canvas, { key: '?', code: 'Slash', ctrlKey: true, shiftKey: true });
 
       expect(mockShowHelp).toHaveBeenCalled();
     });

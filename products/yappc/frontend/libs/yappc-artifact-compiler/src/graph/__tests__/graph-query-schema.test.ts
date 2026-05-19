@@ -4,8 +4,8 @@ import { GraphQuerySchema } from '../types';
 describe('GraphQuerySchema', () => {
   it('accepts cursor pagination and unresolved-edge filters', () => {
     const parsed = GraphQuerySchema.parse({
-      nodeKinds: ['component'],
-      edgeKinds: ['imports'],
+      nodeTypes: ['component'],
+      edgeTypes: ['imports'],
       cursor: '2026-05-15T10:20:30.000Z',
       limit: 50,
       includeUnresolvedEdges: true,

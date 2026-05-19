@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-18T20-21-46-f55ec80d",
+  "phase": "test",
+  "eventCount": 9,
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-46-f55ec80d:test",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "timestamp": "2026-05-18T20:21:46.052Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:46.052Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-46-f55ec80d:test",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "timestamp": "2026-05-18T20:21:46.054Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d"
+      },
+      "payload": {
+        "phase": "test",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.054Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:plan-created:2026-05-18T20-21-46-f55ec80d:test",
+        "eventType": "lifecycle.plan.created",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:46.055Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:phase-started:2026-05-18T20-21-46-f55ec80d:test",
+        "eventType": "lifecycle.phase.started",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "phase": "test",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.055Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:step-started:2026-05-18T20-21-46-f55ec80d:test-backend-api-0",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "stepId": "test-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.055Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:step-completed:2026-05-18T20-21-46-f55ec80d:test-backend-api-0",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "stepId": "test-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "gradle-java-service",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T20:21:46.055Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:step-started:2026-05-18T20-21-46-f55ec80d:test-web-1",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "stepId": "test-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:46.055Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:step-completed:2026-05-18T20-21-46-f55ec80d:test-web-1",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "stepId": "test-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:46.055Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-21-46-f55ec80d",
+        "phase": "test",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-46-f55ec80d",
+        "eventId": "derived:phase-completed:2026-05-18T20-21-46-f55ec80d:test",
+        "eventType": "lifecycle.phase.completed",
+        "timestamp": "2026-05-18T20:21:46.055Z"
+      },
+      "payload": {
+        "phase": "test",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:46.055Z"
+      }
+    }
+  ],
+  "writtenAt": "2026-05-18T20:21:46.057Z"
+}

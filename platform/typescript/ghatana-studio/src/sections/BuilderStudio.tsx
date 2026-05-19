@@ -1,16 +1,16 @@
 /**
  * Builder Studio
  *
- * UI Builder document creation, editing, and management.
- * Integrates with @ghatana/ui-builder public APIs for BuilderDocument operations.
+ * UI Builder document creation, editing, and management with visual authoring.
+ * Integrates with @ghatana/ui-builder for document creation, serialization, and persistence.
  *
  * @doc.type component
- * @doc.purpose Builder document authoring and management
+ * @doc.purpose Builder document visual authoring and management
  * @doc.layer platform
  */
 
 import type { ReactElement } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
 // Import public APIs from ui-builder platform
@@ -19,11 +19,106 @@ import {
   validateBuilderDocument,
   serializeBuilderDocument,
   deserializeBuilderDocument,
+  LocalStoragePersistenceAdapter,
+  insertNode,
+  updateNodeProps,
+  type PersistenceAdapter,
+  type DocumentVersion,
+  type NodeId,
 } from '@ghatana/ui-builder';
-import type { DocumentId } from '@ghatana/ui-builder';
+import type { BuilderDocument, ComponentInstance } from '@ghatana/ui-builder';
 import { studioLogger } from '../logging/studioLogger';
 
-type StudioBuilderDocument = ReturnType<typeof createBuilderDocument>;
+// Import visual builder components
+import { ComponentPalette, type ComponentContract } from '../components/builder/ComponentPalette';
+import { ComponentTree } from '../components/builder/ComponentTree';
+import { PropertyInspector } from '../components/builder/PropertyInspector';
+import { ValidationPanel } from '../components/builder/ValidationPanel';
+import { VisualCanvas } from '../components/builder/VisualCanvas';
+
+/**
+ * Custom persistence adapter that extends LocalStoragePersistenceAdapter
+ * to support document listing and deletion for BuilderStudio.
+ *
+ * This adapter wraps the standard LocalStoragePersistenceAdapter and adds
+ * a document index to track all documents, enabling list and delete operations.
+ */
+class StudioPersistenceAdapter implements PersistenceAdapter {
+  private baseAdapter: LocalStoragePersistenceAdapter;
+  private documentIndexKey: string;
+  private documentIndex: Set<string> = new Set();
+
+  constructor(namespace: string) {
+    this.baseAdapter = new LocalStoragePersistenceAdapter(namespace);
+    this.documentIndexKey = `${namespace}:index`;
+    this.loadDocumentIndex();
+  }
+
+  private loadDocumentIndex(): void {
+    try {
+      const stored = localStorage.getItem(this.documentIndexKey);
+      if (stored) {
+        this.documentIndex = new Set(JSON.parse(stored));
+      }
+    } catch (err) {
+      studioLogger.error('Failed to load document index', { error: err });
+    }
+  }
+
+  private saveDocumentIndex(): void {
+    try {
+      localStorage.setItem(this.documentIndexKey, JSON.stringify([...this.documentIndex]));
+    } catch (err) {
+      studioLogger.error('Failed to save document index', { error: err });
+    }
+  }
+
+  async save(doc: BuilderDocument, label: string): Promise<string> {
+    const versionId = await this.baseAdapter.save(doc, label);
+    this.documentIndex.add(doc.documentId);
+    this.saveDocumentIndex();
+    return versionId;
+  }
+
+  async load(documentId: string): Promise<BuilderDocument | null> {
+    return this.baseAdapter.load(documentId);
+  }
+
+  async listVersions(documentId: string): Promise<readonly DocumentVersion[]> {
+    return this.baseAdapter.listVersions(documentId);
+  }
+
+  async restoreVersion(documentId: string, versionId: string): Promise<BuilderDocument | null> {
+    return this.baseAdapter.restoreVersion(documentId, versionId);
+  }
+
+  async deleteVersion(documentId: string, versionId: string): Promise<void> {
+    await this.baseAdapter.deleteVersion(documentId, versionId);
+  }
+
+  async clearDocument(documentId: string): Promise<void> {
+    await this.baseAdapter.clearDocument(documentId);
+  }
+
+  /**
+   * List all document IDs in the persistence store.
+   */
+  async listDocumentIds(): Promise<readonly string[]> {
+    return [...this.documentIndex];
+  }
+
+  /**
+   * Delete a document entirely (all versions).
+   */
+  async deleteDocument(documentId: string): Promise<void> {
+    await this.clearDocument(documentId);
+    this.documentIndex.delete(documentId);
+    this.saveDocumentIndex();
+  }
+}
+
+// Use BuilderDocument directly since createBuilderDocument returns the canonical type
+type StudioBuilderDocument = BuilderDocument;
 
 interface DocumentListItem {
   id: string;
@@ -32,32 +127,72 @@ interface DocumentListItem {
   document: StudioBuilderDocument;
 }
 
+
+
 export default function BuilderStudio(): ReactElement {
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<DocumentListItem | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>(null);
+  const [selectedInstance, setSelectedInstance] = useState<ComponentInstance | null>(null);
+  const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBuilderDocument> | null>(null);
 
-  // Load documents from localStorage (in a real app, this would be from a backend)
+  // Use custom persistence adapter that supports list and delete operations.
+  // Wrapped in useMemo so a new instance is NOT created on every render.
+  const persistenceAdapter = useMemo(
+    () => new StudioPersistenceAdapter('builder-studio-documents'),
+    []
+  );
+
+  // Load documents from persistence adapter
   useEffect(() => {
     loadDocuments();
   }, []);
 
-  const loadDocuments = (): void => {
+  const loadDocuments = async (): Promise<void> => {
+    setError(null);
     try {
-      const stored = localStorage.getItem('builder-studio-documents');
-      if (stored) {
-        const docs: DocumentListItem[] = JSON.parse(stored);
-        setDocuments(docs);
+      const documentIds = await persistenceAdapter.listDocumentIds();
+      const docs: DocumentListItem[] = [];
+      
+      for (const docId of documentIds) {
+        const doc = await persistenceAdapter.load(docId);
+        if (doc) {
+          docs.push({
+            id: doc.documentId,
+            name: doc.metadata.description || 'Untitled Document',
+            updatedAt: doc.metadata.updatedAt,
+            document: doc,
+          });
+        }
       }
+      
+      setDocuments(docs);
     } catch (err) {
       studioLogger.error('Failed to load documents', { error: err });
+      setError('Failed to load documents');
     }
   };
 
-  const saveDocuments = (docs: DocumentListItem[]): void => {
+  const validateCurrentDocument = (): void => {
+    if (selectedDocument) {
+      const result = validateBuilderDocument(selectedDocument.document);
+      setValidationResult(result);
+    }
+  };
+
+  // Re-validate when document selection changes
+  useEffect(() => {
+    validateCurrentDocument();
+  }, [selectedDocument]);
+
+  const saveDocuments = async (docs: DocumentListItem[]): Promise<void> => {
     try {
-      localStorage.setItem('builder-studio-documents', JSON.stringify(docs));
+      // Save each document using the persistence adapter
+      for (const doc of docs) {
+        await persistenceAdapter.save(doc.document, doc.name);
+      }
       setDocuments(docs);
     } catch (err) {
       studioLogger.error('Failed to save documents', { error: err });
@@ -65,13 +200,12 @@ export default function BuilderStudio(): ReactElement {
     }
   };
 
-  const createNewDocument = (): void => {
-    setIsLoading(true);
+  const createNewDocument = async (): Promise<void> => {
+    setIsCreating(true);
     setError(null);
 
     try {
       const newDoc = createBuilderDocument('studio-user', {
-        documentId: `doc-${Date.now()}` as DocumentId,
         designSystemId: 'default-design-system',
         designSystemName: 'Default Design System',
       });
@@ -89,27 +223,94 @@ export default function BuilderStudio(): ReactElement {
         document: newDoc,
       };
 
-      saveDocuments([...documents, newListItem]);
+      await saveDocuments([...documents, newListItem]);
       setSelectedDocument(newListItem);
     } catch (err) {
       studioLogger.error('Failed to create document', { error: err });
       setError('Failed to create document');
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
-  const deleteDocument = (docId: string): void => {
-    const updatedDocs = documents.filter(doc => doc.id !== docId);
-    saveDocuments(updatedDocs);
-    
-    if (selectedDocument?.id === docId) {
-      setSelectedDocument(null);
+  const deleteDocument = async (docId: string): Promise<void> => {
+    try {
+      await persistenceAdapter.deleteDocument(docId);
+      const updatedDocs = documents.filter(doc => doc.id !== docId);
+      setDocuments(updatedDocs);
+      
+      if (selectedDocument?.id === docId) {
+        setSelectedDocument(null);
+      }
+    } catch (err) {
+      studioLogger.error('Failed to delete document', { error: err });
+      setError('Failed to delete document');
     }
   };
 
   const selectDocument = (doc: DocumentListItem): void => {
     setSelectedDocument(doc);
+    setSelectedNodeId(null);
+    setSelectedInstance(null);
+  };
+
+  const handleNodeSelect = (nodeId: NodeId): void => {
+    setSelectedNodeId(nodeId);
+    const instance = selectedDocument?.document.nodes[nodeId];
+    setSelectedInstance(instance || null);
+  };
+
+  const handlePropertyUpdate = (instanceId: NodeId, prop: string, value: unknown): void => {
+    if (!selectedDocument) return;
+    
+    try {
+      const updatedDoc = updateNodeProps(selectedDocument.document, instanceId, {
+        [prop]: value,
+      });
+      
+      const updatedListItem: DocumentListItem = {
+        ...selectedDocument,
+        document: updatedDoc,
+      };
+      
+      setSelectedDocument(updatedListItem);
+      setSelectedInstance(updatedDoc.nodes[instanceId] || null);
+      validateCurrentDocument();
+    } catch (err) {
+      studioLogger.error('Failed to update property', { error: err });
+      setError('Failed to update property');
+    }
+  };
+
+  const handleComponentSelect = (contract: ComponentContract): void => {
+    if (!selectedDocument) return;
+    
+    try {
+      const rootId = selectedDocument.document.layout.rootId;
+      
+      const updatedDoc = insertNode(selectedDocument.document, {
+        contractName: contract.name,
+        props: contract.props || {},
+        slots: {},
+        bindings: [],
+        metadata: {
+          name: contract.displayName || contract.name,
+          position: { x: 100, y: 100 },
+          size: { width: 200, height: 100 },
+        },
+      }, rootId);
+      
+      const updatedListItem: DocumentListItem = {
+        ...selectedDocument,
+        document: updatedDoc,
+      };
+      
+      setSelectedDocument(updatedListItem);
+      validateCurrentDocument();
+    } catch (err) {
+      studioLogger.error('Failed to add component', { error: err });
+      setError('Failed to add component');
+    }
   };
 
   const exportDocument = (doc: DocumentListItem): void => {
@@ -133,7 +334,7 @@ export default function BuilderStudio(): ReactElement {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const json = e.target?.result as string;
         const result = deserializeBuilderDocument(json);
@@ -150,7 +351,7 @@ export default function BuilderStudio(): ReactElement {
           document: result.document!,
         };
 
-        saveDocuments([...documents, importedDoc]);
+        await saveDocuments([...documents, importedDoc]);
       } catch (err) {
         studioLogger.error('Failed to import document', { error: err });
         setError('Failed to import document');
@@ -183,9 +384,9 @@ export default function BuilderStudio(): ReactElement {
             <Button 
               variant="primary" 
               onClick={createNewDocument}
-              disabled={isLoading}
+              disabled={isCreating}
             >
-              {isLoading ? 'Creating...' : 'New Document'}
+              {isCreating ? 'Creating...' : 'New Document'}
             </Button>
           </div>
         </div>
@@ -262,74 +463,118 @@ export default function BuilderStudio(): ReactElement {
             </Card>
           </div>
 
-          {/* Document Details/Editor */}
+          {/* Visual Builder Workspace */}
           <div className="lg:col-span-2">
             {selectedDocument ? (
-              <Card>
-                <CardHeader title={selectedDocument.name} />
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <Typography variant="body1" className="font-medium mb-2">
-                        Document Information
-                      </Typography>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">ID:</span>
-                          <span className="ml-2">{selectedDocument.id}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Schema Version:</span>
-                          <span className="ml-2">{selectedDocument.document.schemaVersion}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Owner:</span>
-                          <span className="ml-2">{selectedDocument.document.owner}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Nodes:</span>
-                          <span className="ml-2">{Object.keys(selectedDocument.document.nodes).length}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Typography variant="body1" className="font-medium mb-2">
-                        Description
-                      </Typography>
-                      <Typography variant="body2" className="text-gray-600">
-                        {selectedDocument.document.metadata.description || 'No description provided'}
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography variant="body1" className="font-medium mb-2">
-                        Tags
-                      </Typography>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedDocument.document.metadata.tags?.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-sm"
-                          >
-                            {tag}
-                          </span>
-                        )) || (
-                          <Typography variant="body2" className="text-gray-500">
-                            No tags
-                          </Typography>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t">
-                      <Typography variant="body2" className="text-gray-500">
-                        This document uses the @ghatana/ui-builder public APIs for creation, validation, and management.
-                      </Typography>
-                    </div>
+              <div className="h-full flex flex-col">
+                {/* Toolbar */}
+                <div className="mb-4 flex items-center justify-between">
+                  <Typography variant="h3" className="text-xl font-semibold">
+                    {selectedDocument.name}
+                  </Typography>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const json = serializeBuilderDocument(selectedDocument.document);
+                        const blob = new Blob([json], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${selectedDocument.name}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      Export
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={validateCurrentDocument}
+                    >
+                      Validate
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Builder Workspace */}
+                <div className="flex-1 grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
+                  {/* Left Panel - Component Palette and Tree */}
+                  <div className="col-span-3 flex flex-col gap-4">
+                    <Card className="flex-1 flex flex-col">
+                      <CardHeader title="Components" />
+                      <CardContent className="flex-1 p-0">
+                        <ComponentPalette
+                          contracts={[
+                            { name: 'Button', displayName: 'Button', category: 'Form', description: 'Clickable button component' },
+                            { name: 'Input', displayName: 'Input', category: 'Form', description: 'Text input field' },
+                            { name: 'Card', displayName: 'Card', category: 'Layout', description: 'Card container component' },
+                            { name: 'Typography', displayName: 'Typography', category: 'Content', description: 'Text display component' },
+                          ]}
+                          onComponentSelect={handleComponentSelect}
+                        />
+                      </CardContent>
+                    </Card>
+                    <Card className="flex-1 flex flex-col">
+                      <CardHeader title="Tree" />
+                      <CardContent className="flex-1 p-0">
+                        <ComponentTree
+                          document={selectedDocument.document}
+                          selectedNodeId={selectedNodeId}
+                          onNodeSelect={handleNodeSelect}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Center Panel - Canvas */}
+                  <div className="col-span-6 flex flex-col">
+                    <Card className="flex-1 flex flex-col">
+                      <CardHeader title="Canvas" />
+                      <CardContent className="flex-1 p-0">
+                        <VisualCanvas
+                          document={selectedDocument.document}
+                          selectedNodeIds={selectedNodeId ? [selectedNodeId] : []}
+                          onSelectionChange={(nodeIds) => {
+                            if (nodeIds.length > 0) {
+                              handleNodeSelect(nodeIds[0] as NodeId);
+                            } else {
+                              setSelectedNodeId(null);
+                              setSelectedInstance(null);
+                            }
+                          }}
+                          height="100%"
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Right Panel - Properties and Validation */}
+                  <div className="col-span-3 flex flex-col gap-4">
+                    <Card className="flex-1 flex flex-col">
+                      <CardHeader title="Properties" />
+                      <CardContent className="flex-1 p-0">
+                        <PropertyInspector
+                          selectedInstance={selectedInstance}
+                          onPropertyUpdate={handlePropertyUpdate}
+                        />
+                      </CardContent>
+                    </Card>
+                    <Card className="h-64 flex flex-col">
+                      <CardHeader title="Validation" />
+                      <CardContent className="flex-1 p-0">
+                        <ValidationPanel
+                          validationResult={validationResult}
+                          onValidationErrorClick={(nodeId) => handleNodeSelect(nodeId as NodeId)}
+                          onRevalidate={validateCurrentDocument}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
             ) : (
               <Card>
                 <CardContent className="py-12">

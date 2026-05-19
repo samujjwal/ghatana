@@ -16,6 +16,7 @@ export interface ExecutionResultCollectionMetadata {
   readonly productUnitRef?: string;
   readonly lifecycleProfile?: string;
   readonly environment?: string;
+  readonly sourceRef?: string;
   readonly requestedPhases?: readonly ProductLifecyclePhase[];
   readonly executedPhases?: readonly ProductLifecyclePhase[];
   readonly skippedPhases?: readonly ProductLifecyclePhase[];
@@ -103,6 +104,9 @@ export class ExecutionResultCollector {
         : {}),
       ...(metadata.environment !== undefined
         ? { environment: metadata.environment }
+        : {}),
+      ...(metadata.sourceRef !== undefined
+        ? { sourceRef: metadata.sourceRef }
         : {}),
       ...(metadata.requestedPhases !== undefined
         ? { requestedPhases: metadata.requestedPhases }

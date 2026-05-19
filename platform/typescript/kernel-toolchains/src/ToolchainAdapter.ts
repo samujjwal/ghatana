@@ -444,3 +444,83 @@ export interface ToolchainExecutionRequest {
   /** Optional output directory. */
   readonly outputDir?: string;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// §2.4 additions: ToolchainTimeoutPolicy, ToolchainRetryPolicy,
+//                 ToolchainEnvironmentPolicy, ToolchainOutputValidationPolicy,
+//                 ToolchainAdapterRegistryEntry
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Timeout configuration for an adapter's plan and execute operations.
+ */
+export interface ToolchainTimeoutPolicy {
+  /** Timeout for plan (dry-run) operations in milliseconds. */
+  readonly planMs: number;
+  /** Timeout for full execution in milliseconds. */
+  readonly executeMs: number;
+  /** Default timeout used when phase-specific timeout is not defined. */
+  readonly defaultMs: number;
+}
+
+/**
+ * Retry policy for an adapter's execution.
+ */
+export interface ToolchainRetryPolicy {
+  /** Maximum number of execution attempts (including the first). */
+  readonly maxAttempts: number;
+  /** Whether the adapter supports retrying on failure. */
+  readonly retryable: boolean;
+  /** Exit codes on which a retry should be attempted. */
+  readonly retryOnExitCodes: readonly number[];
+}
+
+/**
+ * Declares which environments this adapter may target.
+ */
+export interface ToolchainEnvironmentPolicy {
+  /** Environments this adapter is allowed to target. */
+  readonly allowedEnvironments: readonly string[];
+  /** Environments this adapter must never target without an explicit override. */
+  readonly blockedEnvironments: readonly string[];
+  /** Whether targeting any allowed environment requires explicit approval. */
+  readonly requiresEnvironmentApproval: boolean;
+}
+
+/**
+ * Governs how the adapter validates its output after execution.
+ */
+export interface ToolchainOutputValidationPolicy {
+  /** Whether to run output validation automatically after successful execution. */
+  readonly validateAfterExecute: boolean;
+  /** Artifact types that must be present in the output directory after execution. */
+  readonly requiredArtifactTypes: readonly string[];
+  /** Whether to fail the step if any required artifact is missing. */
+  readonly failOnMissingArtifacts: boolean;
+  /** Whether to fail the step if unexpected artifacts are found. */
+  readonly failOnUnexpectedArtifacts: boolean;
+}
+
+/**
+ * Complete registry entry for a toolchain adapter, combining governance
+ * metadata with implementation details. Mirrors the JSON fields in
+ * config/toolchain-adapter-registry.json.
+ *
+ * `implemented` adapters must supply non-null timeout, retryPolicy,
+ * environmentPolicy, and outputValidation.  `planned` adapters may use null.
+ */
+export interface ToolchainAdapterRegistryEntry {
+  readonly adapterId: string;
+  readonly kind: string;
+  readonly supportedPhases: readonly ProductLifecyclePhase[];
+  readonly supportedSurfaceTypes: readonly ProductSurfaceType[];
+  readonly safeForDefault: boolean;
+  readonly requiresApprovalForProduction: boolean;
+  readonly outputs: readonly string[];
+  readonly tests: readonly string[];
+  readonly status: "implemented" | "partial" | "planned";
+  readonly timeout: ToolchainTimeoutPolicy | null;
+  readonly retryPolicy: ToolchainRetryPolicy | null;
+  readonly environmentPolicy: ToolchainEnvironmentPolicy | null;
+  readonly outputValidation: ToolchainOutputValidationPolicy | null;
+}

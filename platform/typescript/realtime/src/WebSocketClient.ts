@@ -69,7 +69,7 @@ export function createWebSocket(url: string, protocols?: string | string[]): Web
     return new websocketFactory(url, protocols);
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('not a constructor')) {
-      return (websocketFactory as WebSocketFactoryLike)(url, protocols);
+      return (websocketFactory as unknown as WebSocketFactoryLike)(url, protocols);
     }
     throw error;
   }

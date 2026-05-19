@@ -215,7 +215,7 @@ export const showDiagramEditorAtom = atom(false);
 export const commandRegistryAtom = atom<CanvasCommandAction[]>([]);
 export const sortedCommandsAtom = atom((get) =>
   [...get(commandRegistryAtom)].sort((left, right) =>
-    left.label.i18n.languageCompare(right.label)
+    left.label.localeCompare(right.label)
   )
 );
 export const registerCommandsAtom = atom(null, (get, set, actions: CanvasCommandAction[] | CanvasCommandAction) => {

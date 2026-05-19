@@ -23,6 +23,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField, Collapse } from '@ghatana/design-system';
 import { Search } from 'lucide-react';
+import { useTranslation } from '@ghatana/i18n';
 import type { RailPanelProps, LayerNode } from '../UnifiedLeftRail.types';
 import { Input } from '../../../ui/Input';
 import { CanvasOutlineMap } from '../../outline/CanvasOutlineMap';

@@ -1,13 +1,17 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getExternalPreviewSandbox } from '@/security/ContentSecurityPolicy';
+import { render, screen, waitFor } from '@testing-library/react';
+
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}));
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
   return {
     ...actual,
     useParams: () => ({ projectId: 'proj-42' }),
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -15,42 +19,15 @@ import PreviewRoute from '../preview';
 
 describe('preview route', () => {
   beforeEach(() => {
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
-    vi.stubGlobal('fetch', vi.fn());
+    mockNavigate.mockReset();
   });
 
-  it('shows a truthful unavailable state when no external preview host is configured', () => {
-    vi.stubEnv('VITE_FEATURE_PROJECT_PREVIEW', 'false');
-    vi.stubEnv('VITE_PREVIEW_BASE_URL', '');
-
+  it('redirects legacy preview links to the observe phase cockpit', async () => {
     render(<PreviewRoute />);
 
-    expect(screen.getByTestId('preview-status-badge')).toHaveTextContent('Preview unavailable');
-    expect(screen.getByTestId('legacy-route-compatibility-notice')).toHaveTextContent('Project preview is a compatibility deep link.');
-    expect(screen.getByRole('link', { name: /observe phase cockpit/i })).toHaveAttribute('href', '/p/proj-42/observe');
-    expect(screen.getByText('Preview Not Available')).toBeDefined();
-    expect(screen.getByText('A preview host must be configured before this screen can expose a live preview.')).toBeDefined();
-  });
-
-  it('shows external preview status and opens the configured host in a new tab', async () => {
-    vi.stubEnv('VITE_FEATURE_PROJECT_PREVIEW', 'true');
-    vi.stubEnv('VITE_PREVIEW_BASE_URL', 'https://preview.example.test');
-    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 200 }));
-
-    render(<PreviewRoute />);
-
+    expect(screen.getByText('Redirecting to Observe phase...')).toBeDefined();
     await waitFor(() => {
-      expect(screen.getByTestId('preview-status-badge')).toHaveTextContent('External preview ready');
+      expect(mockNavigate).toHaveBeenCalledWith('/p/proj-42/observe', { replace: true });
     });
-    expect(screen.getByText('Preview via external host')).toBeDefined();
-    expect(screen.getByTitle('Project Preview')).toHaveAttribute('src', 'https://preview.example.test/preview/proj-42');
-    expect(screen.getByTitle('Project Preview')).toHaveAttribute('sandbox', getExternalPreviewSandbox());
-    expect(screen.getByTitle('Project Preview')).toHaveAttribute('referrerpolicy', 'no-referrer');
-
-    fireEvent.click(screen.getByTitle('Open in New Tab'));
-
-    expect(windowOpenSpy).toHaveBeenCalledWith('https://preview.example.test/preview/proj-42', '_blank');
   });
 });

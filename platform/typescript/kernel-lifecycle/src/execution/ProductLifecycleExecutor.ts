@@ -168,6 +168,7 @@ export class ProductLifecycleExecutor {
         ...(options.environment !== undefined && plan?.environment === undefined
           ? { environment: options.environment }
           : {}),
+        sourceRef: options.sourceRef ?? plan?.sourceRef ?? "local",
         requestedPhases: [phase],
         ...(approvalResolution.approvalRefs.length > 0
           ? { approvalRefs: approvalResolution.approvalRefs }
@@ -301,6 +302,16 @@ export class ProductLifecycleExecutor {
     );
     if (requiredApprovals.length === 0) {
       return { approvalRefs: [] };
+    }
+
+    if (options.dryRun) {
+      return {
+        approvalRefs: requiredApprovals.map((approval) => ({
+          approvalId: approval.approvalId,
+          status: "approved",
+          ref: `dry-run:approval:${approval.approvalId}`,
+        })),
+      };
     }
 
     const approvalProvider = options.providerContext?.approvals;

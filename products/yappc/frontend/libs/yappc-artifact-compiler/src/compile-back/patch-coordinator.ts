@@ -37,6 +37,14 @@ export interface PatchCoordinatorLogger {
   info?(message: string, meta?: Record<string, unknown>): void;
 }
 
+export interface PatchCoordinatorValidator {
+  validate(
+    changePlan: ChangePlan,
+    elementMap: ReadonlyMap<string, SemanticModelElement>,
+    residuals: ReadonlyMap<string, ResidualIsland>,
+  ): ValidationResult | Promise<ValidationResult>;
+}
+
 /**
  * P1: No-op logger implementation for zero-diff mode.
  * Used when zeroDiff mode is enabled to suppress all logging.
@@ -55,8 +63,8 @@ export interface PatchCoordinatorOptions {
    * rather than auto-application. Defaults to 0.8.
    */
   readonly autoApplyThreshold?: number;
-  /** Required logger for emitter and validation diagnostics. */
-  readonly logger: PatchCoordinatorLogger;
+  /** Logger for emitter and validation diagnostics. */
+  readonly logger?: PatchCoordinatorLogger;
   /** Optional extra validators for patch plans and review bundles. */
   readonly validators?: readonly PatchCoordinatorValidator[];
   /**
@@ -73,10 +81,10 @@ export class PatchCoordinator {
   private readonly validators: readonly PatchCoordinatorValidator[];
   private readonly zeroDiff: boolean;
 
-  constructor(options: PatchCoordinatorOptions) {
+  constructor(options: PatchCoordinatorOptions = {}) {
     this.emitters = options.emitters ?? [new ReactPatchEmitter()];
     this.autoApplyThreshold = options.autoApplyThreshold ?? 0.8;
-    this.logger = options.logger; // P1: Required - no default
+    this.logger = options.logger ?? noopLogger;
     this.validators = options.validators ?? [];
     this.zeroDiff = options.zeroDiff ?? false; // P1: Zero-diff mode
   }
@@ -288,7 +296,7 @@ export class PatchCoordinator {
    */
   async planChanges(
     changeOps: readonly ChangeOp[],
-    context: PatchContext,
+    _context: PatchContext,
   ): Promise<{
     success: boolean;
     errors: Array<{ code: string; message: string; severity: 'error' | 'warning'; changeId?: string }>;
@@ -366,6 +374,15 @@ export class PatchCoordinator {
 
     for (const change of changePlan.changes) {
       const element = elementMap.get(change.elementId);
+      const changeOp: ChangeOp = {
+        id: change.id,
+        kind: change.kind,
+        targetElementId: change.elementId,
+        description: change.description,
+        before: change.before,
+        after: change.after,
+        autoApplyConfidence: change.autoApplyConfidence,
+      };
       if (!element) {
         errors.push({
           code: 'ELEMENT_NOT_FOUND',
@@ -377,7 +394,7 @@ export class PatchCoordinator {
       }
 
       // P0-10: Check if operation has a capable emitter
-      const hasCapableEmitter = this.emitters.some(emitter => emitter.canEmit(change, element));
+      const hasCapableEmitter = this.emitters.some(emitter => emitter.canEmit(changeOp, element));
       if (!hasCapableEmitter && change.autoApplyConfidence < 1.0) {
         // P0-10: Fail validation unless marked as manual-review (confidence < 1.0 indicates requires review)
         errors.push({
@@ -419,8 +436,23 @@ export class PatchCoordinator {
 
     for (const validator of this.validators) {
       const validatorResult = await validator.validate(changePlan, elementMap, residuals);
-      errors.push(...validatorResult.errors);
-      warnings.push(...validatorResult.warnings);
+      for (const error of validatorResult.errors) {
+        errors.push({
+          code: error.code,
+          message: error.message,
+          severity: error.severity,
+          ...(error.filePath ? { filePath: error.filePath } : {}),
+          ...(error.changeId ? { changeId: error.changeId } : {}),
+        });
+      }
+      for (const warning of validatorResult.warnings) {
+        warnings.push({
+          code: warning.code,
+          message: warning.message,
+          ...(warning.filePath ? { filePath: warning.filePath } : {}),
+          ...(warning.changeId ? { changeId: warning.changeId } : {}),
+        });
+      }
     }
 
     return {

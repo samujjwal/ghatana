@@ -1,0 +1,397 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-44-a461019e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-44-a461019e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:44.779Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-44-a461019e"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-44-a461019e",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:44.779Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-44-a461019e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-44-a461019e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:44.781Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-44-a461019e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:44.781Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T20-21-44-a461019e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-44-a461019e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T20:21:44.784Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-44-a461019e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:44.784Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-35-24-323ee67e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-24-323ee67e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:24.313Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-24-323ee67e"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-35-24-323ee67e",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:35:24.313Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-35-24-323ee67e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-24-323ee67e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:24.324Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-24-323ee67e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:35:24.324Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-35-24-323ee67e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-24-323ee67e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:24.330Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-24-323ee67e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:35:24.330Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-35-30-291614c1:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-30-291614c1",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:30.330Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-30-291614c1"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-35-30-291614c1",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:35:30.330Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-35-30-291614c1:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-30-291614c1",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:30.343Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-30-291614c1"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:35:30.343Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-35-30-291614c1:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-30-291614c1",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:30.357Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-30-291614c1"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:35:30.357Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-35-37-1cd771b4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-37-1cd771b4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:37.630Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-37-1cd771b4"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-35-37-1cd771b4",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:35:37.630Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-35-37-1cd771b4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-37-1cd771b4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:37.642Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-37-1cd771b4"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:35:37.642Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-35-37-1cd771b4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-35-37-1cd771b4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:35:37.648Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-35-37-1cd771b4"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:35:37.648Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-43-41-6cd86cf4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-43-41-6cd86cf4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:43:41.713Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-43-41-6cd86cf4"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-43-41-6cd86cf4",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:43:41.713Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-43-41-6cd86cf4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-43-41-6cd86cf4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:43:41.717Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-43-41-6cd86cf4"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:43:41.717Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-43-41-6cd86cf4:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-43-41-6cd86cf4",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:43:41.721Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-43-41-6cd86cf4"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:43:41.721Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T21-44-03-6f92544e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:03.062Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T21:44:03.062Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T21-44-03-6f92544e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:03.066Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-18T21:44:03.066Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-18T21-44-03-6f92544e:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T21-44-03-6f92544e",
+        "phase": "validate",
+        "timestamp": "2026-05-18T21:44:03.070Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T21:44:03.070Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-19T00-31-20-dc5571ed:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-19T00-31-20-dc5571ed",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:20.330Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-20-dc5571ed"
+      },
+      "payload": {
+        "planRunId": "2026-05-19T00-31-20-dc5571ed",
+        "phase": "validate",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-19T00:31:20.330Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-19T00-31-20-dc5571ed:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-19T00-31-20-dc5571ed",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:20.333Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-20-dc5571ed"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "running",
+        "startedAt": "2026-05-19T00:31:20.333Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-completed:2026-05-19T00-31-20-dc5571ed:validate",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.completed",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-19T00-31-20-dc5571ed",
+        "phase": "validate",
+        "timestamp": "2026-05-19T00:31:20.335Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-19T00-31-20-dc5571ed"
+      },
+      "payload": {
+        "phase": "validate",
+        "status": "failed",
+        "durationMs": 0,
+        "completedAt": "2026-05-19T00:31:20.335Z"
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { createHash } from 'crypto';
 import type {
   SourceProvider,
   SourceProviderOptions,
@@ -28,7 +29,12 @@ import type {
   RepositorySnapshot,
   ProviderDiagnostic,
 } from './types';
-import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
+import {
+  assertTsSourceProviderWorkerOnly,
+  SourceProviderError,
+  sourceLocatorToString,
+  validateCredentialPolicy,
+} from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -238,6 +244,7 @@ export class GitLabProvider implements SourceProvider {
 
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    assertTsSourceProviderWorkerOnly(this.providerId, options);
     const normalizedInput = sourceLocatorToString(locator);
     // Normalize gitlab: prefix
     const normalizedLocator = normalizedInput.startsWith('gitlab:') ? normalizedInput.slice('gitlab:'.length) : normalizedInput;
@@ -359,6 +366,7 @@ export class GitLabProvider implements SourceProvider {
               materialized: false,
               sizeBytes: fileMeta.size,
               lastModifiedAt: new Date().toISOString(),
+              checksum: fileMeta.content_sha256 || `gitlab-blob:${entry.id}`,
             });
             diagnostics.push({
               level: 'warning',
@@ -388,6 +396,7 @@ export class GitLabProvider implements SourceProvider {
             materialized: true,
             sizeBytes: content.byteLength,
             lastModifiedAt: new Date().toISOString(),
+            checksum: fileMeta.content_sha256 || createHash('sha256').update(content).digest('hex'),
           });
           fileCount++;
         } catch (err) {
@@ -397,6 +406,7 @@ export class GitLabProvider implements SourceProvider {
             materialized: false,
             sizeBytes: 0,
             lastModifiedAt: new Date().toISOString(),
+            checksum: `gitlab-blob:${entry.id}`,
           });
           diagnostics.push({
             level: 'warning',
@@ -424,13 +434,23 @@ export class GitLabProvider implements SourceProvider {
       branch: parsed.ref !== 'HEAD' ? parsed.ref : undefined,
     };
 
+    const contentHash = createHash('sha256')
+      .update(files.map(file => `${file.relativePath}:${file.checksum}`).sort().join('\n'))
+      .digest('hex');
+
     return {
+      snapshotId: `gitlab:${parsed.projectPath}:${commitSha}:${contentHash.slice(0, 32)}`,
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
       diagnostics,
+      contentHash,
+      contentChecksum: contentHash,
+      tenantId: options?.scope?.tenantId ?? 'worker-local-tenant',
+      workspaceId: options?.scope?.workspaceId ?? 'worker-local-workspace',
+      projectId: options?.scope?.projectId ?? 'worker-local-project',
     };
   }
 }

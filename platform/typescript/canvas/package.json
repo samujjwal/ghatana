@@ -22,10 +22,6 @@
       "types": "./dist/core/canvas-renderer.d.ts",
       "import": "./dist/core/canvas-renderer.js"
     },
-    "./ui-builder": {
-      "types": "./dist/ui-builder/index.d.ts",
-      "import": "./dist/ui-builder/index.js"
-    },
     "./plugins": {
       "types": "./dist/plugins/index.d.ts",
       "import": "./dist/plugins/index.js"
@@ -45,6 +41,14 @@
     "./tools": {
       "types": "./dist/tools/index.d.ts",
       "import": "./dist/tools/index.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js"
+    },
+    "./coordinates": {
+      "types": "./dist/coordinates/index.d.ts",
+      "import": "./dist/coordinates/index.js"
     },
     "./chrome": {
       "types": "./dist/chrome.d.ts",

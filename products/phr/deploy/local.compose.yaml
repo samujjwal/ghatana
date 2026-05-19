@@ -1,0 +1,98 @@
+# Local Docker Compose for the PHR opening lifecycle pilot.
+# Used by `node scripts/kernel-product.mjs product deploy phr --env local`.
+
+services:
+  phr-api:
+    image: ghatana/phr-api:local
+    build:
+      context: ../../..
+      dockerfile: products/phr/launcher/Dockerfile
+    ports:
+      - "${PHR_API_PORT:-8085}:8085"
+    environment:
+      - PHR_ENV=${PHR_ENV:-development}
+      - PHR_DATABASE_URL=${PHR_DATABASE_URL:?PHR_DATABASE_URL is required for PHR local deploy}
+      - PHR_DATABASE_USERNAME=${PHR_DATABASE_USERNAME:-phr}
+      - PHR_DATABASE_PASSWORD=${PHR_DATABASE_PASSWORD}
+      - PHR_LOG_LEVEL=${PHR_LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8085/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    labels:
+      ghatana.kernel.productUnit: phr
+      ghatana.kernel.surface: local
+      ghatana.kernel.component: backend-api
+      ghatana.kernel.lifecycle: "true"
+      ghatana.kernel.environment: local
+      ghatana.kernel.artifactRef: "kernel://artifacts/phr/backend-api:local"
+      ghatana.kernel.health.livePath: /health/live
+      ghatana.kernel.health.readyPath: /health/ready
+    networks:
+      - phr-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  phr-web:
+    image: ghatana/phr-web:local
+    build:
+      context: ../../..
+      dockerfile: products/phr/apps/web/Dockerfile
+    ports:
+      - "${PHR_WEB_PORT:-5178}:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:${PHR_API_PORT:-8085}
+      - VITE_ENV=${PHR_ENV:-development}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      ghatana.kernel.productUnit: phr
+      ghatana.kernel.surface: local
+      ghatana.kernel.component: web
+      ghatana.kernel.lifecycle: "true"
+      ghatana.kernel.environment: local
+      ghatana.kernel.artifactRef: "kernel://artifacts/phr/web:local"
+      ghatana.kernel.health.livePath: /
+      ghatana.kernel.health.readyPath: /
+    networks:
+      - phr-network
+    depends_on:
+      phr-api:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-phr}
+      - POSTGRES_USER=${PHR_DATABASE_USERNAME:-phr}
+      - POSTGRES_PASSWORD=${PHR_DATABASE_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - phr-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PHR_DATABASE_USERNAME:-phr} -d ${POSTGRES_DB:-phr}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      ghatana.kernel.productUnit: phr
+      ghatana.kernel.surface: infrastructure
+      ghatana.kernel.lifecycle: "false"
+      ghatana.kernel.environment: local
+    networks:
+      - phr-network
+
+networks:
+  phr-network:
+    driver: bridge
+
+volumes:
+  phr-postgres-data:

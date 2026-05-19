@@ -1,6 +1,52 @@
 /**
  * @fileoverview Core types and operations barrel export.
+ *
+ * IMPORTANT: The canonical BuilderDocument is defined in builder-document.ts
+ * with full Zod schema validation, migrations, and serialization. This is the
+ * single source of truth for BuilderDocument across the platform.
+ *
+ * The Map-based BuilderDocument from types.ts is DEPRECATED. It is no longer
+ * exported from this barrel. All new code must use the canonical BuilderDocument.
  */
+
+// ============================================================================
+// CANONICAL BUILDER DOCUMENT (from builder-document.ts)
+// ============================================================================
+
+export type {
+  BuilderDocument,
+} from './builder-document';
+
+export {
+  CURRENT_SCHEMA_VERSION,
+  SCHEMA_VERSIONS,
+  BuilderDocumentSchema,
+  attachBuilderDocumentCompatibility,
+  createBuilderDocument,
+  normalizeBuilderDocument,
+  validateBuilderDocument,
+  MIGRATIONS,
+  detectSchemaVersion,
+  migrateBuilderDocument,
+  serializeBuilderDocument,
+  deserializeBuilderDocument,
+  getNode,
+  getRootNodes,
+  getNodeBindings,
+  hasPrivacySensitiveData,
+  requiresAccessibility,
+} from './builder-document';
+
+export type {
+  ValidationIssue,
+  ValidationIssueSeverity,
+  DocumentValidationResult,
+  MigrationFunction,
+} from './builder-document';
+
+// ============================================================================
+// SUPPORTING TYPES (from types.ts) - BuilderDocument NOT included
+// ============================================================================
 
 export type {
   NodeId,
@@ -10,7 +56,6 @@ export type {
   Binding,
   BindingType,
   DesignSystemModel,
-  BuilderDocument,
   DocumentMetadata,
   CodeProjection,
   CodeFile,
@@ -166,28 +211,3 @@ export {
   dsViolationsToValidationResult,
   checkStoryContractParity,
 } from './ds-binding';
-
-export type {
-  ValidationIssue,
-  ValidationIssueSeverity,
-  DocumentValidationResult,
-  MigrationFunction,
-} from './builder-document';
-
-export {
-  CURRENT_SCHEMA_VERSION,
-  SCHEMA_VERSIONS,
-  BuilderDocumentSchema,
-  createBuilderDocument,
-  validateBuilderDocument,
-  MIGRATIONS,
-  detectSchemaVersion,
-  migrateBuilderDocument,
-  serializeBuilderDocument,
-  deserializeBuilderDocument,
-  getNode,
-  getRootNodes,
-  getNodeBindings,
-  hasPrivacySensitiveData,
-  requiresAccessibility,
-} from './builder-document';

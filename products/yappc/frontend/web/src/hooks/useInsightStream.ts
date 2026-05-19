@@ -165,7 +165,7 @@ export function useInsightStream({
           });
 
         return [...next.values()]
-          .sort((left, right) => right.createdAt.i18n.languageCompare(left.createdAt))
+          .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
           .slice(0, maxInsights);
       });
     },

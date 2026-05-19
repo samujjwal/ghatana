@@ -1,0 +1,20 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: integration-test-coverage
+title: Digital Marketing integration test coverage gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that integration tests covering cross-module interactions (CRM
+  connector, Google Ads connector, Meta Ads connector, and API boundary) are
+  executed and their reports are present in the declared output paths.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-integration-tests
+blockingReasonCodes:
+  - requires-integration-test-coverage
+  - missing-integration-test-coverage
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-integration-tests:test
+notes:
+  - Integration tests run against real connector boundaries; requires running infrastructure.

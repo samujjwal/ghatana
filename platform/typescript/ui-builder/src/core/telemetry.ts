@@ -6,7 +6,8 @@
  */
 
 import type { BuilderTelemetryEvent } from '@ghatana/platform-events/observability';
-import type { BuilderDocument, NodeId } from './types.js';
+import type { BuilderDocument } from './builder-document.js';
+import type { NodeId } from './types.js';
 
 export type { BuilderTelemetryEvent };
 
@@ -56,9 +57,10 @@ export function captureSnapshot(
   document: BuilderDocument,
   label: string,
 ): RollbackSnapshot {
+  const legacyDocument = document as BuilderDocument & { id?: string };
   return {
     snapshotId: `snap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    documentId: document.id,
+    documentId: document.documentId ?? legacyDocument.id ?? '',
     label,
     capturedAt: Date.now(),
     document,

@@ -141,7 +141,7 @@ export function RiskAlerts({
   return (
     <div className="mb-10">
       <div className="flex justify-between items-center mb-2">
-        <Typography className="flex items-center gap-2 font-bold text-lg">
+        <Typography as="div" className="flex items-center gap-2 font-bold text-lg">
           Risk Alerts
           <Chip label={activeAlerts.length} size="sm" />
         </Typography>

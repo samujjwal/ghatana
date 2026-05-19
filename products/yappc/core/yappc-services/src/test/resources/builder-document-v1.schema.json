@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.ghatana.dev/ui-builder/builder-document-v1.schema.json",
+  "title": "Ghatana BuilderDocumentV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "documentId",
+    "owner",
+    "root",
+    "nodes",
+    "bindings",
+    "layout",
+    "metadata"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "documentId": { "type": "string", "minLength": 1 },
+    "owner": { "type": "string", "minLength": 1 },
+    "root": { "$ref": "#/$defs/nodeId" },
+    "nodes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/componentInstance" }
+    },
+    "bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/binding" }
+    },
+    "layout": { "$ref": "#/$defs/layout" },
+    "metadata": { "$ref": "#/$defs/documentMetadata" },
+    "i18n": { "$ref": "#/$defs/i18n" },
+    "a11y": { "$ref": "#/$defs/a11y" },
+    "privacy": { "$ref": "#/$defs/privacy" },
+    "validation": { "$ref": "#/$defs/validation" }
+  },
+  "$defs": {
+    "nodeId": { "type": "string", "minLength": 1 },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "source", "target"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["data", "event", "slot", "theme", "computed"] },
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "transform": { "type": "string" },
+        "bidirectional": { "type": "boolean" }
+      }
+    },
+    "actionDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "triggerEvent", "targetKind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "triggerEvent": { "type": "string", "minLength": 1 },
+        "targetKind": {
+          "enum": [
+            "navigate",
+            "toggle-state",
+            "emit-event",
+            "call-api",
+            "update-binding",
+            "custom"
+          ]
+        },
+        "payload": { "type": "object" },
+        "condition": { "type": "string" }
+      }
+    },
+    "instanceMetadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "$ref": "#/$defs/position" },
+        "size": { "$ref": "#/$defs/size" },
+        "locked": { "type": "boolean" },
+        "hidden": { "type": "boolean" },
+        "layout": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["resizable", "positionable"],
+          "properties": {
+            "resizable": { "type": "boolean" },
+            "positionable": { "type": "boolean" },
+            "overflow": { "enum": ["visible", "hidden", "scroll", "auto"] }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/actionDefinition" }
+        }
+      }
+    },
+    "componentInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "contractName",
+        "props",
+        "slots",
+        "bindings",
+        "metadata"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nodeId" },
+        "contractName": { "type": "string", "minLength": 1 },
+        "props": { "type": "object" },
+        "slots": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/nodeId" }
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/binding" }
+        },
+        "metadata": { "$ref": "#/$defs/instanceMetadata" }
+      }
+    },
+    "layoutNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nodeId" },
+        "type": { "enum": ["root", "container", "leaf"] },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nodeId" }
+        },
+        "layout": { "enum": ["flex", "grid", "absolute", "stack"] },
+        "layoutProps": { "type": "object" }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "nodes", "rootId"],
+      "properties": {
+        "type": { "enum": ["flex", "grid", "absolute", "stack", "flow"] },
+        "nodes": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/layoutNode" }
+        },
+        "rootId": { "$ref": "#/$defs/nodeId" }
+      }
+    },
+    "documentMetadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["createdAt", "updatedAt"],
+      "properties": {
+        "createdAt": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "minLength": 1 },
+        "author": { "type": "string" },
+        "description": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "changeCount": { "type": "number" },
+        "collaborationVersion": { "type": "number" },
+        "checkpointId": { "type": "string" }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["defaultLocale", "locales", "translations"],
+      "properties": {
+        "defaultLocale": { "type": "string", "minLength": 1 },
+        "locales": { "type": "array", "items": { "type": "string" } },
+        "translations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "a11y": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "landmarks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "nodeId"],
+            "properties": {
+              "type": {
+                "enum": [
+                  "main",
+                  "navigation",
+                  "complementary",
+                  "contentinfo",
+                  "search",
+                  "banner"
+                ]
+              },
+              "nodeId": { "$ref": "#/$defs/nodeId" }
+            }
+          }
+        },
+        "skipLinks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["targetId", "label"],
+            "properties": {
+              "targetId": { "$ref": "#/$defs/nodeId" },
+              "label": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification"],
+      "properties": {
+        "classification": {
+          "enum": ["public", "internal", "confidential", "restricted"]
+        },
+        "piiNodes": { "type": "array", "items": { "$ref": "#/$defs/nodeId" } },
+        "dataRetention": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["days", "autoDelete"],
+          "properties": {
+            "days": { "type": "number" },
+            "autoDelete": { "type": "boolean" }
+          }
+        },
+        "consentRequired": { "type": "boolean" }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules"],
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "type", "target", "message"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "type": { "enum": ["required", "format", "range", "custom"] },
+              "target": { "type": "string" },
+              "message": { "type": "string" },
+              "params": { "type": "object" }
+            }
+          }
+        },
+        "validateOn": { "enum": ["change", "blur", "submit"] }
+      }
+    }
+  }
+}

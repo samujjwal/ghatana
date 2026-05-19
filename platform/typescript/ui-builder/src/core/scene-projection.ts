@@ -6,7 +6,9 @@
  * BuilderDocument model.
  */
 
-import type { BuilderDocument, ComponentInstance, NodeId } from './types.js';
+import type { BuilderDocument } from './builder-document.js';
+import { attachBuilderDocumentCompatibility, normalizeBuilderDocument } from './builder-document.js';
+import type { ComponentInstance, NodeId } from './types.js';
 
 // ============================================================================
 // Scene Model (canvas-side representation)
@@ -110,11 +112,13 @@ export function projectToScene(
   document: BuilderDocument,
   viewport: SceneViewport = { x: 0, y: 0, zoom: 1 },
 ): SceneProjection {
+  document = normalizeBuilderDocument(document);
   const sceneNodes: SceneNode[] = [];
   let autoX = 40;
 
-  for (const rootId of document.rootNodes) {
-    const node = document.nodes.get(rootId);
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
+    const node = document.nodes[rootId];
     if (node) {
       collectSceneNodes(node, null, null, document, sceneNodes, autoX, 40);
       autoX += DEFAULT_NODE_SIZE.width + 24;
@@ -122,8 +126,8 @@ export function projectToScene(
   }
 
   return {
-    documentId: document.id,
-    documentVersion: document.version,
+    documentId: document.documentId,
+    documentVersion: document.schemaVersion,
     projectedAt: Date.now(),
     nodes: sceneNodes,
     viewport,
@@ -160,7 +164,7 @@ function collectSceneNodes(
 
   for (const [slot, children] of Object.entries(node.slots)) {
     for (const childId of children) {
-      const child = document.nodes.get(childId);
+      const child = document.nodes[childId];
       if (child) {
         collectSceneNodes(child, node.id, slot, document, out, childX, childY);
         childX += DEFAULT_NODE_SIZE.width + 16;
@@ -184,9 +188,10 @@ export function reconcileSceneDeltas(
   document: BuilderDocument,
   deltas: readonly SceneDelta[],
 ): BuilderDocument {
-  return produce(document, (draft) => {
+  document = normalizeBuilderDocument(document);
+  const next = produce(document, (draft) => {
     for (const delta of deltas) {
-      const node = draft.nodes.get(delta.nodeId);
+      const node = draft.nodes[delta.nodeId];
       if (!node && delta.payload.kind !== 'delete') continue;
 
       switch (delta.payload.kind) {
@@ -215,18 +220,9 @@ export function reconcileSceneDeltas(
         }
 
         case 'delete': {
-          (draft.nodes as Map<NodeId, ComponentInstance>).delete(delta.nodeId);
-          draft.rootNodes = draft.rootNodes.filter((id) => id !== delta.nodeId);
-          for (const [, n] of draft.nodes) {
-            for (const [slotName, children] of Object.entries(n.slots)) {
-              if (children.includes(delta.nodeId)) {
-                n.slots = {
-                  ...n.slots,
-                  [slotName]: children.filter((id) => id !== delta.nodeId),
-                };
-              }
-            }
-          }
+          delete draft.nodes[delta.nodeId];
+          removeNodeFromRootLayout(draft, delta.nodeId);
+          removeNodeFromAllSlots(draft, delta.nodeId);
           break;
         }
 
@@ -235,21 +231,12 @@ export function reconcileSceneDeltas(
           const { newParentId, newSlotName } = delta.payload;
 
           // Remove from old position
-          draft.rootNodes = draft.rootNodes.filter((id) => id !== delta.nodeId);
-          for (const [, n] of draft.nodes) {
-            for (const [slotName, children] of Object.entries(n.slots)) {
-              if (children.includes(delta.nodeId)) {
-                n.slots = {
-                  ...n.slots,
-                  [slotName]: children.filter((id) => id !== delta.nodeId),
-                };
-              }
-            }
-          }
+          removeNodeFromRootLayout(draft, delta.nodeId);
+          removeNodeFromAllSlots(draft, delta.nodeId);
 
           // Insert at new position
           if (newParentId && newSlotName) {
-            const parent = draft.nodes.get(newParentId);
+            const parent = draft.nodes[newParentId];
             if (parent) {
               const slot = parent.slots[newSlotName] ?? [];
               parent.slots = {
@@ -258,7 +245,7 @@ export function reconcileSceneDeltas(
               };
             }
           } else {
-            draft.rootNodes = [...draft.rootNodes, delta.nodeId];
+            insertNodeIntoRootLayout(draft, delta.nodeId, delta.payload.newIndex);
           }
           break;
         }
@@ -267,4 +254,37 @@ export function reconcileSceneDeltas(
 
     draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
   });
+  return attachBuilderDocumentCompatibility(next);
+}
+
+function removeNodeFromRootLayout(document: BuilderDocument, nodeId: NodeId): void {
+  const rootLayoutNode = document.layout.nodes[document.layout.rootId];
+  if (!rootLayoutNode?.children) {
+    return;
+  }
+  rootLayoutNode.children = rootLayoutNode.children.filter((id: NodeId) => id !== nodeId);
+}
+
+function insertNodeIntoRootLayout(document: BuilderDocument, nodeId: NodeId, index: number): void {
+  const rootLayoutNode = document.layout.nodes[document.layout.rootId];
+  if (!rootLayoutNode) {
+    return;
+  }
+  const children = [...(rootLayoutNode.children ?? [])];
+  children.splice(Math.max(0, Math.min(index, children.length)), 0, nodeId);
+  rootLayoutNode.children = children;
+}
+
+function removeNodeFromAllSlots(document: BuilderDocument, nodeId: NodeId): void {
+  for (const instance of Object.values(document.nodes)) {
+    for (const [slotName, children] of Object.entries(instance.slots) as [string, NodeId[]][]) {
+      if (children.includes(nodeId)) {
+        const mutableInstance = instance as unknown as { slots: Record<string, NodeId[]> };
+        mutableInstance.slots = {
+          ...instance.slots,
+          [slotName]: children.filter((id: NodeId) => id !== nodeId),
+        };
+      }
+    }
+  }
 }

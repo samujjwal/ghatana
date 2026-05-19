@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-44-44c4bef9",
+  "correlationId": "corr-2026-05-18T20-21-44-44c4bef9",
+  "providerMode": "bootstrap",
+  "productId": "digital-marketing",
+  "providerRefs": {
+    "eventProviderId": "file-lifecycle-events",
+    "artifactProviderId": "file-artifact-manifests",
+    "healthProviderId": "file-health-snapshots",
+    "approvalProviderId": "file-approvals",
+    "provenanceProviderId": "file-provenance",
+    "runtimeTruthProviderId": "file-runtime-truth"
+  },
+  "phase": "test",
+  "phaseMode": "parallel",
+  "lifecycleProfile": "standard-web-api-product",
+  "surfaces": [
+    {
+      "surface": "backend-api",
+      "type": "backend-api",
+      "adapter": "gradle-java-service",
+      "config": {
+        "source": "products/digital-marketing/dm-api",
+        "runtime": "java-service",
+        "adapter": "gradle-java-service",
+        "gradleModule": ":products:digital-marketing:dm-api",
+        "devTask": "runDmosApiServer",
+        "buildTask": "build",
+        "testTask": "test",
+        "validateTask": "check",
+        "packageTask": "assemble",
+        "expectedOutputs": {
+          "build": [
+            "products/digital-marketing/dm-api/build/libs/*.jar"
+          ],
+          "test": [
+            "products/digital-marketing/dm-api/build/test-results/test",
+            "products/digital-marketing/dm-api/build/reports/tests"
+          ]
+        },
+        "health": {
+          "type": "http",
+          "livePath": "/health/live",
+          "readyPath": "/health/ready",
+          "portVariable": "DMOS_API_PORT",
+          "defaultPort": 8080
+        }
+      }
+    },
+    {
+      "surface": "web",
+      "type": "web",
+      "adapter": "pnpm-vite-react",
+      "config": {
+        "source": "products/digital-marketing/ui",
+        "runtime": "static-web",
+        "adapter": "pnpm-vite-react",
+        "packagePath": "products/digital-marketing/ui/package.json",
+        "devScript": "dev",
+        "validateScript": "type-check",
+        "buildScript": "build",
+        "testScript": "test",
+        "packageScript": "build",
+        "expectedOutputs": {
+          "build": [
+            "products/digital-marketing/ui/dist",
+            "products/digital-marketing/ui/dist/index.html"
+          ]
+        },
+        "health": {
+          "type": "http",
+          "path": "/",
+          "portVariable": "DMOS_WEB_PORT",
+          "defaultPort": 5173
+        }
+      }
+    }
+  ],
+  "gates": [],
+  "steps": [
+    {
+      "id": "test-backend-api-0",
+      "stepKind": "surface",
+      "phase": "test",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "adapterSelectionSource": "profile-default",
+      "description": "test backend-api via gradle-java-service",
+      "dependsOn": [],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/digital-marketing/dm-api",
+          "runtime": "java-service",
+          "adapter": "gradle-java-service",
+          "gradleModule": ":products:digital-marketing:dm-api",
+          "devTask": "runDmosApiServer",
+          "buildTask": "build",
+          "testTask": "test",
+          "validateTask": "check",
+          "packageTask": "assemble",
+          "expectedOutputs": {
+            "build": [
+              "products/digital-marketing/dm-api/build/libs/*.jar"
+            ],
+            "test": [
+              "products/digital-marketing/dm-api/build/test-results/test",
+              "products/digital-marketing/dm-api/build/reports/tests"
+            ]
+          },
+          "health": {
+            "type": "http",
+            "livePath": "/health/live",
+            "readyPath": "/health/ready",
+            "portVariable": "DMOS_API_PORT",
+            "defaultPort": 8080
+          }
+        }
+      }
+    },
+    {
+      "id": "test-web-1",
+      "stepKind": "surface",
+      "phase": "test",
+      "surface": "web",
+      "adapter": "pnpm-vite-react",
+      "adapterSelectionSource": "profile-default",
+      "description": "test web via pnpm-vite-react",
+      "dependsOn": [],
+      "estimatedDurationMs": 30000,
+      "adapterContext": {
+        "surfaceConfig": {
+          "source": "products/digital-marketing/ui",
+          "runtime": "static-web",
+          "adapter": "pnpm-vite-react",
+          "packagePath": "products/digital-marketing/ui/package.json",
+          "devScript": "dev",
+          "validateScript": "type-check",
+          "buildScript": "build",
+          "testScript": "test",
+          "packageScript": "build",
+          "expectedOutputs": {
+            "build": [
+              "products/digital-marketing/ui/dist",
+              "products/digital-marketing/ui/dist/index.html"
+            ]
+          },
+          "health": {
+            "type": "http",
+            "path": "/",
+            "portVariable": "DMOS_WEB_PORT",
+            "defaultPort": 5173
+          }
+        }
+      }
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "surface": "backend-api",
+      "type": "test-report",
+      "required": false,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://digital-marketing/test/backend-api/test-report"
+    },
+    {
+      "surface": "web",
+      "type": "test-report",
+      "required": false,
+      "providerId": "file-artifact-manifests",
+      "semanticRef": "artifact://digital-marketing/test/web/test-report"
+    }
+  ],
+  "requiredManifests": [],
+  "requiredPlugins": [
+    {
+      "pluginId": "audit",
+      "required": true
+    },
+    {
+      "pluginId": "observability",
+      "required": true
+    },
+    {
+      "pluginId": "data-access",
+      "required": true
+    },
+    {
+      "pluginId": "identity-entitlement",
+      "required": true
+    },
+    {
+      "pluginId": "security",
+      "required": true
+    },
+    {
+      "pluginId": "preview-security",
+      "required": false
+    }
+  ],
+  "approvalRequirements": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test",
+  "estimatedDurationMs": 60000
+}

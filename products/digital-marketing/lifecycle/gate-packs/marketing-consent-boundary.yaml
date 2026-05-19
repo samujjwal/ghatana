@@ -1,0 +1,22 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: marketing-consent-boundary
+title: Digital Marketing marketing consent boundary gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that all marketing audience targeting, campaign automation, and
+  data pipeline operations respect declared consent boundaries. Marketing contact
+  data must not flow to downstream systems without explicit consent evidence.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-domain/src/main/java/com/ghatana/dm/domain
+  - products/digital-marketing/conformance
+blockingReasonCodes:
+  - requires-marketing-consent-boundary
+  - missing-marketing-consent-boundary
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-domain:check
+notes:
+  - This gate is declared via the kernel://policy-packs/marketing-consent-boundary policy pack.
+  - Consent enforcement is a product policy concern; kernel only evaluates evidence.

@@ -11,7 +11,8 @@
 
 import { z } from "zod";
 import { createNodeId, createDocumentId } from "./types.js";
-import type { NodeId, DocumentId } from "./types.js";
+import type { NodeId, DocumentId, ComponentInstance, Binding, DocumentMetadata } from "./types.js";
+import type { DataClassification } from "@ghatana/platform-events";
 
 // ============================================================================
 // SCHEMA VERSION
@@ -91,12 +92,18 @@ const StateVariantSchema = z.object({
   props: z.record(z.string(), z.unknown()).optional(),
 });
 
-/** Privacy metadata schema. */
+/** Privacy metadata schema. Matches platform-events PrivacyMetadata structure for compatibility. */
 const PrivacyMetadataSchema = z.object({
-  classification: z.enum(["public", "internal", "confidential", "restricted"]).optional(),
-  piiFields: z.array(z.string()).optional(),
-  requiresConsent: z.boolean().optional(),
-});
+  dataClassification: z.custom<DataClassification>((val) => {
+    const valid: readonly string[] = ['PUBLIC', 'INTERNAL', 'SENSITIVE', 'CREDENTIALS', 'REGULATED'];
+    return typeof val === 'string' && valid.includes(val);
+  }),
+  piiFields: z.array(z.string()),
+  containsCredentials: z.boolean(),
+  requiresConsent: z.boolean(),
+  retentionDays: z.number(),
+  dataSubjectType: z.enum(["user", "customer", "employee", "none"]).optional(),
+}).optional();
 
 /** AI change record schema. */
 const AIChangeRecordSchema = z.object({
@@ -284,8 +291,198 @@ export const BuilderDocumentSchema = z.object({
   validation: ValidationSchema.optional(),
 });
 
-/** Type inference for BuilderDocument. */
-export type BuilderDocument = z.infer<typeof BuilderDocumentSchema>;
+type BuilderDocumentSchemaShape = z.infer<typeof BuilderDocumentSchema>;
+
+/** Canonical BuilderDocument type backed by the runtime BuilderDocumentSchema. */
+export type BuilderDocument = Omit<BuilderDocumentSchemaShape, 'nodes' | 'bindings' | 'metadata'> & {
+  readonly nodes: Record<string, ComponentInstance>;
+  readonly bindings: Binding[];
+  readonly metadata: DocumentMetadata;
+};
+
+type NodeRecordWithCompat = Record<string, ComponentInstance> & {
+  get?: (nodeId: NodeId) => ComponentInstance | undefined;
+  set?: (nodeId: NodeId, node: ComponentInstance) => NodeRecordWithCompat;
+  has?: (nodeId: NodeId) => boolean;
+  delete?: (nodeId: NodeId) => boolean;
+  keys?: () => IterableIterator<NodeId>;
+  values?: () => IterableIterator<ComponentInstance>;
+  entries?: () => IterableIterator<[NodeId, ComponentInstance]>;
+  readonly size?: number;
+};
+
+type BuilderDocumentWithCompat = BuilderDocument & {
+  id?: DocumentId;
+  version?: string;
+  name?: string;
+  rootNodes?: NodeId[];
+};
+
+function ownEnumerableNodeEntries(nodes: Record<string, ComponentInstance>): [NodeId, ComponentInstance][] {
+  const entries = Object.entries(nodes)
+    .filter(([, value]) => (
+      typeof value === 'object'
+      && value !== null
+      && 'id' in value
+      && value.contractName !== 'RootContainer'
+    ));
+  return entries as [NodeId, ComponentInstance][];
+}
+
+function schemaNodeRecord(nodes: Record<string, ComponentInstance>): Record<string, ComponentInstance> {
+  return Object.fromEntries(
+    Object.entries(nodes).filter(([, value]) => (
+      typeof value === 'object'
+      && value !== null
+      && 'id' in value
+    )),
+  ) as Record<string, ComponentInstance>;
+}
+
+function attachNodeRecordCompatibility(nodes: Record<string, ComponentInstance>): Record<string, ComponentInstance> {
+  const compatible = nodes as NodeRecordWithCompat;
+  const define = (name: keyof NodeRecordWithCompat, value: unknown): void => {
+    Object.defineProperty(compatible, name, {
+      value,
+      configurable: true,
+      enumerable: false,
+      writable: true,
+    });
+  };
+
+  define('get', (nodeId: NodeId): ComponentInstance | undefined => compatible[nodeId]);
+  define('set', (nodeId: NodeId, node: ComponentInstance): NodeRecordWithCompat => {
+    compatible[nodeId] = node;
+    return compatible;
+  });
+  define('has', (nodeId: NodeId): boolean => Object.prototype.hasOwnProperty.call(compatible, nodeId));
+  define('delete', (nodeId: NodeId): boolean => delete compatible[nodeId]);
+  define('keys', function* keys(): IterableIterator<NodeId> {
+    for (const [nodeId] of ownEnumerableNodeEntries(compatible)) {
+      yield nodeId;
+    }
+  });
+  define('values', function* values(): IterableIterator<ComponentInstance> {
+    for (const [, node] of ownEnumerableNodeEntries(compatible)) {
+      yield node;
+    }
+  });
+  define('entries', function* entries(): IterableIterator<[NodeId, ComponentInstance]> {
+    for (const entry of ownEnumerableNodeEntries(compatible)) {
+      yield entry;
+    }
+  });
+  Object.defineProperty(compatible, 'size', {
+    get: () => ownEnumerableNodeEntries(compatible).length,
+    configurable: true,
+    enumerable: false,
+  });
+
+  return compatible;
+}
+
+export function attachBuilderDocumentCompatibility(document: BuilderDocument): BuilderDocument {
+  const compatible = (Object.isExtensible(document)
+    ? document
+    : {
+        ...document,
+        nodes: { ...document.nodes },
+        bindings: [...document.bindings],
+        layout: {
+          ...document.layout,
+          nodes: { ...document.layout.nodes },
+        },
+        metadata: { ...document.metadata },
+      }) as BuilderDocumentWithCompat;
+  const mutableCompatible = compatible as BuilderDocumentWithCompat & {
+    nodes: Record<string, ComponentInstance>;
+  };
+  if (!Object.isExtensible(compatible.nodes)) {
+    mutableCompatible.nodes = { ...compatible.nodes };
+  }
+  attachNodeRecordCompatibility(mutableCompatible.nodes);
+
+  Object.defineProperty(compatible, 'id', {
+    get: () => compatible.documentId,
+    configurable: true,
+    enumerable: false,
+  });
+  Object.defineProperty(compatible, 'version', {
+    get: () => compatible.schemaVersion,
+    configurable: true,
+    enumerable: false,
+  });
+  Object.defineProperty(compatible, 'name', {
+    get: () => compatible.metadata.description ?? compatible.owner,
+    configurable: true,
+    enumerable: false,
+  });
+  Object.defineProperty(compatible, 'rootNodes', {
+    get: () => [...(compatible.layout.nodes[compatible.layout.rootId]?.children ?? [])],
+    set: (nodeIds: NodeId[]) => {
+      const rootLayoutNode = compatible.layout.nodes[compatible.layout.rootId];
+      if (rootLayoutNode) {
+        rootLayoutNode.children = [...nodeIds];
+      }
+    },
+    configurable: true,
+    enumerable: false,
+  });
+
+  return compatible;
+}
+
+export function normalizeBuilderDocument(document: BuilderDocument): BuilderDocument {
+  const candidate = document as BuilderDocumentWithCompat;
+  if (candidate.layout && candidate.root && candidate.schemaVersion && !(candidate.nodes instanceof Map)) {
+    return attachBuilderDocumentCompatibility(document);
+  }
+
+  const rawNodes = candidate.nodes;
+  const nodes = rawNodes instanceof Map
+    ? Object.fromEntries(rawNodes.entries()) as Record<string, ComponentInstance>
+    : { ...(rawNodes as Record<string, ComponentInstance>) };
+  const rootNodes = candidate.rootNodes ?? [];
+  const root = createNodeId('root');
+  const now = new Date().toISOString();
+
+  return attachBuilderDocumentCompatibility({
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    documentId: candidate.documentId ?? candidate.id ?? createDocumentId(),
+    owner: candidate.owner ?? candidate.metadata?.author ?? 'unknown',
+    root,
+    nodes,
+    bindings: candidate.bindings ?? [],
+    layout: {
+      type: 'flex',
+      nodes: {
+        [root]: {
+          id: root,
+          type: 'root',
+          children: [...rootNodes],
+          layout: 'flex',
+          layoutProps: { direction: 'vertical' },
+        },
+      },
+      rootId: root,
+    },
+    metadata: {
+      createdAt: candidate.metadata?.createdAt ?? now,
+      updatedAt: candidate.metadata?.updatedAt ?? now,
+      author: candidate.metadata?.author ?? candidate.owner,
+      description: candidate.metadata?.description ?? candidate.name,
+      tags: candidate.metadata?.tags,
+      changeCount: candidate.metadata?.changeCount,
+      collaborationVersion: candidate.metadata?.collaborationVersion,
+      checkpointId: candidate.metadata?.checkpointId,
+      dataClassification: candidate.metadata?.dataClassification,
+      reviewStatus: candidate.metadata?.reviewStatus,
+      syncStatus: candidate.metadata?.syncStatus,
+      visibilityContract: candidate.metadata?.visibilityContract,
+      trustLevel: candidate.metadata?.trustLevel,
+    },
+  });
+}
 
 // ============================================================================
 // DOCUMENT CREATION
@@ -300,13 +497,20 @@ export function createBuilderDocument(
     documentId?: DocumentId;
     designSystemId?: string;
     designSystemName?: string;
+    nodes?: Map<NodeId, ComponentInstance> | Record<string, ComponentInstance>;
+    rootNodes?: readonly NodeId[];
+    metadata?: Partial<DocumentMetadata>;
+    designSystem?: unknown;
   },
 ): BuilderDocument {
   const documentId = options?.documentId ?? createDocumentId();
   const rootId = createNodeId();
   const now = new Date().toISOString();
 
-  return {
+  const overrideNodes = options?.nodes instanceof Map
+    ? Object.fromEntries(options.nodes.entries()) as Record<string, ComponentInstance>
+    : options?.nodes;
+  const document = attachBuilderDocumentCompatibility({
     schemaVersion: CURRENT_SCHEMA_VERSION,
     documentId,
     owner,
@@ -344,8 +548,96 @@ export function createBuilderDocument(
       updatedAt: now,
       author: owner,
       changeCount: 0,
+      ...options?.metadata,
+    },
+  });
+  if (overrideNodes) {
+    (document as BuilderDocument & { nodes: Record<string, ComponentInstance> }).nodes = {
+      [rootId]: document.nodes[rootId]!,
+      ...overrideNodes,
+    };
+    attachNodeRecordCompatibility(document.nodes);
+  }
+  if (options?.rootNodes) {
+    const rootLayoutNode = document.layout.nodes[document.layout.rootId];
+    if (rootLayoutNode) {
+      rootLayoutNode.children = [...options.rootNodes];
+    }
+  }
+  if (options?.designSystem) {
+    Object.defineProperty(document, 'designSystem', {
+      get: () => options.designSystem,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+  if (options?.designSystemId) {
+    Object.defineProperty(document, 'designSystemId', {
+      get: () => options.designSystemId,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+  if (options?.designSystemName) {
+    Object.defineProperty(document, 'designSystemName', {
+      get: () => options.designSystemName,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+  return document;
+}
+
+// ============================================================================
+// COMPATIBILITY ADAPTERS
+// ============================================================================
+
+/**
+ * Set root nodes in canonical BuilderDocument layout structure.
+ * Adapter for legacy code that sets rootNodes array.
+ */
+export function setRootNodes(document: BuilderDocument, nodeIds: NodeId[]): BuilderDocument {
+  return {
+    ...document,
+    layout: {
+      ...document.layout,
+      nodes: {
+        ...document.layout.nodes,
+        [document.layout.rootId]: {
+          ...document.layout.nodes[document.layout.rootId],
+          children: nodeIds,
+        },
+      },
     },
   };
+}
+
+/**
+ * Get document ID - adapter for legacy code that uses document.id.
+ */
+export function getDocumentId(document: BuilderDocument): DocumentId {
+  return document.documentId;
+}
+
+/**
+ * Get document version - adapter for legacy code that uses document.version.
+ */
+export function getDocumentVersion(document: BuilderDocument): string {
+  return document.schemaVersion;
+}
+
+/**
+ * Get nodes as Map - adapter for legacy code that expects Map<NodeId, ComponentInstance>.
+ */
+export function getNodesAsMap(document: BuilderDocument): Map<NodeId, ComponentInstance> {
+  return new Map(Object.entries(document.nodes) as [NodeId, ComponentInstance][]);
+}
+
+/**
+ * Get nodes from Map and convert to Record - adapter for converting legacy Map to canonical Record.
+ */
+export function nodesMapToRecord(map: Map<NodeId, ComponentInstance>): Record<string, ComponentInstance> {
+  return Object.fromEntries(map.entries()) as Record<string, ComponentInstance>;
 }
 
 // ============================================================================
@@ -381,8 +673,20 @@ export function validateBuilderDocument(
 ): DocumentValidationResult {
   const issues: ValidationIssue[] = [];
 
+  // Auto-migrate: if schemaVersion is missing, assign the current version so the
+  // schema validator can proceed (normalisation is a no-op for well-formed docs).
+  if (document && typeof document === 'object' && !('schemaVersion' in document)) {
+    document = { schemaVersion: CURRENT_SCHEMA_VERSION, ...document };
+  }
+
   // Schema validation
-  const schemaResult = BuilderDocumentSchema.safeParse(document);
+  const documentForSchema = document && typeof document === 'object'
+    ? {
+        ...(document as BuilderDocument),
+        nodes: schemaNodeRecord((document as BuilderDocument).nodes ?? {}),
+      }
+    : document;
+  const schemaResult = BuilderDocumentSchema.safeParse(documentForSchema);
 
   if (!schemaResult.success) {
     const zodIssues = schemaResult.error.issues;
@@ -545,9 +849,25 @@ export type MigrationFunction = (document: unknown) => unknown;
 
 /**
  * Registry of migrations from older schema versions.
+ *
+ * Migration strategy:
+ * - Each migration function transforms a document from version X to version X+1
+ * - Migrations should be additive and backward-compatible where possible
+ * - Always validate the output document against the target schema
+ * - Document breaking changes in this comment block
+ *
+ * Example migration entry (for future use):
+ * [
+ *   ['0.9.0', (doc) => {
+ *     // Transform 0.9.0 to 1.0.0 structure
+ *     // e.g., convert rootNodes array to layout.rootId + layout.nodes structure
+ *     return transformedDoc;
+ *   }],
+ * ]
  */
 export const MIGRATIONS: ReadonlyMap<string, MigrationFunction> = new Map([
-  // No migrations yet - only version 1.0.0 exists
+  // Version 1.0.0 is the initial schema version - no migrations needed yet
+  // Future migrations will be added here as the schema evolves
 ]);
 
 /**
@@ -643,11 +963,12 @@ export function deserializeBuilderDocument(
     const parsed = JSON.parse(json);
     const migration = migrateBuilderDocument(parsed);
 
-    if (!migration.success) {
+    if (!migration.success || !migration.document) {
       return { success: false, errors: migration.errors };
     }
 
-    return { success: true, document: migration.document, errors: [] };
+    const migratedDocument = migration.document;
+    return { success: true, document: attachBuilderDocumentCompatibility(migratedDocument), errors: [] };
   } catch (error) {
     return {
       success: false,

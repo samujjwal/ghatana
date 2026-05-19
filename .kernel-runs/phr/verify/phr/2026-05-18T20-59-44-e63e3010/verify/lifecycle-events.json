@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-18T20-59-44-e63e3010",
+  "phase": "verify",
+  "eventCount": 7,
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-59-44-e63e3010:verify",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "timestamp": "2026-05-18T20:59:44.099Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:59:44.099Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-59-44-e63e3010:verify",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "timestamp": "2026-05-18T20:59:44.105Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010"
+      },
+      "payload": {
+        "phase": "verify",
+        "status": "running",
+        "startedAt": "2026-05-18T20:59:44.105Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+        "eventId": "derived:plan-created:2026-05-18T20-59-44-e63e3010:verify",
+        "eventType": "lifecycle.plan.created",
+        "timestamp": "2026-05-18T20:59:44.109Z"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "providerMode": "bootstrap",
+        "environment": "local",
+        "createdAt": "2026-05-18T20:59:44.109Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+        "eventId": "derived:phase-started:2026-05-18T20-59-44-e63e3010:verify",
+        "eventType": "lifecycle.phase.started",
+        "timestamp": "2026-05-18T20:59:44.109Z"
+      },
+      "payload": {
+        "phase": "verify",
+        "status": "running",
+        "startedAt": "2026-05-18T20:59:44.109Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+        "eventId": "derived:step-started:2026-05-18T20-59-44-e63e3010:verify-local-0",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T20:59:44.109Z"
+      },
+      "payload": {
+        "stepId": "verify-local-0",
+        "stepKind": "verify",
+        "surface": "local",
+        "adapter": "compose-local",
+        "status": "running",
+        "startedAt": "2026-05-18T20:59:44.109Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+        "eventId": "derived:step-completed:2026-05-18T20-59-44-e63e3010:verify-local-0",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T20:59:44.109Z"
+      },
+      "payload": {
+        "stepId": "verify-local-0",
+        "stepKind": "verify",
+        "surface": "local",
+        "adapter": "compose-local",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T20:59:44.109Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "phr",
+        "runId": "2026-05-18T20-59-44-e63e3010",
+        "phase": "verify",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-59-44-e63e3010",
+        "eventId": "derived:phase-completed:2026-05-18T20-59-44-e63e3010:verify",
+        "eventType": "lifecycle.phase.completed",
+        "timestamp": "2026-05-18T20:59:44.109Z"
+      },
+      "payload": {
+        "phase": "verify",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:59:44.109Z"
+      }
+    }
+  ],
+  "writtenAt": "2026-05-18T20:59:44.114Z"
+}

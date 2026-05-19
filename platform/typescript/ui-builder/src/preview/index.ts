@@ -28,6 +28,11 @@ export type {
   HoverMessage,
   PongMessage,
   PreviewHostServiceCallbacks,
+  PreviewRequest,
+  PreviewResult,
+  PreviewSecurityDecision,
+  PreviewDiagnostics,
+  PreviewArtifactReference,
 } from './protocol.js';
 
 export { PRESET_VIEWPORTS, createSandboxProfile } from './protocol.js';

@@ -25,7 +25,6 @@ import type { CanvasMode } from '../../../types/canvasMode';
 import type { AbstractionLevel } from '../../../types/canvas';
 import { type AutoSaveStatus } from '../versioning/AutoSaveIndicator';
 import { TOOLBAR, TRANSITIONS, RADIUS, Z_INDEX } from '../../../styles/design-tokens';
-import { useTranslation } from '@ghatana/i18n';
 
 // ============================================================================
 // Types
@@ -328,7 +327,6 @@ export function UnifiedCanvasToolbar({
     onSketchToolChange: _onSketchToolChange,
     className = '',
 }: UnifiedCanvasToolbarProps) {
-    const { t } = useTranslation('common');
     // Media query for mobile responsiveness
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -429,7 +427,7 @@ export function UnifiedCanvasToolbar({
             }}
             data-testid="unified-canvas-toolbar"
             role="toolbar"
-            aria-label={t('canvas.toolbar.actions')}
+            aria-label="Canvas toolbar actions"
         >
             {/* Section 1: EDIT - History Controls (Progressive Disclosure - Hidden until first node) */}
             {nodeCount > 0 && (
@@ -438,16 +436,16 @@ export function UnifiedCanvasToolbar({
                         <IconButton
                             onClick={onUndo}
                             disabled={!canUndo}
-                            title={t('canvas.toolbar.undo')}
-                            aria-label={t('canvas.toolbar.undo')}
+                            title="Undo"
+                            aria-label="Undo"
                         >
                             <Undo className="w-4 h-4" />
                         </IconButton>
                         <IconButton
                             onClick={onRedo}
                             disabled={!canRedo}
-                            title={t('canvas.toolbar.redo')}
-                            aria-label={t('canvas.toolbar.redo')}
+                            title="Redo"
+                            aria-label="Redo"
                         >
                             <Redo className="w-4 h-4" />
                         </IconButton>
@@ -464,16 +462,16 @@ export function UnifiedCanvasToolbar({
                         <IconButton
                             onClick={() => onInteractionModeChange('navigate')}
                             active={interactionMode === 'navigate'}
-                            title={t('canvas.toolbar.navigateMode')}
-                            aria-label={t('canvas.toolbar.navigateMode')}
+                            title="Navigate mode"
+                            aria-label="Navigate mode"
                         >
                             <NavigationIcon className="w-4 h-4" />
                         </IconButton>
                         <IconButton
                             onClick={() => onInteractionModeChange('sketch')}
                             active={interactionMode === 'sketch'}
-                            title={t('canvas.toolbar.sketchMode')}
-                            aria-label={t('canvas.toolbar.sketchMode')}
+                            title="Sketch mode"
+                            aria-label="Sketch mode"
                             variant={interactionMode === 'sketch' ? 'primary' : 'default'}
                         >
                             <BrushIcon className="w-4 h-4" />
@@ -481,8 +479,8 @@ export function UnifiedCanvasToolbar({
                         <IconButton
                             onClick={() => onInteractionModeChange('code')}
                             active={interactionMode === 'code'}
-                            title={t('canvas.toolbar.codeMode')}
-                            aria-label={t('canvas.toolbar.codeMode')}
+                            title="Code mode"
+                            aria-label="Code mode"
                             variant={interactionMode === 'code' ? 'primary' : 'default'}
                         >
                             <CodeIcon className="w-4 h-4" />
@@ -490,8 +488,8 @@ export function UnifiedCanvasToolbar({
                         <IconButton
                             onClick={() => onInteractionModeChange('diagram')}
                             active={interactionMode === 'diagram'}
-                            title={t('canvas.toolbar.diagramMode')}
-                            aria-label={t('canvas.toolbar.diagramMode')}
+                            title="Diagram mode"
+                            aria-label="Diagram mode"
                             variant={interactionMode === 'diagram' ? 'primary' : 'default'}
                         >
                             <DiagramIcon className="w-4 h-4" />
@@ -564,27 +562,27 @@ export function UnifiedCanvasToolbar({
                                 warningCount > 0 ? <Warning className="w-3 h-3" /> :
                                     <CheckCircle className="w-3 h-3" />
                         }
-                        aria-label={t('canvas.toolbar.qualityScore')}
+                        aria-label="Quality score"
                     />
                 )}
 
                 {/* AI Suggestions Badge - Always visible */}
                 <BadgeButton
                     onClick={handleOpenAI}
-                    title={t('canvas.toolbar.guidedAssistant')}
+                    title="Guided assistant"
                     label={aiSuggestionCount > 0 ? aiSuggestionCount : '✨'}
                     variant={aiSuggestionCount > 0 ? "info" : "default"}
                     isLoading={isAnalyzing}
                     icon={<AutoAwesome className={`w-3 h-3 ${aiSuggestionCount > 0 ? 'animate-pulse' : ''}`} />}
                     className={aiSuggestionCount > 0 ? 'ring-2 ring-blue-400 ring-opacity-50 animate-pulse-slow' : ''}
-                    aria-label={t('canvas.toolbar.suggestedImprovements')}
+                    aria-label="Suggested improvements"
                 />
             </ToolbarSection>
 
             {/* Mobile Actions Menu */}
             {isMobile && (
                 <>
-                    <IconButton onClick={handleMobileMenuClick} aria-label={t('canvas.toolbar.moreActions')}>
+                    <IconButton onClick={handleMobileMenuClick} aria-label="More actions">
                         <MoreVert className="w-4 h-4" />
                     </IconButton>
                     <Menu
@@ -614,12 +612,12 @@ export function UnifiedCanvasToolbar({
                                 <BadgeButton
                                     onClick={handleOpenCodeGen}
                                     disabled={!canGenerate && generatedFileCount === 0}
-                                    title={t('canvas.toolbar.generateCode')}
+                                    title="Generate code"
                                     label={isGenerating ? '...' : generatedFileCount > 0 ? `${generatedFileCount}` : 'Gen'}
                                     variant="secondary"
                                     isLoading={isGenerating}
                                     icon={<CodeIcon className="w-3 h-3" />}
-                                    aria-label={t('canvas.toolbar.generateCode')}
+                                    aria-label="Generate code"
                                 />
                             </ToolbarSection>
                         </>
@@ -632,17 +630,17 @@ export function UnifiedCanvasToolbar({
                         <IconButton
                             onClick={handleOpenUnifiedPanel}
                             active={unifiedPanelOpen}
-                            title={t('canvas.toolbar.assistantPanel')}
+                            title="Assistant panel"
                             variant="primary"
-                            aria-label={t('canvas.toolbar.assistantPanel')}
+                            aria-label="Assistant panel"
                         >
                             <AutoAwesome className="w-4 h-4" />
                         </IconButton>
                         <IconButton
                             onClick={onOpenOnboarding || handleOpenGuidance}
                             active={guidanceOpen}
-                            title={t('canvas.toolbar.help')}
-                            aria-label={t('canvas.toolbar.help')}
+                            title="Help"
+                            aria-label="Help"
                         >
                             <Help className="w-4 h-4" />
                         </IconButton>

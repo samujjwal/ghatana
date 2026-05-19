@@ -1,0 +1,22 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: non-regulated-customer-data-minimization
+title: Digital Marketing non-regulated customer data minimization gate
+executionMode: declarative-only
+owner: Digital Marketing Platform Team
+status: planned
+description: |
+  Validates that non-regulated customer data (behavioral analytics, ad click
+  attribution, CRM sync) is minimized at the collection boundary. Only data
+  fields declared in the minimization schema are allowed to persist.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-domain/src/main/java/com/ghatana/dm/domain
+  - products/digital-marketing/conformance
+blockingReasonCodes:
+  - requires-non-regulated-customer-data-minimization
+  - missing-non-regulated-customer-data-minimization
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-domain:check
+notes:
+  - This gate is declared via the kernel://policy-packs/non-regulated-customer-data-minimization policy pack.
+  - Minimization policy is a product concern; kernel evaluates evidence only.

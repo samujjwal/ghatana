@@ -119,6 +119,75 @@ function checkToolchainAdapterContracts(adapterRegistry, usedAdapters, lifecycle
       errors.push(`Adapter ${adapterId}: implemented adapters must set planningImplemented/executionImplemented/outputValidationImplemented to true`);
     }
 
+    // Validate new required metadata fields for implemented adapters
+    if (adapter.status === 'implemented') {
+      // timeout must be an object with executeMs
+      if (!adapter.timeout || typeof adapter.timeout !== 'object') {
+        errors.push(`Adapter ${adapterId}: implemented adapters must declare a timeout object with executeMs`);
+      } else if (typeof adapter.timeout.executeMs !== 'number' || adapter.timeout.executeMs <= 0) {
+        errors.push(`Adapter ${adapterId}: timeout.executeMs must be a positive number`);
+      }
+
+      // retryPolicy must be an object with maxAttempts and retryable
+      if (!adapter.retryPolicy || typeof adapter.retryPolicy !== 'object') {
+        errors.push(`Adapter ${adapterId}: implemented adapters must declare a retryPolicy object`);
+      } else {
+        if (typeof adapter.retryPolicy.maxAttempts !== 'number' || adapter.retryPolicy.maxAttempts < 1) {
+          errors.push(`Adapter ${adapterId}: retryPolicy.maxAttempts must be a positive number`);
+        }
+        if (typeof adapter.retryPolicy.retryable !== 'boolean') {
+          errors.push(`Adapter ${adapterId}: retryPolicy.retryable must be a boolean`);
+        }
+        if (!Array.isArray(adapter.retryPolicy.retryOnExitCodes)) {
+          errors.push(`Adapter ${adapterId}: retryPolicy.retryOnExitCodes must be an array`);
+        }
+      }
+
+      // environmentPolicy must be an object with allowedEnvironments
+      if (!adapter.environmentPolicy || typeof adapter.environmentPolicy !== 'object') {
+        errors.push(`Adapter ${adapterId}: implemented adapters must declare an environmentPolicy object`);
+      } else {
+        if (!Array.isArray(adapter.environmentPolicy.allowedEnvironments)) {
+          errors.push(`Adapter ${adapterId}: environmentPolicy.allowedEnvironments must be an array`);
+        }
+        if (!Array.isArray(adapter.environmentPolicy.blockedEnvironments)) {
+          errors.push(`Adapter ${adapterId}: environmentPolicy.blockedEnvironments must be an array`);
+        }
+        if (typeof adapter.environmentPolicy.requiresEnvironmentApproval !== 'boolean') {
+          errors.push(`Adapter ${adapterId}: environmentPolicy.requiresEnvironmentApproval must be a boolean`);
+        }
+      }
+
+      // outputValidation must be an object with validateAfterExecute
+      if (!adapter.outputValidation || typeof adapter.outputValidation !== 'object') {
+        errors.push(`Adapter ${adapterId}: implemented adapters must declare an outputValidation object`);
+      } else {
+        if (typeof adapter.outputValidation.validateAfterExecute !== 'boolean') {
+          errors.push(`Adapter ${adapterId}: outputValidation.validateAfterExecute must be a boolean`);
+        }
+        if (!Array.isArray(adapter.outputValidation.requiredArtifactTypes)) {
+          errors.push(`Adapter ${adapterId}: outputValidation.requiredArtifactTypes must be an array`);
+        }
+        if (typeof adapter.outputValidation.failOnMissingArtifacts !== 'boolean') {
+          errors.push(`Adapter ${adapterId}: outputValidation.failOnMissingArtifacts must be a boolean`);
+        }
+      }
+    }
+
+    // All adapters must have these fields present (null is acceptable for planned)
+    if (!('timeout' in adapter)) {
+      errors.push(`Adapter ${adapterId}: missing required field 'timeout' (use null for planned adapters)`);
+    }
+    if (!('retryPolicy' in adapter)) {
+      errors.push(`Adapter ${adapterId}: missing required field 'retryPolicy' (use null for planned adapters)`);
+    }
+    if (!('environmentPolicy' in adapter)) {
+      errors.push(`Adapter ${adapterId}: missing required field 'environmentPolicy' (use null for planned adapters)`);
+    }
+    if (!('outputValidation' in adapter)) {
+      errors.push(`Adapter ${adapterId}: missing required field 'outputValidation' (use null for planned adapters)`);
+    }
+
     // Enforce: safeForDefault: true requires status: implemented + all three flags true
     if (adapter.safeForDefault === true) {
       if (adapter.status !== 'implemented') {

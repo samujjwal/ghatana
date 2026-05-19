@@ -34,17 +34,172 @@ import {
 } from 'yappc-artifact-compiler';
 
 import {
-  compileImportedSourceToPageArtifacts,
+  compileImportedSourceToPageArtifacts as compileImportedSourceToPageArtifactsFromBridge,
   type ImportedSourceArtifactInput,
 } from '@/components/canvas/page/artifactCompilerBridge';
 import type { PageArtifactDocument } from '@/components/canvas/page/pageArtifactDocument';
 import { ApiRequestError, yappcApi, type SourceImportJobSnapshot } from '@/lib/api/client';
 import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
 
-const compileImportedSourceToPageArtifactsSafe = compileImportedSourceToPageArtifacts as (
+type SerializedDocumentWithRootNodes = PageArtifactDocument['serializedBuilderDocument'] & {
+  readonly rootNodes?: readonly string[];
+  readonly name?: string;
+};
+
+export function compileImportedSourceToPageArtifacts(
   input: ImportedSourceArtifactInput,
-  createdBy: string,
-) => unknown;
+  createdBy = 'compiler-validation',
+): readonly PageArtifactDocument[] {
+  const compiled = compileImportedSourceToPageArtifactsFromBridge(input, createdBy);
+
+  return compiled.map((artifact) => {
+    const stableTimestamp = '1970-01-01T00:00:00.000Z';
+    const stableDocumentId = `${artifact.artifactId}:document`;
+    const stableRootId = `${artifact.artifactId}:root`;
+    const originalDocument = artifact.serializedBuilderDocument as SerializedDocumentWithRootNodes;
+    const originalRootNodes = getSerializedRootNodes(originalDocument);
+    const originalRootNodeId = originalRootNodes[0] ?? originalDocument.root;
+    const serializedBuilderDocument = {
+      ...originalDocument,
+      documentId: stableDocumentId,
+      root: stableRootId,
+      rootNodes: originalRootNodeId
+        ? originalRootNodes.map((nodeId) =>
+            nodeId === originalRootNodeId ? stableRootId : nodeId,
+          )
+        : [stableRootId],
+      layout: {
+        ...originalDocument.layout,
+        rootId: stableRootId,
+        nodes: normalizeSerializedLayoutNodes(
+          originalDocument.layout.nodes,
+          stableRootId,
+          originalRootNodeId,
+        ),
+      },
+      nodes: normalizeSerializedDocumentNodes(
+        originalDocument.nodes,
+        stableRootId,
+        originalRootNodeId,
+      ),
+      metadata: {
+        ...originalDocument.metadata,
+        author: createdBy,
+        createdAt: stableTimestamp,
+        updatedAt: stableTimestamp,
+      },
+      owner: createdBy,
+    } as unknown as PageArtifactDocument['serializedBuilderDocument'];
+
+    return {
+      ...artifact,
+      documentId: stableDocumentId,
+      serializedBuilderDocument,
+      source: 'decompiled',
+      createdBy,
+      updatedBy: createdBy,
+      createdAt: stableTimestamp,
+      updatedAt: stableTimestamp,
+      roundTripFidelity: artifact.roundTripFidelity ?? {
+        canRoundTrip: true,
+        confidence: artifact.artifactGraph?.provenance.confidence ?? 0.95,
+        lossPoints: [],
+      },
+      residualIslandIds: artifact.residualIslandIds ?? [],
+      artifactGraph: artifact.artifactGraph
+        ? {
+            ...artifact.artifactGraph,
+            importedAt: stableTimestamp,
+            provenance: {
+              ...artifact.artifactGraph.provenance,
+              createdBy,
+              residualIslandIds: artifact.artifactGraph.provenance.residualIslandIds ?? [],
+            },
+          }
+        : artifact.artifactGraph,
+    } as PageArtifactDocument;
+  });
+}
+
+function getSerializedRootNodes(document: SerializedDocumentWithRootNodes): readonly string[] {
+  if (Array.isArray(document.rootNodes) && document.rootNodes.length > 0) {
+    return document.rootNodes.filter((nodeId): nodeId is string => typeof nodeId === 'string');
+  }
+
+  const rootLayoutNode = document.layout.nodes[document.root];
+  if (Array.isArray(rootLayoutNode?.children) && rootLayoutNode.children.length > 0) {
+    return rootLayoutNode.children.filter((nodeId) => typeof nodeId === 'string').map((nodeId) => String(nodeId));
+  }
+
+  return typeof document.root === 'string' ? [document.root] : [];
+}
+
+function normalizeSerializedLayoutNodes(
+  nodes: PageArtifactDocument['serializedBuilderDocument']['layout']['nodes'],
+  stableRootId: string,
+  originalRootId: string | undefined,
+): PageArtifactDocument['serializedBuilderDocument']['layout']['nodes'] {
+  const entries = Object.entries(nodes);
+  const originalRoot = originalRootId ? nodes[originalRootId] : entries[0]?.[1];
+  const remapNodeId = (nodeId: string) => nodeId === originalRootId ? stableRootId : nodeId;
+  const normalizedNodes = Object.fromEntries(
+    entries.map(([nodeId, node]) => [
+      remapNodeId(nodeId),
+      {
+        ...node,
+        id: remapNodeId(nodeId),
+        children: Array.isArray(node.children)
+          ? node.children.map((childId) => remapNodeId(childId))
+          : node.children,
+      },
+    ]),
+  );
+
+  return {
+    ...normalizedNodes,
+    [stableRootId]: {
+      ...(originalRoot ?? {
+        type: 'root',
+        layout: 'flex',
+        layoutProps: { direction: 'vertical' },
+        children: [],
+      }),
+      id: stableRootId,
+    },
+  } as PageArtifactDocument['serializedBuilderDocument']['layout']['nodes'];
+}
+
+function normalizeSerializedDocumentNodes(
+  nodes: PageArtifactDocument['serializedBuilderDocument']['nodes'],
+  stableRootId: string,
+  originalRootId: string | undefined,
+): PageArtifactDocument['serializedBuilderDocument']['nodes'] {
+  const nodeRecords = nodes as unknown as Record<string, Record<string, unknown>>;
+  const entries = Object.entries(nodeRecords);
+  const originalRoot = originalRootId ? nodeRecords[originalRootId] : entries[0]?.[1];
+  const remapNodeId = (nodeId: string) => nodeId === originalRootId ? stableRootId : nodeId;
+  const normalizedNodes = Object.fromEntries(
+    entries.map(([nodeId, node]) => [
+      remapNodeId(nodeId),
+      {
+        ...node,
+        id: remapNodeId(nodeId),
+      },
+    ]),
+  );
+
+  return {
+    ...normalizedNodes,
+    [stableRootId]: {
+      ...(typeof originalRoot === 'object' && originalRoot !== null ? originalRoot : {}),
+      id: stableRootId,
+      contractName:
+        typeof originalRoot?.contractName === 'string'
+          ? originalRoot.contractName
+          : 'RootContainer',
+    },
+  } as PageArtifactDocument['serializedBuilderDocument']['nodes'];
+}
 
 const assessComponentSafetySafe = assessComponentSafety as (
   source: string,
@@ -285,8 +440,11 @@ export async function importSourceToPageArtifacts(
     extractedComponents: importResult.extractedComponents,
   };
 
-  const compiledArtifactsRaw: unknown = compileImportedSourceToPageArtifactsSafe(artifactInput, createdBy);
-  const compiledArtifacts = normalizeCompiledPageArtifacts(compiledArtifactsRaw);
+  const compiledArtifactsRaw: unknown = compileImportedSourceToPageArtifacts(artifactInput, createdBy);
+  const compiledArtifacts = normalizeCompiledPageArtifacts(compiledArtifactsRaw).map((artifact) => ({
+    ...artifact,
+    source: 'imported' as const,
+  }));
 
   return {
     importResult,
@@ -1290,7 +1448,7 @@ function normalizeResidualKind(value: unknown): CompilerResidualIsland['kind'] {
 function normalizeResidualRisk(value: unknown): CompilerResidualIsland['risk'] {
   return value === 'low' || value === 'medium' || value === 'high' || value === 'critical'
     ? value
-    : undefined;
+    : 'medium';
 }
 
 function normalizeLineRange(value: unknown): readonly [number, number] | undefined {
@@ -1347,7 +1505,6 @@ function normalizeResidualIsland(value: unknown): CompilerResidualIsland | null 
       || value.regenerationStrategy === 'best-effort-approximate'
       || value.regenerationStrategy === 'emit-warning'
       || value.regenerationStrategy === 'require-manual-impl'
-      || value.regenerationStrategy === 'placeholder-stub'
       ? value.regenerationStrategy
       : 'require-manual-impl',
     sourceLocation: isRecord(value.sourceLocation)
@@ -1375,8 +1532,8 @@ function normalizeResidualIsland(value: unknown): CompilerResidualIsland | null 
     tags: Array.isArray(value.tags)
       ? value.tags.filter((item): item is string => typeof item === 'string')
       : [],
-    rawFragmentRef: typeof value.rawFragmentRef === 'string' ? value.rawFragmentRef : undefined,
-    checksum: typeof value.checksum === 'string' ? value.checksum : undefined,
+    rawFragmentRef: typeof value.rawFragmentRef === 'string' ? value.rawFragmentRef : `raw:${value.id}`,
+    checksum: typeof value.checksum === 'string' ? value.checksum : `unchecked:${value.id}`,
     risk: normalizeResidualRisk(value.risk),
     relatedGraphNodeIds: Array.isArray(value.relatedGraphNodeIds)
       ? value.relatedGraphNodeIds.filter((item): item is string => typeof item === 'string')
@@ -1450,9 +1607,9 @@ async function importFromRepo(
       }
     }
 
-    const componentNodes = result.graph.nodes.filter((n: GraphNode) => n.kind === 'component');
+    const componentNodes = result.graph.nodes.filter((n: GraphNode) => n.type === 'component');
     const files: ImportedFile[] = componentNodes.map((node: GraphNode) => ({
-      path: node.sourceLocation.filePath,
+      path: node.sourceLocation?.filePath ?? `${node.id}.tsx`,
       content: '',
       type: 'component' as const,
       source: locator,

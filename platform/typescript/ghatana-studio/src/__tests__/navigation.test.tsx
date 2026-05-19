@@ -84,6 +84,7 @@ const CAPABILITY_MATRIX_SCENARIOS: readonly CapabilityScenario[] = [
       health: "disabled",
       learn: "visible",
       settings: "visible",
+      "design-system": "visible",
     },
   },
   {
@@ -111,6 +112,7 @@ const CAPABILITY_MATRIX_SCENARIOS: readonly CapabilityScenario[] = [
       health: "disabled",
       learn: "visible",
       settings: "visible",
+      "design-system": "visible",
     },
   },
   {
@@ -138,6 +140,7 @@ const CAPABILITY_MATRIX_SCENARIOS: readonly CapabilityScenario[] = [
       health: "disabled",
       learn: "visible",
       settings: "visible",
+      "design-system": "visible",
     },
   },
   {
@@ -168,6 +171,7 @@ const CAPABILITY_MATRIX_SCENARIOS: readonly CapabilityScenario[] = [
       health: "visible",
       learn: "visible",
       settings: "visible",
+      "design-system": "visible",
     },
   },
 ];

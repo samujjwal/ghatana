@@ -5,6 +5,7 @@ import com.ghatana.kernel.bridge.port.BridgeContext;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -62,18 +63,51 @@ public final class DataCloudHealthProvider extends DataCloudKernelProviderSuppor
     }
 
     public Promise<HealthSnapshotPersistResponse> persistHealthSnapshotTyped(HealthSnapshotPersistRequest request) {
-        Map<String, Object> snapshotMap = Map.of(
-            "snapshotId", request.snapshotId(),
-            "status", request.status(),
-            "details", request.details() != null ? request.details() : Map.of(),
-            "capturedAt", request.capturedAt().toString(),
-            "correlationId", request.correlationId(),
-            "tenantId", context().getTenantId(),
-            "workspaceId", context().getWorkspaceId(),
-            "projectId", context().getProjectId(),
-            "persistedAt", Instant.now().toString()
-        );
+        DataCloudProviderException validationError = validateHealthSnapshot(request);
+        if (validationError != null) {
+            return Promise.ofException(validationError);
+        }
+
+        Map<String, Object> snapshotMap = new HashMap<>();
+        snapshotMap.put("snapshotId", request.snapshotId());
+        snapshotMap.put("status", request.status());
+        snapshotMap.put("details", request.details() != null ? request.details() : Map.of());
+        snapshotMap.put("capturedAt", request.capturedAt().toString());
+        snapshotMap.put("correlationId", request.correlationId());
+        snapshotMap.put("tenantId", context().getTenantId());
+        snapshotMap.put("workspaceId", context().getWorkspaceId());
+        snapshotMap.put("projectId", context().getProjectId());
+        snapshotMap.put("persistedAt", Instant.now().toString());
         return persistRecord(request.snapshotId(), snapshotMap)
             .map($ -> new HealthSnapshotPersistResponse(true, request.snapshotId(), Instant.now().toString()));
+    }
+
+    private DataCloudProviderException validateHealthSnapshot(HealthSnapshotPersistRequest request) {
+        if (isBlank(request.snapshotId())) {
+            return invalidHealthSnapshot("snapshotId is required");
+        }
+        if (isBlank(request.status())) {
+            return invalidHealthSnapshot("status is required");
+        }
+        if (request.capturedAt() == null) {
+            return invalidHealthSnapshot("capturedAt is required");
+        }
+        if (isBlank(request.correlationId())) {
+            return invalidHealthSnapshot("correlationId is required");
+        }
+        return null;
+    }
+
+    private DataCloudProviderException invalidHealthSnapshot(String message) {
+        return new DataCloudProviderException(
+            "health",
+            "persist-health-snapshot",
+            message,
+            DataCloudProviderException.ReasonCode.SCHEMA
+        );
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

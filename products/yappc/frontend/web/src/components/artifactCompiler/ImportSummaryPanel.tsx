@@ -12,7 +12,7 @@
  * @doc.pattern Panel
  */
 
-import { X, CheckCircle2, AlertTriangle, FileText, Skip, Layers } from 'lucide-react';
+import { X, CheckCircle2, AlertTriangle, FileText, SkipForward, Layers } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
@@ -108,7 +108,7 @@ export function ImportSummaryPanel({
               <p className="text-xs text-text-secondary">Understood</p>
             </div>
             <div className="rounded-lg bg-warning-bg/10 border border-warning-border p-3 text-center">
-              <Skip className="mx-auto h-5 w-5 text-warning-color" />
+              <SkipForward className="mx-auto h-5 w-5 text-warning-color" />
               <p className="mt-1 text-2xl font-semibold text-text-primary">{summary.skippedFiles}</p>
               <p className="text-xs text-text-secondary">Skipped</p>
             </div>

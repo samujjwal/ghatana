@@ -304,6 +304,47 @@ export function Layout() {
     };
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
 
+  // Initialize lifecycle services before guard returns so hook order is stable
+  // while workspace/project data loads or becomes available after selection.
+  const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(
+    projectId || ''
+  );
+
+  const handleIntentSave = useCallback(
+    async (kind: LifecycleArtifactKind, data: unknown) => {
+      if (!projectId) return { projectId: '' };
+
+      const userId = currentUser?.id ?? 'anonymous';
+      const existingArtifact = artifacts.find((a) => a.kind === kind);
+
+      if (existingArtifact) {
+        await updateArtifact(
+          existingArtifact.id,
+          { payload: data as Record<string, unknown> },
+          userId
+        );
+      } else {
+        await createArtifact(kind, userId);
+      }
+
+      return { projectId };
+    },
+    [projectId, currentUser?.id, artifacts, createArtifact, updateArtifact]
+  );
+
+  const handleAIAssist = useCallback(async (kind: LifecycleArtifactKind) => {
+    if (!aiAssistEnabled || !projectId) {
+      return null;
+    }
+    return yappcApi.ai.assist({ kind, projectId });
+  }, [projectId, aiAssistEnabled]);
+
+  const intentData = useMemo(() => {
+    // Note: ArtifactSummary doesn't include payload, so this returns an empty object.
+    // In production, fetch full artifacts with service.getArtifact(id).
+    return {};
+  }, []);
+
   // Handle missing scope or authorization errors
   if (error) {
     return (
@@ -346,48 +387,6 @@ export function Layout() {
 
   const projectName = project?.name || 'Loading...';
   const projectTabs = [...BASE_PROJECT_TABS].filter(tab => isPhaseEnabled(tab.key as any)) as (typeof BASE_PROJECT_TABS[number])[];
-
-  // Initialize lifecycle services
-  const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(
-    projectId || ''
-  );
-
-  // IntentDrawer handlers
-  const handleIntentSave = useCallback(
-    async (kind: LifecycleArtifactKind, data: unknown) => {
-      if (!projectId) return { projectId: '' };
-
-      const userId = currentUser?.id ?? 'anonymous';
-      const existingArtifact = artifacts.find((a) => a.kind === kind);
-
-      if (existingArtifact) {
-        await updateArtifact(
-          existingArtifact.id,
-          { payload: data as Record<string, unknown> },
-          userId
-        );
-      } else {
-        await createArtifact(kind, userId);
-      }
-
-      return { projectId };
-    },
-    [projectId, artifacts, createArtifact, updateArtifact]
-  );
-
-  const handleAIAssist = useCallback(async (kind: LifecycleArtifactKind) => {
-    if (!aiAssistEnabled || !projectId) {
-      return null;
-    }
-    return yappcApi.ai.assist({ kind, projectId });
-  }, [projectId, aiAssistEnabled]);
-
-  // Load existing intent data from artifacts
-  const intentData = useMemo(() => {
-    // Note: ArtifactSummary doesn't include payload, so this returns an empty object
-    // In production, you would fetch full artifacts with service.getArtifact(id)
-    return {};
-  }, []);
 
   return (
     <div className="flex flex-col h-full">

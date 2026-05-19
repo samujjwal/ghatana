@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-44-44c4bef9",
+  "correlationId": "corr-2026-05-18T20-21-44-44c4bef9",
+  "providerMode": "bootstrap",
+  "productId": "digital-marketing",
+  "phase": "test",
+  "lifecycleProfile": "standard-web-api-product",
+  "requestedPhases": [
+    "test"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:44.961Z",
+  "completedAt": "2026-05-18T20:21:44.961Z",
+  "steps": [
+    {
+      "stepId": "test-backend-api-0",
+      "phase": "test",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:44.961Z",
+      "completedAt": "2026-05-18T20:21:44.961Z",
+      "exitCode": 0,
+      "stdout": "[DRY-RUN] test phase for backend-api via gradle-java-service",
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-44-44c4bef9"
+    },
+    {
+      "stepId": "test-web-1",
+      "phase": "test",
+      "surface": "web",
+      "adapter": "pnpm-vite-react",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:44.961Z",
+      "completedAt": "2026-05-18T20:21:44.961Z",
+      "exitCode": 0,
+      "stdout": "[DRY-RUN] test phase for web via pnpm-vite-react",
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-44-44c4bef9"
+    }
+  ],
+  "gates": [],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test",
+  "manifestRefs": {
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/test/digital-marketing/2026-05-18T20-21-44-44c4bef9/test/lifecycle-health-snapshot.json"
+}

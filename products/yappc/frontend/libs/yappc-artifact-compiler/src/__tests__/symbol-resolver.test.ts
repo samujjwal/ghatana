@@ -15,7 +15,7 @@ import type { GraphNode, UnresolvedGraphEdge, GraphNodeKind } from '../graph/typ
 function makeNode(overrides: Partial<GraphNode> & { id: string; label: string }): GraphNode {
   return {
     id: overrides.id,
-    kind: (overrides.kind ?? 'component') as GraphNodeKind,
+    type: ((overrides as any).type ?? (overrides as any).kind ?? 'component') as GraphNodeKind,
     label: overrides.label,
     symbolRef: overrides.symbolRef,
     sourceRef: overrides.sourceRef,
@@ -47,7 +47,7 @@ function makeUnresolved(
   return {
     sourceId,
     targetRef,
-    relationship: 'renders',
+    relationshipType: 'renders',
     sourceLocation: DEFAULT_LOC,
     confidence: 0.85,
     metadata: {},

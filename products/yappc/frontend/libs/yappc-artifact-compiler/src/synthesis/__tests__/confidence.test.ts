@@ -34,7 +34,7 @@ describe('ConfidenceScorer', () => {
   it('extracts factors from a graph node', () => {
     const node: GraphNode = {
       id: 'test-node',
-      kind: 'component',
+      type: 'component',
       label: 'TestComponent',
       confidence: 0.85,
       extractorId: 'test-extractor',
@@ -75,7 +75,7 @@ describe('ConfidenceScorer', () => {
   it('determines if element requires review based on confidence threshold', () => {
     const lowConfidenceNode: GraphNode = {
       id: 'test-node',
-      kind: 'component',
+      type: 'component',
       label: 'TestComponent',
       confidence: 0.5,
       extractorId: 'test-extractor',
@@ -95,7 +95,7 @@ describe('ConfidenceScorer', () => {
 
     const highConfidenceNode: GraphNode = {
       id: 'test-node-2',
-      kind: 'component',
+      type: 'component',
       label: 'TestComponent2',
       confidence: 0.9,
       extractorId: 'test-extractor',

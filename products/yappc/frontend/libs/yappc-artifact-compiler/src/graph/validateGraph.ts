@@ -128,12 +128,12 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
         context: { nodeId: node.id, field: 'id' },
       });
     }
-    if (!node.kind) {
+    if (!node.type) {
       errors.push({
         code: 'MISSING_REQUIRED_FIELD',
-        message: 'Node missing required field: kind',
+        message: 'Node missing required field: type',
         severity: 'error',
-        context: { nodeId: node.id, field: 'kind' },
+        context: { nodeId: node.id, field: 'type' },
       });
     }
     if (!node.label || node.label.trim() === '') {
@@ -171,26 +171,26 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
         context: { edgeId: edge.id, field: 'targetId' },
       });
     }
-    if (!edge.kind) {
+    if (!edge.relationshipType) {
       errors.push({
         code: 'MISSING_REQUIRED_FIELD',
-        message: 'Edge missing required field: kind',
+        message: 'Edge missing required field: relationshipType',
         severity: 'error',
-        context: { edgeId: edge.id, field: 'kind' },
+        context: { edgeId: edge.id, field: 'relationshipType' },
       });
     }
   }
 
   // Check index consistency
   const indexedNodeIds = new Set<string>();
-  for (const [kind, ids] of Object.entries(graph.nodeIndex)) {
+  for (const [type, ids] of Object.entries(graph.nodeIndex)) {
     for (const id of ids) {
       if (!nodeIdSet.has(id)) {
         warnings.push({
           code: 'INDEX_NODE_NOT_FOUND',
           message: `Node index references non-existent node: ${id}`,
           severity: 'warning',
-          context: { field: 'nodeIndex', value: { kind, id } },
+          context: { field: 'nodeIndex', value: { type, id } },
         });
       }
       if (indexedNodeIds.has(id)) {
@@ -198,7 +198,7 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
           code: 'DUPLICATE_INDEX_ENTRY',
           message: `Node appears multiple times in index: ${id}`,
           severity: 'warning',
-          context: { nodeId: id, field: 'nodeIndex', value: { kind } },
+          context: { nodeId: id, field: 'nodeIndex', value: { type } },
         });
       }
       indexedNodeIds.add(id);
@@ -206,7 +206,7 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
   }
 
   const indexedEdgeIds = new Set<string>();
-  for (const [kind, ids] of Object.entries(graph.edgeIndex)) {
+  for (const [relationshipType, ids] of Object.entries(graph.edgeIndex)) {
     for (const id of ids) {
       const edgeExists = graph.edges.some((e) => e.id === id);
       if (!edgeExists) {
@@ -214,7 +214,7 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
           code: 'INDEX_EDGE_NOT_FOUND',
           message: `Edge index references non-existent edge: ${id}`,
           severity: 'warning',
-          context: { field: 'edgeIndex', value: { kind, id } },
+          context: { field: 'edgeIndex', value: { relationshipType, id } },
         });
       }
       if (indexedEdgeIds.has(id)) {
@@ -222,7 +222,7 @@ export function validateGraph(graph: ArtifactGraph): GraphValidationResult {
           code: 'DUPLICATE_INDEX_ENTRY',
           message: `Edge appears multiple times in index: ${id}`,
           severity: 'warning',
-          context: { edgeId: id, field: 'edgeIndex', value: { kind } },
+          context: { edgeId: id, field: 'edgeIndex', value: { relationshipType } },
         });
       }
       indexedEdgeIds.add(id);

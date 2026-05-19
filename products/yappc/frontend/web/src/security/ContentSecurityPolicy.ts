@@ -34,6 +34,8 @@ export interface CSPConfig {
   formAction?: string[];
   /** Frame ancestors */
   frameAncestors?: string[];
+  /** Iframe/page sandbox restrictions */
+  sandbox?: string[];
 }
 
 export interface SandboxConfig {
@@ -143,6 +145,7 @@ export function cspConfigToHeader(config: CSPConfig): string {
   if (config.baseUri) directives.push(`base-uri ${config.baseUri.join(' ')}`);
   if (config.formAction) directives.push(`form-action ${config.formAction.join(' ')}`);
   if (config.frameAncestors) directives.push(`frame-ancestors ${config.frameAncestors.join(' ')}`);
+  if (config.sandbox) directives.push(`sandbox ${config.sandbox.join(' ')}`);
 
   return directives.join('; ');
 }

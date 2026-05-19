@@ -1,4 +1,5 @@
 import {
+  createBuilderDocument,
   createDocumentId,
   deserializeDocument,
   serializeDocument,
@@ -12,9 +13,12 @@ import {
   AIActionLineageTracker,
   createLineageEntry,
 } from '@ghatana/ui-builder';
-import { getContractMap } from './registry';
-type DataClassification = NonNullable<BuilderDocument['metadata']['dataClassification']>;
-type TrustLevel = NonNullable<BuilderDocument['metadata']['trustLevel']>;
+
+type DataClassification = 'PUBLIC' | 'INTERNAL' | 'SENSITIVE' | 'CREDENTIALS' | 'REGULATED';
+type TrustLevel = 'UNTRUSTED' | 'IMPORTED_REVIEW_REQUIRED' | 'GENERATED_TRUSTED' | 'TRUSTED_WORKSPACE';
+
+const DEFAULT_DATA_CLASSIFICATION: DataClassification = 'INTERNAL';
+const DEFAULT_TRUST_LEVEL: TrustLevel = 'GENERATED_TRUSTED';
 
 // ---------------------------------------------------------------------------
 // AI Change Record
@@ -227,30 +231,16 @@ export interface PageArtifactDocument {
 }
 
 export function createEmptyBuilderDocument(name: string, author: string): BuilderDocument {
-  const now = new Date().toISOString();
-  const contractMap = getContractMap();
-  const componentContracts = Array.from(contractMap.values());
+  const document = createBuilderDocument(author, {
+    documentId: createDocumentId(),
+  });
 
   return {
-    id: createDocumentId(),
-    version: '1',
-    name,
-    designSystem: {
-      id: 'ghatana-ds-v1',
-      name: 'Ghatana Design System',
-      version: '1.0.0',
-      tokenSetIds: [],
-      componentContracts,
-      themeId: 'default',
-    },
-    rootNodes: [],
-    nodes: new Map(),
+    ...document,
     metadata: {
-      createdAt: now,
-      updatedAt: now,
+      ...document.metadata,
       author,
-      dataClassification: 'INTERNAL',
-      trustLevel: 'GENERATED_TRUSTED',
+      description: name,
     },
   };
 }
@@ -264,15 +254,19 @@ export function createPageArtifactDocument(args: {
 }): PageArtifactDocument {
   const now = new Date().toISOString();
   const document = args.document ?? createEmptyBuilderDocument(args.name, args.createdBy);
+  const serializedBuilderDocument = serializeDocument(document) as SerializedDocument & { name?: string };
 
   return {
     artifactId: args.artifactId,
-    documentId: document.id,
-    serializedBuilderDocument: serializeDocument(document),
+    documentId: document.documentId,
+    serializedBuilderDocument: {
+      ...serializedBuilderDocument,
+      name: serializedBuilderDocument.name ?? document.metadata.description ?? args.name,
+    } as SerializedDocument,
     source: args.source ?? 'created-in-builder',
     syncStatus: 'dirty',
-    trustLevel: document.metadata.trustLevel ?? 'GENERATED_TRUSTED',
-    dataClassification: document.metadata.dataClassification ?? 'INTERNAL',
+    trustLevel: DEFAULT_TRUST_LEVEL,
+    dataClassification: DEFAULT_DATA_CLASSIFICATION,
     createdBy: args.createdBy,
     updatedBy: args.createdBy,
     createdAt: now,
@@ -299,12 +293,11 @@ export function updatePageArtifactDocument(
 
   return {
     ...pageDocument,
-    documentId: document.id,
+    documentId: document.documentId,
     serializedBuilderDocument: serializeDocument(document),
     syncStatus,
-    trustLevel: document.metadata.trustLevel ?? pageDocument.trustLevel,
-    dataClassification:
-      document.metadata.dataClassification ?? pageDocument.dataClassification,
+    trustLevel: pageDocument.trustLevel,
+    dataClassification: pageDocument.dataClassification,
     updatedBy,
     updatedAt: now,
     validationSummary,
@@ -400,7 +393,7 @@ export function createPageArtifactOperationLogExport(
   },
 ): PageArtifactOperationLogExport {
   const records = [...(pageDocument.operationLog ?? [])].sort((left, right) =>
-    left.createdAt.i18n.languageCompare(right.createdAt)
+    left.createdAt.localeCompare(right.createdAt)
   );
   const byOperation: Record<PageArtifactOperationKind, number> = { ...EMPTY_OPERATION_COUNTS };
   const byStatus: Record<PageArtifactOperationStatus, number> = { ...EMPTY_STATUS_COUNTS };

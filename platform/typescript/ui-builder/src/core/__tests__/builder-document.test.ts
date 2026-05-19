@@ -5,10 +5,12 @@
 import { describe, it, expect } from "vitest";
 import {
   CURRENT_SCHEMA_VERSION,
+  MIGRATIONS,
   createBuilderDocument,
   validateBuilderDocument,
   serializeBuilderDocument,
   deserializeBuilderDocument,
+  migrateBuilderDocument,
   getNode,
   getRootNodes,
   hasPrivacySensitiveData,
@@ -413,6 +415,39 @@ describe("BuilderDocument", () => {
       expect(detectSchemaVersion(null)).toBeNull();
       expect(detectSchemaVersion("string")).toBeNull();
       expect(detectSchemaVersion({})).toBeNull();
+    });
+  });
+
+  describe("migrateBuilderDocument", () => {
+    it("should return unchanged document when already at current version", () => {
+      const doc = createBuilderDocument("test-user");
+      const result = migrateBuilderDocument(doc);
+      expect(result.success).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.document?.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    });
+
+    it("should fail gracefully for unknown schema versions", () => {
+      const doc = createBuilderDocument("test-user");
+      const unknownVersionDoc = { ...doc, schemaVersion: "0.0.1" };
+      const result = migrateBuilderDocument(
+        unknownVersionDoc as unknown as BuilderDocument,
+      );
+      expect(result.success).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it("should fail for null input", () => {
+      const result = migrateBuilderDocument(
+        null as unknown as BuilderDocument,
+      );
+      expect(result.success).toBe(false);
+    });
+
+    it("should export MIGRATIONS map as part of the public API", () => {
+      expect(MIGRATIONS).toBeInstanceOf(Map);
+      // v1.0.0 is the initial version — no migrations are needed yet
+      expect(MIGRATIONS.size).toBe(0);
     });
   });
 });

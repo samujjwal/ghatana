@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "records": [
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T20-21-46-2f90cd4c",
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-2f90cd4c",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T20-21-46-2f90cd4c"
+      ],
+      "recordedAt": "2026-05-18T20:21:46.682Z",
+      "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T20-59-43-bb8f4dc5",
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-59-43-bb8f4dc5",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T20-59-43-bb8f4dc5"
+      ],
+      "recordedAt": "2026-05-18T20:59:43.815Z",
+      "correlationId": "corr-2026-05-18T20-59-43-bb8f4dc5"
+    }
+  ]
+}

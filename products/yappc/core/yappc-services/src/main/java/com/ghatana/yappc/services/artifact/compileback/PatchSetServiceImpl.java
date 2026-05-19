@@ -1,6 +1,7 @@
 package com.ghatana.yappc.services.artifact.compileback;
 
 import com.ghatana.yappc.services.artifact.ArtifactRequestScope;
+import com.ghatana.yappc.storage.PatchSetRepository;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,15 @@ import java.util.UUID;
 public final class PatchSetServiceImpl implements PatchSetService {
 
     private static final Logger log = LoggerFactory.getLogger(PatchSetServiceImpl.class);
+    private final PatchSetRepository repository;
+
+    public PatchSetServiceImpl() {
+        this(null);
+    }
+
+    public PatchSetServiceImpl(PatchSetRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public Promise<PatchSet> generatePatchSet(ArtifactRequestScope scope, String planId) {
@@ -58,14 +68,20 @@ public final class PatchSetServiceImpl implements PatchSetService {
         );
 
         log.info("Generated patch set {} with {} patches", patchSetId, patchSet.getAutoApplicableCount());
+        if (repository != null) {
+            return repository.savePatchSet(patchSet);
+        }
         return Promise.of(patchSet);
     }
 
     @Override
     public Promise<Optional<PatchSet>> getPatchSet(String patchSetId, String tenantId) {
         log.debug("Fetching patch set {} for tenant {}", patchSetId, tenantId);
-        // In production, fetch from persistent store
-        return Promise.of(Optional.empty());
+        if (repository == null) {
+            return Promise.of(Optional.empty());
+        }
+        return repository.findPatchSetById(patchSetId)
+            .map(found -> found.filter(patchSet -> patchSet.tenantId().equals(tenantId)));
     }
 
     @Override
@@ -91,6 +107,9 @@ public final class PatchSetServiceImpl implements PatchSetService {
             Map.of("dryRun", dryRun, "appliedCount", 0)
         );
 
+        if (repository != null && !dryRun) {
+            return repository.markPatchSetApplied(patchSetId, "system").map($ -> result);
+        }
         return Promise.of(result);
     }
 
@@ -118,6 +137,11 @@ public final class PatchSetServiceImpl implements PatchSetService {
             null // no error
         );
 
+        if (repository != null) {
+            return repository.saveRollbackMetadata(result)
+                .then($ -> repository.updatePatchSetStatus(patchSetId, PatchSetStatus.ROLLED_BACK))
+                .map($ -> result);
+        }
         return Promise.of(result);
     }
 
@@ -125,8 +149,10 @@ public final class PatchSetServiceImpl implements PatchSetService {
     public Promise<List<PatchSet>> listPatchSets(String tenantId, String workspaceId, String projectId) {
         log.debug("Listing patch sets for tenant {}, workspace {}, project {}",
             tenantId, workspaceId, projectId);
-        // In production, fetch from persistent store with filters
-        return Promise.of(Collections.emptyList());
+        if (repository == null) {
+            return Promise.of(Collections.emptyList());
+        }
+        return repository.listPatchSetsByScope(tenantId, workspaceId, projectId, 100);
     }
 
     /**

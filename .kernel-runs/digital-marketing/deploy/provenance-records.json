@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "records": [
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T20-21-45-98e6a1d0",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-45-98e6a1d0",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T20-21-45-98e6a1d0"
+      ],
+      "recordedAt": "2026-05-18T20:21:45.500Z",
+      "correlationId": "corr-2026-05-18T20-21-45-98e6a1d0"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-19T00-32-08-6f80d3d3",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-19T00-32-08-6f80d3d3",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-19T00-32-08-6f80d3d3"
+      ],
+      "recordedAt": "2026-05-19T00:32:08.058Z",
+      "correlationId": "corr-2026-05-19T00-32-08-6f80d3d3"
+    }
+  ]
+}

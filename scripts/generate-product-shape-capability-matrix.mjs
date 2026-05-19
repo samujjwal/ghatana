@@ -377,7 +377,10 @@ function minimumReleaseToEnable(lifecycleStatus) {
 
 function nextValidationCommand(productId, lifecycleStatus) {
   if (productId === 'digital-marketing') {
-    return 'pnpm check:digital-marketing-lifecycle-pilot --smoke';
+    return 'node scripts/check-digital-marketing-lifecycle-pilot.mjs';
+  }
+  if (productId === 'phr') {
+    return 'node scripts/check-phr-lifecycle-pilot.mjs';
   }
   if (lifecycleStatus === 'enabled') {
     return `node scripts/kernel-product.mjs product build ${productId} --dry-run --json`;

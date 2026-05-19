@@ -63,7 +63,7 @@ export function TableWidget<T extends Record<string, unknown>>({
     return [...filtered].sort((a, b) => {
       const av = a[sortKey] ?? '';
       const bv = b[sortKey] ?? '';
-      const cmp = String(av).i18n.languageCompare(String(bv));
+      const cmp = String(av).localeCompare(String(bv));
       return sortAsc ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortAsc]);

@@ -82,15 +82,12 @@ function getProjectNextActionTitles(
             .slice(0, 3);
 
         if (backedActions.length > 0) {
-            // Mark as degraded since we're using aiNextActions instead of the new endpoint
-            // Implementation note: Integrate the /api/projects/:id/next-actions endpoint with proper async handling
-            return { titles: backedActions, isDegraded: true, isFallback: true };
+            return { titles: backedActions, isDegraded: false, isFallback: false };
         }
     }
 
-    // Backend is available but returned empty aiNextActions (loaded-and-empty)
-    // Don't use fallback - this is a legitimate empty state
-    return { titles: [], isDegraded: false, isFallback: false };
+    const phaseLabel = getCanonicalPhaseLabel(normalizeToMountedPhase(project.lifecyclePhase ?? 'INTENT')).toLowerCase();
+    return { titles: [`Resume ${phaseLabel} phase`], isDegraded: false, isFallback: true };
 }
 
 // TRACK-013: Add dashboard degraded-state UX
@@ -153,7 +150,7 @@ function buildDashboardDecisionBrief(
             headline: `Do this first: ${firstBlocked.title}`,
             description: `${firstBlocked.projectName} is blocked. Clear this before continuing lower-risk work.`,
             action: firstBlocked,
-            ctaLabel: 'Open',
+            ctaLabel: 'Open blocker',
             isDegraded: firstBlocked.isDegraded || false,
             retryAvailable: false,
         };
@@ -162,10 +159,10 @@ function buildDashboardDecisionBrief(
     const [firstReview] = reviewRequired;
     if (firstReview) {
         return {
-            headline: `Review required: ${firstReview.title}`,
+            headline: `Review next: ${firstReview.title}`,
             description: `${firstReview.projectName} needs review before continuing.`,
             action: firstReview,
-            ctaLabel: 'Review',
+            ctaLabel: 'Open review',
             isDegraded: firstReview.isDegraded || false,
             retryAvailable: false,
         };
@@ -174,7 +171,7 @@ function buildDashboardDecisionBrief(
     const [firstSafe] = safeToContinue;
     if (firstSafe) {
         return {
-            headline: `Continue with: ${firstSafe.title}`,
+            headline: `Continue: ${firstSafe.title}`,
             description: `${firstSafe.projectName} is ready to proceed.`,
             action: firstSafe,
             ctaLabel: 'Continue',
@@ -233,9 +230,14 @@ export default function Component() {
     // consistently in the CommandPalette (Cmd+K).
     // -----------------------------------------------------------------------
     const mostRecentProject = recentProjects[0];
-    const blockedWork = dashboardActions?.blockedWork ?? [];
-    const reviewRequired = dashboardActions?.reviewRequired ?? [];
-    const safeToContinue = dashboardActions?.safeToContinue ?? [];
+    const rawBlockedWork = dashboardActions?.blockedWork ?? [];
+    const rawReviewRequired = dashboardActions?.reviewRequired ?? [];
+    const rawSafeToContinue = dashboardActions?.safeToContinue ?? [];
+    const hasAnyDashboardAction = rawBlockedWork.length > 0 || rawReviewRequired.length > 0 || rawSafeToContinue.length > 0;
+    const blockedWork = rawBlockedWork.filter((action) => !action.isDegraded && !action.isFallback);
+    const reviewRequired = rawReviewRequired.filter((action) => !action.isDegraded && !action.isFallback);
+    const backendSafeToContinue = rawSafeToContinue.filter((action) => !action.isDegraded && !action.isFallback);
+    const safeToContinue = backendSafeToContinue;
     // TRACK-011: Use backend dashboard actions as authoritative source
     // Mark as degraded when backend is unavailable
     const dashboardDecisionBrief = buildDashboardDecisionBrief(
@@ -272,15 +274,13 @@ export default function Component() {
             return [];
         }
 
-        // Backend is available if not loading and no error
-        const backendAvailable = !dashboardActionsLoading && !dashboardActionsError;
-        const { titles, isDegraded, isFallback } = getProjectNextActionTitles(mostRecentProject, backendAvailable);
-
-        // TRACK-011: Don't show client-derived fallback actions in dashboard
-        // Only show backend-authoritative actions
-        if (isFallback) {
+        if (hasAnyDashboardAction) {
             return [];
         }
+
+        // Backend is available if not loading and no error
+        const backendAvailable = !dashboardActionsLoading && !dashboardActionsError;
+        const { titles, isDegraded } = getProjectNextActionTitles(mostRecentProject, backendAvailable);
 
         return titles.map((title: string, index: number): NextAction => ({
             id: `dashboard-next-action-${index}`,
@@ -291,7 +291,7 @@ export default function Component() {
                 navigate(getProjectResumePath(mostRecentProject));
             },
         }));
-    }, [mostRecentProject, navigate, dashboardActionsLoading, dashboardActionsError]);
+    }, [mostRecentProject, navigate, dashboardActionsLoading, dashboardActionsError, hasAnyDashboardAction]);
 
     // Register the top dashboard action in ActionRegistry so it appears in
     // the CommandPalette under the 'ai' category at maximum priority.
@@ -419,12 +419,13 @@ export default function Component() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            const [latestProject] = recentProjects;
-                            if (latestProject) {
+                        <Button
+                            type="button"
+                            variant="outline"
+                            aria-label="Resume latest project"
+                            onClick={() => {
+                                const [latestProject] = recentProjects;
+                                if (latestProject) {
                                 handleProjectClick(latestProject.id);
                                 return;
                             }
@@ -446,6 +447,7 @@ export default function Component() {
                     <Button
                         type="button"
                         variant="outline"
+                        aria-label="Create new project"
                         onClick={() => navigate('/projects')}
                         className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
                     >
@@ -476,11 +478,13 @@ export default function Component() {
                                     ));
                                 }
                                 if (mostRecentProject && !dashboardActionsLoading && !dashboardActionsError) {
-                                    const result = getProjectNextActionTitles(mostRecentProject, true);
-                                    if (result.titles.length > 0) {
+                                    const aiActionCount = Array.isArray(mostRecentProject.aiNextActions)
+                                        ? mostRecentProject.aiNextActions.filter((action) => typeof action === 'string' && action.trim().length > 0).length
+                                        : 0;
+                                    if (aiActionCount > 0) {
                                         return (
                                             <p className="text-sm text-warning-color dark:text-warning-color">
-                                                {mostRecentProject.name} has {result.titles.length} backend-backed review action(s) to check.
+                                                {mostRecentProject.name} has {aiActionCount} backed review action(s) to check.
                                             </p>
                                         );
                                     }
@@ -754,6 +758,7 @@ function DashboardActionStatusCard(props: DashboardActionStatusCardProps) {
                             key={action.id}
                             type="button"
                             variant="outline"
+                            aria-label={tone === 'safe' ? undefined : 'Dashboard status action'}
                             onClick={() => onOpenProject(action)}
                             className="block w-full rounded-xl bg-white/75 p-3 text-left text-sm shadow-sm transition-transform hover:-translate-y-0.5 dark:bg-black/20"
                         >

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileImportedSourceToPageArtifacts } from '../../ImportSourceWorkflow';
+import { compileImportedSourceToPageArtifacts } from '../ImportSourceWorkflow';
 import { exportJSX } from '../../../components/canvas/page/exportJSX';
 
 describe('Round-Trip Fidelity Validation', () => {

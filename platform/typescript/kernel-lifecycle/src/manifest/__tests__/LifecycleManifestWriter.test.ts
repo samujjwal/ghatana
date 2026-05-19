@@ -183,8 +183,17 @@ describe('LifecycleManifestWriter', () => {
     const eventsManifest = JSON.parse(
       await readFile(write.manifestRefs.lifecycleEvents ?? '', 'utf-8'),
     ) as { eventCount: number; events: KernelLifecycleEvent[] };
-    expect(eventsManifest.eventCount).toBe(1);
-    expect(eventsManifest.events[0].metadata.eventId).toBe('event-1');
+    expect(eventsManifest.eventCount).toBeGreaterThanOrEqual(5);
+    expect(eventsManifest.events.some((event) => event.metadata.eventId === 'event-1')).toBe(true);
+    expect(eventsManifest.events.map((event) => event.metadata.eventType)).toEqual(
+      expect.arrayContaining([
+        'lifecycle.plan.created',
+        'lifecycle.phase.started',
+        'lifecycle.step.started',
+        'lifecycle.step.completed',
+        'lifecycle.phase.completed',
+      ]),
+    );
     expect(write.result.eventsRef).toBe(write.manifestRefs.lifecycleEvents);
     const eventFiles = await readdir(path.dirname(write.manifestRefs.lifecycleEvents ?? ''));
     expect(eventFiles.some((fileName) => fileName.includes('.tmp'))).toBe(false);

@@ -53,9 +53,9 @@ class ArtifactGraphServiceResidualPreservationTest extends EventloopTestBase {
             .thenReturn(io.activej.promise.Promise.of(null));
         when(repository.upsertEdges(anyString(), anyString(), anyString(), any(), anyString(), anyString()))
             .thenReturn(io.activej.promise.Promise.of(null));
-        when(repository.saveUnresolvedEdges(anyString(), anyString(), anyString(), any()))
+        when(repository.saveUnresolvedEdges(anyString(), anyString(), anyString(), anyString(), any()))
             .thenReturn(io.activej.promise.Promise.of(null));
-        when(repository.saveEdgeResolutionRecords(anyString(), anyString(), any()))
+        when(repository.saveEdgeResolutionRecords(anyString(), anyString(), anyString(), any()))
             .thenReturn(io.activej.promise.Promise.of(null));
         when(repository.saveResidualIslands(anyString(), anyString(), anyString(), any()))
             .thenReturn(io.activej.promise.Promise.of(null));

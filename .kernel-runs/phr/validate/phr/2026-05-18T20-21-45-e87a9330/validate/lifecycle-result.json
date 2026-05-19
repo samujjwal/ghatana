@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-45-e87a9330",
+  "correlationId": "corr-2026-05-18T20-21-45-e87a9330",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "phase": "validate",
+  "lifecycleProfile": "standard-web-api-product",
+  "requestedPhases": [
+    "validate"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:45.878Z",
+  "completedAt": "2026-05-18T20:21:45.878Z",
+  "steps": [
+    {
+      "stepId": "validate-backend-api-0",
+      "phase": "validate",
+      "surface": "backend-api",
+      "adapter": "gradle-java-service",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:45.878Z",
+      "completedAt": "2026-05-18T20:21:45.878Z",
+      "exitCode": 0,
+      "stdout": "[DRY-RUN] validate phase for backend-api via gradle-java-service",
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-45-e87a9330"
+    },
+    {
+      "stepId": "validate-web-1",
+      "status": "skipped",
+      "durationMs": 0
+    }
+  ],
+  "gates": [
+    {
+      "gateId": "registry-validation",
+      "gateName": "registry-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for registry-validation",
+      "evidenceRefs": [
+        "dry-run:gate:registry-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "registry-validation"
+    },
+    {
+      "gateId": "manifest-validation",
+      "gateName": "manifest-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for manifest-validation",
+      "evidenceRefs": [
+        "dry-run:gate:manifest-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "manifest-validation"
+    },
+    {
+      "gateId": "lifecycle-contract-validation",
+      "gateName": "lifecycle-contract-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for lifecycle-contract-validation",
+      "evidenceRefs": [
+        "dry-run:gate:lifecycle-contract-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "lifecycle-contract-validation"
+    },
+    {
+      "gateId": "consent",
+      "gateName": "consent",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for consent",
+      "evidenceRefs": [
+        "dry-run:gate:consent"
+      ],
+      "durationMs": 0,
+      "providerId": "consent"
+    },
+    {
+      "gateId": "pii-classification",
+      "gateName": "pii-classification",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for pii-classification",
+      "evidenceRefs": [
+        "dry-run:gate:pii-classification"
+      ],
+      "durationMs": 0,
+      "providerId": "pii-classification"
+    },
+    {
+      "gateId": "audit-evidence",
+      "gateName": "audit-evidence",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for audit-evidence",
+      "evidenceRefs": [
+        "dry-run:gate:audit-evidence"
+      ],
+      "durationMs": 0,
+      "providerId": "audit-evidence"
+    },
+    {
+      "gateId": "fhir-contract-validation",
+      "gateName": "fhir-contract-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for fhir-contract-validation",
+      "evidenceRefs": [
+        "dry-run:gate:fhir-contract-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "fhir-contract-validation"
+    },
+    {
+      "gateId": "tenant-data-sovereignty",
+      "gateName": "tenant-data-sovereignty",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:45.878Z",
+      "details": "Dry-run gate evaluation for tenant-data-sovereignty",
+      "evidenceRefs": [
+        "dry-run:gate:tenant-data-sovereignty"
+      ],
+      "durationMs": 0,
+      "providerId": "tenant-data-sovereignty"
+    }
+  ],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate",
+  "manifestRefs": {
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/validate/phr/2026-05-18T20-21-45-e87a9330/validate/lifecycle-health-snapshot.json"
+}

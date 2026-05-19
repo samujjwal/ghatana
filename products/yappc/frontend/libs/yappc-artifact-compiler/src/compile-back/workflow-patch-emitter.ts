@@ -36,6 +36,7 @@ export class WorkflowPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }];
       case 'remove-component':
         return [{
@@ -44,6 +45,7 @@ export class WorkflowPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }];
       case 'add-prop':
         const job = op.after as { name: string; command: string } | undefined;
@@ -53,6 +55,7 @@ export class WorkflowPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }] : [];
       case 'remove-prop':
         const jobName = op.before as string | undefined;
@@ -62,6 +65,7 @@ export class WorkflowPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }] : [];
       default:
         return [];

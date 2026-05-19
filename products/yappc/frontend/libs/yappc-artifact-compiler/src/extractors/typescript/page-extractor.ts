@@ -179,6 +179,7 @@ export async function extractPageArtifact(
         artifact: record,
         nodes: [],
         edges: [],
+        unresolvedEdges: [],
         modelElements: [],
         residualIslands: [],
         errors: [{ message: 'File does not appear to be a Next.js/React page file', recoverable: true }],

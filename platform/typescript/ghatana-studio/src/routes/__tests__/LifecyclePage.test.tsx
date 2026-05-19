@@ -529,7 +529,7 @@ describe("LifecyclePage approval queue", () => {
     ).toBeDisabled();
   });
 
-  it("shows explicit non-pilot messaging for products outside Digital Marketing lifecycle pilot", () => {
+  it("treats PHR as an opening lifecycle pilot", () => {
     useStudioLifecycleDataMock.mockReturnValue(
       createContextValue({
         snapshot: {
@@ -539,10 +539,10 @@ describe("LifecyclePage approval queue", () => {
             ...createContextValue().snapshot.productUnit!,
             id: "phr",
             name: "PHR",
-            lifecycleStatus: "planned",
+            lifecycleStatus: "enabled",
             metadata: {
               environments: ["local"],
-              lifecycleExecutionAllowed: false,
+              lifecycleExecutionAllowed: true,
             },
           },
         },
@@ -556,8 +556,36 @@ describe("LifecyclePage approval queue", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Current product unit: phr")).toBeInTheDocument();
     expect(
+      screen.queryByText(/Non-pilot products remain fail-closed/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows explicit non-pilot messaging for products outside opening lifecycle pilots", () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        snapshot: {
+          ...createContextValue().snapshot,
+          runtimeMode: "configured",
+          productUnit: {
+            ...createContextValue().snapshot.productUnit!,
+            id: "finance",
+            name: "Finance",
+            lifecycleStatus: "planned",
+            metadata: {
+              environments: ["local"],
+              lifecycleExecutionAllowed: false,
+            },
+          },
+        },
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    expect(screen.getByText("Current product unit: finance")).toBeInTheDocument();
+    expect(
       screen.getByText(
-        /Only Digital Marketing is lifecycle-enabled in this phase/,
+        /Only Digital Marketing and PHR are lifecycle-enabled opening pilots/,
       ),
     ).toBeInTheDocument();
   });

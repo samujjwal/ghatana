@@ -33,36 +33,28 @@ import {
 import {
   createDocumentId,
   createNodeId,
-  type BuilderDocument,
   type ComponentInstance,
   type Binding,
   type NodeId,
   type ActionDefinition,
   type ResponsiveVariant,
 } from '../types.js';
+import {
+  createBuilderDocument,
+  type BuilderDocument,
+} from '../builder-document.js';
 
 // ============================================================================
 // Test helpers
 // ============================================================================
 
 function makeDoc(overrides: Partial<BuilderDocument> = {}): BuilderDocument {
-  return {
-    id: createDocumentId(),
-    version: '1',
-    name: 'Ops Test Doc',
-    designSystem: {
-      id: 'ds-1',
-      name: 'DS',
-      version: '1.0.0',
-      tokenSetIds: [],
-      componentContracts: [],
-      themeId: 'theme-1',
-    },
-    rootNodes: [],
-    nodes: new Map(),
-    metadata: { createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+  return createBuilderDocument('ops-test-doc', {
+    documentId: createDocumentId(),
+    designSystemId: 'ds-1',
+    designSystemName: 'DS',
     ...overrides,
-  };
+  });
 }
 
 function makeInstance(
@@ -489,7 +481,7 @@ describe('noopEventBus', () => {
   it('does not throw when passed noopEventBus', () => {
     const doc = makeDoc();
     expect(() =>
-      insertNode(doc, { contractNamtractName: 'A', props: {}, slots: {}, bindings: [], metadata: { layout: {} } }, undefined, undefined, noopEventBus),
+      insertNode(doc, { contractName: 'A', props: {}, slots: {}, bindings: [], metadata: { layout: {} } }, undefined, undefined, noopEventBus),
     ).not.toThrow();
   });
 });

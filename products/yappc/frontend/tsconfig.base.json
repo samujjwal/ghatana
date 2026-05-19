@@ -8,6 +8,7 @@
       "DOM.Iterable"
     ],
     "module": "ESNext",
+    "ignoreDeprecations": "6.0",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

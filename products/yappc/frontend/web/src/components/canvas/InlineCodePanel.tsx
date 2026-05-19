@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
-import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Inline Code Panel component.
@@ -40,7 +39,6 @@ export function InlineCodePanel({
   onToggle,
   className,
 }: InlineCodePanelProps) {
-  const { t } = useTranslation('common');
   const [height, setHeight] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -106,7 +104,7 @@ export function InlineCodePanel({
   return (
     <div
       data-testid="inline-code-panel"
-      aria-label={t('canvas.inlineCodePanel.panel')}
+      aria-label="Code editor panel"
       className={cn(
         'fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-surface',
         className
@@ -141,7 +139,7 @@ export function InlineCodePanel({
               onClick={onFormat}
               tabIndex={0}
               className="min-h-0 px-2 py-1 text-xs bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded"
-              title={t('canvas.inlineCodePanel.format')}
+              title="Format code"
             >
               Format
             </Button>
@@ -154,7 +152,7 @@ export function InlineCodePanel({
               onClick={onRun}
               tabIndex={0}
               className="min-h-0 px-2 py-1 text-xs bg-success-bg hover:bg-success-bg text-white rounded"
-              title={t('canvas.inlineCodePanel.run')}
+              title="Run code"
             >
               Run
             </Button>
@@ -166,7 +164,7 @@ export function InlineCodePanel({
               size="small"
               onClick={onAIFix}
               className="min-h-0 px-2 py-1 text-xs bg-info-bg hover:bg-info-bg text-white rounded"
-              title={t('canvas.inlineCodePanel.guidedFix')}
+              title="Guided fix"
             >
               ✨ Guided Fix
             </Button>
@@ -176,7 +174,7 @@ export function InlineCodePanel({
             size="small"
             onClick={() => setIsMinimized(true)}
             className="min-h-0 px-0 py-0 text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
-            title={t('canvas.inlineCodePanel.minimize')}
+            title="Minimize code panel"
           >
             ▼
           </Button>
@@ -187,9 +185,10 @@ export function InlineCodePanel({
               onClick={onToggle}
               tabIndex={0}
               className="min-h-0 px-0 py-0 text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
-              title={t('canvas.inlineCodePanel.close')}
+              title="Hide code panel"
+              aria-label="Hide code panel"
             >
-              {t('canvas.inlineCodePanel.hide')}
+              Hide Code Panel
             </Button>
           )}
         </div>
@@ -209,8 +208,8 @@ export function InlineCodePanel({
           fullWidth
           resize="none"
           className="w-full h-full p-4 font-mono text-sm bg-transparent text-fg dark:text-fg-muted resize-none outline-none"
-          placeholder={t('canvas.inlineCodePanel.placeholder')}
-          aria-label={t('canvas.inlineCodePanel.editor')}
+          placeholder="Edit code"
+          aria-label="Code editor"
         />
       </div>
     </div>

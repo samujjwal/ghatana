@@ -38,7 +38,28 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": true,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": true
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 300000,
+        "defaultMs": 300000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": ["production"],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["jar", "test-report"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
     },
     "gradle-java-library": {
       "kind": "build-tool",
@@ -72,7 +93,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "pnpm-vite-react": {
       "kind": "build-tool",
@@ -107,7 +132,28 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": true,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": true
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 120000,
+        "defaultMs": 120000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": ["production"],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["static-web-bundle", "test-report"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
     },
     "pnpm-node-api": {
       "kind": "build-tool",
@@ -141,7 +187,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "vitest": {
       "kind": "test-tool",
@@ -171,7 +221,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "playwright": {
       "kind": "test-tool",
@@ -201,7 +255,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "docker-buildx": {
       "kind": "package-tool",
@@ -234,7 +292,28 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": true
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 600000,
+        "defaultMs": 600000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": [],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["container-image", "image-digest"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
     },
     "docker-static-web": {
       "kind": "package-tool",
@@ -263,7 +342,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "compose-local": {
       "kind": "deployment-tool",
@@ -275,7 +358,8 @@
       "supportedPhases": [
         "deploy",
         "verify",
-        "rollback"
+        "rollback",
+        "promote"
       ],
       "requires": [
         "composeFile"
@@ -300,7 +384,28 @@
       "requiresApprovalForProduction": true,
       "supportsBootstrapMode": true,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": true
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 120000,
+        "defaultMs": 120000
+      },
+      "retryPolicy": {
+        "maxAttempts": 2,
+        "retryable": true,
+        "retryOnExitCodes": [1]
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local"],
+        "blockedEnvironments": ["production", "staging"],
+        "requiresEnvironmentApproval": true
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["deployment-manifest", "health-check-report"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
     },
     "kubernetes": {
       "kind": "deployment-tool",
@@ -334,7 +439,11 @@
       "requiresApprovalForProduction": true,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "helm": {
       "kind": "deployment-tool",
@@ -369,7 +478,11 @@
       "requiresApprovalForProduction": true,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "terraform": {
       "kind": "deployment-tool",
@@ -403,7 +516,11 @@
       "requiresApprovalForProduction": true,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "xcode-ios": {
       "kind": "build-tool",
@@ -437,7 +554,11 @@
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
       "lifecycleEnabled": false,
-      "featureFlagRequired": true
+      "featureFlagRequired": true,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "gradle-android": {
       "kind": "build-tool",
@@ -472,7 +593,11 @@
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
       "lifecycleEnabled": false,
-      "featureFlagRequired": true
+      "featureFlagRequired": true,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "maven-publish": {
       "kind": "package-tool",
@@ -499,7 +624,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     },
     "domain-pack-validator": {
       "kind": "validation-tool",
@@ -527,7 +656,11 @@
       "requiresApprovalForProduction": false,
       "supportsBootstrapMode": false,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false
+      "lifecycleEnabled": false,
+      "timeout": null,
+      "retryPolicy": null,
+      "environmentPolicy": null,
+      "outputValidation": null
     }
   }
 }

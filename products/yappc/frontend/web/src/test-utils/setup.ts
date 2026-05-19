@@ -5,11 +5,25 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, expect, vi } from 'vitest';
+import { initI18n } from '@ghatana/i18n';
+import commonMessages from '../../public/locales/en/common.json';
 
 enableMapSet();
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
+
+await initI18n({
+  fallbackLng: 'en',
+  defaultNS: 'common',
+  ns: ['common'],
+  disableLanguageDetection: true,
+  resources: {
+    en: {
+      common: commonMessages,
+    },
+  },
+});
 
 // If the test-utils package exports a helper to mock @dnd-kit/core, invoke
 // it here so the mock is registered before any test modules import the
@@ -50,6 +64,13 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
+});
+
+const nativeGetComputedStyle = window.getComputedStyle.bind(window);
+Object.defineProperty(window, 'getComputedStyle', {
+  configurable: true,
+  writable: true,
+  value: (element: Element, pseudoElement?: string | null) => nativeGetComputedStyle(element),
 });
 
 // Mock global APIs

@@ -40,6 +40,7 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
     private static final Logger log = LoggerFactory.getLogger(ProcessTsExtractorWorker.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
     private static final long DEFAULT_TIMEOUT_SECONDS = 300; // 5 minutes
+    private static final int MAX_WORKER_OUTPUT_BYTES = 10 * 1024 * 1024;
 
     private final ObjectMapper objectMapper;
     private final Executor blockingExecutor;
@@ -129,11 +130,12 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
                 throw new TimeoutException("TypeScript extractor worker timed out after " + timeoutSeconds + " seconds");
             }
 
-            String output = readAll(process.getInputStream());
+            String output = readAllBounded(process.getInputStream());
             int exitCode = process.exitValue();
             if (exitCode != 0) {
-                log.error("TypeScript extractor worker failed with exit code {}: {}", exitCode, output);
-                throw new IllegalStateException("TypeScript extractor worker failed with exit code " + exitCode + ": " + output);
+                String redactedOutput = redactWorkerOutput(output);
+                log.error("TypeScript extractor worker failed with exit code {}: {}", exitCode, redactedOutput);
+                throw new IllegalStateException("TypeScript extractor worker failed with exit code " + exitCode + ": " + redactedOutput);
             }
 
             // P1-17: Validate output schema before parsing
@@ -761,8 +763,24 @@ public final class ProcessTsExtractorWorker implements ArtifactCompileJobService
         return second;
     }
 
-    private static String readAll(InputStream inputStream) throws IOException {
-        return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+    private static String readAllBounded(InputStream inputStream) throws IOException {
+        byte[] bytes = inputStream.readNBytes(MAX_WORKER_OUTPUT_BYTES + 1);
+        if (bytes.length > MAX_WORKER_OUTPUT_BYTES) {
+            throw new IOException("TypeScript extractor worker output exceeded " + MAX_WORKER_OUTPUT_BYTES + " bytes");
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    static String redactWorkerOutput(String output) {
+        if (output == null || output.isBlank()) {
+            return "";
+        }
+        String redacted = output;
+        redacted = redacted.replaceAll("(?i)(authorization\\s*[:=]\\s*bearer\\s+)[^\\s\"']+", "$1[REDACTED]");
+        redacted = redacted.replaceAll("(?i)((?:token|api[_-]?key|secret|password|credential)\\s*[:=]\\s*)[^\\s\"',}]+", "$1[REDACTED]");
+        redacted = redacted.replaceAll("gh[pousr]_[A-Za-z0-9_]{20,}", "[REDACTED]");
+        redacted = redacted.replaceAll("github_pat_[A-Za-z0-9_]{20,}", "[REDACTED]");
+        return redacted;
     }
 
     private static String requireNonBlank(String value, String fieldName) {

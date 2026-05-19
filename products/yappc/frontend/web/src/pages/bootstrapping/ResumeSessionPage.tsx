@@ -328,7 +328,7 @@ const ResumeSessionPage: React.FC = () => {
         });
         break;
       case 'alphabetical':
-        result.sort((a, b) => a.projectName.i18n.languageCompare(b.projectName));
+        result.sort((a, b) => a.projectName.localeCompare(b.projectName));
         break;
     }
 

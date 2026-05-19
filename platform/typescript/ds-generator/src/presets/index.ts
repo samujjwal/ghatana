@@ -41,9 +41,30 @@ export const DesignSystemPresetSchema = z.object({
   borderRadius: z.enum(['none', 'subtle', 'rounded', 'pill']),
   density: z.enum(['compact', 'comfortable', 'spacious']),
   elevation: z.enum(['flat', 'subtle', 'raised']),
+  shadow: z.enum(['none', 'light', 'medium', 'heavy']),
+  motion: z.enum(['instant', 'fast', 'normal', 'slow']),
 }).strict();
 
 export type DesignSystemPreset = z.infer<typeof DesignSystemPresetSchema>;
+
+// ============================================================================
+// Materialized Tokens Schema
+// ============================================================================
+
+/** Zod schema for MaterializedTokens - token value map produced by materializing a preset. */
+export const MaterializedTokensSchema = z.object({
+  colors: z.record(z.string(), z.string()),
+  fontFamily: z.string(),
+  fontSizes: z.record(z.string(), z.number()),
+  borderRadius: z.record(z.string(), z.string()),
+  spacing: z.record(z.string(), z.number()),
+  elevation: z.record(z.string(), z.string()),
+  shadow: z.record(z.string(), z.string()),
+  motion: z.record(z.string(), z.string()),
+  zIndex: z.record(z.string(), z.number()),
+});
+
+export type MaterializedTokens = z.infer<typeof MaterializedTokensSchema>;
 
 // ============================================================================
 // Built-in presets
@@ -70,6 +91,8 @@ export const PRESET_GHATANA_DEFAULT: DesignSystemPreset = {
   borderRadius: 'rounded',
   density: 'comfortable',
   elevation: 'subtle',
+  shadow: 'medium',
+  motion: 'normal',
 } as const;
 
 export const PRESET_ENTERPRISE_NEUTRAL: DesignSystemPreset = {
@@ -93,6 +116,8 @@ export const PRESET_ENTERPRISE_NEUTRAL: DesignSystemPreset = {
   borderRadius: 'subtle',
   density: 'compact',
   elevation: 'flat',
+  shadow: 'light',
+  motion: 'fast',
 } as const;
 
 export const PRESET_CREATIVE_BOLD: DesignSystemPreset = {
@@ -116,6 +141,8 @@ export const PRESET_CREATIVE_BOLD: DesignSystemPreset = {
   borderRadius: 'pill',
   density: 'spacious',
   elevation: 'raised',
+  shadow: 'heavy',
+  motion: 'slow',
 } as const;
 
 export const ALL_PRESETS: readonly DesignSystemPreset[] = [
@@ -133,14 +160,90 @@ export function findPreset(id: string): DesignSystemPreset | undefined {
 // Materialization
 // ============================================================================
 
-/** Token value map produced by materializing a preset. */
-export interface MaterializedTokens {
-  readonly colors: Record<string, string>;
-  readonly fontFamily: string;
-  readonly fontSizes: Record<string, number>;
-  readonly borderRadius: Record<string, string>;
-  readonly spacing: Record<string, number>;
-}
+const ELEVATION_MAP: Record<DesignSystemPreset['elevation'], Record<string, string>> = {
+  flat: {
+    xs: 'none',
+    sm: 'none',
+    md: 'none',
+    lg: 'none',
+    xl: 'none',
+  },
+  subtle: {
+    xs: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    sm: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    md: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    lg: '0 10px 15px rgba(0, 0, 0, 0.1)',
+    xl: '0 20px 25px rgba(0, 0, 0, 0.1)',
+  },
+  raised: {
+    xs: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    sm: '0 4px 6px rgba(0, 0, 0, 0.15)',
+    md: '0 10px 15px rgba(0, 0, 0, 0.15)',
+    lg: '0 20px 25px rgba(0, 0, 0, 0.15)',
+    xl: '0 25px 50px rgba(0, 0, 0, 0.25)',
+  },
+};
+
+const SHADOW_MAP: Record<DesignSystemPreset['shadow'], Record<string, string>> = {
+  none: {
+    sm: 'none',
+    md: 'none',
+    lg: 'none',
+    xl: 'none',
+  },
+  light: {
+    sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    md: '0 2px 4px rgba(0, 0, 0, 0.05)',
+    lg: '0 4px 8px rgba(0, 0, 0, 0.05)',
+    xl: '0 8px 16px rgba(0, 0, 0, 0.05)',
+  },
+  medium: {
+    sm: '0 1px 3px rgba(0, 0, 0, 0.12)',
+    md: '0 4px 6px rgba(0, 0, 0, 0.12)',
+    lg: '0 10px 15px rgba(0, 0, 0, 0.12)',
+    xl: '0 20px 25px rgba(0, 0, 0, 0.12)',
+  },
+  heavy: {
+    sm: '0 2px 4px rgba(0, 0, 0, 0.15)',
+    md: '0 8px 12px rgba(0, 0, 0, 0.15)',
+    lg: '0 16px 24px rgba(0, 0, 0, 0.15)',
+    xl: '0 32px 48px rgba(0, 0, 0, 0.15)',
+  },
+};
+
+const MOTION_MAP: Record<DesignSystemPreset['motion'], Record<string, string>> = {
+  instant: {
+    fast: '150ms',
+    normal: '200ms',
+    slow: '300ms',
+  },
+  fast: {
+    fast: '100ms',
+    normal: '150ms',
+    slow: '200ms',
+  },
+  normal: {
+    fast: '200ms',
+    normal: '300ms',
+    slow: '500ms',
+  },
+  slow: {
+    fast: '300ms',
+    normal: '500ms',
+    slow: '700ms',
+  },
+};
+
+const Z_INDEX_MAP = {
+  base: {
+    dropdown: 1000,
+    sticky: 1020,
+    fixed: 1030,
+    modal: 1040,
+    popover: 1050,
+    tooltip: 1060,
+  },
+} as const;
 
 const BORDER_RADIUS_MAP: Record<DesignSystemPreset['borderRadius'], Record<string, string>> = {
   none: { sm: '0', md: '0', lg: '0', full: '0' },
@@ -178,6 +281,10 @@ export function materializePreset(preset: DesignSystemPreset): MaterializedToken
     fontSizes,
     borderRadius: BORDER_RADIUS_MAP[preset.borderRadius],
     spacing: DENSITY_SPACING_MAP[preset.density],
+    elevation: ELEVATION_MAP[preset.elevation],
+    shadow: SHADOW_MAP[preset.shadow],
+    motion: MOTION_MAP[preset.motion],
+    zIndex: Z_INDEX_MAP['base'],
   };
 }
 
@@ -201,6 +308,18 @@ export function renderPresetToCss(preset: DesignSystemPreset): string {
   }
   for (const [key, value] of Object.entries(tokens.spacing)) {
     lines.push(`  --spacing-${key}: ${value}px;`);
+  }
+  for (const [key, value] of Object.entries(tokens.elevation)) {
+    lines.push(`  --elevation-${key}: ${value};`);
+  }
+  for (const [key, value] of Object.entries(tokens.shadow)) {
+    lines.push(`  --shadow-${key}: ${value};`);
+  }
+  for (const [key, value] of Object.entries(tokens.motion)) {
+    lines.push(`  --motion-${key}: ${value};`);
+  }
+  for (const [key, value] of Object.entries(tokens.zIndex)) {
+    lines.push(`  --z-index-${key}: ${value};`);
   }
 
   lines.push(`}`);

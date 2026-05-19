@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-18T18:59:25.860Z",
+  "generated": "2026-05-18T20:58:41.783Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -32,12 +32,16 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
@@ -54,12 +58,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -79,22 +87,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -158,17 +174,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -178,12 +200,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -203,22 +229,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -248,7 +282,9 @@
         "Add recommendation safety and explainability evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": ["products/aura/platform/api"],
+      "readinessEvidence": [
+        "products/aura/platform/api"
+      ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"
     },
@@ -281,17 +317,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -301,12 +343,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -326,22 +372,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "provider-owned",
-          "reasonCodes": ["platform-provider-owned"],
+          "reasonCodes": [
+            "platform-provider-owned"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -408,17 +462,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -428,12 +488,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -453,22 +517,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -552,7 +624,12 @@
         "platform-events",
         "platform-health"
       ],
-      "gatesNeeded": ["a11y", "i18n", "privacy", "security"],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "readinessDimensions": {
         "contractReadiness": {
           "status": "profile-backed",
@@ -566,7 +643,9 @@
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -580,12 +659,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "required",
-          "reasonCodes": ["runtime-truth-required"],
+          "reasonCodes": [
+            "runtime-truth-required"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "required",
-          "reasonCodes": ["approval-gate-required"],
+          "reasonCodes": [
+            "approval-gate-required"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -605,12 +688,16 @@
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
@@ -626,14 +713,16 @@
       },
       "minimumReleaseToEnable": "current-pilot",
       "blockingGaps": [],
-      "nextValidationCommand": "pnpm check:digital-marketing-lifecycle-pilot --smoke",
+      "nextValidationCommand": "node scripts/check-digital-marketing-lifecycle-pilot.mjs",
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
         "deploy:compose-local",
         "web:pnpm-vite-react"
       ],
       "capabilityGaps": [],
-      "reasonCodes": ["execution-ready"],
+      "reasonCodes": [
+        "execution-ready"
+      ],
       "nextActions": [
         "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
@@ -649,7 +738,9 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "stable",
-      "requiredAdapters": ["gradle-java-service"],
+      "requiredAdapters": [
+        "gradle-java-service"
+      ],
       "adapterReadiness": [
         {
           "adapterId": "gradle-java-service",
@@ -712,12 +803,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -742,12 +837,16 @@
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
@@ -761,7 +860,10 @@
         },
         "enablementGuardrail": {
           "status": "blocked",
-          "reasonCodes": ["missing-adapter:portal", "missing-adapter:sdk"],
+          "reasonCodes": [
+            "missing-adapter:portal",
+            "missing-adapter:sdk"
+          ],
           "evidenceRefs": []
         }
       },
@@ -779,7 +881,10 @@
         "backend-api:gradle-java-service",
         "operator:gradle-java-service"
       ],
-      "capabilityGaps": ["missing-adapter:portal", "missing-adapter:sdk"],
+      "capabilityGaps": [
+        "missing-adapter:portal",
+        "missing-adapter:sdk"
+      ],
       "reasonCodes": [
         "missing-adapter:portal",
         "missing-adapter:sdk",
@@ -818,7 +923,10 @@
       "lifecycleStatus": "planned",
       "shapeValidationMode": "shape-only",
       "profileStatus": "experimental",
-      "requiredAdapters": ["gradle-java-service", "pnpm-vite-react"],
+      "requiredAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "adapterReadiness": [
         {
           "adapterId": "gradle-java-service",
@@ -870,7 +978,9 @@
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -880,12 +990,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -912,22 +1026,31 @@
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready", "missing-adapter:mobile"],
+          "reasonCodes": [
+            "e2e-not-ready",
+            "missing-adapter:mobile"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
           "status": "blocked",
-          "reasonCodes": ["missing-adapter:mobile"],
+          "reasonCodes": [
+            "missing-adapter:mobile"
+          ],
           "evidenceRefs": []
         }
       },
@@ -946,7 +1069,9 @@
         "backend-api:gradle-java-service",
         "web:pnpm-vite-react"
       ],
-      "capabilityGaps": ["missing-adapter:mobile"],
+      "capabilityGaps": [
+        "missing-adapter:mobile"
+      ],
       "reasonCodes": [
         "missing-adapter:mobile",
         "planned-shape-only",
@@ -981,10 +1106,14 @@
       "name": "Personal Health Records",
       "productKind": "business-product",
       "shape": "business-product: backend-api + web (standard-web-api-product)",
-      "lifecycleStatus": "planned",
-      "shapeValidationMode": "shape-only",
+      "lifecycleStatus": "enabled",
+      "shapeValidationMode": "execution",
       "profileStatus": "stable",
-      "requiredAdapters": ["gradle-java-service", "pnpm-vite-react"],
+      "requiredAdapters": [
+        "compose-local",
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "adapterReadiness": [
         {
           "adapterId": "gradle-java-service",
@@ -1003,15 +1132,23 @@
           "lifecycleEnabled": true,
           "supportsBootstrapMode": true,
           "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "compose-local",
+          "surfaceType": "deploy.local",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
         }
       ],
-      "missingManifests": [
-        "artifact-manifest",
-        "deployment-manifest",
-        "lifecycle-plan",
-        "lifecycle-result"
+      "missingManifests": [],
+      "missingProviders": [
+        "platform-artifacts",
+        "platform-events",
+        "platform-health"
       ],
-      "missingProviders": [],
       "gatesNeeded": [
         "a11y",
         "audit-evidence",
@@ -1036,22 +1173,32 @@
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
-          "status": "not-required",
-          "reasonCodes": [],
+          "status": "bootstrap-ready-platform-planned",
+          "reasonCodes": [
+            "platform-provider-planned:platform-artifacts",
+            "platform-provider-planned:platform-events",
+            "platform-provider-planned:platform-health"
+          ],
           "evidenceRefs": []
         },
         "runtimeTruthReadiness": {
-          "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "status": "required",
+          "reasonCodes": [
+            "runtime-truth-required"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
-          "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "status": "required",
+          "reasonCodes": [
+            "approval-gate-required"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1060,13 +1207,8 @@
           "evidenceRefs": []
         },
         "artifactDeploymentManifestReadiness": {
-          "status": "blocked",
-          "reasonCodes": [
-            "missing-manifest:artifact-manifest",
-            "missing-manifest:deployment-manifest",
-            "missing-manifest:lifecycle-plan",
-            "missing-manifest:lifecycle-result"
-          ],
+          "status": "ready",
+          "reasonCodes": [],
           "evidenceRefs": []
         },
         "adapterExecutionReadiness": {
@@ -1076,17 +1218,21 @@
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
-          "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "status": "ready",
+          "reasonCodes": [],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -1095,30 +1241,26 @@
           "evidenceRefs": []
         }
       },
-      "minimumReleaseToEnable": "future-readiness-gate",
-      "blockingGaps": [
-        "missing-manifest:artifact-manifest",
-        "missing-manifest:deployment-manifest",
-        "missing-manifest:lifecycle-plan",
-        "missing-manifest:lifecycle-result"
-      ],
-      "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
+      "minimumReleaseToEnable": "current-pilot",
+      "blockingGaps": [],
+      "nextValidationCommand": "node scripts/check-phr-lifecycle-pilot.mjs",
       "requiredCapabilities": [
         "backend-api:gradle-java-service",
+        "deploy:compose-local",
         "web:pnpm-vite-react"
       ],
       "capabilityGaps": [],
       "reasonCodes": [
         "consent-gate-active",
+        "execution-ready",
         "fhir-r4-pilot-surfaces-validated",
-        "healthcare-pilot-planned",
-        "pii-classification-active",
-        "planned-shape-only"
+        "healthcare-pilot-enabled",
+        "pii-classification-active"
       ],
       "nextActions": [
-        "Keep PHR lifecycle execution disabled until regulated healthcare gates are executable",
+        "Develop PHR features in parallel with Digital Marketing under kernel lifecycle",
         "Validate healthcare-specific gate-packs against real FHIR evidence as features mature",
-        "Keep shape-only until required adapters and manifests are executable"
+        "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
       "readinessEvidence": [
         "products/phr/kernel-product.yaml",
@@ -1130,8 +1272,8 @@
         "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
         "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
       ],
-      "executionReadiness": "not-enabled",
-      "status": "Shape-only"
+      "executionReadiness": "executable",
+      "status": "Pilot"
     },
     {
       "productId": "security-gateway",
@@ -1150,21 +1292,32 @@
         "lifecycle-result"
       ],
       "missingProviders": [],
-      "gatesNeeded": ["a11y", "i18n", "privacy", "security"],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -1174,12 +1327,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1199,22 +1356,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -1233,7 +1398,9 @@
       "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
       "requiredCapabilities": [],
       "capabilityGaps": [],
-      "reasonCodes": ["disabled-observed"],
+      "reasonCodes": [
+        "disabled-observed"
+      ],
       "nextActions": [
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
@@ -1270,17 +1437,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -1290,12 +1463,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1315,22 +1492,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -1360,7 +1545,9 @@
         "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": ["products/software-org"],
+      "readinessEvidence": [
+        "products/software-org"
+      ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"
     },
@@ -1372,7 +1559,10 @@
       "lifecycleStatus": "partial",
       "shapeValidationMode": "shape-only-with-known-limitations",
       "profileStatus": "stable",
-      "requiredAdapters": ["gradle-java-service", "pnpm-vite-react"],
+      "requiredAdapters": [
+        "gradle-java-service",
+        "pnpm-vite-react"
+      ],
       "adapterReadiness": [
         {
           "adapterId": "gradle-java-service",
@@ -1422,7 +1612,9 @@
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -1432,12 +1624,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1462,17 +1658,23 @@
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -1504,7 +1706,9 @@
         "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": ["products/tutorputor/kernel-product.yaml"],
+      "readinessEvidence": [
+        "products/tutorputor/kernel-product.yaml"
+      ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only with limitations"
     },
@@ -1537,17 +1741,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -1557,12 +1767,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1582,22 +1796,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "requires-data-cloud-bridge",
-          "reasonCodes": ["data-cloud-bridge-required"],
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {
@@ -1627,7 +1849,9 @@
         "Add governance and integration evidence before lifecycle execution",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
       ],
-      "readinessEvidence": ["products/virtual-org"],
+      "readinessEvidence": [
+        "products/virtual-org"
+      ],
       "executionReadiness": "disabled",
       "status": "Disabled observed"
     },
@@ -1660,17 +1884,23 @@
       "readinessDimensions": {
         "contractReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "apiReadiness": {
           "status": "blocked",
-          "reasonCodes": ["missing-lifecycle-profile"],
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
           "evidenceRefs": []
         },
         "uiReadiness": {
           "status": "unproven",
-          "reasonCodes": ["ui-evidence-not-recorded"],
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "providerReadiness": {
@@ -1680,12 +1910,16 @@
         },
         "runtimeTruthReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["lifecycle-not-enabled"],
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
           "evidenceRefs": []
         },
         "approvalReadiness": {
           "status": "planned",
-          "reasonCodes": ["approval-gate-planned"],
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
           "evidenceRefs": []
         },
         "privacySecurityGateReadiness": {
@@ -1705,22 +1939,30 @@
         },
         "adapterExecutionReadiness": {
           "status": "not-executable",
-          "reasonCodes": ["adapter-execution-not-ready"],
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
           "evidenceRefs": []
         },
         "platformModeReadiness": {
           "status": "provider-owned",
-          "reasonCodes": ["platform-provider-owned"],
+          "reasonCodes": [
+            "platform-provider-owned"
+          ],
           "evidenceRefs": []
         },
         "studioUxReadiness": {
           "status": "unproven",
-          "reasonCodes": ["studio-ux-evidence-not-recorded"],
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
           "evidenceRefs": []
         },
         "e2eReadiness": {
           "status": "not-enabled",
-          "reasonCodes": ["e2e-not-ready"],
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
           "evidenceRefs": []
         },
         "enablementGuardrail": {

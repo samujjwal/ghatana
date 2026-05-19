@@ -125,7 +125,10 @@ export async function fetchAuthSession(
   fetchImpl?: typeof fetch
 ): Promise<AuthSessionUser | null> {
   // Check if we have a session cookie
-  if (!(await hasSession())) {
+  const hasReadableSessionCookie =
+    typeof document !== 'undefined' &&
+    /(?:^|;\s*)(?:accessToken|refreshToken)=/.test(document.cookie);
+  if (!hasReadableSessionCookie && !(await hasSession())) {
     return null;
   }
 

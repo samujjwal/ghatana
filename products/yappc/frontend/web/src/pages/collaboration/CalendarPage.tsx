@@ -138,7 +138,7 @@ const CalendarPage: React.FC = () => {
     const todayStr = toDateKey(today.getFullYear(), today.getMonth(), today.getDate());
     return events
       .filter((e) => e.date.slice(0, 10) >= todayStr)
-      .sort((a, b) => a.date.i18n.languageCompare(b.date))
+      .sort((a, b) => a.date.localeCompare(b.date))
       .slice(0, 8);
   }, [events, today]);
 

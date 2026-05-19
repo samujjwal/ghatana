@@ -27,7 +27,7 @@ export function ProgressBar({
  * Get progress bar color.
  */
 function getProgressColor(percentage: number): string {
-  if (percentage >= 90) return 'bg-success-bg';
-  if (percentage >= 70) return 'bg-warning-bg';
-  return 'bg-destructive-bg';
+  if (percentage >= 90) return 'bg-success-bg bg-green-600';
+  if (percentage >= 70) return 'bg-warning-bg bg-yellow-500';
+  return 'bg-destructive-bg bg-red-600';
 }

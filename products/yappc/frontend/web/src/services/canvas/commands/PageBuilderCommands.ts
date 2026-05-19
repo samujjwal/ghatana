@@ -10,10 +10,12 @@
 
 import {
   addBinding,
+  attachBuilderDocumentCompatibility,
   deleteNode,
   deserializeDocument,
   insertNode,
   moveNode,
+  normalizeBuilderDocument,
   removeBinding,
   serializeDocument,
   updateNodeProps,
@@ -328,8 +330,8 @@ export class PageBuilderCommands {
           artifactId: command.artifactId,
           nodeId: command.nodeId,
           changedNodeIds: applied.changedNodeIds,
-          beforeDocumentId: beforeDocument.id,
-          afterDocumentId: applied.document.id,
+          beforeDocumentId: beforeDocument.documentId,
+          afterDocumentId: applied.document.documentId,
           success: true,
         },
         result
@@ -468,7 +470,7 @@ export class PageBuilderCommands {
       case 'autosave-document':
         return {
           document: cloneDocument(command.data.document),
-          changedNodeIds: [...command.data.document.nodes.keys()],
+          changedNodeIds: Object.keys(command.data.document.nodes) as NodeId[],
         };
       default:
         return assertNever(command);
@@ -533,7 +535,7 @@ export class PageBuilderCommands {
   private applyUpdateProps(document: BuilderDocument, command: UpdatePropsCommand): ApplyCommandOutput {
     const nodeId = command.data.nodeId;
     let nextDocument = updateNodeProps(document, nodeId, command.data.props);
-    const node = nextDocument.nodes.get(nodeId);
+    const node = readDocumentNode(nextDocument, nodeId);
 
     if (
       node &&
@@ -555,8 +557,7 @@ export class PageBuilderCommands {
             : {}),
         },
       };
-      const nextNodes = new Map(nextDocument.nodes);
-      nextNodes.set(nodeId, updatedNode);
+      const nextNodes = replaceDocumentNode(nextDocument, nodeId, updatedNode);
       nextDocument = {
         ...nextDocument,
         nodes: nextNodes,
@@ -632,7 +633,7 @@ export class PageBuilderCommands {
   }
 
   private applyMapComponentToDesignSystem(document: BuilderDocument, command: MapComponentToDesignSystemCommand): ApplyCommandOutput {
-    const node = document.nodes.get(command.data.nodeId);
+    const node = document.nodes[command.data.nodeId];
     if (!node) {
       throw new Error(`Cannot map missing node '${command.data.nodeId}' to design-system contract.`);
     }
@@ -660,8 +661,10 @@ export class PageBuilderCommands {
       },
     };
 
-    const nextNodes = new Map(document.nodes);
-    nextNodes.set(command.data.nodeId, mappedNode);
+    const nextNodes = {
+      ...document.nodes,
+      [command.data.nodeId]: mappedNode,
+    };
 
     return {
       document: {
@@ -677,7 +680,7 @@ export class PageBuilderCommands {
   }
 
   private applyReviewResidualIsland(document: BuilderDocument, command: ReviewResidualIslandCommand): ApplyCommandOutput {
-    const node = document.nodes.get(command.data.nodeId);
+    const node = document.nodes[command.data.nodeId];
     if (!node) {
       throw new Error(`Cannot review residual island for missing node '${command.data.nodeId}'.`);
     }
@@ -697,8 +700,10 @@ export class PageBuilderCommands {
       },
     };
 
-    const nextNodes = new Map(document.nodes);
-    nextNodes.set(command.data.nodeId, updatedNode);
+    const nextNodes = {
+      ...document.nodes,
+      [command.data.nodeId]: updatedNode,
+    };
 
     return {
       document: {
@@ -758,8 +763,8 @@ export class PageBuilderCommands {
       });
       this.systemCommandHistory.push(autosaveCommand);
       this.options.onTelemetry('page_builder_autosave_completed', {
-        documentId: documentSnapshot.id,
-        nodeCount: documentSnapshot.nodes.size,
+        documentId: documentSnapshot.documentId,
+        nodeCount: Object.keys(documentSnapshot.nodes).length,
       });
     } catch (error) {
       this.options.onTelemetry('page_builder_autosave_failed', {
@@ -767,6 +772,38 @@ export class PageBuilderCommands {
       });
     }
   }
+}
+
+function readDocumentNode(document: BuilderDocument, nodeId: NodeId): ComponentInstance | undefined {
+  const nodes = document.nodes as unknown as Map<NodeId, ComponentInstance> & Record<string, ComponentInstance>;
+  return typeof nodes.get === 'function'
+    ? nodes.get(nodeId)
+    : nodes[nodeId];
+}
+
+function replaceDocumentNode(
+  document: BuilderDocument,
+  nodeId: NodeId,
+  node: ComponentInstance,
+): BuilderDocument['nodes'] {
+  const nodes = document.nodes as unknown as Map<NodeId, ComponentInstance> & Record<string, ComponentInstance>;
+  if (nodes instanceof Map) {
+    const nextNodes = new Map(nodes) as Map<NodeId, ComponentInstance> & Record<string, ComponentInstance>;
+    nextNodes.set(nodeId, node);
+    Object.defineProperty(nextNodes, nodeId, {
+      value: node,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+    return nextNodes as unknown as BuilderDocument['nodes'];
+  }
+
+  const nodeRecord = nodes as Record<string, ComponentInstance>;
+  return {
+    ...nodeRecord,
+    [nodeId]: node,
+  } as BuilderDocument['nodes'];
 }
 
 function createSyntheticCommand(
@@ -782,7 +819,7 @@ function createSyntheticCommand(
 }
 
 function cloneDocument(document: BuilderDocument): BuilderDocument {
-  return deserializeDocument(serializeDocument(document));
+  return attachBuilderDocumentCompatibility(normalizeBuilderDocument(deserializeDocument(serializeDocument(document))));
 }
 
 function collectNodeIds(document: BuilderDocument, nodeId: NodeId): readonly NodeId[] {
@@ -796,7 +833,7 @@ function collectNodeIds(document: BuilderDocument, nodeId: NodeId): readonly Nod
     }
 
     ids.add(currentId);
-    const currentNode = document.nodes.get(currentId);
+    const currentNode = document.nodes[currentId];
     if (!currentNode) {
       continue;
     }
@@ -810,7 +847,8 @@ function collectNodeIds(document: BuilderDocument, nodeId: NodeId): readonly Nod
 }
 
 function findNodeLocation(document: BuilderDocument, nodeId: NodeId): NodeLocation | null {
-  const rootIndex = document.rootNodes.indexOf(nodeId);
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  const rootIndex = rootNodeIds.indexOf(nodeId);
   if (rootIndex >= 0) {
     return {
       parentId: null,
@@ -818,8 +856,8 @@ function findNodeLocation(document: BuilderDocument, nodeId: NodeId): NodeLocati
     };
   }
 
-  for (const [parentId, instance] of document.nodes.entries()) {
-    for (const [slotName, children] of Object.entries(instance.slots)) {
+  for (const [parentId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    for (const [slotName, children] of Object.entries(instance.slots) as [string, NodeId[]][]) {
       const childIndex = children.indexOf(nodeId);
       if (childIndex >= 0) {
         return {
@@ -847,7 +885,9 @@ function reorderNode(
   }
 
   const nextOrder = reorderIntoIndex(
-    parentId === null ? document.rootNodes : document.nodes.get(parentId)?.slots[slotName ?? ''] ?? [],
+    parentId === null
+      ? document.layout.nodes[document.layout.rootId]?.children ?? []
+      : document.nodes[parentId]?.slots[slotName ?? ''] ?? [],
     nodeId,
     targetIndex
   );
@@ -855,7 +895,16 @@ function reorderNode(
   if (parentId === null) {
     return {
       ...document,
-      rootNodes: [...nextOrder],
+      layout: {
+        ...document.layout,
+        nodes: {
+          ...document.layout.nodes,
+          [document.layout.rootId]: {
+            ...document.layout.nodes[document.layout.rootId],
+            children: [...nextOrder],
+          },
+        },
+      },
     };
   }
 
@@ -863,7 +912,7 @@ function reorderNode(
     return document;
   }
 
-  const parent = document.nodes.get(parentId);
+  const parent = document.nodes[parentId];
   if (!parent) {
     return document;
   }
@@ -876,8 +925,10 @@ function reorderNode(
     },
   };
 
-  const nextNodes = new Map(document.nodes);
-  nextNodes.set(parentId, nextParent);
+  const nextNodes = {
+    ...document.nodes,
+    [parentId]: nextParent,
+  };
 
   return {
     ...document,
@@ -900,9 +951,9 @@ function replaceBinding(
   nodeId: NodeId,
   binding: Binding
 ): BuilderDocument {
-  const node = document.nodes.get(nodeId);
+  const node = document.nodes[nodeId];
   const existingBinding = node?.bindings.find(
-    (candidate) => candidate.type === binding.type && candidate.target === binding.target,
+    (candidate: Binding) => candidate.type === binding.type && candidate.target === binding.target,
   );
   const documentWithoutExisting = existingBinding
     ? removeBinding(document, nodeId, existingBinding.id)
@@ -916,13 +967,13 @@ function setStateVariant(
   nodeId: NodeId,
   variant: StateVariant
 ): BuilderDocument {
-  const node = document.nodes.get(nodeId);
+  const node = document.nodes[nodeId];
   if (!node) {
     return document;
   }
 
   const existing = node.metadata.stateVariants ?? [];
-  const filtered = existing.filter((candidate) => candidate.state !== variant.state);
+  const filtered = existing.filter((candidate: StateVariant) => candidate.state !== variant.state);
   const updatedNode: ComponentInstance = {
     ...node,
     metadata: {
@@ -931,8 +982,10 @@ function setStateVariant(
     },
   };
 
-  const updatedNodes = new Map(document.nodes);
-  updatedNodes.set(nodeId, updatedNode);
+  const updatedNodes = {
+    ...document.nodes,
+    [nodeId]: updatedNode,
+  };
 
   return {
     ...document,
@@ -949,13 +1002,13 @@ function setComponentResponsiveVariant(
   nodeId: NodeId,
   variant: ResponsiveVariant
 ): BuilderDocument {
-  const node = document.nodes.get(nodeId);
+  const node = document.nodes[nodeId];
   if (!node) {
     return document;
   }
 
   const existing = node.metadata.responsiveVariants ?? [];
-  const filtered = existing.filter((candidate) => candidate.breakpoint !== variant.breakpoint);
+  const filtered = existing.filter((candidate: ResponsiveVariant) => candidate.breakpoint !== variant.breakpoint);
   const updatedNode: ComponentInstance = {
     ...node,
     metadata: {
@@ -964,8 +1017,10 @@ function setComponentResponsiveVariant(
     },
   };
 
-  const updatedNodes = new Map(document.nodes);
-  updatedNodes.set(nodeId, updatedNode);
+  const updatedNodes = {
+    ...document.nodes,
+    [nodeId]: updatedNode,
+  };
 
   return {
     ...document,

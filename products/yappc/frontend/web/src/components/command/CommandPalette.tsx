@@ -13,7 +13,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Dialog, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Box, Chip, Typography } from '@ghatana/design-system';
 import { Search as SearchIcon, Keyboard as KeyboardIcon } from 'lucide-react';
-import { useTranslation } from '@ghatana/i18n';
 
 import { useActions, type ActionState, type ActionDefinition, type GroupedActions } from '../../services/ActionRegistry';
 import { Input } from '../ui/Input';
@@ -128,7 +127,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     open: controlledOpen,
     onOpenChange,
 }) => {
-    const { t } = useTranslation('common');
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = useCallback((value: boolean) => {
@@ -261,7 +259,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 maxWidth="sm"
                 fullWidth
                 className={className}
-                aria-label={t('commandPalette.dialog')}
+                aria-label="Command palette"
             >
                 {/* Search Input */}
                 <Box className="border-b border-grey-200 dark:border-grey-700 p-4">
@@ -269,13 +267,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <SearchIcon className="text-grey-400 w-5 h-5" aria-hidden="true" />
                         <Input
                             ref={inputRef}
-                            aria-label={t('commandPalette.searchActions')}
+                            aria-label="Search actions"
                             aria-controls={listboxId}
                             aria-expanded={isOpen}
                             aria-activedescendant={activeDescendant}
                             aria-autocomplete="list"
                             role="combobox"
-                            placeholder={t('commandPalette.searchPlaceholder')}
+                            placeholder="Search actions..."
                             value={query}
                             onChange={(e) => {
                                 setQuery(e.target.value);
@@ -301,7 +299,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <div
                         id={listboxId}
                         role="listbox"
-                        aria-label={t('commandPalette.availableActions')}
+                        aria-label="Available command actions"
                     >
                         <List className="max-h-96 overflow-y-auto">
                             {filteredActions.map((action: ActionDefinition, index: number) => (

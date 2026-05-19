@@ -26,7 +26,12 @@ import type {
   RepositorySnapshot,
   ProviderDiagnostic,
 } from './types';
-import { SourceProviderError, sourceLocatorToString, validateCredentialPolicy } from './types';
+import {
+  assertTsSourceProviderWorkerOnly,
+  SourceProviderError,
+  sourceLocatorToString,
+  validateCredentialPolicy,
+} from './types';
 import type { SnapshotRef } from '../graph/types';
 
 // ============================================================================
@@ -162,6 +167,7 @@ export class ZipProvider implements SourceProvider {
 
   async resolve(locator: SourceProviderLocator, options?: SourceProviderOptions): Promise<RepositorySnapshot> {
     validateCredentialPolicy(options?.scope, options?.credentials);
+    assertTsSourceProviderWorkerOnly(this.providerId, options);
     const normalizedLocator = sourceLocatorToString(locator);
     const maxFileSizeBytes = options?.maxFileSizeBytes ?? 10 * 1024 * 1024;
     const maxFiles = options?.maxFiles ?? 20_000;
@@ -230,16 +236,18 @@ export class ZipProvider implements SourceProvider {
         });
         break;
       }
-      
+
       if (entry.isDirectory) continue;
-      
-      // P1-4: Diagnose oversized files
+
+      const metadataChecksum = `zip-entry:${contentSha}:${entry.name}`;
+
       if (entry.uncompressedSize > maxFileSizeBytes) {
         files.push({
           relativePath: entry.name,
           materialized: false,
           sizeBytes: entry.uncompressedSize,
           lastModifiedAt: new Date().toISOString(),
+          checksum: metadataChecksum,
         });
         diagnostics.push({
           level: 'warning',
@@ -247,21 +255,18 @@ export class ZipProvider implements SourceProvider {
           message: `Skipped oversized ZIP entry ${entry.name}.`,
           timestamp: new Date().toISOString(),
           resourcePath: entry.name,
-          metadata: {
-            sizeBytes: entry.uncompressedSize,
-            maxFileSizeBytes,
-          },
+          metadata: { sizeBytes: entry.uncompressedSize, maxFileSizeBytes },
         });
         continue;
       }
 
-      // P1-4: Diagnose unsupported compression methods
       if (entry.compressionMethod !== DEFLATE && entry.compressionMethod !== STORED) {
         files.push({
           relativePath: entry.name,
           materialized: false,
           sizeBytes: entry.uncompressedSize,
           lastModifiedAt: new Date().toISOString(),
+          checksum: metadataChecksum,
         });
         diagnostics.push({
           level: 'warning',
@@ -269,35 +274,31 @@ export class ZipProvider implements SourceProvider {
           message: `Skipped ZIP entry ${entry.name} with unsupported compression method ${entry.compressionMethod}.`,
           timestamp: new Date().toISOString(),
           resourcePath: entry.name,
-          metadata: {
-            compressionMethod: entry.compressionMethod,
-          },
+          metadata: { compressionMethod: entry.compressionMethod },
         });
         continue;
       }
 
       const rawName = entry.name;
-      const relativePath = (stripPrefix && rawName.startsWith(stripPrefix)
+      const relativePath = stripPrefix && rawName.startsWith(stripPrefix)
         ? rawName.slice(stripPrefix.length)
-        : rawName);
+        : rawName;
 
       if (!relativePath) continue;
 
       try {
         const content = inflateEntry(zipBuffer, entry);
-        // Normalize the resolved path to prevent zip-slip attacks
         const absolutePath = normalize(join(tempRoot, relativePath.replace(/\//g, '/')));
         const resolvedPath = resolve(absolutePath);
         const resolvedTempRoot = resolve(tempRoot);
 
-        // Enforce path containment: reject if the resolved path escapes tempRoot
         if (!resolvedPath.startsWith(resolvedTempRoot + (process.platform === 'win32' ? '\\' : '/'))) {
-          // P1-4: Diagnose zip-slip attempt
           files.push({
             relativePath,
             materialized: false,
             sizeBytes: entry.uncompressedSize,
             lastModifiedAt: new Date().toISOString(),
+            checksum: metadataChecksum,
           });
           diagnostics.push({
             level: 'warning',
@@ -305,10 +306,7 @@ export class ZipProvider implements SourceProvider {
             message: `Skipped ZIP entry ${entry.name} due to unsafe path (zip-slip attempt).`,
             timestamp: new Date().toISOString(),
             resourcePath: entry.name,
-            metadata: {
-              resolvedPath,
-              intendedPath: relativePath,
-            },
+            metadata: { resolvedPath, intendedPath: relativePath },
           });
           continue;
         }
@@ -323,15 +321,16 @@ export class ZipProvider implements SourceProvider {
           materialized: true,
           sizeBytes: content.byteLength,
           lastModifiedAt: new Date().toISOString(),
+          checksum: createHash('sha256').update(content).digest('hex'),
         });
         fileCount++;
       } catch (err) {
-        // P1-4: Diagnose materialization failures
         files.push({
           relativePath,
           materialized: false,
           sizeBytes: entry.uncompressedSize,
           lastModifiedAt: new Date().toISOString(),
+          checksum: metadataChecksum,
         });
         diagnostics.push({
           level: 'warning',
@@ -347,13 +346,22 @@ export class ZipProvider implements SourceProvider {
       }
     }
 
+    const snapshotContentHash = createHash('sha256')
+      .update(files.map(file => `${file.relativePath}:${file.checksum}`).sort().join('\n'))
+      .digest('hex');
     const snapshot = {
+      snapshotId: `zip:${archiveName}:${snapshotContentHash.slice(0, 32)}`,
       snapshotRef,
       localRootPath: tempRoot,
       files,
       snapshotAt: new Date().toISOString(),
       shallow: false,
       diagnostics,
+      contentHash: snapshotContentHash,
+      contentChecksum: snapshotContentHash,
+      tenantId: options?.scope?.tenantId ?? 'worker-local-tenant',
+      workspaceId: options?.scope?.workspaceId ?? 'worker-local-workspace',
+      projectId: options?.scope?.projectId ?? 'worker-local-project',
     };
 
     // P1-4: Cleanup temp files unless keepTempFiles is true

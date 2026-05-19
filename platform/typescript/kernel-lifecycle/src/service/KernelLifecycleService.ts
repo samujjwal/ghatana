@@ -289,7 +289,7 @@ export class KernelLifecycleService {
       outputDirectory: plan.outputDirectory,
       providerContext: this.providerContext,
       ...(options.environment === undefined ? {} : { environment: options.environment }),
-      ...(options.sourceRef === undefined ? {} : { sourceRef: options.sourceRef }),
+      sourceRef: options.sourceRef ?? plan.sourceRef ?? 'local',
     };
     const result = await this.executor.executePlan(plan, executionOptions);
     await this.writeJson(path.join(plan.outputDirectory, 'lifecycle-result.json'), this.safeResult(result));
@@ -766,7 +766,7 @@ export class KernelLifecycleService {
     return {
       ...(options.surfaceSelector === undefined ? {} : { surfaceSelector: [...options.surfaceSelector] }),
       ...(options.environment === undefined ? {} : { environment: options.environment }),
-      ...(options.sourceRef === undefined ? {} : { sourceRef: options.sourceRef }),
+      sourceRef: options.sourceRef ?? 'local',
       ...(options.outputDir === undefined ? {} : { outputDir: options.outputDir }),
       ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
       providerMode: options.providerMode ?? this.providerContext.mode,

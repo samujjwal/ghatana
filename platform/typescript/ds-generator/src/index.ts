@@ -17,6 +17,7 @@ export {
   PresetColorPaletteSchema,
   PresetTypographySchema,
   DesignSystemPresetSchema,
+  MaterializedTokensSchema,
   PRESET_GHATANA_DEFAULT,
   PRESET_ENTERPRISE_NEUTRAL,
   PRESET_CREATIVE_BOLD,

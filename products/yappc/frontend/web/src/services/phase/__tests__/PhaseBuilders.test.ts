@@ -292,15 +292,22 @@ describe('phase services', () => {
   });
 
   it('approves validate phase transitions through the canonical lifecycle client', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          success: true,
-          currentPhase: 'EXECUTE',
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
-    );
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'audit-validate-1', timestamp: '2026-05-07T12:00:00.000Z' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            currentPhase: 'EXECUTE',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await executePhasePrimaryAction({
@@ -428,19 +435,26 @@ describe('phase services', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     for (const decision of ['apply', 'reject', 'rollback'] as const) {
-      fetchMock.mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            runId: 'gen-run-1',
-            projectId: 'proj-42',
-            decision,
-            status: decision === 'rollback' ? 'ROLLED_BACK' : decision.toUpperCase(),
-            reviewRequired: false,
-            message: `Generation run gen-run-1 ${decision} decision recorded.`,
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        ),
-      );
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ id: `audit-${decision}-1`, timestamp: '2026-05-07T12:00:00.000Z' }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              runId: 'gen-run-1',
+              projectId: 'proj-42',
+              decision,
+              status: decision === 'rollback' ? 'ROLLED_BACK' : decision.toUpperCase(),
+              reviewRequired: false,
+              message: `Generation run gen-run-1 ${decision} decision recorded.`,
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
 
       const result = await executeGenerateReviewDecision({
         projectId: 'proj-42',
@@ -454,8 +468,9 @@ describe('phase services', () => {
         kind: 'generate-review',
         runId: 'gen-run-1',
         reviewRequired: false,
-        message: `Generation run gen-run-1 ${decision} decision recorded.`,
       });
+      expect(result.message).toContain(`Generation run gen-run-1 ${decision} decision recorded.`);
+      expect(result.message).toContain(`Audit event audit-${decision}-1 recorded.`);
     }
 
     for (const decision of ['apply', 'reject', 'rollback'] as const) {
@@ -480,13 +495,31 @@ describe('phase services', () => {
     fetchMock
       .mockResolvedValueOnce(
         new Response(
+          JSON.stringify({ id: 'audit-rollback-1', timestamp: '2026-05-07T12:00:00.000Z' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
           JSON.stringify({ id: 'rollback-1', runSpecRef: 'workflow-run-1', status: 'SUCCESS' }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
       )
       .mockResolvedValueOnce(
         new Response(
+          JSON.stringify({ id: 'audit-promote-1', timestamp: '2026-05-07T12:00:00.000Z' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
           JSON.stringify({ id: 'promote-1', runSpecRef: 'workflow-run-1', status: 'SUCCESS' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ id: 'audit-observe-1', timestamp: '2026-05-07T12:00:00.000Z' }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
       );

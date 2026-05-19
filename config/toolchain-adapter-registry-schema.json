@@ -35,7 +35,7 @@
           "description": "Surface types this adapter supports",
           "items": {
             "type": "string",
-            "enum": ["backend-api", "web", "worker", "operator", "mobile-ios", "mobile-android", "sdk", "domain-pack"]
+              "enum": ["backend-api", "web", "worker", "operator", "portal", "mobile-ios", "mobile-android", "sdk", "domain-pack"]
           }
         },
         "supportedPhases": {

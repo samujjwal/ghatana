@@ -36,6 +36,7 @@ export class PrismaPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }];
       case 'remove-component':
         return [{
@@ -44,6 +45,7 @@ export class PrismaPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }];
       case 'add-prop':
         const fieldDef = op.after as { name: string; type: string } | undefined;
@@ -53,6 +55,7 @@ export class PrismaPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }] : [];
       case 'remove-prop':
         const fieldName = op.before as string | undefined;
@@ -62,6 +65,7 @@ export class PrismaPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }] : [];
       case 'update-prop-type':
         const { name: updateName, type: newType } = op.after as { name: string; type: string } | { name?: string; type?: string };
@@ -71,6 +75,7 @@ export class PrismaPatchEmitter implements PatchEmitter {
           isAtomic: true,
           sourceChangeOpId: op.id,
           emitterId: this.id,
+          ranges: [],
         }] : [];
       default:
         return [];

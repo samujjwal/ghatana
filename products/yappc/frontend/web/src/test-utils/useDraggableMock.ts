@@ -22,8 +22,8 @@ const __test_dnd_bridge: {
 /**
  *
  */
-export function mockUseDraggableSimple() {
-  (vi as unknown).mock('@dnd-kit/core', () => ({
+function createSimpleDndKitMock() {
+  return {
     __esModule: true,
     DndContext: ({ children }: unknown) => children,
     useDraggable: (_opts: unknown) => ({
@@ -33,19 +33,17 @@ export function mockUseDraggableSimple() {
       transform: undefined,
       isDragging: false,
     }),
-  }));
+  };
 }
 
 /**
  *
  */
-export function mockUseDraggableWithPayload() {
+function createPayloadDndKitMock() {
   // Note: do NOT rely on a module-scoped activePayload when running under
   // the test runner. Capture the payload per-element inside the pointerdown
   // handler so the one-time pointerup callback closes over the correct
   // value and doesn't reference an undefined identifier.
-
-  (vi as unknown).mock('@dnd-kit/core', () => {
     const React = require('react');
 
     /**
@@ -107,13 +105,6 @@ export function mockUseDraggableWithPayload() {
       function setNodeRef(el: HTMLElement | null) {
         if (!el) return;
 
-        try {
-          console.debug(
-            '[useDraggableMock] setNodeRef called, payload=',
-            payload
-          );
-        } catch (_) {}
-
         // Write payload attribute for tests that read it directly
         try {
           el.setAttribute('data-dndkit-payload', JSON.stringify(payload));
@@ -123,14 +114,6 @@ export function mockUseDraggableWithPayload() {
         // attach a one-time pointerup (and fallback mouseup) to simulate a
         // drop. Capturing per-element avoids cross-module scoping issues.
         const onPointerDown = (_ev: PointerEvent) => {
-          try {
-            console.debug(
-              '[useDraggableMock] pointerdown on',
-              el,
-              'payload=',
-              payload
-            );
-          } catch (_) {}
           const activePayloadForThisPointer = payload;
 
           // Track last seen pointer coordinates for this drag in case the
@@ -159,13 +142,6 @@ export function mockUseDraggableWithPayload() {
             try {
               document.removeEventListener('pointermove', onPointerMove as unknown);
             } catch (_) {}
-            try {
-              console.debug(
-                '[useDraggableMock] document pointerup triggered, activePayload=',
-                activePayloadForThisPointer
-              );
-            } catch (_) {}
-
             // Determine over target robustly: prefer event.target.closest, then
             // inspect composedPath, then fallback to elementFromPoint when
             // available. This covers jsdom vs. DOM event ordering differences in
@@ -305,15 +281,6 @@ export function mockUseDraggableWithPayload() {
               const alternate = (globalThis as unknown).__TEST_DND_ONDRAGEND__ as
                 | OnDragEndShape
                 | undefined;
-              try {
-                console.debug(
-                  '[useDraggableMock] invoking bridge onDragEnd with active=',
-                  activePayloadForThisPointer,
-                  'over=',
-                  over
-                );
-              } catch (_) {}
-
               const payload = {
                 active: {
                   id: activePayloadForThisPointer?.id,
@@ -414,6 +381,18 @@ export function mockUseDraggableWithPayload() {
       };
     }
 
-    return { __esModule: true, DndContext, useDraggable } as unknown;
-  });
+  return { __esModule: true, DndContext, useDraggable } as unknown;
+}
+
+(vi as unknown).mock('@dnd-kit/core', createPayloadDndKitMock);
+
+export function mockUseDraggableSimple() {
+  return createSimpleDndKitMock();
+}
+
+/**
+ *
+ */
+export function mockUseDraggableWithPayload() {
+  return createPayloadDndKitMock();
 }

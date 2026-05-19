@@ -28,6 +28,7 @@ import HomePage from "./routes/HomePage";
 import IdeasPage from "./routes/IdeasPage";
 import LearnPage from "./routes/LearnPage";
 import LifecyclePage from "./routes/LifecyclePage";
+import OpeningPilotsPage from "./routes/OpeningPilotsPage";
 import { getStudioCapabilityState } from "./api/kernelLifecycleClient";
 import {
   findStudioNavItemFromItems,
@@ -310,6 +311,10 @@ export default function App(): ReactElement {
                 <LifecyclePage />
               </RouteAccessGuard>
             }
+          />
+          <Route
+            path="/lifecycle/pilots"
+            element={<OpeningPilotsPage />}
           />
           <Route
             path="/agents"

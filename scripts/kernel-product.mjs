@@ -144,7 +144,15 @@ function parseArgs(argv) {
 
 function createProviderContext(repoRoot, options) {
   if (options.mode === 'bootstrap') {
-    return createBootstrapKernelProviders({ repoRoot }).context;
+    return createBootstrapKernelProviders({
+      repoRoot,
+      ...(options.outputDir
+        ? {
+            outputRoot: options.outputDir,
+            allowOutputOutsideKernelOut: true,
+          }
+        : {}),
+    }).context;
   }
 
   throw new Error(
@@ -283,6 +291,7 @@ function createLifecycleService({ repoRoot, providerContext, planner, executor, 
 function explainPlan(plan) {
   return {
     productId: plan.productId,
+    productUnitId: plan.productUnitId,
     phase: plan.phase,
     providerMode: plan.providerMode,
     surfaces: plan.surfaces.map((surface) => ({
@@ -290,7 +299,7 @@ function explainPlan(plan) {
       type: surface.type,
       adapter: surface.adapter,
     })),
-    adapters: [...new Set(plan.steps.map((step) => step.adapter).filter(Boolean))],
+    adapterIds: plan.adapterIds ?? [...new Set(plan.steps.map((step) => step.adapter).filter(Boolean))],
     gates: plan.gates.map((gate) => ({
       gateId: gate.gateId,
       required: gate.required,
@@ -309,6 +318,15 @@ function explainPlan(plan) {
       surface: artifact.surface,
       required: artifact.required,
     })),
+    healthChecks: (plan.healthChecks ?? []).map((hc) => ({
+      surface: hc.surface,
+      type: hc.type,
+      ...(hc.livePath !== undefined ? { livePath: hc.livePath } : {}),
+      ...(hc.readyPath !== undefined ? { readyPath: hc.readyPath } : {}),
+      ...(hc.defaultPort !== undefined ? { defaultPort: hc.defaultPort } : {}),
+    })),
+    warnings: plan.warnings ?? [],
+    blockingReasons: plan.blockingReasons ?? [],
   };
 }
 

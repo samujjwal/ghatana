@@ -42,6 +42,7 @@
       },
       "metadata": {
         "owner": "PHR Team",
+        "pilot": true,
         "lifecycleReadiness": {
           "reasonCodes": [
             "disabled-observed",
@@ -73,7 +74,8 @@
       "lifecycleProfile": "standard-web-api-product",
       "lifecycleStatus": "enabled",
       "lifecycleMigration": {
-        "status": "enabled",
+        "status": "ready",
+        "readinessReasonCode": "validated-phr-lifecycle-pilot",
         "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
       },
       "lifecycleReadiness": {
@@ -193,7 +195,7 @@
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": ["local"]
       },
       "lifecycleExecutionAllowed": true
     },

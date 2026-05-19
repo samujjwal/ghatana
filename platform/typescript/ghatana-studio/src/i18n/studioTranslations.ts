@@ -14,6 +14,7 @@ export const STUDIO_TRANSLATIONS = {
   "studio.navigation.health": "Health",
   "studio.navigation.learn": "Learn",
   "studio.navigation.settings": "Settings",
+  "studio.navigation.design-system": "Design System",
   "studio.status.ready": "Ready",
   "studio.status.empty": "Empty",
   "studio.status.degraded": "Degraded",
@@ -477,20 +478,35 @@ export const STUDIO_TRANSLATIONS = {
   "studio.route.blueprints.confidenceSuffix": "% confidence",
   "studio.route.blueprints.notSetValue": "not set",
   "studio.route.lifecycle.pilotReadiness.ready":
-    "Digital Marketing pilot ready",
+    "Opening pilot ready",
   "studio.route.lifecycle.pilotReadiness.blocked":
-    "Digital Marketing pilot blocked",
+    "Opening pilot blocked",
   "studio.route.lifecycle.pilotReadiness.nonPilot": "Non-pilot product",
   "studio.route.lifecycle.pilotReadinessTitle": "Lifecycle pilot readiness",
   "studio.route.lifecycle.currentProductUnitPrefix": "Current product unit:",
   "studio.route.lifecycle.nonPilotExplanation":
-    "Only Digital Marketing is lifecycle-enabled in this phase. Non-pilot products remain fail-closed until promotion gates pass.",
+    "Only Digital Marketing and PHR are lifecycle-enabled opening pilots. Non-pilot products remain fail-closed until promotion gates pass.",
   "studio.route.lifecycle.approvalReason.approved":
     "Approved from Studio lifecycle queue",
   "studio.route.lifecycle.approvalReason.rejected":
     "Rejected from Studio lifecycle queue",
   "studio.route.lifecycle.validationCommand":
-    "pnpm check:digital-marketing-lifecycle-pilot --smoke",
+    "node scripts/check-opening-lifecycle-pilots.mjs",
+  "studio.route.openingPilots.title": "Opening lifecycle pilots",
+  "studio.route.openingPilots.description":
+    "Digital Marketing and PHR lifecycle truth from Kernel bootstrap output or Data Cloud provider mode.",
+  "studio.route.openingPilots.filterLabel": "Pilot filter",
+  "studio.route.openingPilots.latestRunTitle": "Latest lifecycle run",
+  "studio.route.openingPilots.phaseStatusTitle": "Phase status",
+  "studio.route.openingPilots.gateStatusTitle": "Gate status",
+  "studio.route.openingPilots.artifactTitle": "Artifact manifest",
+  "studio.route.openingPilots.deploymentTitle": "Deployment manifest",
+  "studio.route.openingPilots.healthTitle": "Health snapshot",
+  "studio.route.openingPilots.evidenceTitle": "Evidence links",
+  "studio.route.openingPilots.nextActionTitle": "Next required action",
+  "studio.route.openingPilots.notReported": "not reported",
+  "studio.route.openingPilots.bootstrapTruth":
+    "Bootstrap truth is available when Data Cloud provider mode is unconfigured.",
   "studio.route.intentError.reasonCode.clientNotConfigured":
     "Client not configured",
   "studio.route.intentError.reasonCode.previewNotSupported":

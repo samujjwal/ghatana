@@ -138,7 +138,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   onDropRequest,
   onKeyboardMoveRequest,
 }) => {
-  const instance = document.nodes.get(nodeId);
+  const instance = document.nodes[nodeId];
   const [activeDropZone, setActiveDropZone] = useState<string | null>(null);
 
   if (!instance) {

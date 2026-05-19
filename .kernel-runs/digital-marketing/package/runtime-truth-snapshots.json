@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshots": [
+    {
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-45-a6884dd8",
+      "phase": "package",
+      "status": "execution-failed",
+      "observedAt": "2026-05-18T20:21:45.326Z",
+      "evidenceRefs": [
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/lifecycle-result.json",
+        "/Users/samujjwal/Development/ghatana/.kernel-runs/digital-marketing/package/digital-marketing/2026-05-18T20-21-45-a6884dd8/package/artifact-manifest.json"
+      ],
+      "correlationId": "corr-2026-05-18T20-21-45-a6884dd8"
+    }
+  ]
+}

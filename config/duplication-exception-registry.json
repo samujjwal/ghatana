@@ -1,0 +1,20 @@
+{
+  "$schema": "./duplication-exception-registry.schema.json",
+  "version": "1.0.0",
+  "description": "Tracked platform duplication exceptions. Each entry must have a clear rationale, owner, severity, expiry date, and removal plan. Entries suppress specific violations in check-duplicate-platform-capabilities.mjs and related governance scripts.",
+  "exceptions": [
+    {
+      "id": "EXC-001-yappc-gate-evaluator",
+      "owner": "yappc-team",
+      "category": "gate-engine",
+      "affectedPaths": [
+        "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/GateEvaluator.java"
+      ],
+      "reason": "YAPPC GateEvaluator evaluates YAPPC-domain StageSpec criteria (lifecycle stage entry/exit conditions). The class is annotated @doc.layer product and operates on YAPPC-specific domain concepts (StageSpec, criterion keyword-matching). It is not a generic lifecycle gate engine — it is scoped to YAPPC lifecycle stages. Triggered by the generic class-name pattern GateEvaluator which matches the governance check.",
+      "severity": "low",
+      "expiryDate": "2026-09-01",
+      "removalPlan": "Rename to YappcStageGateEvaluator or StageGateEvaluator to make YAPPC scope explicit in the class name and avoid triggering generic naming pattern checks. This rename should happen as part of the next YAPPC lifecycle module refactor (Phase 2 or later).",
+      "validationCheck": "check-duplicate-platform-capabilities.mjs"
+    }
+  ]
+}

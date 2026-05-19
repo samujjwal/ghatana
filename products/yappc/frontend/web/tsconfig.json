@@ -24,6 +24,8 @@
     "paths": {
       "yappc-ai": ["../libs/yappc-ai/src/index.ts"],
       "yappc-ai/*": ["../libs/yappc-ai/src/*"],
+      "yappc-artifact-compiler": ["../libs/yappc-artifact-compiler/src/index.ts"],
+      "yappc-artifact-compiler/*": ["../libs/yappc-artifact-compiler/src/*"],
       "yappc-api": ["../libs/api/src/index.ts"],
       "yappc-api/*": ["../libs/api/src/*"],
       "yappc-auth": ["../libs/yappc-auth/dist/index.js"],

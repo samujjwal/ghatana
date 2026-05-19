@@ -6,6 +6,7 @@ import {
   type RoundTripFidelity,
   type SerializedDocument,
 } from '@ghatana/ui-builder';
+import * as ts from 'typescript';
 
 import { isBuilderDocument } from './builder-document-adapter';
 import {
@@ -82,11 +83,11 @@ function asSerializedDocument(value: unknown): SerializedDocument | null {
 
   const record = value as Record<string, unknown>;
   if (
-    typeof record.id !== 'string' ||
-    typeof record.version !== 'string' ||
-    typeof record.name !== 'string' ||
-    typeof record.designSystem !== 'object' ||
-    !Array.isArray(record.rootNodes) ||
+    typeof record.schemaVersion !== 'string' ||
+    typeof record.documentId !== 'string' ||
+    typeof record.owner !== 'string' ||
+    typeof record.root !== 'string' ||
+    typeof record.layout !== 'object' ||
     typeof record.nodes !== 'object' ||
     record.nodes === null
   ) {
@@ -143,13 +144,15 @@ export function compileSemanticModelToPageArtifacts(
   model: SemanticProductModel,
   createdBy: string,
 ): readonly PageArtifactDocument[] {
-  // P6.3: The actual SemanticProductModel uses 'elements' array, not 'pages'
+  const legacyModel = model as SemanticProductModel & SemanticProductModelLike;
   const elements = model.elements ?? [];
   
   // Filter for page-like elements (kind === 'page')
-  const pageElements = elements.filter((el): el is SemanticModelElement => 
+  const elementPages = elements.filter((el): el is SemanticModelElement => 
     'kind' in el && el.kind === 'page'
   ) as SemanticModelElement[];
+  const pageElements: readonly (SemanticModelElement | SemanticPageLike)[] =
+    elementPages.length > 0 ? elementPages : (legacyModel.pages ?? []);
   
   if (pageElements.length === 0) {
     return [
@@ -163,7 +166,7 @@ export function compileSemanticModelToPageArtifacts(
   }
 
   const projectId = model.id ?? 'semantic-model';
-  const productName = model.repositoryRoot ?? projectId;
+  const productName = model.repositoryRoot ?? legacyModel.name ?? projectId;
   const graphId = `${projectId}:graph`;
   const importedAt = new Date().toISOString();
   const pageSummaries: readonly SemanticPageGraphSummary[] = pageElements.map((page, index) => ({
@@ -180,17 +183,17 @@ export function compileSemanticModelToPageArtifacts(
     const artifactId = pageSummary?.artifactId ?? `${projectId}-page-${index + 1}`;
     const document = resolveBuilderDocument(page, createdBy);
     
-    // P6.3: residualIslands may not exist on elements, default to empty array
-    const residualIslandIds: readonly string[] = [];
+    const pageResidualIslands = (page as SemanticPageLike).residualIslands;
+    const residualIslandIds: readonly string[] = pageResidualIslands?.map((island: { readonly id: string }) => island.id) ?? [];
 
     // P6.3: Extract page-level provenance
-    const pageProvenance = extractProvenanceFromElement(page);
+    const pageProvenance = 'kind' in page ? extractProvenanceFromElement(page) : {};
 
     return {
       ...createPageArtifactDocument({
         artifactId,
         document,
-        name: page.name ?? document.name,
+        name: page.name ?? document.metadata.description ?? 'Generated Page',
         createdBy,
         source: 'decompiled',
       }),
@@ -203,7 +206,7 @@ export function compileSemanticModelToPageArtifacts(
         productName,
         source: projectId,
         importedAt,
-        pageName: page.name ?? document.name,
+        pageName: page.name ?? document.metadata.description ?? 'Generated Page',
         pageIndex: pageSummary?.index ?? index,
         pages: pageSummaries,
         residualIslandIds,
@@ -267,41 +270,132 @@ export function importPageArtifactsFromCode(
 ): readonly PageArtifactDocument[] {
   try {
     const parsed = JSON.parse(serializedSemanticModel) as SemanticProductModelLike;
-    // P6.3: For backward compatibility, convert SemanticProductModelLike to SemanticProductModel
-    // by adding the required fields with defaults
-    const model: SemanticProductModel = {
-      id: parsed.id ?? 'semantic-model',
-      repositoryRoot: parsed.name ?? 'unknown',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1,
-      elementIndex: {},
-      residualIslandIds: [],
-      elements: [],
-      // Convert pages to elements if present
-      ...(parsed.pages ? {
-        elements: parsed.pages.map((page, idx) => ({
-          id: page.id ?? `page-${idx}`,
-          name: page.name ?? `Page ${idx}`,
-          confidence: page.confidence ?? 0.9,
-          provenance: {
-            extractorId: 'yappc-artifact-compiler',
-            extractorVersion: '1.0.0',
-            sourcePaths: [],
-            kind: 'inferred' as const,
-            extractedAt: new Date().toISOString(),
-          },
-        })) as unknown as SemanticProductModel['elements'],
-      } : {}),
-    };
-    return compileSemanticModelToPageArtifacts(model, createdBy);
+    return compileSemanticModelToPageArtifacts(parsed as unknown as SemanticProductModel, createdBy);
   } catch (error: unknown) {
     if (error instanceof SyntaxError) {
+      if (looksLikeTsxSource(serializedSemanticModel)) {
+        return compileTsxSourceToPageArtifacts(serializedSemanticModel, createdBy);
+      }
+
       throw new Error('Invalid JSON - could not parse semantic model.', { cause: error });
     }
 
     throw error;
   }
+}
+
+function looksLikeTsxSource(source: string): boolean {
+  return /\bexport\s+(default\s+)?function\b/.test(source) || /<[A-Za-z][\w.:-]*(\s|>|\/>)/.test(source);
+}
+
+function compileTsxSourceToPageArtifacts(source: string, createdBy: string): readonly PageArtifactDocument[] {
+  const extracted = extractTsxComponentSummary(source);
+  const componentName = extracted.name ?? inferNameFromSource(source) ?? 'ImportedPage';
+  const artifact = compileImportedSourceToPageArtifacts(
+    {
+      projectId: 'decompiled-source',
+      componentName,
+      source,
+      sourceType: 'tsx',
+      importedAt: new Date().toISOString(),
+      extractedComponents: [
+        {
+          name: componentName,
+          isDefaultExport: true,
+          jsxUsage: extracted.jsxUsage,
+          props: extracted.props,
+          slots: [{ name: 'children', multiple: true, required: false }],
+          hooksUsed: extracted.hooksUsed,
+        },
+      ],
+    },
+    createdBy,
+  )[0];
+
+  if (!artifact) {
+    return [];
+  }
+
+  const residualIslandIds = extracted.jsxUsage
+    .filter((name) => /^[A-Z]/.test(name) && name !== componentName)
+    .map((name) => `${artifact.artifactId}:residual:${slugifyForArtifactId(name)}`);
+
+  const lossPoints = [
+    ...(extracted.hooksUsed.length > 0
+      ? [{
+          type: 'custom-code' as const,
+          location: componentName,
+          description: `Preserved hook usage for manual review: ${extracted.hooksUsed.join(', ')}.`,
+        }]
+      : []),
+    ...(residualIslandIds.length > 0
+      ? [{
+          type: 'unsupported-pattern' as const,
+          location: componentName,
+          description: 'Custom JSX component references require registry mapping before exact round-trip.',
+        }]
+      : []),
+  ];
+
+  return [
+    {
+      ...artifact,
+      source: 'decompiled',
+      residualIslandIds,
+      roundTripFidelity: {
+        canRoundTrip: lossPoints.length === 0,
+        confidence: lossPoints.length === 0 ? 0.98 : 0.82,
+        lossPoints,
+      },
+      artifactGraph: artifact.artifactGraph
+        ? {
+            ...artifact.artifactGraph,
+            provenance: {
+              ...artifact.artifactGraph.provenance,
+              residualIslandIds,
+              confidence: lossPoints.length === 0 ? 0.98 : 0.82,
+            },
+          }
+        : artifact.artifactGraph,
+    },
+  ];
+}
+
+function extractTsxComponentSummary(source: string): {
+  readonly name?: string;
+  readonly jsxUsage: readonly string[];
+  readonly props: readonly { readonly name: string; readonly type: string; readonly required: boolean }[];
+  readonly hooksUsed: readonly string[];
+} {
+  const sourceFile = ts.createSourceFile('imported.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let componentName: string | undefined;
+  const jsxUsage = new Set<string>();
+  const hooksUsed = new Set<string>();
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) && node.name && componentName === undefined) {
+      componentName = node.name.text;
+    }
+
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      jsxUsage.add(node.tagName.getText(sourceFile).split('.').pop() ?? node.tagName.getText(sourceFile));
+    }
+
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && /^use[A-Z]/.test(node.expression.text)) {
+      hooksUsed.add(node.expression.text);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return {
+    name: componentName,
+    jsxUsage: [...jsxUsage],
+    props: [],
+    hooksUsed: [...hooksUsed],
+  };
 }
 
 export function compileImportedSourceToPageArtifacts(
@@ -583,7 +677,7 @@ function buildDocumentFromExtractedComponents(
   // Determine slot names from the extracted slot schema
   const slotNames = rootExtracted.slots.map((s) => s.name);
   const primarySlot = slotNames[0] ?? 'children';
-  const emptySlots: Record<string, readonly NodeId[]> = {};
+  const emptySlots: Record<string, NodeId[]> = {};
   for (const slotName of slotNames) {
     emptySlots[slotName] = [];
   }
@@ -610,7 +704,7 @@ function buildDocumentFromExtractedComponents(
     },
   );
 
-  const rootNodeId = document.rootNodes[0];
+  const rootNodeId = document.layout.nodes[document.layout.rootId]?.children?.[0];
   if (!rootNodeId) {
     return document;
   }

@@ -56,3 +56,15 @@ export {
   createDiagram,
   DiagramBuilder,
 } from './types.js';
+
+export type {
+  DiagramPresetId,
+  DiagramPreset,
+  DiagramPresetFeatureFlags,
+} from './presets.js';
+export {
+  DIAGRAM_PRESETS,
+  getDiagramPreset,
+  getDiagramPresetIds,
+  isDiagramPresetId,
+} from './presets.js';

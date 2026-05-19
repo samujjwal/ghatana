@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileImportedSourceToPageArtifacts } from '../../ImportSourceWorkflow';
+import { compileImportedSourceToPageArtifacts } from '../ImportSourceWorkflow';
 
 describe('Idempotent Compile Validation', () => {
   it('produces identical artifacts when compiling the same source twice', async () => {

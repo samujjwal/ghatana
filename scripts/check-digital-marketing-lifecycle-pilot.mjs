@@ -171,14 +171,6 @@ async function main() {
     errors.push(`Product "${PRODUCT_ID}": lifecycle.enabled must be true`);
   }
 
-  const lifecycleEnabledProducts = Object.values(registry)
-    .filter((candidate) => candidate.lifecycleStatus === 'enabled' || candidate.lifecycle?.enabled === true)
-    .map((candidate) => candidate.id);
-  const unexpectedLifecycleProducts = lifecycleEnabledProducts.filter((id) => id !== PRODUCT_ID);
-  if (unexpectedLifecycleProducts.length > 0) {
-    errors.push(`Only "${PRODUCT_ID}" may be lifecycle-enabled pilot; unexpected enabled products: ${unexpectedLifecycleProducts.join(', ')}`);
-  }
-
   if (product.metadata?.pilot !== true) {
     errors.push(`Product "${PRODUCT_ID}": metadata.pilot must be true for the validated lifecycle pilot`);
   }

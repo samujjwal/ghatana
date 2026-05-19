@@ -246,12 +246,27 @@ export interface ValidationError {
 /**
  * Product lifecycle plan.
  */
+/**
+ * Health check configuration derived from a surface's health probe config.
+ */
+export interface ProductLifecycleHealthCheck {
+  surface: string;
+  type: "http" | "tcp" | "exec" | "none";
+  livePath?: string;
+  readyPath?: string;
+  portVariable?: string;
+  defaultPort?: number;
+  command?: readonly string[];
+}
+
 export interface ProductLifecyclePlan {
   schemaVersion: "1.0.0";
   runId: string;
   correlationId: string;
   providerMode: KernelProviderMode;
   productId: string;
+  /** Canonical product unit identifier — equals productId for registry-based products. */
+  productUnitId: string;
   productUnitRef?: string;
   providerRefs?: {
     registryProviderId?: string;
@@ -272,13 +287,21 @@ export interface ProductLifecyclePlan {
   surfaces: ProductSurfaceSelection[];
   gates: ProductGatePlan[];
   steps: ProductLifecycleStep[];
+  /** Top-level summary of all adapter IDs referenced in steps. */
+  adapterIds: readonly string[];
   expectedArtifacts: ProductExpectedArtifact[];
   requiredManifests: ProductLifecycleManifestType[];
   requiredPlugins: ProductLifecycleRequiredPlugin[];
   approvalRequirements: ProductLifecycleApprovalRequirement[];
+  /** Health check probes derived from surface configurations. */
+  healthChecks: readonly ProductLifecycleHealthCheck[];
   outputDirectory: string;
   estimatedDurationMs: number;
   semanticArtifactRefs?: readonly string[];
+  /** Non-fatal planning warnings (e.g. adapter fallbacks, phase exclusions). */
+  warnings: readonly string[];
+  /** Reasons this plan cannot be executed as-is. Empty for valid plans. */
+  blockingReasons: readonly string[];
 }
 
 export type ProductLifecycleManifestType =
@@ -347,6 +370,8 @@ export interface ProductLifecycleResult {
   phase: ProductLifecyclePhase;
   lifecycleProfile?: string;
   environment?: string;
+  /** Source reference (e.g. git commit SHA) recorded at execution time. Always present for every run. */
+  sourceRef?: string;
   requestedPhases?: readonly ProductLifecyclePhase[];
   executedPhases?: readonly ProductLifecyclePhase[];
   skippedPhases?: readonly ProductLifecyclePhase[];

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-19T00-31-27-20a5599f",
+  "phase": "validate",
+  "status": "skipped",
+  "gates": [
+    {
+      "gateId": "registry-validation",
+      "gateName": "registry-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for registry-validation",
+      "evidenceRefs": [
+        "dry-run:gate:registry-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "registry-validation"
+    },
+    {
+      "gateId": "manifest-validation",
+      "gateName": "manifest-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for manifest-validation",
+      "evidenceRefs": [
+        "dry-run:gate:manifest-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "manifest-validation"
+    },
+    {
+      "gateId": "lifecycle-contract-validation",
+      "gateName": "lifecycle-contract-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for lifecycle-contract-validation",
+      "evidenceRefs": [
+        "dry-run:gate:lifecycle-contract-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "lifecycle-contract-validation"
+    },
+    {
+      "gateId": "consent",
+      "gateName": "consent",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for consent",
+      "evidenceRefs": [
+        "dry-run:gate:consent"
+      ],
+      "durationMs": 0,
+      "providerId": "consent"
+    },
+    {
+      "gateId": "pii-classification",
+      "gateName": "pii-classification",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for pii-classification",
+      "evidenceRefs": [
+        "dry-run:gate:pii-classification"
+      ],
+      "durationMs": 0,
+      "providerId": "pii-classification"
+    },
+    {
+      "gateId": "audit-evidence",
+      "gateName": "audit-evidence",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for audit-evidence",
+      "evidenceRefs": [
+        "dry-run:gate:audit-evidence"
+      ],
+      "durationMs": 0,
+      "providerId": "audit-evidence"
+    },
+    {
+      "gateId": "fhir-contract-validation",
+      "gateName": "fhir-contract-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for fhir-contract-validation",
+      "evidenceRefs": [
+        "dry-run:gate:fhir-contract-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "fhir-contract-validation"
+    },
+    {
+      "gateId": "tenant-data-sovereignty",
+      "gateName": "tenant-data-sovereignty",
+      "status": "passed",
+      "checkedAt": "2026-05-19T00:31:27.277Z",
+      "details": "Dry-run gate evaluation for tenant-data-sovereignty",
+      "evidenceRefs": [
+        "dry-run:gate:tenant-data-sovereignty"
+      ],
+      "durationMs": 0,
+      "providerId": "tenant-data-sovereignty"
+    }
+  ],
+  "writtenAt": "2026-05-19T00:31:27.278Z"
+}

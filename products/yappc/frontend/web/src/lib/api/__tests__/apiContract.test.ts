@@ -17,7 +17,20 @@ import path from 'node:path';
 // Test Data
 // ─────────────────────────────────────────────────────────────────────────────
 
-const repoRoot = path.resolve(__dirname, '../../../../../..');
+function findRepoRoot(startDir: string): string {
+  let current = startDir;
+  while (current !== path.dirname(current)) {
+    const manifestCandidate = path.join(current, 'products/yappc/docs/api/route-manifest.yaml');
+    const openApiCandidate = path.join(current, 'products/yappc/docs/api/openapi.yaml');
+    if (fs.existsSync(manifestCandidate) && fs.existsSync(openApiCandidate)) {
+      return current;
+    }
+    current = path.dirname(current);
+  }
+  throw new Error(`Unable to locate repository root from ${startDir}`);
+}
+
+const repoRoot = findRepoRoot(__dirname);
 const routeManifestPath = path.join(repoRoot, 'products/yappc/docs/api/route-manifest.yaml');
 const openApiPath = path.join(repoRoot, 'products/yappc/docs/api/openapi.yaml');
 

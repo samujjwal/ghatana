@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "runId": "2026-05-18T20-21-45-a6884dd8",
+  "phase": "package",
+  "eventCount": 9,
+  "events": [
+    {
+      "metadata": {
+        "eventId": "plan-created:2026-05-18T20-21-45-a6884dd8:package",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.plan.created",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "timestamp": "2026-05-18T20:21:45.319Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:45.319Z"
+      }
+    },
+    {
+      "metadata": {
+        "eventId": "phase-started:2026-05-18T20-21-45-a6884dd8:package",
+        "schemaVersion": "1.0.0",
+        "eventType": "lifecycle.phase.started",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "timestamp": "2026-05-18T20:21:45.321Z",
+        "source": "kernel-lifecycle-service",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8"
+      },
+      "payload": {
+        "phase": "package",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:45.321Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:plan-created:2026-05-18T20-21-45-a6884dd8:package",
+        "eventType": "lifecycle.plan.created",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "planRunId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "providerMode": "bootstrap",
+        "createdAt": "2026-05-18T20:21:45.322Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:phase-started:2026-05-18T20-21-45-a6884dd8:package",
+        "eventType": "lifecycle.phase.started",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "phase": "package",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:45.322Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:step-started:2026-05-18T20-21-45-a6884dd8:package-backend-api-0",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "stepId": "package-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "docker-buildx",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:45.322Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:step-completed:2026-05-18T20-21-45-a6884dd8:package-backend-api-0",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "stepId": "package-backend-api-0",
+        "stepKind": "surface",
+        "surface": "backend-api",
+        "adapter": "docker-buildx",
+        "status": "skipped",
+        "durationMs": 0,
+        "exitCode": 0,
+        "completedAt": "2026-05-18T20:21:45.322Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:step-started:2026-05-18T20-21-45-a6884dd8:package-web-1",
+        "eventType": "lifecycle.step.started",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "stepId": "package-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "running",
+        "startedAt": "2026-05-18T20:21:45.322Z"
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:step-completed:2026-05-18T20-21-45-a6884dd8:package-web-1",
+        "eventType": "lifecycle.step.completed",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "stepId": "package-web-1",
+        "stepKind": "surface",
+        "surface": "product",
+        "adapter": "unknown",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:45.322Z",
+        "evidenceRefs": []
+      }
+    },
+    {
+      "metadata": {
+        "schemaVersion": "1.0.0",
+        "productUnitId": "digital-marketing",
+        "runId": "2026-05-18T20-21-45-a6884dd8",
+        "phase": "package",
+        "source": "kernel-lifecycle-manifest-writer",
+        "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+        "eventId": "derived:phase-completed:2026-05-18T20-21-45-a6884dd8:package",
+        "eventType": "lifecycle.phase.completed",
+        "timestamp": "2026-05-18T20:21:45.322Z"
+      },
+      "payload": {
+        "phase": "package",
+        "status": "skipped",
+        "durationMs": 0,
+        "completedAt": "2026-05-18T20:21:45.322Z"
+      }
+    }
+  ],
+  "writtenAt": "2026-05-18T20:21:45.325Z"
+}

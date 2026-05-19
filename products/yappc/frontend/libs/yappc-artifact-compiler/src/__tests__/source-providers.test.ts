@@ -78,15 +78,21 @@ describe('SourceProviderRegistry', () => {
         {
           scope: {
             tenantId: 'tenant-1',
+            workspaceId: 'workspace-1',
+            projectId: 'project-1',
             principalId: 'user-1',
             grantedAt: new Date().toISOString(),
             executionEnvironment: 'server',
           },
+          artifactCompiler: { tsSourceProviders: { workerOnly: true } },
         },
       );
 
       expect(snapshot.snapshotRef.provider).toBe('local-folder');
       expect(snapshot.localRootPath).toBe(dir);
+      expect(snapshot.tenantId).toBe('tenant-1');
+      expect(snapshot.workspaceId).toBe('workspace-1');
+      expect(snapshot.projectId).toBe('project-1');
     } finally {
       await cleanup(dir);
     }
@@ -153,6 +159,12 @@ describe('LocalFolderProvider', () => {
 
     expect(snapshot.snapshotRef.provider).toBe('local-folder');
     expect(snapshot.localRootPath).toBe(root);
+    expect(snapshot.snapshotId).toMatch(/^local-folder:/);
+    expect(snapshot.contentHash).toBeTruthy();
+    expect(snapshot.contentChecksum).toBe(snapshot.contentHash);
+    expect(snapshot.tenantId).toBe('worker-local-tenant');
+    expect(snapshot.workspaceId).toBe('worker-local-workspace');
+    expect(snapshot.projectId).toBe('worker-local-project');
   });
 
   it('sets repoId to the directory name', async () => {
@@ -175,6 +187,39 @@ describe('LocalFolderProvider', () => {
     const pkgFile = snapshot.files.find(f => f.relativePath === 'package.json');
     expect(pkgFile).toBeDefined();
     expect(pkgFile!.sizeBytes).toBeGreaterThan(0);
+    expect(pkgFile!.checksum).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('rejects server-side production use unless explicitly worker-only', async () => {
+    await writeFile(join(root, 'package.json'), '{"name":"server-reject-test"}');
+    const provider = new LocalFolderProvider();
+
+    await expect(provider.resolve(root, {
+      scope: {
+        tenantId: 'tenant-1',
+        workspaceId: 'workspace-1',
+        projectId: 'project-1',
+        principalId: 'user-1',
+        grantedAt: new Date().toISOString(),
+        executionEnvironment: 'server',
+      },
+    })).rejects.toThrow(/worker-only/);
+
+    const snapshot = await provider.resolve(root, {
+      scope: {
+        tenantId: 'tenant-1',
+        workspaceId: 'workspace-1',
+        projectId: 'project-1',
+        principalId: 'worker-1',
+        grantedAt: new Date().toISOString(),
+        executionEnvironment: 'server',
+      },
+      artifactCompiler: { tsSourceProviders: { workerOnly: true } },
+    });
+
+    expect(snapshot.tenantId).toBe('tenant-1');
+    expect(snapshot.workspaceId).toBe('workspace-1');
+    expect(snapshot.projectId).toBe('project-1');
   });
 
   it('generates a deterministic snapshotRef when no git repo is available', async () => {
@@ -335,6 +380,9 @@ describe('GitHubProvider', () => {
     const provider = new GitHubProvider();
     const snapshot = await provider.resolve('owner/repo', { maxFileSizeBytes: 1000 });
 
+    expect(snapshot.snapshotId).toMatch(/^github:owner\/repo:/);
+    expect(snapshot.contentHash).toBeTruthy();
+    expect(snapshot.contentChecksum).toBe(snapshot.contentHash);
     expect(snapshot.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'GITHUB_FILE_SKIPPED_MAX_SIZE', resourcePath: 'src/huge.ts' }),
@@ -343,7 +391,7 @@ describe('GitHubProvider', () => {
     );
     expect(snapshot.files).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ relativePath: 'src/fail.ts', materialized: false }),
+        expect.objectContaining({ relativePath: 'src/fail.ts', materialized: false, checksum: 'github-blob:fail' }),
       ]),
     );
   });

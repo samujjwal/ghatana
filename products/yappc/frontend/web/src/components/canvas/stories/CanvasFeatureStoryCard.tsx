@@ -1,7 +1,6 @@
 import { Box, Chip, Stack, Typography } from '@ghatana/design-system';
 import { Divider, InteractiveList as List, ListItem, ListItemText, Surface as Paper, type PaperProps } from '@ghatana/design-system';
 import { forwardRef, memo, useCallback, useMemo } from 'react';
-import { useTranslation } from '@ghatana/i18n';
 
 import type * as FeatureStories from './data';
 
@@ -23,6 +22,7 @@ export interface CanvasFeatureStoryCardProps extends Omit<
   highlight?: boolean;
   onStorySelect?: (story: CanvasFeatureStory) => void;
   blueprintChipVariant?: 'outlined' | 'filled';
+  compact?: boolean;
   'data-testid'?: string;
 }
 
@@ -91,7 +91,7 @@ const renderTestTargets = (test: CanvasStoryTestReference) => {
       spacing={1}
       flexWrap="wrap"
       role="list"
-      aria-label={t('canvas.featureStory.testTargets')}
+      aria-label="Test targets"
       className="mt-1"
     >
       {test.targets.map((target) => (
@@ -121,13 +121,13 @@ const CanvasFeatureStoryCardComponent = forwardRef<
       highlight = false,
       onStorySelect,
       blueprintChipVariant = 'outlined',
+      compact = false,
       sx,
       'data-testid': dataTestId,
       ...paperProps
     },
     ref
   ) => {
-    const { t } = useTranslation('common');
     const cardTitleId = useMemo(() => `${story.slug}-title`, [story.slug]);
 
     const interactive = typeof onStorySelect === 'function';
@@ -227,7 +227,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
             </Stack>
           </Stack>
 
-          {story.progress?.summary ? (
+          {story.progress?.summary && !compact ? (
             <Box>
               <Typography className="text-sm font-medium" gutterBottom>
                 Recent Updates
@@ -251,7 +251,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
             </Box>
           ) : null}
 
-          <Box>
+          {!compact ? <Box>
             <Typography className="text-sm font-medium" gutterBottom>
               Acceptance Criteria
             </Typography>
@@ -272,9 +272,9 @@ const CanvasFeatureStoryCardComponent = forwardRef<
                 </ListItem>
               ))}
             </List>
-          </Box>
+          </Box> : null}
 
-          <Box>
+          {!compact ? <Box>
             <Typography className="text-sm font-medium" gutterBottom>
               Tests
             </Typography>
@@ -299,7 +299,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
                 </ListItem>
               ))}
             </List>
-          </Box>
+          </Box> : null}
         </Stack>
       </Paper>
     );

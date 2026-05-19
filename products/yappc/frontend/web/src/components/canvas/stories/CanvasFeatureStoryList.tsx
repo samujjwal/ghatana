@@ -20,7 +20,6 @@ type CanvasFeatureStory = FeatureStories.CanvasFeatureStory;
 type CanvasFeatureStoryCategory = FeatureStories.CanvasFeatureStoryCategory;
 
 import { CanvasFeatureStoryCard } from './CanvasFeatureStoryCard';
-import { useTranslation } from '@ghatana/i18n';
 
 const ALL_TAB_VALUE = 'all';
 const ALL_PROGRESS_VALUE = 'all-progress';
@@ -143,7 +142,6 @@ export function CanvasFeatureStoryList({
   initialProgressFilter,
   'data-testid': dataTestId = 'canvas-feature-story-list',
 }: CanvasFeatureStoryListProps) {
-  const { t } = useTranslation('common');
   const [activeCategoryId, setActiveCategoryId] = useState(
     defaultCategoryId ?? categories[0]?.id ?? ALL_TAB_VALUE
   );
@@ -209,7 +207,7 @@ export function CanvasFeatureStoryList({
     });
     return Array.from(statusMap.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.i18n.languageCompare(b.label));
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [categories]);
 
   const filteredStories = useMemo(() => {
@@ -268,7 +266,7 @@ export function CanvasFeatureStoryList({
             value={activeTabValue}
             onChange={(_event, value) => setActiveCategoryId(value)}
             variant="underline"
-            aria-label={t('canvas.featureStories.categories')}
+            aria-label="Canvas feature story categories"
             data-testid="canvas-feature-story-tabs"
           >
             {tabs.map((tab) => (
@@ -288,7 +286,7 @@ export function CanvasFeatureStoryList({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={searchPlaceholder}
-              aria-label={t('canvas.featureStories.search')}
+              aria-label="Search canvas feature stories"
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </Box>
@@ -394,6 +392,7 @@ export function CanvasFeatureStoryList({
                 story={story}
                 highlight={story.id === highlightStoryId}
                 onStorySelect={onStorySelect}
+                compact={activeTabValue === ALL_TAB_VALUE}
                 showCategoryLabel={
                   showCategoryLabelOnCards || activeTabValue === ALL_TAB_VALUE
                 }

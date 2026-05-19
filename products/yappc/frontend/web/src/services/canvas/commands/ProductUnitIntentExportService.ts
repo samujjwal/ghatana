@@ -217,7 +217,9 @@ export function buildYappcArtifactIntelligenceEvidence(
         rootArtifactIds: artifact.artifactGraph.nodes
           .filter((node) => node.kind === 'product' || node.kind === 'page')
           .map((node) => node.id),
-        orphanArtifactIds: artifact.artifactGraph.provenance.residualIslandIds,
+        orphanArtifactIds: artifact.artifactGraph.provenance.residualIslandIds.filter((residualId) =>
+          artifact.artifactGraph.nodes.some((node) => node.id === residualId),
+        ),
       })
     );
 

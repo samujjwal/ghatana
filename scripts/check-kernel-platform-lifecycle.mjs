@@ -25,6 +25,11 @@ const checks = [
   'check-yappc-artifact-intelligence-boundary.mjs',
   'check-kernel-yappc-boundary.mjs',
   'check-kernel-product-unit-provider-contracts.mjs',
+  // Task 1.4: Boundary, duplication, and package governance
+  'check-domain-boundaries.mjs',
+  'check-deprecated-imports.mjs',
+  'check-package-registry.mjs',
+  'check-duplicate-platform-capabilities.mjs',
 ];
 
 function main() {

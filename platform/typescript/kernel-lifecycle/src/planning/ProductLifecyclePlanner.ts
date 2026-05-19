@@ -21,6 +21,7 @@ import {
   ProductLifecycleRequiredPlugin,
   ProductLifecycleApprovalRequirement,
   ProductLifecycleApprovalRequirementConfig,
+  ProductLifecycleHealthCheck,
 } from '../domain/ProductLifecyclePhase.js';
 import type {
   KernelLifecycleProviderContext,
@@ -29,7 +30,7 @@ import type {
 } from '@ghatana/kernel-product-contracts';
 
 /** Phases that are handled by the deployment target adapter, NOT surface adapters. */
-const DEPLOYMENT_PHASES = new Set<ProductLifecyclePhase>(['deploy', 'verify', 'rollback']);
+const DEPLOYMENT_PHASES = new Set<ProductLifecyclePhase>(['deploy', 'verify', 'rollback', 'promote']);
 
 /** Phases that use the package adapter from product package config. */
 const PACKAGE_PHASES = new Set<ProductLifecyclePhase>(['package']);
@@ -352,7 +353,7 @@ export class ProductLifecyclePlanner {
     } else {
       throw new Error(
         `Phase "${phase}" is not yet supported by Kernel lifecycle planning. ` +
-          'Supported phases: dev, validate, test, build, package, deploy, verify, rollback.',
+          'Supported phases: dev, validate, test, build, package, deploy, verify, rollback, promote.',
       );
     }
 
@@ -361,6 +362,8 @@ export class ProductLifecyclePlanner {
     const requiredManifests = this.resolveRequiredManifests(phase, config);
     const requiredPlugins = this.resolveRequiredPlugins(config);
     const approvalRequirements = this.resolveApprovalRequirements(phase, config, options.environment);
+    const adapterIds = [...new Set(steps.map((s) => s.adapter).filter(Boolean))];
+    const healthChecks = this.resolveHealthChecks(selectedSurfaces);
 
     return {
       schemaVersion: '1.0.0',
@@ -368,6 +371,7 @@ export class ProductLifecyclePlanner {
       correlationId,
       providerMode,
       productId,
+      productUnitId: productId,
       ...(productUnit ? { productUnitRef: productUnit.id } : {}),
       ...this.resolveProviderRefs(productUnit),
       phase,
@@ -379,12 +383,16 @@ export class ProductLifecyclePlanner {
       surfaces: selectedSurfaces,
       gates,
       steps,
+      adapterIds,
       expectedArtifacts,
       requiredManifests,
       requiredPlugins,
       approvalRequirements,
+      healthChecks,
       outputDirectory,
       estimatedDurationMs: this.estimateDuration(steps),
+      warnings: [],
+      blockingReasons: [],
     };
   }
 
@@ -582,7 +590,7 @@ export class ProductLifecyclePlanner {
     const verifyConfig = config.verify?.[resolvedEnv];
 
     const stepKind: LifecycleStepKind =
-      phase === 'deploy' ? 'deploy' : phase === 'verify' ? 'verify' : 'rollback';
+      phase === 'deploy' ? 'deploy' : phase === 'verify' ? 'verify' : phase === 'promote' ? 'promotion' : 'rollback';
 
     const stepId = `${phase}-${resolvedEnv}-0`;
     const step: ProductLifecycleStep = {
@@ -753,6 +761,30 @@ export class ProductLifecyclePlanner {
       required: true,
       source: `kernel-product.environments.${resolvedEnvironment}`,
     };
+  }
+
+  private resolveHealthChecks(
+    surfaces: ProductSurfaceSelection[],
+  ): ProductLifecycleHealthCheck[] {
+    const healthChecks: ProductLifecycleHealthCheck[] = [];
+    for (const sel of surfaces) {
+      const healthConfig = (sel.config as Record<string, unknown>).health;
+      if (healthConfig === undefined || healthConfig === null || typeof healthConfig !== 'object') {
+        continue;
+      }
+      const h = healthConfig as Record<string, unknown>;
+      const type = (typeof h.type === 'string' ? h.type : 'none') as ProductLifecycleHealthCheck['type'];
+      healthChecks.push({
+        surface: sel.surface,
+        type,
+        ...(typeof h.livePath === 'string' ? { livePath: h.livePath } : {}),
+        ...(typeof h.readyPath === 'string' ? { readyPath: h.readyPath } : {}),
+        ...(typeof h.portVariable === 'string' ? { portVariable: h.portVariable } : {}),
+        ...(typeof h.defaultPort === 'number' ? { defaultPort: h.defaultPort } : {}),
+        ...(Array.isArray(h.command) ? { command: h.command as string[] } : {}),
+      });
+    }
+    return healthChecks;
   }
 
   private resolveProviderRefs(

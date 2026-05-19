@@ -84,8 +84,8 @@ vi.mock('../../../../hooks/useLastOpenedProject', () => ({
 
 vi.mock('../../../../hooks/useWorkspaceData', () => ({
   useWorkspaceContext: () => ({
-    currentWorkspace: null,
-    workspaces: [],
+    currentWorkspace: { id: 'workspace-1', name: 'Workspace One' },
+    workspaces: [{ id: 'workspace-1', name: 'Workspace One' }],
     ownedProjects: [],
     includedProjects: [],
   }),

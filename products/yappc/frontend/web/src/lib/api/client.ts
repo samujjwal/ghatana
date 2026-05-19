@@ -35,7 +35,7 @@ import { authService } from '@/services/auth/AuthService';
 import type { ResourceCapabilities, WorkspaceRole } from '@/services/workspace/accessControl';
 
 // Task 3.2.2: Import OpenAPI-generated client for adapter layer
-import { OpenAPI, AuthService as GeneratedAuthService, WorkspacesService, ProjectsService, LifecycleService, AuditService, GenerateService, WorkflowsService, RunService } from '../../clients/generated/api';
+import { OpenAPI, AuthService as GeneratedAuthService, LifecycleService, AuditService, GenerateService, WorkflowsService, RunService } from '../../clients/generated/api';
 import type {
   LoginRequest as GeneratedLoginRequestType,
   LoginResponse as GeneratedLoginResponseType,
@@ -619,13 +619,26 @@ export type CreateWorkspaceRequest = GeneratedCreateWorkspaceRequest;
 export type UpdateWorkspaceRequest = GeneratedUpdateWorkspaceRequest;
 
 export const workspaces = {
-  // Task 3.2.3: Delegate to generated client
-  list: () => WorkspacesService.listWorkspaces(),
-  get: (workspaceId: string) => WorkspacesService.getWorkspace(workspaceId),
-  create: (body: CreateWorkspaceRequest) => WorkspacesService.createWorkspace(body),
+  list: () => get<GeneratedWorkspace[] | { workspaces: GeneratedWorkspace[] }>('/api/workspaces', 'workspaces.list'),
+  get: (workspaceId: string) =>
+    get<GeneratedWorkspace | { workspace: GeneratedWorkspace }>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}`,
+      'workspaces.get',
+    ),
+  create: (body: CreateWorkspaceRequest) =>
+    post<CreateWorkspaceRequest, GeneratedWorkspace | { workspace: GeneratedWorkspace }>(
+      '/api/workspaces',
+      body,
+      'workspaces.create',
+    ),
   update: (workspaceId: string, body: UpdateWorkspaceRequest) =>
-    WorkspacesService.updateWorkspace(workspaceId, body),
-  delete: (workspaceId: string) => WorkspacesService.deleteWorkspace(workspaceId),
+    patch<UpdateWorkspaceRequest, GeneratedWorkspace | { workspace: GeneratedWorkspace }>(
+      `/api/workspaces/${encodeURIComponent(workspaceId)}`,
+      body,
+      'workspaces.update',
+    ),
+  delete: (workspaceId: string) =>
+    del<void>(`/api/workspaces/${encodeURIComponent(workspaceId)}`, 'workspaces.delete'),
   // Task 3.2.3: Keep existing implementation for methods not in generated client
   suggestName: () => get<{ name: string }>('/api/workspaces/suggest-name', 'workspaces.suggestName'),
   refreshAi: (workspaceId: string) =>
@@ -819,13 +832,33 @@ export const projects = {
     if (!workspaceId) {
       throw new ApiRequestError(400, 'workspaceId is required for projects.list');
     }
-    return ProjectsService.listProjects(workspaceId);
+    return get<ProjectListResponse | Project[]>(
+      `/api/projects${encodeQuery({ workspaceId })}`,
+      'projects.list',
+    );
   },
-  get: (projectId: string, workspaceId?: string) => ProjectsService.getProject(projectId, workspaceId),
-  create: (body: CreateProjectRequest) => ProjectsService.createProject(body),
+  get: (projectId: string, workspaceId?: string) =>
+    get<Project | ProjectResourceResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
+      'projects.get',
+    ),
+  create: (body: CreateProjectRequest) =>
+    post<CreateProjectRequest, Project | ProjectResourceResponse>(
+      '/api/projects',
+      body,
+      'projects.create',
+    ),
   update: (projectId: string, workspaceId: string, body: UpdateProjectRequest) =>
-    ProjectsService.updateProject(projectId, workspaceId, body),
-  delete: (projectId: string, workspaceId: string) => ProjectsService.deleteProject(projectId, workspaceId),
+    patch<UpdateProjectRequest, Project | ProjectResourceResponse>(
+      `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
+      body,
+      'projects.update',
+    ),
+  delete: (projectId: string, workspaceId: string) =>
+    del<void>(
+      `/api/projects/${encodeURIComponent(projectId)}${encodeQuery({ workspaceId })}`,
+      'projects.delete',
+    ),
   // Task 3.2.3: Keep existing implementation for methods not in generated client or requiring enrichment
   getScoped: async (projectId: string, workspaceId: string) =>
     unwrapProjectResource(

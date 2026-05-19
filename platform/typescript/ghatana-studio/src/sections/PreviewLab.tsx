@@ -23,16 +23,23 @@ import {
   type PreviewToHostMessage,
 } from '@ghatana/ui-builder/preview';
 import {
+  type BuilderDocument,
   createBuilderDocument,
-  type DocumentId,
 } from '@ghatana/ui-builder';
+import { serializeToHtml } from '@ghatana/ui-builder/web';
 import { studioLogger } from '../logging/studioLogger';
 
-type PreviewBuilderDocument = Parameters<PreviewHostService['mount']>[0];
+/**
+ * Create a minimal canonical BuilderDocument for preview testing.
+ * Uses the schema-based BuilderDocument from @ghatana/ui-builder.
+ */
+function createSampleBuilderDocument(): BuilderDocument {
+  return createBuilderDocument('preview-lab');
+}
 
 interface PreviewSession {
   id: string;
-  document: PreviewBuilderDocument;
+  document: BuilderDocument;
   sandbox: SandboxProfile;
   viewport: Viewport;
   isActive: boolean;
@@ -86,7 +93,7 @@ export default function PreviewLab(): ReactElement {
     };
   }, [selectedSession]);
 
-  const createPreviewSession = (document: PreviewBuilderDocument): void => {
+  const createPreviewSession = (document: BuilderDocument): void => {
     setIsLoading(true);
     setError(null);
 
@@ -181,12 +188,7 @@ export default function PreviewLab(): ReactElement {
   };
 
   const loadSampleDocument = (): void => {
-    const sampleDocument = createBuilderDocument('preview-lab', {
-      documentId: `sample-${Date.now()}` as DocumentId,
-      designSystemId: 'default-design-system',
-      designSystemName: 'Default Design System',
-    }) as unknown as PreviewBuilderDocument;
-
+    const sampleDocument = createSampleBuilderDocument();
     createPreviewSession(sampleDocument);
   };
 
@@ -314,9 +316,9 @@ export default function PreviewLab(): ReactElement {
                 {selectedSession ? (
                   <div className="space-y-4">
                     <div className="border rounded-lg overflow-hidden">
-                      <div 
+                      <div
                         className="bg-gray-100 p-2 text-sm text-gray-600"
-                        style={{ 
+                        style={{
                           width: `${Math.min(selectedSession.viewport.width, 600)}px`,
                           margin: '0 auto'
                         }}
@@ -325,7 +327,6 @@ export default function PreviewLab(): ReactElement {
                       </div>
                       <iframe
                         ref={iframeRef}
-                        src="about:blank"
                         className="border-0"
                         style={{
                           width: `${Math.min(selectedSession.viewport.width, 600)}px`,
@@ -334,6 +335,8 @@ export default function PreviewLab(): ReactElement {
                           display: 'block',
                         }}
                         sandbox="allow-scripts allow-same-origin allow-forms"
+                        title="Preview Sandbox"
+                        srcDoc={serializeToHtml(selectedSession.document, { emitDebugAttributes: true })}
                       />
                     </div>
 

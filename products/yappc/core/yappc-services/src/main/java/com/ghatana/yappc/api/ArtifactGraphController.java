@@ -13,7 +13,6 @@ import com.ghatana.yappc.services.artifact.ArtifactGraphService;
 import com.ghatana.yappc.services.artifact.ArtifactGraphValidator;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
-import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +40,15 @@ public class ArtifactGraphController {
     private static final Logger log = LoggerFactory.getLogger(ArtifactGraphController.class);
 
     private final ArtifactGraphService artifactGraphService;
+    private final ArtifactScopeResolver scopeResolver;
 
     public ArtifactGraphController(ArtifactGraphService artifactGraphService) {
+        this(artifactGraphService, new ArtifactScopeResolver());
+    }
+
+    public ArtifactGraphController(ArtifactGraphService artifactGraphService, ArtifactScopeResolver scopeResolver) {
         this.artifactGraphService = artifactGraphService;
+        this.scopeResolver = scopeResolver;
     }
 
     /**
@@ -58,6 +63,12 @@ public class ArtifactGraphController {
             log.error("Failed to serialize error JSON", e);
             return "{\"error\":\"Internal error\"}";
         }
+    }
+
+    private Promise<HttpResponse> scopeError(ArtifactScopeResolver.ScopeResolutionException e) {
+        return Promise.of(HttpResponse.ofCode(e.statusCode())
+            .withJson(toJsonError("Scope resolution failed", e.getMessage()))
+            .build());
     }
 
     /**
@@ -88,40 +99,15 @@ public class ArtifactGraphController {
                     try {
                         ArtifactGraphIngestRequest ingestRequest = JsonMapper.fromJson(json, ArtifactGraphIngestRequest.class);
 
-                        // P0-7: Reject if payload tenantId conflicts with principal tenant
-                        if (ingestRequest.tenantId() != null && !ingestRequest.tenantId().equals(tenantId)) {
-                            log.warn("Tenant scope mismatch in ingest: principalTenant={}, requestTenant={}",
-                                tenantId, ingestRequest.tenantId());
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                                .build());
+                        ArtifactRequestScope scope;
+                        try {
+                            scope = scopeResolver.resolve(request, principal, ingestRequest.tenantId(), ingestRequest.projectId());
+                        } catch (ArtifactScopeResolver.ScopeResolutionException e) {
+                            log.warn("Scope resolution failed in ingest: {}", e.getMessage());
+                            return scopeError(e);
                         }
 
-                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
-                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
-                            log.warn("Missing X-Workspace-ID or X-Project-ID scope header in ingest request");
-                            return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
-                                .build());
-                        }
-
-                        if (ingestRequest.projectId() != null && !ingestRequest.projectId().isBlank()
-                            && !scopedProjectId.equals(ingestRequest.projectId())) {
-                            log.warn("Project scope mismatch in ingest: scopedProjectId={}, requestProjectId={}",
-                                scopedProjectId, ingestRequest.projectId());
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
-                                .build());
-                        }
-
-                        String projectId = scopedProjectId;
-                        if (projectId.isBlank()) {
-                            log.warn("Missing projectId in ingest request");
-                            return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"Bad Request: missing projectId\"}")
-                                .build());
-                        }
+                        String projectId = scope.projectId();
 
                         ArtifactGraphIngestRequest scopedRequest = new ArtifactGraphIngestRequest(
                             projectId,
@@ -136,8 +122,6 @@ public class ArtifactGraphController {
                             ingestRequest.edgeResolutionRecords(),
                             ingestRequest.residualIslands()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(projectId, tenantId, scopedWorkspaceId);
-
                         // P0: Use centralized ArtifactGraphValidator for comprehensive validation
                         ArtifactGraphValidator.ValidationResult validationResult =
                             ArtifactGraphValidator.validateIngestRequest(scopedRequest, scope);
@@ -213,35 +197,20 @@ public class ArtifactGraphController {
                     try {
                         ArtifactGraphAnalysisRequest analysisRequest = JsonMapper.fromJson(json, ArtifactGraphAnalysisRequest.class);
 
-                        if (analysisRequest.tenantId() != null && !analysisRequest.tenantId().equals(tenantId)) {
-                            log.warn("Tenant scope mismatch in analyze: principalTenant={}, requestTenant={}",
-                                tenantId, analysisRequest.tenantId());
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                                .build());
-                        }
-
-                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
-                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
-                                .build());
-                        }
-                        if (analysisRequest.projectId() != null && !analysisRequest.projectId().isBlank()
-                                && !scopedProjectId.equals(analysisRequest.projectId())) {
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
-                                .build());
+                        ArtifactRequestScope scope;
+                        try {
+                            scope = scopeResolver.resolve(request, principal, analysisRequest.tenantId(), analysisRequest.projectId());
+                        } catch (ArtifactScopeResolver.ScopeResolutionException e) {
+                            log.warn("Scope resolution failed in analyze: {}", e.getMessage());
+                            return scopeError(e);
                         }
 
                         ArtifactGraphAnalysisRequest scopedRequest = new ArtifactGraphAnalysisRequest(
-                            scopedProjectId,
+                            scope.projectId(),
                             tenantId,
                             analysisRequest.algorithmTypes(),
                             analysisRequest.nodeIds()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId, scopedWorkspaceId);
 
                         return artifactGraphService.analyzeGraph(scope, scopedRequest)
                                 .map(result -> {
@@ -283,37 +252,22 @@ public class ArtifactGraphController {
                     try {
                         ArtifactGraphMergeRequest mergeRequest = JsonMapper.fromJson(json, ArtifactGraphMergeRequest.class);
 
-                        if (mergeRequest.tenantId() != null && !mergeRequest.tenantId().equals(tenantId)) {
-                            log.warn("Tenant scope mismatch in merge: principalTenant={}, requestTenant={}",
-                                tenantId, mergeRequest.tenantId());
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                                .build());
-                        }
-
-                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
-                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
-                                .build());
-                        }
-                        if (mergeRequest.projectId() != null && !mergeRequest.projectId().isBlank()
-                                && !scopedProjectId.equals(mergeRequest.projectId())) {
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
-                                .build());
+                        ArtifactRequestScope scope;
+                        try {
+                            scope = scopeResolver.resolve(request, principal, mergeRequest.tenantId(), mergeRequest.projectId());
+                        } catch (ArtifactScopeResolver.ScopeResolutionException e) {
+                            log.warn("Scope resolution failed in merge: {}", e.getMessage());
+                            return scopeError(e);
                         }
 
                         ArtifactGraphMergeRequest scopedRequest = new ArtifactGraphMergeRequest(
-                            scopedProjectId,
+                            scope.projectId(),
                             tenantId,
                             mergeRequest.baseModel(),
                             mergeRequest.leftModel(),
                             mergeRequest.rightModel(),
                             mergeRequest.resolutionStrategy()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedRequest.projectId(), tenantId, scopedWorkspaceId);
 
                         return artifactGraphService.mergeModels(scope, scopedRequest)
                                 .map(result -> {
@@ -362,22 +316,18 @@ public class ArtifactGraphController {
                         // P0: Use typed request DTO instead of raw map parsing
                         ArtifactGraphQueryRequest queryRequest = JsonMapper.fromJson(json, ArtifactGraphQueryRequest.class);
 
-                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
-                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
-                                .build());
+                        ArtifactRequestScope scope;
+                        try {
+                            scope = scopeResolver.resolve(request, principal, null, null);
+                        } catch (ArtifactScopeResolver.ScopeResolutionException e) {
+                            log.warn("Scope resolution failed in query: {}", e.getMessage());
+                            return scopeError(e);
                         }
 
-                        // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
-                        // (This is handled by not allowing tenantId in the typed request DTO)
-
                         log.info("Querying artifact graph: projectId={}, workspaceId={}, queryType={}, cursor={}, limit={}, includeUnresolved={}",
-                            scopedProjectId, scopedWorkspaceId, queryRequest.queryType(), 
+                            scope.projectId(), scope.workspaceId(), queryRequest.queryType(),
                             queryRequest.cursor() != null ? "present" : "null", queryRequest.limit(), queryRequest.includeUnresolvedEdges());
 
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedProjectId, tenantId, scopedWorkspaceId);
                         return artifactGraphService.queryGraph(scope, queryRequest.queryType(), queryRequest.seedNodeIds(), 
                                 queryRequest.cursor(), queryRequest.limit(), queryRequest.snapshotId(), queryRequest.includeUnresolvedEdges())
                                 .map(result -> {
@@ -429,37 +379,21 @@ public class ArtifactGraphController {
                         // P0: Use typed request DTO instead of raw map parsing
                         ResidualAnalysisRequest analysisRequest = JsonMapper.fromJson(json, ResidualAnalysisRequest.class);
 
-                        String scopedWorkspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
-                        String scopedProjectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-                        if (scopedWorkspaceId == null || scopedWorkspaceId.isBlank() || scopedProjectId == null || scopedProjectId.isBlank()) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                            .withJson("{\"error\":\"Bad Request: missing X-Workspace-ID or X-Project-ID scope header\"}")
-                                .build());
-                        }
-                        if (analysisRequest.projectId() != null && !analysisRequest.projectId().isBlank()
-                                && !scopedProjectId.equals(analysisRequest.projectId())) {
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: project scope mismatch\"}")
-                                .build());
-                        }
-
-                        // P1-8: Validate tenant scope - reject if request body contains tenantId that doesn't match principal
-                        if (analysisRequest.tenantId() != null && !analysisRequest.tenantId().equals(tenantId)) {
-                            log.warn("Tenant scope mismatch in analyzeResidual: principalTenant={}, requestTenant={}",
-                                tenantId, analysisRequest.tenantId());
-                            return Promise.of(HttpResponse.ofCode(403)
-                                .withJson("{\"error\":\"Forbidden: tenant scope mismatch\"}")
-                                .build());
+                        ArtifactRequestScope scope;
+                        try {
+                            scope = scopeResolver.resolve(request, principal, analysisRequest.tenantId(), analysisRequest.projectId());
+                        } catch (ArtifactScopeResolver.ScopeResolutionException e) {
+                            log.warn("Scope resolution failed in analyzeResidual: {}", e.getMessage());
+                            return scopeError(e);
                         }
 
                         // Create scoped request
                         ResidualAnalysisRequest scopedRequest = new ResidualAnalysisRequest(
-                            scopedProjectId,
+                            scope.projectId(),
                             tenantId,
-                            scopedWorkspaceId,
+                            scope.workspaceId(),
                             analysisRequest.residualIslands()
                         );
-                        ArtifactRequestScope scope = new ArtifactRequestScope(scopedProjectId, tenantId, scopedWorkspaceId);
 
                         return artifactGraphService.analyzeResidual(scope, scopedRequest)
                                 .map(result -> {

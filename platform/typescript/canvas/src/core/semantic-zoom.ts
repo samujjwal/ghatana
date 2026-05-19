@@ -29,6 +29,21 @@ export type SemanticZoomLevel =
   | "source"; // Original source - raw data, code
 
 /**
+ * Detail level for content rendering within a semantic zoom context.
+ *
+ * Complements {@link SemanticZoomLevel} by specifying how much detail to render
+ * for a specific node or edge regardless of the current viewport zoom level.
+ * Use this to control per-element information density independently of the
+ * global zoom state.
+ *
+ * - `"minimal"` — only identity information (id, type icon).
+ * - `"summary"` — key properties and status indicators.
+ * - `"full"` — all attributes visible in the viewport.
+ * - `"expanded"` — full content plus auxiliary panels (annotations, references).
+ */
+export type DetailLevel = "minimal" | "summary" | "full" | "expanded";
+
+/**
  * Band definition for a semantic zoom level.
  * Maps scale ranges to semantic meanings.
  */

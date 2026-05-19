@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "records": [
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T20-21-44-a461019e",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T20-21-44-a461019e",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T20-21-44-a461019e"
+      ],
+      "recordedAt": "2026-05-18T20:21:44.778Z",
+      "correlationId": "corr-2026-05-18T20-21-44-a461019e"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-35-24-323ee67e",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-24-323ee67e",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-35-24-323ee67e"
+      ],
+      "recordedAt": "2026-05-18T21:35:24.309Z",
+      "correlationId": "corr-2026-05-18T21-35-24-323ee67e"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-35-30-291614c1",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-30-291614c1",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-35-30-291614c1"
+      ],
+      "recordedAt": "2026-05-18T21:35:30.326Z",
+      "correlationId": "corr-2026-05-18T21-35-30-291614c1"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-35-37-1cd771b4",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-35-37-1cd771b4",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-35-37-1cd771b4"
+      ],
+      "recordedAt": "2026-05-18T21:35:37.627Z",
+      "correlationId": "corr-2026-05-18T21-35-37-1cd771b4"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-43-41-6cd86cf4",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-43-41-6cd86cf4",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-43-41-6cd86cf4"
+      ],
+      "recordedAt": "2026-05-18T21:43:41.712Z",
+      "correlationId": "corr-2026-05-18T21-43-41-6cd86cf4"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-18T21-44-03-6f92544e",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-18T21-44-03-6f92544e",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-18T21-44-03-6f92544e"
+      ],
+      "recordedAt": "2026-05-18T21:44:03.059Z",
+      "correlationId": "corr-2026-05-18T21-44-03-6f92544e"
+    },
+    {
+      "provenanceId": "kernel-lifecycle:2026-05-19T00-31-20-dc5571ed",
+      "productUnitId": "digital-marketing",
+      "runId": "2026-05-19T00-31-20-dc5571ed",
+      "source": "kernel-lifecycle-service",
+      "evidenceRefs": [
+        "lifecycle-plan:2026-05-19T00-31-20-dc5571ed"
+      ],
+      "recordedAt": "2026-05-19T00:31:20.329Z",
+      "correlationId": "corr-2026-05-19T00-31-20-dc5571ed"
+    }
+  ]
+}

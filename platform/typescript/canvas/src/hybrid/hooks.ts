@@ -40,15 +40,16 @@ import {
   selectedEdgesAtom,
 } from "./state";
 import {
-  getHybridCanvasController,
+  HybridCanvasController,
   type HybridCanvasAPI,
 } from "./hybrid-canvas-controller";
 
 /**
  * Hook to get the canvas controller API
+ * Creates a new instance-scoped controller for each component
  */
 export function useHybridCanvas(): HybridCanvasAPI {
-  return useMemo(() => getHybridCanvasController(), []);
+  return useMemo(() => new HybridCanvasController(), []);
 }
 
 /**

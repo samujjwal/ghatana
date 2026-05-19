@@ -1208,4 +1208,233 @@ describe('@ghatana/ui-builder/core - Code Generation', () => {
       expect(result.roundTripFidelity.confidence).toBeGreaterThanOrEqual(0);
     });
   });
+
+  // ==========================================================================
+  // Golden snapshot tests
+  // ==========================================================================
+  describe('Golden Snapshots', () => {
+    const buttonContract = {
+      name: 'Button',
+      version: '1.0.0',
+      props: [{ name: 'label', type: 'string', required: false }],
+      slots: [],
+      events: [],
+      styles: {},
+      metadata: {
+        category: 'input' as const,
+        status: 'stable' as const,
+        platforms: ['web' as const],
+      },
+      builder: {
+        codegen: {
+          importPath: '@ghatana/design-system',
+          componentName: 'Button',
+          namedExport: true,
+        },
+      },
+    };
+
+    const inputContract = {
+      name: 'TextInput',
+      version: '1.0.0',
+      props: [
+        { name: 'placeholder', type: 'string', required: false },
+        { name: 'value', type: 'string', required: false },
+      ],
+      slots: [],
+      events: [],
+      styles: {},
+      metadata: {
+        category: 'input' as const,
+        status: 'stable' as const,
+        platforms: ['web' as const],
+      },
+      builder: {
+        codegen: {
+          importPath: '@ghatana/design-system',
+          componentName: 'TextInput',
+          namedExport: true,
+        },
+      },
+    };
+
+    it('golden: single Button node produces stable TSX output', () => {
+      const buttonId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Button Form',
+        designSystem: {
+          id: 'ghatana-ds',
+          name: 'Ghatana DS',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [buttonId],
+        nodes: new Map([
+          [
+            buttonId,
+            {
+              id: buttonId,
+              contractName: 'Button',
+              props: { label: 'Submit' },
+              slots: {},
+              bindings: [],
+              metadata: {},
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = generateReactCode(
+        document,
+        new Map([['Button', buttonContract]]),
+        {
+          format: 'functional',
+          typescript: true,
+          importPath: '@ghatana/design-system',
+          componentName: 'ButtonForm',
+        },
+      );
+
+      expect(result.language).toBe('tsx');
+      expect(result.files).toHaveLength(1);
+      const content = result.files[0].content;
+      // Golden structural assertions — these form the golden contract
+      expect(content).toContain("import * as React from 'react'");
+      expect(content).toContain("import { Button } from '@ghatana/design-system'");
+      expect(content).toContain('ButtonForm');
+      expect(content).toContain('label="Submit"');
+      expect(content).toContain('ButtonFormProps');
+      // Verify the output is non-trivial
+      expect(content.length).toBeGreaterThan(100);
+    });
+
+    it('golden: two sibling nodes produce stable TSX with grouped import', () => {
+      const btnId = createNodeId();
+      const inputId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Login Form',
+        designSystem: {
+          id: 'ghatana-ds',
+          name: 'Ghatana DS',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [inputId, btnId],
+        nodes: new Map([
+          [
+            inputId,
+            {
+              id: inputId,
+              contractName: 'TextInput',
+              props: { placeholder: 'Email' },
+              slots: {},
+              bindings: [],
+              metadata: {},
+            },
+          ],
+          [
+            btnId,
+            {
+              id: btnId,
+              contractName: 'Button',
+              props: { label: 'Login' },
+              slots: {},
+              bindings: [],
+              metadata: {},
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = generateReactCode(
+        document,
+        new Map([
+          ['Button', buttonContract],
+          ['TextInput', inputContract],
+        ]),
+        {
+          format: 'functional',
+          typescript: true,
+          importPath: '@ghatana/design-system',
+          componentName: 'LoginForm',
+        },
+      );
+
+      expect(result.language).toBe('tsx');
+      // Both components import from the same path — should be grouped in one import statement
+      const content = result.files[0].content;
+      expect(content).toContain('Button');
+      expect(content).toContain('TextInput');
+      // Both props should appear
+      expect(content).toContain('placeholder="Email"');
+      expect(content).toContain('label="Login"');
+      // LoginForm component and props interface
+      expect(content).toContain('LoginForm');
+    });
+
+    it('golden: no-contract node produces loss point but still emits valid output', () => {
+      const nodeId = createNodeId();
+      const document: BuilderDocument = {
+        id: createDocumentId(),
+        version: '1',
+        name: 'Unknown Component Doc',
+        designSystem: {
+          id: 'ds',
+          name: 'DS',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: [nodeId],
+        nodes: new Map([
+          [
+            nodeId,
+            {
+              id: nodeId,
+              contractName: 'CustomWidget',
+              props: { color: 'red' },
+              slots: {},
+              bindings: [],
+              metadata: {},
+            },
+          ],
+        ]),
+        metadata: {
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      };
+
+      const result = generateReactCode(document, new Map(), {
+        format: 'functional',
+        typescript: true,
+        importPath: '@ghatana/design-system',
+        componentName: 'UnknownDoc',
+      });
+
+      expect(result.roundTripFidelity.canRoundTrip).toBe(false);
+      expect(result.roundTripFidelity.lossPoints).toHaveLength(1);
+      expect(result.roundTripFidelity.lossPoints[0].type).toBe('unsupported-pattern');
+      // Should still emit a non-empty file
+      expect(result.files[0].content.length).toBeGreaterThan(50);
+      expect(result.files[0].content).toContain('UnknownDoc');
+    });
+  });
 });

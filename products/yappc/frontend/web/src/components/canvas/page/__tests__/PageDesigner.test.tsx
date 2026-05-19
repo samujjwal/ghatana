@@ -202,12 +202,135 @@ vi.mock('../schemas', () => ({
 
 vi.mock('@ghatana/ui-builder', () => ({
   createDocumentId: () => 'doc-1',
+  attachBuilderDocumentCompatibility: (document: {
+    nodes: Map<string, unknown> | Record<string, unknown>;
+    layout?: { rootId: string; nodes: Record<string, { children?: string[] }> };
+    [key: string]: unknown;
+  }) => {
+    if (!(document.nodes instanceof Map)) {
+      const nodeRecord = document.nodes;
+      Object.defineProperty(nodeRecord, 'get', { value: (id: string) => nodeRecord[id], enumerable: false });
+      Object.defineProperty(nodeRecord, 'has', { value: (id: string) => Object.prototype.hasOwnProperty.call(nodeRecord, id), enumerable: false });
+      Object.defineProperty(nodeRecord, 'size', { get: () => Object.values(nodeRecord).filter((node) => (node as { contractName?: string }).contractName !== 'RootContainer').length, enumerable: false });
+    }
+    Object.defineProperty(document, 'rootNodes', {
+      get: () => document.layout?.nodes[document.layout.rootId]?.children ?? [],
+      configurable: true,
+      enumerable: false,
+    });
+    return document;
+  },
+  normalizeBuilderDocument: (document: unknown) => {
+    const doc = document as {
+      documentId?: string;
+      id?: string;
+      owner?: string;
+      root?: string;
+      rootNodes?: string[];
+      nodes?: Map<string, unknown> | Record<string, unknown>;
+      layout?: { rootId: string; nodes: Record<string, { id?: string; type?: string; children?: string[] }> };
+      metadata?: Record<string, unknown>;
+    } | undefined;
+    if (!doc) {
+      return {
+        documentId: 'doc-1',
+        owner: 'test',
+        root: 'root',
+        rootNodes: [],
+        nodes: new Map(),
+        layout: { rootId: 'root', nodes: { root: { id: 'root', type: 'root', children: [] } } },
+        metadata: {},
+      };
+    }
+    const rootId = doc.root ?? doc.layout?.rootId ?? 'root';
+    const rootNodes = doc.rootNodes ?? doc.layout?.nodes[rootId]?.children ?? [];
+    const nodeRecord = doc.nodes instanceof Map
+      ? doc.nodes
+      : { ...(doc.nodes ?? {}) };
+    if (nodeRecord instanceof Map) {
+      for (const [nodeId, node] of nodeRecord.entries()) {
+        Object.defineProperty(nodeRecord, nodeId, {
+          value: node,
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
+      }
+    } else {
+      Object.defineProperty(nodeRecord, 'get', { value: (id: string) => nodeRecord[id], enumerable: false, configurable: true });
+      Object.defineProperty(nodeRecord, 'has', { value: (id: string) => Object.prototype.hasOwnProperty.call(nodeRecord, id), enumerable: false, configurable: true });
+      Object.defineProperty(nodeRecord, 'set', { value: (id: string, value: unknown) => { nodeRecord[id] = value; return nodeRecord; }, enumerable: false, configurable: true });
+      Object.defineProperty(nodeRecord, 'delete', { value: (id: string) => delete nodeRecord[id], enumerable: false, configurable: true });
+      Object.defineProperty(nodeRecord, 'size', { get: () => Object.keys(nodeRecord).length, enumerable: false, configurable: true });
+    }
+    return {
+      ...doc,
+      documentId: doc.documentId ?? doc.id ?? 'doc-1',
+      owner: doc.owner ?? 'test',
+      root: rootId,
+      rootNodes,
+      nodes: nodeRecord,
+      layout: {
+        type: 'flex',
+        ...(doc.layout ?? {}),
+        rootId,
+        nodes: {
+          ...(doc.layout?.nodes ?? {}),
+          [rootId]: {
+            id: rootId,
+            type: 'root',
+            ...(doc.layout?.nodes[rootId] ?? {}),
+            children: rootNodes,
+          },
+        },
+      },
+      metadata: doc.metadata ?? {},
+    };
+  },
+  createBuilderDocument: (owner: string, options?: { documentId?: string }) => ({
+    id: options?.documentId ?? 'doc-1',
+    documentId: options?.documentId ?? 'doc-1',
+    version: '1',
+    schemaVersion: '1.0.0',
+    name: 'Test Document',
+    owner,
+    root: 'root',
+    rootNodes: [],
+    nodes: new Map(),
+    bindings: [],
+    layout: {
+      type: 'flex',
+      rootId: 'root',
+      nodes: {
+        root: {
+          id: 'root',
+          type: 'root',
+          children: [],
+        },
+      },
+    },
+    designSystem: {
+      id: 'ghatana-ds-v1',
+      name: 'Ghatana Design System',
+      version: '1.0.0',
+      tokenSetIds: [],
+      componentContracts: [],
+      themeId: 'default',
+    },
+    metadata: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      author: owner,
+      dataClassification: 'INTERNAL',
+      trustLevel: 'GENERATED_TRUSTED',
+    },
+  }),
   insertNode: insertNodeMock.mockImplementation((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
     rootNodes: string[];
   }, instance: { contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }, parentId?: string, slotName?: string, bus?: { onNodeInserted?: (payload: { nodeId: string }) => void }) => {
-    const nextNodes = new Map(document.nodes);
-    const nodeId = `node-${document.nodes.size + 1}`;
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
+    const nodeId = `node-${nextNodes.size + 1}`;
     nextNodes.set(nodeId, {
       id: nodeId,
       contractName: instance.contractName,
@@ -241,7 +364,7 @@ vi.mock('@ghatana/ui-builder', () => ({
     };
   }),
   deleteNode: vi.fn((document: { nodes: Map<string, unknown>; rootNodes: string[] }, nodeId: string) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
     nextNodes.delete(nodeId);
     return {
       ...document,
@@ -253,7 +376,7 @@ vi.mock('@ghatana/ui-builder', () => ({
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
     rootNodes: string[];
   }, nodeId: string, newParentId?: string | null, newSlotName?: string) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
 
     const nextRootNodes = document.rootNodes.filter((id) => id !== nodeId);
     for (const [id, node] of nextNodes.entries()) {
@@ -300,7 +423,7 @@ vi.mock('@ghatana/ui-builder', () => ({
   updateNodeProps: vi.fn((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
   }, nodeId: string, props: Record<string, unknown>) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
     const current = nextNodes.get(nodeId);
     if (current) {
       nextNodes.set(nodeId, {
@@ -316,7 +439,7 @@ vi.mock('@ghatana/ui-builder', () => ({
   addBinding: vi.fn((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
   }, nodeId: string, binding: unknown) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
     const current = nextNodes.get(nodeId);
     if (current) {
       nextNodes.set(nodeId, {
@@ -332,7 +455,7 @@ vi.mock('@ghatana/ui-builder', () => ({
   removeBinding: vi.fn((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: Array<{ id?: string }>; metadata: Record<string, unknown> }>;
   }, nodeId: string, bindingId: string) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
     const current = nextNodes.get(nodeId);
     if (current) {
       nextNodes.set(nodeId, {
@@ -348,7 +471,7 @@ vi.mock('@ghatana/ui-builder', () => ({
   setResponsiveVariant: vi.fn((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
   }, nodeId: string, variant: unknown) => {
-    const nextNodes = new Map(document.nodes);
+    const nextNodes = new Map(document.nodes instanceof Map ? document.nodes : Object.entries(document.nodes));
     const current = nextNodes.get(nodeId);
     if (current) {
       nextNodes.set(nodeId, {

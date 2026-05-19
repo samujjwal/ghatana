@@ -165,9 +165,9 @@ function renameComponentInSource(source: string, filePath: string, oldName: stri
 
   visit(sourceFile);
   if (edits.length === 0) {
-    return { updated: source, range: firstRange };
+    return firstRange ? { updated: source, range: firstRange } : { updated: source };
   }
-  return { updated: applyTextEdits(source, edits), range: firstRange };
+  return firstRange ? { updated: applyTextEdits(source, edits), range: firstRange } : { updated: applyTextEdits(source, edits) };
 }
 
 /**
@@ -341,7 +341,7 @@ export class ReactPatchEmitter implements PatchEmitter {
       patch: {
         diff,
         checksum: checksumFor(renamed.updated),
-        metadata: renamed.range,
+        ...(renamed.range ? { metadata: renamed.range } : {}),
       },
     };
   }

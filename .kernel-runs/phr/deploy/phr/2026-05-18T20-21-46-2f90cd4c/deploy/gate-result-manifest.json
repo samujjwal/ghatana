@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "runId": "2026-05-18T20-21-46-2f90cd4c",
+  "phase": "deploy",
+  "status": "skipped",
+  "gates": [
+    {
+      "gateId": "artifact-validation",
+      "gateName": "artifact-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for artifact-validation",
+      "evidenceRefs": [
+        "dry-run:gate:artifact-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "artifact-validation"
+    },
+    {
+      "gateId": "environment-validation",
+      "gateName": "environment-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for environment-validation",
+      "evidenceRefs": [
+        "dry-run:gate:environment-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "environment-validation"
+    },
+    {
+      "gateId": "health-check",
+      "gateName": "health-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for health-check",
+      "evidenceRefs": [
+        "dry-run:gate:health-check"
+      ],
+      "durationMs": 0,
+      "providerId": "health-check"
+    },
+    {
+      "gateId": "observability-check",
+      "gateName": "observability-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for observability-check",
+      "evidenceRefs": [
+        "dry-run:gate:observability-check"
+      ],
+      "durationMs": 0,
+      "providerId": "observability-check"
+    },
+    {
+      "gateId": "consent",
+      "gateName": "consent",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for consent",
+      "evidenceRefs": [
+        "dry-run:gate:consent"
+      ],
+      "durationMs": 0,
+      "providerId": "consent"
+    },
+    {
+      "gateId": "tenant-data-sovereignty",
+      "gateName": "tenant-data-sovereignty",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for tenant-data-sovereignty",
+      "evidenceRefs": [
+        "dry-run:gate:tenant-data-sovereignty"
+      ],
+      "durationMs": 0,
+      "providerId": "tenant-data-sovereignty"
+    }
+  ],
+  "writtenAt": "2026-05-18T20:21:46.689Z"
+}

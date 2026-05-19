@@ -60,6 +60,7 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
 
     private final ArtifactGraphRepository repository;
     private final ArtifactModelVersionRepository versionRepository;
+    private final ResidualIslandService residualIslandService;
     private final Cache<String, List<ArtifactNodeDto>> nodeCache;
     private final Cache<String, List<ArtifactEdgeDto>> edgeCache;
     private final Executor blockingExecutor;
@@ -73,8 +74,17 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
     }
 
     public ArtifactGraphServiceImpl(ArtifactGraphRepository repository, ArtifactModelVersionRepository versionRepository, Executor blockingExecutor) {
+        this(repository, versionRepository, blockingExecutor, new ResidualIslandService());
+    }
+
+    public ArtifactGraphServiceImpl(
+            ArtifactGraphRepository repository,
+            ArtifactModelVersionRepository versionRepository,
+            Executor blockingExecutor,
+            ResidualIslandService residualIslandService) {
         this.repository = repository;
         this.versionRepository = versionRepository;
+        this.residualIslandService = Objects.requireNonNull(residualIslandService, "residualIslandService must not be null");
         this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
         this.nodeCache = Caffeine.newBuilder()
                 .maximumSize(1000)
@@ -116,8 +126,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         // Only insert/update nodes that have changed based on checksum
         return repository.upsertNodes(scope.projectId(), scope.tenantId(), scope.workspaceId(), request.nodes(), snapshotId, versionId, contentChecksum)
             .then(saved -> repository.upsertEdges(scope.projectId(), scope.tenantId(), scope.workspaceId(), request.edges(), snapshotId, versionId))
-            .then(v -> repository.saveUnresolvedEdges(scope.projectId(), scope.tenantId(), snapshotId, unresolvedEdges))
-            .then(v -> repository.saveEdgeResolutionRecords(scope.projectId(), scope.tenantId(), resolutionRecords))
+            .then(v -> repository.saveUnresolvedEdges(scope.projectId(), scope.tenantId(), scope.workspaceId(), snapshotId, unresolvedEdges))
+            .then(v -> repository.saveEdgeResolutionRecords(scope.projectId(), scope.tenantId(), scope.workspaceId(), resolutionRecords))
             .then(v -> repository.saveResidualIslands(scope.projectId(), scope.tenantId(), snapshotId, residualIslands))
                 .then(v -> {
                     nodeCache.invalidate(cacheKey);
@@ -712,20 +722,8 @@ public class ArtifactGraphServiceImpl implements ArtifactGraphService {
         log.info("Analyzing {} residual islands for project {}", 
             request.residualIslands().size(), scope.projectId());
         
-        // Validate residual islands have required fields for analysis
-        for (ResidualIslandDto island : request.residualIslands()) {
-            if (island.originalSource() == null || island.originalSource().isBlank()) {
-                log.warn("Residual island {} missing originalSource, cannot perform meaningful analysis", island.id());
-            }
-        }
-        
-        // Perform analysis on typed residual islands
         List<ResidualIslandDto> enriched = request.residualIslands().stream()
-                .map(island -> {
-                    // In a real implementation, this would perform AST analysis, pattern matching, etc.
-                    // For now, we return the typed DTO with analysis metadata
-                    return island; // Return unchanged for now - analysis logic to be implemented
-                })
+                .map(island -> residualIslandService.analyze(scope, island))
                 .toList();
         
         return Promise.of(new ArtifactGraphResponse(true, "residual-analysis",

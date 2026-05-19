@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-75d08b66",
+  "correlationId": "corr-2026-05-18T20-21-46-75d08b66",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "phase": "package",
+  "lifecycleProfile": "standard-web-api-product",
+  "requestedPhases": [
+    "package"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:46.476Z",
+  "completedAt": "2026-05-18T20:21:46.476Z",
+  "steps": [
+    {
+      "stepId": "package-backend-api-0",
+      "phase": "package",
+      "surface": "backend-api",
+      "adapter": "docker-buildx",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:46.476Z",
+      "completedAt": "2026-05-18T20:21:46.476Z",
+      "exitCode": 0,
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-46-75d08b66"
+    },
+    {
+      "stepId": "package-web-1",
+      "status": "skipped",
+      "durationMs": 0
+    }
+  ],
+  "gates": [],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package",
+  "manifestRefs": {
+    "artifactManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/artifact-manifest.json",
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/lifecycle-health-snapshot.json"
+}

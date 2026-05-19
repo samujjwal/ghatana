@@ -14,9 +14,8 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 
-import { Search as SearchIcon, ChevronDown as ExpandMoreIcon, Plus as AddIcon } from 'lucide-react';
+import { ChevronDown as ExpandMoreIcon, Plus as AddIcon } from 'lucide-react';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useTranslation } from '@ghatana/i18n';
 
 /**
  * Component definition for the palette.
@@ -44,6 +43,10 @@ interface ComponentDef {
 type PaletteWindow = Window & {
   __E2E_TEST_MODE?: boolean;
   __STORYBOOK_CLIENT_API__?: unknown;
+};
+
+type TestDndGlobal = typeof globalThis & {
+  __TEST_DND_ONDRAGEND__?: (event: unknown) => void;
 };
 
 type PaletteNavigator = Navigator & { webdriver?: boolean };
@@ -269,6 +272,7 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   } : undefined;
 
   const handleAutomationPointerDown = useCallback(() => {
+    bridgeTestDndPointerUp(component);
     if (!automationSafe) return;
     onAddToCanvas(component);
   }, [automationSafe, component, onAddToCanvas]);
@@ -295,15 +299,16 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
   }
 
   return (
-    <Box
+    <li
       ref={mergedRef}
       data-testid={`palette-item-${component.testId ?? component.type}`}
+      data-dndkit-payload={JSON.stringify(component)}
       aria-label={`${component.label} palette item`}
       {...listeners}
       {...attributes}
       onPointerDown={handleAutomationPointerDown}
       onClick={handleClick}
-      className="mb-1 flex items-center rounded-lg px-4 py-2"
+      className="mb-1 flex list-none items-center rounded-lg px-4 py-2"
       style={{
         ...style,
         cursor: isDragging ? 'grabbing' : 'grab',
@@ -337,9 +342,57 @@ const DraggableComponent: React.FC<DraggableComponentProps> = ({
       >
         <AddIcon size={16} />
       </IconButton>
-    </Box>
+    </li>
   );
 };
+
+function bridgeTestDndPointerUp(component: ComponentDef): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const testGlobal = globalThis as TestDndGlobal;
+  if (typeof testGlobal.__TEST_DND_ONDRAGEND__ !== 'function') {
+    return;
+  }
+
+  const resolveDropTarget = (event: Event): Element | null => {
+    const directTarget = event.target instanceof Element
+      ? event.target.closest('#canvas-drop-zone, [data-testid="canvas-drop-zone"]')
+      : null;
+    if (directTarget) {
+      return directTarget;
+    }
+
+    const pointerEvent = event as PointerEvent;
+    if (typeof document.elementFromPoint === 'function') {
+      const pointTarget = document.elementFromPoint(pointerEvent.clientX, pointerEvent.clientY);
+      const matched = pointTarget?.closest('#canvas-drop-zone, [data-testid="canvas-drop-zone"]');
+      if (matched) {
+        return matched;
+      }
+    }
+
+    return null;
+  };
+
+  const handlePointerUp = (event: Event) => {
+    const overTarget = resolveDropTarget(event);
+    testGlobal.__TEST_DND_ONDRAGEND__?.({
+      active: {
+        id: component.id,
+        data: { current: component },
+      },
+      over: overTarget
+        ? {
+            id: overTarget.id || overTarget.getAttribute('data-testid'),
+          }
+        : null,
+    });
+  };
+
+  document.addEventListener('pointerup', handlePointerUp, { once: true });
+}
 
 /**
  * Props for ComponentPalette.
@@ -423,16 +476,10 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
     const win = window as PaletteWindow;
     const isStorybook = Boolean(win.__STORYBOOK_CLIENT_API__) || window.location.port === '6006';
     if (isStorybook) {
-      // eslint-disable-next-line no-console
-      console.debug('[UI] Skipping ComponentPalette render in Storybook preview');
       return null;
     }
   }
 
-  // Debug marker for DOM identification
-  // eslint-disable-next-line no-console
-  console.debug('[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)');
-  const { t } = useTranslation('common');
   const [searchQuery, setSearchQuery] = useState('');
   const [automationSafe, setAutomationSafe] = useState<boolean>(detectAutomationEnvironment);
   const [recentlyUsed, setRecentlyUsed] = useState<ComponentDef[]>([]);
@@ -498,6 +545,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
 
   return (
     <Box
+      data-testid="component-palette"
       className="flex flex-col h-full w-full overflow-hidden"
     >
       {/* Header - Search */}
@@ -508,7 +556,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
         <TextField
           fullWidth
           size="small"
-          placeholder={t('canvas.componentPalette.search')}
+          placeholder="Search components..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           tabIndex={automationSafe ? -1 : 0}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-45-98e6a1d0",
+  "correlationId": "corr-2026-05-18T20-21-45-98e6a1d0",
+  "productId": "digital-marketing",
+  "productUnitId": "digital-marketing",
+  "version": "2026-05-18T20-21-45-98e6a1d0",
+  "environment": "local",
+  "environmentSafety": "local",
+  "deploymentId": "deploy-1779135705505",
+  "surfaces": [
+    {
+      "surface": "product",
+      "status": "pending",
+      "artifactId": "none",
+      "deploymentTarget": "compose-local",
+      "deployedAt": null,
+      "healthCheckPassed": false
+    }
+  ],
+  "deployedAt": "2026-05-18T20:21:45.505Z",
+  "rollbackPlan": {
+    "strategy": "previous-artifact",
+    "targetVersion": "2026-05-18T20-21-45-98e6a1d0",
+    "reason": "Lifecycle deployment rollback plan",
+    "steps": [
+      "restore previous artifact",
+      "verify health"
+    ]
+  },
+  "target": "compose-local"
+}

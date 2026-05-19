@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "manifests": [
+    {
+      "productUnitId": "phr",
+      "runId": "2026-05-18T20-21-46-75d08b66",
+      "manifestPath": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/package/phr/2026-05-18T20-21-46-75d08b66/package/artifact-manifest.json",
+      "artifactCount": 0
+    }
+  ]
+}

@@ -218,7 +218,12 @@ describe('PreviewHostService', () => {
     const service = new PreviewHostService(iframe, profile);
     // Provide a minimal valid BuilderDocument structure
     const doc = { id: 'doc-1' } as Parameters<typeof service.mount>[0];
-    await service.mount(doc, profile);
+    // Start mount — it sends postMessage synchronously before awaiting the ack
+    const mountPromise = service.mount(doc, profile);
+    // Retrieve the correlationId from the just-sent message and dispatch the ack
+    const sentMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'MOUNTED', correlationId: sentMsg.correlationId, durationMs: 0 });
+    await mountPromise;
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'MOUNT_DOCUMENT',
@@ -233,7 +238,10 @@ describe('PreviewHostService', () => {
   it('update() sends UPDATE_DOCUMENT with document', async () => {
     const service = new PreviewHostService(iframe, profile);
     const doc = { id: 'doc-2' } as Parameters<typeof service.update>[0];
-    await service.update(doc);
+    const updatePromise = service.update(doc);
+    const sentMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'UPDATED', correlationId: sentMsg.correlationId, durationMs: 0 });
+    await updatePromise;
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'UPDATE_DOCUMENT',
@@ -247,7 +255,10 @@ describe('PreviewHostService', () => {
   it('teardown() sends TEARDOWN and removes the window listener', async () => {
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
     const service = new PreviewHostService(iframe, profile);
-    await service.teardown();
+    const teardownPromise = service.teardown();
+    const sentMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'TEARDOWN_ACK', correlationId: sentMsg.correlationId });
+    await teardownPromise;
 
     expect(postMessage).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'TEARDOWN', correlationId: expect.any(String) }),
@@ -261,8 +272,14 @@ describe('PreviewHostService', () => {
     const handler = vi.fn<[PreviewToHostMessage], void>();
     service.onMessage(handler);
 
-    await service.teardown();
+    const teardownPromise = service.teardown();
+    const sentMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'TEARDOWN_ACK', correlationId: sentMsg.correlationId });
+    await teardownPromise;
 
+    // The handler may have been invoked for TEARDOWN_ACK — reset and verify no
+    // further calls reach it now that teardown has cleared all handlers.
+    handler.mockClear();
     const msg: PreviewToHostMessage = { type: 'PONG', correlationId: 'c4' };
     dispatchMessageToService(iframe, msg);
     expect(handler).not.toHaveBeenCalled();
@@ -330,8 +347,16 @@ describe('PreviewHostService', () => {
   it('generates a unique correlationId per operation', async () => {
     const service = new PreviewHostService(iframe, profile);
     const doc = { id: 'doc-3' } as Parameters<typeof service.mount>[0];
-    await service.mount(doc, profile);
-    await service.update(doc);
+
+    const mountPromise = service.mount(doc, profile);
+    const mountMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'MOUNTED', correlationId: mountMsg.correlationId, durationMs: 0 });
+    await mountPromise;
+
+    const updatePromise = service.update(doc);
+    const updateMsg = postMessage.mock.calls.at(-1)![0] as { correlationId: string };
+    dispatchMessageToService(iframe, { type: 'UPDATED', correlationId: updateMsg.correlationId, durationMs: 0 });
+    await updatePromise;
 
     const calls = postMessage.mock.calls as Array<[Record<string, unknown>, string]>;
     const mountCorrelation = calls.find(([msg]) => msg['type'] === 'MOUNT_DOCUMENT')?.[0]?.['correlationId'];

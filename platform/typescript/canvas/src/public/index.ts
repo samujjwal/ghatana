@@ -399,6 +399,7 @@ export * from '../elements/portal.js';
 // ── Semantic Zoom / Multilevel Visual Context ───────────────────────────────
 export type {
   SemanticZoomLevel,
+  DetailLevel,
   SemanticZoomBand,
   FocusPath,
   FocusPathSegment,
@@ -486,6 +487,19 @@ export {
   createDiagram,
   DiagramBuilder,
 } from '../diagram/types.js';
+
+// ── Diagram Presets ────────────────────────────────────────────────────────
+export type {
+  DiagramPresetId,
+  DiagramPreset,
+  DiagramPresetFeatureFlags,
+} from '../diagram/presets.js';
+export {
+  DIAGRAM_PRESETS,
+  getDiagramPreset,
+  getDiagramPresetIds,
+  isDiagramPresetId,
+} from '../diagram/presets.js';
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 export * from '../utils/export-import.js';

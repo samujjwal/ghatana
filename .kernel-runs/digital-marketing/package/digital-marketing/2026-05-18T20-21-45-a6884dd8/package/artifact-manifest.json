@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-45-a6884dd8",
+  "correlationId": "corr-2026-05-18T20-21-45-a6884dd8",
+  "productId": "digital-marketing",
+  "productUnitId": "digital-marketing",
+  "providerMode": "bootstrap",
+  "phase": "package",
+  "surface": "product",
+  "timestamp": "2026-05-18T20:21:45.322Z",
+  "artifacts": []
+}

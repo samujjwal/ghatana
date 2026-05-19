@@ -102,9 +102,9 @@ interface ArtifactEdgePayload {
 function mapNodeToPayload(node: GraphNode, tenantId: string, projectId: string): ArtifactNodePayload {
   return {
     id: node.id,
-    type: node.kind,
+    type: node.type,
     name: node.label,
-    filePath: node.sourceLocation.filePath,
+    filePath: (node.sourceLocation?.filePath ?? ''),
     content: JSON.stringify(node.metadata),
     properties: node.metadata,
     tags: node.privacySecurityFlags,
@@ -117,7 +117,7 @@ function mapEdgeToPayload(edge: GraphEdge): ArtifactEdgePayload {
   return {
     sourceNodeId: edge.sourceId,
     targetNodeId: edge.targetId,
-    relationshipType: edge.kind,
+    relationshipType: edge.relationshipType,
     properties: edge.metadata,
   };
 }
@@ -330,12 +330,12 @@ export class SynthesisEngine {
     const provenanceBase = {
       extractorId: node.extractorId,
       extractorVersion: node.extractorVersion,
-      sourcePaths: [node.sourceLocation.filePath],
+      sourcePaths: [(node.sourceLocation?.filePath ?? '')],
       kind: node.provenance,
       extractedAt: new Date().toISOString(),
     };
 
-    switch (node.kind) {
+    switch (node.type) {
       case 'component': {
         const props = (node.metadata['props'] as Array<{ name: string; type: string; required?: boolean }>) ?? [];
         const tags = (node.metadata['tags'] as string[] | undefined) ?? [];
@@ -345,6 +345,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'component',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           contractName: node.label,
           props: props.map(p => ({
             name: p.name,
@@ -374,6 +377,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'page',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           routePath: (node.metadata['routePath'] as string) ?? `/${node.label.toLowerCase()}`,
           layoutId: this.findFirstConnectedNode(node.id, graph, 'layout-of'),
           componentIds: this.findConnectedNodes(node.id, graph, 'contains'),
@@ -391,6 +397,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'state-store',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           storeType: (node.metadata['storeType'] as StateStoreModel['storeType']) ?? 'unknown',
           stateTree: (node.metadata['stateTree'] as Record<string, unknown>) ?? undefined,
           actionTypes: (node.metadata['actions'] as StateStoreModel['actionTypes']) ?? [],
@@ -407,6 +416,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'token',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           tokenPath: (node.metadata['tokenPath'] as string[]) ?? [node.label],
           value: {
             value: (node.metadata['value'] as string | number) ?? '',
@@ -425,6 +437,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'data-entity',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           tableName: (node.metadata['tableName'] as string) ?? node.label.toLowerCase(),
           fields: (node.metadata['fields'] as DataModel['fields']) ?? [],
           relations: (node.metadata['relations'] as DataModel['relations']) ?? [],
@@ -446,6 +461,9 @@ export class SynthesisEngine {
           confidence: node.confidence,
           provenance: provenanceBase,
           kind: 'api-endpoint',
+          graphNodeIds: [node.id],
+          sourceRefs: node.sourceRef ? [node.sourceRef] : [],
+          residualIslandIds: node.residualFragmentIds,
           path: (node.metadata['path'] as string) ?? '/',
           methods: (node.metadata['methods'] as string[]) ?? ['GET'],
           additionalOperations: [],
@@ -467,12 +485,12 @@ export class SynthesisEngine {
 
   private findConnectedNodes(nodeId: string, graph: ArtifactGraph, edgeKind: string): string[] {
     return graph.edges
-      .filter(e => e.sourceId === nodeId && e.kind === edgeKind)
+      .filter(e => e.sourceId === nodeId && e.relationshipType === edgeKind)
       .map(e => e.targetId);
   }
 
   private findFirstConnectedNode(nodeId: string, graph: ArtifactGraph, edgeKind: string): string | undefined {
-    const edge = graph.edges.find(e => e.sourceId === nodeId && e.kind === edgeKind);
+    const edge = graph.edges.find(e => e.sourceId === nodeId && e.relationshipType === edgeKind);
     return edge?.targetId;
   }
 

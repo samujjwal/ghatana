@@ -7,7 +7,9 @@
  */
 
 import type { ComponentContract } from '@ghatana/ds-schema';
-import type { BuilderDocument, ComponentInstance, NodeId } from '../core/types.js';
+import type { ComponentInstance, NodeId } from '../core/types.js';
+import type { BuilderDocument } from '../core/builder-document.js';
+import { normalizeBuilderDocument } from '../core/builder-document.js';
 import { projectInstanceToPlatformPlan, type ContractLookup, type ManifestLookup } from '../core/platform-plan.js';
 
 // ============================================================================
@@ -97,11 +99,13 @@ export function serializeToHtml(
   document: BuilderDocument,
   config: Partial<WebRendererConfig> = {},
 ): string {
+  document = normalizeBuilderDocument(document);
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const lines: string[] = ['<!DOCTYPE html>', '<html>', '<body>'];
 
-  for (const rootId of document.rootNodes) {
-    const node = document.nodes.get(rootId);
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
+    const node = document.nodes[rootId];
     if (node) {
       lines.push(...renderNodeHtml(node, document, cfg, 1));
     }
@@ -176,7 +180,7 @@ function renderNodeHtml(
   // Render slot children
   for (const slotPlan of platformPlan.slots) {
     for (const childId of slotPlan.childIds) {
-      const child = document.nodes.get(childId as NodeId);
+      const child = document.nodes[childId as NodeId];
       if (child) {
         const childAttrs = slotPlan.name === 'default'
           ? undefined
@@ -207,6 +211,7 @@ export function mountToDOM(
   containerOrSelector: Element | string,
   config: Partial<WebRendererConfig> = {},
 ): () => void {
+  document = normalizeBuilderDocument(document);
   const container = resolveContainer(containerOrSelector);
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
@@ -215,8 +220,9 @@ export function mountToDOM(
 
   const mountedElements: Element[] = [];
 
-  for (const rootId of document.rootNodes) {
-    const node = document.nodes.get(rootId);
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
+    const node = document.nodes[rootId];
     if (node) {
       const el = renderNodeDOM(node, document, cfg);
       container.appendChild(el);
@@ -320,7 +326,7 @@ function renderNodeDOM(
 
   for (const slotPlan of platformPlan.slots) {
     for (const childId of slotPlan.childIds) {
-      const child = document.nodes.get(childId as NodeId);
+      const child = document.nodes[childId as NodeId];
       if (child) {
         const childAttrs = slotPlan.name === 'default'
           ? undefined

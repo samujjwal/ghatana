@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "2026-05-18T20-21-46-2f90cd4c",
+  "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c",
+  "providerMode": "bootstrap",
+  "productId": "phr",
+  "phase": "deploy",
+  "lifecycleProfile": "standard-web-api-product",
+  "environment": "local",
+  "requestedPhases": [
+    "deploy"
+  ],
+  "status": "skipped",
+  "startedAt": "2026-05-18T20:21:46.688Z",
+  "completedAt": "2026-05-18T20:21:46.688Z",
+  "steps": [
+    {
+      "stepId": "deploy-local-0",
+      "phase": "deploy",
+      "surface": "local",
+      "adapter": "compose-local",
+      "status": "skipped",
+      "startedAt": "2026-05-18T20:21:46.687Z",
+      "completedAt": "2026-05-18T20:21:46.687Z",
+      "exitCode": 0,
+      "stdout": "[DRY-RUN] deploy phase for local via compose-local",
+      "durationMs": 0,
+      "artifacts": [],
+      "errors": [],
+      "warnings": [],
+      "correlationId": "corr-2026-05-18T20-21-46-2f90cd4c"
+    }
+  ],
+  "gates": [
+    {
+      "gateId": "artifact-validation",
+      "gateName": "artifact-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for artifact-validation",
+      "evidenceRefs": [
+        "dry-run:gate:artifact-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "artifact-validation"
+    },
+    {
+      "gateId": "environment-validation",
+      "gateName": "environment-validation",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for environment-validation",
+      "evidenceRefs": [
+        "dry-run:gate:environment-validation"
+      ],
+      "durationMs": 0,
+      "providerId": "environment-validation"
+    },
+    {
+      "gateId": "health-check",
+      "gateName": "health-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for health-check",
+      "evidenceRefs": [
+        "dry-run:gate:health-check"
+      ],
+      "durationMs": 0,
+      "providerId": "health-check"
+    },
+    {
+      "gateId": "observability-check",
+      "gateName": "observability-check",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for observability-check",
+      "evidenceRefs": [
+        "dry-run:gate:observability-check"
+      ],
+      "durationMs": 0,
+      "providerId": "observability-check"
+    },
+    {
+      "gateId": "consent",
+      "gateName": "consent",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for consent",
+      "evidenceRefs": [
+        "dry-run:gate:consent"
+      ],
+      "durationMs": 0,
+      "providerId": "consent"
+    },
+    {
+      "gateId": "tenant-data-sovereignty",
+      "gateName": "tenant-data-sovereignty",
+      "status": "passed",
+      "checkedAt": "2026-05-18T20:21:46.687Z",
+      "details": "Dry-run gate evaluation for tenant-data-sovereignty",
+      "evidenceRefs": [
+        "dry-run:gate:tenant-data-sovereignty"
+      ],
+      "durationMs": 0,
+      "providerId": "tenant-data-sovereignty"
+    }
+  ],
+  "artifacts": [],
+  "outputDirectory": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy",
+  "manifestRefs": {
+    "deploymentManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/deployment-manifest.json",
+    "lifecycleHealthSnapshot": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-health-snapshot.json",
+    "gateResultManifest": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/gate-result-manifest.json",
+    "lifecycleEvents": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-events.json",
+    "lifecycleResult": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-result.json"
+  },
+  "eventsRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-events.json",
+  "healthSnapshotRef": "/Users/samujjwal/Development/ghatana/.kernel-runs/phr/deploy/phr/2026-05-18T20-21-46-2f90cd4c/deploy/lifecycle-health-snapshot.json"
+}

@@ -5,7 +5,9 @@
  * implementation, plus autosave orchestration with debouncing and session recovery.
  */
 
-import type { BuilderDocument, DocumentId, NodeId, ComponentInstance } from './types.js';
+import { attachBuilderDocumentCompatibility, CURRENT_SCHEMA_VERSION, normalizeBuilderDocument } from './builder-document.js';
+import type { BuilderDocument } from './builder-document.js';
+import type { DocumentId, NodeId } from './types.js';
 
 // ============================================================================
 // Serialization helpers
@@ -13,31 +15,73 @@ import type { BuilderDocument, DocumentId, NodeId, ComponentInstance } from './t
 
 /** Serialise a BuilderDocument to a plain JSON-safe object. */
 export function serializeDocument(doc: BuilderDocument): SerializedDocument {
+  const legacyDoc = doc as BuilderDocument & {
+    id?: DocumentId;
+    name?: string;
+    version?: string;
+    rootNodes?: readonly NodeId[];
+    designSystem?: unknown;
+  };
+  doc = normalizeBuilderDocument(doc);
   return {
-    ...doc,
-    nodes: Object.fromEntries(doc.nodes),
+    schemaVersion: doc.schemaVersion,
+    documentId: doc.documentId,
+    owner: doc.owner,
+    root: doc.root,
+    nodes: doc.nodes,
+    bindings: doc.bindings,
+    layout: doc.layout,
+    metadata: doc.metadata,
+    i18n: doc.i18n,
+    a11y: doc.a11y,
+    privacy: doc.privacy,
+    validation: doc.validation,
+    legacyName: legacyDoc.name ?? doc.metadata.description,
+    legacyVersion: legacyDoc.version,
+    designSystem: legacyDoc.designSystem,
   };
 }
 
 /** Deserialise a plain object back to a BuilderDocument. */
 export function deserializeDocument(raw: SerializedDocument): BuilderDocument {
+  const rootNodes = raw.layout.nodes[raw.layout.rootId]?.children ?? [];
   return {
-    ...raw,
-    id: raw.id as DocumentId,
-    nodes: new Map(
-      Object.entries(raw.nodes).map(([k, v]) => [k as NodeId, v as ComponentInstance])
-    ) as unknown as ReadonlyMap<NodeId, ComponentInstance>,
-  };
+    schemaVersion: raw.schemaVersion,
+    documentId: raw.documentId,
+    id: raw.documentId,
+    owner: raw.owner,
+    root: raw.root,
+    nodes: new Map(Object.entries(raw.nodes)) as unknown as BuilderDocument['nodes'],
+    bindings: raw.bindings,
+    layout: raw.layout,
+    metadata: raw.metadata,
+    name: raw.legacyName ?? raw.metadata.description ?? raw.owner,
+    version: raw.legacyVersion ?? raw.schemaVersion,
+    rootNodes,
+    designSystem: raw.designSystem,
+    i18n: raw.i18n,
+    a11y: raw.a11y,
+    privacy: raw.privacy,
+    validation: raw.validation,
+  } as unknown as BuilderDocument;
 }
 
 export interface SerializedDocument {
-  readonly id: string;
-  readonly version: string;
-  readonly name: string;
-  readonly designSystem: BuilderDocument['designSystem'];
-  readonly rootNodes: BuilderDocument['rootNodes'];
-  readonly nodes: Record<string, BuilderDocument['nodes'] extends ReadonlyMap<infer _K, infer V> ? V : never>;
+  readonly schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+  readonly documentId: DocumentId;
+  readonly owner: string;
+  readonly root: NodeId;
+  readonly nodes: BuilderDocument['nodes'];
+  readonly bindings: BuilderDocument['bindings'];
+  readonly layout: BuilderDocument['layout'];
   readonly metadata: BuilderDocument['metadata'];
+  readonly i18n?: BuilderDocument['i18n'];
+  readonly a11y?: BuilderDocument['a11y'];
+  readonly privacy?: BuilderDocument['privacy'];
+  readonly validation?: BuilderDocument['validation'];
+  readonly legacyName?: string;
+  readonly legacyVersion?: string;
+  readonly designSystem?: unknown;
 }
 
 // ============================================================================
@@ -85,6 +129,11 @@ const LS_KEY_PREFIX = '@ghatana/ui-builder:doc:';
 const LS_VERSIONS_SUFFIX = ':versions';
 const MAX_VERSIONS = 50;
 
+function getDocumentId(doc: BuilderDocument): string {
+  const maybeLegacy = doc as BuilderDocument & { id?: string };
+  return doc.documentId ?? maybeLegacy.id ?? '';
+}
+
 /** localStorage-backed persistence adapter. Safe to use in browser environments. */
 export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
   private readonly prefix: string;
@@ -94,20 +143,21 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
   }
 
   async save(doc: BuilderDocument, label: string): Promise<string> {
+    const documentId = getDocumentId(doc);
     const versionId = `v-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const entry: DocumentVersion = {
       versionId,
-      documentId: doc.id,
+      documentId,
       savedAt: Date.now(),
       label,
       document: serializeDocument(doc),
     };
 
     // Save latest
-    localStorage.setItem(this.prefix + doc.id, JSON.stringify(entry.document));
+    localStorage.setItem(this.prefix + documentId, JSON.stringify(entry.document));
 
     // Append to version list
-    const versionsKey = this.prefix + doc.id + LS_VERSIONS_SUFFIX;
+    const versionsKey = this.prefix + documentId + LS_VERSIONS_SUFFIX;
     const existing: DocumentVersion[] = this.readVersionList(versionsKey);
     existing.unshift(entry);
     if (existing.length > MAX_VERSIONS) {
@@ -172,19 +222,20 @@ export class InMemoryPersistenceAdapter implements PersistenceAdapter {
   private readonly versions = new Map<string, DocumentVersion[]>();
 
   async save(doc: BuilderDocument, label: string): Promise<string> {
+    const documentId = getDocumentId(doc);
     const versionId = `v-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const entry: DocumentVersion = {
       versionId,
-      documentId: doc.id,
+      documentId,
       savedAt: Date.now(),
       label,
       document: serializeDocument(doc),
     };
-    this.docs.set(doc.id, entry.document);
-    const list = this.versions.get(doc.id) ?? [];
+    this.docs.set(documentId, entry.document);
+    const list = this.versions.get(documentId) ?? [];
     list.unshift(entry);
     if (list.length > MAX_VERSIONS) list.splice(MAX_VERSIONS);
-    this.versions.set(doc.id, list);
+    this.versions.set(documentId, list);
     return versionId;
   }
 

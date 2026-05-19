@@ -2,17 +2,18 @@
  * @fileoverview React code generation from BuilderDocument.
  */
 
-import type { BuilderComponentManifest, ComponentContract } from '@ghatana/ds-schema';
 import type {
-  BuilderDocument,
-  NodeId,
   ComponentInstance,
+  NodeId,
   CodeProjection,
   CodeFile,
   CodeRegionOwnership,
   RoundTripFidelity,
   LossPoint,
-} from './types';
+} from './types.js';
+import type { BuilderDocument } from './builder-document.js';
+import { normalizeBuilderDocument } from './builder-document.js';
+import type { BuilderComponentManifest, ComponentContract } from '@ghatana/ds-schema';
 import {
   projectDocumentToPlatformPlan,
   type BuilderPlatformNodePlan,
@@ -35,10 +36,12 @@ export function generateReactCode(
   contracts: ReadonlyMap<string, ComponentContract>,
   options: GenerateOptions,
 ): CodeProjection {
+  document = normalizeBuilderDocument(document);
   const lossPoints: LossPoint[] = [];
 
   // Contract-aware round-trip loss analysis across all nodes in the document.
-  for (const [nodeId, instance] of document.nodes) {
+  for (const [nodeId, instance] of Object.entries(document.nodes)) {
+    if (instance.contractName === 'RootContainer') continue;
     // 1. Missing contract — generated code will fall back to heuristic tag names.
     if (!contracts.has(instance.contractName)) {
       lossPoints.push({
@@ -50,7 +53,10 @@ export function generateReactCode(
 
     // 2. Node ownership: user-authored or manual-merge-required content cannot
     //    be fully recovered from static JSX output on re-import.
-    const nodeOwnership = instance.metadata.ownership;
+    const ownership = instance.metadata.ownership;
+    const nodeOwnership = typeof ownership === 'string'
+      ? ownership
+      : (typeof ownership?.type === 'string' ? ownership.type : undefined);
     if (nodeOwnership === 'user-authored' || nodeOwnership === 'manual-merge-required') {
       lossPoints.push({
         type: 'custom-code',
@@ -141,7 +147,7 @@ function collectSubtreeNodeIds(
 ): NodeId[] {
   if (visited.has(nodeId)) return [];
   visited.add(nodeId);
-  const instance = document.nodes.get(nodeId);
+  const instance = document.nodes[nodeId];
   if (!instance) return [];
   const result: NodeId[] = [nodeId];
   for (const slotChildren of Object.values(instance.slots)) {
@@ -170,7 +176,7 @@ function generateComponentFile(
   // Collect component imports — group by importPath, collecting component names from contracts
   type ImportSpec = { names: Set<string>; namedExport: boolean };
   const importMap = new Map<string, ImportSpec>();
-  for (const instance of document.nodes.values()) {
+  for (const instance of Object.values(document.nodes)) {
     const contract = contracts.get(instance.contractName);
     const codegen = contract?.builder?.codegen;
     if (!codegen?.importPath) continue;
@@ -205,8 +211,9 @@ function generateComponentFile(
   lines.push('  return (');
 
   // Generate JSX for root nodes — track per-root-node line ranges for ownership.
-  for (const rootId of document.rootNodes) {
-    const rootInstance = document.nodes.get(rootId);
+  const rootNodeIds = document.layout.nodes[document.layout.rootId]?.children ?? [];
+  for (const rootId of rootNodeIds) {
+    const rootInstance = document.nodes[rootId];
     if (rootInstance) {
       // lineStart is 1-based; capture current line count before adding JSX.
       const linesBefore = lines.length + 1;
@@ -250,7 +257,7 @@ function generateComponentFile(
         type: 'builder-generated',
         lineStart: 1,
         lineEnd: lines.length,
-        builderNodeIds: Array.from(document.nodes.keys()),
+        builderNodeIds: Object.keys(document.nodes) as NodeId[],
       },
     },
     nodeOwnership,
@@ -393,7 +400,7 @@ function generateSlotValueLines(
   visited: Set<NodeId>,
 ): string[] {
   if (childIds.length === 1) {
-    const child = document.nodes.get(childIds[0]);
+    const child = document.nodes[childIds[0]];
     return child
       ? generateNodeJSX(child, document, contracts, platformPlans, indent, visited)
       : [`${'  '.repeat(indent)}{null}`];
@@ -402,7 +409,7 @@ function generateSlotValueLines(
   const indentStr = '  '.repeat(indent);
   const lines = [`${indentStr}<>`];
   for (const childId of childIds) {
-    const child = document.nodes.get(childId);
+    const child = document.nodes[childId];
     if (child) {
       lines.push(...generateNodeJSX(child, document, contracts, platformPlans, indent + 1, visited));
     }
@@ -428,7 +435,7 @@ function generateDefaultSlotBody(
   }
 
   for (const childId of childIds) {
-    const child = document.nodes.get(childId);
+    const child = document.nodes[childId];
     if (child) {
       lines.push(...generateNodeJSX(child, document, contracts, platformPlans, indent, visited));
     }

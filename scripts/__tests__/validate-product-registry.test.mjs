@@ -159,7 +159,7 @@ test('platform provider enabled fails', () => {
     runArtifactCheck: () => 'ok',
   });
 
-  assert(issues.some((problem) => problem.message.includes('Only digital-marketing may be lifecycle-enabled or lifecycleExecutionAllowed=true until explicitly promoted')));
+  assert(issues.some((problem) => problem.message.includes('Only opening lifecycle pilots may be lifecycle-enabled or lifecycleExecutionAllowed=true')));
 });
 
 test('disabled product yaml must remain fail closed', () => {
