@@ -91,3 +91,272 @@ exports[`DS Generator Golden Tests > renders CSS from preset matching golden fil
   --z-index-tooltip: 1060;
 }"
 `;
+
+exports[`emitFiles golden snapshots > CSS target output matches golden snapshot > emit-files-css-checksum.golden 1`] = `"c5bf55b1"`;
+
+exports[`emitFiles golden snapshots > CSS target output matches golden snapshot > emit-files-css-target.golden 1`] = `
+"/* Design System: Ghatana Golden Design System */
+/* Base preset: ghatana-default */
+/* Generated: 2024-01-01T00:00:00.000Z */
+
+:root {
+  /* borderRadius */
+  --borderRadius-full: 9999px;
+  --borderRadius-lg: 12px;
+  --borderRadius-md: 8px;
+  --borderRadius-sm: 4px;
+  /* colors */
+  --colors-error: #ef4444;
+  --colors-info: #06b6d4;
+  --colors-neutral: #6b7280;
+  --colors-primary: #3b82f6;
+  --colors-secondary: #8b5cf6;
+  --colors-success: #10b981;
+  --colors-warning: #f59e0b;
+  /* elevation */
+  --elevation-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --elevation-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --elevation-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --elevation-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --elevation-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --fontFamily: Inter, system-ui, sans-serif;
+  /* fontSizes */
+  --fontSizes-2xl: 31.3;
+  --fontSizes-lg: 20;
+  --fontSizes-md: 16;
+  --fontSizes-sm: 12.8;
+  --fontSizes-xl: 25;
+  --fontSizes-xs: 10.2;
+  /* motion */
+  --motion-fast: 200ms;
+  --motion-normal: 300ms;
+  --motion-slow: 500ms;
+  /* shadow */
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.12);
+  /* spacing */
+  --spacing-lg: 24;
+  --spacing-md: 16;
+  --spacing-sm: 8;
+  --spacing-xl: 32;
+  --spacing-xs: 4;
+  /* zIndex */
+  --zIndex-dropdown: 1000;
+  --zIndex-fixed: 1030;
+  --zIndex-modal: 1040;
+  --zIndex-popover: 1050;
+  --zIndex-sticky: 1020;
+  --zIndex-tooltip: 1060;
+}"
+`;
+
+exports[`emitFiles golden snapshots > JSON target output matches golden snapshot > emit-files-json-checksum.golden 1`] = `"75c75a7e"`;
+
+exports[`emitFiles golden snapshots > JSON target output matches golden snapshot > emit-files-json-target.golden 1`] = `
+"{
+  "schemaVersion": "1.0.0",
+  "documentId": "golden-doc-001",
+  "name": "Ghatana Golden Design System",
+  "basePresetId": "ghatana-default",
+  "tokens": {
+    "colors": {
+      "primary": "#3b82f6",
+      "secondary": "#8b5cf6",
+      "neutral": "#6b7280",
+      "success": "#10b981",
+      "warning": "#f59e0b",
+      "error": "#ef4444",
+      "info": "#06b6d4"
+    },
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "fontSizes": {
+      "xs": 10.2,
+      "sm": 12.8,
+      "md": 16,
+      "lg": 20,
+      "xl": 25,
+      "2xl": 31.3
+    },
+    "borderRadius": {
+      "sm": "4px",
+      "md": "8px",
+      "lg": "12px",
+      "full": "9999px"
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "elevation": {
+      "xs": "0 1px 2px rgba(0, 0, 0, 0.05)",
+      "sm": "0 1px 3px rgba(0, 0, 0, 0.1)",
+      "md": "0 4px 6px rgba(0, 0, 0, 0.1)",
+      "lg": "0 10px 15px rgba(0, 0, 0, 0.1)",
+      "xl": "0 20px 25px rgba(0, 0, 0, 0.1)"
+    },
+    "shadow": {
+      "sm": "0 1px 3px rgba(0, 0, 0, 0.12)",
+      "md": "0 4px 6px rgba(0, 0, 0, 0.12)",
+      "lg": "0 10px 15px rgba(0, 0, 0, 0.12)",
+      "xl": "0 20px 25px rgba(0, 0, 0, 0.12)"
+    },
+    "motion": {
+      "fast": "200ms",
+      "normal": "300ms",
+      "slow": "500ms"
+    },
+    "zIndex": {
+      "dropdown": 1000,
+      "sticky": 1020,
+      "fixed": 1030,
+      "modal": 1040,
+      "popover": 1050,
+      "tooltip": 1060
+    }
+  },
+  "metadata": {
+    "generatedAt": "2024-01-01T00:00:00.000Z",
+    "generator": "ghatana-ds-generator"
+  }
+}"
+`;
+
+exports[`emitFiles golden snapshots > React theme target output matches golden snapshot > emit-files-react-theme-checksum.golden 1`] = `"8473cc5a"`;
+
+exports[`emitFiles golden snapshots > React theme target output matches golden snapshot > emit-files-react-theme-target.golden 1`] = `
+"import type { Theme } from '@ghatana/theme';
+
+/** Design system: Ghatana Golden Design System (preset: ghatana-default) */
+export const theme: Theme = {
+  colors: {
+    'error': '#ef4444',
+    'info': '#06b6d4',
+    'neutral': '#6b7280',
+    'primary': '#3b82f6',
+    'secondary': '#8b5cf6',
+    'success': '#10b981',
+    'warning': '#f59e0b',
+  },
+  typography: {
+    fontFamily: 'Inter, system-ui, sans-serif',
+    fontSizes: {
+      '2xl': 31.3,
+      'lg': 20,
+      'md': 16,
+      'sm': 12.8,
+      'xl': 25,
+      'xs': 10.2,
+    },
+  },
+  borderRadius: {
+    'full': '9999px',
+    'lg': '12px',
+    'md': '8px',
+    'sm': '4px',
+  },
+  spacing: {
+    'lg': 24,
+    'md': 16,
+    'sm': 8,
+    'xl': 32,
+    'xs': 4,
+  },
+  shadow: {
+    'lg': '0 10px 15px rgba(0, 0, 0, 0.12)',
+    'md': '0 4px 6px rgba(0, 0, 0, 0.12)',
+    'sm': '0 1px 3px rgba(0, 0, 0, 0.12)',
+    'xl': '0 20px 25px rgba(0, 0, 0, 0.12)',
+  },
+  motion: {
+    'fast': '200ms',
+    'normal': '300ms',
+    'slow': '500ms',
+  },
+  zIndex: {
+    'dropdown': 1000,
+    'fixed': 1030,
+    'modal': 1040,
+    'popover': 1050,
+    'sticky': 1020,
+    'tooltip': 1060,
+  },
+} as const;"
+`;
+
+exports[`emitFiles golden snapshots > Tailwind config target output matches golden snapshot > emit-files-tailwind-checksum.golden 1`] = `"a0e81a44"`;
+
+exports[`emitFiles golden snapshots > Tailwind config target output matches golden snapshot > emit-files-tailwind-target.golden 1`] = `
+"/** @type {import("tailwindcss").Config} */
+export default {
+  theme: {
+    extend: {
+      colors: {
+        'error': '#ef4444',
+        'info': '#06b6d4',
+        'neutral': '#6b7280',
+        'primary': '#3b82f6',
+        'secondary': '#8b5cf6',
+        'success': '#10b981',
+        'warning': '#f59e0b',
+      },
+      fontFamily: {
+        sans: ['Inter, system-ui, sans-serif', 'sans-serif'],
+      },
+      fontSize: {
+        '2xl': '31.3px',
+        'lg': '20px',
+        'md': '16px',
+        'sm': '12.8px',
+        'xl': '25px',
+        'xs': '10.2px',
+      },
+      borderRadius: {
+        'full': '9999px',
+        'lg': '12px',
+        'md': '8px',
+        'sm': '4px',
+      },
+      spacing: {
+        'lg': '24px',
+        'md': '16px',
+        'sm': '8px',
+        'xl': '32px',
+        'xs': '4px',
+      },
+      boxShadow: {
+        'lg': '0 10px 15px rgba(0, 0, 0, 0.12)',
+        'md': '0 4px 6px rgba(0, 0, 0, 0.12)',
+        'sm': '0 1px 3px rgba(0, 0, 0, 0.12)',
+        'xl': '0 20px 25px rgba(0, 0, 0, 0.12)',
+      },
+      transitionDuration: {
+        'fast': '200ms',
+        'normal': '300ms',
+        'slow': '500ms',
+      },
+      zIndex: {
+        'dropdown': 1000,
+        'fixed': 1030,
+        'modal': 1040,
+        'popover': 1050,
+        'sticky': 1020,
+        'tooltip': 1060,
+      },
+    },
+  },
+};"
+`;
+
+exports[`emitFiles golden snapshots > full pipeline manifest filenames match golden snapshot > emit-files-all-filenames.golden 1`] = `
+[
+  "ghatana-golden-design-system.css",
+  "ghatana-golden-design-system.tailwind.config.js",
+  "ghatana-golden-design-system.theme.tsx",
+  "ghatana-golden-design-system.tokens.json",
+]
+`;
