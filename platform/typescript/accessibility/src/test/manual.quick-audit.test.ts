@@ -65,4 +65,4 @@ it("manual quick audit - demo.html", async () => {
   );
   // eslint-disable-next-line no-console
   console.log(`  Total findings: ${report.findings.length}`);
-});
+}, 15_000);

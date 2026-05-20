@@ -123,4 +123,66 @@ describe('source acquisition providers', () => {
       descriptor: result.descriptor,
     });
   });
+
+  it('uses backend repository acquisition client when provided', async () => {
+    const provider = new RepositorySourceProvider({
+      acquireRepository: async (input) => ({
+        sources: [
+          {
+            relativePath: 'src/App.tsx',
+            content: `// ${input.repositoryUrl}`,
+          },
+        ],
+        errors: [],
+        partial: false,
+      }),
+      acquireArchive: async () => ({
+        sources: [],
+        errors: ['not-used'],
+        partial: false,
+      }),
+    });
+
+    const result = await provider.acquire({
+      kind: 'github-repository',
+      repositoryUrl: 'https://github.com/example/repo',
+      ref: 'main',
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.sources).toHaveLength(1);
+    expect(result.sources[0]?.relativePath).toBe('src/App.tsx');
+    expect(result.descriptor?.kind).toBe('github');
+    expect(result.acquisitionJob).toBeUndefined();
+  });
+
+  it('uses backend archive acquisition client when provided', async () => {
+    const provider = new ArchiveUploadProvider({
+      acquireRepository: async () => ({
+        sources: [],
+        errors: ['not-used'],
+        partial: false,
+      }),
+      acquireArchive: async (input) => ({
+        sources: [
+          {
+            relativePath: `unzipped/${input.file.name}.tsx`,
+            content: 'export const ArchiveEntry = true;',
+          },
+        ],
+        errors: [],
+        partial: false,
+      }),
+    });
+
+    const result = await provider.acquire({
+      kind: 'archive-upload',
+      file: makeFile('source.zip', 'fake-zip'),
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.sources.map((source) => source.relativePath)).toEqual(['unzipped/source.zip.tsx']);
+    expect(result.descriptor?.kind).toBe('archive');
+    expect(result.acquisitionJob).toBeUndefined();
+  });
 });

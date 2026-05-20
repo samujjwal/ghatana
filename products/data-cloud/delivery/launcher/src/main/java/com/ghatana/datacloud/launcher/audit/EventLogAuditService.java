@@ -7,6 +7,7 @@ import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.audit.AuditQuery;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
+import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 
 import java.nio.ByteBuffer;
@@ -137,10 +138,17 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
                 .idempotencyKey(event.getId())
                 .build();
 
-            // DC-P1-09: Use runPromise to synchronously wait for audit write completion
-            // In production, this ensures critical operations cannot proceed without successful audit
+            // DC-P1-09: wait for the critical audit write completion before the caller proceeds.
             try {
-                record(event).getResult();  // Synchronously wait for completion
+                Promise<Offset> writePromise = eventLogStore.append(
+                    TenantContext.of(event.getTenantId(), Map.of("stream", AUDIT_STREAM)),
+                    entry);
+                if (writePromise.isException()) {
+                    throw writePromise.getException();
+                }
+                if (!writePromise.isComplete()) {
+                    throw new IllegalStateException("Audit write did not complete synchronously");
+                }
             } catch (Exception error) {
                 if (failClosedForCritical) {
                     throw new IllegalStateException(
@@ -151,6 +159,11 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
                 throw error;
             }
         } catch (RuntimeException exception) {
+            if (exception instanceof IllegalStateException
+                && exception.getMessage() != null
+                && exception.getMessage().startsWith("DC-P1-09: Failed to record critical audit event")) {
+                throw exception;
+            }
             if (failClosedForCritical) {
                 throw new IllegalStateException(
                     "DC-P1-09: Failed to serialize critical audit event - operation blocked", exception);

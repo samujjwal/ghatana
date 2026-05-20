@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Centralized runtime profile validator that enforces fail-closed behaviour
@@ -28,6 +29,11 @@ import java.util.Map;
  *       transaction manager, metrics, and trace export are all required.</li>
  * </ul>
  *
+ * <h2>DC-P1-05: Subsystem requirement registration</h2>
+ * <p>Subsystems can register their own production requirements via
+ * {@link #registerRequirement(SubsystemRequirement)}. This allows handlers
+ * to declare their specific dependencies without modifying the core validator.
+ *
  * @doc.type class
  * @doc.purpose Centralized runtime profile fail-closed validation gate
  * @doc.layer product
@@ -36,6 +42,9 @@ import java.util.Map;
 public final class RuntimeProfileValidator {
 
     private static final Logger log = LoggerFactory.getLogger(RuntimeProfileValidator.class);
+
+    /** DC-P1-05: Registered subsystem requirements from handlers and components. */
+    private static final List<SubsystemRequirement> REGISTERED_REQUIREMENTS = new CopyOnWriteArrayList<>();
 
     /** Dependency spec submitted by callers via the {@link Builder}. */
     private final String deploymentProfile;
@@ -67,9 +76,50 @@ public final class RuntimeProfileValidator {
     }
 
     /**
+     * DC-P1-05: Registers a subsystem requirement for production validation.
+     *
+     * <p>Subsystems (handlers, components) can call this method during application
+     * initialization to declare their specific production dependencies. The validator
+     * will check these requirements during {@link #validate()}.
+     *
+     * <p>Example usage from DataLifecycleHandler:
+     * <pre>{@code
+     * RuntimeProfileValidator.registerRequirement(
+     *     new SubsystemRequirement(
+     *         "DataLifecycleHandler",
+     *         "production",
+     *         () -> transactionManager != null,
+     *         "TransactionManager is required for critical governance operations (purge, redaction) in production."
+     *     )
+     * );
+     * }</pre>
+     *
+     * @param requirement the subsystem requirement to register
+     */
+    public static void registerRequirement(SubsystemRequirement requirement) {
+        if (requirement != null) {
+            REGISTERED_REQUIREMENTS.add(requirement);
+            log.debug("[DC-P1-05] Registered subsystem requirement: {} for profile {}",
+                requirement.subsystemName(), requirement.requiredProfile());
+        }
+    }
+
+    /**
+     * DC-P1-05: Clears all registered subsystem requirements.
+     *
+     * <p>This method is primarily useful for testing to ensure test isolation.
+     */
+    public static void clearRegisteredRequirements() {
+        REGISTERED_REQUIREMENTS.clear();
+        log.debug("[DC-P1-05] Cleared all registered subsystem requirements");
+    }
+
+    /**
      * Runs all profile-specific validation rules. Accumulates every violation
      * and throws a single {@link IllegalStateException} listing them all so
      * that operators can fix every gap in one deployment cycle.
+     *
+     * <p>DC-P1-05: Also validates all registered subsystem requirements.
      *
      * @throws IllegalStateException if any required dependency is absent for
      *                               the configured deployment profile
@@ -146,6 +196,19 @@ public final class RuntimeProfileValidator {
             }
         }
 
+        // DC-P1-05: Validate registered subsystem requirements
+        for (SubsystemRequirement requirement : REGISTERED_REQUIREMENTS) {
+            if (requirement.appliesToProfile(deploymentProfile)) {
+                try {
+                    requirement.validate();
+                } catch (Exception e) {
+                    violations.add(
+                        "DC-P1-05: Subsystem requirement failed for '" + requirement.subsystemName()
+                        + "' in profile '" + deploymentProfile + "': " + e.getMessage());
+                }
+            }
+        }
+
         if (!violations.isEmpty()) {
             String message = buildViolationMessage(violations, deploymentProfile);
             log.error("[DC-P0-001] Runtime profile validation FAILED for profile '{}': {} violation(s) found",
@@ -159,12 +222,14 @@ public final class RuntimeProfileValidator {
         log.info(
             "[DC-P0-001] Runtime profile validation PASSED for profile '{}' — "
             + "auth={}, audit={}, policy={}, entityStore={}, eventStore={}, "
-            + "idempotency={}, txManager={}, metrics={}, traceExport={}, completionService={}",
+            + "idempotency={}, txManager={}, metrics={}, traceExport={}, completionService={}, "
+            + "registeredRequirements={}",
             deploymentProfile,
             authConfigured, auditConfigured, policyEngineConfigured,
             durableEntityStore, durableEventStore,
             durableIdempotencyStore, transactionManagerConfigured,
-            metricsConfigured, traceExportConfigured, completionServiceConfigured);
+            metricsConfigured, traceExportConfigured, completionServiceConfigured,
+            REGISTERED_REQUIREMENTS.size());
     }
 
     /**
@@ -336,6 +401,90 @@ public final class RuntimeProfileValidator {
         /** Builds the {@link RuntimeProfileValidator}. */
         public RuntimeProfileValidator build() {
             return new RuntimeProfileValidator(this);
+        }
+    }
+
+    /**
+     * DC-P1-05: Interface for subsystem-specific production requirements.
+     *
+     * <p>Subsystems (handlers, components) implement this interface to declare
+     * their specific dependencies for different deployment profiles. The
+     * RuntimeProfileValidator will call {@link #validate()} during startup.
+     *
+     * @doc.type interface
+     * @doc.purpose Subsystem requirement specification for production validation
+     * @doc.layer product
+     * @doc.pattern Specification
+     */
+    public interface SubsystemRequirement {
+
+        /**
+         * Returns the subsystem name for logging and error messages.
+         *
+         * @return subsystem name (e.g., "DataLifecycleHandler", "EntityCrudHandler")
+         */
+        String subsystemName();
+
+        /**
+         * Returns the deployment profile this requirement applies to.
+         *
+         * <p>Supported values: "production", "staging", "sovereign", "local", or
+         * "any" to apply to all profiles.
+         *
+         * @return required profile name
+         */
+        String requiredProfile();
+
+        /**
+         * Checks if this requirement applies to the given deployment profile.
+         *
+         * @param currentProfile the current deployment profile
+         * @return true if this requirement should be validated for the profile
+         */
+        default boolean appliesToProfile(String currentProfile) {
+            String required = requiredProfile();
+            if ("any".equalsIgnoreCase(required)) {
+                return true;
+            }
+            return required.equalsIgnoreCase(currentProfile);
+        }
+
+        /**
+         * Validates the requirement and throws an exception if not satisfied.
+         *
+         * @throws IllegalStateException if the requirement is not met
+         */
+        void validate();
+    }
+
+    /**
+     * DC-P1-05: Functional implementation of SubsystemRequirement using a lambda.
+     *
+     * <p>Convenient record for simple requirements that can be expressed
+     * as a single validation lambda.
+     *
+     * @doc.type record
+     * @doc.purpose Functional subsystem requirement implementation
+     * @doc.layer product
+     * @doc.pattern FunctionalInterface
+     */
+    public record FunctionalSubsystemRequirement(
+        String subsystemName,
+        String requiredProfile,
+        Runnable validation,
+        String errorMessage
+    ) implements SubsystemRequirement {
+
+        @Override
+        public void validate() {
+            try {
+                validation.run();
+            } catch (Exception e) {
+                throw new IllegalStateException(
+                    "DC-P1-05: " + subsystemName + " requirement failed for profile " +
+                    requiredProfile + ": " + (errorMessage != null ? errorMessage : e.getMessage()),
+                    e);
+            }
         }
     }
 }

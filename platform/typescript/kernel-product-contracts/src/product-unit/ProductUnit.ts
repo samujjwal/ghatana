@@ -19,6 +19,10 @@ import {
   IMPLEMENTATION_STATUSES,
   PRODUCT_UNIT_SURFACE_TYPES,
 } from "./ProductUnitSurface.js";
+import type { ProductShape } from "./ProductShape.js";
+import { PRODUCT_SHAPES } from "./ProductShape.js";
+import type { ProductUnitSourceRef } from "./ProductUnitSourceRef.js";
+import { ProductUnitSourceRefSchema } from "./ProductUnitSourceRef.js";
 import type { ProviderRef } from "../provider/ProviderRef";
 
 // Re-export ProductUnitSurface for convenience
@@ -61,7 +65,10 @@ export interface ProductUnitDraft {
   readonly scope?: ProductUnitScope | undefined;
   readonly owner?: string | undefined;
   readonly surfaces: readonly ProductUnitSurface[];
+  readonly productShape?: ProductShape | undefined;
+  readonly sourceRefs?: readonly ProductUnitSourceRef[] | undefined;
   readonly lifecycleProfile?: string | undefined;
+  readonly semanticArtifactRefs?: readonly string[] | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
 }
 
@@ -160,6 +167,16 @@ export interface ProductUnit {
   readonly surfaces: readonly ProductUnitSurface[];
 
   /**
+   * Product-neutral lifecycle capability shape.
+   */
+  readonly productShape?: ProductShape | undefined;
+
+  /**
+   * Source acquisition references for monorepo/external/archive/generated inputs.
+   */
+  readonly sourceRefs?: readonly ProductUnitSourceRef[] | undefined;
+
+  /**
    * Lifecycle profile name (e.g., "standard-web-api-product").
    */
   readonly lifecycleProfile?: string | undefined;
@@ -168,6 +185,11 @@ export interface ProductUnit {
    * Current lifecycle execution status.
    */
   readonly lifecycleStatus?: LifecycleStatus | undefined;
+
+  /**
+   * Semantic artifact evidence references shared by contract with Studio/YAPPC.
+   */
+  readonly semanticArtifactRefs?: readonly string[] | undefined;
 
   /**
    * Conformance requirements for this ProductUnit.
@@ -301,7 +323,10 @@ export const ProductUnitDraftSchema = z
     scope: ProductUnitScopeSchema.optional(),
     owner: z.string().trim().min(1).optional(),
     surfaces: z.array(ProductUnitSurfaceSchema),
+    productShape: z.enum(PRODUCT_SHAPES).optional(),
+    sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     lifecycleProfile: z.string().trim().min(1).optional(),
+    semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
     metadata: RecordSchema.optional(),
   })
   .strict();
@@ -317,8 +342,11 @@ export const ProductUnitSchema = z
     registryProviderRef: ProviderRefSchema,
     sourceProviderRef: ProviderRefSchema,
     surfaces: z.array(ProductUnitSurfaceSchema).min(1),
+    productShape: z.enum(PRODUCT_SHAPES).optional(),
+    sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     lifecycleProfile: z.string().trim().min(1).optional(),
     lifecycleStatus: z.enum(LIFECYCLE_STATUSES).optional(),
+    semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
     conformance: z
       .object({
         requiredChecks: z.array(z.string().trim().min(1)),

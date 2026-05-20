@@ -19,6 +19,8 @@ import {
   type ProductUnitDraft,
   type ProductUnitScope,
 } from "./ProductUnit.js";
+import type { ProductUnitSourceRef } from "./ProductUnitSourceRef.js";
+import { ProductUnitSourceRefSchema } from "./ProductUnitSourceRef.js";
 
 export type { ProductUnitDraft, ProductUnitScope };
 
@@ -217,6 +219,7 @@ export interface ProductUnitGovernanceHints {
 export interface IntentProvenance {
   readonly sourceSystem: ProducerType;
   readonly sourceArtifactRefs: readonly string[];
+  readonly sourceRefs?: readonly ProductUnitSourceRef[] | undefined;
   readonly createdBy: string;
   readonly createdAt: string;
   readonly evidenceRefs?: readonly string[] | undefined;
@@ -278,6 +281,21 @@ export interface ProductUnitIntent {
    * Optional provenance information. Must not contain raw secrets.
    */
   readonly provenance?: IntentProvenance | undefined;
+
+  /**
+   * Optional semantic artifact evidence refs from YAPPC/Studio handoff.
+   */
+  readonly semanticArtifactRefs?: readonly string[] | undefined;
+
+  /**
+   * Optional risk hotspot evidence refs for generated or imported source.
+   */
+  readonly riskHotspotRefs?: readonly string[] | undefined;
+
+  /**
+   * Optional generated change-set evidence refs.
+   */
+  readonly generatedChangeSetRefs?: readonly string[] | undefined;
 }
 
 const PRODUCER_TYPES: readonly ProducerType[] = [
@@ -418,6 +436,7 @@ export const IntentProvenanceSchema = z
   .object({
     sourceSystem: z.enum(PRODUCER_TYPES),
     sourceArtifactRefs: z.array(z.string().trim().min(1)),
+    sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     createdBy: z.string().trim().min(1),
     createdAt: z.string().datetime({ offset: true }),
     evidenceRefs: z.array(z.string().trim().min(1)).optional(),
@@ -438,6 +457,9 @@ export const ProductUnitIntentSchema = z
     requestedLifecycle: RequestedLifecycleSchema.optional(),
     governanceHints: ProductUnitGovernanceHintsSchema.optional(),
     provenance: IntentProvenanceSchema.optional(),
+    semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
+    riskHotspotRefs: z.array(z.string().trim().min(1)).optional(),
+    generatedChangeSetRefs: z.array(z.string().trim().min(1)).optional(),
   })
   .strict()
   .superRefine((intent: ProductUnitIntent, context: z.RefinementCtx) => {

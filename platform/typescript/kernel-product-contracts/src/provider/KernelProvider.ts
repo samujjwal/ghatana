@@ -33,3 +33,41 @@ export interface KernelProvider {
    */
   readonly backingStore: "file" | "data-cloud" | "external";
 }
+
+export const KERNEL_PROVIDER_CLASSIFICATIONS = [
+  "bootstrap-generic",
+  "generic-http-client",
+  "data-cloud-bridge",
+  "anti-pattern",
+] as const;
+
+export type KernelProviderClassification =
+  (typeof KERNEL_PROVIDER_CLASSIFICATIONS)[number];
+
+export type KernelProviderCapability =
+  | "registry"
+  | "source"
+  | "toolchain"
+  | "artifact"
+  | "deployment"
+  | "environment"
+  | "secrets"
+  | "telemetry"
+  | "approval"
+  | "health"
+  | "gate"
+  | "lifecycle-event"
+  | "provenance"
+  | "memory"
+  | "runtime-truth"
+  | "policy-evidence";
+
+export interface ProviderModeCapabilityRequirement {
+  readonly providerId: string;
+  readonly mode: "bootstrap" | "platform";
+  readonly capabilities: readonly KernelProviderCapability[];
+  readonly requiredForPhases: readonly string[];
+  readonly failClosed: boolean;
+  readonly healthCheckRequired: boolean;
+  readonly classification?: KernelProviderClassification | undefined;
+}

@@ -46,6 +46,8 @@ const BACKEND_BREAKER_FAILURE_THRESHOLD = parseInt(
   10,
 );
 const BACKEND_BREAKER_OPEN_MS = parseInt(process.env['BACKEND_BREAKER_OPEN_MS'] ?? '30000', 10);
+const DATACLOUD_PROFILE = process.env['DATACLOUD_PROFILE'] ?? process.env['AEP_PROFILE'] ?? 'local';
+const API_KEY_TENANT_MAP = process.env['ACTION_PLANE_API_KEY_TENANT_MAP'];
 
 if (!JWT_SECRET) {
   writeStructuredLog('error', 'FATAL: JWT_SECRET environment variable must be set');
@@ -56,6 +58,21 @@ const allowedOrigins: string[] = ALLOWED_ORIGINS
   ? ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:5173'];
 
+const apiKeys: Record<string, { tenantId: string; workspaceId?: string; projectId?: string; userId?: string }> = {};
+if (API_KEY_TENANT_MAP) {
+  for (const entry of API_KEY_TENANT_MAP.split(',')) {
+    const [key, tenantId, workspaceId, projectId, userId] = entry.split(':').map(part => part.trim());
+    if (key && tenantId) {
+      apiKeys[key] = {
+        tenantId,
+        ...(workspaceId ? { workspaceId } : {}),
+        ...(projectId ? { projectId } : {}),
+        ...(userId ? { userId } : {}),
+      };
+    }
+  }
+}
+
 // ── Start ──────────────────────────────────────────────────────────────────────
 const start = async () => {
   try {
@@ -63,6 +80,15 @@ const start = async () => {
       jwtSecret: JWT_SECRET,
       backendUrl: AEP_BACKEND_URL,
       allowedOrigins,
+      deploymentProfile:
+        DATACLOUD_PROFILE === 'production' ||
+        DATACLOUD_PROFILE === 'staging' ||
+        DATACLOUD_PROFILE === 'sovereign' ||
+        DATACLOUD_PROFILE === 'embedded' ||
+        DATACLOUD_PROFILE === 'test'
+          ? DATACLOUD_PROFILE
+          : 'local',
+      apiKeys,
       logger: true,
       requestBodyLimitBytes: REQUEST_BODY_LIMIT_BYTES,
       rateLimitWindowMs: RATE_LIMIT_WINDOW_MS,

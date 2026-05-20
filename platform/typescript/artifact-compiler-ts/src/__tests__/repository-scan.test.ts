@@ -29,6 +29,15 @@ describe("scanRepositorySources", () => {
       "src/components/Button.tsx",
       "src/pages/Home.tsx",
     ]);
+    expect(scan.model.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromId: "src/pages/Home.tsx",
+          toId: "src/components/Button.tsx",
+          kind: "import",
+        }),
+      ]),
+    );
   });
 
   it("keeps parse failures in the scan inventory and decompiles valid files", () => {

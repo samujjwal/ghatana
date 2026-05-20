@@ -189,12 +189,30 @@ const INITIAL_STATE: ArtifactWorkflowState = {
   lastDecompileAt: null,
 };
 
+function loadInitialWorkflowState(): ArtifactWorkflowState {
+  if (typeof globalThis.localStorage === 'undefined') {
+    return INITIAL_STATE;
+  }
+
+  try {
+    const serialized = globalThis.localStorage.getItem('ghatana-studio-workflow-state');
+    if (!serialized) {
+      return INITIAL_STATE;
+    }
+    const parsed = JSON.parse(serialized) as Partial<PersistedWorkflowState>;
+    return parsed.state ?? INITIAL_STATE;
+  } catch (err) {
+    studioLogger.error('Failed to hydrate workflow state', { error: err });
+    return INITIAL_STATE;
+  }
+}
+
 /**
  * Root workflow atom. Holds the full ArtifactWorkflowState.
  *
  * Write by dispatching a partial update or a full state via `setArtifactWorkflow`.
  */
-export const artifactWorkflowAtom = atom<ArtifactWorkflowState>(INITIAL_STATE);
+export const artifactWorkflowAtom = atom<ArtifactWorkflowState>(loadInitialWorkflowState());
 
 /**
  * Internal audit metadata tracking (not part of public state).

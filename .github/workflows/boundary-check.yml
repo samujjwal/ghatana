@@ -77,6 +77,11 @@ jobs:
       - name: Check Data-Cloud OpenAPI contract drift
         run: bash products/data-cloud/scripts/check-openapi-drift.sh
 
+      - name: Check stale AEP/product boundary language (DC-P1-11)
+        run: |
+          echo "DC-P1-11: Running stale AEP/product boundary language lint..."
+          node scripts/lint-stale-aep-boundary.mjs || echo "⚠️  AEP boundary lint found violations (non-blocking during migration)"
+
       - name: Run YAPPC duplication boundary checks
         run: pnpm --dir products/yappc/frontend check:duplication-boundaries
 

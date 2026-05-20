@@ -147,7 +147,8 @@ describe('Authentication', () => {
   it('rejects requests without Authorization header', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/events' });
     expect(res.statusCode).toBe(401);
-    expect(res.json().message).toBe('Missing Bearer token');
+    expect(res.json().message).toBe('Missing Bearer token or API key');
+    expect(res.json().reasonCode).toBe('TENANT_REQUIRED');
     expect(res.headers['x-correlation-id']).toBeDefined();
     expect(res.json().correlationId).toBeDefined();
   });
@@ -190,6 +191,101 @@ describe('Authentication', () => {
     expect(res.json().message).toBe('Tenant mismatch between X-Tenant-Id header and JWT payload');
     expect(res.headers['x-correlation-id']).toBeDefined();
     expect(res.json().correlationId).toBeDefined();
+  });
+
+  it('accepts tenant_id as the authoritative JWT tenant claim in strict profiles', async () => {
+    const strictApp = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://localhost:9999',
+      allowedOrigins: ['http://localhost:5173'],
+      deploymentProfile: 'production',
+    });
+    await strictApp.ready();
+    try {
+      const token = validToken({ tenant_id: 'tenant-a' });
+      const res = await strictApp.inject({
+        method: 'GET',
+        url: '/api/v1/events',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'x-tenant-id': 'tenant-a',
+        },
+      });
+      expect(res.statusCode).not.toBe(400);
+      expect(res.statusCode).not.toBe(403);
+    } finally {
+      await strictApp.close();
+    }
+  });
+
+  it('rejects strict-profile JWTs without tenant claims before proxying', async () => {
+    const strictApp = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://localhost:9999',
+      allowedOrigins: ['http://localhost:5173'],
+      deploymentProfile: 'production',
+    });
+    await strictApp.ready();
+    try {
+      const token = validToken();
+      const res = await strictApp.inject({
+        method: 'GET',
+        url: '/api/v1/events',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toMatchObject({
+        reasonCode: 'MISSING_TENANT_CLAIM',
+      });
+    } finally {
+      await strictApp.close();
+    }
+  });
+
+  it('treats tenantId query as a compatibility hint and rejects mismatch', async () => {
+    const token = validToken({ tenant_id: 'tenant-a' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/events?tenantId=tenant-b',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({
+      reasonCode: 'TENANT_MISMATCH',
+    });
+  });
+
+  it('accepts API keys with configured tenant association in strict profiles', async () => {
+    const apiKeyApp = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://localhost:9999',
+      allowedOrigins: ['http://localhost:5173'],
+      deploymentProfile: 'staging',
+      apiKeys: {
+        'key-tenant-a': {
+          tenantId: 'tenant-a',
+          workspaceId: 'workspace-a',
+          projectId: 'project-a',
+          userId: 'api-key-user',
+        },
+      },
+    });
+    await apiKeyApp.ready();
+    try {
+      const res = await apiKeyApp.inject({
+        method: 'GET',
+        url: '/api/v1/events',
+        headers: {
+          'x-api-key': 'key-tenant-a',
+          'x-tenant-id': 'tenant-a',
+        },
+      });
+      expect(res.statusCode).not.toBe(400);
+      expect(res.statusCode).not.toBe(401);
+      expect(res.statusCode).not.toBe(403);
+    } finally {
+      await apiKeyApp.close();
+    }
   });
 
   it('preserves inbound correlation ID in auth error responses', async () => {

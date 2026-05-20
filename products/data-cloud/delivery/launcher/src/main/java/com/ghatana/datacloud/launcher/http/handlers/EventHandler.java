@@ -286,7 +286,7 @@ public class EventHandler {
                         (String) eventData.get("subject"),
                         finalActor,
                         (String) eventData.get("classification"),
-                        (Map<String, Object>) eventData.getOrDefault("policyContext", Map.of()),
+                        normalizePolicyContext(eventData.get("policyContext")),
                         (String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler"),
                         traceContext,           // DC-P0-01: traceContext (was missing)
                         correlationId,          // DC-P0-01: correlationId (was in wrong position)
@@ -384,6 +384,24 @@ public class EventHandler {
             log.warn("[EventHandler] DC-P1-04: Failed to JSON-serialize policyContext ({}), using toString()", raw.getClass().getSimpleName(), e);
             return raw.toString();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> normalizePolicyContext(Object raw) {
+        if (raw == null) {
+            return Map.of();
+        }
+        if (raw instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        if (raw instanceof String s && !s.isBlank()) {
+            try {
+                return http.objectMapper().readValue(s, Map.class);
+            } catch (Exception e) {
+                log.warn("[EventHandler] DC-P1-04: Failed to parse string policyContext for validation", e);
+            }
+        }
+        return Map.of();
     }
 
     public Promise<HttpResponse> handleQueryEvents(HttpRequest request) {

@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
+import com.ghatana.datacloud.launcher.RuntimeProfileValidator;
 import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -11,8 +12,10 @@ import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
+import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpHeaders;
@@ -132,9 +135,16 @@ public class DataLifecycleHandler {
     private final ObjectMapper objectMapper;
     private final HttpHandlerSupport http;
     private final AuditService auditService; // nullable
+    private final EventLogAuditService eventLogAuditService; // nullable, used for critical audit writes
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
     /** DC-BE-002: Generic idempotency store for governance operations. */
     private WriteIdempotencyStore idempotencyStore;
+    
+    /** DC-P1-03: Transaction manager for atomic critical operations with audit. */
+    private TransactionManager transactionManager;
+    
+    /** DC-P1-03: Deployment profile for production validation. */
+    private String deploymentProfile = "local";
 
     /**
      * Creates a governance handler.
@@ -152,6 +162,7 @@ public class DataLifecycleHandler {
         this.objectMapper = objectMapper;
         this.http         = http;
         this.auditService = auditService;
+        this.eventLogAuditService = auditService instanceof EventLogAuditService ? (EventLogAuditService) auditService : null;
     }
 
     public DataLifecycleHandler withTraceSupport(TraceSpanSupport traceSupport) {
@@ -168,6 +179,177 @@ public class DataLifecycleHandler {
     public DataLifecycleHandler withIdempotencyStore(WriteIdempotencyStore idempotencyStore) {
         this.idempotencyStore = idempotencyStore;
         return this;
+    }
+
+    /**
+     * DC-P1-03: Attaches a transaction manager for atomic critical operations with audit.
+     *
+     * @param transactionManager the transaction manager
+     * @return {@code this} for method chaining
+     */
+    public DataLifecycleHandler withTransactionManager(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+        return this;
+    }
+
+    /**
+     * DC-P1-03/P1-05: Sets the deployment profile and registers subsystem requirements.
+     *
+     * <p>This method registers DataLifecycleHandler's specific production requirements
+     * with the RuntimeProfileValidator instead of validating them separately.
+     *
+     * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
+     * @return {@code this} for method chaining
+     */
+    public DataLifecycleHandler withDeploymentProfile(String profile) {
+        this.deploymentProfile = profile != null ? profile : "local";
+        
+        // DC-P1-05: Register subsystem requirements with RuntimeProfileValidator
+        if (isProductionLikeProfile(deploymentProfile)) {
+            RuntimeProfileValidator.registerRequirement(
+                new RuntimeProfileValidator.FunctionalSubsystemRequirement(
+                    "DataLifecycleHandler",
+                    deploymentProfile,
+                    () -> {
+                        // DC-P1-03: Transaction manager is required for atomic critical operations
+                        if (transactionManager == null) {
+                            throw new IllegalStateException(
+                                "DC-P1-03: TransactionManager is required in production/staging/sovereign profiles. " +
+                                "Critical governance operations (purge, redaction) must be atomic with audit emission.");
+                        }
+                        // DC-P1-03: EventLogAuditService is required for fail-closed critical audit writes
+                        if (eventLogAuditService == null) {
+                            throw new IllegalStateException(
+                                "DC-P1-03: EventLogAuditService is required in production/staging/sovereign profiles. " +
+                                "Critical audit writes must be fail-closed to block operations on audit sink failure.");
+                        }
+                    },
+                    "TransactionManager and EventLogAuditService are required for critical governance operations"
+                )
+            );
+        }
+        
+        return this;
+    }
+
+    /**
+     * DC-P1-03: Determines if the deployment profile requires production-like strictness.
+     */
+    private static boolean isProductionLikeProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return lower.equals("production") || lower.equals("staging") || lower.equals("sovereign");
+    }
+
+    /**
+     * DC-P1-03: Executes purge operation in a transaction with critical audit.
+     * 
+     * <p>This method wraps the deletion and critical audit write in a transaction to ensure
+     * atomicity. If the audit write fails, the transaction is rolled back and the operation
+     * is blocked (fail-closed principle).
+     * 
+     * @param tenantId tenant identifier
+     * @param requestId request identifier
+     * @param collection collection name
+     * @param confirmationToken confirmation token
+     * @param entityRefs entity references to delete
+     * @param candidates candidate entities
+     * @param tenantContext tenant context
+     * @param operationScope idempotency operation scope
+     * @param idempotencyKey idempotency key
+     * @return promise of HTTP response
+     */
+    private Promise<HttpResponse> executePurgeInTransaction(
+            String tenantId,
+            String requestId,
+            String collection,
+            String confirmationToken,
+            List<EntityStore.EntityRef> entityRefs,
+            List<EntityStore.Entity> candidates,
+            TenantContext tenantContext,
+            String operationScope,
+            String idempotencyKey) {
+        
+        return transactionManager.executeInTransactionWithContext(tenantId, context -> {
+            // Step 1: Delete entities within transaction
+            return deleteByRefsOrLegacy(requireEntityStore(), tenantContext, entityRefs)
+                .then(batchResult -> {
+                    // Step 2: Emit critical audit within transaction (blocking, fail-closed)
+                    try {
+                        emitCriticalAudit(tenantId, requestId, "RETENTION_PURGE",
+                            collection, Map.of(
+                                "dryRun", false,
+                                "deletedCount", batchResult.successCount(),
+                                "requestedCount", entityRefs.size(),
+                                "confirmationTokenHash", sha256Hex(confirmationToken)));
+                    } catch (Exception auditError) {
+                        // DC-P1-03: Audit write failure within transaction - this will trigger rollback
+                        log.error("[DC-P1-03] Critical audit write failed during purge transaction - rolling back: {}",
+                            auditError.getMessage(), auditError);
+                        // Re-throw to trigger transaction rollback
+                        throw new RuntimeException(
+                            "DC-P1-03: Critical audit write failed - purge operation rolled back", auditError);
+                    }
+
+                    // Step 3: Log governance event within transaction
+                    logGovernanceEvent(
+                        tenantContext,
+                        requestId,
+                        "RETENTION_PURGE",
+                        collection,
+                        Map.of(
+                            "deletedCount", batchResult.successCount(),
+                            "requestedCount", entityRefs.size(),
+                            "failedCount", batchResult.failureCount()));
+
+                    // Step 4: Save tombstone within transaction
+                    return savePurgeTombstone(
+                        tenantContext,
+                        collection,
+                        candidates.stream().map(entity -> entity.id().value()).toList(),
+                        batchResult.successCount(),
+                        entityRefs.size(),
+                        sha256Hex(confirmationToken),
+                        requestId
+                    ).map(ignored -> batchResult);
+                })
+                .map(batchResult -> {
+                    // Build response after transaction commits
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("collection", collection);
+                    result.put("dryRun", false);
+                    result.put("status", "PURGE_COMPLETED");
+                    result.put("deletedCount", batchResult.successCount());
+                    result.put("deletedRows", batchResult.successCount());
+                    result.put("requestedRows", entityRefs.size());
+                    result.put("failedRows", batchResult.failureCount());
+                    result.put("deletedEntityIds", candidates.stream()
+                        .map(entity -> entity.id().value())
+                        .toList());
+                    result.put("completedAt", Instant.now().toString());
+                    result.put("requestId", requestId);
+                    
+                    ApiResponse responseEnvelope = ApiResponse.success(result, tenantId, requestId);
+                    
+                    // DC-BE-002: Store idempotency response
+                    if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
+                        Map<String, Object> cachedResponseBody = objectMapper.convertValue(
+                            responseEnvelope,
+                            new TypeReference<Map<String, Object>>() { }
+                        );
+                        idempotencyStore.put(tenantId, operationScope, idempotencyKey, cachedResponseBody);
+                    }
+
+                    return http.envelopeResponse(responseEnvelope, objectMapper);
+                });
+        }).then(
+            result -> Promise.of(result),
+            err -> {
+                log.error("[DC-P1-03] Purge transaction failed for collection={} tenant={}: {}",
+                    collection, tenantId, err.getMessage(), err);
+                return Promise.of(http.errorResponse(500,
+                    "Purge transaction failed: " + err.getMessage()));
+            });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -545,11 +727,28 @@ public class DataLifecycleHandler {
                                 ), tenantId, requestId), objectMapper));
                         }
 
+                        // DC-P1-03: Use transaction/outbox pattern for critical purge with audit
+                        if (transactionManager != null && isProductionLikeProfile(deploymentProfile)) {
+                            return executePurgeInTransaction(
+                                tenantId,
+                                requestId,
+                                collection,
+                                confirmationToken,
+                                entityRefs,
+                                candidates,
+                                tenantContext,
+                                operationScope,
+                                idempotencyKey
+                            );
+                        }
+
+                        // Non-transactional path for local/test profiles
                         return deleteByRefsOrLegacy(entityStore, tenantContext, entityRefs)
                             .then(batchResult -> {
                                 log.info("[DC-E5] purge COMPLETED collection={} tenant={} deleted={}",
                                     collection, tenantId, batchResult.successCount());
-                                emitAudit(tenantId, requestId, "RETENTION_PURGE",
+                                // DC-P1-09: Use critical audit for actual purge execution (transaction/outbox pattern)
+                                emitCriticalAudit(tenantId, requestId, "RETENTION_PURGE",
                                     collection, Map.of(
                                         "dryRun", false,
                                         "deletedCount", batchResult.successCount(),
@@ -809,7 +1008,8 @@ public class DataLifecycleHandler {
 
                         return entityStore.save(tenantContext, updatedEntity)
                             .map(savedEntity -> {
-                                emitAudit(tenantId, requestId, "PII_REDACT", collection,
+                                // DC-P1-09: Use critical audit for actual redaction execution (transaction/outbox pattern)
+                                emitCriticalAudit(tenantId, requestId, "PII_REDACT", collection,
                                     Map.of(
                                         "entityId", entityId,
                                         "fieldCount", changedFields.size(),
@@ -1658,6 +1858,76 @@ public class DataLifecycleHandler {
         details.forEach(builder::detail);
         service.record(builder.build())
             .whenException(e -> log.warn("[DC-E5] audit emit failed: {}", e.getMessage()));
+    }
+
+    /**
+     * DC-P1-09: Emits a critical audit event with transaction/outbox pattern and fail-closed semantics.
+     * 
+     * <p>This method ensures audit evidence is durably accepted before critical mutations proceed.
+     * If the audit write fails in production/staging/sovereign profiles, the operation is blocked
+     * (fail-closed principle). This prevents critical operations from proceeding without audit trail.
+     * 
+     * <p>Use this method for:
+     * <ul>
+     *   <li>Retention purge operations</li>
+     *   <li>PII redaction operations</li>
+     *   <li>Policy updates/deletions</li>
+     *   <li>Model promotions</li>
+     *   <li>Entity deletions</li>
+     * </ul>
+     * 
+     * @param tenantId tenant identifier
+     * @param requestId request identifier for correlation
+     * @param eventType audit event type
+     * @param resourceId resource identifier being affected
+     * @param details additional audit details
+     * @throws IllegalStateException if audit write fails and fail-closed is enabled
+     */
+    private void emitCriticalAudit(String tenantId, String requestId, String eventType,
+                                    String resourceId, Map<String, Object> details) {
+        if (eventLogAuditService == null) {
+            // DC-P1-09: In production/staging/sovereign profiles, critical operations require durable audit
+            if (isProductionProfile()) {
+                throw new IllegalStateException(
+                    "DC-P1-09: EventLogAuditService is required for critical mutations in production profile. " +
+                    "Operation blocked: " + eventType + " on " + resourceId);
+            }
+            // Fall back to regular audit in local/test profiles
+            emitAudit(tenantId, requestId, eventType, resourceId, details);
+            return;
+        }
+
+        AuditEvent.Builder builder = AuditEvent.builder()
+            .tenantId(tenantId)
+            .eventType(eventType)
+            .resourceType("GOVERNANCE")
+            .resourceId(resourceId)
+            .success(true)
+            .detail("requestId", requestId);
+        details.forEach(builder::detail);
+
+        try {
+            // DC-P1-09: Use recordCritical for fail-closed audit write
+            eventLogAuditService.recordCritical(builder.build());
+        } catch (Exception e) {
+            log.error("[DC-P1-09] Critical audit write failed for operation {} on resource {}: {}",
+                eventType, resourceId, e.getMessage(), e);
+            // In fail-closed mode, rethrow to block the operation
+            if (eventLogAuditService != null) {
+                throw new IllegalStateException(
+                    "DC-P1-09: Failed to record critical audit event. Operation blocked due to audit sink failure: " +
+                    e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Checks if the current deployment profile is production-grade.
+     * Production profiles require fail-closed audit for critical mutations.
+     */
+    private boolean isProductionProfile() {
+        String profile = http.deploymentProfile();
+        return "production".equals(profile) || "staging".equals(profile) || "sovereign".equals(profile);
     }
 
     @SuppressWarnings("unchecked")

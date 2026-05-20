@@ -461,6 +461,7 @@ subprojects {
             source = fileTree(sourceDirectory) {
                 exclude("**/generated/**")
                 exclude("**/build/generated/**")
+                exclude("**/*.generated.java")
                 exclude("**/*Grpc.java")
                 exclude("**/*Proto.java")
                 exclude("**/*_Grpc*.java")

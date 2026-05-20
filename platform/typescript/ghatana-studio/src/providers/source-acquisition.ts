@@ -149,6 +149,22 @@ export interface LocalFolderInput {
 }
 
 /**
+ * Optional backend adapter for providers that require server-side acquisition.
+ *
+ * Studio keeps boundary-safe defaults (pending jobs) when this client is absent.
+ */
+export interface SourceAcquisitionBackendClient {
+  acquireRepository(
+    input: RepositorySourceInput,
+    options?: SourceAcquisitionOptions,
+  ): Promise<SourceAcquisitionResult>;
+  acquireArchive(
+    input: ArchiveUploadInput,
+    options?: SourceAcquisitionOptions,
+  ): Promise<SourceAcquisitionResult>;
+}
+
+/**
  * Default options for source acquisition.
  */
 export const DEFAULT_ACQUISITION_OPTIONS: Required<SourceAcquisitionOptions> = {
@@ -404,6 +420,8 @@ export class LocalFolderDescriptorProvider implements SourceAcquisitionProvider 
 export class RepositorySourceProvider implements SourceAcquisitionProvider {
   readonly providerName = 'RepositorySource';
 
+  constructor(private readonly backendClient?: SourceAcquisitionBackendClient) {}
+
   canHandle(input: unknown): input is RepositorySourceInput {
     return (
       typeof input === 'object' &&
@@ -415,7 +433,10 @@ export class RepositorySourceProvider implements SourceAcquisitionProvider {
     );
   }
 
-  async acquire(input: unknown): Promise<SourceAcquisitionResult> {
+  async acquire(
+    input: unknown,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
     if (!this.canHandle(input)) {
       return { sources: [], errors: ['Invalid input for RepositorySourceProvider'], partial: false };
     }
@@ -426,6 +447,33 @@ export class RepositorySourceProvider implements SourceAcquisitionProvider {
       input.repositoryUrl,
       input.ref,
     );
+
+    if (this.backendClient !== undefined) {
+      try {
+        const backendResult = await this.backendClient.acquireRepository(input, options);
+        return {
+          ...backendResult,
+          descriptor: backendResult.descriptor ?? descriptor,
+          acquisitionJob:
+            backendResult.acquisitionJob ??
+            (backendResult.sources.length === 0 ? createPendingAcquisitionJob(descriptor) : undefined),
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          sources: [],
+          errors: [`Repository acquisition failed for "${input.repositoryUrl}": ${message}`],
+          partial: false,
+          descriptor,
+          acquisitionJob: {
+            ...createPendingAcquisitionJob(descriptor),
+            status: 'failed',
+            completedAt: new Date().toISOString(),
+            errorMessage: message,
+          },
+        };
+      }
+    }
 
     return {
       sources: [],
@@ -442,6 +490,8 @@ export class RepositorySourceProvider implements SourceAcquisitionProvider {
 export class ArchiveUploadProvider implements SourceAcquisitionProvider {
   readonly providerName = 'ArchiveUpload';
 
+  constructor(private readonly backendClient?: SourceAcquisitionBackendClient) {}
+
   canHandle(input: unknown): input is ArchiveUploadInput {
     return (
       typeof input === 'object' &&
@@ -453,12 +503,42 @@ export class ArchiveUploadProvider implements SourceAcquisitionProvider {
     );
   }
 
-  async acquire(input: unknown): Promise<SourceAcquisitionResult> {
+  async acquire(
+    input: unknown,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
     if (!this.canHandle(input)) {
       return { sources: [], errors: ['Invalid input for ArchiveUploadProvider'], partial: false };
     }
 
     const descriptor = createDescriptor('archive', `archive://${input.file.name}`, input.file.name);
+
+    if (this.backendClient !== undefined) {
+      try {
+        const backendResult = await this.backendClient.acquireArchive(input, options);
+        return {
+          ...backendResult,
+          descriptor: backendResult.descriptor ?? descriptor,
+          acquisitionJob:
+            backendResult.acquisitionJob ??
+            (backendResult.sources.length === 0 ? createPendingAcquisitionJob(descriptor) : undefined),
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          sources: [],
+          errors: [`Archive acquisition failed for "${input.file.name}": ${message}`],
+          partial: false,
+          descriptor,
+          acquisitionJob: {
+            ...createPendingAcquisitionJob(descriptor),
+            status: 'failed',
+            completedAt: new Date().toISOString(),
+            errorMessage: message,
+          },
+        };
+      }
+    }
 
     return {
       sources: [],

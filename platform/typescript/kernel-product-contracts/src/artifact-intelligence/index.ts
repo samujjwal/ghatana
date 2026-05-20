@@ -17,6 +17,7 @@ export {
   GeneratedChangeSetSummarySchema,
   SemanticArtifactEvidenceBundleSchema,
   ArtifactIntelligenceEvidenceEnvelopeSchema,
+  ArtifactEvidenceEnvelopeSchema,
   isSemanticArtifactReference,
   isArtifactGraphSummary,
   isProductShapeEvidence,
@@ -26,6 +27,7 @@ export {
   isGeneratedChangeSetSummary,
   isSemanticArtifactEvidenceBundle,
   isArtifactIntelligenceEvidenceEnvelope,
+  isArtifactEvidenceEnvelope,
   type ArtifactKind,
   type ProductShapeKind,
   type LifecycleReadinessState,
@@ -44,4 +46,5 @@ export {
   type GeneratedChangeSetSummary,
   type SemanticArtifactEvidenceBundle,
   type ArtifactIntelligenceEvidenceEnvelope,
+  type ArtifactEvidenceEnvelope,
 } from "./ArtifactIntelligence.js";

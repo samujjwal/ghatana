@@ -36,6 +36,26 @@ function readSource(rel) {
 
 console.log("\n=== check:builder-canvas-adapter ===\n");
 
+// ── Root script target alignment ─────────────────────────────────────────────
+console.log("0. Root script target alignment");
+
+const rootPackage = JSON.parse(readSource("package.json") || "{}");
+const checkScript = rootPackage?.scripts?.["check:builder-canvas-adapter"];
+const expectedTestTarget = "src/adapters/__tests__/BuilderCanvasProjectionAdapter.test.ts";
+const legacyTestTarget = "src/adapters/__tests__/BuilderCanvasAdapter.test.ts";
+
+check(
+  typeof checkScript === "string" && checkScript.includes(expectedTestTarget),
+  `Root script references canonical adapter test target: ${expectedTestTarget}`,
+  `Root script must reference canonical adapter test target: ${expectedTestTarget}`
+);
+
+check(
+  typeof checkScript === "string" && !checkScript.includes(legacyTestTarget),
+  "Root script does not reference legacy adapter test target",
+  `Root script still references legacy adapter test target: ${legacyTestTarget}`
+);
+
 // ── Enforce single canonical adapter (no duplicate ownership) ─────────────────
 console.log("1. Single canonical adapter enforcement");
 

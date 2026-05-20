@@ -332,6 +332,12 @@ jobs:
           chmod +x products/data-cloud/scripts/validate-agent-governance.sh
           bash products/data-cloud/scripts/validate-agent-governance.sh
 
+      # DC-P1-04: Stale AEP/product-boundary language lint gate
+      - name: DC-P1-04: Check stale AEP/product-boundary language
+        run: |
+          chmod +x scripts/check-data-cloud-boundary-language.mjs
+          node scripts/check-data-cloud-boundary-language.mjs
+
   # Reuse scorecard: enforces shared-library adoption (E7-S1 / Workstream G)
   reuse-scorecard:
     runs-on: ubuntu-latest

@@ -20,6 +20,26 @@ import type {
   ThemeConfig,
 } from './preview-protocol.js';
 
+/**
+ * Current runtime limitations for static preview rendering.
+ */
+export const STATIC_PREVIEW_RUNTIME_LIMITATIONS = [
+  'Static JSX only; hooks/state/effects are not executed',
+  'No runtime data fetching or network I/O in preview execution',
+  'No dynamic import execution or module graph runtime resolution',
+  'Imported components are represented as static placeholders',
+] as const;
+
+/**
+ * Planned milestones for full interactive runtime parity.
+ */
+export const FULL_RUNTIME_PREVIEW_PLAN = [
+  'Run compiled artifacts in an isolated worker + iframe bridge',
+  'Resolve and hydrate module graph with explicit import allowlist',
+  'Support event dispatch, hooks, and controlled async boundaries',
+  'Emit traceable runtime evidence for fidelity and security gates',
+] as const;
+
 // ============================================================================
 // Static Preview Extraction
 // ============================================================================

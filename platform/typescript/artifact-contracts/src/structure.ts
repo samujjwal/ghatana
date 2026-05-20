@@ -4,6 +4,8 @@
 
 import { z } from "zod";
 
+export const EXTRACTED_STRUCTURE_SCHEMA_VERSION = "1.0.0" as const;
+
 export const JsxTreeNodeSchema: z.ZodType<{
   readonly tagName: string;
   readonly isIntrinsic: boolean;
@@ -65,3 +67,48 @@ export const SourceImportRecordSchema = z.object({
 });
 
 export type SourceImportRecord = z.infer<typeof SourceImportRecordSchema>;
+
+/**
+ * Versioned envelope for extracted structure payloads.
+ *
+ * This enables additive schema evolution without breaking existing evidence
+ * packs and persisted workflow snapshots.
+ */
+export const ExtractedStructureEnvelopeSchema = z.object({
+  schemaVersion: z.literal(EXTRACTED_STRUCTURE_SCHEMA_VERSION),
+  jsxTree: z.array(JsxTreeNodeSchema).default([]),
+  detectedRoutes: z.array(DetectedRouteSchema).default([]),
+  componentUsages: z.array(ComponentUsageRecordSchema).default([]),
+  protectedRegions: z.array(ExtractedProtectedRegionSchema).default([]),
+  sourceImports: z.array(SourceImportRecordSchema).default([]),
+});
+
+export type ExtractedStructureEnvelope = z.infer<typeof ExtractedStructureEnvelopeSchema>;
+
+/**
+ * Migrates known historical extracted-structure shapes into the current
+ * versioned envelope contract.
+ */
+export function migrateExtractedStructureEnvelope(input: unknown): ExtractedStructureEnvelope {
+  const envelope = z.object({
+    schemaVersion: z.string(),
+    jsxTree: z.array(JsxTreeNodeSchema).optional(),
+    detectedRoutes: z.array(DetectedRouteSchema).optional(),
+    componentUsages: z.array(ComponentUsageRecordSchema).optional(),
+    protectedRegions: z.array(ExtractedProtectedRegionSchema).optional(),
+    sourceImports: z.array(SourceImportRecordSchema).optional(),
+  }).safeParse(input);
+
+  if (envelope.success && envelope.data.schemaVersion === EXTRACTED_STRUCTURE_SCHEMA_VERSION) {
+    return ExtractedStructureEnvelopeSchema.parse(envelope.data);
+  }
+
+  return ExtractedStructureEnvelopeSchema.parse({
+    schemaVersion: EXTRACTED_STRUCTURE_SCHEMA_VERSION,
+    jsxTree: (input as { jsxTree?: unknown })?.jsxTree,
+    detectedRoutes: (input as { detectedRoutes?: unknown })?.detectedRoutes,
+    componentUsages: (input as { componentUsages?: unknown })?.componentUsages,
+    protectedRegions: (input as { protectedRegions?: unknown })?.protectedRegions,
+    sourceImports: (input as { sourceImports?: unknown })?.sourceImports,
+  });
+}

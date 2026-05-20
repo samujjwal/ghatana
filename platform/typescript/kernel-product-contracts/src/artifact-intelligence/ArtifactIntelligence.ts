@@ -52,9 +52,12 @@ export type PrivacyClassification = (typeof PRIVACY_CLASSIFICATIONS)[number];
 
 export const EVIDENCE_TYPES = [
   "semantic-artifact-reference",
+  "artifact-evidence-envelope",
   "artifact-graph-summary",
   "dependency-graph-evidence",
   "product-shape-evidence",
+  "fidelity-report",
+  "round-trip-diff",
   "residual-island-report",
   "risk-hotspot-report",
   "generated-change-set-summary",
@@ -294,6 +297,7 @@ export const SemanticArtifactEvidenceBundleSchema = z
 
 export const ArtifactIntelligenceEvidenceEnvelopeSchema = z
   .object({
+    schemaVersion: z.literal(ARTIFACT_INTELLIGENCE_SCHEMA_VERSION).optional(),
     envelopeId: NonEmptyStringSchema,
     tenantId: NonEmptyStringSchema,
     workspaceId: NonEmptyStringSchema,
@@ -304,6 +308,39 @@ export const ArtifactIntelligenceEvidenceEnvelopeSchema = z
     evidenceRef: NonEmptyStringSchema,
     envelopeCreatedAt: z.string().datetime({ offset: true }),
     correlationId: NonEmptyStringSchema,
+  })
+  .strict();
+
+export const ArtifactEvidenceEnvelopeSchema = z
+  .object({
+    schemaVersion: z.literal(ARTIFACT_INTELLIGENCE_SCHEMA_VERSION),
+    envelopeId: NonEmptyStringSchema,
+    tenantId: NonEmptyStringSchema,
+    workspaceId: NonEmptyStringSchema,
+    projectId: NonEmptyStringSchema,
+    productUnitId: NonEmptyStringSchema,
+    runId: NonEmptyStringSchema.optional(),
+    correlationId: NonEmptyStringSchema,
+    sourceRef: NonEmptyStringSchema,
+    artifactType: z.enum([
+      "build-output",
+      "package-output",
+      "container-image",
+      "semantic-source",
+      "repository-scan",
+      "round-trip-diff",
+      "fidelity-report",
+      "generated-change-set",
+    ]),
+    artifactRefs: z.array(NonEmptyStringSchema),
+    semanticArtifactRefs: z.array(NonEmptyStringSchema),
+    residualIslandRefs: z.array(NonEmptyStringSchema),
+    fidelityRefs: z.array(NonEmptyStringSchema),
+    roundTripDiffRefs: z.array(NonEmptyStringSchema),
+    generatedChangeSetRefs: z.array(NonEmptyStringSchema),
+    riskHotspotRefs: z.array(NonEmptyStringSchema),
+    trustState: z.enum(["trusted", "untrusted", "degraded", "blocked", "not-generated"]),
+    createdAt: z.string().datetime({ offset: true }),
   })
   .strict();
 
@@ -321,6 +358,7 @@ export type RiskHotspotReport = z.infer<typeof RiskHotspotReportSchema>;
 export type GeneratedChangeSetSummary = z.infer<typeof GeneratedChangeSetSummarySchema>;
 export type SemanticArtifactEvidenceBundle = z.infer<typeof SemanticArtifactEvidenceBundleSchema>;
 export type ArtifactIntelligenceEvidenceEnvelope = z.infer<typeof ArtifactIntelligenceEvidenceEnvelopeSchema>;
+export type ArtifactEvidenceEnvelope = z.infer<typeof ArtifactEvidenceEnvelopeSchema>;
 
 export function isSemanticArtifactReference(
   value: unknown
@@ -366,6 +404,12 @@ export function isArtifactIntelligenceEvidenceEnvelope(
   value: unknown
 ): value is ArtifactIntelligenceEvidenceEnvelope {
   return ArtifactIntelligenceEvidenceEnvelopeSchema.safeParse(value).success;
+}
+
+export function isArtifactEvidenceEnvelope(
+  value: unknown
+): value is ArtifactEvidenceEnvelope {
+  return ArtifactEvidenceEnvelopeSchema.safeParse(value).success;
 }
 
 const RISK_LEVEL_ORDER: Readonly<Record<RiskLevel, number>> = {

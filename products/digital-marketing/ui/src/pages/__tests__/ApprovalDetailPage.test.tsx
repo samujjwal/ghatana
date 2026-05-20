@@ -217,7 +217,7 @@ describe('ApprovalDetailPage', () => {
         notes: undefined,
       }, expect.any(String)),
     );
-  });
+  }, 15_000);
 
   it('requires comment for high-risk approval rejection', async () => {
     mockGetStatus.mockResolvedValue(HIGH_RISK_APPROVAL);

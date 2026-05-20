@@ -39,9 +39,10 @@ class RouteActionAccessRegistryTest {
     }
 
     @Test
-    @DisplayName("unmapped route actions return null (fallback to path-prefix inference)")
-    void shouldReturnNullForUnmappedRouteAction() {
-        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/learning/review")).isNull();
+    @DisplayName("contract mapped route actions return explicit access")
+    void shouldReturnExplicitAccessForMappedRouteAction() {
+        assertThat(RouteActionAccessRegistry.requiredAccess("GET", "/api/v1/learning/review"))
+            .isEqualTo(DataCloudSecurityFilter.AccessLevel.OPERATOR);
     }
 
     @Test

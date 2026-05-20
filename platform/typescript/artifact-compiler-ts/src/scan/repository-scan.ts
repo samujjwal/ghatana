@@ -7,7 +7,9 @@
  */
 
 import * as ts from "typescript";
+import * as path from "node:path";
 import type {
+  ArtifactEdge,
   FileScanResult,
   LogicalArtifactModel,
   ScanResult,
@@ -47,6 +49,7 @@ export function scanRepositorySources(
   const fileResults: FileScanResult[] = [];
   const decompileFiles: DecompileSourceFile[] = [];
   const parsedFiles: ParsedSourceFile[] = [];
+  const importStatements: ImportStatement[] = [];
 
   for (const source of sources) {
     const sourceFile = toSourceFile(source);
@@ -100,6 +103,7 @@ export function scanRepositorySources(
       relativePath: source.relativePath,
       sourceFile: parsed,
     });
+    importStatements.push(...collectImportStatements(source.relativePath, parsed));
   }
 
   const decompiled = decompileFiles.length > 0
@@ -118,6 +122,24 @@ export function scanRepositorySources(
       };
 
   const residuals = detectResidualIslands(decompiled.model, { parsedFiles });
+  const graph = buildRepositoryImportGraph({
+    model: decompiled.model,
+    sources,
+    imports: importStatements,
+  });
+
+  const modelWithGraph: LogicalArtifactModel = {
+    ...decompiled.model,
+    edges: mergeUniqueEdges(decompiled.model.edges, graph.edges),
+    metadata: {
+      ...decompiled.model.metadata,
+      repositoryGraph: {
+        resolvedImportCount: graph.resolvedImportCount,
+        unresolvedImportCount: graph.unresolvedImportCount,
+      },
+    },
+  };
+
   const result: ScanResult = {
     scanJobId: options.scanJobId,
     modelId: options.modelId,
@@ -130,8 +152,156 @@ export function scanRepositorySources(
 
   return {
     result,
-    model: decompiled.model,
+    model: modelWithGraph,
   };
+}
+
+interface ImportStatement {
+  readonly fromPath: string;
+  readonly moduleSpecifier: string;
+  readonly isTypeOnly: boolean;
+}
+
+function collectImportStatements(relativePath: string, sourceFile: ts.SourceFile): ImportStatement[] {
+  const imports: ImportStatement[] = [];
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) {
+      continue;
+    }
+    imports.push({
+      fromPath: relativePath,
+      moduleSpecifier: statement.moduleSpecifier.text,
+      isTypeOnly: statement.importClause?.isTypeOnly ?? false,
+    });
+  }
+  return imports;
+}
+
+function buildRepositoryImportGraph(options: {
+  readonly model: LogicalArtifactModel;
+  readonly sources: readonly RepositoryScanSourceEntry[];
+  readonly imports: readonly ImportStatement[];
+}): { readonly edges: readonly ArtifactEdge[]; readonly resolvedImportCount: number; readonly unresolvedImportCount: number } {
+  const nodeIds = new Set(Object.keys(options.model.nodes));
+  const absoluteSourcePaths = new Set(options.sources.map((source) => toAbsolutePath(source.relativePath)));
+  let resolvedImportCount = 0;
+  let unresolvedImportCount = 0;
+
+  const moduleResolutionHost: ts.ModuleResolutionHost = {
+    fileExists: (fileName: string): boolean => absoluteSourcePaths.has(normalizeAbsolutePath(fileName)),
+    readFile: (): string | undefined => undefined,
+    directoryExists: (): boolean => true,
+    realpath: (fileName: string): string => normalizeAbsolutePath(fileName),
+    getCurrentDirectory: (): string => "/",
+  };
+
+  const compilerOptions: ts.CompilerOptions = {
+    allowJs: true,
+    moduleResolution: ts.ModuleResolutionKind.Bundler,
+  };
+
+  const edges: ArtifactEdge[] = [];
+  for (const importStatement of options.imports) {
+    const resolvedPath = resolveImportSpecifier(
+      importStatement,
+      compilerOptions,
+      moduleResolutionHost,
+      absoluteSourcePaths,
+    );
+    if (resolvedPath === null || !nodeIds.has(resolvedPath)) {
+      unresolvedImportCount += 1;
+      continue;
+    }
+
+    resolvedImportCount += 1;
+    edges.push({
+      id: `${importStatement.fromPath}->${resolvedPath}:${importStatement.moduleSpecifier}:${importStatement.isTypeOnly ? "type" : "value"}`,
+      fromId: importStatement.fromPath,
+      toId: resolvedPath,
+      kind: importStatement.isTypeOnly ? "type-only" : "import",
+      importSpecifier: importStatement.moduleSpecifier,
+    });
+  }
+
+  return { edges, resolvedImportCount, unresolvedImportCount };
+}
+
+function resolveImportSpecifier(
+  importStatement: ImportStatement,
+  compilerOptions: ts.CompilerOptions,
+  moduleResolutionHost: ts.ModuleResolutionHost,
+  absoluteSourcePaths: ReadonlySet<string>,
+): string | null {
+  const containingFile = toAbsolutePath(importStatement.fromPath);
+  const tsResolved = ts.resolveModuleName(
+    importStatement.moduleSpecifier,
+    containingFile,
+    compilerOptions,
+    moduleResolutionHost,
+  ).resolvedModule?.resolvedFileName;
+
+  const tsRelative = fromAbsolutePath(tsResolved);
+  if (tsRelative !== null && absoluteSourcePaths.has(toAbsolutePath(tsRelative))) {
+    return tsRelative;
+  }
+
+  if (!importStatement.moduleSpecifier.startsWith(".")) {
+    return null;
+  }
+
+  const containingDir = path.posix.dirname(importStatement.fromPath);
+  const candidateBase = path.posix.normalize(path.posix.join(containingDir, importStatement.moduleSpecifier));
+  const manualCandidates = [
+    candidateBase,
+    `${candidateBase}.ts`,
+    `${candidateBase}.tsx`,
+    `${candidateBase}.js`,
+    `${candidateBase}.jsx`,
+    path.posix.join(candidateBase, "index.ts"),
+    path.posix.join(candidateBase, "index.tsx"),
+    path.posix.join(candidateBase, "index.js"),
+    path.posix.join(candidateBase, "index.jsx"),
+  ];
+
+  for (const candidate of manualCandidates) {
+    if (absoluteSourcePaths.has(toAbsolutePath(candidate))) {
+      return normalizeRelativePath(candidate);
+    }
+  }
+
+  return null;
+}
+
+function normalizeRelativePath(value: string): string {
+  return value.replace(/^\/+/, "").replace(/\\/g, "/");
+}
+
+function normalizeAbsolutePath(value: string): string {
+  const withForwardSlashes = value.replace(/\\/g, "/");
+  if (withForwardSlashes.startsWith("/")) {
+    return withForwardSlashes;
+  }
+  return `/${withForwardSlashes}`;
+}
+
+function toAbsolutePath(relativePath: string): string {
+  return normalizeAbsolutePath(normalizeRelativePath(relativePath));
+}
+
+function fromAbsolutePath(value: string | undefined): string | null {
+  if (value === undefined) return null;
+  return normalizeRelativePath(value.replace(/^(file:\/\/)?\/+/, ""));
+}
+
+function mergeUniqueEdges(existing: readonly ArtifactEdge[], discovered: readonly ArtifactEdge[]): ArtifactEdge[] {
+  const merged = new Map<string, ArtifactEdge>();
+  for (const edge of existing) {
+    merged.set(edge.id, edge);
+  }
+  for (const edge of discovered) {
+    merged.set(edge.id, edge);
+  }
+  return [...merged.values()];
 }
 
 function toSourceFile(source: RepositoryScanSourceEntry): SourceFile {

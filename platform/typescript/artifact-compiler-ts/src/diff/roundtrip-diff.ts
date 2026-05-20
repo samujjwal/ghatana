@@ -2,6 +2,8 @@
  * @fileoverview Round-trip source/model/source diff utilities.
  */
 
+import * as ts from "typescript";
+
 import {
   computeFidelityReport,
   createResidualIslandReport,
@@ -70,7 +72,7 @@ function diffSourcePair(options: {
     options.model,
     options.reimportedModel,
     options.originalPath,
-  ) || normalizeSource(options.originalContent) === normalizeSource(options.generatedContent);
+  ) || areAstEquivalent(options.originalContent, options.generatedContent);
   const hunk = buildSingleSummaryHunk(originalLines, generatedLines, unchangedLines);
 
   return {
@@ -93,6 +95,28 @@ function splitLines(content: string): string[] {
 
 function normalizeSource(content: string): string {
   return content.replace(/\s+/g, " ").trim();
+}
+
+function normalizeAst(content: string): string | null {
+  try {
+    const sourceFile = ts.createSourceFile("diff.tsx", content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    if (sourceFile.parseDiagnostics.length > 0) {
+      return null;
+    }
+    const printer = ts.createPrinter({ removeComments: true });
+    return normalizeSource(printer.printFile(sourceFile));
+  } catch {
+    return null;
+  }
+}
+
+function areAstEquivalent(originalContent: string, generatedContent: string): boolean {
+  const originalAst = normalizeAst(originalContent);
+  const generatedAst = normalizeAst(generatedContent);
+  if (originalAst === null || generatedAst === null) {
+    return normalizeSource(originalContent) === normalizeSource(generatedContent);
+  }
+  return originalAst === generatedAst;
 }
 
 function countUnchangedPrefix(originalLines: readonly string[], generatedLines: readonly string[]): number {
@@ -140,7 +164,29 @@ function isSemanticallyEquivalent(
   return (
     originalNode.kind === reimportedNode.kind &&
     originalNode.displayName === reimportedNode.displayName &&
-    JSON.stringify(originalNode.exportedSymbols) === JSON.stringify(reimportedNode.exportedSymbols) &&
-    JSON.stringify(originalNode.inferredProps) === JSON.stringify(reimportedNode.inferredProps)
+    JSON.stringify([...originalNode.exportedSymbols].sort()) === JSON.stringify([...reimportedNode.exportedSymbols].sort()) &&
+    JSON.stringify(normalizeRecord(originalNode.inferredProps)) === JSON.stringify(normalizeRecord(reimportedNode.inferredProps)) &&
+    JSON.stringify(normalizeSourceImportShape(originalNode.sourceImports)) === JSON.stringify(normalizeSourceImportShape(reimportedNode.sourceImports)) &&
+    JSON.stringify(nodeEdgeShape(model, nodeId)) === JSON.stringify(nodeEdgeShape(reimportedModel, nodeId))
   );
+}
+
+function normalizeRecord(record: Record<string, string> | undefined): Record<string, string> {
+  if (record === undefined) return {};
+  const entries = Object.entries(record).sort(([left], [right]) => left.localeCompare(right));
+  return Object.fromEntries(entries);
+}
+
+function normalizeSourceImportShape(sourceImports: LogicalArtifactModel["nodes"][string]["sourceImports"]): readonly string[] {
+  if (sourceImports === undefined) return [];
+  return sourceImports
+    .map((record) => `${record.isTypeOnly ? "type" : "value"}:${record.moduleSpecifier}:${record.importClauseText ?? ""}`)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function nodeEdgeShape(model: LogicalArtifactModel, nodeId: string): readonly string[] {
+  return model.edges
+    .filter((edge) => edge.fromId === nodeId)
+    .map((edge) => `${edge.kind}:${edge.toId}:${edge.importSpecifier ?? ""}`)
+    .sort((left, right) => left.localeCompare(right));
 }

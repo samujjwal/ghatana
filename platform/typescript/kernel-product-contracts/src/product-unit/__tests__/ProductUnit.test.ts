@@ -12,6 +12,8 @@ import {
   createExecutableProductUnit,
   type ProductUnitSurface,
 } from "../ProductUnit";
+import { isProductShape } from "../ProductShape";
+import { isProductUnitSourceRef } from "../ProductUnitSourceRef";
 
 describe("ProductUnit", () => {
   describe("isProductUnit", () => {
@@ -43,11 +45,70 @@ describe("ProductUnit", () => {
             implementationStatus: "implemented",
           },
         ],
+        productShape: "marketing-ops",
+        sourceRefs: [
+          {
+            kind: "monorepo-path",
+            ref: "products/digital-marketing",
+            displayName: "Digital Marketing source",
+          },
+        ],
+        semanticArtifactRefs: ["artifact-evidence://dm/graph-summary"],
         lifecycleProfile: "standard-web-api-product",
         lifecycleStatus: "enabled",
       };
 
       expect(isProductUnit(validProductUnit)).toBe(true);
+    });
+
+    it("accepts planned and provider product shapes without executable lifecycle claims", () => {
+      const platformProvider: ProductUnit = {
+        schemaVersion: "1.0.0",
+        id: "data-cloud",
+        name: "Data Cloud",
+        kind: "platform-provider",
+        registryProviderRef: { providerId: "ghatana-file-registry" },
+        sourceProviderRef: { providerId: "ghatana-file-registry" },
+        surfaces: [
+          {
+            id: "data-cloud-api",
+            type: "backend-api",
+            implementationStatus: "implemented",
+          },
+        ],
+        productShape: "platform-provider",
+        sourceRefs: [{ kind: "monorepo-path", ref: "products/data-cloud" }],
+        lifecycleStatus: "planned",
+      };
+
+      expect(isProductUnit(platformProvider)).toBe(true);
+      expect(isProductShape(platformProvider.productShape)).toBe(true);
+      expect(isProductUnitSourceRef(platformProvider.sourceRefs?.[0])).toBe(true);
+    });
+
+    it("rejects external source provider refs without providerId", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "external-app",
+        name: "External App",
+        kind: "external-application",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "external-web",
+            type: "web",
+            implementationStatus: "planned",
+          },
+        ],
+        productShape: "external-repo",
+        sourceRefs: [{ kind: "external-source-provider", ref: "repo://app" }],
+      };
+
+      expect(isProductUnit(productUnit)).toBe(false);
+      expect(validateProductUnit(productUnit).errors).toContain(
+        "external-source-provider source refs require providerId"
+      );
     });
 
     it("returns false for invalid objects", () => {

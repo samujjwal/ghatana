@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ARTIFACT_INTELLIGENCE_SCHEMA_VERSION,
   ArtifactGraphSummarySchema,
+  ArtifactEvidenceEnvelopeSchema,
   ArtifactIntelligenceEvidenceEnvelopeSchema,
   DependencyGraphEvidenceSchema,
   GeneratedChangeSetSummarySchema,
@@ -11,6 +12,7 @@ import {
   SemanticArtifactEvidenceBundleSchema,
   SemanticArtifactReferenceSchema,
   isArtifactGraphSummary,
+  isArtifactEvidenceEnvelope,
   isArtifactIntelligenceEvidenceEnvelope,
   isDependencyGraphEvidence,
   isGeneratedChangeSetSummary,
@@ -20,6 +22,7 @@ import {
   isSemanticArtifactEvidenceBundle,
   isSemanticArtifactReference,
   type ArtifactGraphSummary,
+  type ArtifactEvidenceEnvelope,
   type ArtifactIntelligenceEvidenceEnvelope,
   type DependencyGraphEvidence,
   type GeneratedChangeSetSummary,
@@ -182,6 +185,28 @@ const envelopeFixture: ArtifactIntelligenceEvidenceEnvelope = {
   correlationId: "corr-1",
 };
 
+const artifactEvidenceEnvelopeFixture: ArtifactEvidenceEnvelope = {
+  schemaVersion: ARTIFACT_INTELLIGENCE_SCHEMA_VERSION,
+  envelopeId: "artifact-envelope-1",
+  tenantId: "tenant-1",
+  workspaceId: "workspace-1",
+  projectId: "project-1",
+  productUnitId: "product-1",
+  runId: "run-1",
+  correlationId: "corr-1",
+  sourceRef: "source://monorepo/products/product-1",
+  artifactType: "semantic-source",
+  artifactRefs: ["artifact://product-1/build/web-dist"],
+  semanticArtifactRefs: ["artifact://product-1/routes/ideas"],
+  residualIslandRefs: ["evidence://residual-islands/evidence-islands-1"],
+  fidelityRefs: ["evidence://fidelity/report-1"],
+  roundTripDiffRefs: ["evidence://round-trip/diff-1"],
+  generatedChangeSetRefs: ["evidence://change-set/evidence-changes-1"],
+  riskHotspotRefs: ["evidence://risk-hotspots/evidence-risk-1"],
+  trustState: "degraded",
+  createdAt: "2026-05-14T00:00:00.000Z",
+};
+
 describe("artifact intelligence contracts", () => {
   it("accepts all required evidence contract families", () => {
     expect(isSemanticArtifactReference(semanticArtifact)).toBe(true);
@@ -193,6 +218,7 @@ describe("artifact intelligence contracts", () => {
     expect(isGeneratedChangeSetSummary(generatedChangeSet)).toBe(true);
     expect(isSemanticArtifactEvidenceBundle(semanticBundleFixture)).toBe(true);
     expect(isArtifactIntelligenceEvidenceEnvelope(envelopeFixture)).toBe(true);
+    expect(isArtifactEvidenceEnvelope(artifactEvidenceEnvelopeFixture)).toBe(true);
   });
 
   it("accepts generated evidence fixtures for bundle and envelope schemas", () => {
@@ -201,6 +227,9 @@ describe("artifact intelligence contracts", () => {
     );
     expect(
       ArtifactIntelligenceEvidenceEnvelopeSchema.safeParse(envelopeFixture).success
+    ).toBe(true);
+    expect(
+      ArtifactEvidenceEnvelopeSchema.safeParse(artifactEvidenceEnvelopeFixture).success
     ).toBe(true);
   });
 

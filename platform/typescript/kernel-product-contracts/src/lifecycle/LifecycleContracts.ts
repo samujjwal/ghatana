@@ -80,15 +80,35 @@ export const LifecycleProfileSchema = z.object({
   displayName: z.string().min(1),
   description: z.string().optional(),
   defaultPhases: z.array(z.string()).min(1),
+  phaseGraph: z
+    .object({
+      nodes: z.array(z.string().trim().min(1)),
+      edges: z.array(
+        z
+          .object({
+            from: z.string().trim().min(1),
+            to: z.string().trim().min(1),
+          })
+          .strict(),
+      ),
+    })
+    .strict()
+    .optional(),
   phaseDefaults: z
     .record(
       z.string(),
       z.object({
         mode: z.enum(["parallel", "sequential", "dag"]),
         defaultSurfaces: z.array(z.string()),
+        requiredGates: z.array(z.string().trim().min(1)).optional(),
+        phaseOutputs: z.array(z.string().trim().min(1)).optional(),
+        providerModes: z.array(z.enum(["bootstrap", "platform"])).optional(),
+        evidencePolicy: z.enum(["none", "best-effort", "required"]).optional(),
+        envConstraints: z.array(z.string().trim().min(1)).optional(),
       }),
     )
     .optional(),
+  requiredProviders: z.array(z.string().trim().min(1)).optional(),
   requiredManifests: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
 });
@@ -203,15 +223,23 @@ export function parseLifecycleExecutionRequest(
 
 /** Canonical set of lifecycle failure reason codes. */
 export const LIFECYCLE_FAILURE_REASON_CODES = [
+  "config-invalid",
   "adapter-failed",
+  "command-failed",
   "gate-failed",
   "artifact-missing",
+  "output-missing",
+  "environment-blocked",
+  "dependency-blocked",
   "manifest-write-failed",
   "approval-required",
+  "approval-missing",
   "policy-denied",
+  "security-policy-denied",
   "provider-unavailable",
   "disabled-product",
   "missing-adapter",
+  "adapter-missing",
   "invalid-registry-state",
   "unknown",
 ] as const;

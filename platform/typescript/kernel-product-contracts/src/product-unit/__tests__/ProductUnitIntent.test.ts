@@ -73,6 +73,39 @@ describe("ProductUnitIntent", () => {
     expect(isProductUnitIntent(baseIntent)).toBe(true);
   });
 
+  it("accepts semantic artifact, source, risk, and generated change-set handoff refs", () => {
+    const intent: ProductUnitIntent = {
+      ...baseIntent,
+      productUnit: {
+        ...baseIntent.productUnit,
+        productShape: "artifact-intelligence",
+        sourceRefs: [
+          {
+            kind: "github-ref",
+            ref: "https://github.com/example/external-demo/tree/main",
+            providerId: "github",
+          },
+        ],
+        semanticArtifactRefs: ["artifact-evidence://semantic/source-1"],
+      },
+      provenance: {
+        ...baseIntent.provenance!,
+        sourceRefs: [
+          {
+            kind: "github-ref",
+            ref: "https://github.com/example/external-demo/tree/main",
+            providerId: "github",
+          },
+        ],
+      },
+      semanticArtifactRefs: ["artifact-evidence://semantic/source-1"],
+      riskHotspotRefs: ["artifact-evidence://risk/hotspot-1"],
+      generatedChangeSetRefs: ["artifact-evidence://changeset/1"],
+    };
+
+    expect(isProductUnitIntent(intent)).toBe(true);
+  });
+
   it("accepts an external repository source provider without assuming products path", () => {
     const intent: ProductUnitIntent = {
       ...baseIntent,

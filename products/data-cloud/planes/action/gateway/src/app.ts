@@ -210,7 +210,7 @@ function extractHeaderProjectId(
 }
 
 function extractPayloadTenantId(payload: JwtPayload): string | null {
-  const tenantId = payload["tenantId"];
+  const tenantId = payload["tenant_id"] ?? payload["tenantId"];
   return typeof tenantId === "string" && tenantId.trim().length > 0
     ? tenantId.trim()
     : null;
@@ -434,6 +434,16 @@ export interface GatewayConfig {
   jwtSecret: string;
   backendUrl: string;
   allowedOrigins: string[];
+  /**
+   * Action Plane deployment profile. Production, staging, and sovereign profiles
+   * must derive tenant identity from authenticated JWT/API-key context.
+   */
+  deploymentProfile?: "local" | "test" | "embedded" | "staging" | "production" | "sovereign";
+  /**
+   * API key tenant association map. Keys are raw gateway API keys; values carry
+   * tenant/workspace/project claims associated at key creation time.
+   */
+  apiKeys?: Readonly<Record<string, ApiKeyAuthContext>>;
   logger?: boolean;
   metrics?: GatewayMetrics;
   /** Override the WebSocket idle timeout (ms). Default: WS_IDLE_TIMEOUT_MS. */
@@ -480,6 +490,84 @@ export interface GatewayConfig {
    * When absent, provider endpoints fail closed. Production should use a Data Cloud-backed implementation.
    */
   providerStore?: ProviderStorePort;
+}
+
+export interface ApiKeyAuthContext {
+  readonly tenantId: string;
+  readonly workspaceId?: string | undefined;
+  readonly projectId?: string | undefined;
+  readonly userId?: string | undefined;
+  readonly roles?: readonly string[] | undefined;
+}
+
+type AuthMethod = "jwt" | "api-key";
+
+interface AuthenticatedRequestContext {
+  readonly method: AuthMethod;
+  readonly tenantId: string | null;
+  readonly workspaceId: string | null;
+  readonly projectId: string | null;
+  readonly userId: string | null;
+  readonly roles: readonly string[];
+  readonly payload: JwtPayload;
+}
+
+function strictTenantProfile(
+  profile: GatewayConfig["deploymentProfile"],
+): boolean {
+  return (
+    profile === "production" ||
+    profile === "staging" ||
+    profile === "sovereign"
+  );
+}
+
+function extractApiKey(
+  request: FastifyRequest,
+): string | null {
+  const headerValue = request.headers["x-api-key"];
+  if (typeof headerValue === "string" && headerValue.trim().length > 0) {
+    return headerValue.trim();
+  }
+  if (Array.isArray(headerValue) && headerValue[0]?.trim()) {
+    return headerValue[0].trim();
+  }
+  return null;
+}
+
+function resolveApiKeyContext(
+  apiKey: string,
+  apiKeys: GatewayConfig["apiKeys"],
+): AuthenticatedRequestContext | null {
+  const context = apiKeys?.[apiKey];
+  if (!context) {
+    return null;
+  }
+  return {
+    method: "api-key",
+    tenantId: context.tenantId,
+    workspaceId: context.workspaceId ?? null,
+    projectId: context.projectId ?? null,
+    userId: context.userId ?? `api-key:${context.tenantId}`,
+    roles: context.roles ?? [],
+    payload: {
+      sub: context.userId ?? `api-key:${context.tenantId}`,
+      tenant_id: context.tenantId,
+      tenantId: context.tenantId,
+      workspaceId: context.workspaceId,
+      projectId: context.projectId,
+      roles: context.roles,
+      authMethod: "api-key",
+    },
+  };
+}
+
+function tenantHintFromQuery(request: FastifyRequest): string | null {
+  const query = request.query as Record<string, unknown>;
+  const tenantId = query["tenantId"];
+  return typeof tenantId === "string" && tenantId.trim().length > 0
+    ? tenantId.trim()
+    : null;
 }
 
 async function appendAgentLifecycleTrace(
@@ -734,6 +822,7 @@ export async function buildApp(
     allowedHeaders: [
       "Content-Type",
       "Authorization",
+      "X-API-Key",
       "X-Tenant-Id",
       "X-Correlation-ID",
       "X-Ghatana-Tenant-Id",
@@ -754,20 +843,63 @@ export async function buildApp(
       (request as FastifyRequest & { correlationId?: string }).correlationId ??
       resolveCorrelationId(request);
     const token = extractBearerToken(request.headers.authorization);
-    if (!token) {
+    const apiKey = extractApiKey(request);
+    if (!token && !apiKey) {
       metrics.recordAuthFailure("missing_token");
       reply.header(CORRELATION_ID_HEADER, correlationId);
       void reply.status(401).send({
         error: "Unauthorized",
-        message: "Missing Bearer token",
+        reasonCode: "TENANT_REQUIRED",
+        message: "Missing Bearer token or API key",
         correlationId,
       });
       return;
     }
     try {
-      const payload = verifyJwt(token, config.jwtSecret);
+      let authContext: AuthenticatedRequestContext;
+      if (token) {
+        const payload = verifyJwt(token, config.jwtSecret);
+        authContext = {
+          method: "jwt",
+          tenantId: extractPayloadTenantId(payload),
+          workspaceId: extractWorkspaceId(payload),
+          projectId: extractProjectId(payload),
+          userId: extractUserId(payload),
+          roles: extractRoles(payload),
+          payload,
+        };
+      } else {
+        const apiKeyContext = resolveApiKeyContext(apiKey ?? "", config.apiKeys);
+        if (!apiKeyContext) {
+          metrics.recordAuthFailure("invalid_api_key");
+          reply.header(CORRELATION_ID_HEADER, correlationId);
+          void reply.status(401).send({
+            error: "Unauthorized",
+            reasonCode: "TENANT_REQUIRED",
+            message: "Invalid API key",
+            correlationId,
+          });
+          return;
+        }
+        authContext = apiKeyContext;
+      }
+
+      const strictTenant = strictTenantProfile(config.deploymentProfile ?? "local");
       const headerTenantId = resolveHeaderTenantId(request.headers);
-      const payloadTenantId = extractPayloadTenantId(payload);
+      const queryTenantId = tenantHintFromQuery(request);
+      const payloadTenantId = authContext.tenantId;
+      if (strictTenant && !payloadTenantId) {
+        metrics.recordAuthFailure("missing_tenant_claim");
+        reply.header(CORRELATION_ID_HEADER, correlationId);
+        void reply.status(400).send({
+          error: "Bad Request",
+          reasonCode: "MISSING_TENANT_CLAIM",
+          message:
+            "Authenticated identity must include tenant_id claim or API-key tenant association",
+          correlationId,
+        });
+        return;
+      }
       if (
         headerTenantId &&
         payloadTenantId &&
@@ -778,12 +910,32 @@ export async function buildApp(
         reply.header(CORRELATION_ID_HEADER, correlationId);
         void reply.status(403).send({
           error: "Forbidden",
+          reasonCode: "TENANT_MISMATCH",
           message: "Tenant mismatch between X-Tenant-Id header and JWT payload",
           correlationId,
         });
         return;
       }
-      (request as FastifyRequest & { user: JwtPayload }).user = payload;
+      if (
+        queryTenantId &&
+        payloadTenantId &&
+        queryTenantId !== payloadTenantId
+      ) {
+        metrics.recordTenantMismatch();
+        metrics.recordAuthFailure("tenant_mismatch");
+        reply.header(CORRELATION_ID_HEADER, correlationId);
+        void reply.status(403).send({
+          error: "Forbidden",
+          reasonCode: "TENANT_MISMATCH",
+          message:
+            "Tenant mismatch between tenantId query parameter and authenticated tenant",
+          correlationId,
+        });
+        return;
+      }
+      (request as FastifyRequest & { user: JwtPayload }).user = authContext.payload;
+      (request as FastifyRequest & { authContext: AuthenticatedRequestContext }).authContext =
+        authContext;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid token";
       metrics.recordAuthFailure("invalid_token");
@@ -2254,9 +2406,12 @@ export async function buildApp(
       if (request.headers.authorization) {
         proxyHeaders["authorization"] = request.headers.authorization;
       }
-      const payloadTenantId = extractPayloadTenantId(
-        (request as FastifyRequest & { user: JwtPayload }).user,
-      );
+      const authContext = (request as FastifyRequest & {
+        authContext?: AuthenticatedRequestContext;
+      }).authContext;
+      const payloadTenantId =
+        authContext?.tenantId ??
+        extractPayloadTenantId((request as FastifyRequest & { user: JwtPayload }).user);
       const headerTenantId = resolveHeaderTenantId(request.headers);
       const effectiveTenantId = payloadTenantId ?? headerTenantId;
       if (effectiveTenantId) {
@@ -2362,12 +2517,24 @@ export async function buildApp(
         ? query.tenantId.trim()
         : null;
     const jwtTenantId = extractPayloadTenantId(payload);
+    if (strictTenantProfile(config.deploymentProfile ?? "local") && !jwtTenantId) {
+      metrics.recordSseRejected();
+      metrics.recordAuthFailure("missing_tenant_claim");
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      return reply.status(400).send({
+        error: "Bad Request",
+        reasonCode: "MISSING_TENANT_CLAIM",
+        message: "Authenticated identity must include tenant_id claim",
+        correlationId,
+      });
+    }
     if (queryTenantId && jwtTenantId && queryTenantId !== jwtTenantId) {
       metrics.recordSseRejected();
       metrics.recordTenantMismatch();
       reply.header(CORRELATION_ID_HEADER, correlationId);
       return reply.status(403).send({
         error: "Forbidden",
+        reasonCode: "TENANT_MISMATCH",
         message:
           "Tenant mismatch between tenantId query parameter and JWT payload",
         correlationId,
@@ -2482,9 +2649,32 @@ export async function buildApp(
         }
       }
 
-      const tenantId =
-        extractPayloadTenantId(payload) ??
-        extractHeaderTenantId(req.headers["x-tenant-id"]);
+      const queryTenantId =
+        typeof (req.query as Record<string, string>)["tenantId"] === "string" &&
+        (req.query as Record<string, string>)["tenantId"].trim().length > 0
+          ? (req.query as Record<string, string>)["tenantId"].trim()
+          : null;
+      const jwtTenantId = extractPayloadTenantId(payload);
+      const headerTenantId = extractHeaderTenantId(req.headers["x-tenant-id"]);
+      if (strictTenantProfile(config.deploymentProfile ?? "local") && !jwtTenantId) {
+        metrics.recordWsRejected();
+        metrics.recordAuthFailure("missing_tenant_claim");
+        clientSocket.close(4003, "Missing tenant claim");
+        return;
+      }
+      if (headerTenantId && jwtTenantId && headerTenantId !== jwtTenantId) {
+        metrics.recordWsRejected();
+        metrics.recordTenantMismatch();
+        clientSocket.close(4003, "Tenant mismatch");
+        return;
+      }
+      if (queryTenantId && jwtTenantId && queryTenantId !== jwtTenantId) {
+        metrics.recordWsRejected();
+        metrics.recordTenantMismatch();
+        clientSocket.close(4003, "Tenant mismatch");
+        return;
+      }
+      const tenantId = jwtTenantId ?? headerTenantId;
 
       const backendWsUrl =
         config.backendUrl.replace(/^http/, "ws") + "/api/v1/tail/events";

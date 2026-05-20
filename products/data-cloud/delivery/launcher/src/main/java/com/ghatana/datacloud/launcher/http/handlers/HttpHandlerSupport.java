@@ -279,6 +279,13 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * Returns the deployment profile label configured for this HTTP surface.
+     */
+    public String deploymentProfile() {
+        return deploymentMode;
+    }
+
+    /**
      * Adds a {@code X-Fallback-Tenant-Warning} header to an existing response builder
      * when the tenant was resolved via the default fallback.
      */
