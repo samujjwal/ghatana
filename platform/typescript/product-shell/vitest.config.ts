@@ -18,7 +18,7 @@ export default defineConfig({
       '@ghatana/theme': resolve(__dirname, '../theme/src/index.ts'),
       '@testing-library/react': resolve(
         __dirname,
-        '../../../node_modules/.pnpm/@testing-library+react@16.3.2_@testing-library+dom@10.4.1_@types+react-dom@19.2.3_@type_893f466751a7d66081fd06e9edb9241a/node_modules/@testing-library/react',
+        '../../../node_modules/.pnpm/@testing-library+react@16.3_893f466751a7d66081fd06e9edb9241a/node_modules/@testing-library/react',
       ),
       '@testing-library/jest-dom': resolve(
         __dirname,

@@ -10,7 +10,7 @@
  * @doc.pattern State
  */
 
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { atom, useAtom, useAtomValue, createStore } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import type {
   HybridCanvasState,
@@ -471,7 +471,10 @@ export const redoAtom = atom(null, (get, set) => {
 // =============================================================================
 
 /**
- * Hybrid canvas store object for easy access
+ * Hybrid canvas store object for easy access.
+ *
+ * @deprecated Use `createCanvasStore()` for isolated per-canvas state.
+ * This global facade is kept for legacy/single-canvas use only.
  */
 export const hybridCanvasStore = {
   state: hybridCanvasStateAtom,
@@ -538,3 +541,60 @@ export function useRenderingMode() {
 export function useActiveLayer() {
   return useAtom(activeLayerAtom);
 }
+
+// =============================================================================
+// MULTI-CANVAS STORE FACTORY
+// =============================================================================
+
+/**
+ * Creates an isolated Jotai store pre-seeded with the default canvas state.
+ * Use this when mounting multiple independent canvas instances in the same app.
+ *
+ * @example
+ * ```tsx
+ * const store = createHybridCanvasStore();
+ * const controller = new HybridCanvasController({ store });
+ * ```
+ *
+ * @alias createCanvasStore
+ */
+export function createHybridCanvasStore(): ReturnType<typeof createStore> {
+  return createCanvasStore();
+}
+
+/**
+ * Creates an isolated Jotai store pre-seeded with the default canvas state.
+ * Use this when mounting multiple independent canvas instances in the same app.
+ *
+ * @example
+ * ```tsx
+ * const store = createCanvasStore();
+ * const controller = new HybridCanvasController({ store });
+ * ```
+ */
+export function createCanvasStore(): ReturnType<typeof createStore> {
+  const store = createStore();
+  // Pre-seed default state so derived atoms have a stable initial value.
+  // (Jotai lazily initialises atoms; explicit set guarantees snapshot integrity.)
+  store.set(hybridCanvasStateAtom, {
+    mode: "hybrid-freeform",
+    activeLayer: "both",
+    viewport: { x: 0, y: 0, zoom: 1, minZoom: 0.1, maxZoom: 5 },
+    selection: { elementIds: [], nodeIds: [], edgeIds: [], isMultiSelect: false, bounds: null },
+    layers: {
+      freeform: { id: "freeform", visible: true, opacity: 1, interactive: true, zIndex: 0 },
+      graph: { id: "graph", visible: true, opacity: 1, interactive: true, zIndex: 1 },
+      overlay: { id: "overlay", visible: true, opacity: 1, interactive: false, zIndex: 2 },
+    },
+    elements: [],
+    nodes: [],
+    edges: [],
+    tool: "select",
+    readOnly: false,
+    dimensions: { width: 0, height: 0 },
+    grid: { visible: true, size: 20, snap: true, color: "#e0e0e0", type: "lines" },
+  });
+  store.set(historyAtom, { past: [], future: [], maxSize: 50 });
+  return store;
+}
+

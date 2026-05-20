@@ -39,10 +39,10 @@ export interface ActionPayloadValidationResult {
  */
 const NavigatePayloadSchema = z.object({
   route: z.string().min(1),
-  params: z.record(z.string()).optional(),
-  query: z.record(z.string()).optional(),
+  params: z.record(z.string(), z.string()).optional(),
+  query: z.record(z.string(), z.string()).optional(),
   hash: z.string().optional(),
-  state: z.record(z.unknown()).optional(),
+  state: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
@@ -58,7 +58,7 @@ const ToggleStatePayloadSchema = z.object({
  */
 const EmitEventPayloadSchema = z.object({
   eventName: z.string().min(1),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
@@ -67,9 +67,9 @@ const EmitEventPayloadSchema = z.object({
 const CallApiPayloadSchema = z.object({
   endpoint: z.string().min(1).url(),
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']).optional(),
-  headers: z.record(z.string()).optional(),
-  body: z.record(z.unknown()).optional(),
-  queryParams: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  body: z.record(z.string(), z.unknown()).optional(),
+  queryParams: z.record(z.string(), z.string()).optional(),
 });
 
 /**
@@ -83,7 +83,7 @@ const UpdateBindingPayloadSchema = z.object({
 /**
  * Custom action payload schema (minimal validation).
  */
-const CustomPayloadSchema = z.record(z.unknown());
+const CustomPayloadSchema = z.record(z.string(), z.unknown());
 
 // ============================================================================
 // PAYLOAD VALIDATION

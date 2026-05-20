@@ -15,6 +15,24 @@ import { S3Client, ListObjectsV2Command, RestoreObjectCommand } from '@aws-sdk/c
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
+type ComplianceWorkerLogLevel = 'info' | 'warn' | 'error';
+
+const writeComplianceWorkerLog = (
+  level: ComplianceWorkerLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-compliance',
+    message,
+    ...context,
+  };
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify(entry)}\n`);
+};
+
 // Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -688,7 +706,7 @@ export class LegalComplianceService {
       };
 
     } catch (error) {
-      console.error('File backup test failed:', error);
+      writeComplianceWorkerLog('error', 'File backup test failed', { error });
       return { exists: false, recent: false, size: 0 };
     }
   }
@@ -751,9 +769,15 @@ export class LegalComplianceService {
         },
       });
 
-      console.log(`Compliance audit ${report.reportId} completed with score: ${report.complianceScore.toFixed(1)}%`);
+      writeComplianceWorkerLog('info', 'Compliance audit completed', {
+        reportId: report.reportId,
+        complianceScore: report.complianceScore,
+      });
     } catch (error) {
-      console.error('Failed to store compliance report:', error);
+      writeComplianceWorkerLog('error', 'Failed to store compliance report', {
+        reportId: report.reportId,
+        error,
+      });
     }
   }
 
@@ -836,7 +860,10 @@ const complianceWorker = new Worker(
           throw new Error(`Unknown audit type: ${auditType}`);
       }
     } catch (error: any) {
-      console.error('Compliance audit failed:', error);
+      writeComplianceWorkerLog('error', 'Compliance audit failed', {
+        auditType,
+        error: error.message,
+      });
       throw error;
     }
   },
@@ -848,16 +875,21 @@ const complianceWorker = new Worker(
 
 // Worker event handlers
 complianceWorker.on('completed', (job) => {
-  console.log(`Compliance job ${job.id} completed successfully`);
+  writeComplianceWorkerLog('info', 'Compliance job completed successfully', {
+    jobId: job.id,
+  });
 });
 
 complianceWorker.on('failed', (job, err) => {
-  console.error(`Compliance job ${job?.id} failed:`, err);
+  writeComplianceWorkerLog('error', 'Compliance job failed', {
+    jobId: job?.id,
+    error: err.message,
+  });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down compliance worker...');
+  writeComplianceWorkerLog('info', 'Shutting down compliance worker');
   await complianceWorker.close();
   await prisma.$disconnect();
   await redis.quit();

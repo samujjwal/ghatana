@@ -31,12 +31,21 @@ export type { HybridCanvasAPI } from "./hybrid-canvas-controller";
 // State management
 export {
   hybridCanvasStore,
+  createCanvasStore,
+  createHybridCanvasStore,
   useHybridCanvasState,
   useViewport,
   useSelection,
   useRenderingMode,
   useActiveLayer,
 } from "./state";
+
+// Provider
+export { HybridCanvasProvider } from "./HybridCanvasProvider";
+export type {
+  HybridCanvasProviderProps,
+  HybridCanvasStore,
+} from "./HybridCanvasProvider";
 
 // Hooks
 export {

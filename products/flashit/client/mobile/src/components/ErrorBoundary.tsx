@@ -12,6 +12,7 @@ import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 // ============================================================================
@@ -47,6 +48,10 @@ interface ErrorLog {
 const ERROR_LOG_KEY = '@ghatana/flashit-error_logs';
 const MAX_ERROR_LOGS = 50;
 const MAX_ERROR_RESET_ATTEMPTS = 3;
+
+const errorBoundaryDiagnostic = (message: string, error: unknown): void => {
+  monitoring.log('error', `[ErrorBoundary] ${message}`, { error });
+};
 
 // ============================================================================
 // Error Boundary Component
@@ -141,7 +146,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       // Save logs
       await AsyncStorage.setItem(ERROR_LOG_KEY, JSON.stringify(logs));
     } catch (e) {
-      console.error('Failed to log error:', e);
+      errorBoundaryDiagnostic('Failed to log error', e);
     }
   }
 
@@ -170,7 +175,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         Updates.reloadAsync();
       }
     } catch (e) {
-      console.error('Failed to reload app:', e);
+      errorBoundaryDiagnostic('Failed to reload app', e);
       // Fallback to just resetting state
       this.reset();
     }
@@ -194,7 +199,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       // Reload app
       await this.handleReload();
     } catch (e) {
-      console.error('Failed to clear data:', e);
+      errorBoundaryDiagnostic('Failed to clear data', e);
     }
   };
 
@@ -372,7 +377,7 @@ export async function getErrorLogs(): Promise<ErrorLog[]> {
     const logsJson = await AsyncStorage.getItem(ERROR_LOG_KEY);
     return logsJson ? JSON.parse(logsJson) : [];
   } catch (e) {
-    console.error('Failed to get error logs:', e);
+    errorBoundaryDiagnostic('Failed to get error logs', e);
     return [];
   }
 }
@@ -384,7 +389,7 @@ export async function clearErrorLogs(): Promise<void> {
   try {
     await AsyncStorage.removeItem(ERROR_LOG_KEY);
   } catch (e) {
-    console.error('Failed to clear error logs:', e);
+    errorBoundaryDiagnostic('Failed to clear error logs', e);
   }
 }
 

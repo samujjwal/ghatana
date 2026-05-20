@@ -7,7 +7,7 @@
  * concrete event transport.
  */
 
-import { produce } from 'immer';
+import { produce, castDraft } from 'immer';
 import type { BuilderDocument } from './builder-document.js';
 import { attachBuilderDocumentCompatibility, normalizeBuilderDocument } from './builder-document.js';
 import type { ComponentInstance, NodeId, Binding } from './types';
@@ -139,7 +139,7 @@ export function insertNode(
     
     // Add to nodes record (canonical uses Record, not Map)
     // Spread metadata to create mutable copy for Immer compatibility with platform-events readonly arrays
-    draft.nodes[id] = newInstance as unknown as typeof draft.nodes[string];
+    draft.nodes[id] = castDraft(newInstance);
     
     // Add to parent's slot or root layout
     if (parentId && slotName) {
@@ -746,7 +746,7 @@ export function mergeDocuments(
     // Merge in nodes that exist in remote but not in local (additions)
     for (const [nodeId, remoteNode] of Object.entries(remote.nodes)) {
       if (!(nodeId in draft.nodes)) {
-        draft.nodes[nodeId] = remoteNode as unknown as typeof draft.nodes[string];
+        draft.nodes[nodeId] = castDraft(remoteNode);
         continue;
       }
 

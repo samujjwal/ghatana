@@ -80,6 +80,9 @@ describe('CanvasDocument Round-trip Tests', () => {
             type: 'node',
             position: { x: 100, y: 100 },
             size: { width: 200, height: 100 },
+            rotation: 0,
+            locked: false,
+            hidden: false,
             data: {
               label: 'Node 1',
               contractName: 'Button',
@@ -92,6 +95,9 @@ describe('CanvasDocument Round-trip Tests', () => {
             source: 'node-1',
             target: 'node-2',
             position: { x: 0, y: 0 },
+            rotation: 0,
+            locked: false,
+            hidden: false,
             data: {
               label: 'Edge 1',
               slot: 'default',
@@ -121,6 +127,9 @@ describe('CanvasDocument Round-trip Tests', () => {
             id: 'node-1',
             type: 'node',
             position: { x: 100, y: 100 },
+            rotation: 0,
+            locked: false,
+            hidden: false,
             metadata: {
               customField: { nested: { value: 42 } },
             },
@@ -248,10 +257,13 @@ describe('CanvasDocument Round-trip Tests', () => {
         id: 'node-1',
         type: 'node',
         position: { x: 0, y: 0 },
+        rotation: 0,
+        locked: false,
+        hidden: false,
         data: { label: 'Node' },
       };
 
-      const result = CanvasDocumentSchema.shape.elements.elementSchema.safeParse(node);
+      const result = CanvasDocumentSchema.shape.elements.valueType.safeParse(node);
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.type).toBe('node');
@@ -265,10 +277,13 @@ describe('CanvasDocument Round-trip Tests', () => {
         source: 'node-1',
         target: 'node-2',
         position: { x: 0, y: 0 },
+        rotation: 0,
+        locked: false,
+        hidden: false,
         data: { label: 'Edge' },
       };
 
-      const result = CanvasDocumentSchema.shape.elements.elementSchema.safeParse(edge);
+      const result = CanvasDocumentSchema.shape.elements.valueType.safeParse(edge);
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.type).toBe('edge');

@@ -75,8 +75,8 @@ export const MoveNodeActionSchema = BaseActionSchema.extend({
 export const UpdateNodePropsActionSchema = BaseActionSchema.extend({
   type: z.literal('update-node-props'),
   nodeId: z.string().min(1),
-  oldProps: z.record(z.unknown()),
-  newProps: z.record(z.unknown()),
+  oldProps: z.record(z.string(), z.unknown()),
+  newProps: z.record(z.string(), z.unknown()),
   path: z.string().optional(),
 });
 

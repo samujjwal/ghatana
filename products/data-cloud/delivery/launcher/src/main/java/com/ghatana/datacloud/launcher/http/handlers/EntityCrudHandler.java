@@ -73,18 +73,23 @@ public class EntityCrudHandler {
     private OpenSearchConnector openSearchConnector;
     private TenantQuotaService tenantQuotaService;
 
-    /** P0.2: Idempotency key store for entity writes — backed by durable store in non-embedded profiles. */
+    /** DC-P1-05: Idempotency key store for entity writes — must be durable in production. */
     private EntityWriteIdempotencyStore idempotencyStore;
-    // In-memory fallback for embedded/local profiles (lost on restart, bounded by IDEMPOTENCY_MAX_ENTRIES).
+    // In-memory fallback for embedded/local profiles only (lost on restart, bounded by IDEMPOTENCY_MAX_ENTRIES).
+    // DC-P1-05: This fallback is disabled in production profiles.
     private final Map<String, IdempotencyEntry> inMemoryIdempotencyStore = new ConcurrentHashMap<>();
     private static final int IDEMPOTENCY_MAX_ENTRIES = 10_000;
     private static final long IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000L; // 24 hours
 
-    /** DC-BE-003: Transaction manager for atomic multi-step writes (entity + event + audit). */
+    /** DC-BE-003: Transaction manager for atomic multi-step writes (entity + event + audit).
+     *  DC-P1-05: Required in production profiles. */
     private TransactionManager transactionManager;
 
-    /** P0-06: Outbox processor for atomic entity write lifecycle. */
+    /** DC-P1-05: Outbox processor for atomic entity write lifecycle — required in production. */
     private EntityWriteOutboxProcessor outboxProcessor;
+
+    /** DC-P1-05: Deployment profile for production validation. */
+    private String deploymentProfile = "local";
 
     private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
@@ -156,6 +161,69 @@ public class EntityCrudHandler {
     public EntityCrudHandler withTransactionManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
         return this;
+    }
+
+    /**
+     * DC-P1-05: Sets the deployment profile for production validation.
+     *
+     * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
+     * @return {@code this} for method chaining
+     */
+    public EntityCrudHandler withDeploymentProfile(String profile) {
+        this.deploymentProfile = profile != null ? profile : "local";
+        return this;
+    }
+
+    /**
+     * DC-P1-05: Validates production requirements for entity write durability.
+     * Throws IllegalStateException if production invariants are violated.
+     *
+     * <p>Production/staging/sovereign profiles require:
+     * <ul>
+     *   <li>Durable {@link #idempotencyStore} (in-memory fallback disabled)</li>
+     *   <li>{@link #transactionManager} for atomic writes</li>
+     *   <li>{@link #outboxProcessor} for durable side-effect processing</li>
+     * </ul>
+     */
+    public void validateProductionRequirements() {
+        if (!isProductionLikeProfile(deploymentProfile)) {
+            log.info("[EntityCrudHandler] Skipping production validation for profile '{}'", deploymentProfile);
+            return;
+        }
+
+        log.info("[EntityCrudHandler] Validating production requirements for profile '{}'", deploymentProfile);
+
+        // DC-P1-05: Durable idempotency store is required in production
+        if (idempotencyStore == null) {
+            throw new IllegalStateException(
+                "DC-P1-05: Durable EntityWriteIdempotencyStore is required in production/staging/sovereign profiles. " +
+                "In-memory idempotency is not durable across restarts.");
+        }
+
+        // DC-P1-05: Transaction manager is required for atomic writes in production
+        if (transactionManager == null) {
+            throw new IllegalStateException(
+                "DC-P1-05: TransactionManager is required in production/staging/sovereign profiles. " +
+                "Entity writes must be atomic with event append and audit emission.");
+        }
+
+        // DC-P1-05: Outbox processor is required for durable side-effect processing in production
+        if (outboxProcessor == null) {
+            throw new IllegalStateException(
+                "DC-P1-05: EntityWriteOutboxProcessor is required in production/staging/sovereign profiles. " +
+                "WebSocket broadcasts and semantic indexing must be processed durably.");
+        }
+
+        log.info("[EntityCrudHandler] Production requirements validated successfully for profile '{}'", deploymentProfile);
+    }
+
+    /**
+     * DC-P1-05: Determines if the deployment profile requires production-like strictness.
+     */
+    private static boolean isProductionLikeProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return lower.equals("production") || lower.equals("staging") || lower.equals("sovereign");
     }
 
     // ==================== Quota Enforcement ====================
@@ -248,7 +316,7 @@ public class EntityCrudHandler {
                         Map.of("collection", entity.collection(), "event.type", "entity.saved"),
                         () -> client.appendEvent(tenantId, cdcEvent))
                         .then(savedEvent -> {
-                            // P0-06: Create outbox entry for async websocket broadcast and semantic indexing
+                            // DC-P1-05: Create outbox entry for async websocket broadcast and semantic indexing
                             if (outboxProcessor != null) {
                                 EntityWriteOutbox outbox = EntityWriteOutbox.builder()
                                     .tenantId(tenantId)
@@ -267,15 +335,21 @@ public class EntityCrudHandler {
                                     ))
                                     .correlationId(correlationId)
                                     .build();
-                                
-                                // Store outbox entry (will be processed asynchronously)
-                                // Note: For production, this should be persisted in the transaction
-                                // For now, we add it to the in-memory processor if available
-                                if (outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
-                                    ((InMemoryEntityWriteOutboxProcessor) outboxProcessor).addPending(outbox);
+
+                                // DC-P1-05: In production, outbox must be durable - not in-memory
+                                if (isProductionLikeProfile(deploymentProfile)
+                                    && outboxProcessor instanceof InMemoryEntityWriteOutboxProcessor) {
+                                    log.error("[EntityCrudHandler] DC-P1-05: In-memory outbox processor used in production profile '{}' - " +
+                                             "this violates durability requirements", deploymentProfile);
+                                    // Return error promise for production - don't silently use in-memory
+                                    return Promise.ofException(new IllegalStateException(
+                                        "DC-P1-05: Durable outbox processor required in production"));
                                 }
+
+                                // Store outbox entry for async processing
+                                outboxProcessor.addPending(outbox);
                             }
-                            
+
                             return Promise.of(entity);
                         });
                 })
@@ -300,6 +374,14 @@ public class EntityCrudHandler {
 
     private Promise<HttpResponse> checkIdempotencyOrNull(String tenantId, String collection, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return null;
+
+        // DC-P1-05: In production, durable store is mandatory - no in-memory fallback
+        if (idempotencyStore == null && isProductionLikeProfile(deploymentProfile)) {
+            log.error("[EntityCrudHandler] DC-P1-05: Idempotency check failed - no durable store in production profile '{}'", deploymentProfile);
+            return Promise.of(http.errorResponse(503,
+                "Idempotency service unavailable: durable store required in production"));
+        }
+
         // Prefer durable store when available (non-embedded profiles).
         if (idempotencyStore != null) {
             Optional<Map<String, Object>> cached = idempotencyStore.get(tenantId, collection, idempotencyKey);
@@ -309,7 +391,8 @@ public class EntityCrudHandler {
             }
             return null;
         }
-        // Fall back to in-memory store for local/embedded profiles.
+
+        // DC-P1-05: Fall back to in-memory store ONLY for local/embedded profiles (not production).
         String key = inMemoryIdempotencyKey(tenantId, collection, idempotencyKey);
         IdempotencyEntry entry = inMemoryIdempotencyStore.get(key);
         if (entry != null && Instant.now().minusMillis(IDEMPOTENCY_TTL_MS).isBefore(entry.storedAt())) {
@@ -321,12 +404,21 @@ public class EntityCrudHandler {
 
     private void storeIdempotency(String tenantId, String collection, String idempotencyKey, Map<String, Object> responseBody) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) return;
+
+        // DC-P1-05: In production, durable store is mandatory
+        if (idempotencyStore == null && isProductionLikeProfile(deploymentProfile)) {
+            log.error("[EntityCrudHandler] DC-P1-05: Cannot store idempotency - no durable store in production profile '{}'", deploymentProfile);
+            // Don't throw here to avoid breaking the response, but log the violation
+            return;
+        }
+
         // Prefer durable store when available.
         if (idempotencyStore != null) {
             idempotencyStore.put(tenantId, collection, idempotencyKey, responseBody);
             return;
         }
-        // In-memory fallback: evict expired entries when approaching capacity.
+
+        // DC-P1-05: In-memory fallback only for local/embedded profiles (not production).
         if (inMemoryIdempotencyStore.size() >= IDEMPOTENCY_MAX_ENTRIES) {
             Instant cutoff = Instant.now().minusMillis(IDEMPOTENCY_TTL_MS);
             inMemoryIdempotencyStore.entrySet().removeIf(e -> e.getValue().storedAt().isBefore(cutoff));

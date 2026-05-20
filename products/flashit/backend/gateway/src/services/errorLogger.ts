@@ -10,6 +10,7 @@
 
 import { FastifyRequest } from 'fastify';
 import { PrismaClient } from '../../generated/prisma/index.js';
+import { systemLogger } from '../lib/logger.js';
 
 // ============================================================================
 // Types & Interfaces
@@ -135,14 +136,14 @@ class ErrorLoggerService {
     // Check if should trigger alert
     this.checkAlert(fingerprint, error.message, severity);
 
-    // Log to console in development
+    // Emit local diagnostics in development.
     if (process.env.NODE_ENV === 'development') {
-      console.error(`[${severity}] [${category}]`, error.message, context);
+      systemLogger.error(`[${severity}] [${category}] ${error.message}`, error, context);
     }
 
     // Store in database (async, don't block)
     this.storeError(error, fingerprint, severity, category, context).catch((err) => {
-      console.error('Failed to store error:', err);
+      systemLogger.error('Failed to store error', err, { fingerprint });
     });
 
     return fingerprint;
@@ -306,10 +307,9 @@ class ErrorLoggerService {
     context: ErrorContext
   ): Promise<void> {
     try {
-      // In a real implementation, store in database
-      // For now, just log to console in production
+      // In a real implementation, store in database.
       if (process.env.NODE_ENV === 'production') {
-        console.error(JSON.stringify({
+        systemLogger.error('Error log entry', error, {
           fingerprint,
           severity,
           category,
@@ -317,7 +317,7 @@ class ErrorLoggerService {
           stack: error.stack,
           context,
           timestamp: new Date().toISOString(),
-        }));
+        });
       }
 
       // Example Prisma implementation:
@@ -340,7 +340,7 @@ class ErrorLoggerService {
       //   },
       // });
     } catch (err) {
-      console.error('Failed to store error in database:', err);
+      systemLogger.error('Failed to store error in database', err, { fingerprint });
     }
   }
 
@@ -377,7 +377,7 @@ class ErrorLoggerService {
         try {
           callback(alert);
         } catch (err) {
-          console.error('Alert callback error:', err);
+          systemLogger.error('Alert callback error', err, { alertId: alert.id });
         }
       });
     }

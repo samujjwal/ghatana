@@ -9,11 +9,9 @@ info:
     event-cloud streaming, analytics, reporting, governance, plugin-driven extensibility, feature
     storage, model metadata, and execution persistence surfaces.
 
-    Data-Cloud now exposes plugin-backed workflow execution endpoints for pipeline execution,
-    execution status inspection, and execution log retrieval inside the standalone launcher.
-    In this API, workflow and pipeline execution means data-local plugin runtime execution.
-    AEP still owns broader agentic orchestration outside these data-local runtime surfaces.
     Data Cloud includes the Action Plane runtime implementation for plugin-backed workflow execution and observability.
+    The Action Plane provides agentic orchestration, pattern detection, anomaly analysis, time-series forecasting,
+    pipeline execution, and governance/operation surfaces.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
@@ -33,14 +31,33 @@ info:
 
     ## WebSocket
     The `/ws` endpoint accepts WebSocket upgrade requests and streams JSON change-data-capture
-    events (entity create / update / delete) scoped to the caller's `tenantId`. Connect with
+    events (entity create / update / delete) scoped to the caller's authenticated tenant. Connect with
     a standard WebSocket client; no subprotocol is required. Each message is a JSON object with
     `type`, `collection`, `id`, and `data` fields.
 
     ## Authentication
-    All endpoints require a `tenantId` (query parameter or `X-Tenant-ID` header) to enforce
-    tenant isolation. Production deployments additionally require a bearer token via the
-    `security-gateway` proxy.
+    All endpoints require authenticated identity with a valid bearer token (JWT) or API key.
+    The tenant identity is derived from the authenticated principal's token claims - specifically
+    the `tenant_id` claim in JWT tokens or the tenant associated with API keys.
+
+    ### Production Tenant Identity (Strict Mode)
+    In production, staging, and sovereign profiles:
+    - Tenant is **always** derived from authenticated identity (JWT `tenant_id` claim or API key tenant)
+    - The `X-Tenant-ID` header and `tenantId` query parameter are treated as **compatibility hints only**
+    - If provided, these hints must match the authenticated tenant; mismatch results in `403 Forbidden`
+    - Missing tenant claim in authentication results in `400 Bad Request`
+    - The default fallback tenant (`"default"`) is **disabled** in production profiles
+
+    ### Local/Development Tenant Identity
+    In local, test, and embedded profiles:
+    - `X-Tenant-ID` header or `tenantId` query parameter may be used for convenience
+    - A fallback tenant (`"default"`) is used when no tenant is specified
+
+    ### Security Requirements
+    - All endpoints except health checks require valid authentication
+    - CRITICAL routes (governance mutations, model promotions, data deletion) require policy engine
+    - SENSITIVE routes emit audit events
+    - Break-glass access requires explicit `X-Break-Glass-Reason` header and ADMIN role
 
     ## Versioning
     All stable endpoints are prefixed with `/api/v1`. Utility endpoints (`/health`, `/ready`,
@@ -109,22 +126,100 @@ tags:
   - name: plugins
     description: Bundled plugin lifecycle management.
   - name: agents
-    description: Catalog of agent descriptors served by Data Cloud.
+    description: Catalog of agent descriptors served by Data Cloud Action Plane.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Error Response Components (DC-P0-01)
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - UNAUTHENTICATED
+                - FORBIDDEN
+                - TENANT_REQUIRED
+                - TENANT_MISMATCH
+                - POLICY_DENY
+                - AUDIT_SERVICE_REQUIRED
+                - MISSING_TENANT_CLAIM
+                - DELEGATED_ACCESS_DENIED
+            message:
+              type: string
+            requestId:
+              type: string
+              format: uuid
+      example:
+        error:
+          code: "TENANT_MISMATCH"
+          message: "Requested tenant does not match authenticated tenant"
+          requestId: "550e8400-e29b-41d4-a716-446655440000"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Reusable components
 # ─────────────────────────────────────────────────────────────────────────────
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT bearer token with required `tenant_id` claim.
+        The tenant identity is extracted from the `tenant_id` claim.
+        Tokens without this claim are rejected in all profiles.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key for machine-to-machine authentication.
+        The tenant identity is associated with the API key at creation time.
+
   parameters:
     tenantIdQuery:
       name: tenantId
       in: query
       description: |
-        Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-        May alternatively be supplied as the `X-Tenant-ID` request header.
+        **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+
+        In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+        If provided, this value must match the authenticated tenant or the request is rejected.
+        In local/test/embedded profiles, this may be used for convenience when authentication
+        does not include tenant claims.
       schema:
         type: string
         example: "tenant-123"
+      deprecated: true
+    tenantIdHeader:
+      name: X-Tenant-ID
+      in: header
+      description: |
+        **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+
+        In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+        If provided, this value must match the authenticated tenant or the request is rejected.
+        In local/test/embedded profiles, this may be used for convenience when authentication
+        does not include tenant claims.
+      schema:
+        type: string
+        example: "tenant-123"
+      deprecated: true
 
     collectionPath:
       name: collection

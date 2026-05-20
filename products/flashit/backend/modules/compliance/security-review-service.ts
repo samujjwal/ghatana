@@ -13,6 +13,23 @@ import crypto from 'crypto';
 import validator from 'validator';
 import { z } from 'zod';
 
+type SecurityLogLevel = 'info' | 'warn' | 'error';
+
+const writeSecurityLog = (
+  level: SecurityLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-security-review',
+    message,
+    ...context,
+  })}\n`);
+};
+
 // Prisma client
 const prisma = new PrismaClient();
 
@@ -851,9 +868,15 @@ export class SecurityReviewService {
         },
       });
 
-      console.log(`Security audit ${report.auditId} completed with score: ${report.overallScore.toFixed(1)}%`);
+      writeSecurityLog('info', 'Security audit completed', {
+        auditId: report.auditId,
+        overallScore: report.overallScore,
+      });
     } catch (error) {
-      console.error('Failed to store audit results:', error);
+      writeSecurityLog('error', 'Failed to store audit results', {
+        auditId: report.auditId,
+        error,
+      });
     }
   }
 

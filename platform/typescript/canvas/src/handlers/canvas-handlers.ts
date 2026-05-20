@@ -12,6 +12,24 @@
 import { ActionContext } from "../core/action-registry";
 import { nanoid } from "nanoid";
 
+const emitCanvasStateEvent = (
+  message: string,
+  detail?: Record<string, unknown>,
+): void => {
+  if (typeof globalThis.dispatchEvent !== "function" || typeof CustomEvent === "undefined") {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent("canvas-state-event", {
+      detail: {
+        message,
+        ...detail,
+      },
+    }),
+  );
+};
+
 /**
  * Canvas element types
  */
@@ -56,13 +74,16 @@ class CanvasStateManager {
   addElement(element: CanvasElement): void {
     this.elements.set(element.id, element);
     this.notifyListeners();
-    console.log(`➕ Added element: ${element.type} (${element.id})`);
+    emitCanvasStateEvent("Element added", {
+      elementId: element.id,
+      elementType: element.type,
+    });
   }
 
   removeElement(id: string): void {
     this.elements.delete(id);
     this.notifyListeners();
-    console.log(`➖ Removed element: ${id}`);
+    emitCanvasStateEvent("Element removed", { elementId: id });
   }
 
   updateElement(id: string, updates: Partial<CanvasElement>): void {
@@ -70,7 +91,7 @@ class CanvasStateManager {
     if (element) {
       Object.assign(element, updates);
       this.notifyListeners();
-      console.log(`🔄 Updated element: ${id}`);
+      emitCanvasStateEvent("Element updated", { elementId: id });
     }
   }
 
@@ -97,7 +118,7 @@ class CanvasStateManager {
   clear(): void {
     this.elements.clear();
     this.notifyListeners();
-    console.log("🗑️ Cleared all elements");
+    emitCanvasStateEvent("Elements cleared");
   }
 
   getAllConnections(): Array<{ from: string; to: string }> {

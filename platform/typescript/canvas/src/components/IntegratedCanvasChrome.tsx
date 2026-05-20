@@ -32,6 +32,24 @@ import { useAvailableActions } from '../hooks/useAvailableActions';
 import { initializeActionRegistry } from '../actions/action-initializer';
 import { connectActionHandlers } from '../actions/action-handlers-connector';
 
+const emitCanvasChromeDiagnostic = (
+    message: string,
+    detail?: Record<string, unknown>,
+) => {
+    if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+        return;
+    }
+
+    globalThis.dispatchEvent(
+        new CustomEvent('canvas-chrome-diagnostic', {
+            detail: {
+                message,
+                ...detail,
+            },
+        }),
+    );
+};
+
 interface IntegratedCanvasChromeProps {
     children: ReactNode;
     projectName?: string;
@@ -66,17 +84,20 @@ const IntegratedCanvasChromeInner: React.FC<IntegratedCanvasChromeProps> = ({
 
     // Initialize action system
     useEffect(() => {
-        console.log('🚀 Initializing Canvas Multi-Layer System...');
+        emitCanvasChromeDiagnostic('Initializing Canvas Multi-Layer System');
         initializeActionRegistry();
         connectActionHandlers();
-        console.log('✅ Canvas Multi-Layer System initialized');
+        emitCanvasChromeDiagnostic('Canvas Multi-Layer System initialized');
     }, []);
 
     // Enable layer detection
     useLayerDetection({
         enabled: enableLayerDetection,
         onLayerChange: (layer, previousLayer) => {
-            console.log(`🔍 Layer changed: ${previousLayer} → ${layer}`);
+            emitCanvasChromeDiagnostic('Layer changed', {
+                layer,
+                previousLayer,
+            });
         },
     });
 
@@ -183,8 +204,8 @@ const IntegratedCanvasChromeInner: React.FC<IntegratedCanvasChromeProps> = ({
                 projectName={projectName}
                 onProjectChange={onProjectChange}
                 onSearch={() => setCommandPaletteOpen(true)}
-                onShare={() => console.log('Share clicked')}
-                onSettings={() => console.log('Settings clicked')}
+                onShare={() => emitCanvasChromeDiagnostic('Share requested')}
+                onSettings={() => emitCanvasChromeDiagnostic('Settings requested')}
             />
 
             {/* Main Layout */}

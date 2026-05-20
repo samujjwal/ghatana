@@ -50,7 +50,7 @@ export const TailwindConfigOutputSchema = z.object({
     spacing: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
     borderRadius: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
     boxShadow: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
-    extend: z.record(z.unknown()).optional(),
+    extend: z.record(z.string(), z.unknown()).optional(),
   }),
   content: z.string(),
   metadata: z.object({
@@ -162,7 +162,7 @@ export function validateGeneratorOutput(output: unknown): ValidationResult<Gener
   if (!result.success) {
     return {
       valid: false,
-      errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+      errors: result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
     };
   }
 
@@ -179,7 +179,7 @@ export function validateGenerationResult(result: unknown): ValidationResult<Gene
   if (!parsed.success) {
     return {
       valid: false,
-      errors: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+      errors: parsed.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
     };
   }
 

@@ -9,6 +9,21 @@ import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
 
+const API_REQUEST_DIAGNOSTIC_EVENT = 'dmos:api-request-diagnostic';
+
+function recordApiRequestDiagnostic(code: string, error: unknown): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.dispatchEvent(new CustomEvent(API_REQUEST_DIAGNOSTIC_EVENT, {
+        detail: {
+            code,
+            message: error instanceof Error ? error.message : 'Unknown API request error',
+        },
+    }));
+}
+
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
 };
@@ -243,7 +258,7 @@ export const getResponseBody = async (response: Response): Promise<any> => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            recordApiRequestDiagnostic('DMOS_API_RESPONSE_BODY_PARSE_FAILED', error);
         }
     }
     return undefined;

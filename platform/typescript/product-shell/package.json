@@ -25,13 +25,13 @@
     "lucide-react": "^0.400.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.0.0"
+    "react-router": "catalog:"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
-    "react-router-dom": "catalog:",
+    "react-router": "catalog:",
     "tsup": "^8.0.0",
     "typescript": "catalog:",
     "vitest": "catalog:"

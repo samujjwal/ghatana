@@ -24,6 +24,22 @@ import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 
+function writeTracingLog(
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void {
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-gateway',
+    component: 'otel',
+    message,
+    ...context,
+  })}\n`);
+}
+
 // Enable diagnostic logging in development
 if (process.env.OTEL_DEBUG === 'true') {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.INFO);
@@ -82,22 +98,25 @@ if (TRACING_ENABLED) {
   });
 
   sdk.start();
-  console.log(`[OTEL] Tracing initialized for ${SERVICE_NAME} → ${OTEL_ENDPOINT}`);
+  writeTracingLog('info', 'Tracing initialized', {
+    serviceName: SERVICE_NAME,
+    endpoint: OTEL_ENDPOINT,
+  });
 
   // Graceful shutdown
   const shutdown = async () => {
     try {
       await sdk?.shutdown();
-      console.log('[OTEL] Tracing shut down successfully');
+      writeTracingLog('info', 'Tracing shut down successfully');
     } catch (err) {
-      console.error('[OTEL] Error shutting down tracing:', err);
+      writeTracingLog('error', 'Error shutting down tracing', { error: err });
     }
   };
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 } else {
-  console.log('[OTEL] Tracing disabled (set OTEL_TRACING_ENABLED=true to enable)');
+  writeTracingLog('info', 'Tracing disabled', { enableWith: 'OTEL_TRACING_ENABLED=true' });
 }
 
 export { sdk as otelSdk };

@@ -1,64 +1,77 @@
 #!/usr/bin/env node
 
-import { spawn } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log("🔧 Starting Prisma client generation...\n");
-console.log(`📍 Current directory: ${process.cwd()}`);
-console.log(`📝 Script directory: ${__dirname}\n`);
+function writeLine(message = '') {
+  process.stdout.write(`${message}\n`);
+}
 
-// First, clean the generated folder
-const generatedPath = path.join(__dirname, "generated", "prisma");
-console.log(`🗑️  Cleaning ${generatedPath}...`);
+function writeError(message = '') {
+  process.stderr.write(`${message}\n`);
+}
+
+writeLine('Starting Prisma client generation...');
+writeLine();
+writeLine(`Current directory: ${process.cwd()}`);
+writeLine(`Script directory: ${__dirname}`);
+writeLine();
+
+const generatedPath = path.join(__dirname, 'generated', 'prisma');
+writeLine(`Cleaning ${generatedPath}...`);
 
 if (fs.existsSync(generatedPath)) {
   fs.rmSync(generatedPath, { recursive: true, force: true });
-  console.log("✅ Cleaned generated folder\n");
+  writeLine('Cleaned generated folder.');
+  writeLine();
 } else {
-  console.log("ℹ️  Generated folder doesn't exist yet (first run)\n");
+  writeLine('Generated folder does not exist yet.');
+  writeLine();
 }
 
-// Ensure generated folder exists
-const generatedParent = path.join(__dirname, "generated");
+const generatedParent = path.join(__dirname, 'generated');
 if (!fs.existsSync(generatedParent)) {
   fs.mkdirSync(generatedParent, { recursive: true });
-  console.log(`📁 Created ${generatedParent}\n`);
+  writeLine(`Created ${generatedParent}`);
+  writeLine();
 }
 
-// Run prisma generate
-console.log("⏳ Running Prisma generate...\n");
+writeLine('Running Prisma generate...');
+writeLine();
 
-const schemaPath = path.join(__dirname, "prisma", "schema.prisma");
-console.log(`📖 Using schema: ${schemaPath}\n`);
+const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
+writeLine(`Using schema: ${schemaPath}`);
+writeLine();
 
-const prismaProcess = spawn("pnpm", ["exec", "prisma", "generate", "--schema", schemaPath], {
+const prismaProcess = spawn('pnpm', ['exec', 'prisma', 'generate', '--schema', schemaPath], {
   cwd: __dirname,
-  stdio: "inherit",
+  stdio: 'inherit',
 });
 
-prismaProcess.on("close", (code) => {
-  console.log("\n" + "=".repeat(60));
+prismaProcess.on('close', (code) => {
+  writeLine();
+  writeLine('='.repeat(60));
   if (code === 0) {
-    console.log("✅ Prisma client generated successfully!");
-    console.log(`📂 Location: ${generatedPath}`);
+    writeLine('Prisma client generated successfully.');
+    writeLine(`Location: ${generatedPath}`);
 
-    // Verify
-    const indexFile = path.join(generatedPath, "index.js");
+    const indexFile = path.join(generatedPath, 'index.js');
     if (fs.existsSync(indexFile)) {
-      console.log(`✅ Verified: ${indexFile} exists`);
-      console.log("\n🎉 Ready to start the server with: pnpm run dev");
+      writeLine(`Verified: ${indexFile} exists`);
+      writeLine('Ready to start the server with: pnpm run dev');
     } else {
-      console.error(`❌ ERROR: ${indexFile} not found!`);
+      writeError(`ERROR: ${indexFile} not found.`);
       process.exit(1);
     }
   } else {
-    console.error(`❌ Prisma generation failed with exit code ${code}`);
-    process.exit(code);
+    writeError(`Prisma generation failed with exit code ${code}`);
+    process.exit(code ?? 1);
   }
-  console.log("=".repeat(60) + "\n");
+  writeLine('='.repeat(60));
+  writeLine();
 });

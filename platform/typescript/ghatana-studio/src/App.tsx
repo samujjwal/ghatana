@@ -20,15 +20,20 @@ import {
 import AgentsPage from "./routes/AgentsPage";
 import ArtifactsPage from "./routes/ArtifactsPage";
 import BlueprintsPage from "./routes/BlueprintsPage";
+import BuilderPage from "./routes/BuilderPage";
 import CanvasPage from "./routes/CanvasPage";
 import DeploymentsPage from "./routes/DeploymentsPage";
+import { DesignSystemPage } from "./routes/DesignSystemPage";
 import DevelopPage from "./routes/DevelopPage";
+import FidelityReportPage from "./routes/FidelityReportPage";
 import HealthPage from "./routes/HealthPage";
 import HomePage from "./routes/HomePage";
 import IdeasPage from "./routes/IdeasPage";
+import ImportDecompilePage from "./routes/ImportDecompilePage";
 import LearnPage from "./routes/LearnPage";
 import LifecyclePage from "./routes/LifecyclePage";
 import OpeningPilotsPage from "./routes/OpeningPilotsPage";
+import PreviewPage from "./routes/PreviewPage";
 import { getStudioCapabilityState } from "./api/kernelLifecycleClient";
 import {
   findStudioNavItemFromItems,
@@ -297,6 +302,22 @@ export default function App(): ReactElement {
             }
           />
           <Route
+            path="/builder"
+            element={
+              <RouteAccessGuard navItem={routeById.builder}>
+                <BuilderPage />
+              </RouteAccessGuard>
+            }
+          />
+          <Route
+            path="/design-system"
+            element={
+              <RouteAccessGuard navItem={routeById["design-system"]}>
+                <DesignSystemPage />
+              </RouteAccessGuard>
+            }
+          />
+          <Route
             path="/develop"
             element={
               <RouteAccessGuard navItem={routeById.develop}>
@@ -365,6 +386,10 @@ export default function App(): ReactElement {
             }
           />
           <Route path="*" element={<NotFoundRoute />} />
+          {/* Utility routes — no nav item, accessible directly */}
+          <Route path="/import" element={<ImportDecompilePage />} />
+          <Route path="/fidelity-report" element={<FidelityReportPage />} />
+          <Route path="/preview" element={<PreviewPage />} />
         </Routes>
       </ProductShell>
     </ErrorBoundary>

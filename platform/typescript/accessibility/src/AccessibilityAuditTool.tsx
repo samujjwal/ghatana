@@ -5,6 +5,27 @@ import { AccessibilityReportViewer } from './AccessibilityReportViewer';
 
 import type { AccessibilityReport, Finding } from './types';
 
+const emitAccessibilityAuditDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent('ghatana:accessibility-audit-diagnostic', {
+      detail: {
+        level,
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  );
+};
+
 /**
  *
  */
@@ -53,7 +74,7 @@ export const AccessibilityAuditTool: React.FC<AccessibilityAuditToolProps> = ({
           auditorRef.current = auditor;
         }
       } catch (err) {
-        console.error('Failed to initialize AccessibilityAuditor:', err);
+        emitAccessibilityAuditDiagnostic('error', 'Failed to initialize AccessibilityAuditor', { error: err });
         if (isMounted) {
           const error = err instanceof Error ? err : new Error(String(err));
           setError(error);
@@ -88,7 +109,7 @@ export const AccessibilityAuditTool: React.FC<AccessibilityAuditToolProps> = ({
       onAuditComplete?.(result);
       setIsExpanded(true);
     } catch (err) {
-      console.error('Accessibility audit failed:', err);
+      emitAccessibilityAuditDiagnostic('error', 'Accessibility audit failed', { error: err });
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
       onError?.(error);
@@ -107,7 +128,10 @@ export const AccessibilityAuditTool: React.FC<AccessibilityAuditToolProps> = ({
   const handleViolationClick = useCallback((finding: Finding) => {
     // Future: Could implement element highlighting if we store
     // additional node information in Finding type
-    console.log('Violation clicked:', finding.id, finding.description);
+    emitAccessibilityAuditDiagnostic('info', 'Violation clicked', {
+      findingId: finding.id,
+      description: finding.description,
+    });
   }, []);
 
   // Toggle the expanded state

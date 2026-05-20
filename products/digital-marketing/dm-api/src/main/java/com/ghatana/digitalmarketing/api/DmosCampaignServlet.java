@@ -722,7 +722,7 @@ public final class DmosCampaignServlet {
     private Promise<HttpResponse> checkCapability(DmOperationContext ctx, String capabilityKey) {
         if (workspaceService == null) {
             // Capability checks disabled in test mode
-            return Promise.of(null);
+            return Promise.of((HttpResponse) null);
         }
         return workspaceService.isCapabilityEnabled(ctx, capabilityKey)
             .then(enabled -> {
@@ -731,7 +731,7 @@ public final class DmosCampaignServlet {
                         "Capability '" + capabilityKey + "' is not enabled for this workspace",
                         ctx.getCorrelationId().getValue()));
                 }
-                return Promise.of(null);
+                return Promise.of((HttpResponse) null);
             });
     }
 

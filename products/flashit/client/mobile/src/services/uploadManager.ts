@@ -3,10 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { offlineQueueService, QueuedItem } from "./offlineQueue";
 import { networkMonitor } from "./networkMonitor";
 import { mediaCompressionService } from "./mediaCompressionService";
+import { monitoring } from "./monitoring";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 5000; // 5 seconds
 const MAX_CONCURRENT_UPLOADS = 2;
+
+const uploadDiagnostic = (
+  level: "debug" | "info" | "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[UploadManager] ${message}`, context);
+};
 
 /**
  * Upload Manager Service
@@ -82,7 +91,7 @@ class UploadManagerService {
   private async uploadItem(item: QueuedItem): Promise<void> {
     // Check retry limit
     if (item.metadata.retryCount >= MAX_RETRIES) {
-      console.log(`Max retries reached for item ${item.id}`);
+      uploadDiagnostic("warn", "Max retries reached", { itemId: item.id });
       return;
     }
 
@@ -116,9 +125,16 @@ class UploadManagerService {
       }
 
       await offlineQueueService.updateItemStatus(item.id, "completed");
-      console.log(`Successfully uploaded item ${item.id}`);
+      uploadDiagnostic("info", "Successfully uploaded item", {
+        itemId: item.id,
+        type: item.type,
+      });
     } catch (error) {
-      console.error(`Error uploading item ${item.id}:`, error);
+      uploadDiagnostic("error", "Error uploading item", {
+        itemId: item.id,
+        type: item.type,
+        error,
+      });
       await offlineQueueService.updateItemStatus(
         item.id,
         "failed",
@@ -150,8 +166,6 @@ class UploadManagerService {
           | "high"
           | "medium"
           | "low") || "medium";
-      const networkType = networkMonitor.getNetworkType();
-
       const compressionResult = await mediaCompressionService.compressMedia(
         item.uri,
         "audio",
@@ -159,9 +173,7 @@ class UploadManagerService {
       );
 
       uploadUri = compressionResult.uri;
-      console.log(
-        `Audio compressed: ${compressionResult.originalSize} -> ${compressionResult.compressedSize} (${compressionResult.compressionRatio}%)`,
-      );
+      uploadDiagnostic("info", "Audio compressed", { compressionResult });
     }
 
     // Get file info
@@ -206,8 +218,6 @@ class UploadManagerService {
           | "high"
           | "medium"
           | "low") || "medium";
-      const networkType = networkMonitor.getNetworkType();
-
       const compressionResult = await mediaCompressionService.compressMedia(
         item.uri,
         "image",
@@ -215,9 +225,7 @@ class UploadManagerService {
       );
 
       uploadUri = compressionResult.uri;
-      console.log(
-        `Image compressed: ${compressionResult.originalSize} -> ${compressionResult.compressedSize} (${compressionResult.compressionRatio}%)`,
-      );
+      uploadDiagnostic("info", "Image compressed", { compressionResult });
     }
 
     // Get file info
@@ -262,8 +270,6 @@ class UploadManagerService {
           | "high"
           | "medium"
           | "low") || "medium";
-      const networkType = networkMonitor.getNetworkType();
-
       const compressionResult = await mediaCompressionService.compressMedia(
         item.uri,
         "video",
@@ -271,9 +277,7 @@ class UploadManagerService {
       );
 
       uploadUri = compressionResult.uri;
-      console.log(
-        `Video compressed: ${compressionResult.originalSize} -> ${compressionResult.compressedSize} (${compressionResult.compressionRatio}%)`,
-      );
+      uploadDiagnostic("info", "Video compressed", { compressionResult });
     }
 
     // Get file info

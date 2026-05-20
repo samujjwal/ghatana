@@ -19,6 +19,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useNavigation } from '@react-navigation/native';
 import { WaveformVisualizer } from '../components/WaveformVisualizer';
 import { AudioPlaybackControls } from '../components/AudioPlaybackControls';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const MAX_RECORDING_DURATION_MS = 5 * 60 * 1000; // 5 minutes
@@ -29,6 +30,13 @@ interface RecordingState {
   isRecording: boolean;
   isPaused: boolean;
 }
+
+const voiceRecorderDiagnostic = (
+  message: string,
+  error: unknown,
+): void => {
+  monitoring.log('error', `[VoiceRecorder] ${message}`, { error });
+};
 
 /**
  * Voice Recorder Screen for mobile audio capture
@@ -47,7 +55,7 @@ export const VoiceRecorderScreen: React.FC = () => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      voiceRecorderDiagnostic('Navigation error', error);
     }
   };
   const [recordingState, setRecordingState] = useState<RecordingState>({
@@ -102,7 +110,7 @@ export const VoiceRecorderScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error('Error requesting permissions:', error);
+      voiceRecorderDiagnostic('Error requesting permissions', error);
       Alert.alert('Error', 'Failed to request microphone permission');
     }
   };
@@ -123,7 +131,7 @@ export const VoiceRecorderScreen: React.FC = () => {
       }));
       setAudioLevels([]);
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      voiceRecorderDiagnostic('Failed to start recording', error);
       Alert.alert('Error', 'Failed to start recording. Please try again.');
     }
   };
@@ -135,7 +143,7 @@ export const VoiceRecorderScreen: React.FC = () => {
       recorder.pause();
       setRecordingState(prev => ({ ...prev, isPaused: true }));
     } catch (error) {
-      console.error('Failed to pause recording:', error);
+      voiceRecorderDiagnostic('Failed to pause recording', error);
     }
   };
 
@@ -146,7 +154,7 @@ export const VoiceRecorderScreen: React.FC = () => {
       recorder.record();
       setRecordingState(prev => ({ ...prev, isPaused: false }));
     } catch (error) {
-      console.error('Failed to resume recording:', error);
+      voiceRecorderDiagnostic('Failed to resume recording', error);
     }
   };
 
@@ -170,7 +178,7 @@ export const VoiceRecorderScreen: React.FC = () => {
         shouldPlayInBackground: false,
       });
     } catch (error) {
-      console.error('Failed to stop recording:', error);
+      voiceRecorderDiagnostic('Failed to stop recording', error);
       Alert.alert('Error', 'Failed to stop recording');
     }
   };
@@ -232,7 +240,7 @@ export const VoiceRecorderScreen: React.FC = () => {
         ]
       );
     } catch (error) {
-      console.error('Failed to save recording:', error);
+      voiceRecorderDiagnostic('Failed to save recording', error);
       Alert.alert('Error', 'Failed to save recording');
     }
   };

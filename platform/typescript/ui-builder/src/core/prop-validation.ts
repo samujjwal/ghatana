@@ -11,8 +11,32 @@
  */
 
 import type { ComponentInstance, NodeId } from './types.js';
-import type { ComponentContract, PropDefinition } from '@ghatana/ds-schema';
+import type { ComponentContract } from '@ghatana/ds-schema';
 import { z } from 'zod';
+
+// ============================================================================
+// LOCAL PROP DEFINITION (flat validation shape used by this module)
+// ============================================================================
+
+/**
+ * Flat prop definition shape used for validation.
+ * Mirrors the structure of ComponentProp from @ghatana/ds-schema but
+ * flattened for ergonomic access during validation.
+ */
+interface PropDefinition {
+  name: string;
+  type: string;
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  enum?: unknown[];
+  minItems?: number;
+  maxItems?: number;
+  schema?: Record<string, z.ZodTypeAny>;
+}
 
 // ============================================================================
 // PROP VALIDATION RESULT
@@ -251,9 +275,21 @@ export function validateComponentProps(
 ): PropValidationResult {
   const errors: PropValidationError[] = [];
 
-  for (const propDef of contract.props) {
-    const value = instance.props[propDef.name];
-    const error = validatePropValue(propDef.name, value, propDef);
+  for (const contractProp of contract.props) {
+    // Adapt ComponentProp (nested validation) to the flat PropDefinition used here
+    const propDef: PropDefinition = {
+      name: contractProp.name,
+      type: contractProp.type,
+      required: contractProp.required,
+      min: contractProp.validation?.min,
+      max: contractProp.validation?.max,
+      minLength: contractProp.validation?.minLength,
+      maxLength: contractProp.validation?.maxLength,
+      pattern: contractProp.validation?.pattern,
+      enum: contractProp.validation?.enum,
+    };
+    const value = instance.props[contractProp.name];
+    const error = validatePropValue(contractProp.name, value, propDef);
     
     if (error) {
       errors.push({

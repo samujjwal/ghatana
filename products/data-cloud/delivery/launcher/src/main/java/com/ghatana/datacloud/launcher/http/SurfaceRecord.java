@@ -7,6 +7,83 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
+ * DC-P1-07: Runtime posture metadata for surface records.
+ * Captures auth, durability, audit, policy, metrics, tracing, and health state.
+ */
+public record RuntimePosture(
+    boolean authEnabled,           // Authentication is configured and operational
+    boolean durabilityEnabled,     // Durable persistence (not in-memory only)
+    boolean auditEnabled,        // Audit sink is configured and operational
+    boolean policyEnabled,       // Policy engine is configured and operational
+    boolean metricsEnabled,      // Metrics collection is enabled
+    boolean tracingEnabled,      // Distributed tracing is enabled
+    boolean eventStoreEnabled,   // Event store is durable and operational
+    boolean idempotencyEnabled,  // Idempotency store is durable
+    Map<String, DependencyHealth> dependencyHealth  // Health of required dependencies
+) {
+    public RuntimePosture {
+        dependencyHealth = dependencyHealth == null
+            ? Map.of()
+            : Collections.unmodifiableMap(Map.copyOf(dependencyHealth));
+    }
+
+    public static RuntimePostureBuilder builder() {
+        return new RuntimePostureBuilder();
+    }
+
+    public Map<String, Object> toMap() {
+        return Map.of(
+            "authEnabled", authEnabled,
+            "durabilityEnabled", durabilityEnabled,
+            "auditEnabled", auditEnabled,
+            "policyEnabled", policyEnabled,
+            "metricsEnabled", metricsEnabled,
+            "tracingEnabled", tracingEnabled,
+            "eventStoreEnabled", eventStoreEnabled,
+            "idempotencyEnabled", idempotencyEnabled,
+            "dependencyHealth", dependencyHealth.entrySet().stream()
+                .collect(java.util.HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().toMap()), java.util.HashMap::putAll)
+        );
+    }
+
+    public static class RuntimePostureBuilder {
+        private boolean authEnabled;
+        private boolean durabilityEnabled;
+        private boolean auditEnabled;
+        private boolean policyEnabled;
+        private boolean metricsEnabled;
+        private boolean tracingEnabled;
+        private boolean eventStoreEnabled;
+        private boolean idempotencyEnabled;
+        private Map<String, DependencyHealth> dependencyHealth = Map.of();
+
+        public RuntimePostureBuilder authEnabled(boolean v) { this.authEnabled = v; return this; }
+        public RuntimePostureBuilder durabilityEnabled(boolean v) { this.durabilityEnabled = v; return this; }
+        public RuntimePostureBuilder auditEnabled(boolean v) { this.auditEnabled = v; return this; }
+        public RuntimePostureBuilder policyEnabled(boolean v) { this.policyEnabled = v; return this; }
+        public RuntimePostureBuilder metricsEnabled(boolean v) { this.metricsEnabled = v; return this; }
+        public RuntimePostureBuilder tracingEnabled(boolean v) { this.tracingEnabled = v; return this; }
+        public RuntimePostureBuilder eventStoreEnabled(boolean v) { this.eventStoreEnabled = v; return this; }
+        public RuntimePostureBuilder idempotencyEnabled(boolean v) { this.idempotencyEnabled = v; return this; }
+        public RuntimePostureBuilder dependencyHealth(Map<String, DependencyHealth> v) { this.dependencyHealth = v; return this; }
+
+        public RuntimePosture build() {
+            return new RuntimePosture(authEnabled, durabilityEnabled, auditEnabled, policyEnabled,
+                metricsEnabled, tracingEnabled, eventStoreEnabled, idempotencyEnabled, dependencyHealth);
+        }
+    }
+}
+
+/**
+ * DC-P1-07: Dependency health status for Runtime Truth.
+ */
+record DependencyHealth(String name, boolean healthy, String status, String message) {
+    public Map<String, Object> toMap() {
+        return Map.of("name", name, "healthy", healthy, "status", status, "message", message != null ? message : "");
+    }
+}
+
+/**
  * Typed, immutable Runtime Truth surface record.
  *
  * <p>DC-P1-5: The architecture requires every surface to have typed state,
@@ -16,6 +93,9 @@ import java.util.Objects;
  *
  * <p>A surface cannot be in {@link RuntimeTruthStatus#LIVE LIVE} state without at least
  * one dependency probe result. This invariant is enforced at construction time.
+ *
+ * <p>DC-P1-07: Full runtime posture metadata captures auth, durability, audit, policy,
+ * metrics, tracing, event store, and idempotency state for complete operational visibility.
  *
  * @param surfaceId            canonical surface identifier (e.g. {@code ai.assist})
  * @param state                canonical status from {@link RuntimeTruthStatus}
@@ -28,6 +108,7 @@ import java.util.Objects;
  * @param evidence             free-form evidence map exposed to operators
  * @param limitations          optional description of what is limited in DEGRADED/PREVIEW modes
  * @param actionsAllowed       explicit list of actions gated by this surface
+ * @param runtimePosture       DC-P1-07: Full runtime posture metadata
  *
  * @doc.type class
  * @doc.purpose Typed, immutable Runtime Truth surface record with dependency-probe evidence
@@ -45,7 +126,8 @@ public record SurfaceRecord(
     Instant lastCheckedAt,
     Map<String, Object> evidence,
     String limitations,
-    List<String> actionsAllowed
+    List<String> actionsAllowed,
+    RuntimePosture runtimePosture  // DC-P1-07: Full runtime posture
 ) {
 
     /**
@@ -95,20 +177,24 @@ public record SurfaceRecord(
      * @return an unmodifiable map representation of this record
      */
     public Map<String, Object> toMap() {
-        return Map.ofEntries(
-            Map.entry("surfaceId", surfaceId),
-            Map.entry("state", state.toJsonValue()),
-            Map.entry("status", state.toLegacyValue()),
-            Map.entry("ownerPlane", ownerPlane != null ? ownerPlane : "unknown"),
-            Map.entry("requiredDependencies", requiredDependencies),
-            Map.entry("dependencyProbes", dependencyProbes.stream().map(DependencyProbeResult::toMap).toList()),
-            Map.entry("tenantScope", tenantScope),
-            Map.entry("runtimeProfile", runtimeProfile),
-            Map.entry("lastCheckedAt", lastCheckedAt.toString()),
-            Map.entry("evidence", evidence),
-            Map.entry("limitations", limitations != null ? limitations : ""),
-            Map.entry("actionsAllowed", actionsAllowed)
-        );
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("surfaceId", surfaceId);
+        result.put("state", state.toJsonValue());
+        result.put("status", state.toLegacyValue());
+        result.put("ownerPlane", ownerPlane != null ? ownerPlane : "unknown");
+        result.put("requiredDependencies", requiredDependencies);
+        result.put("dependencyProbes", dependencyProbes.stream().map(DependencyProbeResult::toMap).toList());
+        result.put("tenantScope", tenantScope);
+        result.put("runtimeProfile", runtimeProfile);
+        result.put("lastCheckedAt", lastCheckedAt.toString());
+        result.put("evidence", evidence);
+        result.put("limitations", limitations != null ? limitations : "");
+        result.put("actionsAllowed", actionsAllowed);
+        // DC-P1-07: Include runtime posture if present
+        if (runtimePosture != null) {
+            result.put("runtimePosture", runtimePosture.toMap());
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     // =========================================================================
@@ -146,6 +232,7 @@ public record SurfaceRecord(
         private Map<String, Object> evidence = Map.of();
         private String limitations;
         private List<String> actionsAllowed = List.of();
+        private RuntimePosture runtimePosture;  // DC-P1-07
 
         private Builder(String surfaceId) {
             this.surfaceId = Objects.requireNonNull(surfaceId, "surfaceId");
@@ -219,11 +306,17 @@ public record SurfaceRecord(
             return this;
         }
 
+        /** DC-P1-07: Sets the runtime posture metadata. */
+        public Builder runtimePosture(RuntimePosture runtimePosture) {
+            this.runtimePosture = runtimePosture;
+            return this;
+        }
+
         /** Builds the {@link SurfaceRecord}, validating all invariants. */
         public SurfaceRecord build() {
             return new SurfaceRecord(
                 surfaceId, state, ownerPlane, requiredDependencies, dependencyProbes,
-                tenantScope, runtimeProfile, lastCheckedAt, evidence, limitations, actionsAllowed);
+                tenantScope, runtimeProfile, lastCheckedAt, evidence, limitations, actionsAllowed, runtimePosture);
         }
     }
 }

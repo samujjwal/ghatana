@@ -1,10 +1,10 @@
-import { mobileDashboard } from '../data/mockData';
+import { demoDashboard } from '../data/demoDashboard';
 
 describe('PHR mobile app contract', () => {
-  it('ships the demo dashboard needed by the mobile shell', () => {
-    expect(mobileDashboard.patient.name).toBe('Aarati Shrestha');
-    expect(mobileDashboard.records.length).toBeGreaterThan(0);
-    expect(mobileDashboard.consents.length).toBeGreaterThan(0);
-    expect(mobileDashboard.notifications.length).toBeGreaterThan(0);
+  it('keeps a typed demo dashboard fixture for mobile contract tests', () => {
+    expect(demoDashboard.patient.name).toBe('Aarati Shrestha');
+    expect(demoDashboard.records.length).toBeGreaterThan(0);
+    expect(demoDashboard.consents.length).toBeGreaterThan(0);
+    expect(demoDashboard.notifications.length).toBeGreaterThan(0);
   });
 });

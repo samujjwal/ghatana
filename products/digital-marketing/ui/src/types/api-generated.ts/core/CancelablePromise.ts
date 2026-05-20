@@ -14,6 +14,21 @@ export class CancelError extends Error {
     }
 }
 
+const API_RUNTIME_DIAGNOSTIC_EVENT = 'dmos:api-runtime-diagnostic';
+
+function recordApiRuntimeDiagnostic(code: string, error: unknown): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    window.dispatchEvent(new CustomEvent(API_RUNTIME_DIAGNOSTIC_EVENT, {
+        detail: {
+            code,
+            message: error instanceof Error ? error.message : 'Unknown API runtime error',
+        },
+    }));
+}
+
 export interface OnCancel {
     readonly isResolved: boolean;
     readonly isRejected: boolean;
@@ -117,7 +132,7 @@ export class CancelablePromise<T> implements Promise<T> {
                     cancelHandler();
                 }
             } catch (error) {
-                console.warn('Cancellation threw an error', error);
+                recordApiRuntimeDiagnostic('DMOS_API_CANCEL_HANDLER_FAILED', error);
                 return;
             }
         }

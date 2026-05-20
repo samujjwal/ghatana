@@ -10,6 +10,7 @@
 
 import * as Network from 'expo-network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { monitoring } from './monitoring';
 
 // ============================================================================
 // Types & Interfaces
@@ -79,6 +80,14 @@ const DEFAULT_SETTINGS: DataUsageSettings = {
   monthlyLimitMB: 2000,
   warnAtPercent: 80,
   trackingEnabled: true,
+};
+
+const dataUsageDiagnostic = (
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[DataUsage] ${message}`, context);
 };
 
 // ============================================================================
@@ -462,7 +471,7 @@ class DataUsageTrackerService {
       try {
         listener(stats);
       } catch (error) {
-        console.error('Data usage listener error:', error);
+        dataUsageDiagnostic('error', 'Listener error', { error });
       }
     }
   }
@@ -481,7 +490,7 @@ class DataUsageTrackerService {
         }));
       }
     } catch (error) {
-      console.warn('Failed to load data usage entries:', error);
+      dataUsageDiagnostic('warn', 'Failed to load data usage entries', { error });
     }
   }
 
@@ -497,7 +506,7 @@ class DataUsageTrackerService {
 
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.entries));
     } catch (error) {
-      console.warn('Failed to save data usage entries:', error);
+      dataUsageDiagnostic('warn', 'Failed to save data usage entries', { error });
     }
   }
 
@@ -511,7 +520,7 @@ class DataUsageTrackerService {
         this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       }
     } catch (error) {
-      console.warn('Failed to load data usage settings:', error);
+      dataUsageDiagnostic('warn', 'Failed to load data usage settings', { error });
     }
   }
 
@@ -522,7 +531,7 @@ class DataUsageTrackerService {
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
     } catch (error) {
-      console.warn('Failed to save data usage settings:', error);
+      dataUsageDiagnostic('warn', 'Failed to save data usage settings', { error });
     }
   }
 
@@ -540,7 +549,7 @@ class DataUsageTrackerService {
         }));
       }
     } catch (error) {
-      console.warn('Failed to load data usage alerts:', error);
+      dataUsageDiagnostic('warn', 'Failed to load data usage alerts', { error });
     }
   }
 
@@ -553,7 +562,7 @@ class DataUsageTrackerService {
       this.alerts = this.alerts.slice(-50);
       await AsyncStorage.setItem(ALERTS_KEY, JSON.stringify(this.alerts));
     } catch (error) {
-      console.warn('Failed to save data usage alerts:', error);
+      dataUsageDiagnostic('warn', 'Failed to save data usage alerts', { error });
     }
   }
 

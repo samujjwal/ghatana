@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { manipulateAsync, FlipType, SaveFormat } from 'expo-image-manipulator';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const { width, height } = Dimensions.get('window');
@@ -21,6 +22,10 @@ interface ImageEditorProps {
 }
 
 type EditAction = 'rotate' | 'flip' | 'crop';
+
+const imageEditorDiagnostic = (message: string, error: unknown): void => {
+  monitoring.log('error', `[ImageEditor] ${message}`, { error });
+};
 
 /**
  * Image Editor Component
@@ -51,7 +56,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
       setEditedUri(manipResult.uri);
       setRotation(newRotation);
     } catch (error) {
-      console.error('Error rotating image:', error);
+      imageEditorDiagnostic('Error rotating image', error);
     } finally {
       setIsProcessing(false);
     }
@@ -67,7 +72,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
       );
       setEditedUri(manipResult.uri);
     } catch (error) {
-      console.error('Error flipping image:', error);
+      imageEditorDiagnostic('Error flipping image horizontally', error);
     } finally {
       setIsProcessing(false);
     }
@@ -83,7 +88,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
       );
       setEditedUri(manipResult.uri);
     } catch (error) {
-      console.error('Error flipping image:', error);
+      imageEditorDiagnostic('Error flipping image vertically', error);
     } finally {
       setIsProcessing(false);
     }
@@ -119,7 +124,7 @@ export const ImageEditor: React.FC<ImageEditorProps> = ({
         setIsProcessing(false);
       });
     } catch (error) {
-      console.error('Error cropping image:', error);
+      imageEditorDiagnostic('Error cropping image', error);
       setIsProcessing(false);
     }
   };

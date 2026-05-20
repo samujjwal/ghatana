@@ -1,6 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle, Copy, X } from 'lucide-react';
 
+const CORRELATION_DIAGNOSTIC_EVENT = 'dmos:correlation-diagnostic';
+
+interface CorrelationDiagnostic {
+  code: string;
+  message: string;
+}
+
+function recordCorrelationDiagnostic(diagnostic: CorrelationDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<CorrelationDiagnostic>(CORRELATION_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
+
 /**
  * P1-051: Correlation ID Display Component
  *
@@ -88,7 +103,10 @@ export const CorrelationIdDisplay: React.FC<CorrelationIdDisplayProps> = ({
       onCopy?.(displayId);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy correlation ID:', err);
+      recordCorrelationDiagnostic({
+        code: 'DMOS_CORRELATION_ID_COPY_FAILED',
+        message: err instanceof Error ? err.message : 'Failed to copy correlation ID',
+      });
     }
   };
 
@@ -335,7 +353,10 @@ export class CorrelationIdErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    recordCorrelationDiagnostic({
+      code: 'DMOS_CORRELATION_BOUNDARY_ERROR',
+      message: `${error.message}${errorInfo.componentStack ? ` ${errorInfo.componentStack}` : ''}`,
+    });
   }
 
   render() {

@@ -14,6 +14,23 @@ import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
 
+type ReflectionLogLevel = 'info' | 'warn' | 'error';
+
+const writeReflectionLog = (
+  level: ReflectionLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-reflection',
+    message,
+    ...context,
+  })}\n`);
+};
+
 // Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -383,7 +400,12 @@ class ReflectionContextBuilder {
       }
 
     } catch (error) {
-      console.error('Failed to get related moments:', error);
+      writeReflectionLog('error', 'Failed to get related moments', {
+        momentId,
+        userId,
+        sphereId,
+        error,
+      });
       return [];
     }
   }
@@ -795,7 +817,12 @@ const reflectionWorker = new Worker<ReflectionJobData>(
       return result;
 
     } catch (error: any) {
-      console.error('Reflection job failed:', error);
+      writeReflectionLog('error', 'Reflection job failed', {
+        jobId: job.id,
+        momentId: data.momentId,
+        userId: data.userId,
+        error: error.message,
+      });
 
       // Create failure audit event
       try {
@@ -815,7 +842,11 @@ const reflectionWorker = new Worker<ReflectionJobData>(
           },
         });
       } catch (auditError) {
-        console.error('Failed to create audit event:', auditError);
+        writeReflectionLog('error', 'Failed to create reflection failure audit event', {
+          jobId: job.id,
+          momentId: data.momentId,
+          auditError,
+        });
       }
 
       throw error;
@@ -829,20 +860,26 @@ const reflectionWorker = new Worker<ReflectionJobData>(
 
 // Worker event handlers
 reflectionWorker.on('completed', (job) => {
-  console.log(`Reflection job ${job.id} completed successfully`);
+  writeReflectionLog('info', 'Reflection job completed successfully', { jobId: job.id });
 });
 
 reflectionWorker.on('failed', (job, err) => {
-  console.error(`Reflection job ${job?.id} failed:`, err);
+  writeReflectionLog('error', 'Reflection job failed', {
+    jobId: job?.id,
+    error: err.message,
+  });
 });
 
 reflectionWorker.on('progress', (job, progress) => {
-  console.log(`Reflection job ${job.id} progress: ${progress}%`);
+  writeReflectionLog('info', 'Reflection job progress', {
+    jobId: job.id,
+    progress,
+  });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down reflection worker...');
+  writeReflectionLog('info', 'Shutting down reflection worker');
   await reflectionWorker.close();
   await prisma.$disconnect();
   await redis.quit();

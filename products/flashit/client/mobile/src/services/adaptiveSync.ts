@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, AppStateStatus } from 'react-native';
 import { getBatteryOptimizer, type PowerSettings } from './batteryOptimizer';
 import { getDataUsageTracker } from './dataUsageTracker';
+import { monitoring } from './monitoring';
 
 // ============================================================================
 // Types & Interfaces
@@ -96,6 +97,14 @@ const DEFAULT_CONFIG: SyncConfig = {
 };
 
 const PRIORITY_ORDER: SyncPriority[] = ['critical', 'high', 'normal', 'low', 'background'];
+
+const syncDiagnostic = (
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[AdaptiveSync] ${message}`, context);
+};
 
 // ============================================================================
 // Adaptive Sync Service
@@ -332,7 +341,7 @@ class AdaptiveSyncService {
         this.adjustSyncBehavior();
       }
     } catch (error) {
-      console.warn('Failed to update sync conditions:', error);
+      syncDiagnostic('warn', 'Failed to update sync conditions', { error });
     }
   }
 
@@ -456,7 +465,7 @@ class AdaptiveSyncService {
    */
   private async performSync(force: boolean = false): Promise<void> {
     if (!this.syncHandler) {
-      console.warn('No sync handler configured');
+      syncDiagnostic('warn', 'No sync handler configured');
       return;
     }
 
@@ -606,7 +615,7 @@ class AdaptiveSyncService {
         }));
       }
     } catch (error) {
-      console.warn('Failed to load sync queue:', error);
+      syncDiagnostic('warn', 'Failed to load sync queue', { error });
     }
   }
 
@@ -617,7 +626,7 @@ class AdaptiveSyncService {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(this.queue));
     } catch (error) {
-      console.warn('Failed to save sync queue:', error);
+      syncDiagnostic('warn', 'Failed to save sync queue', { error });
     }
   }
 
@@ -637,7 +646,7 @@ class AdaptiveSyncService {
         };
       }
     } catch (error) {
-      console.warn('Failed to load sync stats:', error);
+      syncDiagnostic('warn', 'Failed to load sync stats', { error });
     }
   }
 
@@ -648,7 +657,7 @@ class AdaptiveSyncService {
     try {
       await AsyncStorage.setItem(STATS_KEY, JSON.stringify(this.stats));
     } catch (error) {
-      console.warn('Failed to save sync stats:', error);
+      syncDiagnostic('warn', 'Failed to save sync stats', { error });
     }
   }
 

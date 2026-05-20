@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import type { StudioLifecycleDataContextValue } from '../../data/StudioLifecycleDataContext';
 import ArtifactsPage from '../ArtifactsPage';
 
@@ -80,7 +81,7 @@ describe('ArtifactsPage', () => {
   it('renders translated artifact status badges', () => {
     useStudioLifecycleDataMock.mockReturnValue(createContextValue());
 
-    render(<ArtifactsPage />);
+    render(<MemoryRouter><ArtifactsPage /></MemoryRouter>);
 
     expect(screen.getByText('studio.route.artifacts.status.found')).toBeInTheDocument();
     expect(screen.getByText('studio.route.artifacts.status.missing')).toBeInTheDocument();

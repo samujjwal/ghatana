@@ -1,6 +1,6 @@
 import type { MobileDashboard } from '../types';
 
-export const mobileDashboard: MobileDashboard = {
+export const demoDashboard: MobileDashboard = {
   patient: {
     id: 'patient-nepal-001',
     name: 'Aarati Shrestha',

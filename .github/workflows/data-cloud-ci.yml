@@ -282,7 +282,7 @@ jobs:
           bash products/data-cloud/scripts/check-doc-boundaries.sh --warn-only \
             2>&1 >> "$GITHUB_STEP_SUMMARY" || true
 
-      - name: Tenant isolation static audit
+      - name: DC-P2-02: Tenant isolation static audit
         run: |
           chmod +x products/data-cloud/scripts/audit-tenant-isolation.sh
           bash products/data-cloud/scripts/audit-tenant-isolation.sh
@@ -308,9 +308,21 @@ jobs:
       - name: Upload tenant isolation audit report
         if: always()
         run: |
-          echo "## Tenant Isolation Audit" >> "$GITHUB_STEP_SUMMARY"
+          echo "## DC-P2-02: Tenant Isolation Audit" >> "$GITHUB_STEP_SUMMARY"
           bash products/data-cloud/scripts/audit-tenant-isolation.sh --warn-only \
             2>&1 >> "$GITHUB_STEP_SUMMARY" || true
+
+      # DC-P2-02: Connector validation gate
+      - name: Connector validation
+        run: |
+          chmod +x products/data-cloud/scripts/validate-connectors.sh
+          bash products/data-cloud/scripts/validate-connectors.sh
+
+      # DC-P2-02: Agent governance validation gate
+      - name: Agent governance validation
+        run: |
+          chmod +x products/data-cloud/scripts/validate-agent-governance.sh
+          bash products/data-cloud/scripts/validate-agent-governance.sh
 
   # Reuse scorecard: enforces shared-library adoption (E7-S1 / Workstream G)
   reuse-scorecard:
@@ -576,11 +588,12 @@ jobs:
       - backup-drill
       - smoke-e2e
       - helm-render-validation
+      - security-scan
     if: always()
     steps:
-      - name: Evaluate release gate
+      - name: DC-P2-02: Evaluate production readiness gate
         run: |
-          echo "── Data-Cloud Release Gate ──────────────────────────────────"
+          echo "── Data-Cloud Production Readiness Gate (DC-P2-02) ─────────"
 
           FAILED=""
           check_job() {
@@ -594,11 +607,12 @@ jobs:
             fi
           }
 
-          check_job "build-and-test"   "${{ needs.build-and-test.result }}"
-          check_job "hygiene"          "${{ needs.hygiene.result }}"
-          check_job "reuse-scorecard"  "${{ needs.reuse-scorecard.result }}"
-          check_job "sdk-generation"   "${{ needs.sdk-generation.result }}"
-          check_job "helm-render-validation" "${{ needs.helm-render-validation.result }}"
+          check_job "build-and-test"           "${{ needs.build-and-test.result }}"
+          check_job "hygiene"                  "${{ needs.hygiene.result }}"
+          check_job "reuse-scorecard"          "${{ needs.reuse-scorecard.result }}"
+          check_job "sdk-generation"           "${{ needs.sdk-generation.result }}"
+          check_job "helm-render-validation"   "${{ needs.helm-render-validation.result }}"
+          check_job "security-scan"            "${{ needs.security-scan.result }}"
           # backup-drill uses --warn-only so it only contributes advisory output
           echo "  ℹ  INFO  backup-drill: ${{ needs.backup-drill.result }} (advisory — see drill logs)"
           # smoke-e2e uses --warn-only so it only contributes advisory output
@@ -606,11 +620,11 @@ jobs:
 
           echo "─────────────────────────────────────────────────────────────"
           if [ -n "$FAILED" ]; then
-            echo "::error::Release gate FAILED — blocking jobs:$FAILED"
+            echo "::error::DC-P2-02: Production readiness gate FAILED — blocking jobs:$FAILED"
             echo "Resolve all failures before merging to main."
             exit 1
           fi
-          echo "✓ All release-gate checks passed — safe to merge."
+          echo "✓ DC-P2-02: All production readiness checks passed — safe to merge."
 
   security-scan:
     runs-on: ubuntu-latest

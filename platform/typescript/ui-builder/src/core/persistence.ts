@@ -44,26 +44,29 @@ export function serializeDocument(doc: BuilderDocument): SerializedDocument {
 
 /** Deserialise a plain object back to a BuilderDocument. */
 export function deserializeDocument(raw: SerializedDocument): BuilderDocument {
-  const rootNodes = raw.layout.nodes[raw.layout.rootId]?.children ?? [];
-  return {
+  // Merge legacy document name into metadata.description so the compatibility
+  // 'name' getter returns the right value after a serialization round-trip.
+  const metadata: BuilderDocument['metadata'] = {
+    ...raw.metadata,
+    description: raw.metadata.description ?? raw.legacyName,
+  };
+  // nodes is already Record<string, ComponentInstance> in SerializedDocument.
+  // Copy to a fresh object to avoid shared-reference mutations.
+  const nodes: BuilderDocument['nodes'] = { ...raw.nodes };
+  return attachBuilderDocumentCompatibility({
     schemaVersion: raw.schemaVersion,
     documentId: raw.documentId,
-    id: raw.documentId,
     owner: raw.owner,
     root: raw.root,
-    nodes: new Map(Object.entries(raw.nodes)) as unknown as BuilderDocument['nodes'],
+    nodes,
     bindings: raw.bindings,
     layout: raw.layout,
-    metadata: raw.metadata,
-    name: raw.legacyName ?? raw.metadata.description ?? raw.owner,
-    version: raw.legacyVersion ?? raw.schemaVersion,
-    rootNodes,
-    designSystem: raw.designSystem,
+    metadata,
     i18n: raw.i18n,
     a11y: raw.a11y,
     privacy: raw.privacy,
     validation: raw.validation,
-  } as unknown as BuilderDocument;
+  });
 }
 
 export interface SerializedDocument {

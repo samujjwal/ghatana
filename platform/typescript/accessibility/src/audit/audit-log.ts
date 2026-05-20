@@ -148,7 +148,7 @@ export class AuditLogService {
       const stored = localStorage.getItem('audit_backups');
       return stored ? (JSON.parse(stored) as AuditEvent[]) : [];
     } catch {
-      return [];
+      return Array.from<AuditEvent>([]);
     }
   }
 

@@ -16,6 +16,7 @@ import fs from 'fs/promises';
 import { createObjectCsvWriter } from 'csv-writer';
 import { join } from 'path';
 import { prisma } from '../../lib/prisma.js';
+import { systemLogger } from '../../lib/logger.js';
 
 // Redis connection
 const redis = new Redis({
@@ -758,8 +759,8 @@ const reportingWorker = new Worker<ReportJob>(
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       };
 
-    } catch (error: any) {
-      console.error('Report generation failed:', error);
+    } catch (error) {
+      systemLogger.error('Report generation failed', error, { jobId: job.id });
       throw error;
     }
   },
@@ -804,16 +805,16 @@ async function sendEmailReport(email: string, filePath: string, format: string):
 
 // Worker event handlers
 reportingWorker.on('completed', (job) => {
-  console.log(`Report generation job ${job.id} completed successfully`);
+  systemLogger.info('Report generation job completed successfully', { jobId: job.id });
 });
 
 reportingWorker.on('failed', (job, err) => {
-  console.error(`Report generation job ${job?.id} failed:`, err);
+  systemLogger.error('Report generation job failed', err, { jobId: job?.id });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down reporting worker...');
+  systemLogger.info('Shutting down reporting worker');
   await reportingWorker.close();
   await prisma.$disconnect();
   await redis.quit();

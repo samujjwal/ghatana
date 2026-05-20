@@ -21,6 +21,10 @@ interface ValidationResult {
   warnings: ValidationError[];
 }
 
+const writeValidationLine = (message = ''): void => {
+  process.stdout.write(`${message}\n`);
+};
+
 /**
  * Validate production configuration
  * @doc.method validateProductionConfig
@@ -29,14 +33,13 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
 
-  // Only run full validation in production
   if (process.env.NODE_ENV !== 'production') {
     return { valid: true, errors, warnings };
   }
 
-  console.log('🔒 Running production configuration validation...\n');
+  writeValidationLine('Running production configuration validation...');
+  writeValidationLine();
 
-  // 1. Email configuration
   const emailProvider = process.env.EMAIL_PROVIDER;
   if (!emailProvider || emailProvider === 'stub') {
     errors.push({
@@ -59,17 +62,14 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
         severity: 'critical',
       });
     }
-  } else if (emailProvider === 'ses') {
-    if (!process.env.AWS_REGION) {
-      errors.push({
-        code: 'AWS_REGION_MISSING',
-        message: 'AWS_REGION is required when EMAIL_PROVIDER=ses',
-        severity: 'critical',
-      });
-    }
+  } else if (emailProvider === 'ses' && !process.env.AWS_REGION) {
+    errors.push({
+      code: 'AWS_REGION_MISSING',
+      message: 'AWS_REGION is required when EMAIL_PROVIDER=ses',
+      severity: 'critical',
+    });
   }
 
-  // 2. JWT configuration
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
     errors.push({
       code: 'JWT_SECRET_WEAK',
@@ -78,7 +78,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     });
   }
 
-  // 3. Database configuration
   if (!process.env.DATABASE_URL) {
     errors.push({
       code: 'DATABASE_URL_MISSING',
@@ -87,7 +86,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     });
   }
 
-  // 4. Redis configuration
   if (!process.env.REDIS_HOST) {
     warnings.push({
       code: 'REDIS_HOST_MISSING',
@@ -96,7 +94,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     });
   }
 
-  // 5. Stripe configuration (if billing enabled)
   if (process.env.ENABLE_BILLING === 'true') {
     if (!process.env.STRIPE_SECRET_KEY) {
       errors.push({
@@ -114,7 +111,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     }
   }
 
-  // 6. AI service configuration
   if (!process.env.OPENAI_API_KEY && !process.env.OLLAMA_BASE_URL) {
     warnings.push({
       code: 'AI_PROVIDER_MISSING',
@@ -123,7 +119,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     });
   }
 
-  // 7. Verify email service connectivity
   if (emailProvider && emailProvider !== 'stub') {
     try {
       const emailValid = await verifyEmailConfig();
@@ -143,7 +138,6 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     }
   }
 
-  // 8. Security checks
   if (process.env.ALLOW_UNAUTHENTICATED_ACCESS === 'true') {
     errors.push({
       code: 'UNAUTHENTICATED_ACCESS_ENABLED',
@@ -160,30 +154,33 @@ export async function validateProductionConfig(): Promise<ValidationResult> {
     });
   }
 
-  // Print results
-  console.log('='.repeat(60));
-  console.log('🔍 PRODUCTION CONFIGURATION VALIDATION RESULTS');
-  console.log('='.repeat(60));
+  writeValidationLine('='.repeat(60));
+  writeValidationLine('PRODUCTION CONFIGURATION VALIDATION RESULTS');
+  writeValidationLine('='.repeat(60));
 
   if (errors.length > 0) {
-    console.log(`\n❌ CRITICAL ERRORS (${errors.length}):`);
+    writeValidationLine();
+    writeValidationLine(`CRITICAL ERRORS (${errors.length}):`);
     for (const error of errors) {
-      console.log(`   [${error.code}] ${error.message}`);
+      writeValidationLine(`   [${error.code}] ${error.message}`);
     }
   }
 
   if (warnings.length > 0) {
-    console.log(`\n⚠️  WARNINGS (${warnings.length}):`);
+    writeValidationLine();
+    writeValidationLine(`WARNINGS (${warnings.length}):`);
     for (const warning of warnings) {
-      console.log(`   [${warning.code}] ${warning.message}`);
+      writeValidationLine(`   [${warning.code}] ${warning.message}`);
     }
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log('\n✅ All production configuration checks passed!');
+    writeValidationLine();
+    writeValidationLine('All production configuration checks passed.');
   }
 
-  console.log('\n' + '='.repeat(60));
+  writeValidationLine();
+  writeValidationLine('='.repeat(60));
 
   return {
     valid: errors.length === 0,
@@ -201,10 +198,10 @@ export async function assertProductionConfig(): Promise<void> {
   const result = await validateProductionConfig();
 
   if (!result.valid) {
-    const errorMessages = result.errors.map(e => `[${e.code}] ${e.message}`).join('\n');
+    const errorMessages = result.errors.map((error) => `[${error.code}] ${error.message}`).join('\n');
     throw new Error(
       `PRODUCTION CONFIGURATION INVALID - Startup aborted:\n${errorMessages}\n\n` +
-      `Set the required environment variables before starting the server.`
+      `Set the required environment variables before starting the server.`,
     );
   }
 }

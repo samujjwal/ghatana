@@ -15,6 +15,24 @@ import { S3Client, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/cl
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
+type ComplianceLogLevel = 'info' | 'warn' | 'error';
+
+const writeComplianceLog = (
+  level: ComplianceLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-data-deletion',
+    message,
+    ...context,
+  };
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify(entry)}\n`);
+};
+
 // Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -289,7 +307,11 @@ export class SecureDataDeletionService {
       };
 
     } catch (error: any) {
-      console.error('Deletion execution failed:', error);
+      writeComplianceLog('error', 'Deletion execution failed', {
+        requestId: deletionRequest.id,
+        userId: deletionRequest.userId,
+        error: error.message,
+      });
 
       // Update request as failed
       await prisma.dataDeletionRequest.update({
@@ -400,7 +422,13 @@ export class SecureDataDeletionService {
           );
 
         } catch (error: any) {
-          console.error(`Operation ${operation.id} failed:`, error);
+          writeComplianceLog('error', 'Deletion operation failed', {
+            requestId: deletionRequest.id,
+            operationId: operation.id,
+            operationType: operation.type,
+            target: operation.target,
+            error: error.message,
+          });
 
           // Log operation failure
           await this.logSecureDeletionOperation(
@@ -555,7 +583,11 @@ export class SecureDataDeletionService {
           }));
           deletedCount++;
         } catch (error) {
-          console.error(`Failed to delete S3 object ${moment.mediaUrl}:`, error);
+          writeComplianceLog('error', 'Failed to delete S3 object', {
+            requestId: deletionRequest.id,
+            mediaUrl: moment.mediaUrl,
+            error,
+          });
         }
       }
     }
@@ -570,9 +602,10 @@ export class SecureDataDeletionService {
     operation: DeletionOperation,
     deletionRequest: DeletionRequest
   ): Promise<{ type: string; count: number }> {
-    // Placeholder for vector store deletion
-    // In production, this would interface with the vector database
-    console.log(`Vector deletion for user ${deletionRequest.userId} - operation: ${operation.target}`);
+    writeComplianceLog('info', 'Vector deletion requested', {
+      userId: deletionRequest.userId,
+      operationTarget: operation.target,
+    });
 
     return { type: 'vectors', count: 0 };
   }
@@ -995,7 +1028,11 @@ const deletionWorker = new Worker<DeletionRequest>(
     try {
       await job.updateProgress(10);
 
-      console.log(`Starting deletion for user ${deletionRequest.userId}, type: ${deletionRequest.deletionType}`);
+      writeComplianceLog('info', 'Starting deletion job', {
+        requestId: deletionRequest.id,
+        userId: deletionRequest.userId,
+        deletionType: deletionRequest.deletionType,
+      });
 
       const result = await SecureDataDeletionService.executeDeletion(deletionRequest);
 
@@ -1004,7 +1041,10 @@ const deletionWorker = new Worker<DeletionRequest>(
       return result;
 
     } catch (error: any) {
-      console.error('Deletion worker failed:', error);
+      writeComplianceLog('error', 'Deletion worker failed', {
+        requestId: deletionRequest.id,
+        error: error.message,
+      });
       throw error;
     }
   },
@@ -1016,16 +1056,21 @@ const deletionWorker = new Worker<DeletionRequest>(
 
 // Worker event handlers
 deletionWorker.on('completed', (job) => {
-  console.log(`Deletion job ${job.data.id} completed successfully`);
+  writeComplianceLog('info', 'Deletion job completed successfully', {
+    requestId: job.data.id,
+  });
 });
 
 deletionWorker.on('failed', (job, err) => {
-  console.error(`Deletion job ${job?.data.id} failed:`, err);
+  writeComplianceLog('error', 'Deletion job failed', {
+    requestId: job?.data.id,
+    error: err.message,
+  });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down deletion worker...');
+  writeComplianceLog('info', 'Shutting down deletion worker');
   await deletionWorker.close();
   await prisma.$disconnect();
   await redis.quit();

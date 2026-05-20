@@ -13,6 +13,23 @@ import Stripe from 'stripe';
 import { prisma } from '../../lib/prisma.js';
 import type { TierName } from './usage-limits.js';
 
+type BillingLogLevel = 'info' | 'warn' | 'error';
+
+const writeBillingLog = (
+    level: BillingLogLevel,
+    message: string,
+    context?: Record<string, unknown>,
+): void => {
+    const stream = level === 'error' ? process.stderr : process.stdout;
+    stream.write(`${JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level,
+        service: 'flashit-billing',
+        message,
+        ...context,
+    })}\n`);
+};
+
 // In-memory idempotency set for webhook event IDs.
 // Prevents duplicate processing when Stripe retries delivery.
 // Production deployments should persist this in Redis with a TTL of ~24 hours.
@@ -313,7 +330,9 @@ export class StripeBillingService {
     static async handleWebhookEvent(event: Stripe.Event): Promise<void> {
         // Idempotency guard — Stripe may retry delivery, so skip already-processed events.
         if (processedWebhookEventIds.has(event.id)) {
-            console.log(`Webhook event ${event.id} already processed, skipping.`);
+            writeBillingLog('info', 'Webhook event already processed, skipping', {
+                eventId: event.id,
+            });
             return;
         }
         processedWebhookEventIds.add(event.id);
@@ -351,7 +370,11 @@ export class StripeBillingService {
                     },
                 });
 
-                console.log(`Subscription ${subscription.id} updated for customer ${customerId} to tier ${tier}`);
+                writeBillingLog('info', 'Subscription updated', {
+                    subscriptionId: subscription.id,
+                    customerId,
+                    tier,
+                });
                 break;
             }
 
@@ -370,7 +393,10 @@ export class StripeBillingService {
                     },
                 });
 
-                console.log(`Subscription ${subscription.id} canceled for customer ${customerId}`);
+                writeBillingLog('info', 'Subscription canceled', {
+                    subscriptionId: subscription.id,
+                    customerId,
+                });
                 break;
             }
 
@@ -403,17 +429,24 @@ export class StripeBillingService {
                             html: `<p>Hi ${user.displayName || 'there'},</p><p>Your recent payment for Flashit subscription failed. Please update your payment method to avoid service interruption.</p><p><strong>Invoice ID:</strong> ${invoice.id}<br><strong>Amount:</strong> $${(invoice.amount_due / 100).toFixed(2)}</p><p><a href="${process.env.APP_URL || 'http://localhost:2900'}/settings/billing">Update Payment Method</a></p>`,
                         });
                     } catch (emailError) {
-                        console.error('Failed to send payment failure email:', emailError);
+                        writeBillingLog('error', 'Failed to send payment failure email', {
+                            customerId,
+                            invoiceId: invoice.id,
+                            emailError,
+                        });
                     }
                 }
 
-                console.error(`Payment failed for customer ${customerId}, invoice ${invoice.id}`);
+                writeBillingLog('error', 'Payment failed', {
+                    customerId,
+                    invoiceId: invoice.id,
+                });
                 break;
             }
 
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
-                console.log(`Payment succeeded for invoice ${invoice.id}`);
+                writeBillingLog('info', 'Payment succeeded', { invoiceId: invoice.id });
                 break;
             }
         }

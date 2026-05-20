@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { useParams } from 'react-router-dom';
-import { demoDashboard } from '../mockData';
+import { fetchDashboardData } from '../api/phrApi';
+import type { PatientRecordSummary } from '../types';
 
 export function RecordDetailPage(): React.ReactElement {
   const { recordId } = useParams();
-  const record = demoDashboard.records.find((item) => item.id === recordId) ?? null;
+  const [record, setRecord] = useState<PatientRecordSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardData()
+      .then((data) => {
+        setRecord(data.records.find((item) => item.id === recordId) ?? null);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : 'Failed to load record payload');
+      })
+      .finally(() => setLoading(false));
+  }, [recordId]);
+
+  if (loading) {
+    return <div className="loading">Loading record...</div>;
+  }
+
+  if (error) {
+    return <div className="error">Error: {error}</div>;
+  }
 
   if (!record) {
     return (

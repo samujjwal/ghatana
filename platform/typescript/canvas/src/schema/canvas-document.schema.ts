@@ -54,7 +54,7 @@ export const CanvasElementBaseSchema = z.object({
   rotation: z.number().default(0),
   locked: z.boolean().default(false),
   hidden: z.boolean().default(false),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ============================================================================
@@ -66,7 +66,7 @@ export const CanvasNodeSchema = CanvasElementBaseSchema.extend({
   data: z.object({
     label: z.string(),
     contractName: z.string().optional(),
-    props: z.record(z.unknown()).optional(),
+    props: z.record(z.string(), z.unknown()).optional(),
   }),
 });
 
@@ -121,7 +121,7 @@ export const CanvasDocumentSchema = z.object({
   documentId: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  elements: z.record(CanvasElementSchema),
+  elements: z.record(z.string(), CanvasElementSchema),
   viewport: CanvasViewportSchema,
   metadata: z.object({
     createdAt: z.string(),
@@ -212,6 +212,40 @@ export function validateCanvasDocument(doc: unknown): {
 
   return {
     valid: false,
-    errors: result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+    errors: result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
+  };
+}
+
+// ============================================================================
+// Version Constant and Factory
+// ============================================================================
+
+/**
+ * Current schema version for CanvasDocument.
+ * Bump this on breaking schema changes and add a corresponding migration.
+ */
+export const CANVAS_DOCUMENT_SCHEMA_VERSION = '1.0.0';
+
+/**
+ * Creates a minimal empty CanvasDocument with the current schema version.
+ *
+ * @param documentId - Stable unique ID (use `crypto.randomUUID()` at the call site).
+ * @param name - Human-readable document name.
+ */
+export function createCanvasDocument(
+  documentId: string,
+  name: string,
+): CanvasDocument {
+  const now = new Date().toISOString();
+  return {
+    schemaVersion: CANVAS_DOCUMENT_SCHEMA_VERSION,
+    documentId,
+    name,
+    elements: {},
+    viewport: { x: 0, y: 0, zoom: 1 },
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+    },
   };
 }

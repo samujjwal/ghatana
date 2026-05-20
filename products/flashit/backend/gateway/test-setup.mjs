@@ -1,47 +1,60 @@
 #!/usr/bin/env node
 
 /**
- * Quick test to verify Prisma client setup
+ * Quick test to verify Prisma client setup.
  */
 
-console.log("Testing Prisma client setup...\n");
+const fs = require('fs');
+
+function writeLine(message = '') {
+  process.stdout.write(`${message}\n`);
+}
+
+function writeError(message = '') {
+  process.stderr.write(`${message}\n`);
+}
+
+writeLine('Testing Prisma client setup...');
+writeLine();
 
 try {
-  console.log("1. Testing generated/prisma/index.js import...");
+  writeLine('1. Testing generated/prisma/index.js import...');
   const { PrismaClient } = require('./generated/prisma/index.js');
-  console.log("   ✅ Successfully imported PrismaClient\n");
+  writeLine('   OK: imported PrismaClient');
+  writeLine();
 
-  console.log("2. Checking PrismaClient type...");
-  console.log(`   Type: ${typeof PrismaClient}`);
-  console.log(`   Name: ${PrismaClient.name}\n`);
+  writeLine('2. Checking PrismaClient type...');
+  writeLine(`   Type: ${typeof PrismaClient}`);
+  writeLine(`   Name: ${PrismaClient.name}`);
+  writeLine();
 
-  console.log("3. Checking schema.prisma...");
-  const fs = require('fs');
+  writeLine('3. Checking schema.prisma...');
   const schema = fs.readFileSync('./generated/prisma/schema.prisma', 'utf-8');
-  
+
   if (schema.includes('provider = "postgresql"')) {
-    console.log("   ✅ Schema uses PostgreSQL\n");
+    writeLine('   OK: schema uses PostgreSQL');
+    writeLine();
   } else {
-    console.log("   ❌ Schema does NOT use PostgreSQL!\n");
+    writeError('   Schema does not use PostgreSQL.');
     process.exit(1);
   }
 
-  console.log("4. Checking DATABASE_URL...");
+  writeLine('4. Checking DATABASE_URL...');
   require('dotenv').config();
   if (process.env.DATABASE_URL) {
-    console.log(`   ✅ DATABASE_URL set\n`);
+    writeLine('   OK: DATABASE_URL set');
+    writeLine();
   } else {
-    console.log("   ❌ DATABASE_URL not set!\n");
+    writeError('   DATABASE_URL not set.');
     process.exit(1);
   }
 
-  console.log("✅ All checks passed!");
-  console.log("\nReady to start: pnpm run dev");
-
+  writeLine('All checks passed.');
+  writeLine('Ready to start: pnpm run dev');
 } catch (error) {
-  console.error("❌ Test failed:");
-  console.error(error.message);
-  console.error("\nFull error:");
-  console.error(error);
+  writeError('Test failed.');
+  writeError(error instanceof Error ? error.message : String(error));
+  writeError('Full error:');
+  writeError(error instanceof Error && error.stack ? error.stack : String(error));
   process.exit(1);
 }

@@ -62,7 +62,7 @@ const normalizeWorkflow = (workflow: WorkflowDefinition): WorkflowDefinition => 
  * // Load workflow
  * const loaded = loadWorkflowState();
  * if (loaded) {
- *   console.log('Workflow restored:', loaded.name);
+ *   restoreWorkflowPreview(loaded.name);
  * }
  * }</pre>
  *
@@ -87,6 +87,29 @@ const INDEX_KEY = `${STORAGE_PREFIX}index`;
 const MAX_HISTORY_SIZE = 50;
 const ORIGINAL_SET_ITEM = (localStorage as any).setItem;
 
+type PersistenceDiagnosticLevel = 'info' | 'warn' | 'error';
+
+const emitPersistenceDiagnostic = (
+  level: PersistenceDiagnosticLevel,
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent('data-cloud:persistence-diagnostic', {
+      detail: {
+        level,
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  );
+};
+
 /**
  * Saves workflow state to localStorage.
  *
@@ -102,7 +125,7 @@ export function saveWorkflowState(workflow: WorkflowDefinition): void {
     const json = JSON.stringify(normalizeWorkflow(workflow));
     localStorage.setItem(CURRENT_KEY, json);
   } catch (error) {
-    console.error('Failed to save workflow state:', error);
+    emitPersistenceDiagnostic('error', 'Failed to save workflow state', { error });
     throw new Error('Failed to save workflow state: localStorage may be full');
   }
 }
@@ -132,7 +155,7 @@ export function loadWorkflowState(): WorkflowDefinition | null {
     const workflow = normalizeWorkflow(parsed as WorkflowDefinition);
     return workflow;
   } catch (error) {
-    console.error('Failed to load workflow state:', error);
+    emitPersistenceDiagnostic('error', 'Failed to load workflow state', { error });
     return null;
   }
 }
@@ -152,7 +175,7 @@ export function saveHistory(history: WorkflowDefinition[]): void {
     const json = JSON.stringify(truncated);
     localStorage.setItem(HISTORY_KEY, json);
   } catch (error) {
-    console.error('Failed to save history:', error);
+    emitPersistenceDiagnostic('error', 'Failed to save history', { error });
     throw new Error('Failed to save history: localStorage may be full');
   }
 }
@@ -173,7 +196,7 @@ export function loadHistory(): WorkflowDefinition[] {
     );
     return history;
   } catch (error) {
-    console.error('Failed to load history:', error);
+    emitPersistenceDiagnostic('error', 'Failed to load history', { error });
     return [];
   }
 }
@@ -187,7 +210,7 @@ export function saveHistoryIndex(index: number): void {
   try {
     localStorage.setItem(INDEX_KEY, JSON.stringify(index));
   } catch (error) {
-    console.error('Failed to save history index:', error);
+    emitPersistenceDiagnostic('error', 'Failed to save history index', { error });
   }
 }
 
@@ -204,7 +227,7 @@ export function loadHistoryIndex(): number {
     }
     return JSON.parse(json) as number;
   } catch (error) {
-    console.error('Failed to load history index:', error);
+    emitPersistenceDiagnostic('error', 'Failed to load history index', { error });
     return -1;
   }
 }
@@ -218,7 +241,7 @@ export function clearHistory(): void {
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem(INDEX_KEY);
   } catch (error) {
-    console.error('Failed to clear history:', error);
+    emitPersistenceDiagnostic('error', 'Failed to clear history', { error });
   }
 }
 
@@ -260,7 +283,7 @@ export function importWorkflow(json: string): WorkflowDefinition {
 
     return workflow;
   } catch (error) {
-    console.error('Failed to import workflow:', error);
+    emitPersistenceDiagnostic('error', 'Failed to import workflow', { error });
     throw new Error(`Failed to import workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

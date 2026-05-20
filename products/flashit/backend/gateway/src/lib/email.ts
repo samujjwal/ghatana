@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { systemLogger } from "./logger";
 
 export type EmailPayload = {
   to: string;
@@ -113,9 +114,12 @@ export async function sendEmail(
       );
     }
     const messageId = `stub-email-${Date.now()}`;
-    console.log(
-      `[email stub] from=${from} to=${payload.to} subject="${payload.subject}" id=${messageId}`,
-    );
+    systemLogger.info("[email stub] Email accepted by stub provider", {
+      from,
+      to: payload.to,
+      subject: payload.subject,
+      messageId,
+    });
     return { messageId };
   }
 
@@ -132,7 +136,7 @@ export async function sendEmail(
       });
       return { messageId: info.messageId };
     } catch (error) {
-      console.error("[email smtp] Failed to send email:", error);
+      systemLogger.error("[email smtp] Failed to send email", error);
       throw new Error(
         `Failed to send email via SMTP: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -172,7 +176,7 @@ export async function sendEmail(
       const response = await client.send(command);
       return { messageId: response.MessageId || `ses-${Date.now()}` };
     } catch (error) {
-      console.error("[email ses] Failed to send email:", error);
+      systemLogger.error("[email ses] Failed to send email", error);
       throw new Error(
         `Failed to send email via SES: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -196,7 +200,7 @@ export async function verifyEmailConfig(): Promise<boolean> {
       await transporter.verify();
       return true;
     } catch (error) {
-      console.error("[email smtp] Configuration verification failed:", error);
+      systemLogger.error("[email smtp] Configuration verification failed", error);
       return false;
     }
   }

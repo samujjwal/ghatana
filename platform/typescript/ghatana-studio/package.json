@@ -17,6 +17,8 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@ghatana/artifact-compiler-ts": "workspace:*",
+    "@ghatana/artifact-contracts": "workspace:*",
     "@ghatana/api": "workspace:*",
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",

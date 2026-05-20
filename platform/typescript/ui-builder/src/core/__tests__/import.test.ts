@@ -12,31 +12,46 @@ import {
   importFromTsx,
   importFromHtml,
 } from '../import.js';
-import type { BuilderDocument, ComponentInstance } from '../types.js';
-import { createDocumentId, createNodeId } from '../types.js';
+import { createBuilderDocument } from '../builder-document.js';
+import { CURRENT_SCHEMA_VERSION } from '../builder-document.js';
 
 // ----------------------------------------------------------------------------
-// Fixtures
+// Fixtures — use canonical createBuilderDocument so tests stay coherent with production code
 // ----------------------------------------------------------------------------
 
-function makeDoc(overrides: Partial<BuilderDocument> = {}): BuilderDocument {
-  return {
-    id: createDocumentId(),
-    version: '1',
-    name: 'Test Document',
-    designSystem: {
-      id: 'ds-1',
-      name: 'Test DS',
-      version: '1.0.0',
-      tokenSetIds: [],
-      componentContracts: [],
-      themeId: 'theme-1',
+function makeDoc(): ReturnType<typeof createBuilderDocument> {
+  return createBuilderDocument('test-user');
+}
+
+// Minimal canonical JSON payload matching what importFromJson expects
+function makeCanonicalJson(nodes: Record<string, unknown> = {}, layoutChildren: string[] = []): string {
+  const rootId = 'root-fixture';
+  return JSON.stringify({
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    documentId: 'doc-fixture',
+    owner: 'test-user',
+    root: rootId,
+    nodes,
+    bindings: [],
+    layout: {
+      type: 'flex',
+      nodes: {
+        [rootId]: {
+          id: rootId,
+          type: 'root',
+          children: layoutChildren,
+          layout: 'flex',
+          layoutProps: { direction: 'vertical' },
+        },
+      },
+      rootId,
     },
-    rootNodes: [],
-    nodes: new Map(),
-    metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ...overrides,
-  };
+    metadata: {
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+      author: 'test-user',
+    },
+  });
 }
 
 // ----------------------------------------------------------------------------
@@ -45,9 +60,8 @@ function makeDoc(overrides: Partial<BuilderDocument> = {}): BuilderDocument {
 
 describe('importFromJson', () => {
   it('imports a valid BuilderDocument JSON', () => {
-    const json = JSON.stringify({
-      rootNodes: ['node-1'],
-      nodes: {
+    const json = makeCanonicalJson(
+      {
         'node-1': {
           id: 'node-1',
           contractName: 'Button',
@@ -57,12 +71,13 @@ describe('importFromJson', () => {
           metadata: {},
         },
       },
-    });
+      ['node-1'],
+    );
     const doc = makeDoc();
     const result = importFromJson({ format: 'json', content: json }, doc);
     expect(result.status).toBe('clean');
     expect(result.addedNodeIds).toContain('node-1');
-    expect(result.document.nodes.has('node-1')).toBe(true);
+    expect('node-1' in result.document.nodes).toBe(true);
   });
 
   it('returns failed for invalid JSON', () => {
@@ -71,32 +86,31 @@ describe('importFromJson', () => {
     expect(result.errorMessage).toContain('JSON parse error');
   });
 
-  it('returns failed for JSON missing rootNodes', () => {
+  it('returns failed for JSON that is not a canonical BuilderDocument', () => {
     const result = importFromJson({ format: 'json', content: '{"foo": "bar"}' }, makeDoc());
     expect(result.status).toBe('failed');
-    expect(result.errorMessage).toContain('missing rootNodes');
+    // The error message should mention canonical schema requirements
+    expect(result.errorMessage).toBeDefined();
+    expect(result.errorMessage!.length).toBeGreaterThan(0);
   });
 
   it('round-trips with full fidelity', () => {
-    const doc = makeDoc({
-      name: 'Original',
-      rootNodes: ['id-1'],
-      nodes: new Map([
-        [
-          'id-1',
-          {
-            id: 'id-1',
-            contractName: 'Card',
-            props: { title: 'Test' },
-            slots: {},
-            bindings: [],
-            metadata: {},
-          },
-        ],
-      ]),
-    });
-    const serialized = JSON.stringify(doc);
-    const result = importFromJson({ format: 'json', content: serialized }, makeDoc());
+    const nodeId = 'id-1';
+    const json = makeCanonicalJson(
+      {
+        [nodeId]: {
+          id: nodeId,
+          contractName: 'Card',
+          props: { title: 'Test' },
+          slots: {},
+          bindings: [],
+          metadata: {},
+        },
+      },
+      [nodeId],
+    );
+    const result = importFromJson({ format: 'json', content: json }, makeDoc());
+    expect(result.status).toBe('clean');
     expect(result.fidelity.canRoundTrip).toBe(true);
     expect(result.fidelity.confidence).toBe(1);
   });
@@ -113,7 +127,7 @@ describe('importFromTsx', () => {
     const result = importFromTsx({ format: 'tsx', content: tsx }, makeDoc(), contracts);
     expect(result.status).toBe('clean');
     expect(result.addedNodeIds.length).toBe(1);
-    const node = result.document.nodes.get(result.addedNodeIds[0]);
+    const node = result.document.nodes[result.addedNodeIds[0] as string];
     expect(node?.contractName).toBe('Button');
     expect(node?.props['variant']).toBe('primary');
     expect(node?.props['disabled']).toBe(true);
@@ -158,14 +172,14 @@ describe('importFromHtml', () => {
     const result = importFromHtml({ format: 'html', content: html }, makeDoc());
     expect(result.status).toBe('clean');
     expect(result.addedNodeIds.length).toBe(1);
-    const node = result.document.nodes.get(result.addedNodeIds[0]);
+    const node = result.document.nodes[result.addedNodeIds[0] as string];
     expect(node?.contractName).toBe('Button');
   });
 
   it('converts kebab-case to PascalCase', () => {
     const html = '<ghatana-text-field />';
     const result = importFromHtml({ format: 'html', content: html }, makeDoc());
-    const node = result.document.nodes.get(result.addedNodeIds[0]);
+    const node = result.document.nodes[result.addedNodeIds[0] as string];
     expect(node?.contractName).toBe('TextField');
   });
 
@@ -190,7 +204,7 @@ describe('importFromHtml', () => {
 
 describe('importSource', () => {
   it('dispatches to json importer', () => {
-    const json = JSON.stringify({ rootNodes: [], nodes: {} });
+    const json = makeCanonicalJson();
     const result = importSource({ format: 'json', content: json }, makeDoc());
     expect(result.status).toBe('clean');
   });

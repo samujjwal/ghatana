@@ -1,33 +1,34 @@
 /**
- * products/data-cloud/planes/action/orchestrator — AEP Orchestration Sub-module
+ * products/data-cloud/planes/action/orchestrator — Data Cloud Action Plane Orchestration Sub-module
  *
  * Contains the pipeline orchestration engine, execution queues, deployment
- * adapters, and DI wiring that bridges the AEP domain platform with the
+ * adapters, and DI wiring that bridges the Action Plane domain platform with the
  * agent/pipeline lifecycle management layer.
  *
  * Dependency direction:
- *   products:aep:orchestrator    → products:aep:aep-operator-contracts (shared AEP contracts)
- *   products:aep:platform-bundle ← retired; no dependency on orchestrator
- *   products:aep:server          → products:aep:orchestrator
+ *   products:data-cloud:planes:action:orchestrator → products:data-cloud:planes:action:operator-contracts
  *
- * This module intentionally breaks the circular dependency that would result
- * from the earlier state where orchestrator code lived inside products:aep:platform-bundle.
+ * This module consolidates the orchestration logic that was previously split across
+ * the retired AEP (Agentic Event Processor) standalone product boundaries.
+ *
+ * DC-P1-10: AEP has been retired as a standalone product; all functionality is now
+ * part of Data Cloud Action Plane.
  */
 plugins {
     id("java-module")
 }
 
-group = "com.ghatana.aep"
+group = "com.ghatana.datacloud"
 version = rootProject.version
 
-description = "AEP Orchestrator — pipeline lifecycle, execution queues, and agent dispatch wiring"
+description = "Data Cloud Action Plane Orchestrator — pipeline lifecycle, execution queues, and agent dispatch wiring"
 
 
 dependencies {
-    // Shared AEP contracts — EventCloud, operator catalog, pipeline contracts
+    // Action Plane contracts — EventCloud, operator catalog, pipeline contracts
     api(project(":products:data-cloud:planes:action:operator-contracts"))
     implementation(project(":products:data-cloud:planes:action:engine"))
-    // aep-agent-runtime contains agent dispatch classes (AgentDispatcher, LlmProvider, etc.)
+    // Agent runtime for dispatch classes (AgentDispatcher, LlmProvider, etc.)
     implementation(project(":products:data-cloud:planes:action:agent-runtime"))
     api(project(":platform:java:messaging"))  // Unified messaging (merged connectors)
     api(project(":products:data-cloud:planes:action:registry"))
@@ -37,7 +38,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:agent-core"))
     api(project(":platform:java:workflow"))
-    api(project(":products:data-cloud:planes:action:engine"))  // Unified runtime (Phase 1.6 consolidation)
+    api(project(":products:data-cloud:planes:action:engine"))  // Unified runtime
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
     api(project(":platform:java:config"))
@@ -102,8 +103,8 @@ dependencies {
 // Test depends on analytics/ingress modules not yet on orchestrator classpath
 // Also exclude test files with outdated ActiveJ APIs (EventloopThread, com.io.activej.promise)
 sourceSets.test {
-    java.exclude("com/ghatana/aep/di/AepDiModulesTest.java")
-    java.exclude("com/ghatana/aep/engine/registry/AgentMemoryPlaneClientMasteryTest.java")
+    java.exclude("com/ghatana/datacloud/planes/action/orchestrator/di/AepDiModulesTest.java")
+    java.exclude("com/ghatana/datacloud/planes/action/orchestrator/engine/registry/AgentMemoryPlaneClientMasteryTest.java")
 }
 
 tasks.test {
@@ -123,7 +124,7 @@ tasks.test {
 // =============================================================================
 
 /**
- * Enforces that all AEP operator YAML catalog files reference only canonical
+ * DC-P1-10: Validates that all Action Plane operator YAML catalog files reference only canonical
  * platform enum values (AgentType, AutonomyLevel, DeterminismGuarantee, StateMutability).
  *
  * Run explicitly: ./gradlew :products:data-cloud:planes:action:orchestrator:validateAgentCatalogs
@@ -131,10 +132,10 @@ tasks.test {
  */
 tasks.register("validateAgentCatalogs") {
     group = "verification"
-    description = "Validates that all AEP agent catalog YAMLs use canonical platform enum values"
+    description = "Validates that all Action Plane agent catalog YAMLs use canonical platform enum values"
     dependsOn(tasks.test)
     doLast {
-        logger.lifecycle("✅  AEP catalog canonical enum validation complete (backed by CatalogCanonicalValuesTest)")
+        logger.lifecycle("✅  Action Plane catalog canonical enum validation complete (backed by CatalogCanonicalValuesTest)")
     }
 }
 

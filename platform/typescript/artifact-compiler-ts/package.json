@@ -1,0 +1,67 @@
+{
+  "name": "@ghatana/artifact-compiler-ts",
+  "version": "0.1.0",
+  "description": "TypeScript/TSX artifact compiler and decompiler for the Ghatana artifact pipeline",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./decompile": {
+      "types": "./dist/decompile/tsx.d.ts",
+      "import": "./dist/decompile/tsx.js"
+    },
+    "./compile": {
+      "types": "./dist/compile/react.d.ts",
+      "import": "./dist/compile/react.js"
+    },
+    "./projection/builder": {
+      "types": "./dist/projection/builder.d.ts",
+      "import": "./dist/projection/builder.js"
+    },
+    "./projection/canvas": {
+      "types": "./dist/projection/canvas.d.ts",
+      "import": "./dist/projection/canvas.js"
+    },
+    "./projection/ds": {
+      "types": "./dist/projection/ds.d.ts",
+      "import": "./dist/projection/ds.js"
+    },
+    "./fidelity": {
+      "types": "./dist/fidelity/scorer.d.ts",
+      "import": "./dist/fidelity/scorer.js"
+    },
+    "./residual": {
+      "types": "./dist/residual/residual-islands.d.ts",
+      "import": "./dist/residual/residual-islands.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ghatana/artifact-contracts": "workspace:*",
+    "typescript": "^6.0.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.4.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1430,8 +1430,13 @@ public class DataCloudHttpServer {
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         if (tenantQuotaService != null) entityHandler.withTenantQuotaService(tenantQuotaService);
         if (transactionManager != null) entityHandler.withTransactionManager(transactionManager);
+        if (entityWriteOutboxProcessor != null) entityHandler.withOutboxProcessor(entityWriteOutboxProcessor);
         entityHandler.withTraceSupport(traceSpanSupport);
         entityHandler.withSemanticSearchPorts(semanticSearchHandler::indexEntity, semanticSearchHandler::deleteEntity);
+        // DC-P1-05: Set deployment profile for production validation
+        entityHandler.withDeploymentProfile(deploymentMode);
+        // DC-P1-05: Validate production requirements for entity write durability
+        entityHandler.validateProductionRequirements();
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
         anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport, eventLogStore, objectMapper);
@@ -1441,6 +1446,10 @@ public class DataCloudHttpServer {
         eventHandler.withTraceSupport(traceSpanSupport);
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
         if (genericIdempotencyStore != null) eventHandler.withIdempotencyStore(genericIdempotencyStore);
+        // DC-P1-06: Set deployment profile for production validation
+        eventHandler.withDeploymentProfile(deploymentMode);
+        // DC-P1-06: Validate production requirements for event durability
+        eventHandler.validateProductionRequirements();
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
@@ -1709,6 +1718,7 @@ public class DataCloudHttpServer {
                 .auditService(auditService)
                 .strictTenantResolution(strictTenantResolution)
                 .build();
+            securityFilter.validateProductionRequirements(); // added this line
             rootServlet = securityFilter.apply(filteredRouter);
             log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {})",
                 apiKeyResolver != null ? "enabled" : "disabled",

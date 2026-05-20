@@ -158,24 +158,12 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds pipeline registry and execution endpoints.
+     * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withPipelineRoutes(
             PipelineCheckpointHandler pipelineCheckpointHandler,
             WorkflowExecutionHandler workflowExecutionHandler) {
-        // P1-01: Conditionally register legacy routes based on feature flag
-        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
-
-        if (enableLegacyRoutes) {
-            builder
-                // Pipeline CRUD (legacy routes)
-                .with(HttpMethod.GET, "/api/v1/pipelines", pipelineCheckpointHandler::handleListPipelines)
-                .with(HttpMethod.POST, "/api/v1/pipelines", pipelineCheckpointHandler::handleSavePipeline)
-                .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleGetPipeline)
-                .with(HttpMethod.PUT, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleUpdatePipeline)
-                .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline);
-        }
-
-        // Canonical Action Plane routes (always registered)
+        // Canonical Action Plane routes
         builder
             .with(HttpMethod.GET, "/api/v1/action/pipelines", pipelineCheckpointHandler::handleListPipelines)
             .with(HttpMethod.POST, "/api/v1/action/pipelines", pipelineCheckpointHandler::handleSavePipeline)
@@ -185,16 +173,6 @@ public class DataCloudRouterBuilder {
 
         // Pipeline execution - only register if workflowExecutionHandler is available
         if (workflowExecutionHandler != null) {
-            if (enableLegacyRoutes) {
-                builder
-                    .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
-                    .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
-                    .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
-                    .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
-                    .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
-            }
-
-            // Canonical Action Plane routes (always registered)
             builder
                 .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
                 .with(HttpMethod.GET, "/api/v1/action/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
@@ -245,23 +223,10 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds agent memory plane endpoints.
+     * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withMemoryRoutes(MemoryPlaneHandler memoryHandler) {
-        // P1-01: Conditionally register legacy routes based on feature flag
-        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
-
-        if (enableLegacyRoutes) {
-            builder
-                .with(HttpMethod.GET, "/api/v1/memory", memoryHandler::handleListMemory)
-                .with(HttpMethod.POST, "/api/v1/memory/:agentId", memoryHandler::handleStoreMemory)
-                .with(HttpMethod.GET, "/api/v1/memory/:agentId", memoryHandler::handleGetAgentMemory)
-                .with(HttpMethod.GET, "/api/v1/memory/:agentId/:tier", memoryHandler::handleGetAgentMemoryByTier)
-                .with(HttpMethod.POST, "/api/v1/memory/:agentId/search", memoryHandler::handleSearchAgentMemory)
-                .with(HttpMethod.DELETE, "/api/v1/memory/:agentId/:memoryId", memoryHandler::handleDeleteMemory)
-                .with(HttpMethod.PUT, "/api/v1/memory/:agentId/:memoryId/retain", memoryHandler::handleRetainMemory);
-        }
-
-        // Canonical Action Plane routes (always registered)
+        // Canonical Action Plane routes
         builder
             .with(HttpMethod.GET, "/api/v1/action/memory", memoryHandler::handleListMemory)
             .with(HttpMethod.POST, "/api/v1/action/memory/:agentId", memoryHandler::handleStoreMemory)
@@ -294,21 +259,10 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds learning and review endpoints.
+     * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withLearningRoutes(LearningHandler learningHandler) {
-        // P1-01: Conditionally register legacy routes based on feature flag
-        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
-
-        if (enableLegacyRoutes) {
-            builder
-                .with(HttpMethod.POST, "/api/v1/learning/trigger", learningHandler::handleLearningTrigger)
-                .with(HttpMethod.GET, "/api/v1/learning/status", learningHandler::handleLearningStatus)
-                .with(HttpMethod.GET, "/api/v1/learning/review", learningHandler::handleLearningReviewQueue)
-                .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/approve", learningHandler::handleLearningReviewApprove)
-                .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject);
-        }
-
-        // Canonical Action Plane routes (always registered)
+        // Canonical Action Plane routes
         builder
             .with(HttpMethod.POST, "/api/v1/action/learning/trigger", learningHandler::handleLearningTrigger)
             .with(HttpMethod.GET, "/api/v1/action/learning/status", learningHandler::handleLearningStatus)
@@ -612,19 +566,10 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds autonomy management endpoints.
+     * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withAutonomyRoutes(AutonomyHandler autonomyHandler) {
-        builder
-            .with(HttpMethod.PUT, "/api/v1/autonomy/level", autonomyHandler::handleSetGlobalLevel)
-            .with(HttpMethod.GET, "/api/v1/autonomy/level", autonomyHandler::handleGetGlobalLevel)
-            .with(HttpMethod.GET, "/api/v1/autonomy/domains", autonomyHandler::handleListDomains)
-            .with(HttpMethod.GET, "/api/v1/autonomy/domains/:domain", autonomyHandler::handleGetDomain)
-            .with(HttpMethod.GET, "/api/v1/autonomy/logs", autonomyHandler::handleGetLogs)
-            // P2.3: Expose automation plan to human operators
-            .with(HttpMethod.GET, "/api/v1/autonomy/plan/:actionType", autonomyHandler::handleGetAutonomyPlan)
-            // P2.6: Update autonomy policies from operator feedback patterns
-            .with(HttpMethod.POST, "/api/v1/autonomy/feedback-policy", autonomyHandler::handleUpdatePolicyFromFeedback);
-
+        // Canonical Action Plane routes
         builder
             .with(HttpMethod.PUT, "/api/v1/action/autonomy/level", autonomyHandler::handleSetGlobalLevel)
             .with(HttpMethod.GET, "/api/v1/action/autonomy/level", autonomyHandler::handleGetGlobalLevel)
@@ -638,11 +583,13 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds agent catalog runtime endpoints.
+     * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withAgentCatalogRoutes(AgentCatalogHandler agentCatalogHandler) {
+        // Canonical Action Plane routes
         builder
-            .with(HttpMethod.GET, "/api/v1/agents/catalog", agentCatalogHandler::handleListCatalog)
-            .with(HttpMethod.GET, "/api/v1/agents/catalog/:id", agentCatalogHandler::handleGetAgent);
+            .with(HttpMethod.GET, "/api/v1/action/agents/catalog", agentCatalogHandler::handleListCatalog)
+            .with(HttpMethod.GET, "/api/v1/action/agents/catalog/:id", agentCatalogHandler::handleGetAgent);
         return this;
     }
 
@@ -651,17 +598,24 @@ public class DataCloudRouterBuilder {
      */
     public DataCloudRouterBuilder withPluginRoutes(PluginInstallHandler pluginInstallHandler) {
         if (pluginInstallHandler == null) return this;
-        builder
-            .with(HttpMethod.GET, "/api/v1/plugins", pluginInstallHandler::handleListPlugins)
-            .with(HttpMethod.GET, "/api/v1/plugins/:id", pluginInstallHandler::handleGetPlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/enable", pluginInstallHandler::handleEnablePlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/disable", pluginInstallHandler::handleDisablePlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade", pluginInstallHandler::handleUpgradePlugin)
-            .with(HttpMethod.GET, "/api/v1/plugins/marketplace", pluginInstallHandler::handleMarketplaceCatalog)
-            .with(HttpMethod.GET, "/api/v1/plugins/:id/sandbox", pluginInstallHandler::handlePluginSandboxStatus)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/validate", pluginInstallHandler::handleValidatePluginSchema)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/conformance", pluginInstallHandler::handlePluginConformanceTest);
 
+        // P1-03: Conditionally register legacy routes based on feature flag
+        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
+
+        if (enableLegacyRoutes) {
+            builder
+                .with(HttpMethod.GET, "/api/v1/plugins", pluginInstallHandler::handleListPlugins)
+                .with(HttpMethod.GET, "/api/v1/plugins/:id", pluginInstallHandler::handleGetPlugin)
+                .with(HttpMethod.POST, "/api/v1/plugins/:id/enable", pluginInstallHandler::handleEnablePlugin)
+                .with(HttpMethod.POST, "/api/v1/plugins/:id/disable", pluginInstallHandler::handleDisablePlugin)
+                .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade", pluginInstallHandler::handleUpgradePlugin)
+                .with(HttpMethod.GET, "/api/v1/plugins/marketplace", pluginInstallHandler::handleMarketplaceCatalog)
+                .with(HttpMethod.GET, "/api/v1/plugins/:id/sandbox", pluginInstallHandler::handlePluginSandboxStatus)
+                .with(HttpMethod.POST, "/api/v1/plugins/:id/validate", pluginInstallHandler::handleValidatePluginSchema)
+                .with(HttpMethod.POST, "/api/v1/plugins/:id/conformance", pluginInstallHandler::handlePluginConformanceTest);
+        }
+
+        // Canonical Action Plane routes (always registered)
         builder
             .with(HttpMethod.GET, "/api/v1/action/plugins", pluginInstallHandler::handleListPlugins)
             .with(HttpMethod.GET, "/api/v1/action/plugins/:id", pluginInstallHandler::handleGetPlugin)

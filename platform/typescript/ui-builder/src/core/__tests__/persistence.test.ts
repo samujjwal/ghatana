@@ -27,7 +27,7 @@ function makeDoc(overrides: Partial<BuilderDocument> = {}): BuilderDocument {
       themeId: 'theme-1',
     },
     rootNodes: [],
-    nodes: new Map(),
+    nodes: {},
     metadata: {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -45,14 +45,16 @@ describe('serializeDocument / deserializeDocument', () => {
     const id = createNodeId();
     const doc = makeDoc({
       rootNodes: [id],
-      nodes: new Map([[id, {
-        id,
-        contractName: 'Button',
-        props: { label: 'Click me' },
-        slots: {},
-        bindings: [],
-        metadata: {},
-      }]]),
+      nodes: {
+        [id]: {
+          id,
+          contractName: 'Button',
+          props: { label: 'Click me' },
+          slots: {},
+          bindings: [],
+          metadata: {},
+        },
+      },
     });
 
     const serialized = serializeDocument(doc);
@@ -60,16 +62,19 @@ describe('serializeDocument / deserializeDocument', () => {
     expect(serialized.nodes[id]).toBeDefined();
 
     const restored = deserializeDocument(serialized);
-    expect(restored.nodes).toBeInstanceOf(Map);
-    expect(restored.nodes.get(id)?.contractName).toBe('Button');
+    // nodes is a canonical Record — not a Map instance.
+    expect(restored.nodes[id]).toBeDefined();
+    expect(restored.nodes[id]?.contractName).toBe('Button');
     expect(restored.rootNodes).toEqual([id]);
   });
 
   it('preserves document metadata through round-trip', () => {
-    const doc = makeDoc({ name: 'My Page', version: '2' });
+    const doc = makeDoc({ name: 'My Page' });
     const restored = deserializeDocument(serializeDocument(doc));
+    // In the canonical model, 'name' derives from metadata.description.
     expect(restored.name).toBe('My Page');
-    expect(restored.version).toBe('2');
+    // schemaVersion is always the canonical version constant.
+    expect(restored.schemaVersion).toBe('1.0.0');
   });
 });
 

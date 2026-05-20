@@ -542,4 +542,231 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
     }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile rejects tenantId query parameter spoofing")
+    void productionProfileRejectsTenantIdQuerySpoofing() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .build();
+
+        // Try to spoof tenant via query parameter while using valid API key for tenant-1
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/collections?tenantId=spoofed-tenant")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should reject due to tenant mismatch (API key tenant-1 vs query spoofed-tenant)
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile rejects API key with different tenant than authenticated principal")
+    void productionProfileRejectsApiKeyTenantMismatch() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        // API key resolver that returns principal for tenant-2
+        ApiKeyResolver apiKeyResolverTenant2 = apiKey -> {
+            if ("api-key-tenant-2".equals(apiKey)) {
+                return Optional.of(new Principal("user-2", List.of("OPERATOR"), "tenant-2"));
+            }
+            return Optional.empty();
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolverTenant2)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .build();
+
+        // Try to use API key for tenant-2 but request with X-Tenant-Id header for tenant-1
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/collections")
+            .withHeader(HttpHeaders.of("X-API-Key"), "api-key-tenant-2")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should reject due to tenant mismatch
+        assertThat(response.getCode()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile startup validation fails without strict tenant resolution")
+    void productionProfileStartupValidationFailsWithoutStrictTenantResolution() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(false) // NOT strict - should fail validation
+            .deploymentProfile("production")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P0-01");
+        assertThat(exception.getMessage()).contains("strictTenantResolution must be true");
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile startup validation fails without authentication mechanism")
+    void productionProfileStartupValidationFailsWithoutAuthMechanism() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(null)
+            .jwtProvider(null) // No auth mechanism
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P0-01");
+        assertThat(exception.getMessage()).contains("apiKeyResolver or jwtProvider must be configured");
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile startup validation fails without audit service when enforcing")
+    void productionProfileStartupValidationFailsWithoutAuditService() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(null) // No audit service
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P0-01");
+        assertThat(exception.getMessage()).contains("AuditService is required");
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile startup validation fails without policy engine when enforcing")
+    void productionProfileStartupValidationFailsWithoutPolicyEngine() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(null) // No policy engine
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P0-01");
+        assertThat(exception.getMessage()).contains("PolicyEngine is required");
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Production profile startup validation succeeds with all required components")
+    void productionProfileStartupValidationSucceedsWithAllComponents() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        // Should not throw any exception
+        filter.validateProductionRequirements();
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Local profile skips production validation")
+    void localProfileSkipsProductionValidation() {
+        System.setProperty("DATACLOUD_PROFILE", "local");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(null) // Missing policy engine - OK for local
+            .auditService(null) // Missing audit service - OK for local
+            .enforcing(true)
+            .strictTenantResolution(false) // Not strict - OK for local
+            .deploymentProfile("local")
+            .build();
+
+        // Should not throw any exception
+        filter.validateProductionRequirements();
+    }
+
+    @Test
+    @DisplayName("DC-P0-01: Sovereign profile enforces same strictness as production")
+    void sovereignProfileEnforcesSameStrictnessAsProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "sovereign");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(false) // NOT strict - should fail
+            .deploymentProfile("sovereign")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P0-01");
+        assertThat(exception.getMessage()).contains("strictTenantResolution must be true");
+    }
 }

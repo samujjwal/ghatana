@@ -111,17 +111,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const isCollapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
 
-  // Debug instrumentation: log render/mount lifecycle for diagnosis
-  try {
-    console.log('[DashboardLayout] render start - sidebar present=', Boolean(sidebar), 'isCollapsed=', isCollapsed);
-  } catch (e) {
-    // ignore
-  }
-
   // Handle responsive behavior
   useEffect(() => {
     if (!responsive) return;
-    console.log('[DashboardLayout] attaching resize listener, responsiveBreakpoint=', responsiveBreakpoint);
 
     const handleResize = () => {
       const shouldCollapse = window.innerWidth < responsiveBreakpoint;
@@ -132,18 +124,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         setInternalCollapsed(shouldCollapse);
       }
     };
-    console.log('[DashboardLayout] resize handler installed');
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [responsive, responsiveBreakpoint, onSidebarToggle]);
-
-  React.useEffect(() => {
-    console.log('[DashboardLayout] mounted');
-    return () => {
-      console.log('[DashboardLayout] unmounted');
-    };
-  }, []);
 
   const maxWidthClass = MAX_WIDTH_MAP[maxWidth];
   const paddingClass = PADDING_MAP[padding];

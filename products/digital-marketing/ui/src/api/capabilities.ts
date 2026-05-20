@@ -13,6 +13,26 @@
 
 import { apiRequest } from '@/lib/http-client';
 
+const CAPABILITY_DIAGNOSTIC_EVENT = 'dmos:capability-diagnostic';
+
+interface CapabilityDiagnostic {
+  code: string;
+  message: string;
+  details: Record<string, string>;
+}
+
+function diagnosticErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
+function recordCapabilityDiagnostic(diagnostic: CapabilityDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<CapabilityDiagnostic>(CAPABILITY_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
+
 /**
  * P1-037: Standard capability keys for DMOS features.
  * P0-004: Added missing capability keys for new route manifest features.
@@ -81,7 +101,14 @@ export async function isCapabilityEnabled(
     return capability?.enabled ?? false;
   } catch (error) {
     // Fail closed: if we can't determine capability status, assume disabled
-    console.error(`Failed to check capability ${capabilityKey}:`, error);
+    recordCapabilityDiagnostic({
+      code: 'DMOS_CAPABILITY_CHECK_FAILED',
+      message: 'Capability check failed closed.',
+      details: {
+        capabilityKey,
+        error: diagnosticErrorMessage(error),
+      },
+    });
     return false;
   }
 }
@@ -145,7 +172,14 @@ export async function isRouteActionPermitted(
       return capability?.enabled ?? false;
     });
   } catch (error) {
-    console.error(`Failed to check action permission ${action}:`, error);
+    recordCapabilityDiagnostic({
+      code: 'DMOS_ACTION_PERMISSION_CHECK_FAILED',
+      message: 'Action permission check failed closed.',
+      details: {
+        action,
+        error: diagnosticErrorMessage(error),
+      },
+    });
     return false;
   }
 }

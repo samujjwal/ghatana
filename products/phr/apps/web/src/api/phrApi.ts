@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { demoDashboard } from '../mockData';
 import type {
   AppointmentSummary,
   ConsentGrant,
@@ -293,6 +292,7 @@ function extractBundleEntries(bundle: z.infer<typeof FhirBundleSchema>): Record<
 
 export async function fetchDashboardData(): Promise<DashboardData> {
   if (USE_MOCK) {
+    const { demoDashboard } = await import('../demoData');
     return dashboardSchema.parse(demoDashboard);
   }
 

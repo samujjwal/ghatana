@@ -39,6 +39,12 @@ public class EventHandler {
     /** DC-BE-002: Generic idempotency store for event append operations. */
     private WriteIdempotencyStore idempotencyStore;
 
+    /** DC-P1-06: Deployment profile for production validation. */
+    private String deploymentProfile = "local";
+
+    /** DC-P1-06: Whether to enforce strict event envelope validation. */
+    private boolean strictEventValidation = false;
+
     public EventHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
         this.http = http;
@@ -66,6 +72,95 @@ public class EventHandler {
     }
 
     /**
+     * DC-P1-06: Sets the deployment profile for production validation.
+     *
+     * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
+     * @return {@code this} for method chaining
+     */
+    public EventHandler withDeploymentProfile(String profile) {
+        this.deploymentProfile = profile != null ? profile : "local";
+        // DC-P1-06: Enable strict validation in production-like profiles
+        this.strictEventValidation = isProductionLikeProfile(this.deploymentProfile);
+        return this;
+    }
+
+    /**
+     * DC-P1-06: Validates production requirements for event durability.
+     * Throws IllegalStateException if production invariants are violated.
+     */
+    public void validateProductionRequirements() {
+        if (!isProductionLikeProfile(deploymentProfile)) {
+            return;
+        }
+
+        log.info("[EventHandler] Validating production requirements for profile '{}'", deploymentProfile);
+
+        // DC-P1-06: Durable idempotency store is required in production
+        if (idempotencyStore == null) {
+            throw new IllegalStateException(
+                "DC-P1-06: WriteIdempotencyStore is required in production/staging/sovereign profiles. " +
+                "Event append idempotency must be durable across restarts.");
+        }
+
+        log.info("[EventHandler] Production requirements validated successfully for profile '{}'", deploymentProfile);
+    }
+
+    /**
+     * DC-P1-06: Determines if the deployment profile requires production-like strictness.
+     */
+    private static boolean isProductionLikeProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return lower.equals("production") || lower.equals("staging") || lower.equals("sovereign");
+    }
+
+    /**
+     * DC-P1-06: Canonical event envelope for production event append.
+     * Rich envelope fields required for provenance, audit, replay, and governance.
+     */
+    public record EventEnvelope(
+        String eventId,        // Unique event identifier (UUID)
+        String type,           // Event type (required)
+        String tenantId,       // Tenant identifier (enriched server-side in production)
+        String workspaceId,    // Workspace scope
+        String subject,        // Subject entity identifier
+        String actor,          // Actor/principal who triggered the event
+        String classification, // Event classification (public, sensitive, critical)
+        Map<String, Object> policyContext, // Policy evaluation context
+        String provenance,     // Event provenance/source
+        String traceContext,   // Distributed trace context
+        String correlationId,  // Correlation ID for distributed tracing
+        String causationId,    // Causation ID for event sourcing
+        Map<String, Object> payload, // Event payload (required)
+        Instant timestamp      // Event timestamp (server-enriched in production)
+    ) {
+        /**
+         * Validates the envelope according to DC-P1-06 requirements.
+         * @return validation error message, or null if valid
+         */
+        public String validate(boolean strict) {
+            if (eventId == null || eventId.isBlank()) {
+                if (strict) return "eventId is required in strict mode";
+            }
+            if (type == null || type.isBlank()) {
+                return "type is required";
+            }
+            if (payload == null || payload.isEmpty()) {
+                return "payload is required";
+            }
+            if (strict) {
+                if (actor == null || actor.isBlank()) {
+                    return "actor is required in strict mode";
+                }
+                if (timestamp == null) {
+                    return "timestamp is required in strict mode";
+                }
+            }
+            return null; // valid
+        }
+    }
+
+    /**
      * P0.5: Check tenant quota before event append operations.
      * Returns an error promise if quota is exceeded, otherwise null.
      */
@@ -88,20 +183,27 @@ public class EventHandler {
         }
         String tenantId = resolutionResult.tenantId();
         if (tenantId == null) {
-            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+            return Promise.of(http.errorResponse(400, "Tenant is required"));
         }
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
-        // DC-BE-002: Check idempotency for event append
+        // DC-P1-06: In production, durable idempotency is mandatory
         String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
         String operationScope = "events:append";
-        if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
-            if (cached.isPresent()) {
-                log.info("[DC-BE-002] Returning cached event append response for key={}", idempotencyKey);
-                return Promise.of(http.jsonResponse(cached.get()));
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            if (idempotencyStore == null && isProductionLikeProfile(deploymentProfile)) {
+                log.error("[EventHandler] DC-P1-06: Idempotency requested but no durable store in production");
+                return Promise.of(http.errorResponse(503,
+                    "Idempotency service unavailable: durable store required in production"));
+            }
+            if (idempotencyStore != null) {
+                var cached = idempotencyStore.get(tenantId, operationScope, idempotencyKey);
+                if (cached.isPresent()) {
+                    log.info("[DC-BE-002] Returning cached event append response for key={}", idempotencyKey);
+                    return Promise.of(http.jsonResponse(cached.get()));
+                }
             }
         }
 
@@ -120,12 +222,10 @@ public class EventHandler {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> eventData = http.objectMapper().readValue(body, Map.class);
 
-                Optional<String> requestErr = ApiInputValidator.validateEntityPayload(eventData);
-                if (requestErr.isPresent()) return Promise.of(http.errorResponse(400, requestErr.get()));
-
+                // DC-P1-06: Canonical event envelope validation
                 String eventType = (String) eventData.get("type");
                 if (eventType == null || eventType.isBlank()) {
-                    return Promise.of(http.errorResponse(400, "type must not be null or blank"));
+                    return Promise.of(http.errorResponse(400, "type is required"));
                 }
 
                 Object payloadCandidate = eventData.containsKey("payload")
@@ -136,11 +236,60 @@ public class EventHandler {
                 }
 
                 Map<String, Object> payload = (Map<String, Object>) payloadMap;
-                if (eventData.containsKey("data")) {
-                    Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(payload);
-                    if (payloadErr.isPresent()) return Promise.of(http.errorResponse(400, payloadErr.get()));
+
+                // DC-P1-06: In production, enforce canonical event envelope with all required fields
+                if (strictEventValidation) {
+                    String eventId = (String) eventData.get("eventId");
+                    String actor = (String) eventData.get("actor");
+                    Instant timestamp = eventData.containsKey("timestamp")
+                        ? Instant.parse((String) eventData.get("timestamp"))
+                        : Instant.now();
+
+                    // Build canonical envelope for validation
+                    EventEnvelope envelope = new EventEnvelope(
+                        eventId,
+                        eventType,
+                        tenantId,
+                        (String) eventData.get("workspaceId"),
+                        (String) eventData.get("subject"),
+                        actor,
+                        (String) eventData.get("classification"),
+                        (Map<String, Object>) eventData.getOrDefault("policyContext", Map.of()),
+                        (String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler"),
+                        http.resolveCorrelationId(request),
+                        (String) eventData.get("causationId"),
+                        payload,
+                        timestamp
+                    );
+
+                    String validationError = envelope.validate(true);
+                    if (validationError != null) {
+                        log.warn("[EventHandler] DC-P1-06: Event envelope validation failed in production profile '{}': {}",
+                            deploymentProfile, validationError);
+                        return Promise.of(http.errorResponse(400,
+                            "Invalid event envelope in production mode: " + validationError));
+                    }
                 }
 
+                // DC-P1-06: Enrich server-owned fields in production
+                String eventId = (String) eventData.get("eventId");
+                String actor = (String) eventData.get("actor");
+                String correlationId = http.resolveCorrelationId(request);
+                Instant timestamp = Instant.now();
+
+                if (isProductionLikeProfile(deploymentProfile)) {
+                    // In production, generate eventId if not provided
+                    if (eventId == null || eventId.isBlank()) {
+                        eventId = java.util.UUID.randomUUID().toString();
+                    }
+                    // In production, actor should be enriched from authenticated principal
+                    // This is a placeholder - actual principal extraction happens at filter level
+                    if (actor == null || actor.isBlank()) {
+                        actor = "system"; // Will be replaced with actual principal in production
+                    }
+                }
+
+                // DC-P1-06: Build canonical event with enriched fields
                 DataCloudClient.Event event = DataCloudClient.Event.builder()
                     .type(eventType)
                     .payload(payload)
@@ -152,15 +301,21 @@ public class EventHandler {
                     tenantId,
                     "datacloud.event.store.append",
                     handlerSpan.spanId(),
-                    Map.of("event.type", eventType),
+                    Map.of("event.type", eventType, "event.id", eventId != null ? eventId : "auto"),
                     () -> client.appendEvent(tenantId, event))
                     .map(offset -> {
-                        Map<String, Object> responseBody = Map.of(
-                            "offset", offset.value(),
-                            "type", eventType,
-                            "eventType", eventType,
-                            "timestamp", Instant.now().toString()
-                        );
+                        Map<String, Object> responseBody = new LinkedHashMap<>();
+                        responseBody.put("offset", offset.value());
+                        responseBody.put("type", eventType);
+                        responseBody.put("eventType", eventType);
+                        if (eventId != null) {
+                            responseBody.put("eventId", eventId);
+                        }
+                        responseBody.put("timestamp", timestamp.toString());
+                        if (correlationId != null) {
+                            responseBody.put("correlationId", correlationId);
+                        }
+
                         // DC-BE-002: Store idempotency response
                         if (idempotencyStore != null && idempotencyKey != null && !idempotencyKey.isBlank()) {
                             idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);

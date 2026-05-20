@@ -394,6 +394,57 @@ export type ComponentBuilderBinding = z.infer<
 >;
 
 // ============================================================================
+// Component Builder Integration Schema
+// (Named separately so TypeScript can fully infer the type, including `bindings`)
+// ============================================================================
+
+export const ComponentBuilderIntegrationSchema = z.object({
+  /** Icon for component picker. */
+  icon: z.string().optional(),
+  /** Default props when dragging onto canvas. */
+  defaultProps: z.record(z.string(), z.unknown()).optional(),
+  /** Builder binding declarations for bindable props/events/slots. */
+  bindings: z.array(ComponentBuilderBindingSchema).optional(),
+  /** Canvas behavior configuration. */
+  canvas: z
+    .object({
+      resizable: z.boolean().default(true),
+      draggable: z.boolean().default(true),
+      selectable: z.boolean().default(true),
+      container: z.boolean().default(false),
+    })
+    .optional(),
+  /** Code generation configuration. */
+  codegen: z
+    .object({
+      importPath: z.string(),
+      componentName: z.string(),
+      namedExport: z.boolean().default(true),
+      htmlTagName: z
+        .string()
+        .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/)
+        .optional(),
+    })
+    .optional(),
+  /** Palette identity for the component picker. */
+  palette: z
+    .object({
+      group: z.string().optional(),
+      subGroup: z.string().optional(),
+      displayName: z.string().optional(),
+      tooltip: z.string().optional(),
+      rank: z.number().int().optional(),
+      searchKeywords: z.array(z.string()).default([]),
+      featured: z.boolean().default(false),
+    })
+    .optional(),
+});
+
+export type ComponentBuilderIntegration = z.infer<
+  typeof ComponentBuilderIntegrationSchema
+>;
+
+// ============================================================================
 // Component Prop Schema
 // ============================================================================
 
@@ -666,81 +717,7 @@ export const ComponentContractSchema = z.object({
     .optional(),
 
   // Builder integration
-  builder: z
-    .object({
-      // Icon for component picker
-      icon: z.string().optional(),
-
-      // Default props when dragging onto canvas
-      defaultProps: z.record(z.string(), z.unknown()).optional(),
-
-      // Builder binding declarations for bindable props/events/slots.
-      bindings: z.array(ComponentBuilderBindingSchema).optional(),
-
-      // Canvas behavior
-      canvas: z
-        .object({
-          resizable: z.boolean().default(true),
-          draggable: z.boolean().default(true),
-          selectable: z.boolean().default(true),
-          container: z.boolean().default(false), // Can contain other components
-        })
-        .optional(),
-
-      // Code generation
-      codegen: z
-        .object({
-          importPath: z.string(),
-          componentName: z.string(),
-          namedExport: z.boolean().default(true),
-          /**
-           * The HTML custom-element tag name used by the web/SSR renderer.
-           * Defaults to `ghatana-{contractName.toLowerCase()}` if not provided.
-           * Must be a valid custom element name (contain a hyphen).
-           */
-          htmlTagName: z
-            .string()
-            .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/)
-            .optional(),
-        })
-        .optional(),
-
-      /**
-       * Palette identity — how this component appears in the builder's
-       * component picker and drag palette.
-       */
-      palette: z
-        .object({
-          /**
-           * Group name for the component picker panel (e.g. 'Form Controls',
-           * 'Data Display', 'Layout').
-           */
-          group: z.string().optional(),
-          /**
-           * Sub-group within the palette group for finer-grained organisation
-           * (e.g. 'Text Inputs' under 'Form Controls').
-           */
-          subGroup: z.string().optional(),
-          /** Display name shown in the palette (defaults to contract.name). */
-          displayName: z.string().optional(),
-          /**
-           * Short description shown in the palette tooltip (defaults to
-           * contract.description).
-           */
-          tooltip: z.string().optional(),
-          /**
-           * Rank within the palette group — lower numbers appear first.
-           * Components with no rank are placed after ranked ones.
-           */
-          rank: z.number().int().optional(),
-          /** Keywords for palette search (in addition to name and description). */
-          searchKeywords: z.array(z.string()).default([]),
-          /** Whether this component is pinned to the "Favourites" section. */
-          featured: z.boolean().default(false),
-        })
-        .optional(),
-    })
-    .optional(),
+  builder: ComponentBuilderIntegrationSchema.optional(),
 
   // Examples
   examples: z

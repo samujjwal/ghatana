@@ -3,6 +3,7 @@ export type StudioRouteId =
   | "ideas"
   | "blueprints"
   | "canvas"
+  | "builder"
   | "develop"
   | "lifecycle"
   | "agents"
@@ -197,6 +198,19 @@ export const STUDIO_ROUTE_OWNERSHIP_METADATA: Readonly<
     status: "ready",
     supportedUxStates: COMMON_UX_STATES,
     previewTrustState: "controlled",
+  },
+  builder: {
+    routeId: "builder",
+    path: "/builder",
+    ownerDomain: "studio",
+    ownerProduct: "Ghatana Studio",
+    permissions: ["studio.builder.view"],
+    featureFlags: ["studio.builder"],
+    requiredProviders: [],
+    lifecycleTruthSource: "none",
+    status: "ready",
+    supportedUxStates: COMMON_UX_STATES,
+    previewTrustState: "trusted",
   },
   develop: {
     routeId: "develop",
@@ -416,6 +430,26 @@ export const STUDIO_NAV_ITEMS = [
     evidenceRequired: ["platform/typescript/kernel-product-contracts/src"],
     journey: ["product-ideation-to-intent"],
     dimension: "blueprinting",
+    isCustomerVisible: true,
+    exposure: "visible",
+  },
+  {
+    id: "builder",
+    path: "/builder",
+    label: "Builder",
+    labelKey: "studio.navigation.builder",
+    ownership: "studio",
+    requiredCapability: "studio.builder.view",
+    status: "ready",
+    statusReasonCode: "available",
+    statusMessageKey: "studio.navigation.status.builder",
+    requiredNextAction: "None",
+    evidenceRefs: [
+      "platform/typescript/ui-builder/src",
+    ],
+    evidenceRequired: [],
+    journey: ["direct-kernel-usage"],
+    dimension: "development",
     isCustomerVisible: true,
     exposure: "visible",
   },
@@ -663,6 +697,7 @@ function resolveRouteExposure(
     route.id === "home" ||
     route.id === "blueprints" ||
     route.id === "canvas" ||
+    route.id === "builder" ||
     route.id === "learn" ||
     route.id === "design-system" ||
     route.id === "settings"

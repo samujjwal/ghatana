@@ -43,6 +43,29 @@ import type { LSPClientConfig, LSPDiagnostic, LSPClientMetrics } from './types';
 // Re-export for external consumers
 export type { LSPClientConfig, LSPDiagnostic, LSPClientMetrics } from './types';
 
+type LSPLogLevel = 'info' | 'warn' | 'error';
+
+const emitLSPDiagnostic = (
+  level: LSPLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent('ghatana:lsp-diagnostic', {
+      detail: {
+        level,
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      },
+    })
+  );
+};
+
 /**
  * LSP server configuration
  */
@@ -152,12 +175,16 @@ export class LSPClientManager {
       server.onDiagnostics(this.handleDiagnostics.bind(this));
       server.onError(this.handleServerError.bind(this, serverConfig.id));
 
-      console.log(`LSP server '${serverConfig.name}' initialized successfully`);
+      emitLSPDiagnostic('info', 'LSP server initialized successfully', {
+        serverId: serverConfig.id,
+        serverName: serverConfig.name,
+      });
     } catch (error) {
-      console.error(
-        `Failed to initialize LSP server '${serverConfig.name}':`,
-        error
-      );
+      emitLSPDiagnostic('error', 'Failed to initialize LSP server', {
+        serverId: serverConfig.id,
+        serverName: serverConfig.name,
+        error,
+      });
     }
   }
 
@@ -202,7 +229,11 @@ export class LSPClientManager {
                 ),
               };
             } catch (error) {
-              console.error('Completion error:', error);
+              emitLSPDiagnostic('error', 'Completion provider error', {
+                languageId,
+                serverId: serverConfig.id,
+                error,
+              });
               return { suggestions: [] };
             }
           },
@@ -221,7 +252,11 @@ export class LSPClientManager {
               const locations = await server.provideDefinition(model, position);
               return locations.map((loc) => this.convertLocation(loc));
             } catch (error) {
-              console.error('Definition error:', error);
+              emitLSPDiagnostic('error', 'Definition provider error', {
+                languageId,
+                serverId: serverConfig.id,
+                error,
+              });
               return [];
             }
           },
@@ -244,7 +279,11 @@ export class LSPClientManager {
               contents: [{ value: '**' + (hover.contents as string) + '**' }],
             };
           } catch (error) {
-            console.error('Hover error:', error);
+            emitLSPDiagnostic('error', 'Hover provider error', {
+              languageId,
+              serverId: serverConfig.id,
+              error,
+            });
             return null;
           }
         },
@@ -414,7 +453,10 @@ export class LSPClientManager {
 
       monaco.editor.setModelMarkers(model, 'lsp', monacoDiagnostics);
     } catch (error) {
-      console.error('Failed to apply diagnostics:', error);
+      emitLSPDiagnostic('error', 'Failed to apply diagnostics', {
+        uri,
+        error,
+      });
     }
   }
 
@@ -422,7 +464,10 @@ export class LSPClientManager {
    * Handle server error
    */
   private handleServerError(serverId: string, error: Error): void {
-    console.error(`LSP server ${serverId} error:`, error);
+    emitLSPDiagnostic('error', 'LSP server error', {
+      serverId,
+      error,
+    });
 
     const metrics = this.metrics.get(serverId);
     if (metrics) {

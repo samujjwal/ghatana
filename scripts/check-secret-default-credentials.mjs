@@ -2,7 +2,7 @@
 // Authoritative Source: docs/SECRETS_CLASSIFICATION.md
 
 import { execFileSync } from "child_process";
-import { readFileSync } from "fs";
+import { readdirSync, readFileSync, statSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -77,9 +77,64 @@ const rgArgs = [
   "-g", "Dockerfile",
 ];
 
-const files = execFileSync("rg", rgArgs, { cwd: repoRoot, encoding: "utf8" })
-  .split(/\r?\n/)
-  .filter(Boolean)
+function walkFiles(root) {
+  const results = [];
+  const fullRoot = path.join(repoRoot, root);
+  const stack = [fullRoot];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined) {
+      continue;
+    }
+
+    let entries;
+    try {
+      entries = readdirSync(current);
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry);
+      const relPath = path.relative(repoRoot, fullPath).replace(/\\/g, "/");
+      if (policy.excludeFragments.some((fragment) => relPath.includes(fragment))) {
+        continue;
+      }
+
+      let stats;
+      try {
+        stats = statSync(fullPath);
+      } catch {
+        continue;
+      }
+
+      if (stats.isDirectory()) {
+        stack.push(fullPath);
+      } else if (stats.isFile()) {
+        results.push(relPath);
+      }
+    }
+  }
+
+  return results;
+}
+
+function listCandidateFiles() {
+  try {
+    return execFileSync("rg", rgArgs, { cwd: repoRoot, encoding: "utf8" })
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((relPath) => relPath.replace(/\\/g, "/"));
+  } catch (error) {
+    if (error?.code !== "ENOENT" && error?.code !== "EPERM") {
+      throw error;
+    }
+    return policy.includeRoots.flatMap((root) => walkFiles(root));
+  }
+}
+
+const files = listCandidateFiles()
   .filter(shouldScan)
   .map((relPath) => ({
     relPath,

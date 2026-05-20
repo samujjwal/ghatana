@@ -544,6 +544,25 @@ interface CanvasChromeLayoutProps {
   showTopBar?: boolean;
 }
 
+const emitCanvasChromeEvent = (
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  if (typeof globalThis.dispatchEvent !== "function" || typeof CustomEvent === "undefined") {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent("canvas-chrome-diagnostic", {
+      detail: {
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  );
+};
+
 export const CanvasChromeLayout: React.FC<CanvasChromeLayoutProps> = ({
   children,
   calmMode = false,
@@ -575,9 +594,9 @@ export const CanvasChromeLayout: React.FC<CanvasChromeLayoutProps> = ({
         <TopBar
           projectName={projectName}
           onProjectChange={onProjectChange}
-          onSearch={() => console.log("Search")}
-          onShare={() => console.log("Share")}
-          onSettings={() => console.log("Settings")}
+          onSearch={() => emitCanvasChromeEvent("Search requested")}
+          onShare={() => emitCanvasChromeEvent("Share requested")}
+          onSettings={() => emitCanvasChromeEvent("Settings requested")}
         />
       )}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -624,7 +643,7 @@ export interface CanvasCommandSet {
 
 export const useCanvasCommands = (): CanvasCommandSet => ({
   executeCommand: (command: string, ...args: unknown[]) => {
-    console.log(`Executing command: ${command}`, args);
+    emitCanvasChromeEvent("Executing command", { command, args });
   },
   getAvailableCommands: () => [],
 });
@@ -652,7 +671,7 @@ export const FeatureHintsManager: React.FC<FeatureHintsManagerProps> = ({
 // Telemetry Hooks (placeholders)
 export const useCanvasTelemetry = () => ({
   trackEvent: (event: string, properties?: Record<string, unknown>) => {
-    console.log(`Canvas telemetry: ${event}`, properties);
+    emitCanvasChromeEvent("Canvas telemetry event", { event, properties });
   },
 });
 

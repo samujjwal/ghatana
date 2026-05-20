@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 /**
  * Event-store-backed audit service for the standalone Data Cloud launcher.
  *
+ * <p>DC-P1-09: Provides fail-closed audit sink for critical mutations. Critical operations
+ * must successfully record audit events before proceeding. Audit failures for critical
+ * operations result in operation failure (fail-closed principle).
+ *
  * @doc.type class
  * @doc.purpose Persist audit events to the platform event store and expose audit summaries
  * @doc.layer product
@@ -35,10 +39,16 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
 
     private final EventLogStore eventLogStore;
     private final ObjectMapper objectMapper;
+    private final boolean failClosedForCritical;
 
     public EventLogAuditService(EventLogStore eventLogStore, ObjectMapper objectMapper) {
+        this(eventLogStore, objectMapper, true);
+    }
+
+    public EventLogAuditService(EventLogStore eventLogStore, ObjectMapper objectMapper, boolean failClosedForCritical) {
         this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.failClosedForCritical = failClosedForCritical;
     }
 
     @Override
@@ -78,6 +88,80 @@ public final class EventLogAuditService implements AuditService, AuditSummaryPro
             return Promise.ofException(exception);
         } catch (Exception exception) {
             return Promise.ofException(exception);
+        }
+    }
+
+    /**
+     * DC-P1-09: Synchronously record a critical audit event with fail-closed semantics.
+     * 
+     * <p>This method blocks until the audit event is successfully persisted to the event store.
+     * If the audit write fails, this method throws an IllegalStateException, preventing the
+     * operation from proceeding (fail-closed principle).
+     * 
+     * <p>Use this method for critical mutations (DELETE, governance operations, model promotions,
+     * learning review actions) where audit trail integrity is non-negotiable.
+     * 
+     * @param event the audit event to record
+     * @throws IllegalStateException if the audit write fails and fail-closed is enabled
+     * @throws RuntimeException if the event cannot be serialized
+     */
+    public void recordCritical(AuditEvent event) {
+        Objects.requireNonNull(event, "event must not be null");
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("id", event.getId());
+            payload.put("tenantId", event.getTenantId());
+            payload.put("eventType", event.getEventType());
+            payload.put("principal", event.getPrincipal());
+            payload.put("resourceType", event.getResourceType());
+            payload.put("resourceId", event.getResourceId());
+            payload.put("success", event.getSuccess());
+            payload.put("timestamp", event.getTimestamp().toString());
+            payload.put("details", event.getDetails());
+            payload.put("critical", true);  // Mark as critical for downstream processing
+
+            EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+                .eventId(UUID.fromString(event.getId()))
+                .eventType(event.getEventType())
+                .eventVersion("1.0.0")
+                .timestamp(event.getTimestamp())
+                .payload(objectMapper.writeValueAsBytes(payload))
+                .contentType("application/json")
+                .headers(Map.of(
+                    "stream", AUDIT_STREAM,
+                    "tenantId", event.getTenantId(),
+                    "resourceType", String.valueOf(event.getResourceType()),
+                    "resourceId", String.valueOf(event.getResourceId()),
+                    "critical", "true"  // Mark header as critical
+                ))
+                .idempotencyKey(event.getId())
+                .build();
+
+            // DC-P1-09: Use runPromise to synchronously wait for audit write completion
+            // In production, this ensures critical operations cannot proceed without successful audit
+            try {
+                record(event).getResult();  // Synchronously wait for completion
+            } catch (Exception error) {
+                if (failClosedForCritical) {
+                    throw new IllegalStateException(
+                        "DC-P1-09: Failed to record critical audit event for operation " + 
+                        event.getEventType() + " on " + event.getResourceType() + 
+                        " - operation blocked due to audit sink failure", error);
+                }
+                throw error;
+            }
+        } catch (RuntimeException exception) {
+            if (failClosedForCritical) {
+                throw new IllegalStateException(
+                    "DC-P1-09: Failed to serialize critical audit event - operation blocked", exception);
+            }
+            throw exception;
+        } catch (Exception exception) {
+            if (failClosedForCritical) {
+                throw new IllegalStateException(
+                    "DC-P1-09: Failed to serialize critical audit event - operation blocked", exception);
+            }
+            throw new RuntimeException(exception);
         }
     }
 

@@ -18,13 +18,24 @@ export interface JSONAdapterOptions {
   includeMetadata?: boolean;
   /** Indentation for JSON (default: 2 spaces) */
   indent?: number;
+  /**
+   * Injectable clock function for the generatedAt timestamp.
+   * Defaults to `() => new Date().toISOString()`.
+   * Provide a deterministic value in tests.
+   */
+  clockFn?: () => string;
 }
 
 export function generateJSONTokens(
   tokens: MaterializedTokens,
   options: JSONAdapterOptions = {},
 ): string {
-  const { formatVersion = '1.0.0', includeMetadata = true, indent = 2 } = options;
+  const {
+    formatVersion = '1.0.0',
+    includeMetadata = true,
+    indent = 2,
+    clockFn = () => new Date().toISOString(),
+  } = options;
 
   const jsonTokens: Record<string, unknown> = {
     formatVersion,
@@ -42,7 +53,7 @@ export function generateJSONTokens(
 
   if (includeMetadata) {
     jsonTokens.metadata = {
-      generatedAt: new Date().toISOString(),
+      generatedAt: clockFn(),
       generator: 'ghatana-ds-generator',
     };
   }

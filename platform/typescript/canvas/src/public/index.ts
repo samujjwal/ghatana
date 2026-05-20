@@ -72,6 +72,18 @@ export {
   unregisterPluginContributions,
 } from '../plugins/plugin-registry.js';
 
+// ── Command model ──────────────────────────────────────────────────────────
+export type {
+  CanvasCommand,
+  CanvasCommandContext,
+  CanvasCommandHost,
+} from '../commands/index.js';
+export {
+  CompositeCommand,
+  CommandTransaction,
+  CanvasCommandExecutor,
+} from '../commands/index.js';
+
 // ── Hybrid canvas ──────────────────────────────────────────────────────────
 export type {
   HybridCanvasProps,
@@ -91,6 +103,8 @@ export {
 } from '../hybrid/hybrid-canvas-controller.js';
 export {
   hybridCanvasStore,
+  createCanvasStore,
+  createHybridCanvasStore,
   useHybridCanvasState,
   useViewport,
   useSelection,
@@ -107,6 +121,11 @@ export {
   useCanvasTool,
 } from '../hybrid/hooks.js';
 export { HybridCanvas } from '../hybrid/HybridCanvas.js';
+export { HybridCanvasProvider } from '../hybrid/HybridCanvasProvider.js';
+export type {
+  HybridCanvasProviderProps,
+  HybridCanvasStore,
+} from '../hybrid/HybridCanvasProvider.js';
 export { FreeformLayer } from '../hybrid/FreeformLayer.js';
 export { GraphLayer } from '../hybrid/GraphLayer.js';
 export { LayerContainer } from '../hybrid/LayerContainer.js';

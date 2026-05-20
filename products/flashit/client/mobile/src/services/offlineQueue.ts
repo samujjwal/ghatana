@@ -1,6 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { monitoring } from "./monitoring";
 
 const QUEUE_KEY = "@flashit:offline_queue";
+
+const queueDiagnostic = (
+  level: "debug" | "info" | "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[OfflineQueue] ${message}`, context);
+};
 
 export interface QueuedItem {
   id: string;
@@ -54,7 +63,7 @@ class OfflineQueueService {
 
       return id;
     } catch (error) {
-      console.error("Error enqueueing item:", error);
+      queueDiagnostic("error", "Error enqueueing item", { error });
       throw error;
     }
   }
@@ -67,7 +76,7 @@ class OfflineQueueService {
       const queueJson = await AsyncStorage.getItem(QUEUE_KEY);
       return queueJson ? JSON.parse(queueJson) : [];
     } catch (error) {
-      console.error("Error getting queue:", error);
+      queueDiagnostic("error", "Error getting queue", { error });
       return [];
     }
   }
@@ -103,7 +112,11 @@ class OfflineQueueService {
         await this.saveQueue(queue);
       }
     } catch (error) {
-      console.error("Error updating item status:", error);
+      queueDiagnostic("error", "Error updating item status", {
+        id,
+        status,
+        error,
+      });
     }
   }
 
@@ -116,7 +129,7 @@ class OfflineQueueService {
       const filteredQueue = queue.filter((item) => item.id !== id);
       await this.saveQueue(filteredQueue);
     } catch (error) {
-      console.error("Error removing item:", error);
+      queueDiagnostic("error", "Error removing item", { id, error });
     }
   }
 
@@ -129,7 +142,7 @@ class OfflineQueueService {
       const activeQueue = queue.filter((item) => item.status !== "completed");
       await this.saveQueue(activeQueue);
     } catch (error) {
-      console.error("Error clearing completed items:", error);
+      queueDiagnostic("error", "Error clearing completed items", { error });
     }
   }
 
@@ -170,7 +183,7 @@ class OfflineQueueService {
     try {
       await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
     } catch (error) {
-      console.error("Error saving queue:", error);
+      queueDiagnostic("error", "Error saving queue", { error });
       throw error;
     }
   }
@@ -182,7 +195,7 @@ class OfflineQueueService {
     try {
       await AsyncStorage.removeItem(QUEUE_KEY);
     } catch (error) {
-      console.error("Error clearing queue:", error);
+      queueDiagnostic("error", "Error clearing queue", { error });
     }
   }
 }

@@ -15,6 +15,9 @@ export default defineConfig({
       '@ghatana/tokens': path.resolve(__dirname, '../tokens/src/index.ts'),
       '@ghatana/theme': path.resolve(__dirname, '../theme/src/index.ts'),
       '@ghatana/i18n': path.resolve(__dirname, '../i18n/src/index.ts'),
+      '@ghatana/artifact-compiler-ts': path.resolve(__dirname, '../artifact-compiler-ts/src/index.ts'),
+      '@ghatana/artifact-contracts': path.resolve(__dirname, '../artifact-contracts/src/index.ts'),
+      '@ghatana/ds-generator': path.resolve(__dirname, '../ds-generator/src/index.ts'),
     },
   },
   test: {

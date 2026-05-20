@@ -1,4 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { monitoring } from '../services/monitoring';
+
+const migrationDiagnostic = (
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    context?: Record<string, unknown>,
+): void => {
+    monitoring.log(level, `[Migration] ${message}`, context);
+};
 
 // Clear old boolean values that were stored as strings
 export const migrateBooleanSettings = async () => {
@@ -15,23 +24,34 @@ export const migrateBooleanSettings = async () => {
             '@settings_uploadQuality'
         ];
 
-        console.log('[Migration] Starting boolean settings migration...');
+        migrationDiagnostic('info', 'Starting boolean settings migration');
 
         for (const key of keysToMigrate) {
             const value = await AsyncStorage.getItem(key);
             if (value !== null) {
                 // Check if it's an old string value
                 if (value === 'true' || value === 'false') {
-                    console.log(`[Migration] Migrating ${key}: ${value} -> ${JSON.parse(value)}`);
+                    const migratedValue = JSON.parse(value) as boolean;
+                    migrationDiagnostic('info', 'Migrating boolean setting', {
+                        key,
+                        value,
+                        migratedValue,
+                    });
                     // Convert to proper JSON boolean
-                    await AsyncStorage.setItem(key, JSON.parse(value));
+                    await AsyncStorage.setItem(key, JSON.stringify(migratedValue));
                 } else {
                     try {
                         // Test if it's already valid JSON
                         JSON.parse(value);
-                        console.log(`[Migration] ${key} already in correct format: ${value}`);
+                        migrationDiagnostic('debug', 'Setting already in correct format', {
+                            key,
+                            value,
+                        });
                     } catch {
-                        console.log(`[Migration] ${key} has unexpected value: ${value}, removing...`);
+                        migrationDiagnostic('warn', 'Setting has unexpected value, removing', {
+                            key,
+                            value,
+                        });
                         await AsyncStorage.removeItem(key);
                     }
                 }
@@ -49,16 +69,20 @@ export const migrateBooleanSettings = async () => {
             if (value !== null) {
                 try {
                     JSON.parse(value);
-                    console.log(`[Migration] Jotai key ${key} already in correct format`);
+                    migrationDiagnostic('debug', 'Jotai key already in correct format', {
+                        key,
+                    });
                 } catch {
-                    console.log(`[Migration] Jotai key ${key} has invalid format, removing...`);
+                    migrationDiagnostic('warn', 'Jotai key has invalid format, removing', {
+                        key,
+                    });
                     await AsyncStorage.removeItem(key);
                 }
             }
         }
 
-        console.log('[Migration] Migration completed');
+        migrationDiagnostic('info', 'Migration completed');
     } catch (error) {
-        console.error('[Migration] Migration failed:', error);
+        migrationDiagnostic('error', 'Migration failed', { error });
     }
 };

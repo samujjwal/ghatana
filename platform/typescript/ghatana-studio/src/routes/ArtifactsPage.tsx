@@ -1,5 +1,8 @@
+import { useState, useCallback } from "react";
 import type { ReactElement } from "react";
+import { useNavigate } from "react-router";
 import { Badge } from "@ghatana/design-system";
+import type { FidelityReport, ResidualIslandReport } from "@ghatana/artifact-contracts";
 import { useStudioLifecycleData } from "../data/StudioLifecycleDataContext";
 import type { StudioTranslationKey } from "../i18n/studioTranslations";
 import { useStudioTranslation } from "../i18n/studioTranslations";
@@ -8,8 +11,201 @@ import {
   formatBytes,
   lifecycleDataBadgeTone,
 } from "./studioLifecycleRouteSupport";
+import {
+  type DecompileJobState,
+  fidelityTrafficLight,
+  fidelitySummaryText,
+} from "../adapters/ArtifactStudioWorkflowAdapter";
 
 type TranslateFn = (key: StudioTranslationKey) => string;
+
+// ============================================================================
+// Decompile Jobs Panel
+// ============================================================================
+
+interface DecompileJobsPanelProps {
+  readonly jobs: readonly DecompileJobState[];
+  readonly onViewFidelity: (report: FidelityReport) => void;
+  readonly onViewResiduals: (report: ResidualIslandReport) => void;
+  readonly onClear: (jobId: string) => void;
+}
+
+function DecompileJobsPanel({
+  jobs,
+  onViewFidelity,
+  onViewResiduals,
+  onClear,
+}: DecompileJobsPanelProps): ReactElement {
+  const navigate = useNavigate();
+
+  if (jobs.length === 0) {
+    return (
+      <article className="studio-card space-y-2">
+        <h3 className="text-base font-semibold text-gray-950">
+          Decompile Jobs
+        </h3>
+        <p className="text-sm text-gray-600">
+          No decompile jobs yet.{" "}
+          <button
+            type="button"
+            onClick={() => void navigate("/import")}
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            Import source files
+          </button>{" "}
+          to start.
+        </p>
+      </article>
+    );
+  }
+
+  return (
+    <article className="studio-card space-y-3" aria-labelledby="decompile-jobs-title">
+      <div className="flex items-center justify-between">
+        <h3 id="decompile-jobs-title" className="text-base font-semibold text-gray-950">
+          Decompile Jobs ({jobs.length})
+        </h3>
+        <button
+          type="button"
+          onClick={() => void navigate("/import")}
+          className="text-sm text-blue-600 underline hover:text-blue-800"
+        >
+          + Import new
+        </button>
+      </div>
+      <ul className="space-y-3" role="list">
+        {jobs.map((job) => {
+          const light = job.result != null ? fidelityTrafficLight(job.result.fidelityReport) : null;
+          const summary = job.result != null ? fidelitySummaryText(job.result.fidelityReport) : null;
+
+          return (
+            <li
+              key={job.jobId}
+              className="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-gray-900 truncate">
+                  {job.fileName}
+                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {job.status === "running" && (
+                    <Badge tone="neutral" variant="soft">Running…</Badge>
+                  )}
+                  {job.status === "complete" && light !== null && (
+                    <span className="text-sm" aria-label={`Fidelity: ${summary ?? ""}`}>
+                      {light} {summary}
+                    </span>
+                  )}
+                  {job.status === "failed" && (
+                    <Badge tone="danger" variant="soft">Error</Badge>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onClear(job.jobId)}
+                    className="text-xs text-gray-400 hover:text-gray-700"
+                    aria-label={`Remove job ${job.fileName}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {job.status === "failed" && (job.result?.errors?.length ?? 0) > 0 && (
+                <p className="text-xs text-red-700">{job.result?.errors?.[0] ?? ""}</p>
+              )}
+
+              {job.status === "complete" && job.result != null && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (job.result?.fidelityReport !== null && job.result?.fidelityReport !== undefined) {
+                        onViewFidelity(job.result.fidelityReport);
+                      }
+                    }}
+                    className="text-xs text-blue-600 underline hover:text-blue-800"
+                  >
+                    View Fidelity Report
+                  </button>
+                  {job.result.residualIslandReport !== null &&
+                    job.result.residualIslandReport.totalCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (job.result?.residualIslandReport !== null && job.result?.residualIslandReport !== undefined) {
+                          onViewResiduals(job.result.residualIslandReport);
+                        }
+                      }}
+                      className="text-xs text-amber-600 underline hover:text-amber-800"
+                    >
+                      {job.result.residualIslandReport.totalCount} Residual Islands
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </article>
+  );
+}
+
+// ============================================================================
+// Residual Review Queue
+// ============================================================================
+
+interface ResidualQueueProps {
+  readonly jobs: readonly DecompileJobState[];
+}
+
+function ResidualReviewQueue({ jobs }: ResidualQueueProps): ReactElement | null {
+  const navigate = useNavigate();
+  const islands = jobs.flatMap((job) => {
+    if (job.result == null || job.result.residualIslandReport === null) return [];
+    return job.result.residualIslandReport.islands.map((island) => ({
+      jobId: job.jobId,
+      fileName: job.fileName,
+      island,
+    }));
+  });
+
+  if (islands.length === 0) return null;
+
+  return (
+    <article className="studio-card space-y-3" aria-labelledby="residual-queue-title">
+      <h3 id="residual-queue-title" className="text-base font-semibold text-amber-900">
+        ⚠ Residual Review Queue ({islands.length})
+      </h3>
+      <p className="text-sm text-amber-800">
+        These code regions could not be fully modelled. Review and resolve before
+        exporting.
+      </p>
+      <ul className="space-y-2" role="list">
+        {islands.map(({ jobId, fileName, island }) => (
+          <li
+            key={`${jobId}-${island.id}`}
+            className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-mono text-amber-900 truncate">
+                {fileName} / {island.id}
+              </span>
+              <button
+                type="button"
+                onClick={() => void navigate("/import")}
+                className="text-xs text-blue-600 underline hover:text-blue-800 shrink-0"
+              >
+                Re-import
+              </button>
+            </div>
+            <p className="text-xs text-amber-800">{island.description}</p>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
 
 function artifactStatusLabel(found: boolean, t: TranslateFn): string {
   return found
@@ -18,6 +214,7 @@ function artifactStatusLabel(found: boolean, t: TranslateFn): string {
 }
 
 export default function ArtifactsPage(): ReactElement {
+  const navigate = useNavigate();
   const lifecycleData = useStudioLifecycleData();
   const t = useStudioTranslation();
   const snapshot = lifecycleData.snapshot;
@@ -35,6 +232,22 @@ export default function ArtifactsPage(): ReactElement {
     snapshot.productUnit?.metadata,
   );
 
+  // Decompile jobs state — populated when user navigates back from ImportDecompilePage
+  const [decompileJobs, setDecompileJobs] = useState<readonly DecompileJobState[]>([]);
+
+  const handleClearJob = useCallback((jobId: string) => {
+    setDecompileJobs((prev) => prev.filter((j) => j.jobId !== jobId));
+  }, []);
+
+  const handleViewFidelity = useCallback((report: FidelityReport) => {
+    void navigate("/fidelity-report", { state: { report } });
+  }, [navigate]);
+
+  const handleViewResiduals = useCallback((_report: ResidualIslandReport) => {
+    // Navigate to import page which shows residuals inline
+    void navigate("/import");
+  }, [navigate]);
+
   return (
     <section className="space-y-6" aria-labelledby="artifacts-title">
       <div className="space-y-2">
@@ -51,6 +264,15 @@ export default function ArtifactsPage(): ReactElement {
           {t("studio.route.artifacts.description")}
         </p>
       </div>
+
+      {/* Decompile workflow panels */}
+      <DecompileJobsPanel
+        jobs={decompileJobs}
+        onViewFidelity={handleViewFidelity}
+        onViewResiduals={handleViewResiduals}
+        onClear={handleClearJob}
+      />
+      <ResidualReviewQueue jobs={decompileJobs} />
 
       {artifactManifestStatus === "missing" ||
       artifactManifestStatus === "unavailable" ||

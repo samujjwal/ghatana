@@ -1,5 +1,6 @@
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { SaveFormat } from "expo-image-manipulator";
 import { optimizeImage, getFileSizeMB } from "../utils/imageOptimization";
+import { monitoring } from "./monitoring";
 
 /**
  * Media Compression Service
@@ -36,6 +37,14 @@ export interface CompressionResult {
   processingTime: number; // Milliseconds
   quality: CompressionQuality;
 }
+
+const mediaCompressionDiagnostic = (
+  level: "info" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[MediaCompression] ${message}`, context);
+};
 
 // Quality presets for images
 const IMAGE_QUALITY_PRESETS = {
@@ -140,7 +149,7 @@ class MediaCompressionService {
       result.processingTime = Date.now() - startTime;
       return result;
     } catch (error) {
-      console.error(`[MediaCompression] Failed to compress ${type}:`, error);
+      mediaCompressionDiagnostic("error", `Failed to compress ${type}`, { error });
       throw error;
     }
   }
@@ -193,10 +202,10 @@ class MediaCompressionService {
 
     // For now, return original URI and indicate backend processing needed
     // In production, upload to backend for compression
-    console.log(
-      "[MediaCompression] Video compression requires backend processing",
-    );
-    console.log("[MediaCompression] Preset:", preset);
+    mediaCompressionDiagnostic("info", "Video compression requires backend processing", {
+      preset,
+      options,
+    });
 
     // Implementation note: Implement backend video compression
     // 1. Upload video to backend compression endpoint
@@ -244,10 +253,10 @@ class MediaCompressionService {
     const preset = AUDIO_QUALITY_PRESETS[quality];
 
     // Similar to video, audio compression needs backend
-    console.log(
-      "[MediaCompression] Audio compression requires backend processing",
-    );
-    console.log("[MediaCompression] Preset:", preset);
+    mediaCompressionDiagnostic("info", "Audio compression requires backend processing", {
+      preset,
+      options,
+    });
 
     // Implementation note: Implement backend audio compression
     // Use FFmpeg to convert to AAC with target bitrate

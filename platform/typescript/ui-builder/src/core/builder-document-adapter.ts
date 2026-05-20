@@ -13,8 +13,8 @@
  * @doc.pattern AdapterPattern
  */
 
-import type { BuilderDocument, ComponentInstance, NodeId } from './types.js';
-import { validateBuilderDocument, type BuilderDocumentDTO } from './builder-document.js';
+import type { ComponentInstance, NodeId, DocumentId, Binding } from './types.js';
+import { validateBuilderDocument, type BuilderDocument } from './builder-document.js';
 
 // ============================================================================
 // API DTO FORMAT
@@ -76,7 +76,7 @@ export interface BuilderDocumentStorageDTO {
   schemaVersion: string;
   owner: string;
   designSystemId?: string;
-  document: BuilderDocumentDTO;
+  document: BuilderDocument;
   indexedFields: {
     author: string;
     createdAt: Date;
@@ -99,12 +99,15 @@ export class BuilderDocumentAdapter {
    * Convert canonical BuilderDocument to API response format.
    */
   toAPIResponse(document: BuilderDocument): BuilderDocumentAPIResponse {
+    // Extra fields (designSystemId/Name) are not in the canonical type but may
+    // be present on documents that pre-date the current schema.
+    const extra = document as unknown as Record<string, unknown>;
     return {
       documentId: document.documentId,
       schemaVersion: document.schemaVersion,
       owner: document.owner,
-      designSystemId: document.designSystemId,
-      designSystemName: document.designSystemName,
+      designSystemId: extra['designSystemId'] as string | undefined,
+      designSystemName: extra['designSystemName'] as string | undefined,
       nodes: Object.entries(document.nodes).map(([id, instance]) => ({
         id,
         contractName: instance.contractName,
@@ -120,14 +123,14 @@ export class BuilderDocumentAdapter {
       layout: {
         type: document.layout.type,
         rootId: document.layout.rootId,
-        nodes: document.layout.nodes,
+        nodes: document.layout.nodes as BuilderDocumentAPIResponse['layout']['nodes'],
       },
       metadata: {
         createdAt: document.metadata.createdAt,
         updatedAt: document.metadata.updatedAt,
         author: document.metadata.author,
         description: document.metadata.description,
-        tags: document.metadata.tags,
+        tags: document.metadata.tags ? [...document.metadata.tags] : undefined,
       },
     };
   }
@@ -144,7 +147,7 @@ export class BuilderDocumentAdapter {
         contractName: node.contractName,
         props: node.props,
         slots: node.slots as Record<string, NodeId[]>,
-        bindings: node.bindings,
+        bindings: node.bindings as Binding[],
         metadata: {
           name: node.metadata.name,
           position: node.metadata.position,
@@ -154,16 +157,16 @@ export class BuilderDocumentAdapter {
     }
 
     return {
-      documentId: api.documentId,
-      schemaVersion: api.schemaVersion,
+      documentId: api.documentId as DocumentId,
+      schemaVersion: api.schemaVersion as '1.0.0',
       owner: api.owner,
-      designSystemId: api.designSystemId,
-      designSystemName: api.designSystemName,
+      root: api.layout.rootId as NodeId,
       nodes,
+      bindings: [],
       layout: {
-        type: api.layout.type,
-        rootId: api.layout.rootId,
-        nodes: api.layout.nodes,
+        type: api.layout.type as BuilderDocument['layout']['type'],
+        rootId: api.layout.rootId as NodeId,
+        nodes: api.layout.nodes as BuilderDocument['layout']['nodes'],
       },
       metadata: {
         createdAt: api.metadata.createdAt,
@@ -183,19 +186,20 @@ export class BuilderDocumentAdapter {
     for (const instance of Object.values(document.nodes)) {
       componentTypes.add(instance.contractName);
     }
+    const extra = document as unknown as Record<string, unknown>;
 
     return {
       _id: document.documentId,
       documentId: document.documentId,
       schemaVersion: document.schemaVersion,
       owner: document.owner,
-      designSystemId: document.designSystemId,
-      document: document as unknown as BuilderDocumentDTO,
+      designSystemId: extra['designSystemId'] as string | undefined,
+      document: document,
       indexedFields: {
-        author: document.metadata.author || document.owner,
+        author: document.metadata.author ?? document.owner,
         createdAt: new Date(document.metadata.createdAt),
         updatedAt: new Date(document.metadata.updatedAt),
-        tags: document.metadata.tags || [],
+        tags: document.metadata.tags ? [...document.metadata.tags] : [],
         nodeCount: Object.keys(document.nodes).length,
         componentTypes: Array.from(componentTypes),
       },
@@ -206,7 +210,7 @@ export class BuilderDocumentAdapter {
    * Convert storage format to canonical BuilderDocument.
    */
   fromStorageDTO(dto: BuilderDocumentStorageDTO): BuilderDocument {
-    const document = dto.document as unknown as BuilderDocument;
+    const document = dto.document;
     const validation = validateBuilderDocument(document);
     
     if (!validation.valid) {
@@ -242,27 +246,28 @@ export class BuilderDocumentAdapter {
    * Migrate document without schema version (pre-0.9.0).
    */
   private migrateLegacyDocument(legacy: Record<string, unknown>): BuilderDocument {
-    // Add missing fields with defaults
-    return {
-      documentId: (legacy.documentId as string) || crypto.randomUUID(),
-      schemaVersion: '1.0.0',
-      owner: (legacy.owner as string) || 'system',
-      designSystemId: legacy.designSystemId as string | undefined,
-      designSystemName: legacy.designSystemName as string | undefined,
-      nodes: legacy.nodes as Record<NodeId, ComponentInstance> || {},
-      layout: legacy.layout as BuilderDocument['layout'] || {
-        type: 'flex',
-        rootId: 'root',
-        nodes: {
-          root: { type: 'root', children: [] },
-        },
+    const legacyMeta = (legacy['metadata'] ?? {}) as Record<string, unknown>;
+    const defaultLayout: BuilderDocument['layout'] = {
+      type: 'flex',
+      rootId: 'root' as NodeId,
+      nodes: {
+        root: { id: 'root' as NodeId, type: 'root', children: [] },
       },
+    };
+    return {
+      documentId: ((legacy['documentId'] as string | undefined) ?? crypto.randomUUID()) as DocumentId,
+      schemaVersion: '1.0.0',
+      owner: (legacy['owner'] as string | undefined) ?? 'system',
+      root: 'root' as NodeId,
+      nodes: (legacy['nodes'] as Record<NodeId, ComponentInstance> | undefined) ?? {},
+      bindings: (legacy['bindings'] as Binding[] | undefined) ?? [],
+      layout: (legacy['layout'] as BuilderDocument['layout'] | undefined) ?? defaultLayout,
       metadata: {
-        createdAt: (legacy.metadata?.createdAt as string) || new Date().toISOString(),
-        updatedAt: (legacy.metadata?.updatedAt as string) || new Date().toISOString(),
-        author: legacy.metadata?.author as string,
-        description: legacy.metadata?.description as string,
-        tags: legacy.metadata?.tags as string[] | undefined,
+        createdAt: (legacyMeta['createdAt'] as string | undefined) ?? new Date().toISOString(),
+        updatedAt: (legacyMeta['updatedAt'] as string | undefined) ?? new Date().toISOString(),
+        author: legacyMeta['author'] as string | undefined,
+        description: legacyMeta['description'] as string | undefined,
+        tags: legacyMeta['tags'] as string[] | undefined,
       },
     };
   }
@@ -271,23 +276,24 @@ export class BuilderDocumentAdapter {
    * Migrate from schema version 0.9.0 to 1.0.0.
    */
   private migrateFrom09(legacy: Record<string, unknown>): BuilderDocument {
-    const nodes = legacy.nodes as Record<NodeId, ComponentInstance>;
+    const rawNodes = (legacy['nodes'] ?? {}) as Record<string, ComponentInstance>;
     
-    // Ensure each node has required metadata fields
-    for (const node of Object.values(nodes)) {
-      if (!node.metadata) {
-        node.metadata = {};
-      }
-      if (!node.metadata.locked) {
-        node.metadata.locked = false;
-      }
-      if (!node.metadata.hidden) {
-        node.metadata.hidden = false;
-      }
+    // Ensure each node has required metadata fields (non-mutating)
+    const migratedNodes: Record<NodeId, ComponentInstance> = {};
+    for (const [nodeId, node] of Object.entries(rawNodes)) {
+      migratedNodes[nodeId as NodeId] = {
+        ...node,
+        metadata: {
+          locked: false,
+          hidden: false,
+          ...node.metadata,
+        },
+      };
     }
 
     return {
       ...legacy,
+      nodes: migratedNodes,
       schemaVersion: '1.0.0',
     } as BuilderDocument;
   }
@@ -350,8 +356,10 @@ export class BuilderDocumentAdapter {
       ...original,
       nodes: { ...edited.nodes },
       layout: { ...edited.layout },
-      metadata: { ...edited.metadata },
-      updatedAt: new Date().toISOString(),
+      metadata: {
+        ...edited.metadata,
+        updatedAt: new Date().toISOString(),
+      },
     };
   }
 }

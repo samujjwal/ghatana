@@ -1,5 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createFlashitAtoms } from "@flashit/shared";
+import { monitoring } from "../services/monitoring";
+
+const localAtomsDiagnostic = (message: string, error: unknown): void => {
+  monitoring.log("error", `[LocalAtoms] ${message}`, { error });
+};
 
 const storageAdapter = {
   getItem: async (key: string) => {
@@ -15,7 +20,7 @@ const storageAdapter = {
         return value;
       }
     } catch (error) {
-      console.error("AsyncStorage getItem error:", error);
+      localAtomsDiagnostic("AsyncStorage getItem error", error);
       return null;
     }
   },
@@ -25,14 +30,14 @@ const storageAdapter = {
         typeof value === "string" ? value : JSON.stringify(value);
       await AsyncStorage.setItem(key, serializedValue);
     } catch (error) {
-      console.error("AsyncStorage setItem error:", error);
+      localAtomsDiagnostic("AsyncStorage setItem error", error);
     }
   },
   removeItem: async (key: string) => {
     try {
       await AsyncStorage.removeItem(key);
     } catch (error) {
-      console.error("AsyncStorage removeItem error:", error);
+      localAtomsDiagnostic("AsyncStorage removeItem error", error);
     }
   },
 };

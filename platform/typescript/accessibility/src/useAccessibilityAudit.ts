@@ -5,6 +5,26 @@ import { AccessibilityAuditor } from './AccessibilityAuditor';
 import type { AccessibilityReport } from './types';
 import type { RunOptions } from 'axe-core';
 
+const emitAccessibilityAuditHookDiagnostic = (
+  message: string,
+  error: unknown,
+): void => {
+  if (typeof globalThis.dispatchEvent !== 'function' || typeof CustomEvent === 'undefined') {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent('ghatana:accessibility-audit-diagnostic', {
+      detail: {
+        level: 'error',
+        message,
+        context: { error },
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  );
+};
+
 /**
  *
  */
@@ -60,7 +80,7 @@ export function useAccessibilityAudit({
       onComplete?.(result);
       return result;
     } catch (err) {
-      console.error('Accessibility audit failed:', err);
+      emitAccessibilityAuditHookDiagnostic('Accessibility audit failed', err);
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
       onError?.(error);
@@ -87,7 +107,7 @@ export function useAccessibilityAudit({
           }
         }
       } catch (err) {
-        console.error('Failed to initialize AccessibilityAuditor:', err);
+        emitAccessibilityAuditHookDiagnostic('Failed to initialize AccessibilityAuditor', err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error(String(err)));
           onError?.(err instanceof Error ? err : new Error(String(err)));

@@ -79,11 +79,15 @@ export function importFromJson(
     };
   }
 
+  // Validate canonical schema structure: schemaVersion + nodes as Record.
+  // The legacy rootNodes field is no longer part of the canonical schema.
   if (
     typeof parsed !== 'object' ||
     parsed === null ||
-    !('rootNodes' in parsed) ||
-    !Array.isArray((parsed as Record<string, unknown>)['rootNodes'])
+    !('schemaVersion' in parsed) ||
+    !('nodes' in parsed) ||
+    typeof (parsed as Record<string, unknown>)['nodes'] !== 'object' ||
+    Array.isArray((parsed as Record<string, unknown>)['nodes'])
   ) {
     return {
       status: 'failed',
@@ -91,22 +95,8 @@ export function importFromJson(
       addedNodeIds: [],
       conflicts: [],
       fidelity: { canRoundTrip: false, lossPoints: [], confidence: 0 },
-      errorMessage: 'JSON does not look like a BuilderDocument — missing rootNodes',
-    };
-  }
-
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    !('nodes' in parsed)
-  ) {
-    return {
-      status: 'failed',
-      document: existing,
-      addedNodeIds: [],
-      conflicts: [],
-      fidelity: { canRoundTrip: false, lossPoints: [], confidence: 0 },
-      errorMessage: 'JSON does not look like a BuilderDocument — missing nodes',
+      errorMessage:
+        'JSON does not look like a canonical BuilderDocument — expected schemaVersion and nodes as Record',
     };
   }
 
@@ -114,19 +104,52 @@ export function importFromJson(
   const rawNodes = raw['nodes'] as Record<string, unknown>;
   const addedIds: NodeId[] = [];
 
-  // Import without immer to avoid complex type compatibility issues
-  // Import is a merge operation, not a mutation of existing state
-  // Use plain object for construction to avoid readonly/mutable array mismatch
-  const updated: Record<string, unknown> = {
+  // Build a typed mutable copy of the nodes record.
+  // Incoming JSON nodes are cast as ComponentInstance — a valid assumption for
+  // canonical BuilderDocument JSON produced by serializeBuilderDocument().
+  const mergedNodes: Record<string, ComponentInstance> = { ...existing.nodes };
+
+  for (const [id, node] of Object.entries(rawNodes)) {
+    if (!(id in mergedNodes)) {
+      mergedNodes[id] = node as ComponentInstance;
+      addedIds.push(id as NodeId);
+    }
+  }
+
+  // Build a typed copy of the layout with merged root children.
+  const mergedLayoutNodes = { ...existing.layout.nodes } as Record<
+    string,
+    { id: string; type: 'root' | 'container' | 'leaf'; children?: string[] }
+  >;
+
+  if ('layout' in raw && typeof raw.layout === 'object' && raw.layout !== null) {
+    const layout = raw.layout as Record<string, unknown>;
+    if ('rootId' in layout && 'nodes' in layout && typeof layout.rootId === 'string') {
+      const importedLayoutNodes = layout.nodes as Record<string, unknown>;
+      const importedRootNode = importedLayoutNodes[layout.rootId] as Record<string, unknown> | undefined;
+
+      if (importedRootNode && Array.isArray(importedRootNode.children)) {
+        const importedRootChildren = importedRootNode.children as string[];
+        const existingRootNode = mergedLayoutNodes[existing.layout.rootId];
+
+        if (existingRootNode) {
+          const existingChildren = existingRootNode.children ?? [];
+          const newChildren = importedRootChildren.filter((id) => !existingChildren.includes(id));
+          mergedLayoutNodes[existing.layout.rootId] = {
+            ...existingRootNode,
+            children: [...existingChildren, ...newChildren],
+          };
+        }
+      }
+    }
+  }
+
+  const mergedDocument: BuilderDocument = {
     ...existing,
-    nodes: {
-      ...existing.nodes,
-    },
+    nodes: mergedNodes,
     layout: {
       ...existing.layout,
-      nodes: {
-        ...existing.layout.nodes,
-      },
+      nodes: mergedLayoutNodes as typeof existing.layout.nodes,
     },
     metadata: {
       ...existing.metadata,
@@ -134,46 +157,9 @@ export function importFromJson(
     },
   };
 
-  // Import nodes using canonical Record structure
-  for (const [id, node] of Object.entries(rawNodes)) {
-    if (!(id in (updated.nodes as Record<string, unknown>))) {
-      (updated.nodes as Record<string, unknown>)[id] = node;
-      addedIds.push(id as NodeId);
-    }
-  }
-
-  // Handle root children from layout structure (canonical)
-  if ('layout' in raw && typeof raw.layout === 'object' && raw.layout !== null) {
-    const layout = raw.layout as Record<string, unknown>;
-    if ('rootId' in layout && 'nodes' in layout) {
-      const rootId = layout.rootId as string;
-      const layoutNodes = layout.nodes as Record<string, unknown>;
-      const rootLayoutNode = layoutNodes[rootId] as Record<string, unknown>;
-
-      if (rootLayoutNode && 'children' in rootLayoutNode && Array.isArray(rootLayoutNode.children)) {
-        const importedRootChildren = rootLayoutNode.children as NodeId[];
-        const updatedLayout = updated.layout as Record<string, unknown>;
-        const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
-        const currentRootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
-
-        if (currentRootLayoutNode) {
-          const newRootChildren = importedRootChildren.filter(
-            (id) => !((currentRootLayoutNode.children as NodeId[] | undefined)?.includes(id))
-          );
-          currentRootLayoutNode.children = [
-            ...(currentRootLayoutNode.children as NodeId[] | undefined ?? []),
-            ...newRootChildren,
-          ];
-        }
-      }
-    }
-  }
-
   return {
     status: 'clean',
-    // Cast through unknown to handle readonly/mutable array mismatch
-    // External JSON has mutable arrays, canonical schema uses readonly
-    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
+    document: attachBuilderDocumentCompatibility(mergedDocument),
     addedNodeIds: addedIds,
     conflicts: [],
     fidelity: { canRoundTrip: true, lossPoints: [], confidence: 1 },
@@ -344,14 +330,31 @@ export function importFromTsx(
     });
   }
 
-  // Import without immer to avoid complex type compatibility issues
-  // Use plain object for construction to avoid readonly/mutable array mismatch
-  const updated: Record<string, unknown> = {
+  // Build typed document merging imported TSX components into the existing document.
+  const mergedNodesForTsx: Record<string, ComponentInstance> = { ...existing.nodes };
+  const mergedLayoutNodesForTsx = { ...existing.layout.nodes } as Record<
+    string,
+    { id: string; type: 'root' | 'container' | 'leaf'; children?: string[] }
+  >;
+
+  for (const node of insertedComponents) {
+    mergedNodesForTsx[node.id] = node;
+    // Add to root layout children (canonical structure)
+    const rootNode = mergedLayoutNodesForTsx[existing.layout.rootId];
+    if (rootNode) {
+      mergedLayoutNodesForTsx[existing.layout.rootId] = {
+        ...rootNode,
+        children: [...(rootNode.children ?? []), node.id],
+      };
+    }
+  }
+
+  const mergedDocForTsx: BuilderDocument = {
     ...existing,
-    nodes: { ...existing.nodes },
+    nodes: mergedNodesForTsx,
     layout: {
       ...existing.layout,
-      nodes: { ...existing.layout.nodes },
+      nodes: mergedLayoutNodesForTsx as typeof existing.layout.nodes,
     },
     metadata: {
       ...existing.metadata,
@@ -359,24 +362,9 @@ export function importFromTsx(
     },
   };
 
-  for (const node of insertedComponents) {
-    (updated.nodes as Record<string, unknown>)[node.id] = node;
-    // Add to root layout children (canonical structure)
-    const updatedLayout = updated.layout as Record<string, unknown>;
-    const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
-    const rootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
-    if (rootLayoutNode) {
-      rootLayoutNode.children = [
-        ...(rootLayoutNode.children as NodeId[] | undefined ?? []),
-        node.id,
-      ];
-    }
-  }
-
   return {
     status: conflicts.length > 0 ? 'review-required' : 'clean',
-    // Cast through unknown to handle readonly/mutable array mismatch
-    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
+    document: attachBuilderDocumentCompatibility(mergedDocForTsx),
     addedNodeIds: addedIds,
     conflicts,
     fidelity: {
@@ -441,14 +429,31 @@ export function importFromHtml(
     });
   }
 
-  // Import without immer to avoid complex type compatibility issues
-  // Use plain object for construction to avoid readonly/mutable array mismatch
-  const updated: Record<string, unknown> = {
+  // Build typed document merging imported HTML components into the existing document.
+  const mergedNodesForHtml: Record<string, ComponentInstance> = { ...existing.nodes };
+  const mergedLayoutNodesForHtml = { ...existing.layout.nodes } as Record<
+    string,
+    { id: string; type: 'root' | 'container' | 'leaf'; children?: string[] }
+  >;
+
+  for (const node of insertedComponents) {
+    mergedNodesForHtml[node.id] = node;
+    // Add to root layout children (canonical structure)
+    const rootNode = mergedLayoutNodesForHtml[existing.layout.rootId];
+    if (rootNode) {
+      mergedLayoutNodesForHtml[existing.layout.rootId] = {
+        ...rootNode,
+        children: [...(rootNode.children ?? []), node.id],
+      };
+    }
+  }
+
+  const mergedDocForHtml: BuilderDocument = {
     ...existing,
-    nodes: { ...existing.nodes },
+    nodes: mergedNodesForHtml,
     layout: {
       ...existing.layout,
-      nodes: { ...existing.layout.nodes },
+      nodes: mergedLayoutNodesForHtml as typeof existing.layout.nodes,
     },
     metadata: {
       ...existing.metadata,
@@ -456,24 +461,9 @@ export function importFromHtml(
     },
   };
 
-  for (const node of insertedComponents) {
-    (updated.nodes as Record<string, unknown>)[node.id] = node;
-    // Add to root layout children (canonical structure)
-    const updatedLayout = updated.layout as Record<string, unknown>;
-    const updatedLayoutNodes = updatedLayout.nodes as Record<string, unknown>;
-    const rootLayoutNode = updatedLayoutNodes[updatedLayout.rootId as string] as Record<string, unknown>;
-    if (rootLayoutNode) {
-      rootLayoutNode.children = [
-        ...(rootLayoutNode.children as NodeId[] | undefined ?? []),
-        node.id,
-      ];
-    }
-  }
-
   return {
     status: lossPoints.length > 0 ? 'review-required' : 'clean',
-    // Cast through unknown to handle readonly/mutable array mismatch
-    document: attachBuilderDocumentCompatibility(updated as unknown as BuilderDocument),
+    document: attachBuilderDocumentCompatibility(mergedDocForHtml),
     addedNodeIds: addedIds,
     conflicts: [],
     fidelity: {

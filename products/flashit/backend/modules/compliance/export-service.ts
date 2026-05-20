@@ -19,6 +19,24 @@ import crypto from 'crypto';
 import { S3Client, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+type ExportLogLevel = 'info' | 'warn' | 'error';
+
+const writeExportLog = (
+  level: ExportLogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): void => {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: 'flashit-data-export',
+    message,
+    ...context,
+  };
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify(entry)}\n`);
+};
+
 // Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -358,7 +376,7 @@ export class DataExportService {
       if (encryption?.enabled && encryption.password) {
         // Note: archiver doesn't support password encryption natively
         // In production, use a library like node-7z or implement AES encryption
-        console.warn('Password encryption unavailable in this local');
+        writeExportLog('warn', 'Password encryption unavailable in this local');
       }
 
       // Add all files from source directory
@@ -427,7 +445,10 @@ export class DataExportService {
 
         cleanedCount++;
       } catch (error) {
-        console.error(`Failed to cleanup export ${exportRequest.id}:`, error);
+        writeExportLog('error', 'Failed to cleanup export', {
+          exportId: exportRequest.id,
+          error,
+        });
       }
     }
 
@@ -817,7 +838,11 @@ const exportWorker = new Worker<ExportRequest>(
       };
 
     } catch (error: any) {
-      console.error('Export job failed:', error);
+      writeExportLog('error', 'Export job failed', {
+        exportId: exportRequest.exportId,
+        userId: exportRequest.userId,
+        error: error.message,
+      });
 
       // Update database with failure
       await prisma.dataExportRequest.update({
@@ -840,11 +865,16 @@ const exportWorker = new Worker<ExportRequest>(
 
 // Worker event handlers
 exportWorker.on('completed', (job) => {
-  console.log(`Export job ${job.data.exportId} completed successfully`);
+  writeExportLog('info', 'Export job completed successfully', {
+    exportId: job.data.exportId,
+  });
 });
 
 exportWorker.on('failed', (job, err) => {
-  console.error(`Export job ${job?.data.exportId} failed:`, err);
+  writeExportLog('error', 'Export job failed', {
+    exportId: job?.data.exportId,
+    error: err.message,
+  });
 });
 
 // Schedule cleanup task
@@ -852,16 +882,16 @@ setInterval(async () => {
   try {
     const cleanedCount = await DataExportService.cleanupExpiredExports();
     if (cleanedCount > 0) {
-      console.log(`Cleaned up ${cleanedCount} expired exports`);
+      writeExportLog('info', 'Cleaned up expired exports', { cleanedCount });
     }
   } catch (error) {
-    console.error('Export cleanup failed:', error);
+    writeExportLog('error', 'Export cleanup failed', { error });
   }
 }, 24 * 60 * 60 * 1000); // Run daily
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('Shutting down export worker...');
+  writeExportLog('info', 'Shutting down export worker');
   await exportWorker.close();
   await prisma.$disconnect();
   await redis.quit();

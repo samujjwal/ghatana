@@ -1,6 +1,7 @@
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system/legacy";
 import { Image } from "react-native";
+import { monitoring } from "../services/monitoring";
 
 interface OptimizationOptions {
   maxWidth?: number;
@@ -14,6 +15,10 @@ const DEFAULT_OPTIONS: Required<OptimizationOptions> = {
   maxHeight: 2048,
   quality: 0.9,
   format: SaveFormat.JPEG,
+};
+
+const imageOptimizationDiagnostic = (message: string, error: unknown): void => {
+  monitoring.log("error", `[ImageOptimization] ${message}`, { error });
 };
 
 /**
@@ -70,7 +75,7 @@ export async function optimizeImage(
 
     return result.uri;
   } catch (error) {
-    console.error("Error optimizing image:", error);
+    imageOptimizationDiagnostic("Error optimizing image", error);
     // Return original URI if optimization fails
     return uri;
   }
@@ -145,7 +150,7 @@ export async function getFileSizeMB(uri: string): Promise<number | null> {
     }
     return null;
   } catch (error) {
-    console.error("Error getting file size:", error);
+    imageOptimizationDiagnostic("Error getting file size", error);
     return null;
   }
 }
@@ -162,7 +167,7 @@ export async function imageToBase64(uri: string): Promise<string | null> {
     });
     return base64;
   } catch (error) {
-    console.error("Error converting image to base64:", error);
+    imageOptimizationDiagnostic("Error converting image to base64", error);
     return null;
   }
 }

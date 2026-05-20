@@ -95,6 +95,55 @@ class OpenApiRouteParity_DC_CON_001_Test {
     private static final Pattern OPENAPI_PATH_PATTERN =
             Pattern.compile("^  (/[^:]+):$");
 
+    /**
+     * DC-P1-03: Action Plane routes that are registered under both legacy and canonical paths.
+     * These routes should NOT be normalized - they are distinct route registrations.
+     */
+    private static final Set<String> ACTION_PLANE_ROUTES = Set.of(
+        "/api/v1/action/pipelines",
+        "/api/v1/action/pipelines/:pipelineId",
+        "/api/v1/action/pipelines/:pipelineId/execute",
+        "/api/v1/action/pipelines/:pipelineId/executions",
+        "/api/v1/action/pipelines/:pipelineId/executions/:executionId",
+        "/api/v1/action/pipelines/:pipelineId/executions/:executionId/logs",
+        "/api/v1/action/pipelines/:pipelineId/executions/:executionId/cancel",
+        "/api/v1/action/executions/:executionId",
+        "/api/v1/action/executions/:executionId/logs",
+        "/api/v1/action/executions/:executionId/cancel",
+        "/api/v1/action/executions/:executionId/retry",
+        "/api/v1/action/executions/:executionId/rollback",
+        "/api/v1/action/executions/:executionId/checkpoints",
+        "/api/v1/action/executions/:executionId/restore",
+        "/api/v1/action/memory",
+        "/api/v1/action/memory/:agentId",
+        "/api/v1/action/memory/:agentId/:tier",
+        "/api/v1/action/memory/:agentId/search",
+        "/api/v1/action/memory/:agentId/:memoryId",
+        "/api/v1/action/memory/:agentId/:memoryId/retain",
+        "/api/v1/action/learning/trigger",
+        "/api/v1/action/learning/status",
+        "/api/v1/action/learning/review",
+        "/api/v1/action/learning/review/:reviewId/approve",
+        "/api/v1/action/learning/review/:reviewId/reject",
+        "/api/v1/action/autonomy/level",
+        "/api/v1/action/autonomy/domains",
+        "/api/v1/action/autonomy/domains/:domain",
+        "/api/v1/action/autonomy/logs",
+        "/api/v1/action/autonomy/plan/:actionType",
+        "/api/v1/action/autonomy/feedback-policy",
+        "/api/v1/action/plugins",
+        "/api/v1/action/plugins/:id",
+        "/api/v1/action/plugins/:id/enable",
+        "/api/v1/action/plugins/:id/disable",
+        "/api/v1/action/plugins/:id/upgrade",
+        "/api/v1/action/plugins/marketplace",
+        "/api/v1/action/plugins/:id/sandbox",
+        "/api/v1/action/plugins/:id/validate",
+        "/api/v1/action/plugins/:id/conformance",
+        "/api/v1/action/agents/catalog",
+        "/api/v1/action/agents/catalog/:id"
+    );
+
     @Test
     @DisplayName("every OpenAPI path has a matching runtime route")
     void everyOpenApiPathHasAMatchingRuntimeRoute() throws IOException {
@@ -210,11 +259,26 @@ class OpenApiRouteParity_DC_CON_001_Test {
 
     /**
      * Converts OpenAPI-style path parameters ({paramName}) to ActiveJ colon style (:paramName).
+     * DC-P1-03: Preserves canonical Action Plane namespace - does NOT normalize /api/v1/action/* to /api/v1/*
+     * Canonical /api/v1/action/* routes are preserved as-is without parameter normalization.
      */
     private String normalizeToColonStyle(String path) {
-        return path
-                .replaceFirst("^/api/v1/action/", "/api/v1/")
-                .replaceAll("\\{([^}]+)}", ":$1");
+        // DC-P1-03: Do NOT normalize action routes - they are canonical paths
+        // Check if this is a canonical Action Plane route (starts with /api/v1/action/)
+        if (path.startsWith("/api/v1/action/")) {
+            // Extract the base path without parameters for comparison
+            String basePath = path.replaceAll("\\{[^}]+\\}", "").replaceAll(":[^/]+", "").replaceAll("/$", "");
+            // Check if this base path matches any Action Plane route base
+            for (String actionRoute : ACTION_PLANE_ROUTES) {
+                String actionBasePath = actionRoute.replaceAll(":[^/]+", "").replaceAll("/$", "");
+                if (basePath.startsWith(actionBasePath)) {
+                    // This is an Action Plane route - preserve it exactly as-is
+                    return path;
+                }
+            }
+        }
+        // Non-Action Plane routes: normalize parameters
+        return path.replaceAll("\\{([^}]+)}", ":$1");
     }
 
     /**

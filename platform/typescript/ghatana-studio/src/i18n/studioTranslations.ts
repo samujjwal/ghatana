@@ -6,6 +6,7 @@ export const STUDIO_TRANSLATIONS = {
   "studio.navigation.ideas": "Ideas",
   "studio.navigation.blueprints": "Blueprints",
   "studio.navigation.canvas": "Canvas",
+  "studio.navigation.builder": "Builder",
   "studio.navigation.develop": "Develop",
   "studio.navigation.lifecycle": "Lifecycle",
   "studio.navigation.agents": "Agents",

@@ -35,6 +35,7 @@ import { normalizeRoles, validateRoles } from '@/lib/role-utils';
 
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 const SESSION_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+const AUTH_DIAGNOSTIC_EVENT = 'dmos:auth-diagnostic';
 
 // P0-007: Production environment check using Vite env
 const isProduction = import.meta.env.MODE === 'production';
@@ -43,6 +44,27 @@ const isDevMode = import.meta.env.DEV === true;
 // P0-006: Auth provider configuration from environment
 const AUTH_PROVIDER_ENABLED = import.meta.env.VITE_AUTH_PROVIDER_ENABLED === 'true';
 const AUTH_CALLBACK_PATH = '/auth/callback';
+
+type AuthDiagnosticLevel = 'warn' | 'error';
+
+interface AuthDiagnostic {
+  level: AuthDiagnosticLevel;
+  code: string;
+  message: string;
+  details?: Record<string, string | number | boolean>;
+}
+
+function recordAuthDiagnostic(diagnostic: AuthDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<AuthDiagnostic>(AUTH_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
 
 /** Auth session info from provider token validation */
 interface AuthSessionInfo {
@@ -148,7 +170,12 @@ export function AuthProvider({
 
           if (!response.ok) {
             // P0-008: Fail closed on refresh failure - log user out
-            console.warn('[DMOS] P0-008: Session refresh failed with status:', response.status);
+            recordAuthDiagnostic({
+              level: 'warn',
+              code: 'DMOS_AUTH_REFRESH_FAILED',
+              message: 'Session refresh failed and the user was logged out.',
+              details: { status: response.status },
+            });
             logout();
             return;
           }
@@ -167,12 +194,21 @@ export function AuthProvider({
             }
           } else {
             // P0-008: Invalid refresh response - fail closed
-            console.warn('[DMOS] P0-008: Invalid refresh response from provider');
+            recordAuthDiagnostic({
+              level: 'warn',
+              code: 'DMOS_AUTH_INVALID_REFRESH_RESPONSE',
+              message: 'Auth provider returned an invalid refresh response.',
+            });
             logout();
           }
         } catch (error) {
           // P0-008: Network or parsing error - fail closed
-          console.error('[DMOS] P0-008: Session refresh error:', error);
+          recordAuthDiagnostic({
+            level: 'error',
+            code: 'DMOS_AUTH_REFRESH_ERROR',
+            message: 'Session refresh failed because of a network or parsing error.',
+            details: { error: getErrorMessage(error) },
+          });
           logout();
         }
       } else if (isDevMode) {
@@ -200,7 +236,12 @@ export function AuthProvider({
       // DMOS-P1-12: Validate and normalize roles
       const normalizedRoles = normalizeRoles(newRoles);
       if (!validateRoles(normalizedRoles) && normalizedRoles.length > 0) {
-        console.warn('[DMOS] Invalid roles provided, using empty array:', newRoles);
+        recordAuthDiagnostic({
+          level: 'warn',
+          code: 'DMOS_AUTH_INVALID_ROLES',
+          message: 'Invalid roles were provided during login.',
+          details: { roles: newRoles.join(',') },
+        });
       }
       
       setAuthToken(newToken);
@@ -235,7 +276,11 @@ export function AuthProvider({
       // P0-008: Production with auth provider - trigger the refresh logic
       // The useEffect hook handles the actual refresh call
       // This manual trigger is for explicit refresh requests
-      console.warn('[DMOS] P0-008: Manual refresh called - automatic refresh is handled by useEffect');
+      recordAuthDiagnostic({
+        level: 'warn',
+        code: 'DMOS_AUTH_MANUAL_REFRESH_SKIPPED',
+        message: 'Manual refresh was requested while automatic provider refresh is active.',
+      });
     } else if (isDevMode) {
       // In development only, extend the session expiry
       setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);

@@ -42,7 +42,7 @@ public final class IdempotencyServiceImpl implements IdempotencyService {
         // Simplified implementation without repository
         LOG.info("[DMOS] Idempotency cache miss (no repository): key={} workspace={}",
             idempotencyKey, ctx.getWorkspaceId().getValue());
-        return Promise.of(null);
+        return Promise.of((IdempotentResponse) null);
     }
 
     @Override

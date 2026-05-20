@@ -14,6 +14,7 @@ import { database, SyncQueueRecord } from './database';
 import { momentRepository, Moment } from './momentRepository';
 import { sphereRepository, Sphere } from './sphereRepository';
 import { networkMonitor } from '../services/networkMonitor';
+import { monitoring } from '../services/monitoring';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEYS = {
@@ -58,6 +59,14 @@ interface SyncItem {
   maxRetries: number;
 }
 
+const syncDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[Sync] ${message}`, context);
+};
+
 /**
  * Database Sync Service.
  */
@@ -89,7 +98,7 @@ class DatabaseSyncService {
       }
     });
 
-    console.log('[Sync] Initialized');
+    syncDiagnostic('info', 'Initialized');
   }
 
   /**
@@ -118,7 +127,7 @@ class DatabaseSyncService {
       this.sync();
     }
 
-    console.log('[Sync] Auto-sync started');
+    syncDiagnostic('info', 'Auto-sync started');
   }
 
   /**
@@ -129,7 +138,7 @@ class DatabaseSyncService {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
     }
-    console.log('[Sync] Auto-sync stopped');
+    syncDiagnostic('info', 'Auto-sync stopped');
   }
 
   /**
@@ -195,7 +204,7 @@ class DatabaseSyncService {
       // Notify listeners
       this.notifyListeners(result);
 
-      console.log('[Sync] Completed:', result);
+      syncDiagnostic('info', 'Completed', { result });
     }
 
     return result;
@@ -462,7 +471,7 @@ class DatabaseSyncService {
       const data = await response.json();
       return { success: true, data: Array.isArray(data) ? data : data.items || [] };
     } catch (error) {
-      console.error('[Sync] Failed to fetch from server:', error);
+      syncDiagnostic('error', 'Failed to fetch from server', { error });
       return { success: false };
     }
   }

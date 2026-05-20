@@ -1,6 +1,22 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+const CACHE_DIAGNOSTIC_EVENT = 'dmos:cache-diagnostic';
+
+interface CacheDiagnostic {
+  code: string;
+  message: string;
+  details: Record<string, string>;
+}
+
+function recordCacheDiagnostic(diagnostic: CacheDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<CacheDiagnostic>(CACHE_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
+
 /**
  * P1-032: Cache Invalidation Hook
  *
@@ -143,7 +159,11 @@ export const useCacheInvalidation = () => {
     const rule = invalidationRules.current.find(r => r.mutationType === mutationType);
     
     if (!rule) {
-      console.warn(`[Cache] No invalidation rule found for mutation: ${mutationType}`);
+      recordCacheDiagnostic({
+        code: 'DMOS_CACHE_INVALIDATION_RULE_MISSING',
+        message: 'No invalidation rule found for mutation.',
+        details: { mutationType },
+      });
       return;
     }
 
@@ -432,7 +452,13 @@ export const useStaleWhileRevalidate = (
 
     if (cached && isStale) {
       // Return stale data while revalidating
-      prefetchQueries([key]).catch(console.error);
+      prefetchQueries([key]).catch((error: unknown) => {
+        recordCacheDiagnostic({
+          code: 'DMOS_CACHE_PREFETCH_FAILED',
+          message: error instanceof Error ? error.message : 'Cache prefetch failed.',
+          details: { key: JSON.stringify(key) },
+        });
+      });
       return { data: cached, fromCache: true, stale: true };
     }
 

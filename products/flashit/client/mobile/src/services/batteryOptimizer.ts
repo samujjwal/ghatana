@@ -11,6 +11,7 @@
 import * as Battery from "expo-battery";
 import * as Network from "expo-network";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { monitoring } from "./monitoring";
 
 // ============================================================================
 // Types & Interfaces
@@ -122,6 +123,14 @@ const DEFAULT_CONFIG: BatteryConfig = {
 
 const STORAGE_KEY = "@ghatana/flashit-battery_optimizer";
 
+const batteryOptimizerDiagnostic = (
+  level: "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[BatteryOptimizer] ${message}`, context);
+};
+
 // ============================================================================
 // Battery Optimizer Service
 // ============================================================================
@@ -222,7 +231,7 @@ class BatteryOptimizerService {
         this.updateSettings(newMode);
       }
     } catch (error) {
-      console.warn("Failed to get battery status:", error);
+      batteryOptimizerDiagnostic("warn", "Failed to get battery status", { error });
     }
   }
 
@@ -277,7 +286,7 @@ class BatteryOptimizerService {
       try {
         listener(this.currentSettings);
       } catch (error) {
-        console.error("Battery optimizer listener error:", error);
+        batteryOptimizerDiagnostic("error", "Listener error", { error });
       }
     }
   }
@@ -422,7 +431,7 @@ class BatteryOptimizerService {
         JSON.stringify(this.customOverrides),
       );
     } catch (error) {
-      console.warn("Failed to persist battery overrides:", error);
+      batteryOptimizerDiagnostic("warn", "Failed to persist battery overrides", { error });
     }
   }
 
@@ -436,7 +445,7 @@ class BatteryOptimizerService {
         this.customOverrides = JSON.parse(stored);
       }
     } catch (error) {
-      console.warn("Failed to load battery overrides:", error);
+      batteryOptimizerDiagnostic("warn", "Failed to load battery overrides", { error });
     }
   }
 

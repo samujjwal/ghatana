@@ -12,6 +12,27 @@ import { ImageElement, type ImageProps } from "../elements/image.js";
 import { PipelineNodeElement, type PipelineNodeProps } from "../elements/pipeline-node.js";
 import { themeManager } from "../theme/index.js";
 
+const emitCanvasImportExportDiagnostic = (
+  level: "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  if (typeof globalThis.dispatchEvent !== "function" || typeof CustomEvent === "undefined") {
+    return;
+  }
+
+  globalThis.dispatchEvent(
+    new CustomEvent("canvas-import-export-diagnostic", {
+      detail: {
+        level,
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+      },
+    }),
+  );
+};
+
 export interface ExportOptions {
   format: "png" | "svg" | "json";
   quality?: number;
@@ -96,7 +117,11 @@ export class CanvasExporter {
         try {
           element.render(ctx);
         } catch (error) {
-          console.error("Error rendering element:", error);
+          emitCanvasImportExportDiagnostic("error", "Error rendering element", {
+            error,
+            elementId: element.id,
+            elementType: element.type,
+          });
         }
       }
 
@@ -185,7 +210,10 @@ export class CanvasExporter {
               elements.push(element);
             }
           } catch (error) {
-            console.error("Error importing element:", error);
+            emitCanvasImportExportDiagnostic("error", "Error importing element", {
+              error,
+              elementData,
+            });
           }
         }
 
@@ -334,7 +362,7 @@ export class CanvasExporter {
   private static jsonToElement(data: Record<string, unknown>): CanvasElement | null {
     // Every element requires at minimum: id, xywh, type
     if (!data.id || !data.xywh || !data.type) {
-      console.warn("jsonToElement: skipping element missing required fields (id, xywh, type)", data);
+      emitCanvasImportExportDiagnostic("warn", "Skipping element missing required fields", { data });
       return null;
     }
 
@@ -444,12 +472,17 @@ export class CanvasExporter {
           } as PipelineNodeProps);
 
         default:
-          // Unknown element type — log and skip rather than hard-fail
-          console.warn(`jsonToElement: unsupported element type '${data.type}'; skipping`);
+          // Unknown element type: skip rather than hard-fail.
+          emitCanvasImportExportDiagnostic("warn", "Unsupported element type", {
+            elementType: data.type,
+          });
           return null;
       }
     } catch (err) {
-      console.error(`jsonToElement: failed to construct element type '${data.type}':`, err);
+      emitCanvasImportExportDiagnostic("error", "Failed to construct element", {
+        error: err,
+        elementType: data.type,
+      });
       return null;
     }
   }

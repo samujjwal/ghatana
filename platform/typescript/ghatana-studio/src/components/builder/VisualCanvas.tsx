@@ -12,6 +12,7 @@
 import type { ReactElement } from 'react';
 import { useMemo } from 'react';
 import { HybridCanvas } from '@ghatana/canvas';
+import type { SelectionState } from '@ghatana/canvas';
 import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
 
 export interface VisualCanvasProps {
@@ -115,8 +116,11 @@ export function VisualCanvas({
         onElementsChange={onElementsChange}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onSelectionChange={(selection) => {
-          onSelectionChange(selection.nodeIds as unknown as readonly NodeId[]);
+        onSelectionChange={(selection: SelectionState) => {
+          // Map canvas string node IDs to typed NodeId (which is `string & { __brand: 'NodeId' }`)
+          // The canvas selection.nodeIds are string[] that correspond 1:1 with builder NodeId keys.
+          const nodeIds = selection.nodeIds as NodeId[];
+          onSelectionChange(nodeIds);
         }}
         onViewportChange={() => {}}
         onModeChange={() => {}}

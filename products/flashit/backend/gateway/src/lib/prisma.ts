@@ -11,6 +11,7 @@
 import { PrismaClient } from "../../generated/prisma/index.js";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { systemLogger } from "./logger";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -26,12 +27,14 @@ const createPrismaClient = () => {
     );
   }
 
-  console.log("🔗 Creating Prisma Client with connection string:", connectionString.replace(/:[^:]+@/, ':***@'));
+  systemLogger.info("Creating Prisma Client", {
+    connectionString: connectionString.replace(/:[^:]+@/, ":***@"),
+  });
   
   const pool = new Pool({ connectionString });
   const adapter = new PrismaPg(pool);
 
-  console.log("📦 Initializing PrismaClient with @prisma/adapter-pg...");
+  systemLogger.info("Initializing PrismaClient with PostgreSQL adapter");
 
   try {
     const client = new PrismaClient({
@@ -41,10 +44,10 @@ const createPrismaClient = () => {
           ? ["query", "error", "warn"]
           : ["error"],
     });
-    console.log("✅ PrismaClient initialized successfully with PostgreSQL adapter");
+    systemLogger.info("PrismaClient initialized successfully with PostgreSQL adapter");
     return client;
   } catch (error) {
-    console.error("❌ Failed to initialize PrismaClient:", error instanceof Error ? error.message : error);
+    systemLogger.error("Failed to initialize PrismaClient", error);
     throw error;
   }
 };

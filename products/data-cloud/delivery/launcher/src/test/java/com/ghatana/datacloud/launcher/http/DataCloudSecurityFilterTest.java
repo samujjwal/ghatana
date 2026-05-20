@@ -960,4 +960,259 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             assertThat(status).isEqualTo(403); 
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 9. PRODUCTION PROFILE TENANT ENFORCEMENT (DC-P0-04)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Production profile tenant enforcement")
+    class ProductionProfileTenantTests {
+
+        @Test
+        @DisplayName("production profile requires strictTenantResolution=true")
+        void productionProfile_requiresStrictTenantResolution() {
+            // DC-P0-04: In production profile, strict tenant resolution must be enabled
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(false)  // Violation: should be true in production
+                    .build();
+
+            // validateProductionRequirements should throw IllegalStateException
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+                filter.validateProductionRequirements("production")
+            ).isInstanceOf(IllegalStateException.class)
+             .hasMessageContaining("strictTenantResolution must be true");
+        }
+
+        @Test
+        @DisplayName("production profile rejects tenant from query parameter spoofing")
+        void productionProfile_rejectsTenantQuerySpoofing() {
+            // DC-P0-04: Tenant must come from authenticated identity, not query parameter
+            Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Try to spoof tenant via query parameter
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH + "?tenantId=spoofed-tenant")
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            // Should use authenticated tenant, not query parameter
+            // The filter should ignore the query parameter and use the principal's tenant
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("production profile rejects tenant from header when mismatched with principal")
+        void productionProfile_rejectsMismatchedTenantHeader() {
+            // DC-P0-04: X-Tenant-ID header must match authenticated tenant in production
+            Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Send mismatched tenant header
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "different-tenant")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(403);
+        }
+
+        @Test
+        @DisplayName("production profile allows matching tenant header as compatibility hint")
+        void productionProfile_allowsMatchingTenantHeader() {
+            // DC-P0-04: X-Tenant-ID header is allowed as compatibility hint if it matches
+            Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Send matching tenant header
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("production profile requires audit service")
+        void productionProfile_requiresAuditService() {
+            // DC-P0-04: Audit service must be configured in production
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(null)  // Violation: audit service required in production
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+                filter.validateProductionRequirements("production")
+            ).isInstanceOf(IllegalStateException.class)
+             .hasMessageContaining("AuditService");
+        }
+
+        @Test
+        @DisplayName("production profile requires policy engine")
+        void productionProfile_requiresPolicyEngine() {
+            // DC-P0-04: Policy engine must be configured in production
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(null)  // Violation: policy engine required in production
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+                filter.validateProductionRequirements("production")
+            ).isInstanceOf(IllegalStateException.class)
+             .hasMessageContaining("PolicyEngine");
+        }
+
+        @Test
+        @DisplayName("API key principal tenant mismatch is rejected in production")
+        void productionProfile_rejectsApiKeyTenantMismatch() {
+            // DC-P0-04: API key tenant must match request context
+            Principal principal = new Principal("test-service", List.of("admin"), "api-key-tenant");
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Send request with different tenant in header
+            HttpRequest req = HttpRequest.get("http://localhost" + INTERNAL_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "header-tenant")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(403);
+        }
+
+        @Test
+        @DisplayName("delegated access scenario - support tenant can access with proper claims")
+        void productionProfile_allowsDelegatedAccessWithClaims() {
+            // DC-P0-04: Delegated access (e.g., support team) requires proper claims
+            // Simulate a support principal with delegated access claim
+            Principal supportPrincipal = new Principal("support-user", List.of("support", "delegated_access"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(supportPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            HttpRequest req = get(INTERNAL_PATH);
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(200);
+            verify(auditService).record(any(AuditEvent.class));  // Audit should be emitted for delegated access
+        }
+
+        @Test
+        @DisplayName("missing tenant claim in JWT returns 400 in production")
+        void productionProfile_missingTenantClaimReturns400() {
+            // DC-P0-04: JWT without tenant_id claim should be rejected
+            Principal noTenantPrincipal = new Principal("svc-user", List.of("service"), "");
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(noTenantPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            HttpRequest req = getWithKey(INTERNAL_PATH, VALID_API_KEY);
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
+            assertThat(status).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("staging profile enforces same tenant rules as production")
+        void stagingProfile_enforcesSameTenantRules() {
+            // DC-P0-04: Staging profile should enforce same rules as production
+            Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Staging should also require strict tenant resolution
+            org.assertj.core.api.Assertions.assertThatCode(() -> 
+                filter.validateProductionRequirements("staging")
+            ).doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("sovereign profile enforces same tenant rules as production")
+        void sovereignProfile_enforcesSameTenantRules() {
+            // DC-P0-04: Sovereign profile should enforce same rules as production
+            Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
+            when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .strictTenantResolution(true)
+                    .build();
+
+            // Sovereign should also require strict tenant resolution
+            org.assertj.core.api.Assertions.assertThatCode(() -> 
+                filter.validateProductionRequirements("sovereign")
+            ).doesNotThrowAnyException();
+        }
+    }
 }

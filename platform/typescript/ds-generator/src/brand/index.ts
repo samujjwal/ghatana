@@ -206,6 +206,8 @@ export function applyBrand(
 
 /**
  * Render a BrandedTokens map to CSS custom properties.
+ * Emits all token categories — colors, typography, border-radius, spacing,
+ * elevation, shadow, motion, z-index, and any additional custom properties.
  */
 export function renderBrandToCss(branded: BrandedTokens): string {
   const lines: string[] = [`:root {`];
@@ -225,6 +227,21 @@ export function renderBrandToCss(branded: BrandedTokens): string {
   }
   for (const [key, value] of Object.entries(branded.elevation)) {
     lines.push(`  --elevation-${key}: ${value};`);
+  }
+  if (branded.shadow) {
+    for (const [key, value] of Object.entries(branded.shadow)) {
+      lines.push(`  --shadow-${key}: ${value};`);
+    }
+  }
+  if (branded.motion) {
+    for (const [key, value] of Object.entries(branded.motion)) {
+      lines.push(`  --motion-${key}: ${value};`);
+    }
+  }
+  if (branded.zIndex) {
+    for (const [key, value] of Object.entries(branded.zIndex)) {
+      lines.push(`  --z-index-${key}: ${value};`);
+    }
   }
   for (const [key, value] of Object.entries(branded.customProperties)) {
     lines.push(`  ${key}: ${value};`);

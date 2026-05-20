@@ -14,6 +14,7 @@
     "types": ["node", "react", "react-native"],
     "paths": {
       "@/*": ["./src/*"],
+      "@ghatana/platform-utils": ["../../../../platform/typescript/platform-utils/src/index.ts"],
       "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"],
       "@ghatana/tokens": ["../../../../platform/typescript/tokens/src/index.ts"]
     }

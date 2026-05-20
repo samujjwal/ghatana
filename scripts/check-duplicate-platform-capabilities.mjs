@@ -16,7 +16,7 @@
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, resolve, basename } from 'node:path';
+import { dirname, join, resolve, basename, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -108,6 +108,11 @@ function shouldIgnore(filePath) {
   return IGNORED_SEGMENTS.some(seg => normalized.includes(seg));
 }
 
+function normalizeRepoRelativePath(filePath) {
+  const absolutePath = resolve(repoRoot, filePath);
+  return relative(repoRoot, absolutePath).replace(/\\/g, '/');
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // File walking
 // ──────────────────────────────────────────────────────────────────────────────
@@ -147,13 +152,14 @@ function listProductFiles(ext) {
       .split('\n')
       .map(l => l.trim())
       .filter(Boolean)
+      .map(normalizeRepoRelativePath)
       .filter(l => !shouldIgnore(l));
   }
 
   // Fallback: walk manually
   const results = [];
   walkDirectory(join(repoRoot, 'products'), file => {
-    if (file.endsWith(`.${ext}`)) results.push(file.replace(repoRoot + '/', ''));
+    if (file.endsWith(`.${ext}`)) results.push(normalizeRepoRelativePath(file));
   });
   return results;
 }
@@ -164,11 +170,16 @@ function listProductJsonFiles() {
     encoding: 'utf8',
   });
   if (rg.status === 0) {
-    return rg.stdout.split('\n').map(l => l.trim()).filter(Boolean).filter(l => !shouldIgnore(l));
+    return rg.stdout
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(normalizeRepoRelativePath)
+      .filter(l => !shouldIgnore(l));
   }
   const results = [];
   walkDirectory(join(repoRoot, 'products'), file => {
-    if (file.endsWith('.schema.json')) results.push(file.replace(repoRoot + '/', ''));
+    if (file.endsWith('.schema.json')) results.push(normalizeRepoRelativePath(file));
   });
   return results;
 }
@@ -193,7 +204,7 @@ function buildExceptionSet(exceptions) {
   const paths = new Set();
   for (const entry of exceptions) {
     if (Array.isArray(entry.affectedPaths)) {
-      for (const p of entry.affectedPaths) paths.add(p);
+      for (const p of entry.affectedPaths) paths.add(normalizeRepoRelativePath(p));
     }
   }
   return paths;

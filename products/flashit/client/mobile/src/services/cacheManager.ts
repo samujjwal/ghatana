@@ -12,9 +12,18 @@
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { database } from "../database";
+import { monitoring } from "./monitoring";
 
 type AsyncStorageWithBulkRemove = typeof AsyncStorage & {
   multiRemove?: (keys: string[]) => Promise<void>;
+};
+
+const cacheDiagnostic = (
+  level: "debug" | "info" | "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[CacheManager] ${message}`, context);
 };
 
 /**
@@ -61,7 +70,7 @@ class CacheManagerService {
         await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
       }
     }
-    console.log("[CacheManager] Initialized");
+    cacheDiagnostic("info", "Initialized");
   }
 
   /**
@@ -161,10 +170,7 @@ class CacheManagerService {
 
       return totalSize;
     } catch (error) {
-      console.error(
-        `[CacheManager] Error reading directory ${dirPath}:`,
-        error,
-      );
+      cacheDiagnostic("error", "Error reading directory", { dirPath, error });
       return 0;
     }
   }
@@ -186,6 +192,9 @@ class CacheManagerService {
 
       return totalSize * 2; // Approximate (characters → bytes)
     } catch (error) {
+      cacheDiagnostic("warn", "Unable to estimate AsyncStorage size", {
+        error,
+      });
       return 0;
     }
   }
@@ -215,12 +224,16 @@ class CacheManagerService {
         await FileSystem.deleteAsync(dir, { idempotent: true });
         await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
         cleared += size;
-        console.log(`[CacheManager] Cleared ${name}: ${this.formatSize(size)}`);
+        cacheDiagnostic("info", "Cleared directory", {
+          name,
+          size,
+          formattedSize: this.formatSize(size),
+        });
       }
 
       return { success: true, cleared };
     } catch (error) {
-      console.error("[CacheManager] Clear error:", error);
+      cacheDiagnostic("error", "Clear error", { error });
       return { success: false, cleared };
     }
   }
@@ -241,7 +254,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error("[CacheManager] Clear media cache error:", error);
+      cacheDiagnostic("error", "Clear media cache error", { error });
       return { success: false, cleared };
     }
   }
@@ -262,7 +275,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error("[CacheManager] Clear temp files error:", error);
+      cacheDiagnostic("error", "Clear temp files error", { error });
       return { success: false, cleared };
     }
   }
@@ -283,7 +296,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error("[CacheManager] Clear old files error:", error);
+      cacheDiagnostic("error", "Clear old files error", { error });
       return { success: false, cleared };
     }
   }
@@ -320,6 +333,10 @@ class CacheManagerService {
 
       return cleared;
     } catch (error) {
+      cacheDiagnostic("warn", "Clear old files in directory error", {
+        dirPath,
+        error,
+      });
       return 0;
     }
   }
@@ -346,7 +363,7 @@ class CacheManagerService {
 
       return { success: true, count: queueKeys.length };
     } catch (error) {
-      console.error("[CacheManager] Clear offline queue error:", error);
+      cacheDiagnostic("error", "Clear offline queue error", { error });
       return { success: false, count: 0 };
     }
   }
@@ -382,7 +399,7 @@ class CacheManagerService {
     const needsCleaning = await this.needsCleaning(thresholdMB);
 
     if (needsCleaning) {
-      console.log("[CacheManager] Auto-cleaning cache...");
+      cacheDiagnostic("info", "Auto-cleaning cache", { thresholdMB });
 
       // First, clear old files
       await this.clearOldFiles(7);
@@ -397,7 +414,7 @@ class CacheManagerService {
         await this.clearMediaCache();
       }
 
-      console.log("[CacheManager] Auto-clean completed");
+      cacheDiagnostic("info", "Auto-clean completed", { thresholdMB });
     }
   }
 }

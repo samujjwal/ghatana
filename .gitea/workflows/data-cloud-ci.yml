@@ -158,6 +158,16 @@ jobs:
         run: pnpm test --passWithNoTests
         working-directory: products/data-cloud/delivery/ui
 
+      - name: Run UI E2E tests (production gate)
+        run: pnpm test:e2e --passWithNoTests
+        working-directory: products/data-cloud/delivery/ui
+        # P2-2: E2E tests are critical production gates for user journey validation
+
+      - name: Run accessibility audit (a11y)
+        run: pnpm test:e2e a11y.spec.ts --passWithNoTests
+        working-directory: products/data-cloud/delivery/ui
+        # P2-2: Accessibility is a production gate for inclusive design
+
   # ---------------------------------------------------------------------------
   # Job 3: Docker build
   # ---------------------------------------------------------------------------

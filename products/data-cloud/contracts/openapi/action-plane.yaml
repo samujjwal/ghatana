@@ -1,27 +1,47 @@
 openapi: 3.0.3
 info:
-  title: Ghatana AEP (Agentic Event Processor) API
+  title: Data Cloud Action Plane API
   description: |
-    REST API for the Agentic Event Processor (AEP).
+    REST API for the Data Cloud Action Plane.
 
-    AEP provides an agentic orchestration runtime for event-driven execution,
-    including pattern detection, anomaly analysis, time-series forecasting,
-    and pipeline governance/operation surfaces.
-    All multi-tenant endpoints accept an `X-Tenant-Id` header or
-    a `tenantId` query parameter for tenant isolation.
+    The Action Plane is the runtime implementation behind Data Cloud for agentic
+    orchestration, including pattern detection, anomaly analysis, time-series
+    forecasting, pipeline execution, and governance/operation surfaces.
+
+    **AEP Compatibility Note:** This contract replaces the legacy AEP (Agentic Event
+    Processor) standalone product contract. AEP is now the runtime implementation
+    within Data Cloud Action Plane, not a standalone product.
+
+    ## Authentication
+    All endpoints require authenticated identity with a valid bearer token (JWT) or API key.
+    The tenant identity is derived from the authenticated principal's token claims.
+
+    ### Production Tenant Identity (Strict Mode)
+    In production, staging, and sovereign profiles:
+    - Tenant is **always** derived from authenticated identity (JWT `tenant_id` claim or API key tenant)
+    - The `X-Tenant-ID` header and `tenantId` query parameter are treated as **compatibility hints only**
+    - If provided, these hints must match the authenticated tenant; mismatch results in `403 Forbidden`
+    - Missing tenant claim in authentication results in `400 Bad Request`
+
+    ### Local/Development Tenant Identity
+    In local, test, and embedded profiles:
+    - `X-Tenant-ID` header or `tenantId` query parameter may be used for convenience
+    - A fallback tenant (`"default"`) is used when no tenant is specified
   version: 1.0.0
   contact:
-    name: Ghatana Platform Team
+    name: Data Cloud Platform Team
     url: https://github.com/samujjwal/ghatana
   license:
-    name: Apache 2.0
-    url: https://www.apache.org/licenses/LICENSE-2.0.html
+    name: Proprietary — Ghatana Internal
+    identifier: LicenseRef-Ghatana-Proprietary
 
 servers:
-  - url: http://localhost:8090
-    description: Local development (AEP standalone — canonical Java backend on port 8090)
-  - url: https://aep.ghatana.local
-    description: Production AEP
+  - url: http://localhost:8082
+    description: Local development (Data Cloud standalone launcher)
+  - url: https://data-cloud-staging.ghatana.internal
+    description: Data Cloud Staging
+  - url: https://data-cloud.ghatana.internal
+    description: Data Cloud Production
 
 tags:
   - name: Health
@@ -63,6 +83,7 @@ tags:
 
 security:
   - bearerAuth: []
+  - apiKeyAuth: []
 
 paths:
   # ========== Health Endpoints ==========
@@ -82,7 +103,7 @@ paths:
               example:
                 status: UP
                 timestamp: "2026-02-03T12:00:00Z"
-                service: aep
+                service: data-cloud-action-plane
 
   /ready:
     get:
@@ -132,9 +153,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/InfoResponse'
               example:
-                service: AEP
+                service: Data Cloud Action Plane
                 version: 1.0.0-SNAPSHOT
-                description: Agentic Event Processor
+                description: Data Cloud Action Plane Runtime
                 timestamp: "2026-02-03T12:00:00Z"
 
   /metrics:
@@ -197,7 +218,6 @@ paths:
             schema:
               $ref: '#/components/schemas/EventRequest'
             example:
-              tenantId: acme-corp
               type: user.login
               payload:
                 userId: user-123
@@ -325,7 +345,6 @@ paths:
             schema:
               $ref: '#/components/schemas/PatternCreateRequest'
             example:
-              tenantId: acme-corp
               name: Brute Force Login
               description: Detects rapid successive failed login attempts
               type: ANOMALY
@@ -490,7 +509,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AnomalyDetectionRequest'
             example:
-              tenantId: acme-corp
               events:
                 - type: login.failed
                   payload: { userId: user-123, ip: "10.0.0.1" }
@@ -566,7 +584,6 @@ paths:
             schema:
               $ref: '#/components/schemas/ForecastRequest'
             example:
-              tenantId: acme-corp
               metric: cpu.utilization
               points:
                 - timestamp: "2026-02-03T11:00:00Z"
@@ -2703,22 +2720,46 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: |
+        JWT bearer token with required `tenant_id` claim.
+        The tenant identity is extracted from the `tenant_id` claim.
+        Tokens without this claim are rejected.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key for machine-to-machine authentication.
+        The tenant identity is associated with the API key at creation time.
+
   parameters:
     TenantIdHeader:
       name: X-Tenant-Id
       in: header
-      description: Tenant identifier for multi-tenant isolation
+      description: |
+        **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+
+        Tenant identifier for multi-tenant isolation. In production/staging/sovereign profiles,
+        tenant is derived from authenticated identity. If provided, this value must match the
+        authenticated tenant or the request is rejected. In local/test/embedded profiles, this
+        may be used for convenience when authentication does not include tenant claims.
       schema:
         type: string
-        default: default
+      deprecated: true
 
     TenantIdQuery:
       name: tenantId
       in: query
-      description: Tenant identifier
+      description: |
+        **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+
+        Tenant identifier for multi-tenant isolation. In production/staging/sovereign profiles,
+        tenant is derived from authenticated identity. If provided, this value must match the
+        authenticated tenant or the request is rejected. In local/test/embedded profiles, this
+        may be used for convenience when authentication does not include tenant claims.
       schema:
         type: string
-        default: default
+      deprecated: true
 
     UserIdHeader:
       name: X-User-Id

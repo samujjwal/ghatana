@@ -11,6 +11,7 @@
 
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
+import { monitoring } from '../services/monitoring';
 
 /**
  * Deep link configuration.
@@ -50,6 +51,14 @@ const ROUTE_MAPPINGS: Record<string, string> = {
   '/search': '/search',
 };
 
+const deepLinkingDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[DeepLinking] ${message}`, context);
+};
+
 /**
  * Deep Linking Service.
  */
@@ -82,7 +91,7 @@ class DeepLinkingService {
       }
     });
 
-    console.log('[DeepLinking] Initialized');
+    deepLinkingDiagnostic('info', 'Initialized');
   }
 
   /**
@@ -110,7 +119,7 @@ class DeepLinkingService {
         isValid: true,
       };
     } catch (error) {
-      console.error('[DeepLinking] Parse error:', error);
+      deepLinkingDiagnostic('error', 'Parse error', { error });
       return {
         path: '/',
         params: {},
@@ -123,7 +132,7 @@ class DeepLinkingService {
    * Handle a deep link.
    */
   handleDeepLink(link: ParsedDeepLink): void {
-    console.log('[DeepLinking] Handling:', link.path);
+    deepLinkingDiagnostic('info', 'Handling link', { path: link.path });
 
     // Notify listeners
     this.listeners.forEach((listener) => listener(link));
@@ -138,10 +147,10 @@ class DeepLinkingService {
   navigateTo(path: string, params?: Record<string, string>): void {
     try {
       // Map the path to expo-router format
-      const routerPath = this.mapPath(path, params);
-      router.push(routerPath as any);
+      const routerPath = this.mapPath(path, params) as Parameters<typeof router.push>[0];
+      router.push(routerPath);
     } catch (error) {
-      console.error('[DeepLinking] Navigation error:', error);
+      deepLinkingDiagnostic('error', 'Navigation error', { error });
       // Fallback to home
       router.push('/');
     }

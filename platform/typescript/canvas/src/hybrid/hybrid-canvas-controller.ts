@@ -49,6 +49,9 @@ import {
   getBoundingRect,
   calculateZoomToFit,
 } from "./coordinates";
+import type { CanvasCommand } from "../commands/types.js";
+import { CanvasCommandExecutor } from "../commands/executor.js";
+import { CommandTransaction } from "../commands/types.js";
 
 // ============================================================================
 // DEPENDENCY INTERFACES
@@ -78,12 +81,11 @@ export interface IdProvider {
 }
 
 /**
- * Default ID provider using timestamp + random.
- * Note: This is non-deterministic and should be replaced with
- * a proper UUID generator in production.
+ * Default ID provider using `crypto.randomUUID()`.
+ * Produces stable, globally-unique identifiers suitable for production use.
  */
 export const defaultIdProvider: IdProvider = {
-  generate: (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+  generate: (prefix: string) => `${prefix}-${crypto.randomUUID()}`,
 };
 
 /**
@@ -182,6 +184,12 @@ export interface HybridCanvasAPI {
   undo(): void;
   redo(): void;
   pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void;
+  /** Returns a snapshot of the mutable arrays tracked by history (elements, nodes, edges). */
+  getSnapshot(): HistoryEntry['snapshot'];
+  /** Execute a command, capturing exactly one undo/redo history entry. */
+  execute(command: CanvasCommand): void;
+  /** Begin an imperative transaction that batches multiple mutations into one undo step. */
+  beginTransaction(description: string): CommandTransaction;
 
   // Utilities
   screenToCanvas(point: Point): Point;
@@ -778,6 +786,24 @@ export class HybridCanvasController implements HybridCanvasAPI {
     this.store.set(pushHistoryAtom, params);
   }
 
+  getSnapshot(): HistoryEntry['snapshot'] {
+    const state = this.store.get(hybridCanvasStateAtom);
+    return {
+      elements: state.elements,
+      nodes: state.nodes,
+      edges: state.edges,
+    };
+  }
+
+  execute(command: CanvasCommand): void {
+    const executor = new CanvasCommandExecutor(this);
+    executor.execute(command);
+  }
+
+  beginTransaction(description: string): CommandTransaction {
+    return new CommandTransaction(this, description);
+  }
+
   // ===========================================================================
   // UTILITIES
   // ===========================================================================
@@ -814,114 +840,142 @@ export class HybridCanvasController implements HybridCanvasAPI {
     const selection = this.getSelection();
     const offset = 20;
 
-    // Duplicate elements
-    const elements = this.getElements();
-    const newElementIds: string[] = [];
+    // Snapshot BEFORE any mutation — one history entry for the entire duplicate op.
+    const snapshotElements = this.getElements();
+    const snapshotNodes = this.getNodes();
+    const snapshotEdges = this.getEdges();
 
+    const newElementIds: string[] = [];
+    let elements = snapshotElements;
     for (const id of selection.elementIds) {
       const element = elements.find((e) => e.id === id);
       if (element) {
-        const newElement = this.addElement({
+        const newId = this.generateId("element");
+        const newElement: CanvasElement = {
           ...element,
-          id: undefined,
+          id: newId,
           position: {
             x: element.position.x + offset,
             y: element.position.y + offset,
           },
-        });
-        newElementIds.push(newElement.id);
+        };
+        elements = [...elements, newElement];
+        newElementIds.push(newId);
       }
     }
 
-    // Duplicate nodes
-    const nodes = this.getNodes();
     const newNodeIds: string[] = [];
-
+    let nodes = snapshotNodes;
     for (const id of selection.nodeIds) {
       const node = nodes.find((n) => n.id === id);
       if (node) {
-        const newNode = this.addNode({
+        const newId = this.generateId("node");
+        const newNode: CanvasNode = {
           ...node,
-          id: undefined,
+          id: newId,
           position: {
             x: node.position.x + offset,
             y: node.position.y + offset,
           },
-        });
-        newNodeIds.push(newNode.id);
+        };
+        nodes = [...nodes, newNode];
+        newNodeIds.push(newId);
       }
     }
 
-    // Select duplicated items
-    this.select({
-      elements: newElementIds,
-      nodes: newNodeIds,
-      edges: [],
+    // Apply all mutations at once, then push ONE history entry.
+    this.store.set(elementsAtom, elements);
+    this.store.set(nodesAtom, nodes);
+    this.pushHistory({
+      action: `Duplicate ${selection.elementIds.length + selection.nodeIds.length} items`,
+      snapshot: { elements: snapshotElements, nodes: snapshotNodes, edges: snapshotEdges },
     });
+
+    this.select({ elements: newElementIds, nodes: newNodeIds, edges: [] });
   }
 
   groupSelected(): void {
     const selection = this.getSelection();
     if (selection.elementIds.length < 2) return;
 
+    const allElements = this.getElements();
     const elements = selection.elementIds
-      .map((id) => this.getElementById(id))
+      .map((id) => allElements.find((e) => e.id === id))
       .filter((e): e is CanvasElement => e !== undefined && !e.locked);
     if (elements.length < 2) return;
 
-    // Compute bounding box of all selected elements
+    // Snapshot BEFORE any mutation — one history entry for the entire group op.
+    const snapshotElements = allElements;
+    const snapshotNodes = this.getNodes();
+    const snapshotEdges = this.getEdges();
+
     const minX = Math.min(...elements.map((e) => e.position.x));
     const minY = Math.min(...elements.map((e) => e.position.y));
     const maxX = Math.max(...elements.map((e) => e.position.x + e.size.width));
-    const maxY = Math.max(
-      ...elements.map((e) => e.position.y + e.size.height),
-    );
+    const maxY = Math.max(...elements.map((e) => e.position.y + e.size.height));
 
-    // addElement already calls pushHistory internally; suppress double-entry by
-    // updating elements atomically before the group is added.
     const childIds = elements.map((e) => e.id);
-    const group = this.addElement({
+    const groupId = this.generateId("element");
+    const group: CanvasElement = {
+      id: groupId,
       type: "group",
       position: { x: minX, y: minY },
       size: { width: maxX - minX, height: maxY - minY },
       data: { childIds },
+    } as CanvasElement;
+
+    // Wire children to their new parent and add the group — all in one update.
+    const updatedElements = allElements.map((e) =>
+      childIds.includes(e.id) ? { ...e, parentId: groupId } : e,
+    );
+    this.store.set(elementsAtom, [...updatedElements, group]);
+
+    // One history entry for the entire operation.
+    this.pushHistory({
+      action: `Group ${childIds.length} elements`,
+      snapshot: { elements: snapshotElements, nodes: snapshotNodes, edges: snapshotEdges },
     });
 
-    // Wire children to their new parent
-    for (const element of elements) {
-      this.updateElement(element.id, { parentId: group.id });
-    }
-
-    this.select({ elements: [group.id] });
+    this.select({ elements: [groupId] });
   }
 
   ungroupSelected(): void {
     const selection = this.getSelection();
+    const groupIds = selection.elementIds.filter((id) => {
+      const e = this.getElementById(id);
+      return e?.type === "group";
+    });
+    if (groupIds.length === 0) return;
+
+    // Snapshot BEFORE any mutation — one history entry for the entire ungroup op.
+    const snapshotElements = this.getElements();
+    const snapshotNodes = this.getNodes();
+    const snapshotEdges = this.getEdges();
+
+    let elements = snapshotElements;
     const ungroupedIds: string[] = [];
 
-    for (const id of selection.elementIds) {
-      const element = this.getElementById(id);
-      if (!element || element.type !== "group") continue;
+    for (const groupId of groupIds) {
+      const group = elements.find((e) => e.id === groupId);
+      if (!group || group.type !== "group") continue;
 
-      const childIds =
-        (element.data.childIds as string[] | undefined) ?? [];
-      for (const childId of childIds) {
-        this.updateElement(childId, { parentId: undefined });
-        ungroupedIds.push(childId);
-      }
-      this.deleteElement(id);
+      const childIds = (group.data.childIds as string[] | undefined) ?? [];
+      // Clear parentId from all children, then remove the group.
+      elements = elements
+        .filter((e) => e.id !== groupId)
+        .map((e) => (childIds.includes(e.id) ? { ...e, parentId: undefined } : e));
+      ungroupedIds.push(...childIds);
     }
+
+    // Apply all mutations at once.
+    this.store.set(elementsAtom, elements);
+    this.pushHistory({
+      action: `Ungroup ${groupIds.length} group(s)`,
+      snapshot: { elements: snapshotElements, nodes: snapshotNodes, edges: snapshotEdges },
+    });
 
     if (ungroupedIds.length > 0) {
       this.select({ elements: ungroupedIds });
-      // Snapshot state BEFORE mutation for correct undo behavior
-      const elements = this.getElements();
-      const nodes = this.getNodes();
-      const edges = this.getEdges();
-      this.pushHistory({
-        action: `Ungroup ${ungroupedIds.length} elements`,
-        snapshot: { elements, nodes, edges },
-      });
     }
   }
 

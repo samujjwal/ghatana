@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { offlineQueueService, QueuedItem } from './offlineQueue';
 import { networkMonitor } from './networkMonitor';
+import { monitoring } from './monitoring';
 
 /**
  * Upload Error Handling Service
@@ -73,6 +74,14 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
   baseDelayMs: 5000,      // 5 seconds
   maxDelayMs: 300000,     // 5 minutes
   exponentialBase: 2,
+};
+
+const errorDiagnostic = (
+  level: 'debug' | 'info' | 'warn' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[ErrorHandler] ${message}`, context);
 };
 
 // Error message templates
@@ -176,7 +185,11 @@ class UploadErrorHandlerService {
       await this.scheduleRetry(uploadError);
     }
 
-    console.log(`[ErrorHandler] Error handled: ${category} - ${errorMessage}`);
+    errorDiagnostic('info', 'Error handled', {
+      category,
+      errorMessage,
+      uploadId,
+    });
     return uploadError;
   }
 
@@ -320,7 +333,11 @@ class UploadErrorHandlerService {
     const { uploadId, retryDelayMs, currentRetry, maxRetries, retryStrategy } = error;
 
     if (currentRetry >= maxRetries) {
-      console.log(`[ErrorHandler] Max retries reached for ${uploadId}`);
+      errorDiagnostic('warn', 'Max retries reached', {
+        uploadId,
+        currentRetry,
+        maxRetries,
+      });
       await offlineQueueService.updateItemStatus(uploadId, 'failed', error.message);
       return;
     }
@@ -337,7 +354,10 @@ class UploadErrorHandlerService {
       return;
     }
 
-    console.log(`[ErrorHandler] Scheduling retry for ${uploadId} in ${retryDelayMs}ms`);
+    errorDiagnostic('info', 'Scheduling retry', {
+      uploadId,
+      retryDelayMs,
+    });
 
     const timer = setTimeout(async () => {
       this.retryTimers.delete(uploadId);
@@ -354,7 +374,9 @@ class UploadErrorHandlerService {
     const unsubscribe = networkMonitor.subscribe((state) => {
       if (state.isConnected) {
         unsubscribe();
-        console.log(`[ErrorHandler] Network restored, retrying ${uploadId}`);
+        errorDiagnostic('info', 'Network restored, retrying upload', {
+          uploadId,
+        });
         this.retryUpload(uploadId, error.currentRetry + 1);
       }
     });
@@ -364,7 +386,7 @@ class UploadErrorHandlerService {
    * Retry an upload
    */
   async retryUpload(uploadId: string, retryCount: number): Promise<void> {
-    console.log(`[ErrorHandler] Retrying upload ${uploadId} (attempt ${retryCount})`);
+    errorDiagnostic('info', 'Retrying upload', { uploadId, retryCount });
     await offlineQueueService.updateItemStatus(uploadId, 'pending');
     
     // Update retry count in metadata
@@ -380,7 +402,7 @@ class UploadErrorHandlerService {
    * Manually retry a failed upload
    */
   async manualRetry(uploadId: string): Promise<void> {
-    console.log(`[ErrorHandler] Manual retry requested for ${uploadId}`);
+    errorDiagnostic('info', 'Manual retry requested', { uploadId });
     await this.retryUpload(uploadId, 0);
   }
 
@@ -392,7 +414,7 @@ class UploadErrorHandlerService {
     if (timer) {
       clearTimeout(timer);
       this.retryTimers.delete(uploadId);
-      console.log(`[ErrorHandler] Cancelled retry for ${uploadId}`);
+      errorDiagnostic('info', 'Cancelled retry', { uploadId });
     }
   }
 
@@ -468,7 +490,7 @@ class UploadErrorHandlerService {
 
       await AsyncStorage.setItem(STORAGE_KEYS.ERROR_ANALYTICS, JSON.stringify(analytics));
     } catch (e) {
-      console.error('[ErrorHandler] Failed to update analytics:', e);
+      errorDiagnostic('error', 'Failed to update analytics', { error: e });
     }
   }
 
@@ -482,7 +504,7 @@ class UploadErrorHandlerService {
         return JSON.parse(analyticsRaw);
       }
     } catch (e) {
-      console.error('[ErrorHandler] Failed to get analytics:', e);
+      errorDiagnostic('error', 'Failed to get analytics', { error: e });
     }
 
     return {

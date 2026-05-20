@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 interface AudioPlaybackControlsProps {
@@ -9,6 +10,13 @@ interface AudioPlaybackControlsProps {
     duration: number;
     onSoundLoaded: (sound: Audio.Sound) => void;
 }
+
+const audioPlaybackDiagnostic = (
+    message: string,
+    context?: Record<string, unknown>,
+): void => {
+    monitoring.log('error', `[AudioPlayback] ${message}`, context);
+};
 
 /**
  * Audio Playback Controls Component
@@ -40,7 +48,7 @@ export const AudioPlaybackControls: React.FC<AudioPlaybackControlsProps> = ({
         try {
             // Validate audio URI before attempting to load
             if (!audioUri || typeof audioUri !== 'string') {
-                console.error('Invalid audio URI:', audioUri);
+                audioPlaybackDiagnostic('Invalid audio URI', { audioUri });
                 return;
             }
 
@@ -57,8 +65,7 @@ export const AudioPlaybackControls: React.FC<AudioPlaybackControlsProps> = ({
             setSound(audioSound);
             onSoundLoaded(audioSound);
         } catch (error) {
-            console.error('Error loading sound:', error);
-            console.error('Audio URI that failed:', audioUri);
+            audioPlaybackDiagnostic('Error loading sound', { error, audioUri });
             // Don't set sound if loading failed
             setSound(null);
         }
@@ -75,7 +82,7 @@ export const AudioPlaybackControls: React.FC<AudioPlaybackControlsProps> = ({
             }
             setIsPlaying(!isPlaying);
         } catch (error) {
-            console.error('Error toggling playback:', error);
+            audioPlaybackDiagnostic('Error toggling playback', { error });
         }
     };
 

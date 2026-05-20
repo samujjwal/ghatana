@@ -114,6 +114,9 @@ export function validateDocument(
     }
   }
 
+  // Validate tree invariants: no duplicate parentage, no cycles
+  validateTreeInvariants(document, errors);
+
   // Additional contract-aware validations
   validateResponsiveConsistency(document, contracts, warnings);
   validateActionBindings(document, contracts, warnings);
@@ -288,6 +291,88 @@ function validatePreviewTrustPolicy(
         path: 'metadata.trustLevel',
       });
     }
+  }
+}
+
+// ============================================================================
+// Tree Invariant Validation (cycle detection + duplicate parentage)
+// ============================================================================
+
+/**
+ * Validates that the nodes-and-slots graph is a strict tree:
+ *   1. No node appears as a child under more than one parent (duplicate parentage).
+ *   2. No node is reachable from itself (cycle).
+ *
+ * Both violations are reported as errors because they break the serialisation
+ * contract and can cause infinite loops during rendering / traversal.
+ */
+function validateTreeInvariants(
+  document: BuilderDocument,
+  errors: ValidationError[],
+): void {
+  // Map from child nodeId → list of parent nodeIds that claim it
+  const parentCount = new Map<NodeId, NodeId[]>();
+
+  // Build the parent-count map from all node slot declarations
+  for (const [parentId, instance] of Object.entries(document.nodes) as [NodeId, ComponentInstance][]) {
+    for (const childrenInSlot of Object.values(instance.slots)) {
+      for (const childId of childrenInSlot) {
+        if (!parentCount.has(childId)) {
+          parentCount.set(childId, []);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        parentCount.get(childId)!.push(parentId);
+      }
+    }
+  }
+
+  // Duplicate parentage: any child referenced by more than one parent
+  for (const [childId, parents] of parentCount.entries()) {
+    if (parents.length > 1) {
+      errors.push({
+        code: 'DUPLICATE_PARENTAGE',
+        message:
+          `Node "${childId}" appears as a child under ${parents.length} parents (${parents.join(', ')}). ` +
+          `A node may only have a single parent in the tree.`,
+        nodeId: childId,
+      });
+    }
+  }
+
+  // Cycle detection using DFS: track the current ancestor stack
+  const visited = new Set<NodeId>();
+  const inStack = new Set<NodeId>();
+
+  function dfs(nodeId: NodeId): void {
+    if (inStack.has(nodeId)) {
+      // We've reached a node that is already in the current traversal stack → cycle
+      errors.push({
+        code: 'CYCLE_DETECTED',
+        message: `Cycle detected: node "${nodeId}" is its own ancestor.`,
+        nodeId,
+      });
+      return;
+    }
+    if (visited.has(nodeId)) return;
+
+    visited.add(nodeId);
+    inStack.add(nodeId);
+
+    const node = document.nodes[nodeId];
+    if (node) {
+      for (const childrenInSlot of Object.values(node.slots)) {
+        for (const childId of childrenInSlot) {
+          dfs(childId);
+        }
+      }
+    }
+
+    inStack.delete(nodeId);
+  }
+
+  // Traverse from every node to catch disconnected sub-cycles too
+  for (const nodeId of Object.keys(document.nodes) as NodeId[]) {
+    dfs(nodeId);
   }
 }
 

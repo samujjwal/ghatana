@@ -40,7 +40,7 @@ export class Logger {
       correlationId,
       method: request.method,
       url: request.url,
-      userId: (request as any).user?.userId,
+      userId: (request as { user?: { userId?: string } }).user?.userId,
     });
   }
 
@@ -121,7 +121,7 @@ export class Logger {
 
     // In production, output as JSON for log aggregators
     if (process.env.NODE_ENV === 'production') {
-      console.log(JSON.stringify(logEntry));
+      writeLogLine(JSON.stringify(logEntry), level);
     } else {
       // In development, pretty print
       const { correlationId, userId, method, url, error: errorObj, ...rest } = logEntry;
@@ -132,14 +132,14 @@ export class Logger {
         method && url ? `[${method} ${url}]` : '',
       ].filter(Boolean).join(' ');
 
-      console.log(`${prefix} ${level.toUpperCase()}: ${message}`);
+      writeLogLine(`${prefix} ${level.toUpperCase()}: ${message}`, level);
       
       if (Object.keys(rest).length > 2) { // More than just timestamp and level
-        console.log('  Data:', JSON.stringify(rest, null, 2));
+        writeLogLine(`  Data: ${JSON.stringify(rest, null, 2)}`, level);
       }
 
       if (errorObj && typeof errorObj === 'object') {
-        console.error('  Error:', errorObj);
+        writeLogLine(`  Error: ${JSON.stringify(errorObj, null, 2)}`, 'error');
       }
     }
   }
@@ -197,3 +197,8 @@ export async function registerLoggerPlugin(app: any): Promise<void> {
 
 // Export singleton for non-request contexts
 export const systemLogger = Logger.create({ service: 'flashit-api' });
+
+function writeLogLine(message: string, level: 'info' | 'warn' | 'error' | 'debug'): void {
+  const stream = level === 'error' ? process.stderr : process.stdout;
+  stream.write(`${message}\n`);
+}

@@ -16,6 +16,21 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
+const AUTH_PAGE_DIAGNOSTIC_EVENT = 'dmos:auth-page-diagnostic';
+
+interface AuthPageDiagnostic {
+  code: string;
+  message: string;
+}
+
+function recordAuthPageDiagnostic(diagnostic: AuthPageDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<AuthPageDiagnostic>(AUTH_PAGE_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
+
 /**
  * Token response from the auth provider token endpoint.
  */
@@ -135,7 +150,10 @@ export function AuthCallbackPage(): React.ReactElement {
         // Navigate to dashboard
         navigate(`/workspaces/${userInfo.workspace_id}/dashboard`);
       } catch (err) {
-        console.error('[DMOS] Auth callback error:', err);
+        recordAuthPageDiagnostic({
+          code: 'DMOS_AUTH_CALLBACK_FAILED',
+          message: err instanceof Error ? err.message : 'Authentication failed',
+        });
         setError(err instanceof Error ? err.message : 'Authentication failed');
         setIsProcessing(false);
       }

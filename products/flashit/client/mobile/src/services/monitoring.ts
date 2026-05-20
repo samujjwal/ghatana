@@ -89,6 +89,18 @@ const MAX_BREADCRUMBS = 100;
 const MAX_STORED_METRICS = 1000;
 const MAX_STORED_LOGS = 500;
 
+const normalizeMonitoringError = (error: unknown): Record<string, unknown> => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  return { value: String(error) };
+};
+
 // ============================================================================
 // Monitoring Service
 // ============================================================================
@@ -217,11 +229,6 @@ class MonitoringService {
     // Add as breadcrumb
     this.addBreadcrumb('log', message, level, context);
 
-    // Console output in development
-    if (__DEV__) {
-      console[level === 'fatal' ? 'error' : level](message, context);
-    }
-
     this.persistLogs();
   }
 
@@ -279,7 +286,7 @@ class MonitoringService {
       // Implementation note: Send to crash reporting service
       this.log('error', 'Crash reported', { crashId: crash.id });
     } catch (e) {
-      console.error('Failed to store crash report:', e);
+      this.addBreadcrumb('monitoring', 'Failed to store crash report', 'error', normalizeMonitoringError(e));
     }
   }
 
@@ -447,7 +454,7 @@ class MonitoringService {
     try {
       await AsyncStorage.setItem(METRICS_KEY, JSON.stringify(this.metrics));
     } catch (e) {
-      console.error('Failed to persist metrics:', e);
+      this.addBreadcrumb('monitoring', 'Failed to persist metrics', 'error', normalizeMonitoringError(e));
     }
   }
 
@@ -455,7 +462,7 @@ class MonitoringService {
     try {
       await AsyncStorage.setItem(LOGS_KEY, JSON.stringify(this.logs));
     } catch (e) {
-      console.error('Failed to persist logs:', e);
+      this.addBreadcrumb('monitoring', 'Failed to persist logs', 'error', normalizeMonitoringError(e));
     }
   }
 
@@ -473,7 +480,7 @@ class MonitoringService {
         this.logs = JSON.parse(logsJson);
       }
     } catch (e) {
-      console.error('Failed to load persisted data:', e);
+      this.addBreadcrumb('monitoring', 'Failed to load persisted data', 'error', normalizeMonitoringError(e));
     }
   }
 

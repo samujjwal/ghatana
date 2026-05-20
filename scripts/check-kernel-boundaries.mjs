@@ -15,7 +15,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,36 +102,92 @@ function isIgnored(relativePath) {
   return ignoredPathFragments.some((fragment) => normalized.includes(fragment));
 }
 
+function walkFiles(roots, predicate) {
+  const results = [];
+  const stack = roots.map((root) => path.join(repoRoot, root));
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined) {
+      continue;
+    }
+
+    let entries;
+    try {
+      entries = readdirSync(current);
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry);
+      const relPath = normalizePath(path.relative(repoRoot, fullPath));
+      if (isIgnored(relPath)) {
+        continue;
+      }
+
+      let stats;
+      try {
+        stats = statSync(fullPath);
+      } catch {
+        continue;
+      }
+
+      if (stats.isDirectory()) {
+        stack.push(fullPath);
+      } else if (stats.isFile() && predicate(relPath)) {
+        results.push(relPath);
+      }
+    }
+  }
+
+  return results;
+}
+
+function listRgFiles(args, fallback) {
+  try {
+    return execFileSync('rg', args, { cwd: repoRoot, encoding: 'utf8' })
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map(normalizePath)
+      .filter((file) => !isIgnored(file));
+  } catch (error) {
+    if (error?.code !== 'ENOENT' && error?.code !== 'EPERM') {
+      throw error;
+    }
+    return fallback();
+  }
+}
+
 function listSourceFiles() {
   const args = ['--files', 'platform', 'products'];
   for (const glob of sourceGlobs) {
     args.push('-g', glob);
   }
-  return execFileSync('rg', args, { cwd: repoRoot, encoding: 'utf8' })
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .filter((file) => !isIgnored(file));
+  return listRgFiles(args, () =>
+    walkFiles(['platform', 'products'], (file) =>
+      sourceGlobs.some((glob) => file.endsWith(glob.slice(1))),
+    ),
+  );
 }
 
 function listGradleFiles() {
-  return execFileSync('rg', ['--files', 'platform', 'products', '-g', '*.gradle.kts', '-g', 'build.gradle'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .filter((file) => !isIgnored(file));
+  return listRgFiles(
+    ['--files', 'platform', 'products', '-g', '*.gradle.kts', '-g', 'build.gradle'],
+    () =>
+      walkFiles(
+        ['platform', 'products'],
+        (file) => file.endsWith('.gradle.kts') || path.basename(file) === 'build.gradle',
+      ),
+  );
 }
 
 function buildProductPackageMap(productIds) {
   const packageMap = new Map();
-  const packageFiles = execFileSync('rg', ['--files', 'products', '-g', 'package.json'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .filter((file) => !isIgnored(file));
+  const packageFiles = listRgFiles(
+    ['--files', 'products', '-g', 'package.json'],
+    () => walkFiles(['products'], (file) => path.basename(file) === 'package.json'),
+  );
 
   for (const packageFile of packageFiles) {
     const product = productFromPath(packageFile, productIds);

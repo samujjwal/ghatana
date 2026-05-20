@@ -1,46 +1,59 @@
 #!/usr/bin/env node
 
 /**
- * Quick test to verify Prisma client import works
+ * Quick test to verify Prisma client import works.
  */
 
-console.log("🧪 Testing Prisma client import...\n");
+const fs = require('fs');
+const path = require('path');
+
+function writeLine(message = '') {
+  process.stdout.write(`${message}\n`);
+}
+
+function writeError(message = '') {
+  process.stderr.write(`${message}\n`);
+}
+
+writeLine('Testing Prisma client import...');
+writeLine();
 
 try {
-  console.log("1. Checking generated folder exists...");
-  const fs = require('fs');
-  const path = require('path');
-  
+  writeLine('1. Checking generated folder exists...');
+
   const generatedPath = path.join(process.cwd(), 'generated', 'prisma');
   if (!fs.existsSync(generatedPath)) {
-    console.log("❌ Generated folder not found!");
+    writeError('Generated folder not found.');
     process.exit(1);
   }
-  console.log(`   ✅ ${generatedPath} exists\n`);
+  writeLine(`   OK: ${generatedPath} exists`);
+  writeLine();
 
-  console.log("2. Checking index.js exists...");
+  writeLine('2. Checking index.js exists...');
   const indexPath = path.join(generatedPath, 'index.js');
   if (!fs.existsSync(indexPath)) {
-    console.log(`❌ ${indexPath} not found!`);
+    writeError(`${indexPath} not found.`);
     process.exit(1);
   }
-  console.log(`   ✅ ${indexPath} exists\n`);
+  writeLine(`   OK: ${indexPath} exists`);
+  writeLine();
 
-  console.log("3. Attempting to import PrismaClient...");
+  writeLine('3. Attempting to import PrismaClient...');
   const { PrismaClient } = require('./generated/prisma/index.js');
-  console.log("   ✅ Import successful\n");
+  writeLine('   OK: import successful');
+  writeLine();
 
-  console.log("4. Checking PrismaClient type...");
-  console.log(`   Type: ${typeof PrismaClient}`);
-  console.log(`   Constructor: ${PrismaClient.name}\n`);
+  writeLine('4. Checking PrismaClient type...');
+  writeLine(`   Type: ${typeof PrismaClient}`);
+  writeLine(`   Constructor: ${PrismaClient.name}`);
+  writeLine();
 
-  console.log("✅ All tests passed!");
-  console.log("\n🚀 Ready to run: pnpm run dev");
-
+  writeLine('All tests passed.');
+  writeLine('Ready to run: pnpm run dev');
 } catch (error) {
-  console.error("❌ Test failed:");
-  console.error(error.message);
-  console.error("\nFull error:");
-  console.error(error);
+  writeError('Test failed.');
+  writeError(error instanceof Error ? error.message : String(error));
+  writeError('Full error:');
+  writeError(error instanceof Error && error.stack ? error.stack : String(error));
   process.exit(1);
 }

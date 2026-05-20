@@ -19,6 +19,20 @@ const isDevMode = import.meta.env.DEV === true;
 const AUTH_PROVIDER_ENABLED = import.meta.env.VITE_AUTH_PROVIDER_ENABLED === 'true';
 const AUTH_AUTHORIZE_ENDPOINT = import.meta.env.VITE_AUTH_AUTHORIZE_ENDPOINT;
 const AUTH_CLIENT_ID = import.meta.env.VITE_AUTH_CLIENT_ID;
+const LOGIN_DIAGNOSTIC_EVENT = 'dmos:login-diagnostic';
+
+interface LoginDiagnostic {
+  code: string;
+  message: string;
+}
+
+function recordLoginDiagnostic(diagnostic: LoginDiagnostic): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent<LoginDiagnostic>(LOGIN_DIAGNOSTIC_EVENT, { detail: diagnostic }));
+}
 
 /**
  * P0-001 + P0-002: Initiates OAuth2 authorization code flow with PKCE S256.
@@ -29,7 +43,10 @@ async function initiateOAuthFlow(): Promise<void> {
     if (isProduction) {
       throw new Error('[DMOS] Auth provider not configured. VITE_AUTH_AUTHORIZE_ENDPOINT and VITE_AUTH_CLIENT_ID are required in production.');
     }
-    console.error('[DMOS] Auth provider not configured');
+    recordLoginDiagnostic({
+      code: 'DMOS_AUTH_PROVIDER_NOT_CONFIGURED',
+      message: 'Auth provider is not configured for the current environment.',
+    });
     return;
   }
 

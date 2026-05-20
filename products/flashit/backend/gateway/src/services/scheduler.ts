@@ -126,9 +126,15 @@ const jobs: ScheduledJob[] = [
             where: { id: req.id },
             data: { status: 'executed', executedAt: now },
           });
-          console.log(`[scheduler] Executed deletion request ${req.id} for user ${req.userId}`);
+          systemLogger.info('[scheduler] Executed deletion request', {
+            requestId: req.id,
+            userId: req.userId,
+          });
         } catch (err) {
-          console.error(`[scheduler] Failed deletion request ${req.id}`, err);
+          systemLogger.error('[scheduler] Failed deletion request', err, {
+            requestId: req.id,
+            userId: req.userId,
+          });
         }
       }
 
@@ -145,13 +151,16 @@ const jobs: ScheduledJob[] = [
  * Start all scheduled jobs. Call this once after the server is listening.
  */
 export function startScheduler(): void {
-  console.log(`[scheduler] Starting ${jobs.length} scheduled jobs`);
+  systemLogger.info('[scheduler] Starting scheduled jobs', { jobCount: jobs.length });
 
   for (const job of jobs) {
     // Run immediately on startup, then on interval
     job.handler();
     job.timer = setInterval(job.handler, job.intervalMs);
-    console.log(`[scheduler] Registered: ${job.name} (every ${job.intervalMs / 1000}s)`);
+    systemLogger.info('[scheduler] Registered scheduled job', {
+      jobName: job.name,
+      intervalSeconds: job.intervalMs / 1000,
+    });
   }
 }
 
@@ -159,7 +168,7 @@ export function startScheduler(): void {
  * Stop all scheduled jobs. Call this during graceful shutdown.
  */
 export function stopScheduler(): void {
-  console.log('[scheduler] Stopping all scheduled jobs');
+  systemLogger.info('[scheduler] Stopping all scheduled jobs');
   for (const job of jobs) {
     if (job.timer) {
       clearInterval(job.timer);

@@ -12,6 +12,7 @@
 
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
+import { monitoring } from '../services/monitoring';
 
 // Database configuration
 const DB_NAME = 'flashit.db';
@@ -111,6 +112,14 @@ export interface SyncQueueRecord {
  */
 type Row = Record<string, any>;
 
+const databaseDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[Database] ${message}`, context);
+};
+
 /**
  * Database migration.
  */
@@ -153,9 +162,9 @@ class DatabaseManager {
       // Run migrations
       await this.runMigrations();
 
-      console.log('[Database] Initialized successfully');
+      databaseDiagnostic('info', 'Initialized successfully');
     } catch (error) {
-      console.error('[Database] Failed to initialize:', error);
+      databaseDiagnostic('error', 'Failed to initialize', { error });
       throw error;
     }
   }
@@ -302,7 +311,7 @@ class DatabaseManager {
     const migrations = this.getMigrations().filter((m) => m.version > version);
 
     for (const migration of migrations) {
-      console.log(`[Database] Running migration: ${migration.name}`);
+      databaseDiagnostic('info', 'Running migration', { migrationName: migration.name });
       await this.db.execAsync(migration.up);
       await this.setSetting('db_version', migration.version.toString());
     }
@@ -406,7 +415,7 @@ class DatabaseManager {
   async backup(backupPath: string): Promise<void> {
     const sourcePath = this.getDatabasePath();
     await FileSystem.copyAsync({ from: sourcePath, to: backupPath });
-    console.log(`[Database] Backed up to: ${backupPath}`);
+    databaseDiagnostic('info', 'Backed up database', { backupPath });
   }
 
   /**
@@ -417,7 +426,7 @@ class DatabaseManager {
     const targetPath = this.getDatabasePath();
     await FileSystem.copyAsync({ from: backupPath, to: targetPath });
     await this.init();
-    console.log(`[Database] Restored from: ${backupPath}`);
+    databaseDiagnostic('info', 'Restored database', { backupPath });
   }
 
   /**
@@ -435,7 +444,7 @@ class DatabaseManager {
     `);
 
     this.notifyListeners();
-    console.log('[Database] All data deleted');
+    databaseDiagnostic('info', 'All data deleted');
   }
 }
 

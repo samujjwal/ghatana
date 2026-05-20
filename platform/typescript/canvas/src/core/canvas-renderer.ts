@@ -201,7 +201,7 @@ export class CanvasRenderer {
         this.drawSelectionOutline(element);
       }
     } catch (error) {
-      console.error("Error rendering element:", error);
+      this.emitDiagnostic("error", "Error rendering element", { error });
     }
   }
 
@@ -296,9 +296,7 @@ export class CanvasRenderer {
     const point = this.getMousePosition(event);
     const canvasPoint = this.viewport.screenToCanvas(point);
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[CanvasRenderer] mouseDown at', point, '-> canvas', canvasPoint);
+    this.emitDiagnostic("debug", "Mouse down", { point, canvasPoint });
 
     // AI Observation
     this.aiLayer.trackInteraction('interaction_start', { point: canvasPoint });
@@ -327,9 +325,10 @@ export class CanvasRenderer {
   private handleElementCreate(event: Event): void {
     const customEvent = event as CustomEvent;
     const element = customEvent.detail.element;
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[CanvasRenderer] element-create', element?.id, element?.xywh);
+    this.emitDiagnostic("debug", "Element create", {
+      elementId: element?.id,
+      xywh: element?.xywh,
+    });
 
     this.addElement(element);
   }
@@ -354,22 +353,26 @@ export class CanvasRenderer {
     const canvasPoint = point;
 
     const clickedElement = this.getElementAtPoint(canvasPoint);
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[CanvasRenderer] canvas-select at', canvasPoint, 'clickedElement=', clickedElement?.id);
+    this.emitDiagnostic("debug", "Canvas select", {
+      canvasPoint,
+      clickedElementId: clickedElement?.id,
+    });
 
-    // Dump visible layer elements for debugging
-    // eslint-disable-next-line no-console
     const layerElements = this.layerManager.getElements('default');
-    // eslint-disable-next-line no-console
-    console.debug('[CanvasRenderer] layerElements count=', layerElements.length);
+    this.emitDiagnostic("debug", "Layer elements inspected", {
+      count: layerElements.length,
+    });
     for (const el of layerElements) {
       try {
-        // eslint-disable-next-line no-console
-        console.debug('[CanvasRenderer] element', el.id, el.getBounds());
+        this.emitDiagnostic("debug", "Layer element bounds", {
+          elementId: el.id,
+          bounds: el.getBounds(),
+        });
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.debug('[CanvasRenderer] element', el.id, 'getBounds error', e);
+        this.emitDiagnostic("debug", "Layer element bounds error", {
+          elementId: el.id,
+          error: e,
+        });
       }
     }
 
@@ -580,6 +583,22 @@ export class CanvasRenderer {
         callback(...args);
       }
     }
+  }
+
+  private emitDiagnostic(
+    level: "debug" | "info" | "warn" | "error",
+    message: string,
+    detail?: Record<string, unknown>,
+  ): void {
+    this.canvas.dispatchEvent(
+      new CustomEvent("canvas-renderer-diagnostic", {
+        detail: {
+          level,
+          message,
+          ...detail,
+        },
+      }),
+    );
   }
 
   public dispose(): void {

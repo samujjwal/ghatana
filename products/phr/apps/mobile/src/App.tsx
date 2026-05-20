@@ -1,6 +1,5 @@
 import React, { type ErrorInfo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { mobileDashboard } from './data/mockData';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ConsentScreen } from './screens/ConsentScreen';
 import { EmergencyAccessScreen } from './screens/EmergencyAccessScreen';
@@ -14,6 +13,7 @@ import { registerForPushNotificationsAsync } from './services/pushNotifications'
 import type { MobileDashboard } from './types';
 
 type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emergency' | 'settings';
+const APP_DIAGNOSTIC_EVENT = 'phr-mobile:diagnostic';
 
 const tabs: Array<{ key: ScreenKey; label: string }> = [
   { key: 'dashboard', label: 'Home' },
@@ -34,8 +34,16 @@ class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasErr
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('PHR mobile app boundary caught an error', error, errorInfo);
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    if (typeof globalThis.dispatchEvent === 'function') {
+      globalThis.dispatchEvent(new CustomEvent(APP_DIAGNOSTIC_EVENT, {
+        detail: {
+          code: 'PHR_MOBILE_BOUNDARY_ERROR',
+          message: error.message,
+          componentStack: errorInfo.componentStack,
+        },
+      }));
+    }
   }
 
   override render(): ReactNode {
@@ -56,11 +64,25 @@ export default function App(): React.ReactElement {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [activeScreen, setActiveScreen] = React.useState<ScreenKey>('dashboard');
   const [dashboard, setDashboard] = React.useState<MobileDashboard | null>(null);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
   const [syncMessage, setSyncMessage] = React.useState('Offline cache has not been refreshed in this session.');
 
-  React.useEffect(() => {
-    void fetchMobileDashboard().then(setDashboard).catch(() => setDashboard(mobileDashboard));
+  const loadDashboard = React.useCallback(() => {
+    setLoadError(null);
+    void fetchMobileDashboard()
+      .then((nextDashboard) => {
+        setDashboard(nextDashboard);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        setDashboard(null);
+        setLoadError(error instanceof Error ? error.message : 'Unable to load mobile dashboard.');
+      });
   }, []);
+
+  React.useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const onEnablePush = async (): Promise<void> => {
     const token = await registerForPushNotificationsAsync();
@@ -73,16 +95,35 @@ export default function App(): React.ReactElement {
   };
 
   const onSyncOffline = async (): Promise<void> => {
-    setSyncMessage(await syncOfflineDashboard());
+    try {
+      setSyncMessage(await syncOfflineDashboard());
+      loadDashboard();
+    } catch (error) {
+      setSyncMessage(error instanceof Error ? error.message : 'Offline cache refresh failed.');
+    }
   };
 
   if (!dashboard) {
+    if (loadError) {
+      return (
+        <SafeAreaView style={styles.loadingContainer}>
+          <Text style={styles.header}>PHR Nepal mobile</Text>
+          <Text style={styles.errorText}>{loadError}</Text>
+          <Pressable onPress={loadDashboard} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#123c84" />
       </SafeAreaView>
     );
   }
+
+  const loadedDashboard = dashboard;
 
   if (!isAuthenticated) {
     return (
@@ -95,18 +136,18 @@ export default function App(): React.ReactElement {
   const renderScreen = (): React.ReactElement => {
     switch (activeScreen) {
       case 'records':
-        return <RecordsScreen records={dashboard.records} />;
+        return <RecordsScreen records={loadedDashboard.records} />;
       case 'consents':
-        return <ConsentScreen consents={dashboard.consents} />;
+        return <ConsentScreen consents={loadedDashboard.consents} />;
       case 'notifications':
-        return <NotificationsScreen notifications={dashboard.notifications} onEnablePush={() => void onEnablePush()} />;
+        return <NotificationsScreen notifications={loadedDashboard.notifications} onEnablePush={() => void onEnablePush()} />;
       case 'emergency':
         return <EmergencyAccessScreen onAuthenticate={() => void onAuthenticate()} />;
       case 'settings':
         return <SettingsScreen onSyncOffline={() => void onSyncOffline()} syncMessage={syncMessage} />;
       case 'dashboard':
       default:
-        return <DashboardScreen dashboard={dashboard} />;
+        return <DashboardScreen dashboard={loadedDashboard} />;
     }
   };
 
@@ -157,6 +198,17 @@ const styles = StyleSheet.create({
     color: '#0b1b35',
     textAlign: 'center',
     paddingHorizontal: 24,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#123c84',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   tabBar: {
     flexDirection: 'row',

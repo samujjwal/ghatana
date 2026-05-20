@@ -142,7 +142,7 @@ export const TokenCollectionSchema = z.object({
   schemaVersion: z.string().default('1.0.0'),
   name: z.string(),
   description: z.string().optional(),
-  tokens: z.record(DesignTokenSchema),
+  tokens: z.record(z.string(), DesignTokenSchema),
   metadata: z.object({
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -168,7 +168,7 @@ export function validateToken(token: unknown): ValidationResult<DesignToken> {
   if (!result.success) {
     return {
       valid: false,
-      errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+      errors: result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
     };
   }
 
@@ -185,7 +185,7 @@ export function validateTokenCollection(collection: unknown): ValidationResult<T
   if (!result.success) {
     return {
       valid: false,
-      errors: result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+      errors: result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
     };
   }
 
@@ -202,7 +202,7 @@ export function validateTokens(tokens: unknown): ValidationResult<DesignToken[]>
   if (!arrayResult.success) {
     return {
       valid: false,
-      errors: arrayResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+      errors: arrayResult.error.issues.map(e => `${e.path.join('.')}: ${e.message}`),
     };
   }
 

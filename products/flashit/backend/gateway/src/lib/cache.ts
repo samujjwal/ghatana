@@ -11,6 +11,7 @@
  */
 
 import { createClient, RedisClientType } from 'redis';
+import { systemLogger } from './logger';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6383';
 const DEFAULT_TTL = 300; // 5 minutes
@@ -28,23 +29,23 @@ export async function initCache(): Promise<void> {
     client = createClient({ url: REDIS_URL });
 
     client.on('error', (err) => {
-      console.error('[Cache] Redis error:', err.message);
+      systemLogger.error('[Cache] Redis error', err);
       isConnected = false;
     });
 
     client.on('connect', () => {
       isConnected = true;
-      console.log('[Cache] Redis connected');
+      systemLogger.info('[Cache] Redis connected');
     });
 
     client.on('reconnecting', () => {
-      console.log('[Cache] Redis reconnecting...');
+      systemLogger.info('[Cache] Redis reconnecting');
     });
 
     await client.connect();
     isConnected = true;
   } catch (err) {
-    console.warn('[Cache] Redis unavailable, caching disabled:', (err as Error).message);
+    systemLogger.warn('[Cache] Redis unavailable, caching disabled', { error: err });
     client = null;
     isConnected = false;
   }

@@ -12,12 +12,21 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { monitoring } from './monitoring';
 
 const STORAGE_KEYS = {
   BIOMETRIC_ENABLED: 'biometric_enabled',
   APP_LOCK_ENABLED: 'app_lock_enabled',
   LOCK_TIMEOUT: 'lock_timeout',
   LAST_ACTIVE: 'last_active_time',
+};
+
+const biometricDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  monitoring.log(level, `[Biometric] ${message}`, context);
 };
 
 /**
@@ -98,11 +107,11 @@ class BiometricAuthService {
       await this.loadSettings();
 
       this.initialized = true;
-      console.log('[Biometric] Initialized:', this.settings);
+      biometricDiagnostic('info', 'Initialized', { settings: this.settings });
 
       return this.settings;
     } catch (error) {
-      console.error('[Biometric] Init error:', error);
+      biometricDiagnostic('error', 'Init error', { error });
       return this.settings;
     }
   }
@@ -140,7 +149,7 @@ class BiometricAuthService {
       this.settings.lockTimeout = timeout ? parseInt(timeout, 10) : 0;
       this.lastActiveTime = lastActive ? parseInt(lastActive, 10) : Date.now();
     } catch (error) {
-      console.error('[Biometric] Failed to load settings:', error);
+      biometricDiagnostic('error', 'Failed to load settings', { error });
     }
   }
 
@@ -162,7 +171,7 @@ class BiometricAuthService {
         String(this.settings.lockTimeout)
       );
     } catch (error) {
-      console.error('[Biometric] Failed to save settings:', error);
+      biometricDiagnostic('error', 'Failed to save settings', { error });
     }
   }
 
@@ -265,7 +274,7 @@ class BiometricAuthService {
 
       return { success: false, error: result.error };
     } catch (error) {
-      console.error('[Biometric] Auth error:', error);
+      biometricDiagnostic('error', 'Auth error', { error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Authentication failed',

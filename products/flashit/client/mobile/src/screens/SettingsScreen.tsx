@@ -16,8 +16,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { backgroundUploadService } from '../services/backgroundUploadService';
 import { offlineQueueService } from '../services/offlineQueue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { RootStackParamList } from '../navigation';
 import { getFlashitMobileSettingsRoutes } from '../routeManifest';
 import { mobileAtoms } from '../state/localAtoms';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 /**
@@ -39,8 +41,15 @@ const SETTINGS_KEYS = {
 
 type UploadQuality = 'high' | 'medium' | 'low';
 
+const settingsDiagnostic = (
+  message: string,
+  error: unknown,
+): void => {
+  monitoring.log('error', `[Settings] ${message}`, { error });
+};
+
 export function SettingsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Settings'>>();
   const currentUser = useAtomValue(mobileAtoms.currentUserAtom);
   const quickLinks = getFlashitMobileSettingsRoutes(currentUser);
   const [backgroundUploadsEnabled, setBackgroundUploadsEnabled] = useState(false);
@@ -70,7 +79,7 @@ export function SettingsScreen() {
       setAutoCompress(compress !== null ? JSON.parse(compress) : true); // Default true
       setUploadQuality((quality as UploadQuality) || 'medium');
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      settingsDiagnostic('Failed to load settings', error);
     }
   };
 
@@ -79,6 +88,7 @@ export function SettingsScreen() {
       const status = await backgroundUploadService.getStatus();
       setBackgroundTaskStatus(status.message);
     } catch (error) {
+      settingsDiagnostic('Failed to check background task status', error);
       setBackgroundTaskStatus('Error checking status');
     }
   };
@@ -88,7 +98,7 @@ export function SettingsScreen() {
       const stats = await offlineQueueService.getQueueStats();
       setQueueStats(stats);
     } catch (error) {
-      console.error('Failed to load queue stats:', error);
+      settingsDiagnostic('Failed to load queue stats', error);
     }
   };
 
@@ -123,7 +133,7 @@ export function SettingsScreen() {
 
       await checkBackgroundTaskStatus();
     } catch (error) {
-      console.error('Failed to toggle background uploads:', error);
+      settingsDiagnostic('Failed to toggle background uploads', error);
       Alert.alert('Error', 'Failed to update background upload setting.');
     }
   };
@@ -133,7 +143,7 @@ export function SettingsScreen() {
       await AsyncStorage.setItem(SETTINGS_KEYS.WIFI_ONLY, JSON.stringify(enabled));
       setWifiOnly(enabled);
     } catch (error) {
-      console.error('Failed to toggle WiFi only:', error);
+      settingsDiagnostic('Failed to toggle WiFi only', error);
     }
   };
 
@@ -142,7 +152,7 @@ export function SettingsScreen() {
       await AsyncStorage.setItem(SETTINGS_KEYS.AUTO_COMPRESS, JSON.stringify(enabled));
       setAutoCompress(enabled);
     } catch (error) {
-      console.error('Failed to toggle auto compress:', error);
+      settingsDiagnostic('Failed to toggle auto compress', error);
     }
   };
 
@@ -151,7 +161,7 @@ export function SettingsScreen() {
       await AsyncStorage.setItem(SETTINGS_KEYS.UPLOAD_QUALITY, quality);
       setUploadQuality(quality);
     } catch (error) {
-      console.error('Failed to set upload quality:', error);
+      settingsDiagnostic('Failed to set upload quality', error);
     }
   };
 
@@ -170,6 +180,7 @@ export function SettingsScreen() {
               await loadQueueStats();
               Alert.alert('Success', 'Cache cleared successfully');
             } catch (error) {
+              settingsDiagnostic('Failed to clear cache', error);
               Alert.alert('Error', 'Failed to clear cache');
             }
           },
@@ -190,6 +201,7 @@ export function SettingsScreen() {
       await loadQueueStats();
       Alert.alert('Success', `${failedItems.length} uploads queued for retry`);
     } catch (error) {
+      settingsDiagnostic('Failed to retry uploads', error);
       Alert.alert('Error', 'Failed to retry uploads');
     }
   };

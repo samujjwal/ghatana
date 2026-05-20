@@ -511,19 +511,107 @@ public final class DataCloudSecurityFilter {
     }
 
     /**
-     * Default tenant identifier used when strict tenant resolution is disabled
+     * DC-P0-01: Default tenant identifier used when strict tenant resolution is disabled
      * and no explicit tenant is provided in the request.
+     *
+     * <p><b>DC-P0-01:</b> This fallback is disabled in production, staging, and sovereign profiles.
+     * Production deployments must always resolve tenant from authenticated identity.
+     *
+     * @deprecated Use only in local/test/embedded profiles. Production must use strict tenant resolution.
      */
+    @Deprecated
     public static final String DEFAULT_FALLBACK_TENANT = "default";
 
-    private static String extractTenantId(
+    /**
+     * DC-P0-01: Validates production profile requirements at startup.
+     * Throws IllegalStateException if production invariants are violated.
+     *
+     * <p>Production/staging/sovereign profiles require:
+     * <ul>
+     *   <li>strictTenantResolution = true</li>
+     *   <li>auditService must be configured (for SENSITIVE/CRITICAL routes)</li>
+     *   <li>policyEngine must be configured (when enforcing=true)</li>
+     *   <li>apiKeyResolver or jwtProvider must be configured</li>
+     * </ul>
+     *
+     * <p>DC-P0-01: This method must be called during service startup before accepting traffic.
+     * Failure to call this method in production profiles is a critical security vulnerability.
+     */
+    public void validateProductionRequirements() {
+        if (!isProductionLikeProfile(deploymentProfile)) {
+            log.info("[DC-SEC] Skipping production validation for profile '{}'", deploymentProfile);
+            return;
+        }
+
+        log.info("[DC-SEC] Validating production requirements for profile '{}'", deploymentProfile);
+
+        // DC-P0-01: Strict tenant resolution is mandatory in production
+        if (!strictTenantResolution) {
+            throw new IllegalStateException(
+                "DC-P0-01: strictTenantResolution must be true in production/staging/sovereign profiles. " +
+                "Tenant must be derived from authenticated identity, not from fallback or headers. " +
+                "Set strictTenantResolution=true in the builder configuration.");
+        }
+
+        // DC-P0-01: At least one authentication mechanism must be configured
+        if (apiKeyResolver == null && jwtProvider == null) {
+            throw new IllegalStateException(
+                "DC-P0-01: At least one of apiKeyResolver or jwtProvider must be configured " +
+                "in production/staging/sovereign profiles. Authentication is mandatory.");
+        }
+
+        // DC-P0-01: Audit service is required for SENSITIVE/CRITICAL routes in production
+        if (auditService == null && enforcing) {
+            throw new IllegalStateException(
+                "DC-P0-01: AuditService is required for production/staging/sovereign profiles. " +
+                "SENSITIVE and CRITICAL routes must emit audit events.");
+        }
+
+        // DC-P0-01: Policy engine is required for CRITICAL routes when enforcing
+        if (policyEngine == null && enforcing) {
+            throw new IllegalStateException(
+                "DC-P0-01: PolicyEngine is required for production/staging/sovereign profiles when enforcing=true. " +
+                "CRITICAL routes require policy evaluation.");
+        }
+
+        log.info("[DC-SEC] Production requirements validated successfully for profile '{}'", deploymentProfile);
+    }
+
+    /**
+     * DC-P0-01: Determines if the deployment profile requires production-like strictness.
+     */
+    private static boolean isProductionLikeProfile(String profile) {
+        if (profile == null) return false;
+        String lower = profile.trim().toLowerCase();
+        return lower.equals("production") || lower.equals("staging") || lower.equals("sovereign");
+    }
+
+    private String extractTenantId(
             io.activej.http.HttpRequest request,
             Principal authenticatedPrincipal,
             boolean strictTenantResolution) {
+        // DC-P0-01: Primary source - authenticated principal claim
         if (authenticatedPrincipal != null && authenticatedPrincipal.getTenantId() != null) {
             return authenticatedPrincipal.getTenantId();
         }
 
+        // DC-P0-01: In production-like profiles, we must have tenant from authenticated identity
+        if (isProductionLikeProfile(deploymentProfile)) {
+            // Production requires tenant from authenticated principal - no fallbacks
+            if (authenticatedPrincipal == null) {
+                log.error("[DC-SEC] DC-P0-01: No authenticated principal in production profile '{}' - " +
+                         "tenant cannot be resolved", deploymentProfile);
+                return null;
+            }
+            if (authenticatedPrincipal.getTenantId() == null) {
+                log.error("[DC-SEC] DC-P0-01: Authenticated principal has no tenant claim in production profile '{}' - " +
+                         "principal={}", deploymentProfile, authenticatedPrincipal.getName());
+                return null;
+            }
+            return authenticatedPrincipal.getTenantId();
+        }
+
+        // Non-production profiles: allow header/context fallbacks for compatibility
         String tenantHeader = TenantExtractor.fromHttp(request).orElse(null);
         if (tenantHeader != null) {
             return tenantHeader;
@@ -538,7 +626,11 @@ public final class DataCloudSecurityFilter {
             return null;
         }
 
-        // DC-AUD-014: Non-strict mode falls back to default tenant
+        // DC-AUD-014: Non-strict mode falls back to default tenant (local/test only)
+        // DC-P0-01: This fallback is deprecated and should not be used in new code
+        log.warn("[DC-SEC] Using deprecated default fallback tenant '{}' for profile '{}'. " +
+                 "This fallback will be removed in future versions. Configure strict tenant resolution.",
+                 DEFAULT_FALLBACK_TENANT, deploymentProfile);
         return DEFAULT_FALLBACK_TENANT;
     }
 

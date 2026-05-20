@@ -16,10 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import { CameraPreview } from '../components/CameraPreview';
 import { ImageEditor } from '../components/ImageEditor';
 import { optimizeImage } from '../utils/imageOptimization';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
-
-// Import MediaType for ImagePicker
-import { MediaType } from 'expo-image-picker';
 
 type CaptureMode = 'camera' | 'gallery' | 'preview' | 'edit';
 
@@ -29,6 +27,10 @@ interface CapturedImage {
   height: number;
   base64?: string;
 }
+
+const imageCaptureDiagnostic = (message: string, error: unknown): void => {
+  monitoring.log('error', `[ImageCapture] ${message}`, { error });
+};
 
 /**
  * Image Capture Screen for mobile photo capture
@@ -47,7 +49,7 @@ export const ImageCaptureScreen: React.FC = () => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      imageCaptureDiagnostic('Navigation error', error);
     }
   };
   const [mode, setMode] = useState<CaptureMode>('camera');
@@ -56,7 +58,7 @@ export const ImageCaptureScreen: React.FC = () => {
   const [cameraType, setCameraType] = useState<CameraType>('back' as CameraType);
   const [capturedImage, setCapturedImage] = useState<CapturedImage | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<React.ElementRef<typeof CameraView> | null>(null);
 
   useEffect(() => {
     requestPermissions();
@@ -80,7 +82,7 @@ export const ImageCaptureScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error('Error requesting permissions:', error);
+      imageCaptureDiagnostic('Error requesting permissions', error);
       Alert.alert('Error', 'Failed to request permissions');
     }
   };
@@ -103,7 +105,7 @@ export const ImageCaptureScreen: React.FC = () => {
       });
       setMode('preview');
     } catch (error) {
-      console.error('Error capturing photo:', error);
+      imageCaptureDiagnostic('Error capturing photo', error);
       Alert.alert('Error', 'Failed to capture photo');
     } finally {
       setIsProcessing(false);
@@ -118,7 +120,7 @@ export const ImageCaptureScreen: React.FC = () => {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images' as any,
+        mediaTypes: 'images',
         allowsEditing: false,
         quality: 1,
         exif: true,
@@ -134,7 +136,7 @@ export const ImageCaptureScreen: React.FC = () => {
         setMode('preview');
       }
     } catch (error) {
-      console.error('Error picking image:', error);
+      imageCaptureDiagnostic('Error picking image', error);
       Alert.alert('Error', 'Failed to pick image from gallery');
     }
   };
@@ -197,7 +199,7 @@ export const ImageCaptureScreen: React.FC = () => {
         ]
       );
     } catch (error) {
-      console.error('Error saving photo:', error);
+      imageCaptureDiagnostic('Error saving photo', error);
       Alert.alert('Error', 'Failed to save photo');
     } finally {
       setIsProcessing(false);

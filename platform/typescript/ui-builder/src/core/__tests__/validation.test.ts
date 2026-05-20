@@ -550,3 +550,125 @@ describe('validateDocument — platform TrustLevel rank mapping', () => {
     expect(result.errors.some((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toBe(true);
   });
 });
+
+// ============================================================================
+// Tree Invariant Tests — cycle detection and duplicate parentage
+// ============================================================================
+
+describe('validateDocument — CYCLE_DETECTED', () => {
+  it('errors when a node references itself as a child', () => {
+    const selfRef = makeInstance(createNodeId(), 'Container');
+    selfRef.slots = { default: [selfRef.id] };
+    const doc = makeDoc({
+      rootNodes: [selfRef.id],
+      nodes: new Map([[selfRef.id, selfRef]]),
+    });
+    const result = validateDocument(doc, new Map([['Container', makeContract('Container')]]));
+    expect(result.errors.some((e) => e.code === 'CYCLE_DETECTED')).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+
+  it('errors when two nodes reference each other (mutual cycle)', () => {
+    const nodeA = makeInstance(createNodeId(), 'Container');
+    const nodeB = makeInstance(createNodeId(), 'Container');
+    nodeA.slots = { default: [nodeB.id] };
+    nodeB.slots = { default: [nodeA.id] };
+    const doc = makeDoc({
+      rootNodes: [nodeA.id],
+      nodes: new Map([[nodeA.id, nodeA], [nodeB.id, nodeB]]),
+    });
+    const result = validateDocument(doc, new Map([['Container', makeContract('Container')]]));
+    expect(result.errors.some((e) => e.code === 'CYCLE_DETECTED')).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+
+  it('errors when there is a 3-node cycle (A → B → C → A)', () => {
+    const nodeA = makeInstance(createNodeId(), 'Container');
+    const nodeB = makeInstance(createNodeId(), 'Container');
+    const nodeC = makeInstance(createNodeId(), 'Container');
+    nodeA.slots = { default: [nodeB.id] };
+    nodeB.slots = { default: [nodeC.id] };
+    nodeC.slots = { default: [nodeA.id] };
+    const doc = makeDoc({
+      rootNodes: [nodeA.id],
+      nodes: new Map([[nodeA.id, nodeA], [nodeB.id, nodeB], [nodeC.id, nodeC]]),
+    });
+    const result = validateDocument(doc, new Map([['Container', makeContract('Container')]]));
+    expect(result.errors.some((e) => e.code === 'CYCLE_DETECTED')).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes for a valid tree with no cycles', () => {
+    const parent = makeInstance(createNodeId(), 'Container');
+    const child = makeInstance(createNodeId(), 'Button');
+    parent.slots = { default: [child.id] };
+    const doc = makeDoc({
+      rootNodes: [parent.id],
+      nodes: new Map([[parent.id, parent], [child.id, child]]),
+    });
+    const contracts = new Map([
+      ['Container', makeContract('Container')],
+      ['Button', makeContract('Button')],
+    ]);
+    const result = validateDocument(doc, contracts);
+    expect(result.errors.filter((e) => e.code === 'CYCLE_DETECTED')).toHaveLength(0);
+  });
+});
+
+describe('validateDocument — DUPLICATE_PARENTAGE', () => {
+  it('errors when the same node appears as a child in two different parents', () => {
+    const shared = makeInstance(createNodeId(), 'Button');
+    const parentA = makeInstance(createNodeId(), 'Container');
+    const parentB = makeInstance(createNodeId(), 'Container');
+    parentA.slots = { default: [shared.id] };
+    parentB.slots = { default: [shared.id] };
+    const doc = makeDoc({
+      rootNodes: [parentA.id, parentB.id],
+      nodes: new Map([
+        [shared.id, shared],
+        [parentA.id, parentA],
+        [parentB.id, parentB],
+      ]),
+    });
+    const contracts = new Map([
+      ['Container', makeContract('Container')],
+      ['Button', makeContract('Button')],
+    ]);
+    const result = validateDocument(doc, contracts);
+    expect(result.errors.some((e) => e.code === 'DUPLICATE_PARENTAGE')).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+
+  it('errors when the same node appears twice in one parent slot', () => {
+    const child = makeInstance(createNodeId(), 'Button');
+    const parent = makeInstance(createNodeId(), 'Container');
+    parent.slots = { default: [child.id, child.id] };
+    const doc = makeDoc({
+      rootNodes: [parent.id],
+      nodes: new Map([[parent.id, parent], [child.id, child]]),
+    });
+    const contracts = new Map([
+      ['Container', makeContract('Container')],
+      ['Button', makeContract('Button')],
+    ]);
+    const result = validateDocument(doc, contracts);
+    expect(result.errors.some((e) => e.code === 'DUPLICATE_PARENTAGE')).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes when each node has exactly one parent', () => {
+    const child = makeInstance(createNodeId(), 'Button');
+    const parent = makeInstance(createNodeId(), 'Container');
+    parent.slots = { default: [child.id] };
+    const doc = makeDoc({
+      rootNodes: [parent.id],
+      nodes: new Map([[parent.id, parent], [child.id, child]]),
+    });
+    const contracts = new Map([
+      ['Container', makeContract('Container')],
+      ['Button', makeContract('Button')],
+    ]);
+    const result = validateDocument(doc, contracts);
+    expect(result.errors.filter((e) => e.code === 'DUPLICATE_PARENTAGE')).toHaveLength(0);
+  });
+});

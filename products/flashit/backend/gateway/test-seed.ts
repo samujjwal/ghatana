@@ -1,45 +1,51 @@
 /**
- * Test script to verify seed functionality
+ * Test script to verify seed functionality.
  */
 import { PrismaClient } from '../generated/prisma/index.js';
 
 const prisma = new PrismaClient();
 
-async function testSeed() {
+function writeLine(message = ''): void {
+  process.stdout.write(`${message}\n`);
+}
+
+function writeError(message = ''): void {
+  process.stderr.write(`${message}\n`);
+}
+
+async function testSeed(): Promise<void> {
   try {
-    console.log('Testing Prisma connection...');
-    
-    // Check if users exist
+    writeLine('Testing Prisma connection...');
+
     const userCount = await prisma.user.count();
-    console.log(`✅ Found ${userCount} users in database`);
-    
-    // List users
+    writeLine(`Found ${userCount} users in database`);
+
     const users = await prisma.user.findMany({
       select: { email: true, displayName: true },
       take: 5,
     });
-    
-    console.log('\n📋 Sample Users:');
+
+    writeLine();
+    writeLine('Sample Users:');
     users.forEach((user) => {
-      console.log(`  - ${user.email} (${user.displayName})`);
+      writeLine(`  - ${user.email} (${user.displayName})`);
     });
-    
-    // Count spheres
+
     const sphereCount = await prisma.sphere.count();
-    console.log(`\n✅ Found ${sphereCount} spheres`);
-    
-    // Count moments
+    writeLine();
+    writeLine(`Found ${sphereCount} spheres`);
+
     const momentCount = await prisma.moment.count();
-    console.log(`✅ Found ${momentCount} moments`);
-    
-    console.log('\n✨ Seed verification complete!');
-    
+    writeLine(`Found ${momentCount} moments`);
+
+    writeLine();
+    writeLine('Seed verification complete.');
   } catch (error) {
-    console.error('❌ Error:', error);
+    writeError(`Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-testSeed();
+void testSeed();

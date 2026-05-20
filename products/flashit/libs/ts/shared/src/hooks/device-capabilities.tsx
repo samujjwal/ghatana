@@ -11,6 +11,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getDeviceCapabilities, DeviceCapabilities } from './media';
 
+const emitDeviceCapabilityDiagnostic = (
+  level: 'info' | 'error',
+  message: string,
+  context?: Record<string, unknown>,
+): void => {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(
+      new CustomEvent('flashit:device-capability-diagnostic', {
+        detail: {
+          level,
+          message,
+          context,
+          timestamp: new Date().toISOString(),
+        },
+      }),
+    );
+  }
+};
+
+const getErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
 // Device capability state
 export interface DeviceCapabilityState {
   capabilities: DeviceCapabilities | null;
@@ -68,7 +90,7 @@ class OfflineCaptureQueue {
         }
       }
     } catch (error) {
-      console.error('Failed to load offline queue:', error);
+      emitDeviceCapabilityDiagnostic('error', 'Failed to load offline queue', { error });
     }
   }
 
@@ -79,7 +101,7 @@ class OfflineCaptureQueue {
         localStorage.setItem('flashit_offline_queue', JSON.stringify(this.queue));
       }
     } catch (error) {
-      console.error('Failed to save offline queue:', error);
+      emitDeviceCapabilityDiagnostic('error', 'Failed to save offline queue', { error });
     }
   }
 
@@ -87,7 +109,7 @@ class OfflineCaptureQueue {
     // Check if we're in a browser environment
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('online', () => {
-        console.log('Network online - processing offline queue');
+        emitDeviceCapabilityDiagnostic('info', 'Network online - processing offline queue');
         this.processQueue();
       });
     }
@@ -145,7 +167,7 @@ class OfflineCaptureQueue {
       try {
         await this.processItem(item);
       } catch (error) {
-        console.error('Failed to process queue item:', error);
+        emitDeviceCapabilityDiagnostic('error', 'Failed to process queue item', { error });
       }
     }
 
@@ -198,12 +220,16 @@ class OfflineCaptureQueue {
       // Remove completed items after a delay
       setTimeout(() => this.removeItem(item.id), 30000); // 30 seconds
 
-    } catch (error: any) {
+    } catch (error) {
       item.status = 'failed';
-      item.error = error.message;
+      item.error = getErrorMessage(error, 'Failed to upload offline item');
 
       if (item.attempts >= this.maxRetries) {
-        console.error(`Failed to upload offline item after ${this.maxRetries} attempts:`, error);
+        emitDeviceCapabilityDiagnostic('error', 'Failed to upload offline item after retry limit', {
+          error,
+          maxRetries: this.maxRetries,
+          itemId: item.id,
+        });
       } else {
         // Retry after delay
         setTimeout(() => {
@@ -330,11 +356,11 @@ export function useDeviceCapabilities() {
         error: null,
       });
 
-    } catch (error: any) {
+    } catch (error) {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Failed to detect device capabilities',
+        error: getErrorMessage(error, 'Failed to detect device capabilities'),
       }));
     }
   }, []);
@@ -377,7 +403,7 @@ export function useDeviceCapabilities() {
 
       return true;
     } catch (error) {
-      console.error('Permission request failed:', error);
+      emitDeviceCapabilityDiagnostic('error', 'Permission request failed', { error });
       return false;
     }
   }, [checkCapabilities]);

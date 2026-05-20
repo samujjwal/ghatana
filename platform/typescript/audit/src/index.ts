@@ -116,6 +116,25 @@ export interface AuditHttpTransport {
   get(url: string, params?: Record<string, string | number | boolean | null | undefined>): Promise<unknown>;
 }
 
+function emitAuditDiagnostic(
+  level: "error",
+  message: string,
+  context?: Record<string, unknown>
+): void {
+  if (typeof globalThis.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+    globalThis.dispatchEvent(
+      new CustomEvent("ghatana:audit-diagnostic", {
+        detail: {
+          level,
+          message,
+          context,
+          timestamp: new Date().toISOString(),
+        },
+      })
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Local backup helpers
 // ---------------------------------------------------------------------------
@@ -202,8 +221,7 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
       try {
         await config.transport.post(logEndpoint, validated);
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Error logging audit event:", error);
+        emitAuditDiagnostic("error", "Error logging audit event", { error });
         if (enableLocalBackup) {
           this.storeLocally(validated);
         }
@@ -295,8 +313,7 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
 
         keys.slice(50).forEach((k) => sessionStorage.removeItem(k));
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to store audit event locally:", error);
+        emitAuditDiagnostic("error", "Failed to store audit event locally", { error });
       }
     },
 
@@ -323,9 +340,8 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
           .filter((e): e is AuditEvent => e !== null)
           .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to get local audit backups:", error);
-        return [];
+        emitAuditDiagnostic("error", "Failed to get local audit backups", { error });
+        return Array.from<AuditEvent>([]);
       }
     },
 
@@ -339,8 +355,7 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
         );
         keys.forEach((k) => sessionStorage.removeItem(k));
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error("Failed to clear local audit backups:", error);
+        emitAuditDiagnostic("error", "Failed to clear local audit backups", { error });
       }
     },
 
@@ -356,8 +371,7 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
           // Remove successful sync
           sessionStorage.removeItem(`audit_backup_${event.id}`);
         } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error(`Failed to sync audit event ${event.id}:`, error);
+          emitAuditDiagnostic("error", "Failed to sync audit event", { error, eventId: event.id });
         }
       }
     },

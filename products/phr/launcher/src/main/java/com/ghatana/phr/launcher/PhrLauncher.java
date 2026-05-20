@@ -258,7 +258,7 @@ public final class PhrLauncher {
         public Promise<DataResult> readData(DataReadRequest request) {
             StoredData stored = records.get(storeKey(request.getDatasetId(), request.getRecordId()));
             if (stored == null) {
-                return Promise.of(null);
+                return Promise.of((DataResult) null);
             }
             return Promise.of(new DataResult(
                 request.getRecordId(),
@@ -330,7 +330,7 @@ public final class PhrLauncher {
 
         @Override
         public Promise<TransactionHandle> beginTransaction(BridgeContext context) {
-            return Promise.of(null);
+            return Promise.of((TransactionHandle) null);
         }
 
         @Override
@@ -345,7 +345,7 @@ public final class PhrLauncher {
 
         @Override
         public Promise<DataStream> openStream(DataStreamRequest request) {
-            return Promise.of(null);
+            return Promise.of((DataStream) null);
         }
 
         private long countRecords(String datasetId) {

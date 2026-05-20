@@ -30,34 +30,43 @@
       "@api/*": ["src/api/*"],
       "@utils/*": ["src/utils/*"],
       "@ghatana/design-system": [
-        "../../../platform/typescript/design-system/src"
+        "../../../../platform/typescript/design-system/src"
       ],
-      "@ghatana/theme": ["../../../platform/typescript/theme"],
-      "@ghatana/tokens": ["../../../platform/typescript/tokens"],
+      "@ghatana/theme": ["../../../../platform/typescript/theme/src/index.ts"],
+      "@ghatana/tokens": ["../../../../platform/typescript/tokens/src/index.ts"],
       "@ghatana/wizard": ["node_modules/@ghatana/wizard/src/index.ts"],
       "@ghatana/platform-utils": [
-        "../../../platform/typescript/platform-utils/src/index.ts"
+        "../../../../platform/typescript/platform-utils/src/index.ts"
       ],
       "@ghatana/product-shell": [
-        "../../../platform/typescript/product-shell/src/index.ts"
+        "../../../../platform/typescript/product-shell/src/index.ts"
+      ],
+      "@ghatana/domain-components/privacy": [
+        "../../../../platform/typescript/domain-components/src/privacy/index.ts"
+      ],
+      "@ghatana/domain-components/security": [
+        "../../../../platform/typescript/domain-components/src/security/index.ts"
+      ],
+      "@ghatana/domain-components/selection": [
+        "../../../../platform/typescript/domain-components/src/selection/index.ts"
       ],
       "@ghatana/privacy-ui": [
-        "../../../platform/typescript/privacy-ui/src"
+        "../../../../platform/typescript/privacy-ui/src"
       ],
       "@ghatana/security-ui": [
-        "../../../platform/typescript/security-ui/src"
+        "../../../../platform/typescript/security-ui/src"
       ],
       "@ghatana/voice-ui": [
-        "../../../platform/typescript/voice-ui/src"
+        "../../../../platform/typescript/voice-ui/src"
       ],
       "@ghatana/nlp-ui": [
-        "../../../platform/typescript/nlp-ui/src"
+        "../../../../platform/typescript/nlp-ui/src"
       ],
       "@ghatana/audit-ui": [
-        "../../../platform/typescript/audit-ui/src"
+        "../../../../platform/typescript/audit-ui/src"
       ],
       "@ghatana/selection-ui": [
-        "../../../platform/typescript/selection-ui/src"
+        "../../../../platform/typescript/selection-ui/src"
       ],
       "@ghatana/realtime": [
         "../../../platform/typescript/realtime/dist/index.d.ts"

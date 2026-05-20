@@ -13,6 +13,25 @@ import { nanoid } from "nanoid";
 
 export { BaseTool } from "./base-tool.js";
 
+type CanvasToolDiagnosticLevel = "debug" | "warn" | "error";
+
+const emitToolDiagnostic = (
+  canvas: HTMLCanvasElement,
+  level: CanvasToolDiagnosticLevel,
+  message: string,
+  detail?: Record<string, unknown>,
+): void => {
+  canvas.dispatchEvent(
+    new CustomEvent("canvas-tool-diagnostic", {
+      detail: {
+        level,
+        message,
+        ...detail,
+      },
+    }),
+  );
+};
+
 export class SelectTool extends BaseTool {
   private selectedElements: CanvasElement[] = [];
   private isDragging = false;
@@ -135,9 +154,10 @@ export class ShapeTool extends BaseTool {
       filled: this.options.fill || false,
     });
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[ShapeTool] create', { id: ((this.currentElement as unknown as Record<string, unknown>)).id, xywh: this.currentElement.xywh });
+    emitToolDiagnostic(canvas, "debug", "Shape created", {
+      id: ((this.currentElement as unknown as Record<string, unknown>)).id,
+      xywh: this.currentElement.xywh,
+    });
 
     // Emit element creation event
     canvas.dispatchEvent(
@@ -175,9 +195,10 @@ export class ShapeTool extends BaseTool {
       }),
     );
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[ShapeTool] update', { id: ((this.currentElement as unknown as Record<string, unknown>)).id, xywh: this.currentElement.xywh });
+    emitToolDiagnostic(canvas, "debug", "Shape updated", {
+      id: ((this.currentElement as unknown as Record<string, unknown>)).id,
+      xywh: this.currentElement.xywh,
+    });
   }
 
   onPointerUp(event: PointerEvent, canvas: HTMLCanvasElement): void {
@@ -191,9 +212,7 @@ export class ShapeTool extends BaseTool {
     }
 
     this.cleanup();
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[ShapeTool] finalize');
+    emitToolDiagnostic(canvas, "debug", "Shape finalized");
   }
 
   getCursor(): string {
@@ -279,9 +298,10 @@ export class BrushTool extends BaseTool {
       }),
     );
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[BrushTool] create', { id: ((this.currentElement as unknown as Record<string, unknown>)).id, xywh: this.currentElement.xywh });
+    emitToolDiagnostic(canvas, "debug", "Brush stroke created", {
+      id: ((this.currentElement as unknown as Record<string, unknown>)).id,
+      xywh: this.currentElement.xywh,
+    });
   }
 
   onPointerMove(event: PointerEvent, canvas: HTMLCanvasElement): void {
@@ -314,9 +334,10 @@ export class BrushTool extends BaseTool {
       }),
     );
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[BrushTool] update', { id: (this.currentElement as unknown as Record<string, unknown>).id, points: ((this.currentElement as unknown as Record<string, unknown>).points as unknown[]).length });
+    emitToolDiagnostic(canvas, "debug", "Brush stroke updated", {
+      id: (this.currentElement as unknown as Record<string, unknown>).id,
+      points: ((this.currentElement as unknown as Record<string, unknown>).points as unknown[]).length,
+    });
   }
 
   onPointerUp(event: PointerEvent, canvas: HTMLCanvasElement): void {
@@ -332,9 +353,7 @@ export class BrushTool extends BaseTool {
     this.isDrawing = false;
     this.cleanup();
 
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[BrushTool] finalize');
+    emitToolDiagnostic(canvas, "debug", "Brush stroke finalized");
   }
 
   getCursor(): string {
@@ -463,10 +482,6 @@ export class ToolManager {
   }
 
   setActiveTool(name: string): void {
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[ToolManager] setActiveTool ->', name);
-
     if (this.activeTool) {
       this.activeTool.deactivate();
     }
@@ -477,8 +492,15 @@ export class ToolManager {
       this.activeToolName = name;
       tool.activate();
     } else {
-      // eslint-disable-next-line no-console
-      console.warn('[ToolManager] requested tool not found:', name);
+      globalThis.dispatchEvent?.(
+        new CustomEvent("canvas-tool-diagnostic", {
+          detail: {
+            level: "warn",
+            message: "Requested tool not found",
+            toolName: name,
+          },
+        }),
+      );
     }
   }
 
@@ -499,9 +521,6 @@ export class ToolManager {
   }
 
   handlePointerDown(event: PointerEvent, canvas: HTMLCanvasElement): void {
-    // Debug
-    // eslint-disable-next-line no-console
-    console.debug('[ToolManager] pointerDown activeTool=', this.activeToolName);
     if (this.activeTool) {
       this.activeTool.onPointerDown(event, canvas);
     }

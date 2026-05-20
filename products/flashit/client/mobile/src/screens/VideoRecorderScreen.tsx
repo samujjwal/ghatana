@@ -7,11 +7,12 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { CameraView, Camera, CameraType, VideoQuality } from 'expo-camera';
+import { CameraView, Camera, CameraType } from 'expo-camera';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useNavigation } from '@react-navigation/native';
 import { VideoRecordingControls } from '../components/VideoRecordingControls';
 import { VideoPreview } from '../components/VideoPreview';
+import { monitoring } from '../services/monitoring';
 import { flashitMobileTheme } from '../theme/kernelTheme';
 
 const MAX_RECORDING_DURATION_MS = 2 * 60 * 1000; // 2 minutes
@@ -22,6 +23,13 @@ interface RecordingState {
   duration: number;
   videoUri: string | null;
 }
+
+const videoRecorderDiagnostic = (
+  message: string,
+  error: unknown,
+): void => {
+  monitoring.log('error', `[VideoRecorder] ${message}`, { error });
+};
 
 /**
  * Video Recorder Screen for mobile video capture
@@ -40,10 +48,10 @@ export const VideoRecorderScreen: React.FC = () => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      videoRecorderDiagnostic('Navigation error', error);
     }
   };
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<React.ElementRef<typeof CameraView> | null>(null);
   const [cameraPermission, setCameraPermission] = useState<boolean>(false);
   const [microphonePermission, setMicrophonePermission] = useState<boolean>(false);
   const [cameraType, setCameraType] = useState<CameraType>('back' as CameraType);
@@ -94,7 +102,7 @@ export const VideoRecorderScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.error('Error requesting permissions:', error);
+      videoRecorderDiagnostic('Error requesting permissions', error);
       Alert.alert('Error', 'Failed to request permissions');
     }
   };
@@ -104,10 +112,19 @@ export const VideoRecorderScreen: React.FC = () => {
 
     try {
       const video = await cameraRef.current.recordAsync({
-        quality: '720p' as any,
         maxDuration: MAX_RECORDING_DURATION_MS / 1000, // Convert to seconds
-        mute: false,
       });
+
+      if (!video?.uri) {
+        videoRecorderDiagnostic('Recording completed without a saved URI', undefined);
+        setRecordingState({
+          isRecording: false,
+          isPaused: false,
+          duration: 0,
+          videoUri: null,
+        });
+        return;
+      }
 
       setRecordingState({
         isRecording: false,
@@ -116,7 +133,7 @@ export const VideoRecorderScreen: React.FC = () => {
         videoUri: video.uri,
       });
     } catch (error) {
-      console.error('Error starting recording:', error);
+      videoRecorderDiagnostic('Error starting recording', error);
       Alert.alert('Error', 'Failed to start recording');
       setRecordingState({
         isRecording: false,
@@ -144,7 +161,7 @@ export const VideoRecorderScreen: React.FC = () => {
       await cameraRef.current.pausePreview();
       setRecordingState((prev) => ({ ...prev, isPaused: true }));
     } catch (error) {
-      console.error('Error pausing recording:', error);
+      videoRecorderDiagnostic('Error pausing recording', error);
     }
   };
 
@@ -155,7 +172,7 @@ export const VideoRecorderScreen: React.FC = () => {
       await cameraRef.current.resumePreview();
       setRecordingState((prev) => ({ ...prev, isPaused: false }));
     } catch (error) {
-      console.error('Error resuming recording:', error);
+      videoRecorderDiagnostic('Error resuming recording', error);
     }
   };
 
@@ -165,7 +182,7 @@ export const VideoRecorderScreen: React.FC = () => {
     try {
       await cameraRef.current.stopRecording();
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      videoRecorderDiagnostic('Error stopping recording', error);
     }
   };
 
@@ -225,7 +242,7 @@ export const VideoRecorderScreen: React.FC = () => {
         ]
       );
     } catch (error) {
-      console.error('Error saving recording:', error);
+      videoRecorderDiagnostic('Error saving recording', error);
       Alert.alert('Error', 'Failed to save video');
     }
   };

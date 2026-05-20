@@ -26,6 +26,9 @@ export function generateCSSVariables(
 ): string {
   const { prefix = '', includeComments = true, indent = '  ' } = options;
 
+  // Ensure every emitted name is a valid CSS custom property starting with --
+  const varPrefix = `--${prefix}`;
+
   const lines: string[] = [];
 
   if (includeComments) {
@@ -39,36 +42,36 @@ export function generateCSSVariables(
   // Colors
   lines.push(`${indent}/* Colors */`);
   for (const [key, value] of Object.entries(tokens.colors)) {
-    lines.push(`${indent}${prefix}color-${key}: ${value};`);
+    lines.push(`${indent}${varPrefix}color-${key}: ${value};`);
   }
   lines.push('');
 
   // Typography
   lines.push(`${indent}/* Typography */`);
-  lines.push(`${indent}${prefix}font-family-base: ${tokens.fontFamily};`);
+  lines.push(`${indent}${varPrefix}font-family-base: ${tokens.fontFamily};`);
   for (const [key, value] of Object.entries(tokens.fontSizes)) {
-    lines.push(`${indent}${prefix}font-size-${key}: ${value}px;`);
+    lines.push(`${indent}${varPrefix}font-size-${key}: ${value}px;`);
   }
   lines.push('');
 
   // Border Radius
   lines.push(`${indent}/* Border Radius */`);
   for (const [key, value] of Object.entries(tokens.borderRadius)) {
-    lines.push(`${indent}${prefix}radius-${key}: ${value};`);
+    lines.push(`${indent}${varPrefix}radius-${key}: ${value};`);
   }
   lines.push('');
 
   // Spacing
   lines.push(`${indent}/* Spacing */`);
   for (const [key, value] of Object.entries(tokens.spacing)) {
-    lines.push(`${indent}${prefix}spacing-${key}: ${value}px;`);
+    lines.push(`${indent}${varPrefix}spacing-${key}: ${value}px;`);
   }
   lines.push('');
 
   // Elevation/Shadow
   lines.push(`${indent}/* Elevation */`);
   for (const [key, value] of Object.entries(tokens.elevation)) {
-    lines.push(`${indent}${prefix}elevation-${key}: ${value};`);
+    lines.push(`${indent}${varPrefix}elevation-${key}: ${value};`);
   }
 
   lines.push('}');

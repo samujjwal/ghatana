@@ -131,7 +131,7 @@ jobs:
     name: AEP Equivalence Check
     runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -152,3 +152,148 @@ jobs:
 
       - name: Run AEP equivalence test (DC-31)
         run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*ActionPlaneAepEquivalence*"
+
+  # ====================================================================================
+  # Production Profile Validation (DC-P2-01)
+  # ====================================================================================
+  production-profile-validation:
+    name: Production Profile Validation
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run production profile validation tests (DC-P2-01)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*ProductionProfile*" --tests "*StrictTenant*" --tests "*DurableDependency*"
+
+  # ====================================================================================
+  # Tenant Isolation Tests (DC-P2-02)
+  # ====================================================================================
+  tenant-isolation-tests:
+    name: Tenant Isolation Security Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tenant isolation security tests (DC-P2-02)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*TenantIsolation*" --tests "*SecurityFilter*" --tests "*TenantResolution*"
+
+  # ====================================================================================
+  # Runtime Truth Validation (DC-P2-03)
+  # ====================================================================================
+  runtime-truth-validation:
+    name: Runtime Truth Surface Validation
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run runtime truth validation tests (DC-P2-03)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*SurfaceRecord*" --tests "*RuntimeTruth*" --tests "*SurfaceRegistry*"
+
+  # ====================================================================================
+  # Contract Validation (DC-P2-04)
+  # ====================================================================================
+  contract-validation:
+    name: OpenAPI Contract Validation
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run OpenAPI contract validation tests (DC-P2-04)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*OpenApiRouteParity*" --tests "*Contract*" --tests "*Schema*"
+
+  # ====================================================================================
+  # Security Filter Tests (DC-P2-05)
+  # ====================================================================================
+  security-filter-tests:
+    name: Security Filter Policy Tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run security filter policy tests (DC-P2-05)
+        run: ./gradlew :products:data-cloud:delivery:launcher:test --tests "*DataCloudSecurityFilter*" --tests "*EndpointSensitivity*" --tests "*RouteActionAccess*"

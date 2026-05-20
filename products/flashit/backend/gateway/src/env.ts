@@ -26,49 +26,63 @@ const envSchema = z.object({
 
 export type WebApiEnv = z.infer<typeof envSchema>;
 
+const writeStartupError = (message: string): void => {
+  process.stderr.write(`${message}\n`);
+};
+
+const requireProductionValue = (
+  value: unknown,
+  message: string,
+): void => {
+  if (!value) {
+    writeStartupError(message);
+    process.exit(1);
+  }
+};
+
 export const loadEnv = (): WebApiEnv => {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    console.error("❌ Invalid environment variables:");
-    console.error(JSON.stringify(result.error.format(), null, 2));
+    writeStartupError("Invalid environment variables:");
+    writeStartupError(JSON.stringify(result.error.format(), null, 2));
     process.exit(1);
   }
 
-  // Production-grade invariants (fail fast)
-  if (result.data.NODE_ENV === 'production') {
-    if (!result.data.JAVA_AGENT_SERVICE_URL) {
-      console.error('❌ Missing JAVA_AGENT_SERVICE_URL in production');
+  if (result.data.NODE_ENV === "production") {
+    requireProductionValue(
+      result.data.JAVA_AGENT_SERVICE_URL,
+      "Missing JAVA_AGENT_SERVICE_URL in production",
+    );
+
+    if (!result.data.EMAIL_PROVIDER || result.data.EMAIL_PROVIDER === "stub") {
+      writeStartupError("EMAIL_PROVIDER must be set to smtp|ses in production");
       process.exit(1);
     }
-    if (!result.data.EMAIL_PROVIDER || result.data.EMAIL_PROVIDER === 'stub') {
-      console.error('❌ EMAIL_PROVIDER must be set to smtp|ses in production');
-      process.exit(1);
-    }
-    if (!result.data.STRIPE_SECRET_KEY) {
-      console.error('❌ Missing STRIPE_SECRET_KEY in production');
-      process.exit(1);
-    }
-    if (!result.data.STRIPE_WEBHOOK_SECRET) {
-      console.error('❌ Missing STRIPE_WEBHOOK_SECRET in production');
-      process.exit(1);
-    }
-    // Validate Stripe price IDs are configured
-    if (!result.data.STRIPE_PRICE_PRO_MONTHLY) {
-      console.error('❌ Missing STRIPE_PRICE_PRO_MONTHLY in production');
-      process.exit(1);
-    }
-    if (!result.data.STRIPE_PRICE_PRO_ANNUAL) {
-      console.error('❌ Missing STRIPE_PRICE_PRO_ANNUAL in production');
-      process.exit(1);
-    }
-    if (!result.data.STRIPE_PRICE_TEAMS_MONTHLY) {
-      console.error('❌ Missing STRIPE_PRICE_TEAMS_MONTHLY in production');
-      process.exit(1);
-    }
-    if (!result.data.STRIPE_PRICE_TEAMS_ANNUAL) {
-      console.error('❌ Missing STRIPE_PRICE_TEAMS_ANNUAL in production');
-      process.exit(1);
-    }
+
+    requireProductionValue(
+      result.data.STRIPE_SECRET_KEY,
+      "Missing STRIPE_SECRET_KEY in production",
+    );
+    requireProductionValue(
+      result.data.STRIPE_WEBHOOK_SECRET,
+      "Missing STRIPE_WEBHOOK_SECRET in production",
+    );
+    requireProductionValue(
+      result.data.STRIPE_PRICE_PRO_MONTHLY,
+      "Missing STRIPE_PRICE_PRO_MONTHLY in production",
+    );
+    requireProductionValue(
+      result.data.STRIPE_PRICE_PRO_ANNUAL,
+      "Missing STRIPE_PRICE_PRO_ANNUAL in production",
+    );
+    requireProductionValue(
+      result.data.STRIPE_PRICE_TEAMS_MONTHLY,
+      "Missing STRIPE_PRICE_TEAMS_MONTHLY in production",
+    );
+    requireProductionValue(
+      result.data.STRIPE_PRICE_TEAMS_ANNUAL,
+      "Missing STRIPE_PRICE_TEAMS_ANNUAL in production",
+    );
   }
 
   return result.data;

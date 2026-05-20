@@ -121,6 +121,7 @@ describe('JSON Tokens Adapter Golden Tests', () => {
       formatVersion: '1.0.0',
       includeMetadata: true,
       indent: 2,
+      clockFn: () => '2024-01-01T00:00:00.000Z',
     });
 
     expect(output).toMatchSnapshot('json-tokens');

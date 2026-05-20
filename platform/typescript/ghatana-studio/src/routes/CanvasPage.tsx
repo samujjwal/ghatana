@@ -85,17 +85,32 @@ export default function CanvasPage(): ReactElement {
   // Create canvas document from artifact data
   const canvasDocument = createArtifactCanvasDocument();
 
-  // Convert BuilderDocument to canvas format
-  const canvasNodes: CanvasNode<Record<string, unknown>>[] = Object.values(canvasDocument.nodes).map((node: ComponentInstance) => ({
-    id: node.id,
-    type: 'artifactNode',
-    position: { x: Math.random() * 800, y: Math.random() * 500 },
-    data: {
-      contractName: node.contractName,
-      props: node.props,
-      metadata: node.metadata,
-    },
-  }));
+  // Convert BuilderDocument to canvas format using deterministic grid layout.
+  // Positions are computed from node index so they are stable across renders.
+  const nodeEntries = Object.values(canvasDocument.nodes) as ComponentInstance[];
+  const GRID_COLUMNS = 4;
+  const CELL_WIDTH = 220;
+  const CELL_HEIGHT = 120;
+  const MARGIN_X = 40;
+  const MARGIN_Y = 40;
+
+  const canvasNodes: CanvasNode<Record<string, unknown>>[] = nodeEntries.map((node: ComponentInstance, index: number) => {
+    const col = index % GRID_COLUMNS;
+    const row = Math.floor(index / GRID_COLUMNS);
+    return {
+      id: node.id,
+      type: 'artifactNode',
+      position: {
+        x: MARGIN_X + col * CELL_WIDTH,
+        y: MARGIN_Y + row * CELL_HEIGHT,
+      },
+      data: {
+        contractName: node.contractName,
+        props: node.props,
+        metadata: node.metadata,
+      },
+    };
+  });
   const canvasEdges: CanvasEdge<Record<string, unknown>>[] = [];
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {

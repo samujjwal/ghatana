@@ -15,7 +15,7 @@
  * @doc.pattern Organism
  */
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import type { ProductRouteCapability, ProductShellConfig } from '../types';
 import { filterDiscoverableRoutes } from '../access';
 
