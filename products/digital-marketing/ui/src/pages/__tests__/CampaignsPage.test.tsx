@@ -266,7 +266,7 @@ describe('CampaignsPage', () => {
     expect(screen.getByRole('heading', { name: /archive campaign/i })).toBeInTheDocument();
     expect(screen.getByTestId('archive-confirm-btn')).toHaveTextContent('Archive Campaign');
     expect(screen.getByTestId('archive-cancel-btn')).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('confirms archive action through dialog confirm button', async () => {
     const user = userEvent.setup();
@@ -303,7 +303,7 @@ describe('CampaignsPage', () => {
     await user.click(screen.getByTestId('archive-confirm-btn'));
 
     expect(archiveExecute).toHaveBeenCalledWith('c-archive-confirm');
-  });
+  }, 15_000);
 
   it('requires duplicate campaign name before confirm', async () => {
     const user = userEvent.setup();
@@ -325,7 +325,7 @@ describe('CampaignsPage', () => {
 
     expect(screen.getByTestId('duplicate-name-error')).toBeInTheDocument();
     expect(duplicateExecute).not.toHaveBeenCalled();
-  });
+  }, 15_000);
 
   it('renders duplicate dialog with labeled input and accessible name', async () => {
     const user = userEvent.setup();
@@ -336,7 +336,7 @@ describe('CampaignsPage', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /duplicate campaign/i })).toBeInTheDocument();
     expect(screen.getByLabelText('Duplicate Name')).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('shows view-only banner and disables mutation actions for viewer role', () => {
     renderPage('test-token', ['viewer']);

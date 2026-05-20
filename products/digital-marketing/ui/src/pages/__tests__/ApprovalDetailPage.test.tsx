@@ -233,7 +233,7 @@ describe('ApprovalDetailPage', () => {
 
     await user.type(screen.getByTestId('decide-comment'), 'Needs revision');
     expect(submitBtn).not.toBeDisabled();
-  });
+  }, 15_000);
 
   it('renders an accessible decision dialog with labeled controls', async () => {
     mockGetStatus.mockResolvedValue(HIGH_RISK_APPROVAL);
@@ -257,5 +257,5 @@ describe('ApprovalDetailPage', () => {
     await user.click(await screen.findByTestId('open-decide-dialog'));
     await user.click(screen.getByTestId('decide-cancel'));
     expect(screen.queryByTestId('decide-dialog')).not.toBeInTheDocument();
-  });
+  }, 15_000);
 });

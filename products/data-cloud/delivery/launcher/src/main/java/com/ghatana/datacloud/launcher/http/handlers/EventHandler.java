@@ -488,12 +488,39 @@ public class EventHandler {
                             // Keep compatibility fallback offset if header is not numeric.
                         }
                     }
-                    eventResponses.add(Map.of(
-                        "offset", eventOffset,
-                        "type", e.type(),
-                        "payload", e.payload(),
-                        "timestamp", e.timestamp().toString()
-                    ));
+                    
+                    // DC-P0-02: Return full canonical event envelope, not just 5 fields
+                    Map<String, Object> eventResponse = new LinkedHashMap<>();
+                    eventResponse.put("offset", eventOffset);
+                    eventResponse.put("eventId", e.headers().get("eventId"));
+                    eventResponse.put("type", e.type());
+                    eventResponse.put("tenantId", e.headers().get("tenantId"));
+                    eventResponse.put("workspaceId", e.headers().get("workspaceId"));
+                    eventResponse.put("subject", optionalValue(e.subjectId()));
+                    eventResponse.put("subjectType", optionalValue(e.subjectType()));
+                    eventResponse.put("actor", optionalValue(e.actor()));
+                    eventResponse.put("classification", optionalValue(e.classification()));
+                    e.policyContext().ifPresentOrElse(
+                        pc -> {
+                            if (!pc.isBlank()) {
+                                try {
+                                    eventResponse.put("policyContext", http.objectMapper().readValue(pc, Map.class));
+                                } catch (Exception ex) {
+                                    eventResponse.put("policyContext", pc);
+                                }
+                            }
+                        },
+                        () -> {} // No policyContext
+                    );
+                    eventResponse.put("provenance", optionalValue(e.source()));
+                    eventResponse.put("traceContext", optionalValue(e.traceContext()));
+                    eventResponse.put("correlationId", optionalValue(e.correlationId()));
+                    eventResponse.put("causationId", optionalValue(e.causationId()));
+                    eventResponse.put("payload", e.payload());
+                    eventResponse.put("timestamp", e.timestamp().toString());
+                    eventResponse.put("headers", e.headers());
+                    
+                    eventResponses.add(eventResponse);
                 }
 
                 // P1-3: Include pagination metadata for both offset and timestamp modes
@@ -563,12 +590,43 @@ public class EventHandler {
                     return http.errorResponse(404, "Event not found at offset: " + offset);
                 }
                 var e = events.get(offset);
-                return http.jsonResponse(Map.of(
-                    "offset", (long)offset,
-                    "type", e.type(),
-                    "payload", e.payload(),
-                    "timestamp", e.timestamp().toString()
-                ));
+                
+                // DC-P0-02: Return full canonical event envelope
+                Map<String, Object> eventResponse = new LinkedHashMap<>();
+                eventResponse.put("offset", (long)offset);
+                eventResponse.put("eventId", e.headers().get("eventId"));
+                eventResponse.put("type", e.type());
+                eventResponse.put("tenantId", e.headers().get("tenantId"));
+                eventResponse.put("workspaceId", e.headers().get("workspaceId"));
+                eventResponse.put("subject", optionalValue(e.subjectId()));
+                eventResponse.put("subjectType", optionalValue(e.subjectType()));
+                eventResponse.put("actor", optionalValue(e.actor()));
+                eventResponse.put("classification", optionalValue(e.classification()));
+                e.policyContext().ifPresentOrElse(
+                    pc -> {
+                        if (!pc.isBlank()) {
+                            try {
+                                eventResponse.put("policyContext", http.objectMapper().readValue(pc, Map.class));
+                            } catch (Exception ex) {
+                                eventResponse.put("policyContext", pc);
+                            }
+                        }
+                    },
+                    () -> {} // No policyContext
+                );
+                eventResponse.put("provenance", optionalValue(e.source()));
+                eventResponse.put("traceContext", optionalValue(e.traceContext()));
+                eventResponse.put("correlationId", optionalValue(e.correlationId()));
+                eventResponse.put("causationId", optionalValue(e.causationId()));
+                eventResponse.put("payload", e.payload());
+                eventResponse.put("timestamp", e.timestamp().toString());
+                eventResponse.put("headers", e.headers());
+                
+                return http.jsonResponse(eventResponse);
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    private static String optionalValue(Optional<String> value) {
+        return value.filter(v -> !v.isBlank()).orElse(null);
     }
 }

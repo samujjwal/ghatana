@@ -3,7 +3,6 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.DataCloudLauncherSettings;
-import com.ghatana.datacloud.launcher.RuntimeProfileValidator;
 import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -193,43 +192,41 @@ public class DataLifecycleHandler {
     }
 
     /**
-     * DC-P1-03/P1-05: Sets the deployment profile and registers subsystem requirements.
+     * DC-P1-03/P1-05: Sets the deployment profile.
      *
-     * <p>This method registers DataLifecycleHandler's specific production requirements
-     * with the RuntimeProfileValidator instead of validating them separately.
+     * <p>This method stores the deployment profile for production-like verification during initialization.
      *
      * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
      * @return {@code this} for method chaining
      */
     public DataLifecycleHandler withDeploymentProfile(String profile) {
         this.deploymentProfile = profile != null ? profile : "local";
-        
-        // DC-P1-05: Register subsystem requirements with RuntimeProfileValidator
-        if (isProductionLikeProfile(deploymentProfile)) {
-            RuntimeProfileValidator.registerRequirement(
-                new RuntimeProfileValidator.FunctionalSubsystemRequirement(
-                    "DataLifecycleHandler",
-                    deploymentProfile,
-                    () -> {
-                        // DC-P1-03: Transaction manager is required for atomic critical operations
-                        if (transactionManager == null) {
-                            throw new IllegalStateException(
-                                "DC-P1-03: TransactionManager is required in production/staging/sovereign profiles. " +
-                                "Critical governance operations (purge, redaction) must be atomic with audit emission.");
-                        }
-                        // DC-P1-03: EventLogAuditService is required for fail-closed critical audit writes
-                        if (eventLogAuditService == null) {
-                            throw new IllegalStateException(
-                                "DC-P1-03: EventLogAuditService is required in production/staging/sovereign profiles. " +
-                                "Critical audit writes must be fail-closed to block operations on audit sink failure.");
-                        }
-                    },
-                    "TransactionManager and EventLogAuditService are required for critical governance operations"
-                )
-            );
-        }
-        
         return this;
+    }
+
+    /**
+     * DC-P1-03: Validates production-readiness of this handler for the configured deployment profile.
+     *
+     * <p>This method should be called during server initialization to ensure all required
+     * subsystems are configured when running in production-like profiles.
+     *
+     * @throws IllegalStateException if required subsystems are missing in production profiles
+     */
+    public void validateProductionRequirements() {
+        if (isProductionLikeProfile(deploymentProfile)) {
+            // DC-P1-03: Transaction manager is required for atomic critical operations
+            if (transactionManager == null) {
+                throw new IllegalStateException(
+                    "DC-P1-03: TransactionManager is required in production/staging/sovereign profiles. " +
+                    "Critical governance operations (purge, redaction) must be atomic with audit emission.");
+            }
+            // DC-P1-03: EventLogAuditService is required for fail-closed critical audit writes
+            if (eventLogAuditService == null) {
+                throw new IllegalStateException(
+                    "DC-P1-03: EventLogAuditService is required in production/staging/sovereign profiles. " +
+                    "Critical audit writes must be fail-closed to block operations on audit sink failure.");
+            }
+        }
     }
 
     /**

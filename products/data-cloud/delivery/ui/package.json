@@ -28,6 +28,8 @@
     "test:contract:watch": "vitest tests/contract",
     "docs:routes:generate": "tsx scripts/generate-route-truth-matrix.ts",
     "docs:routes:check": "tsx scripts/generate-route-truth-matrix.ts --check",
+    "generate:route-manifest": "node ../../scripts/generate-route-manifest.mjs",
+    "check:route-manifest": "node ../../scripts/generate-route-manifest.mjs --check",
     "generate:api-types": "tsx scripts/generate-api-types.ts",
     "check:api-types": "tsx scripts/check-api-types.ts",
     "storybook": "storybook dev -p 6006",

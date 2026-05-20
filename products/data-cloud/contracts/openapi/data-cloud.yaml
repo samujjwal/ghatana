@@ -13,6 +13,7 @@ info:
     The Action Plane provides agentic orchestration, pattern detection, anomaly analysis, time-series forecasting,
     pipeline execution, and governance/operation surfaces.
     In this API, workflow and pipeline execution means data-local plugin runtime execution.
+    AEP still owns broader agentic orchestration.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends

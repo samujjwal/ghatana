@@ -180,12 +180,13 @@ public enum EndpointSensitivity {
     /**
      * Classify a given HTTP method + path pair.
      *
+     * <p>DC-P0-01: Now uses the authoritative RouteSecurityRegistry instead of prefix-based inference.
+     *
      * <p>Rules (evaluated in order):
      * <ol>
      *   <li>If path is in {@link #PUBLIC_PATHS} → {@link #PUBLIC}.</li>
-     *   <li>If method is DELETE and path starts with any CRITICAL prefix → {@link #CRITICAL}.</li>
-     *   <li>If path starts with any CRITICAL prefix (any method) → {@link #CRITICAL}.</li>
-     *   <li>If path starts with any SENSITIVE prefix → {@link #SENSITIVE}.</li>
+     *   <li>Look up route in {@link RouteSecurityRegistry} → use explicit sensitivity.</li>
+     *   <li>If registry has legacy entry that is deprecated → try old prefix-based fallback (temp).</li>
      *   <li>Otherwise → {@link #INTERNAL}.</li>
      * </ol>
      *
@@ -194,10 +195,33 @@ public enum EndpointSensitivity {
      * @return the computed sensitivity level
      */
     public static EndpointSensitivity classify(String method, String path) {
+        // Quick check for public paths (no registry lookup needed)
         if (PUBLIC_PATHS.contains(path)) {
             return PUBLIC;
         }
 
+        // DC-P0-01: First try explicit route security registry
+        var metadata = RouteSecurityRegistry.lookupWithFallback(method, path);
+        if (metadata.isPresent()) {
+            return metadata.get().sensitivity();
+        }
+
+        // DC-P0-01: Temporary fallback to legacy prefix-based classification
+        // This will be removed once all routes are registered in RouteSecurityRegistry.
+        return classifyLegacy(method, path);
+    }
+
+    /**
+     * Legacy classification logic (prefix-based).
+     *
+     * <p>DC-P0-01: This method is temporary and will be removed when all routes
+     * are registered in {@link RouteSecurityRegistry}.
+     *
+     * @param method HTTP method
+     * @param path request path
+     * @return sensitivity level
+     */
+    private static EndpointSensitivity classifyLegacy(String method, String path) {
         String actionKey = method.toUpperCase() + " " + normalizePath(path);
         if (CRITICAL_ROUTE_ACTIONS.contains(actionKey)) {
             return CRITICAL;
@@ -223,9 +247,6 @@ public enum EndpointSensitivity {
         }
 
         // ── 3. Sub-path mutation overrides ────────────────────────────────────
-        // Model promotion, learning approve/reject, and memory retain are all
-        // high-impact mutations that require policy-engine consultation regardless
-        // of their parent resource's default sensitivity level.
         if (path.contains("/promote")
                 || path.contains("/approve")
                 || path.contains("/reject")
@@ -240,22 +261,20 @@ public enum EndpointSensitivity {
             return SENSITIVE;
         }
 
-        // ── 5. Authenticated reads: most GETs are INTERNAL; memory is SENSITIVE ─
+        // ── 5. Authenticated reads ──────────────────────────────────────────
         if ("GET".equalsIgnoreCase(method)) {
             if (path.startsWith("/mcp/")) {
                 return INTERNAL;
             }
-            // Memory tier reads expose personal-data → elevated to SENSITIVE.
             if (path.equals("/api/v1/memory") || path.startsWith("/api/v1/memory/")) {
                 return SENSITIVE;
             }
-            // All other authenticated GETs default to INTERNAL.
             if (path.startsWith("/api/v1/")) {
                 return INTERNAL;
             }
         }
 
-        // ── 6. Remaining writes / mutations → SENSITIVE if prefix matches ─────
+        // ── 6. Remaining writes ─────────────────────────────────────────────
         for (String prefix : SENSITIVE_PATH_PREFIXES) {
             if (path.startsWith(prefix)) {
                 return SENSITIVE;
@@ -266,7 +285,7 @@ public enum EndpointSensitivity {
             return SENSITIVE;
         }
 
-        // Route-access registry is a fallback only; explicit sensitivity rules above take precedence.
+        // Final fallback
         DataCloudSecurityFilter.AccessLevel accessLevel = RouteActionAccessRegistry.requiredAccess(method, path);
         if (accessLevel == DataCloudSecurityFilter.AccessLevel.ADMIN
                 || accessLevel == DataCloudSecurityFilter.AccessLevel.AUDITOR) {

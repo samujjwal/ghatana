@@ -7,7 +7,6 @@
  */
 
 import * as ts from "typescript";
-import * as path from "node:path";
 import type {
   ArtifactEdge,
   FileScanResult,
@@ -249,18 +248,18 @@ function resolveImportSpecifier(
     return null;
   }
 
-  const containingDir = path.posix.dirname(importStatement.fromPath);
-  const candidateBase = path.posix.normalize(path.posix.join(containingDir, importStatement.moduleSpecifier));
+  const containingDir = normalizeRelativePath(importStatement.fromPath).split('/').slice(0, -1).join('/') || '/';
+  const candidateBase = normalizeRelativePath(`${containingDir}/${importStatement.moduleSpecifier}`);
   const manualCandidates = [
     candidateBase,
     `${candidateBase}.ts`,
     `${candidateBase}.tsx`,
     `${candidateBase}.js`,
     `${candidateBase}.jsx`,
-    path.posix.join(candidateBase, "index.ts"),
-    path.posix.join(candidateBase, "index.tsx"),
-    path.posix.join(candidateBase, "index.js"),
-    path.posix.join(candidateBase, "index.jsx"),
+    `${candidateBase}/index.ts`,
+    `${candidateBase}/index.tsx`,
+    `${candidateBase}/index.js`,
+    `${candidateBase}/index.jsx`,
   ];
 
   for (const candidate of manualCandidates) {

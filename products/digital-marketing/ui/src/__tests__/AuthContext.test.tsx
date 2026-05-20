@@ -11,6 +11,8 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import React from 'react';
 
 describe('AuthContext - Session Management (DMOS-P1-013)', () => {
+  const baseTime = new Date('2026-01-01T00:00:00.000Z');
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -23,6 +25,7 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
 
   it('should automatically logout on session expiry', async () => {
     vi.useFakeTimers();
+    vi.setSystemTime(baseTime);
 
     const TestComponent = () => {
       const { isAuthenticated } = useAuth();
@@ -37,14 +40,16 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
 
     expect(getByText('authenticated')).toBeInTheDocument();
 
-    // Fast-forward time to beyond session expiry.
+    // Jump beyond expiry and run the next 1-second expiry check without
+    // draining every scheduled interval between now and then.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(31 * 60 * 1000);
+      vi.setSystemTime(new Date(baseTime.getTime() + 31 * 60 * 1000));
+      await vi.advanceTimersToNextTimerAsync();
     });
 
     expect(getByText('not authenticated')).toBeInTheDocument();
 
-  });
+  }, 15_000);
 
   it('should clear all session data on logout', () => {
     const TestComponent = () => {
@@ -83,6 +88,7 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
 
   it('should refresh session periodically', async () => {
     vi.useFakeTimers();
+    vi.setSystemTime(baseTime);
 
     const TestComponent = () => {
       const { isAuthenticated } = useAuth();
@@ -105,7 +111,7 @@ describe('AuthContext - Session Management (DMOS-P1-013)', () => {
     // Session should still be authenticated (refreshed)
     expect(getByText('authenticated')).toBeInTheDocument();
 
-  });
+  }, 15_000);
 
   it('should not store sensitive token in localStorage', () => {
     const TestComponent = () => {

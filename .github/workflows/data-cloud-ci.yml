@@ -149,6 +149,13 @@ jobs:
             --tests com.ghatana.datacloud.launcher.DataCloudArchitectureTest \
             --no-daemon
 
+      - name: Run launcher plane boundary tests
+        run: |
+          ./gradlew \
+            :products:data-cloud:delivery:launcher:test \
+            --tests com.ghatana.datacloud.launcher.arch.DataCloudPlaneBoundaryTest \
+            --no-daemon
+
       # Code Coverage
       - name: Generate code coverage report
         run: |
@@ -270,6 +277,13 @@ jobs:
         run: |
           cd products/data-cloud
           node scripts/generate-route-security-metadata.mjs --check
+
+      # DC-P1-03/DC-P1-04: Canonical route manifest and UI runtime truth must
+      # be regenerated and committed whenever RouteSecurityRegistry changes.
+      - name: DC-P1-03: Check route manifest/runtime truth drift
+        run: |
+          cd products/data-cloud
+          node scripts/generate-route-manifest.mjs --check
 
       - name: Canonical doc boundary lint
         run: |

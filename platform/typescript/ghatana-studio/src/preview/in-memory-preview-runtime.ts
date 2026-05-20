@@ -46,8 +46,9 @@ export const FULL_RUNTIME_PREVIEW_PLAN = [
 
 function parsePreviewSource(source: string): ts.SourceFile {
   const sourceFile = ts.createSourceFile('preview.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  if (sourceFile.parseDiagnostics.length > 0) {
-    const message = ts.flattenDiagnosticMessageText(sourceFile.parseDiagnostics[0].messageText, '\n');
+  const diagnostics = (sourceFile as ts.SourceFile & { readonly parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics;
+  if (diagnostics && diagnostics.length > 0) {
+    const message = ts.flattenDiagnosticMessageText(diagnostics[0].messageText, '\n');
     throw new Error(`Preview parse failed: ${message}`);
   }
   return sourceFile;
@@ -283,7 +284,7 @@ function renderAttributes(attributes: ts.JsxAttributes, request: PreviewRequest,
 
   for (const prop of attributes.properties) {
     if (!ts.isJsxAttribute(prop)) continue;
-    const name = prop.name.text;
+    const name = ts.isIdentifier(prop.name) ? prop.name.text : prop.name.getText();
     if (name.startsWith('on') || name === 'ref' || name === 'dangerouslySetInnerHTML') continue;
     if (prop.initializer === undefined) {
       rendered.push(`${name}="true"`);

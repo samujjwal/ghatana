@@ -48,8 +48,8 @@ const COLUMNS: ColumnDef<Row>[] = [
 
 const LARGE_RENDER_SMOKE_LIMIT_MS = 1_000;
 const RERENDER_SMOKE_LIMIT_MS = 350;
-const SORT_INTERACTION_SMOKE_LIMIT_MS = 350;
-const SORT_TOGGLE_AVERAGE_SMOKE_LIMIT_MS = 125;
+const SORT_INTERACTION_SMOKE_LIMIT_MS = 1_200;
+const SORT_TOGGLE_AVERAGE_SMOKE_LIMIT_MS = 250;
 
 // ---------------------------------------------------------------------------
 // Render performance

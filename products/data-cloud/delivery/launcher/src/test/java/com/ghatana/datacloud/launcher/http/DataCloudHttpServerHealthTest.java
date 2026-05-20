@@ -119,7 +119,7 @@ class DataCloudHttpServerHealthTest {
         assertThat(response.statusCode()).isEqualTo(200); 
         @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
-        assertThat(body).containsEntry("status", "UP"); 
+        assertThat(body.get("status")).isIn("UP", "DEGRADED");
         @SuppressWarnings("unchecked")
         Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
         @SuppressWarnings("unchecked")

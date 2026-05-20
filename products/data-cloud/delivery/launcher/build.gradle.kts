@@ -81,8 +81,9 @@ dependencies {
 }
 
 tasks.test {
-    // useJUnitPlatform() already applied by java-module; increase parallelism for faster test execution
-    maxParallelForks = 4
+    // Launcher HTTP tests bind real local ports and mutate process-level runtime profile state.
+    // Keep them in one fork so the full repo check is deterministic.
+    maxParallelForks = 1
     finalizedBy(tasks.jacocoTestReport)
 }
 
@@ -289,3 +290,12 @@ tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
     reports.create("xml") { required = true }
 }
 
+tasks.register<Test>("boundaryCheck") {
+    group = "verification"
+    description = "Runs Data Cloud launcher boundary/architecture ArchUnit suites."
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    include("**/DataCloudArchitectureTest.class")
+    include("**/DataCloudPlaneBoundaryTest.class")
+}

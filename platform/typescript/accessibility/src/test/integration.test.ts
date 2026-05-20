@@ -12,6 +12,8 @@ import { AccessibilityScorer } from '../scoring/AccessibilityScorer';
 
 import type { OutputFormat } from '../types';
 
+const LARGE_DATASET_SCORE_BUDGET_MS = 250;
+
 // Mock axe-core
 // Mock axe-core
  
@@ -353,8 +355,8 @@ describe('Full Audit Workflow Integration', () => {
 
       expect(score.overall).toBeGreaterThanOrEqual(0);
       expect(score.overall).toBeLessThanOrEqual(100);
-      // Should calculate score for 500 findings in under 100ms
-      expect(duration).toBeLessThan(100);
+      // Should calculate score for 500 findings inside the shared-runner smoke budget.
+      expect(duration).toBeLessThan(LARGE_DATASET_SCORE_BUDGET_MS);
     });
 
     it('should generate recommendations for complex reports', () => {

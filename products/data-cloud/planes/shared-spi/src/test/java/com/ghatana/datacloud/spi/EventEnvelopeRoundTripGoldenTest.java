@@ -135,10 +135,10 @@ public abstract class EventEnvelopeRoundTripGoldenTest extends EventloopTestBase
                 "causationId", causationId
             ))
             .idempotencyKey(eventId.toString())
-            .correlationId(Optional.of(correlationId))
-            .causationId(Optional.of(causationId))
-            .source(Optional.of(provenance))
-            .userId(Optional.of(actor))
+            .correlationId(correlationId)
+            .causationId(causationId)
+            .source(provenance)
+            .userId(actor)
             .build();
 
         // Act: Append the event
@@ -203,10 +203,10 @@ public abstract class EventEnvelopeRoundTripGoldenTest extends EventloopTestBase
                 "correlationId", "corr-xyz",
                 "causationId", "cause-abc"
             ))
-            .correlationId(Optional.of("corr-xyz"))
-            .causationId(Optional.of("cause-abc"))
-            .source(Optional.of("test-source"))
-            .userId(Optional.of("user-123"))
+            .correlationId("corr-xyz")
+            .causationId("cause-abc")
+            .source("test-source")
+            .userId("user-123")
             .build();
 
         // Act: Append and tail the event
@@ -222,9 +222,6 @@ public abstract class EventEnvelopeRoundTripGoldenTest extends EventloopTestBase
             })
         );
 
-        // Wait a moment for tail to receive the event
-        runPromise(() -> com.ghatana.datacloud.spi.EventLogStore.EventEntry.builder().build());
-        
         // Assert: Verify tail received the event with all fields
         assertThat(tailCount.get()).isGreaterThan(0);
         EventLogStore.EventEntry tailed = tailReceived.get();
@@ -300,10 +297,10 @@ public abstract class EventEnvelopeRoundTripGoldenTest extends EventloopTestBase
                     "causationId", "cause-" + i,
                     "classification", i % 2 == 0 ? "public" : "sensitive"
                 ))
-                .correlationId(Optional.of("corr-" + i))
-                .causationId(Optional.of("cause-" + i))
-                .source(Optional.of("batch-test"))
-                .userId(Optional.of("user-" + i))
+                .correlationId("corr-" + i)
+                .causationId("cause-" + i)
+                .source("batch-test")
+                .userId("user-" + i)
                 .build();
             
             batch.add(entry);

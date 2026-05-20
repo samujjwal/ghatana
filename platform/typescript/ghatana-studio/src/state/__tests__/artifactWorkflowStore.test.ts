@@ -23,6 +23,7 @@ import {
   hasArtifactWorkflowResultAtom,
   setArtifactWorkflowAtom,
   clearArtifactWorkflowAtom,
+  reloadWorkflowStateAtom,
 } from '../artifactWorkflowStore.js';
 import { createPerfectFidelityReport } from '@ghatana/artifact-contracts';
 import { createLogicalArtifactModel } from '@ghatana/artifact-contracts';
@@ -196,5 +197,113 @@ describe('clearArtifactWorkflowAtom', () => {
     expect(state.previewSource).toBeNull();
     expect(state.lastDecompileAt).toBeNull();
     expect(store.get(hasArtifactWorkflowResultAtom)).toBe(false);
+  });
+});
+
+// ============================================================================
+// reloadWorkflowStateAtom — persistence recovery
+// ============================================================================
+
+describe('reloadWorkflowStateAtom', () => {
+  it('restores state from persistence adapter', async () => {
+    const store = makeStore();
+    const model = createLogicalArtifactModel('m1', 'test-model');
+    const report = createPerfectFidelityReport('m1');
+
+    // Set initial state
+    store.set(setArtifactWorkflowAtom, {
+      model,
+      fidelityReport: report,
+      lastDecompileAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    // Create a new store to simulate reload
+    const newStore = makeStore();
+    await newStore.set(reloadWorkflowStateAtom);
+
+    // Verify state was restored
+    expect(newStore.get(artifactModelAtom)).toEqual(model);
+    expect(newStore.get(artifactFidelityReportAtom)).toEqual(report);
+    expect(newStore.get(artifactWorkflowAtom).lastDecompileAt).toBe('2024-01-01T00:00:00.000Z');
+  });
+
+  it('handles null persistence gracefully', async () => {
+    const store = makeStore();
+    // Clear any existing persisted state before testing
+    await store.set(clearArtifactWorkflowAtom);
+    await store.set(reloadWorkflowStateAtom);
+
+    // Should remain in initial state
+    expect(store.get(artifactModelAtom)).toBeNull();
+    expect(store.get(artifactFidelityReportAtom)).toBeNull();
+  });
+
+  it('restores complete workflow state including all fields', async () => {
+    const store = makeStore();
+    const model = createLogicalArtifactModel('m1', 'test-model');
+    const report = createPerfectFidelityReport('m1');
+    const residuals = { islands: [], totalCount: 0, blockingCount: 0 };
+
+    // Set complete state with proper contract types
+    store.set(setArtifactWorkflowAtom, {
+      jobResult: {
+        jobId: 'job-1',
+        status: 'complete',
+        model,
+        fidelityReport: report,
+        residualIslandReport: residuals,
+        errors: [],
+        completedAt: '2024-01-01T00:00:00.000Z',
+        startedAt: '2024-01-01T00:00:00.000Z',
+      },
+      model,
+      fidelityReport: report,
+      previewSource: 'export default function App() {}',
+      evidencePack: {
+        evidenceId: 'ev-1',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        modelId: 'm1',
+        label: 'test-model',
+        stage: 'decompile',
+        fidelity: report,
+        residuals,
+        decompileResult: {
+          success: true,
+          modelId: 'm1',
+          nodeCount: 1,
+          edgeCount: 0,
+          fidelity: report,
+          residuals,
+          errors: [],
+          decompiledAt: '2024-01-01T00:00:00.000Z',
+        },
+        reviewStatus: 'pending',
+      },
+      roundTripDiffReport: {
+        reportId: 'diff-1',
+        modelId: 'm1',
+        diffs: [],
+        fidelity: report,
+        residuals,
+        isLossless: true,
+        generatedAt: '2024-01-01T00:00:00.000Z',
+      },
+      lastDecompileAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    // Reload in new store
+    const newStore = makeStore();
+    await newStore.set(reloadWorkflowStateAtom);
+
+    // Verify all fields restored
+    const state = newStore.get(artifactWorkflowAtom);
+    expect(state.jobResult).toBeDefined();
+    expect(state.model).toEqual(model);
+    expect(state.fidelityReport).toEqual(report);
+    expect(state.previewSource).toBe('export default function App() {}');
+    expect(state.evidencePack).toBeDefined();
+    expect(state.roundTripDiffReport).toBeDefined();
+    expect(state.lastDecompileAt).toBe('2024-01-01T00:00:00.000Z');
+    expect(newStore.get(hasArtifactWorkflowResultAtom)).toBe(true);
   });
 });

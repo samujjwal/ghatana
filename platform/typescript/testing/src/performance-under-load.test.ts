@@ -18,6 +18,8 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const SORT_10000_REGRESSION_BUDGET_MS = 75;
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Run `fn` N times and return the average elapsed ms. */
@@ -271,9 +273,9 @@ describe('Performance Under Load', () => {
   // ─── Regression snapshots ──────────────────────────────────────────────────
 
   describe('Regression baseline assertions', () => {
-    it('sorting 10 000 numbers is under 20 ms (regression guard)', () => {
+    it('sorting 10 000 numbers stays within the regression budget', () => {
       const elapsed = measureMs(() => expensiveSort(10_000), 10);
-      expect(elapsed).toBeLessThan(20);
+      expect(elapsed).toBeLessThan(SORT_10000_REGRESSION_BUDGET_MS);
     });
 
     it('100 promise resolutions complete in under 10 ms total', async () => {

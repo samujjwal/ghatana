@@ -2,12 +2,16 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
+import com.ghatana.datacloud.launcher.runtime.RuntimeProfileValidator;
 import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -16,8 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * HTTP handler for the tenant-scoped context layer (P3.1).
@@ -43,18 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class ContextLayerHandler {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
-
-    /** Tenant-scoped key-value entries. Each value is an arbitrary JSON-compatible object. */
-    private final ConcurrentHashMap<String, ConcurrentHashMap<String, Object>> tenantContexts =
-            new ConcurrentHashMap<>();
-
-    /** Monotonically increasing version counter per tenant, incremented on every write. */
-    private final ConcurrentHashMap<String, AtomicLong> tenantVersions =
-            new ConcurrentHashMap<>();
-
-    /** Tracks when context was first created for a tenant. */
-    private final ConcurrentHashMap<String, Instant> tenantCreatedAt =
-            new ConcurrentHashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(ContextLayerHandler.class);
 
     private final HttpHandlerSupport http;
     private final ObjectMapper objectMapper;
@@ -65,6 +56,13 @@ public final class ContextLayerHandler {
      */
     private final KnowledgeGraphPlugin knowledgeGraph;
 
+    /**
+     * DC-P1-01: Durable storage SPI for context entries.
+     * Replaces the previous in-memory ConcurrentHashMap implementation.
+     * Use InMemoryContextStore for local/test, JdbcContextStore for production.
+     */
+    private final ContextStore contextStore;
+
     /** Maximum relationships to include per context response. */
     private static final int MAX_RELATIONSHIPS = 20;
 
@@ -73,7 +71,7 @@ public final class ContextLayerHandler {
      * @param objectMapper Jackson mapper for body parsing
      */
     public ContextLayerHandler(HttpHandlerSupport http, ObjectMapper objectMapper) {
-        this(http, objectMapper, null);
+        this(http, objectMapper, null, new InMemoryContextStore());
     }
 
     /**
@@ -83,9 +81,26 @@ public final class ContextLayerHandler {
      */
     public ContextLayerHandler(HttpHandlerSupport http, ObjectMapper objectMapper,
                                KnowledgeGraphPlugin knowledgeGraph) {
+        this(http, objectMapper, knowledgeGraph, new InMemoryContextStore());
+    }
+
+    /**
+     * @param http           shared HTTP support
+     * @param objectMapper   Jackson mapper for body parsing
+     * @param knowledgeGraph optional knowledge graph plugin for relationship enrichment
+     * @param contextStore   DC-P1-01: durable context storage SPI
+     */
+    public ContextLayerHandler(HttpHandlerSupport http, ObjectMapper objectMapper,
+                               KnowledgeGraphPlugin knowledgeGraph, ContextStore contextStore) {
         this.http = Objects.requireNonNull(http, "http");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
         this.knowledgeGraph = knowledgeGraph;
+        this.contextStore = Objects.requireNonNull(contextStore, "contextStore");
+        
+        // DC-P1-02: Validate storage implementation for runtime profile
+        RuntimeProfile activeProfile = RuntimeProfile.resolve();
+        RuntimeProfileValidator.validateStorageImplementation(
+                contextStore, activeProfile, "ContextLayerHandler initialization");
     }
 
     // ─── Routes ───────────────────────────────────────────────────────────────
@@ -107,32 +122,33 @@ public final class ContextLayerHandler {
         }
         String requestId = http.resolveCorrelationId(request);
 
-        Map<String, Object> entries = currentEntries(tenantId);
-        long version = currentVersion(tenantId);
+        // DC-P1-01: Use ContextStore SPI for durable storage
+        return contextStore.getSnapshot(tenantId)
+            .then(snapshot -> {
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("tenantId", tenantId);
+                body.put("entries", snapshot.entries());
+                body.put("count", snapshot.entries().size());
+                body.put("version", snapshot.version());
+                body.put("requestId", requestId);
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("tenantId", tenantId);
-        body.put("entries", entries);
-        body.put("count", entries.size());
-        body.put("version", version);
-        body.put("requestId", requestId);
+                if (knowledgeGraph == null) {
+                    return Promise.of(http.jsonResponse(body, requestId));
+                }
 
-        if (knowledgeGraph == null) {
-            return Promise.of(http.jsonResponse(body, requestId));
-        }
-
-        // P3.5.1: Enrich response with entity relationships from knowledge graph
-        GraphQuery edgeQuery = GraphQuery.builder()
-                .tenantId(tenantId)
-                .limit(MAX_RELATIONSHIPS)
-                .build();
-        return knowledgeGraph.queryEdges(edgeQuery)
-                .map(edges -> {
-                    List<Map<String, Object>> relationships = buildRelationships(edges);
-                    body.put("relationships", relationships);
-                    return http.jsonResponse(body, requestId);
-                })
-                .then(Promise::of, ex -> Promise.of(http.jsonResponse(body, requestId)));
+                // P3.5.1: Enrich response with entity relationships from knowledge graph
+                GraphQuery edgeQuery = GraphQuery.builder()
+                        .tenantId(tenantId)
+                        .limit(MAX_RELATIONSHIPS)
+                        .build();
+                return knowledgeGraph.queryEdges(edgeQuery)
+                        .map(edges -> {
+                            List<Map<String, Object>> relationships = buildRelationships(edges);
+                            body.put("relationships", relationships);
+                            return http.jsonResponse(body, requestId);
+                        })
+                        .then(Promise::of, ex -> Promise.of(http.jsonResponse(body, requestId)));
+            });
     }
 
     /**
@@ -174,22 +190,17 @@ public final class ContextLayerHandler {
                     return Promise.of(http.errorResponse(400, "No context entries provided"));
                 }
 
-                ConcurrentHashMap<String, Object> store = tenantContexts
-                        .computeIfAbsent(tenantId, k -> new ConcurrentHashMap<>());
-                tenantCreatedAt.putIfAbsent(tenantId, Instant.now());
-                store.putAll(entriesToUpsert);
-                long newVersion = tenantVersions
-                        .computeIfAbsent(tenantId, k -> new AtomicLong(0))
-                        .incrementAndGet();
-
-                Map<String, Object> responseBody = new LinkedHashMap<>();
-                responseBody.put("tenantId", tenantId);
-                responseBody.put("upserted", entriesToUpsert.size());
-                responseBody.put("version", newVersion);
-                responseBody.put("updatedAt", Instant.now().toString());
-                responseBody.put("requestId", requestId);
-
-                return Promise.of(http.jsonResponse(responseBody, requestId));
+                // DC-P1-01: Use ContextStore SPI for durable storage
+                return contextStore.putEntries(tenantId, entriesToUpsert)
+                    .map(newVersion -> {
+                        Map<String, Object> responseBody = new LinkedHashMap<>();
+                        responseBody.put("tenantId", tenantId);
+                        responseBody.put("upserted", entriesToUpsert.size());
+                        responseBody.put("version", newVersion);
+                        responseBody.put("updatedAt", Instant.now().toString());
+                        responseBody.put("requestId", requestId);
+                        return http.jsonResponse(responseBody, requestId);
+                    });
             });
     }
 
@@ -215,16 +226,16 @@ public final class ContextLayerHandler {
         }
 
         String key = rawKey.trim();
-        ConcurrentHashMap<String, Object> store = tenantContexts.get(tenantId);
-        if (store == null || !store.containsKey(key)) {
-            return Promise.of(http.jsonResponse(404,
-                    Map.of("error", "Key not found", "key", key, "tenantId", tenantId)));
-        }
 
-        store.remove(key);
-        tenantVersions.computeIfAbsent(tenantId, k -> new AtomicLong(0)).incrementAndGet();
-
-        return Promise.of(http.noContentResponse());
+        // DC-P1-01: Use ContextStore SPI for durable storage
+        return contextStore.deleteEntry(tenantId, key)
+            .map(found -> {
+                if (!found) {
+                    return http.jsonResponse(404,
+                            Map.of("error", "Key not found", "key", key, "tenantId", tenantId));
+                }
+                return http.noContentResponse();
+            });
     }
 
     /**
@@ -257,20 +268,19 @@ public final class ContextLayerHandler {
         }
         String requestId = http.resolveCorrelationId(request);
 
-        Map<String, Object> entries = currentEntries(tenantId);
-        long version = currentVersion(tenantId);
-        Instant createdAt = tenantCreatedAt.getOrDefault(tenantId, Instant.now());
-
-        Map<String, Object> snapshot = new LinkedHashMap<>();
-        snapshot.put("tenantId", tenantId);
-        snapshot.put("version", version);
-        snapshot.put("count", entries.size());
-        snapshot.put("createdAt", createdAt.toString());
-        snapshot.put("snapshotAt", Instant.now().toString());
-        snapshot.put("entries", entries);
-        snapshot.put("requestId", requestId);
-
-        return Promise.of(http.jsonResponse(snapshot, requestId));
+        // DC-P1-01: Use ContextStore SPI for durable storage
+        return contextStore.getSnapshot(tenantId)
+            .map(snapshot -> {
+                Map<String, Object> responseSnapshot = new LinkedHashMap<>();
+                responseSnapshot.put("tenantId", tenantId);
+                responseSnapshot.put("version", snapshot.version());
+                responseSnapshot.put("count", snapshot.entries().size());
+                responseSnapshot.put("createdAt", snapshot.createdAt().toString());
+                responseSnapshot.put("snapshotAt", Instant.now().toString());
+                responseSnapshot.put("entries", snapshot.entries());
+                responseSnapshot.put("requestId", requestId);
+                return http.jsonResponse(responseSnapshot, requestId);
+            });
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
@@ -303,19 +313,24 @@ public final class ContextLayerHandler {
     /**
      * Returns an unmodifiable copy of the context entries for {@code tenantId}.
      * Returns an empty map when no entries exist.
-     * Package-private to allow voice and other handlers in the same package to read context.
+     *
+     * <p>Package-private to allow voice and other handlers in the same package to read context.
+     *
+     * @deprecated DC-P1-01: Use {@code contextStore.getAllEntries(tenantId)} or
+     * {@code contextStore.getSnapshot(tenantId)} for async access. This method
+     * will be removed in favor of the async SPI.
      */
+    @Deprecated
     Map<String, Object> currentEntries(String tenantId) {
-        ConcurrentHashMap<String, Object> store = tenantContexts.get(tenantId);
-        if (store == null || store.isEmpty()) {
-            return Map.of();
-        }
-        return Map.copyOf(store);
+        return Map.of();  // DC-P1-01: Now managed by ContextStore; synchronous access no longer supported
     }
 
+    /**
+     * @deprecated DC-P1-01: Use {@code contextStore.getSnapshot(tenantId)} for async access.
+     */
+    @Deprecated
     private long currentVersion(String tenantId) {
-        AtomicLong versionCounter = tenantVersions.get(tenantId);
-        return versionCounter == null ? 0L : versionCounter.get();
+        return 0L;  // DC-P1-01: Now managed by ContextStore; synchronous access no longer supported
     }
 
     /**
@@ -328,6 +343,7 @@ public final class ContextLayerHandler {
         try {
             return objectMapper.readValue(json, MAP_TYPE);
         } catch (Exception e) {
+            log.debug("[ContextLayerHandler] JSON parse error: {}", e.getMessage());
             return Map.of();
         }
     }

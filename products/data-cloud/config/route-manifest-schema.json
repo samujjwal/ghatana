@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Data Cloud Route Manifest Schema",
+  "description": "Canonical route manifest for OpenAPI/runtime/UI consistency (DC-P0-03)",
+  "type": "object",
+  "required": ["version", "lastUpdated", "generatedFrom", "routes"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Manifest version (e.g., 1.0.0 or git commit hash)",
+      "pattern": "^[a-zA-Z0-9.\\-_]+$"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when manifest was generated"
+    },
+    "generatedFrom": {
+      "type": "string",
+      "description": "Source of truth reference (e.g., RouteSecurityRegistry.java@line=42)"
+    },
+    "routes": {
+      "type": "array",
+      "description": "List of all HTTP routes",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["method", "path", "sensitivity"],
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+            "description": "HTTP method"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/api/v[0-9]+/[a-z0-9/{}\\-_]+$",
+            "description": "Canonical API path with version prefix"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": ["PUBLIC", "INTERNAL", "SENSITIVE", "CRITICAL"],
+            "description": "Security sensitivity level"
+          },
+          "requiresAuth": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether route requires authentication"
+          },
+          "requiresTenant": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether route requires X-Tenant-Id header"
+          },
+          "requiresPolicy": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether route requires policy evaluation"
+          },
+          "idempotent": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether route is idempotent (safe to retry)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable route description"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+            "description": "OpenAPI operationId (unique identifier)"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "examples": ["Action Plane", "Event Store", "Context Plane", "Integration"],
+            "description": "OpenAPI tags for grouping"
+          },
+          "requestSchema": {
+            "type": "string",
+            "description": "Reference to OpenAPI request schema (e.g., #/components/schemas/ExecuteAgentRequest)"
+          },
+          "responseSchema": {
+            "type": "string",
+            "description": "Reference to OpenAPI response schema"
+          },
+          "deprecated": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether route is deprecated"
+          },
+          "deprecationReason": {
+            "type": "string",
+            "description": "Reason for deprecation (if applicable)"
+          },
+          "replacesWith": {
+            "type": "string",
+            "description": "Reference to replacement route if deprecated"
+          },
+          "runtimeTruthSurface": {
+            "type": "string",
+            "enum": ["VISIBLE", "HIDDEN", "DEVELOPER_ONLY", "EXPERIMENTAL"],
+            "default": "VISIBLE",
+            "description": "UI feature gate level for RuntimeTruthPosture"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["Action Plane", "Event Store", "Context Plane", "Integration", "Admin", "Health"],
+            "description": "Functional category for documentation"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional route-specific metadata"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

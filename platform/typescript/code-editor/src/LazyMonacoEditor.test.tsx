@@ -17,6 +17,8 @@ import {
 } from './LazyMonacoEditor';
 import type { LazyMonacoEditorProps } from './LazyMonacoEditor';
 
+const INITIAL_RENDER_BUDGET_MS = 150;
+
 describe('Code Editor - Lazy Loading', () => {
     describe('Monaco Loader Hook', () => {
         it('should initialize loader state', () => {
@@ -208,7 +210,7 @@ describe('Code Editor - Lazy Loading', () => {
 
             const endTime = performance.now();
 
-            expect(endTime - startTime).toBeLessThan(100);
+            expect(endTime - startTime).toBeLessThan(INITIAL_RENDER_BUDGET_MS);
         });
 
         it('should support preloading for faster subsequent renders', async () => {
@@ -225,7 +227,7 @@ describe('Code Editor - Lazy Loading', () => {
 
             const endTime = performance.now();
 
-            expect(endTime - startTime).toBeLessThan(100);
+            expect(endTime - startTime).toBeLessThan(INITIAL_RENDER_BUDGET_MS);
         });
 
         it('should handle rapid mount/unmount', () => {

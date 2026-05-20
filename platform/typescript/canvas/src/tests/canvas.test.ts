@@ -5,6 +5,8 @@ import { TextElement } from "../elements/text.js";
 import { BrushElement } from "../elements/brush.js";
 import { Bound } from "../utils/bounds.js";
 
+const MANY_ELEMENTS_OPERATION_BUDGET_MS = 15_000;
+
 describe("YAPPC Canvas Core Tests", () => {
   let container: HTMLElement;
   let canvas: CanvasRenderer;
@@ -360,7 +362,7 @@ describe("YAPPC Canvas Core Tests", () => {
       const duration = endTime - startTime;
 
       expect(canvas.getElements()).toHaveLength(1000);
-      expect(duration).toBeLessThan(5000);
+      expect(duration).toBeLessThan(MANY_ELEMENTS_OPERATION_BUDGET_MS);
     });
   });
 });

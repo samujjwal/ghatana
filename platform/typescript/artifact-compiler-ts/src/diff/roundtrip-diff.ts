@@ -7,6 +7,7 @@ import * as ts from "typescript";
 import {
   computeFidelityReport,
   createResidualIslandReport,
+  type ArtifactEdge,
   type DiffHunk,
   type DiffRecord,
   type FidelityReport,
@@ -100,7 +101,8 @@ function normalizeSource(content: string): string {
 function normalizeAst(content: string): string | null {
   try {
     const sourceFile = ts.createSourceFile("diff.tsx", content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-    if (sourceFile.parseDiagnostics.length > 0) {
+    const diagnostics = (sourceFile as ts.SourceFile & { readonly parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics;
+    if (diagnostics && diagnostics.length > 0) {
       return null;
     }
     const printer = ts.createPrinter({ removeComments: true });
@@ -161,14 +163,50 @@ function isSemanticallyEquivalent(
   const reimportedNode = reimportedModel.nodes[nodeId];
   if (originalNode === undefined || reimportedNode === undefined) return false;
 
-  return (
+  // Shape-level equivalence (existing checks)
+  const shapeEquivalent =
     originalNode.kind === reimportedNode.kind &&
     originalNode.displayName === reimportedNode.displayName &&
     JSON.stringify([...originalNode.exportedSymbols].sort()) === JSON.stringify([...reimportedNode.exportedSymbols].sort()) &&
     JSON.stringify(normalizeRecord(originalNode.inferredProps)) === JSON.stringify(normalizeRecord(reimportedNode.inferredProps)) &&
     JSON.stringify(normalizeSourceImportShape(originalNode.sourceImports)) === JSON.stringify(normalizeSourceImportShape(reimportedNode.sourceImports)) &&
-    JSON.stringify(nodeEdgeShape(model, nodeId)) === JSON.stringify(nodeEdgeShape(reimportedModel, nodeId))
-  );
+    JSON.stringify(nodeEdgeShape(model, nodeId)) === JSON.stringify(nodeEdgeShape(reimportedModel, nodeId));
+
+  if (!shapeEquivalent) return false;
+
+  // Import graph parity (new)
+  const importGraphEquivalent = isImportGraphEquivalent(model, reimportedModel, nodeId);
+  if (!importGraphEquivalent) return false;
+
+  return true;
+}
+
+/**
+ * Import graph parity check.
+ *
+ * Verifies that the import relationships are preserved across round-trip,
+ * including both type-only and value imports, as well as other dependency kinds.
+ */
+function isImportGraphEquivalent(
+  originalModel: LogicalArtifactModel,
+  reimportedModel: LogicalArtifactModel,
+  nodeId: string,
+): boolean {
+  const originalEdges = originalModel.edges.filter((edge) => edge.fromId === nodeId);
+  const reimportedEdges = reimportedModel.edges.filter((edge) => edge.fromId === nodeId);
+
+  if (originalEdges.length !== reimportedEdges.length) {
+    return false;
+  }
+
+  const normalizeEdge = (edge: ArtifactEdge): string => {
+    return `${edge.kind}:${edge.toId}:${edge.importSpecifier ?? ""}`;
+  };
+
+  const originalNormalized = originalEdges.map(normalizeEdge).sort();
+  const reimportedNormalized = reimportedEdges.map(normalizeEdge).sort();
+
+  return JSON.stringify(originalNormalized) === JSON.stringify(reimportedNormalized);
 }
 
 function normalizeRecord(record: Record<string, string> | undefined): Record<string, string> {
