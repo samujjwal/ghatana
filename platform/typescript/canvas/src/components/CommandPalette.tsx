@@ -18,6 +18,7 @@ import {
     Action,
 } from '../chrome';
 import { useActionSearch, useActionExecutor, useActionsByCategory } from '../hooks/useAvailableActions';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 interface CommandPaletteProps {
     isOpen: boolean;
@@ -151,10 +152,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
                 };
                 setRecentActions(prev => [newRecent, ...prev.filter(r => r.actionId !== actionToExecute!.id)].slice(0, 5));
 
-                console.log(`✅ Executed: ${actionToExecute.label}`);
+                emitCanvasDiagnostic("CommandPalette", "info", "Action executed", {
+                    actionId: actionToExecute.id,
+                    label: actionToExecute.label,
+                });
                 onClose();
             } catch (error) {
-                console.error(`❌ Failed to execute: ${actionToExecute.label}`, error);
+                emitCanvasDiagnostic("CommandPalette", "error", "Action execution failed", {
+                    actionId: actionToExecute.id,
+                    label: actionToExecute.label,
+                    error,
+                });
             }
         }
     };
@@ -171,10 +179,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             };
             setRecentActions(prev => [newRecent, ...prev.filter(r => r.actionId !== action.id)].slice(0, 5));
 
-            console.log(`✅ Executed: ${action.label}`);
+            emitCanvasDiagnostic("CommandPalette", "info", "Action executed", {
+                actionId: action.id,
+                label: action.label,
+            });
             onClose();
         } catch (error) {
-            console.error(`❌ Failed to execute: ${action.label}`, error);
+            emitCanvasDiagnostic("CommandPalette", "error", "Action execution failed", {
+                actionId: action.id,
+                label: action.label,
+                error,
+            });
         }
     };
 

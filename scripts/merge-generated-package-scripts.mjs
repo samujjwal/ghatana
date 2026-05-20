@@ -104,6 +104,7 @@ const GENERIC_SCRIPTS = new Set([
   'check:kernel-lifecycle-truth',
   'check:agentic-lifecycle-action-contracts',
   'check:studio-kernel-api',
+  'check:kernel-authoring-pipeline',
   'check:yappc-product-unit-intent-handoff',
   'check:yappc-artifact-intelligence-boundary',
   'scaffold:product',

@@ -21,9 +21,10 @@ export {
   CURRENT_SCHEMA_VERSION,
   SCHEMA_VERSIONS,
   BuilderDocumentSchema,
-  attachBuilderDocumentCompatibility,
+  // NOTE: attachBuilderDocumentCompatibility and normalizeBuilderDocument are
+  // intentionally NOT exported from the canonical barrel. Import them from
+  // `./legacy-builder-document-adapter` for migration purposes only.
   createBuilderDocument,
-  normalizeBuilderDocument,
   validateBuilderDocument,
   MIGRATIONS,
   detectSchemaVersion,

@@ -16,6 +16,8 @@
 
 import { useState, useCallback } from 'react';
 import type { ReactElement, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSetAtom } from 'jotai';
 import {
   createDecompileJobState,
   buildDecompileJobResult,
@@ -27,6 +29,7 @@ import type {
   DecompileJobResult,
   SourceEntry,
 } from '../adapters/ArtifactStudioWorkflowAdapter.js';
+import { setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
 
 // ============================================================================
 // Helpers
@@ -56,6 +59,8 @@ export default function ImportDecompilePage(): ReactElement {
   const [jobState, setJobState] = useState<DecompileJobState | null>(null);
   const [completedResult, setCompletedResult] = useState<DecompileJobResult | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
   const handleFilesSelected = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +125,27 @@ export default function ImportDecompilePage(): ReactElement {
           residualIslandReport: residualReport,
           errors: [],
           startedAt,
+        });
+
+        // Project the model into a canonical BuilderDocument via the studio adapter
+        const { projectModelToBuilderDocument } = await import(
+          '../adapters/ModelToBuilderAdapter.js'
+        );
+        const projectedBuilderDocument = projectModelToBuilderDocument(result.model);
+
+        // Compile preview source from the top-level components
+        const { compileReact } = await import('@ghatana/artifact-compiler-ts');
+        const compiled = compileReact(result.model);
+        const previewSource = compiled.emittedFiles.map(f => f.content).join('\n\n');
+
+        // Persist into the workflow store so all routes can read it
+        setWorkflow({
+          jobResult,
+          model: result.model,
+          projectedBuilderDocument,
+          previewSource,
+          fidelityReport: result.fidelityReport,
+          lastDecompileAt: new Date().toISOString(),
         });
 
         setJobState((prev) =>
@@ -298,6 +324,37 @@ export default function ImportDecompilePage(): ReactElement {
                     </ul>
                   </div>
                 )}
+
+              {/* Workflow action buttons */}
+              <div
+                className="flex flex-wrap gap-3 pt-2"
+                role="group"
+                aria-label="Workflow actions"
+              >
+                <button
+                  type="button"
+                  onClick={() => { void navigate('/canvas'); }}
+                  className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-40"
+                >
+                  Open in Canvas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { void navigate('/builder'); }}
+                  className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-40"
+                >
+                  Open in Builder
+                </button>
+                {completedResult.fidelityReport !== null && (
+                  <button
+                    type="button"
+                    onClick={() => { void navigate('/fidelity-report'); }}
+                    className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                  >
+                    View Fidelity Report
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

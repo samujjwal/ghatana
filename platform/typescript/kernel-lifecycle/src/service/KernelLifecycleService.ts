@@ -114,15 +114,25 @@ export interface PendingApprovalQuery extends KernelLifecycleScopeQuery {
 
 const structuredConsoleLogger: KernelLifecycleLogger = {
   info: (message: string, meta?: Record<string, unknown>): void => {
-    console.info(JSON.stringify({ level: 'info', message, ...meta, ts: new Date().toISOString() }));
+    writeStructuredKernelLifecycleLog('info', message, meta);
   },
   warn: (message: string, meta?: Record<string, unknown>): void => {
-    console.warn(JSON.stringify({ level: 'warn', message, ...meta, ts: new Date().toISOString() }));
+    writeStructuredKernelLifecycleLog('warn', message, meta);
   },
   error: (message: string, meta?: Record<string, unknown>): void => {
-    console.error(JSON.stringify({ level: 'error', message, ...meta, ts: new Date().toISOString() }));
+    writeStructuredKernelLifecycleLog('error', message, meta);
   },
 };
+
+function writeStructuredKernelLifecycleLog(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  meta?: Record<string, unknown>,
+): void {
+  const payload = JSON.stringify({ level, message, ...meta, ts: new Date().toISOString() });
+  const stream = level === 'info' ? process.stdout : process.stderr;
+  stream.write(`${payload}\n`);
+}
 
 export class KernelLifecycleService {
   private readonly repoRoot: string;

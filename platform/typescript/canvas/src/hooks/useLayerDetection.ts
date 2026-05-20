@@ -22,6 +22,7 @@ import {
     LayerTransitionDetector,
     getLayerConfig,
 } from '../core/layer-detector';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 export interface LayerDetectionOptions {
     /** Enable automatic layer detection */
@@ -75,8 +76,10 @@ export function useLayerDetection(options: LayerDetectionOptions = {}) {
                 onLayerChange(layer, previousLayer);
             }
 
-            // Log transition
-            console.log(`🔍 Layer transition: ${previousLayer} → ${layer}`);
+            emitCanvasDiagnostic("useLayerDetection", "info", "Layer transition detected", {
+                previousLayer,
+                layer,
+            });
         });
 
         return unsubscribe;
@@ -128,7 +131,10 @@ export function useZoomToLayer() {
             setSemanticLayer(layer);
         }
 
-        console.log(`🎯 Zooming to ${layer} layer (${targetZoom}x)`);
+        emitCanvasDiagnostic("useLayerDetection", "info", "Zooming to layer", {
+            layer,
+            targetZoom,
+        });
     }, [setZoomLevel, setSemanticLayer]);
 
     return { zoomToLayer };

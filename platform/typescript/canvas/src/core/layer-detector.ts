@@ -11,6 +11,7 @@
  */
 
 import { SemanticLayer } from '../chrome';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 export interface LayerConfig {
     name: SemanticLayer;
@@ -152,7 +153,11 @@ export class LayerTransitionDetector {
             try {
                 listener(layer, previousLayer);
             } catch (error) {
-                console.error('Error in layer transition listener:', error);
+                emitCanvasDiagnostic("LayerTransitionDetector", "error", "Error in layer transition listener", {
+                    layer,
+                    previousLayer,
+                    error,
+                });
             }
         });
     }

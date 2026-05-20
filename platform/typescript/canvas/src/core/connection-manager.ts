@@ -16,6 +16,7 @@
 import { CanvasElement } from "../elements/base.js";
 import { ConnectorElement, type ConnectorProps } from "../elements/connector.js";
 import { elementRegistry } from "./element-registry.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 import type { Point } from "../types/index.js";
 import { nanoid } from "nanoid";
 
@@ -141,7 +142,10 @@ export class ConnectionManager {
         const targetPoint = this.resolveConnectionPoint(target);
 
         if (!sourcePoint || !targetPoint) {
-            console.warn('[ConnectionManager] Cannot resolve connection points');
+            emitCanvasDiagnostic("ConnectionManager", "warn", "Cannot resolve connection points", {
+                source,
+                target,
+            });
             return null;
         }
 

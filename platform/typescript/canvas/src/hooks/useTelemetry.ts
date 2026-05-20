@@ -17,6 +17,7 @@ import {
   chromeSemanticLayerAtom,
   chromeZoomLevelAtom,
 } from "../chrome";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 // ============================================================================
 // TYPES
@@ -115,7 +116,9 @@ class TelemetryManager {
       });
     } catch (error) {
       if (this.config.debug) {
-        console.warn("Performance monitoring not available:", error);
+        emitCanvasDiagnostic("TelemetryManager", "warn", "Performance monitoring not available", {
+          error,
+        });
       }
     }
   }
@@ -144,7 +147,9 @@ class TelemetryManager {
     this.eventQueue.push(telemetryEvent);
 
     if (this.config.debug) {
-      console.log("[Telemetry]", telemetryEvent);
+      emitCanvasDiagnostic("TelemetryManager", "debug", "Telemetry event queued", {
+        telemetryEvent,
+      });
     }
 
     if (this.eventQueue.length >= this.config.batchSize) {
@@ -187,13 +192,18 @@ class TelemetryManager {
         });
       } catch (error) {
         if (this.config.debug) {
-          console.error("[Telemetry] Failed to send events:", error);
+          emitCanvasDiagnostic("TelemetryManager", "error", "Failed to send telemetry events", {
+            error,
+            eventCount: events.length,
+          });
         }
         // Re-queue events on failure
         this.eventQueue.unshift(...events);
       }
     } else if (this.config.debug) {
-      console.log("[Telemetry] Flushing events:", events);
+      emitCanvasDiagnostic("TelemetryManager", "debug", "Telemetry events flushed without endpoint", {
+        eventCount: events.length,
+      });
     }
   }
 

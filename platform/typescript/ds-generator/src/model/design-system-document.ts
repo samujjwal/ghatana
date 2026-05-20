@@ -58,9 +58,39 @@ export type SemanticTokenAlias = z.infer<typeof SemanticTokenAliasSchema>;
 // Component variant / state definition
 // ============================================================================
 
+/**
+ * Canonical component interaction state names recognised by the DS generator.
+ *
+ * These match the W3C / ARIA interaction model and the set of CSS
+ * pseudo-classes used by design-system component libraries. Using a strict enum
+ * here ensures that token override maps and golden snapshots do not silently
+ * accept arbitrary strings (e.g. typos like "focussed" or "disbaled").
+ *
+ * To add a state that is not in this list, open a PR that updates this enum,
+ * the golden snapshot tests, and the CSS emit target simultaneously.
+ */
+export const CANONICAL_COMPONENT_STATES = [
+  'default',
+  'hover',
+  'active',
+  'focus',
+  'focus-visible',
+  'disabled',
+  'loading',
+  'selected',
+  'error',
+  'success',
+  'warning',
+] as const;
+
+export type CanonicalComponentState = typeof CANONICAL_COMPONENT_STATES[number];
+
 export const ComponentStateSchema = z.object({
-  /** State name (e.g. "hover", "focus", "disabled", "selected"). */
-  state: z.string().min(1),
+  /**
+   * State name — must be one of the canonical interaction states.
+   * Use `z.enum` so the schema rejects unknown strings at runtime.
+   */
+  state: z.enum(CANONICAL_COMPONENT_STATES),
   /** Token overrides to apply in this state, keyed by CSS custom property name. */
   tokenOverrides: z.record(z.string(), z.string()),
 });
@@ -127,6 +157,37 @@ export const DesignSystemDocumentSchema = z.object({
 export type DesignSystemDocument = z.infer<typeof DesignSystemDocumentSchema>;
 
 // ============================================================================
+// Generation context (for deterministic testing)
+// ============================================================================
+
+/**
+ * Context passed to factory functions that produce time-stamped or ID-stamped
+ * documents. Injecting these functions makes the output deterministic in tests.
+ *
+ * Production callers do not need to pass this — the defaults use the real clock
+ * and `crypto.randomUUID()`.
+ */
+export interface GenerationContext {
+  /**
+   * Returns the current ISO-8601 timestamp string.
+   * Default (production): `() => new Date().toISOString()`
+   * Test: `() => "2024-01-01T00:00:00.000Z"`
+   */
+  readonly clockFn: () => string;
+  /**
+   * Returns a new unique ID string.
+   * Default (production): `() => crypto.randomUUID()`
+   * Test: deterministic counter or fixed value.
+   */
+  readonly idFn: () => string;
+}
+
+const DEFAULT_GENERATION_CONTEXT: GenerationContext = {
+  clockFn: () => new Date().toISOString(),
+  idFn: () => crypto.randomUUID(),
+};
+
+// ============================================================================
 // Factory
 // ============================================================================
 
@@ -135,6 +196,14 @@ export type DesignSystemDocument = z.infer<typeof DesignSystemDocumentSchema>;
  *
  * The caller is responsible for populating `resolvedTokens` after running the
  * preset/brand materialization pipeline.
+ *
+ * @param documentId - Stable unique ID for this document.
+ * @param name - Human-readable display name.
+ * @param basePresetId - ID of the base DS preset.
+ * @param resolvedTokens - Fully-resolved token map from the materialization pipeline.
+ * @param overrides - Optional partial field overrides.
+ * @param context - Optional {@link GenerationContext} for deterministic testing.
+ *   In production, omit this parameter to use the real clock and UUID generator.
  */
 export function createDesignSystemDocument(
   documentId: string,
@@ -147,6 +216,7 @@ export function createDesignSystemDocument(
       'documentId' | 'name' | 'schemaVersion' | 'basePresetId' | 'resolvedTokens' | 'generatedAt'
     >
   >,
+  context: GenerationContext = DEFAULT_GENERATION_CONTEXT,
 ): DesignSystemDocument {
   return {
     documentId,
@@ -154,7 +224,7 @@ export function createDesignSystemDocument(
     schemaVersion: DS_DOCUMENT_SCHEMA_VERSION,
     basePresetId,
     resolvedTokens,
-    generatedAt: new Date().toISOString(),
+    generatedAt: context.clockFn(),
     semanticAliases: overrides?.semanticAliases ?? [],
     componentVariants: overrides?.componentVariants ?? [],
     brandName: overrides?.brandName,

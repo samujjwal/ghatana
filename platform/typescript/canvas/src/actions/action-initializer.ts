@@ -15,6 +15,7 @@ import {
     getAllLayerActions,
     UNIVERSAL_LAYER_ACTIONS,
 } from './layer-actions';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 export interface ActionRegistryOptions {
     /**
@@ -91,7 +92,9 @@ export function verifyActionRegistry(): boolean {
     const isValid = hasLayerActions && hasTotalActions;
 
     if (!isValid) {
-        console.warn('⚠️ Action registry not properly initialized:', stats);
+        emitCanvasDiagnostic("ActionInitializer", "warn", "Action registry not properly initialized", {
+            stats,
+        });
     }
 
     return isValid;

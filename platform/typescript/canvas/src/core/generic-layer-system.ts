@@ -10,6 +10,7 @@
  */
 
 import { LayerConfig, getCanvasConfig } from './canvas-config';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 /**
  * Generic layer detector
@@ -62,7 +63,11 @@ export class GenericLayerDetector<TLayer extends string = string> {
             try {
                 listener(layer, previousLayer);
             } catch (error) {
-                console.error('Error in layer transition listener:', error);
+                emitCanvasDiagnostic("GenericLayerDetector", "error", "Error in layer transition listener", {
+                    layer,
+                    previousLayer,
+                    error,
+                });
             }
         });
     }

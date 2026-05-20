@@ -5,12 +5,14 @@ import { createBuilderDocument } from '@ghatana/ui-builder';
 import type { BuilderDocument, ComponentInstance } from '@ghatana/ui-builder';
 import type { CanvasNode, CanvasEdge } from '@ghatana/canvas/hybrid';
 import { insertNode } from '@ghatana/ui-builder';
+import { useAtomValue } from 'jotai';
 import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { artifactGraphSummary, residualIslandReport, riskHotspotReport, semanticArtifactReferences } from './yappcWorkflowData';
 import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
+import { projectedBuilderDocumentAtom } from '../state/artifactWorkflowStore.js';
 
 type TranslateFn = (key: StudioTranslationKey) => string;
 
@@ -82,8 +84,12 @@ export default function CanvasPage(): ReactElement {
       : t('studio.route.canvas.action.completeEvidence')
     : t('studio.route.canvas.action.configureHandoff');
 
-  // Create canvas document from artifact data
-  const canvasDocument = createArtifactCanvasDocument();
+  // Read workflow store: use imported document if available, fall back to static demo data.
+  const workflowDocument = useAtomValue(projectedBuilderDocumentAtom);
+
+  // Create canvas document from artifact data (static fallback)
+  const staticCanvasDocument = createArtifactCanvasDocument();
+  const canvasDocument = workflowDocument ?? staticCanvasDocument;
 
   // Convert BuilderDocument to canvas format using deterministic grid layout.
   // Positions are computed from node index so they are stable across renders.

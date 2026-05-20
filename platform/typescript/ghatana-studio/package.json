@@ -38,6 +38,7 @@
     "@ghatana/tokens": "workspace:*",
     "@ghatana/ui-builder": "workspace:*",
     "@tanstack/react-query": "catalog:",
+    "jotai": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "catalog:",

@@ -567,6 +567,25 @@ public final class DataCloudSecurityFilter {
                 "SENSITIVE and CRITICAL routes must emit audit events.");
         }
 
+        // DC-P1-09: Audit sink must be ready to accept writes in production
+        if (auditService != null && enforcing) {
+            try {
+                boolean auditReady = runPromise(() -> checkAuditSinkReadiness());
+                if (!auditReady) {
+                    throw new IllegalStateException(
+                        "DC-P1-09: Audit sink is not ready to accept writes. " +
+                        "Audit service must be healthy and able to persist events before accepting traffic. " +
+                        "Check audit sink connectivity and configuration.");
+                }
+                log.info("[DC-SEC] Audit sink readiness check passed for profile '{}'", deploymentProfile);
+            } catch (Exception e) {
+                throw new IllegalStateException(
+                    "DC-P1-09: Audit sink readiness check failed. " +
+                    "Audit service must be healthy and able to persist events before accepting traffic. " +
+                    "Error: " + e.getMessage(), e);
+            }
+        }
+
         // DC-P0-01: Policy engine is required for CRITICAL routes when enforcing
         if (policyEngine == null && enforcing) {
             throw new IllegalStateException(
@@ -575,6 +594,34 @@ public final class DataCloudSecurityFilter {
         }
 
         log.info("[DC-SEC] Production requirements validated successfully for profile '{}'", deploymentProfile);
+    }
+
+    /**
+     * DC-P1-09: Checks if the audit sink is ready to accept writes.
+     * Performs a lightweight health check by attempting to record a test audit event.
+     *
+     * @return true if audit sink is ready, false otherwise
+     */
+    private Promise<Boolean> checkAuditSinkReadiness() {
+        // Create a minimal test audit event to verify the sink can accept writes
+        AuditEvent testEvent = new AuditEvent(
+            UUID.randomUUID().toString(),
+            "audit-readiness-check",
+            "system",
+            deploymentProfile,
+            Map.of("checkType", "startup-readiness"),
+            Instant.now()
+        );
+
+        return auditService.record(testEvent)
+            .map(result -> {
+                log.info("[DC-SEC] DC-P1-09: Audit sink readiness check succeeded - sink can accept writes");
+                return true;
+            })
+            .onError(error -> {
+                log.error("[DC-SEC] DC-P1-09: Audit sink readiness check failed - sink cannot accept writes: {}", error.getMessage());
+                return Promise.of(false);
+            });
     }
 
     /**

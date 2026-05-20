@@ -22,6 +22,17 @@ import type {
   ProductLifecyclePhase,
 } from "@ghatana/kernel-product-contracts";
 
+function writeKernelLifecycleLog(level: "info" | "warn" | "error", message: string, meta?: Record<string, unknown>): void {
+  const payload = JSON.stringify({
+    level,
+    message,
+    ...meta,
+    ts: new Date().toISOString(),
+  });
+  const stream = level === "info" ? process.stdout : process.stderr;
+  stream.write(`${payload}\n`);
+}
+
 /**
  * Event emitter options.
  */
@@ -71,12 +82,17 @@ export class KernelLifecycleEventEmitter {
     this.logger = options.logger ?? {
       warn: (message, meta) => {
         if (this.enableConsoleLogging) {
-          console.warn(message, meta);
+          writeKernelLifecycleLog("warn", message, meta);
         }
       },
       error: (message, meta) => {
         if (this.enableConsoleLogging) {
-          console.error(message, meta);
+          writeKernelLifecycleLog("error", message, meta);
+        }
+      },
+      info: (message, meta) => {
+        if (this.enableConsoleLogging) {
+          writeKernelLifecycleLog("info", message, meta);
         }
       },
     };
@@ -163,7 +179,9 @@ export class KernelLifecycleEventEmitter {
         });
       });
     } else if (this.enableConsoleLogging) {
-      console.log(JSON.stringify(event, null, 2));
+      this.logger.info?.("Lifecycle event emitted", {
+        event,
+      });
     }
   }
 

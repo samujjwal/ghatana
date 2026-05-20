@@ -17,6 +17,7 @@ import {
     chromeActiveRolesAtom,
 } from '../chrome';
 import { useActionsByCategory, useActionExecutor } from '../hooks/useAvailableActions';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 interface EnhancedContextMenuProps {
     isOpen: boolean;
@@ -91,10 +92,17 @@ export const EnhancedContextMenu: React.FC<EnhancedContextMenuProps> = ({
     const handleActionClick = async (actionId: string) => {
         try {
             await executeAction(actionId, selection);
-            console.log(`✅ Context menu action executed: ${actionId}`);
+            emitCanvasDiagnostic("EnhancedContextMenu", "info", "Context menu action executed", {
+                actionId,
+                selection,
+            });
             onClose();
         } catch (error) {
-            console.error(`❌ Context menu action failed: ${actionId}`, error);
+            emitCanvasDiagnostic("EnhancedContextMenu", "error", "Context menu action failed", {
+                actionId,
+                selection,
+                error,
+            });
         }
     };
 

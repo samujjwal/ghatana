@@ -17,6 +17,7 @@ import {
     SemanticLayer,
 } from '../../chrome';
 import { useActionExecutor } from '../../hooks/useAvailableActions';
+import { emitCanvasDiagnostic } from '../../diagnostics';
 
 interface PalettePanelProps {
     onClose: () => void;
@@ -209,9 +210,16 @@ export const PalettePanel: React.FC<PalettePanelProps> = ({ onClose }) => {
     const handleAddItem = async (item: PaletteItem) => {
         try {
             await executeAction(item.actionId);
-            console.log(`✅ Added ${item.label} to canvas`);
+            emitCanvasDiagnostic("PalettePanel", "info", "Palette item added to canvas", {
+                actionId: item.actionId,
+                label: item.label,
+            });
         } catch (error) {
-            console.error(`❌ Failed to add ${item.label}:`, error);
+            emitCanvasDiagnostic("PalettePanel", "error", "Failed to add palette item", {
+                actionId: item.actionId,
+                label: item.label,
+                error,
+            });
         }
     };
 

@@ -92,3 +92,35 @@ export {
   DecompileResultSchema,
   EvidencePackSchema,
 } from "./evidence.js";
+
+// Scan / Acquisition / Validation / Diff
+export type {
+  AcquisitionJobStatus,
+  AcquisitionJob,
+  ScanJobStatus,
+  ScanJob,
+  FileScanResult,
+  ScanResult,
+  ValidationFindingSeverity,
+  ValidationFinding,
+  ValidationPipelineResult,
+  DiffHunkKind,
+  DiffHunk,
+  DiffRecord,
+  RoundTripDiffReport,
+} from "./scan.js";
+export {
+  AcquisitionJobStatusSchema,
+  AcquisitionJobSchema,
+  ScanJobStatusSchema,
+  ScanJobSchema,
+  FileScanResultSchema,
+  ScanResultSchema,
+  ValidationFindingSeveritySchema,
+  ValidationFindingSchema,
+  ValidationPipelineResultSchema,
+  DiffHunkKindSchema,
+  DiffHunkSchema,
+  DiffRecordSchema,
+  RoundTripDiffReportSchema,
+} from "./scan.js";

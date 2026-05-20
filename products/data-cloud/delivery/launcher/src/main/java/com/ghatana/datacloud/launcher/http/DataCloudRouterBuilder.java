@@ -567,9 +567,24 @@ public class DataCloudRouterBuilder {
     /**
      * Adds autonomy management endpoints.
      * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
+     * Legacy /api/v1/autonomy/* routes are gated behind LEGACY_ACTION_ROUTES feature flag.
      */
     public DataCloudRouterBuilder withAutonomyRoutes(AutonomyHandler autonomyHandler) {
-        // Canonical Action Plane routes
+        // P1-03: Conditionally register legacy routes based on feature flag
+        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
+
+        if (enableLegacyRoutes) {
+            builder
+                .with(HttpMethod.PUT, "/api/v1/autonomy/level", autonomyHandler::handleSetGlobalLevel)
+                .with(HttpMethod.GET, "/api/v1/autonomy/level", autonomyHandler::handleGetGlobalLevel)
+                .with(HttpMethod.GET, "/api/v1/autonomy/domains", autonomyHandler::handleListDomains)
+                .with(HttpMethod.GET, "/api/v1/autonomy/domains/:domain", autonomyHandler::handleGetDomain)
+                .with(HttpMethod.GET, "/api/v1/autonomy/logs", autonomyHandler::handleGetLogs)
+                .with(HttpMethod.GET, "/api/v1/autonomy/plan/:actionType", autonomyHandler::handleGetAutonomyPlan)
+                .with(HttpMethod.POST, "/api/v1/autonomy/feedback-policy", autonomyHandler::handleUpdatePolicyFromFeedback);
+        }
+
+        // Canonical Action Plane routes (always registered)
         builder
             .with(HttpMethod.PUT, "/api/v1/action/autonomy/level", autonomyHandler::handleSetGlobalLevel)
             .with(HttpMethod.GET, "/api/v1/action/autonomy/level", autonomyHandler::handleGetGlobalLevel)

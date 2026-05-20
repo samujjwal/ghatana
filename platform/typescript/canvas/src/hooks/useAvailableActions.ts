@@ -20,6 +20,7 @@ import {
 } from '../chrome';
 import { getActionRegistry, ActionContext } from '../core/action-registry';
 import { initializeActionRegistry } from '../actions/action-initializer';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 /**
  * Hook for getting available actions based on current context
@@ -88,9 +89,14 @@ export function useActionExecutor() {
 
             try {
                 await registry.executeAction(actionId, context);
-                console.log(`✅ Action executed: ${actionId}`);
+                emitCanvasDiagnostic("useActionExecutor", "info", "Action executed", {
+                    actionId,
+                });
             } catch (error) {
-                console.error(`❌ Action execution failed: ${actionId}`, error);
+                emitCanvasDiagnostic("useActionExecutor", "error", "Action execution failed", {
+                    actionId,
+                    error,
+                });
                 throw error;
             }
         },
@@ -182,9 +188,18 @@ export function useActionShortcut() {
 
                 try {
                     await action.handler(context);
-                    console.log(`✅ Shortcut executed: ${shortcut} → ${action.label}`);
+                    emitCanvasDiagnostic("useActionShortcut", "info", "Shortcut executed", {
+                        shortcut,
+                        actionId: action.id,
+                        label: action.label,
+                    });
                 } catch (error) {
-                    console.error(`❌ Shortcut execution failed: ${shortcut}`, error);
+                    emitCanvasDiagnostic("useActionShortcut", "error", "Shortcut execution failed", {
+                        shortcut,
+                        actionId: action.id,
+                        label: action.label,
+                        error,
+                    });
                 }
             }
         },

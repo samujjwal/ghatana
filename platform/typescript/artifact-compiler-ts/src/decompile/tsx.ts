@@ -145,6 +145,240 @@ function detectDesignSystemUsage(
   return found;
 }
 
+// ============================================================================
+// JSX TREE EXTRACTION
+// ============================================================================
+
+/**
+ * A lightweight node in the extracted JSX element tree.
+ */
+export interface JsxTreeNode {
+  /** JSX tag name (e.g. "Button", "div", "Route"). */
+  readonly tagName: string;
+  /** Whether the tag is a HTML intrinsic (lower-case first letter). */
+  readonly isIntrinsic: boolean;
+  /** Child JSX tree nodes (direct children). */
+  readonly children: readonly JsxTreeNode[];
+  /** 1-based start line in the source file. */
+  readonly startLine: number;
+  /** 1-based end line in the source file. */
+  readonly endLine: number;
+}
+
+/**
+ * Extract the JSX element tree from all JSX-rendering function bodies in a
+ * source file. Returns a flat list of root JSX trees (one per render function).
+ */
+export function extractJsxTree(sourceFile: ts.SourceFile): JsxTreeNode[] {
+  const roots: JsxTreeNode[] = [];
+
+  function visitJsx(node: ts.JsxElement | ts.JsxSelfClosingElement | ts.JsxFragment): JsxTreeNode {
+    if (ts.isJsxSelfClosingElement(node)) {
+      const tagName = node.tagName.getText(sourceFile);
+      const { line: startLine } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      const { line: endLine } = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+      return { tagName, isIntrinsic: /^[a-z]/.test(tagName), children: [], startLine: startLine + 1, endLine: endLine + 1 };
+    }
+
+    if (ts.isJsxFragment(node)) {
+      const children: JsxTreeNode[] = [];
+      for (const child of node.children) {
+        if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
+          children.push(visitJsx(child));
+        }
+      }
+      const { line: startLine } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      const { line: endLine } = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+      return { tagName: '<>', isIntrinsic: true, children, startLine: startLine + 1, endLine: endLine + 1 };
+    }
+
+    // ts.JsxElement
+    const tagName = node.openingElement.tagName.getText(sourceFile);
+    const { line: startLine } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    const { line: endLine } = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+    const children: JsxTreeNode[] = [];
+    for (const child of node.children) {
+      if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
+        children.push(visitJsx(child));
+      }
+    }
+    return { tagName, isIntrinsic: /^[a-z]/.test(tagName), children, startLine: startLine + 1, endLine: endLine + 1 };
+  }
+
+  function visitNode(node: ts.Node): void {
+    // Collect top-level JSX returns from arrow functions and function declarations
+    if (
+      ts.isReturnStatement(node) &&
+      node.expression &&
+      (ts.isJsxElement(node.expression) ||
+        ts.isJsxSelfClosingElement(node.expression) ||
+        ts.isJsxFragment(node.expression))
+    ) {
+      roots.push(visitJsx(node.expression));
+    } else if (
+      ts.isParenthesizedExpression(node) &&
+      (ts.isJsxElement(node.expression) ||
+        ts.isJsxSelfClosingElement(node.expression) ||
+        ts.isJsxFragment(node.expression)) &&
+      node.parent &&
+      ts.isReturnStatement(node.parent)
+    ) {
+      roots.push(visitJsx(node.expression));
+    }
+    ts.forEachChild(node, visitNode);
+  }
+
+  ts.forEachChild(sourceFile, visitNode);
+  return roots;
+}
+
+// ============================================================================
+// ROUTE GRAPH DETECTION
+// ============================================================================
+
+/**
+ * A detected route declaration.
+ */
+export interface DetectedRoute {
+  /** The `path` prop value (e.g. "/dashboard/:id"). */
+  readonly path: string;
+  /** The component element name bound to this route. */
+  readonly componentName: string;
+  /** Whether this is an index route (no `path` prop). */
+  readonly isIndex: boolean;
+  /** 1-based source line where the route element appears. */
+  readonly sourceLine: number;
+}
+
+/**
+ * Extract React Router v6 route declarations from a source file.
+ *
+ * Handles `<Route path="..." element={<Component />}>` patterns used by
+ * `react-router-dom` v6. Does not handle legacy v5 `component` props or
+ * dynamic route config objects.
+ */
+export function extractRouteGraph(sourceFile: ts.SourceFile): DetectedRoute[] {
+  const routes: DetectedRoute[] = [];
+
+  function getJsxAttributeValue(attrs: ts.JsxAttributes, name: string): string | null {
+    for (const attr of attrs.properties) {
+      if (!ts.isJsxAttribute(attr)) continue;
+      if (attr.name.getText(sourceFile) !== name) continue;
+      if (!attr.initializer) return null;
+      if (ts.isStringLiteral(attr.initializer)) return attr.initializer.text;
+      if (ts.isJsxExpression(attr.initializer) && attr.initializer.expression) {
+        // Try to inline-evaluate string literals inside {}
+        if (ts.isStringLiteral(attr.initializer.expression)) {
+          return attr.initializer.expression.text;
+        }
+        // Return the raw text as a reference for non-literal expressions
+        return `{${attr.initializer.expression.getText(sourceFile)}}`;
+      }
+    }
+    return null;
+  }
+
+  function extractComponentNameFromElement(node: ts.JsxExpression | ts.StringLiteral | ts.JsxAttribute | undefined): string | null {
+    if (!node) return null;
+    if (ts.isJsxAttribute(node) && node.initializer) {
+      if (ts.isJsxExpression(node.initializer) && node.initializer.expression) {
+        const expr = node.initializer.expression;
+        if (ts.isJsxElement(expr) || ts.isJsxSelfClosingElement(expr)) {
+          const tagName = ts.isJsxElement(expr)
+            ? expr.openingElement.tagName.getText(sourceFile)
+            : expr.tagName.getText(sourceFile);
+          return tagName;
+        }
+        return expr.getText(sourceFile);
+      }
+    }
+    return null;
+  }
+
+  function visitNode(node: ts.Node): void {
+    if (ts.isJsxOpeningLikeElement(node)) {
+      const tagName = node.tagName.getText(sourceFile);
+      if (tagName === 'Route') {
+        const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+        const path = getJsxAttributeValue(node.attributes, 'path') ?? '';
+        const isIndex = getJsxAttributeValue(node.attributes, 'index') !== null;
+
+        // Extract component name from `element` prop
+        let componentName = 'Unknown';
+        for (const attr of node.attributes.properties) {
+          if (ts.isJsxAttribute(attr) && attr.name.getText(sourceFile) === 'element') {
+            const extracted = extractComponentNameFromElement(attr);
+            if (extracted) {
+              componentName = extracted;
+            }
+          }
+        }
+
+        routes.push({ path, componentName, isIndex, sourceLine: line + 1 });
+      }
+    }
+    ts.forEachChild(node, visitNode);
+  }
+
+  ts.forEachChild(sourceFile, visitNode);
+  return routes;
+}
+
+// ============================================================================
+// COMPONENT USAGE GRAPH
+// ============================================================================
+
+/**
+ * A record of a component usage (JSX element reference) in a file.
+ */
+export interface ComponentUsageRecord {
+  /** The component tag name used in JSX. */
+  readonly tagName: string;
+  /** Whether this refers to a known design-system component. */
+  readonly isDesignSystem: boolean;
+  /** 1-based source line of the JSX element. */
+  readonly sourceLine: number;
+  /** The import specifier this tag was resolved from (if any). */
+  readonly importedFrom: string | null;
+}
+
+/**
+ * Extract all component usages (non-intrinsic JSX tags) from a source file.
+ * Returns an array of usage records that can be linked to the component graph.
+ */
+export function extractComponentUsages(
+  sourceFile: ts.SourceFile,
+  dsComponentNames: ReadonlySet<string>,
+  importSpecifierByName: ReadonlyMap<string, string>,
+): ComponentUsageRecord[] {
+  const seen = new Set<string>();
+  const usages: ComponentUsageRecord[] = [];
+
+  function visitNode(node: ts.Node): void {
+    if (ts.isJsxOpeningLikeElement(node)) {
+      const tagName = node.tagName.getText(sourceFile);
+      // Only collect custom components (not HTML intrinsics)
+      if (/^[A-Z]/.test(tagName)) {
+        const key = `${tagName}:${sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          usages.push({
+            tagName,
+            isDesignSystem: dsComponentNames.has(tagName),
+            sourceLine: line + 1,
+            importedFrom: importSpecifierByName.get(tagName) ?? null,
+          });
+        }
+      }
+    }
+    ts.forEachChild(node, visitNode);
+  }
+
+  ts.forEachChild(sourceFile, visitNode);
+  return usages;
+}
+
 /**
  * Collect imported module specifiers and the names of exported symbols.
  */
@@ -298,6 +532,22 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
     const { imports, exportedSymbols, hasDynamicImport } =
       collectImportsAndExports(sourceFile);
 
+    // Build import name → specifier map for component usage resolution
+    const importSpecifierByName = new Map<string, string>();
+    for (const { specifier, decl } of imports) {
+      if (decl.importClause) {
+        const { name, namedBindings } = decl.importClause;
+        if (name) {
+          importSpecifierByName.set(name.text, specifier);
+        }
+        if (namedBindings && ts.isNamedImports(namedBindings)) {
+          for (const el of namedBindings.elements) {
+            importSpecifierByName.set(el.name.text, specifier);
+          }
+        }
+      }
+    }
+
     if (hasDynamicImport) {
       fileLossPoints.push({
         code: "dynamic-import",
@@ -312,6 +562,17 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
       kind === "component" || kind === "page" || kind === "layout"
         ? inferPropsFromSourceFile(sourceFile)
         : {};
+
+    // Extract JSX tree, route graph, and component usage graph for TSX files
+    const isTsxFile = file.relativePath.endsWith(".tsx") || file.relativePath.endsWith(".jsx");
+    const jsxTree = isTsxFile ? extractJsxTree(sourceFile) : [];
+    const detectedRoutes = isTsxFile ? extractRouteGraph(sourceFile) : [];
+    const componentUsages = isTsxFile
+      ? extractComponentUsages(sourceFile, dsNames, importSpecifierByName)
+      : [];
+
+    // Compute real source span
+    const totalLines = sourceFile.getLineAndCharacterOfPosition(sourceFile.end).line + 1;
 
     // Build the ArtifactNode
     const node: ArtifactNode = {
@@ -328,16 +589,23 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
         },
         span: {
           startOffset: 0,
-          endOffset: 0,
+          endOffset: sourceFile.end,
           startLine: 1,
-          endLine: sourceFile.getLineAndCharacterOfPosition(sourceFile.end).line + 1,
+          endLine: totalLines,
         },
       },
       exportedSymbols,
       inferredProps,
       usesDesignSystem,
       classificationConfidence: fileLossPoints.length === 0 ? 1 : 0.8,
-      metadata: {},
+      metadata: {
+        jsxTreeRoots: jsxTree.length,
+        detectedRouteCount: detectedRoutes.length,
+        componentUsageCount: componentUsages.length,
+        jsxTree: jsxTree as unknown as Record<string, unknown>[],
+        detectedRoutes: detectedRoutes as unknown as Record<string, unknown>[],
+        componentUsages: componentUsages as unknown as Record<string, unknown>[],
+      },
     };
 
     mutableNodes[nodeId] = node;

@@ -23,7 +23,10 @@ import { emitReactTheme, type ReactThemeTargetOptions } from './react-theme.js';
 
 /**
  * A single emitted file — filename relative to the output directory, content
- * as a UTF-8 string, and a deterministic SHA-256-style content checksum.
+ * as a UTF-8 string, and a deterministic djb2 content checksum (8 hex chars).
+ *
+ * The checksum is djb2, a non-cryptographic hash. It is used only for
+ * content-change detection and cache invalidation, NOT for security purposes.
  */
 export interface EmittedFile {
   /** Output filename, relative to the design-system output directory. */
@@ -31,8 +34,9 @@ export interface EmittedFile {
   /** UTF-8 file content. */
   readonly content: string;
   /**
-   * Deterministic 32-character hex digest of the content (djb2 hash, stable
-   * across calls for identical input). Used for cache invalidation and diffing.
+   * Deterministic 8-character hex djb2 digest of the content.
+   * Stable across calls for identical input; suitable for cache invalidation
+   * and diff detection. Not cryptographically secure.
    */
   readonly checksum: string;
 }

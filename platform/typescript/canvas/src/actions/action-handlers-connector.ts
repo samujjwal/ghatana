@@ -11,6 +11,7 @@
 
 import { getActionRegistry } from '../core/action-registry';
 import { CanvasHandlers } from '../handlers/canvas-handlers';
+import { emitCanvasDiagnostic } from '../diagnostics';
 
 /**
  * Connect all action handlers to the registry
@@ -72,5 +73,5 @@ export function connectActionHandlers(): void {
         universalAddFrame.handler = CanvasHandlers.addFrame;
     }
 
-    console.log('✅ Action handlers connected');
+    emitCanvasDiagnostic("ActionHandlersConnector", "info", "Action handlers connected");
 }

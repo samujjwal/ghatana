@@ -24,6 +24,7 @@ import {
 } from 'react';
 import type { Node, Edge, Viewport } from '@xyflow/react';
 import type { TopologyNodeData, TopologyEdgeData } from './types';
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 // ============================================
 // VIRTUALIZATION
@@ -494,9 +495,11 @@ export function useRenderMetrics(componentName: string): void {
         const nodeEnv = (globalThis as unknown as Record<string, Record<string, Record<string, string>>>)?.["process"]?.["env"]?.["NODE_ENV"];
         const isDev = nodeEnv === "development";
         if (isDev) {
-            console.debug(
-                `[Render] ${componentName}: count=${renderCount.current}, interval=${timeSinceLastRender}ms`
-            );
+            emitCanvasDiagnostic("RenderMetrics", "debug", "Component render metric", {
+                componentName,
+                count: renderCount.current,
+                intervalMs: timeSinceLastRender,
+            });
         }
     });
 }

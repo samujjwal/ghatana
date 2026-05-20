@@ -15,6 +15,7 @@ import { chromeCurrentPhaseAtom, SemanticLayer } from '../../chrome';
 import { getCanvasConfig, hasCanvasConfig } from '../../core/canvas-config';
 import { getCanvasState, CanvasElement } from '../../handlers/canvas-handlers';
 import { useZoomToLayer } from '../../hooks/useLayerDetection';
+import { emitCanvasDiagnostic } from '../../diagnostics';
 
 interface OutlinePanelProps {
     onClose: () => void;
@@ -87,11 +88,16 @@ export const OutlinePanel: React.FC<OutlinePanelProps> = ({ onClose }) => {
         if (frame.data?.layer) {
             zoomToLayer(frame.data.layer as SemanticLayer, true);
         }
-        console.log('🎯 Zooming to frame:', frame.label);
+        emitCanvasDiagnostic("OutlinePanel", "info", "Zooming to frame", {
+            frameId: frame.id,
+            label: frame.label,
+        });
     };
 
     const handleAddFrame = () => {
-        console.log('➕ Adding new frame for phase:', currentPhase);
+        emitCanvasDiagnostic("OutlinePanel", "info", "Add frame requested", {
+            phase: currentPhase,
+        });
         // This will be connected to the action handler
     };
 

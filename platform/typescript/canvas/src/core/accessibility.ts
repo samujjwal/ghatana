@@ -1,4 +1,5 @@
 import { CanvasElement } from "../elements/base.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 export interface AccessibilityOptions {
   enableScreenReader: boolean;
@@ -168,7 +169,7 @@ export class AccessibilityManager {
   private applyHighContrastTheme(): void {
     // High contrast theme implementation
     // This would need to be implemented based on your theme system
-    console.log("High contrast theme would be applied here");
+    emitCanvasDiagnostic("AccessibilityManager", "info", "High contrast theme requested");
   }
 
   private applyNormalTheme(): void {

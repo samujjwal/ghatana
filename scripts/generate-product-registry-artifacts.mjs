@@ -300,6 +300,7 @@ function generatePackageScripts(registry, lifecycleExclusions) {
   scripts['check:product-registry-artifacts'] = 'node ./scripts/generate-product-registry-artifacts.mjs --check';
   scripts['check:product-kind-classification'] = 'node ./scripts/check-product-kind-classification.mjs';
   scripts['check:kernel-platform-lifecycle'] = 'pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs';
+  scripts['check:kernel-authoring-pipeline'] = 'node ./scripts/check-studio-authoring-workflows.mjs';
   
   // Generate product-specific scripts from registry
   for (const [productId, product] of Object.entries(registry.registry)) {

@@ -15,6 +15,7 @@
   "check:product-registry-artifacts": "node ./scripts/generate-product-registry-artifacts.mjs --check",
   "check:product-kind-classification": "node ./scripts/check-product-kind-classification.mjs",
   "check:kernel-platform-lifecycle": "pnpm build:kernel-lifecycle-platform && node ./scripts/check-kernel-platform-lifecycle.mjs",
+  "check:kernel-authoring-pipeline": "node ./scripts/check-studio-authoring-workflows.mjs",
   "build:phr-gateway": "node scripts/kernel-product.mjs product build phr --surface backend-api",
   "test:phr-gateway": "node scripts/kernel-product.mjs product test phr --surface backend-api",
   "plan:build:phr-gateway": "node scripts/kernel-product.mjs product plan phr build --surface backend-api",

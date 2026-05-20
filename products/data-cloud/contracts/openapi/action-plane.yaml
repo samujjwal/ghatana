@@ -204,7 +204,7 @@ paths:
     post:
       summary: Process a single event
       description: |
-        Submits an event to the AEP engine for real-time processing.
+        Submits an event to the Data Cloud Action Plane engine for real-time processing.
         The engine evaluates all registered patterns against the event
         and returns detection results.
       operationId: processEvent
@@ -1971,7 +1971,7 @@ paths:
 
   /api/v1/session:
     post:
-      summary: Create or refresh an AEP session token
+      summary: Create or refresh an Action Plane session token
       operationId: createSession
       tags: [Sessions]
       responses:
@@ -2564,7 +2564,7 @@ paths:
       summary: Bootstrap a short-lived platform session token
       description: |
         F-008: Issues a platform session token for the authenticated user.
-        Requires AEP_SSO_CONFIGURED=true to be set on the server; returns
+        Requires ACTION_PLANE_SSO_CONFIGURED=true to be set on the server; returns
         503 otherwise. The token is scoped to the tenant resolved from the JWT.
       operationId: getPlatformSession
       tags: [Auth]
@@ -2859,7 +2859,7 @@ components:
           type: integer
         configured:
           type: boolean
-          description: Present and false when the registry is unavailable and AEP is returning a truthful unconfigured payload.
+          description: Present and false when the registry is unavailable and Action Plane is returning a truthful unconfigured payload.
         message:
           type: string
         timestamp:

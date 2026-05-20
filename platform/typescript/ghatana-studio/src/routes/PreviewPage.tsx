@@ -16,6 +16,8 @@
 import { useState, useCallback, useRef } from 'react';
 import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { useAtomValue } from 'jotai';
+import { artifactPreviewSourceAtom } from '../state/artifactWorkflowStore.js';
 
 // ============================================================================
 // Types
@@ -64,7 +66,9 @@ export default function PreviewPage(): ReactElement {
   const navigate = useNavigate();
   const state = (location.state ?? {}) as PreviewPageState;
 
-  const rawSource = state.source ?? null;
+  // Prefer workflow store source (from artifact compile); fall back to router state
+  const workflowSource = useAtomValue(artifactPreviewSourceAtom);
+  const rawSource = workflowSource ?? state.source ?? null;
   const mimeType = state.mimeType ?? 'text/html';
   const title = state.title ?? 'Preview';
 

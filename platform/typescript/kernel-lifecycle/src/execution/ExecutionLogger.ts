@@ -9,21 +9,27 @@ export class ConsoleExecutionLogger {
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    console.log(`${this.prefix} INFO: ${message}`, meta ? JSON.stringify(meta) : '');
+    this.write("INFO", message, meta);
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    console.warn(`${this.prefix} WARN: ${message}`, meta ? JSON.stringify(meta) : '');
+    this.write("WARN", message, meta);
   }
 
   error(message: string, meta?: Record<string, unknown>): void {
-    console.error(`${this.prefix} ERROR: ${message}`, meta ? JSON.stringify(meta) : '');
+    this.write("ERROR", message, meta);
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
     if (process.env.DEBUG === 'true') {
-      console.debug(`${this.prefix} DEBUG: ${message}`, meta ? JSON.stringify(meta) : '');
+      this.write("DEBUG", message, meta);
     }
+  }
+
+  private write(level: "INFO" | "WARN" | "ERROR" | "DEBUG", message: string, meta?: Record<string, unknown>): void {
+    const payload = `${this.prefix} ${level}: ${message}${meta ? ` ${JSON.stringify(meta)}` : ""}\n`;
+    const stream = level === "ERROR" || level === "WARN" ? process.stderr : process.stdout;
+    stream.write(payload);
   }
 }
 

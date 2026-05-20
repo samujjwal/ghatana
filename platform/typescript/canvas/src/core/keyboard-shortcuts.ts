@@ -10,6 +10,8 @@
  * @doc.pattern Command + Observer
  */
 
+import { emitCanvasDiagnostic } from "../diagnostics";
+
 export interface ShortcutConfig {
   key: string;
   ctrl?: boolean;
@@ -101,7 +103,9 @@ export class KeyboardShortcutManager {
     const id = getShortcutId(config);
 
     if (this.shortcuts.has(id)) {
-      console.warn(`Shortcut already registered: ${id}`);
+      emitCanvasDiagnostic("KeyboardShortcuts", "warn", "Shortcut already registered", {
+        id,
+      });
     }
 
     this.shortcuts.set(id, config);
@@ -146,7 +150,7 @@ export class KeyboardShortcutManager {
    */
   startListening(target: HTMLElement | Window = window): void {
     if (this.isListening) {
-      console.warn("Already listening for keyboard shortcuts");
+      emitCanvasDiagnostic("KeyboardShortcuts", "warn", "Already listening for keyboard shortcuts");
       return;
     }
 
@@ -192,7 +196,10 @@ export class KeyboardShortcutManager {
         try {
           await config.handler(event);
         } catch (error) {
-          console.error(`Error executing shortcut ${id}:`, error);
+          emitCanvasDiagnostic("KeyboardShortcuts", "error", "Error executing shortcut", {
+            id,
+            error,
+          });
         }
 
         // Only execute first matching shortcut

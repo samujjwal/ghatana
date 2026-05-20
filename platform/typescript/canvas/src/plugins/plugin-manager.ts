@@ -24,6 +24,7 @@ import type {
   ToolDefinition,
   PanelDefinition,
 } from "./types";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 /**
  * Plugin instance with runtime state
@@ -420,21 +421,20 @@ export class PluginManager {
   }
 
   private createLogger(pluginId: string): PluginLogger {
-    const prefix = `[Plugin:${pluginId}]`;
     return {
-      debug: (msg, ...args) => console.debug(prefix, msg, ...args),
-      info: (msg, ...args) => console.info(prefix, msg, ...args),
-      warn: (msg, ...args) => console.warn(prefix, msg, ...args),
-      error: (msg, ...args) => console.error(prefix, msg, ...args),
+      debug: (msg, ...args) => this.log("debug", msg, { pluginId, args }),
+      info: (msg, ...args) => this.log("info", msg, { pluginId, args }),
+      warn: (msg, ...args) => this.log("warn", msg, { pluginId, args }),
+      error: (msg, ...args) => this.log("error", msg, { pluginId, args }),
     };
   }
 
   private log(
     level: "debug" | "info" | "warn" | "error",
     message: string,
+    context?: Record<string, unknown>,
   ): void {
-    const prefix = "[PluginManager]";
-    console[level](prefix, message);
+    emitCanvasDiagnostic("PluginManager", level, message, context);
   }
 }
 

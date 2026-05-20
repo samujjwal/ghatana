@@ -1,10 +1,10 @@
-# Production-Grade Feature Completeness Audit Report
+# Iterative Production-Grade Feature Completeness Audit Report
 
 ## Ghatana Studio, Canvas, UI Builder, DS Generator, and Artifact Compiler/Decompiler
 
-Target commit: `1d010f24f02ec0d7cd57ef945b32fe407aa10e7c`
-
-Audit basis: I inspected the current GitHub snapshot at the target commit through package manifests, public barrels, core source files, Studio routes/components, kernel artifact contracts, and representative test/file discovery. I did **not** run the repo locally, so command success/failure is not claimed.
+**Repo:** `samujjwal/ghatana`
+**Target commit:** `7f87dd4d52d50e6793d04938ae6a8653f773a8ba`
+**Commit verified:** `libs updates` 
 
 ---
 
@@ -12,224 +12,135 @@ Audit basis: I inspected the current GitHub snapshot at the target commit throug
 
 ### Overall readiness rating
 
-| Area                         |   Rating | Verdict                                                                                                                                                     |
-| ---------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@ghatana/canvas`            |   5 / 10 | Broad foundation, but public surface, schema/runtime contract, composite history, and multi-canvas isolation need hardening.                                |
-| `@ghatana/ui-builder`        | 5.5 / 10 | Significantly improved canonical model direction, but compatibility bridges, casts, import/codegen gaps, and Studio round-trip integration remain blockers. |
-| `@ghatana/ds-generator`      |   3 / 10 | Deterministic preset/brand utility, not yet a full design-system generator.                                                                                 |
-| `@ghatana/ghatana-studio`    |   4 / 10 | Shell and routes exist, but real authoring workflows are incomplete or disconnected.                                                                        |
-| Artifact compiler/decompiler |   2 / 10 | Artifact lifecycle contracts exist; production compiler/decompiler pipeline is not first-class yet.                                                         |
+**Partial / pre-production foundation.**
+
+These areas have moved beyond empty placeholders: the packages exist, the Studio routes exist, and there are real foundations for canonical builder documents, canvas state/controllers, DS generation, artifact contracts, and TS/TSX artifact decompilation. However, the full production workflow is **not yet complete**:
+
+```text
+source → scan → decompile → logical model → canvas/builder/DS projection
+→ user edit → compile → preview → export → re-import → fidelity report
+```
 
 ### Final verdict
 
-**No — partial foundations exist, but these areas are not yet feature-complete or production-grade for a world-class Ghatana product-development platform.**
+**Partial for foundation. No for production-grade, world-class feature completeness.**
 
 ### Top production blockers
 
-1. **Artifact compiler/decompiler is not a first-class implemented capability.** I found `@ghatana/kernel-artifacts` for lifecycle artifact manifests, fingerprints, registry/resolver/validator/storage, but not a full scan → parse/decompile → logical model → edit → compile → re-import → fidelity pipeline. The stale `platform/comp-decomp-todo.md` is explicitly from an older commit and should not be treated as target-snapshot truth.   
-2. **Studio does not yet provide one coherent end-to-end workflow.** `App.tsx` wires product-shell routes for ideas, blueprints, canvas, develop, lifecycle, agents, artifacts, deployments, health, learn, and settings, but the Builder Studio workflow is not part of the main route tree inspected, and `/canvas` is an artifact-intelligence visualization, not a full authoring workspace.  
-3. **Canvas and UI Builder have improved, but still rely on compatibility bridges and unsafe casts.** UI Builder now declares a canonical schema-backed `BuilderDocument`, but compatibility adapters still support legacy `id`, `version`, `name`, `rootNodes`, Map-to-Record behavior, and some casts remain in operations/import/Studio projection.    
-4. **DS Generator is a preset/brand materializer, not a full DS generator.** The manifest itself describes preset materialization and brand customization, and exports only core preset/brand/extension surfaces.  
-5. **Real round-trip evidence is incomplete.** UI Builder has AST-based TSX import and React codegen with fidelity/loss-point reporting, which is good, but this is still component-level import/codegen rather than repository-level artifact compiler/decompiler with source provenance, residual islands, durable evidence packs, and Studio review queues.  
+1. **Studio is not yet a real end-to-end authoring pipeline.**
+   `/canvas`, `/builder`, `/design-system`, `/import`, `/preview`, and `/fidelity-report` exist as routes, but they are not yet integrated into one durable workflow. Studio routes are declared in `App.tsx`, including `/canvas`, `/builder`, `/design-system`, `/import`, `/fidelity-report`, and `/preview`.  
+
+2. **Artifact compiler/decompiler is a useful TypeScript foundation, not production-grade repo intelligence.**
+   `@ghatana/artifact-compiler-ts` exports decompile, compile, builder/canvas/DS projection, fidelity, and residual modules.  But the decompiler currently accepts already-loaded `.ts/.tsx` source files and builds a simplified logical model; it does not yet own GitHub/GitLab/local-folder acquisition, durable repo indexing, multi-language parsing, protected-region preservation, or full round-trip evidence.  
+
+3. **Canvas public API is still too broad for a stable platform package.**
+   `@ghatana/canvas` exports many subpaths and runtime surfaces, including hybrid state, tools, chrome, AI, collaboration, telemetry, testing, flow, public APIs, and many elements.  The public barrel also exports a large set of plugin registries, global reset helpers, hybrid store APIs, chrome components, core systems, performance utilities, accessibility helpers, and element internals.  
+
+4. **UI Builder canonical model is mostly corrected, but compatibility layers remain.**
+   The current UI Builder explicitly says the canonical `BuilderDocument` is in `builder-document.ts`, and the old Map-based model is deprecated and no longer exported from the core barrel.  However, `builder-document.ts` still includes Map compatibility normalization and non-enumerable compatibility fields such as `id`, `version`, `name`, and `rootNodes`. 
+
+5. **Design-system generator is materially improved but not yet fully production-grade.**
+   It now has a `DesignSystemDocument`, semantic aliases, component variants/states, token graph exports, contrast validation, CSS/JSON/Tailwind/React-theme targets, and deterministic file emission APIs.  But the document factory still stamps `generatedAt` with `new Date().toISOString()`, and component states are open strings rather than a strict canonical state enum. 
 
 ### Recommended next milestone
 
-**Milestone 1: Canonical Artifact + Builder + Canvas Contracts.**
-Before adding more UI, define and enforce canonical contracts for:
+**Milestone: Round-Trip Authoring Foundation**
+
+Deliver one vertical path:
 
 ```text
-ArtifactSource
-ArtifactGraph
-LogicalArtifactModel
-BuilderDocument
-CanvasDocument
-DesignSystemDocument
-CompileResult
-DecompileResult
-FidelityReport
-ResidualIslandReport
-EvidencePack
+upload TSX files
+→ decompile into LogicalArtifactModel
+→ project to BuilderDocument and CanvasDocument
+→ edit through Builder/Canvas
+→ compile generated files
+→ preview generated output
+→ re-import generated output
+→ produce fidelity/residual report
 ```
-
-Then wire one thin Studio workflow through those contracts.
 
 ### Recommended first implementation PR
 
-**PR-1: “Canonical artifact contracts and BuilderDocument boundary cleanup.”**
+**PR 1: Canonical artifact round-trip contract + Studio state bridge**
 
-Scope:
+Start with shared contracts and adapters before improving UI polish:
 
-1. Add shared artifact compiler/decompiler contract package.
-2. Make UI Builder canonical document usage strict.
-3. Remove or quarantine legacy compatibility APIs behind explicit adapters.
-4. Add architecture tests preventing unsafe `as unknown as` casts across package boundaries.
-5. Add one minimal source → model → generated source → re-import fidelity test.
+* Make `@ghatana/artifact-contracts` the only source for source/model/provenance/fidelity/evidence.
+* Add a Studio `ArtifactWorkflowStore`.
+* Persist decompile job result, projected builder document, projected canvas graph, generated files, preview source, and fidelity reports.
+* Wire `/import` → `/canvas` → `/builder` → `/preview` → `/fidelity-report`.
 
 ---
 
 ## B. Validated Learnings
 
-### Learning: UI Builder had incompatible BuilderDocument models
+### Learning: UI Builder incompatible BuilderDocument models
 
-**Status: Partially fixed**
+**Status:** Partially fixed.
 
-**Verified current state:**
-`builder-document.ts` now defines `CURRENT_SCHEMA_VERSION`, a Zod-backed `BuilderDocumentSchema`, and a canonical `BuilderDocument` type with `schemaVersion`, `documentId`, `owner`, `root`, `nodes` as a record, `bindings`, `layout`, and metadata.  
+**Evidence:** The core UI Builder barrel now says canonical `BuilderDocument` is defined in `builder-document.ts`, backed by Zod validation, migrations, and serialization; it also states the Map-based `BuilderDocument` from `types.ts` is deprecated and no longer exported.  The old `types.ts` file confirms `BuilderDocument` is no longer defined there and should be imported from `builder-document.ts`. 
 
-**Remaining risk:**
-The same file still includes compatibility support for legacy-style `id`, `version`, `name`, `rootNodes`, and Map-like node accessors. `types.ts` explicitly says the old `BuilderDocument` location is deprecated, but compatibility remains.  
+**Impact:** The prior duplicate-model blocker is reduced, but not eliminated.
 
-**Impact:**
-Better than previous state, but still risky for production because consumers can continue to depend on compatibility behavior rather than the canonical schema.
+**Required action:** Keep the compatibility adapter, but make it explicit and bounded. New Studio, artifact compiler, persistence, preview, and codegen code should consume only canonical `BuilderDocument` or named adapter outputs.
 
-**Required action:**
-Keep only the schema-backed model as public canonical. Move legacy compatibility into `@ghatana/ui-builder/legacy-adapters` or internal migration utilities.
-
-**Priority:** P0 Blocker
+**Priority:** P0.
 
 ---
 
-### Learning: Canvas had broad public API surface
+### Learning: Canvas undo/redo and multi-canvas isolation risks
 
-**Status: Still true**
+**Status:** Partially fixed.
 
-**Verified current state:**
-`@ghatana/canvas` exposes many subpaths from `package.json`, including `./react`, `./types`, `./plugins`, `./hybrid`, `./tools`, `./state`, `./chrome`, `./ai`, `./export`, `./collaboration`, `./telemetry`, `./testing`, `./flow`, and `./public`. 
+**Evidence:** `pushHistoryAtom` explicitly requires a pre-mutation snapshot, and `undoAtom`/`redoAtom` restore element/node/edge snapshots.  The `HybridCanvasController` captures element/node/edge snapshots before add/update/delete mutations and then pushes the pre-mutation snapshot after applying the mutation.  Multi-canvas isolation is supported through `createCanvasStore()` / `createHybridCanvasStore()`, but the deprecated global `hybridCanvasStore` remains publicly exported. 
 
-The public barrel exports plugin registries, hybrid controller/state/hooks, AI, telemetry, domain injection, export, collaboration, React overlays, tools, chrome/panels, theme, accessibility, core systems, performance helpers, elements, semantic zoom, and diagram primitives.  
+**Impact:** Undo/redo implementation direction is now correct, but global store exposure and broad public exports remain production risks.
 
-**Impact:**
-A broad public API makes production stabilization harder and increases backward-compatibility burden before the core document/runtime contracts are stable.
+**Required action:** Add command-level undo/redo regression tests for every mutator and deprecate/remove global store usage from products.
 
-**Required action:**
-Split public API into stable, experimental, internal, and deprecated surfaces. Export only stable APIs from `"."`.
-
-**Priority:** P1 Required
+**Priority:** P0.
 
 ---
 
-### Learning: Deprecated UI Builder compatibility surfaces may still be exposed from Canvas
+### Learning: DS Generator was closer to preset/brand utility than full generator
 
-**Status: Mostly fixed at package/public-barrel level**
+**Status:** Partially fixed.
 
-**Verified current state:**
-The Canvas public barrel explicitly states that Canvas does not own builder-domain abstractions and that the deprecated UI Builder export was intentionally removed. The current `package.json` exports shown do not include `./ui-builder`.  
+**Evidence:** The package now exports model, semantic token aliasing, component variants/states, token graph, contrast validation, CSS/JSON/Tailwind/React theme targets, and a file-emission pipeline.  The design-system document is now self-contained with base preset, optional brand, semantic aliases, component variants, resolved tokens, and metadata. 
 
-**Remaining risk:**
-The package still has a very broad public API, and internal remnants were not exhaustively inspected file-by-file.
+**Impact:** This is no longer just a simple preset helper. It is a credible generator foundation, but still needs deterministic generation hardening, strict state taxonomy, golden tests, and Studio workflow integration.
 
-**Required action:**
-Add a governance check that rejects imports from deprecated Canvas builder compatibility paths and validates package exports against an allowlist.
+**Required action:** Add strict canonical component states, deterministic clock injection, complete golden-output tests, and contrast failure gates.
 
-**Priority:** P1 Required
+**Priority:** P1.
 
 ---
 
-### Learning: Hybrid canvas controller may rely on singleton/global store state
+### Learning: Studio shell existed but did not wire real package capabilities
 
-**Status: Partially fixed**
+**Status:** Partially fixed, still a major blocker.
 
-**Verified current state:**
-`HybridCanvasController` now accepts an injected Jotai store and defaults to `createStore()`, which supports instance-scoped controllers. The deprecated `getHybridCanvasController()` now returns a new controller rather than a singleton.  
+**Evidence:** Studio routes now include `/canvas`, `/builder`, `/design-system`, `/import`, `/fidelity-report`, and `/preview`.  Builder Studio now mounts a visual workspace with component palette, tree, property inspector, validation panel, and visual canvas.  But Builder Studio persists through localStorage, uses hard-coded component contracts, and does not yet connect to artifact import, codegen, preview, or durable backend workflows. 
 
-**Remaining risk:**
-`hybridCanvasStateAtom`, `historyAtom`, and `hybridCanvasStore` remain exported as global atoms/store facade, and public hooks read those global atoms.  
+**Impact:** Studio is useful for demo-level workflows but not yet production-grade product-development orchestration.
 
-**Impact:**
-Consumers using public hooks/store directly can still create cross-canvas bleed unless isolated by a Jotai provider/store discipline.
+**Required action:** Build a durable Studio workflow state model and remove localStorage-only persistence as the production path.
 
-**Required action:**
-Introduce `createHybridCanvasStore()` and `HybridCanvasProvider`; mark global `hybridCanvasStore` as legacy/testing-only.
-
-**Priority:** P1 Required
+**Priority:** P0.
 
 ---
 
-### Learning: Canvas undo/redo may capture state after mutation
+### Learning: Artifact compiler/decompiler is crucial and underdeveloped
 
-**Status: Partially fixed, still risky for composite operations**
+**Status:** Partially implemented foundation, not production-grade.
 
-**Verified current state:**
-The history atom requires pre-mutation snapshots. The controller now captures `elements`, `nodes`, and `edges` before individual add/update/delete operations and passes those snapshots to history.  
+**Evidence:** Shared artifact contracts exist for source, model, provenance, fidelity, and evidence.  TypeScript compiler/decompiler package exists and exports decompile, compile, projections, fidelity, and residual APIs.  Current decompilation parses provided file contents with TypeScript compiler API and creates a `LogicalArtifactModel`, but source refs are currently simplified to `local://` and `working-tree`.  
 
-**Remaining risk:**
-Composite operations such as `duplicateSelected`, `groupSelected`, and `ungroupSelected` call multiple mutating operations, producing multiple history entries or pushing a snapshot after several mutations. `ungroupSelected()` specifically updates children, deletes group elements, then captures state and pushes an “Ungroup” history entry. 
+**Impact:** Good platform seed, but not yet repo-scale artifact intelligence.
 
-**Impact:**
-Single-step undo/redo will not reliably match user intent for group/ungroup/duplicate flows.
+**Required action:** Add source acquisition, repository scanning, provenance, protected regions, residual triage, and round-trip golden tests.
 
-**Required action:**
-Replace ad hoc snapshot pushes with a command model: `execute(command)`, `undo(command)`, `redo(command)`, transaction boundaries, and composite command grouping.
-
-**Priority:** P0 Blocker
-
----
-
-### Learning: Canvas document model may lack runtime schema, migrations, and round-trip guarantees
-
-**Status: Still true based on inspected files**
-
-**Verified current state:**
-The hybrid Canvas model is TypeScript-interface based (`HybridCanvasState`, `CanvasElement`, `CanvasNode`, `CanvasEdge`) with no runtime schema/migration contract evidenced in the inspected model/state files. 
-
-**Impact:**
-No production-grade persisted canvas document guarantee, no versioned migrations, no schema validation, and no round-trip serialization acceptance gate.
-
-**Required action:**
-Add `CanvasDocumentSchema`, `CanvasDocumentV1`, migration registry, serializer/deserializer, and golden round-trip tests.
-
-**Priority:** P0 Blocker
-
----
-
-### Learning: DS Generator may be closer to preset/brand utility than full generator
-
-**Status: Still true**
-
-**Verified current state:**
-The package description is “Design system preset materialization and brand customization generator.” The source exports presets, brand config/application, and generator extension manifest helpers.  
-
-**Impact:**
-It is useful, but not yet a full design-system generator capable of semantic token graphs, component state generation, Tailwind/React outputs, docs, golden files, and accessibility validation.
-
-**Required action:**
-Promote it from preset utility to a pipeline-based generator with explicit targets and tests.
-
-**Priority:** P1 Required
-
----
-
-### Learning: Studio shell exists but routes may not wire real package capabilities
-
-**Status: Still true**
-
-**Verified current state:**
-`App.tsx` wires Studio shell routes. `/canvas` renders a static artifact graph canvas derived from `semanticArtifactReferences` and uses no-op change handlers. `BuilderStudio.tsx` exists as a richer localStorage-based builder section, but it is not imported in the inspected `App.tsx` route tree.   
-
-**Impact:**
-The Studio shell is not yet the real end-to-end authoring/product-development workflow.
-
-**Required action:**
-Create routed workflows for Canvas Authoring, Builder Studio, DS Generation, Artifact Import/Decompile, Preview, Export, and Fidelity Review.
-
-**Priority:** P0 Blocker
-
----
-
-### Learning: Artifact compiler/decompiler is crucial and currently immature
-
-**Status: Still true**
-
-**Verified current state:**
-The current artifact package is lifecycle-manifest oriented: artifact types, packaging, fingerprints, trust state, signatures, SBOM refs, attestations, retention, source/provenance refs, and manifest generation/validation. 
-
-**Gap:**
-I did not find a first-class compiler/decompiler package implementing repository scanning, AST parsing across codebases, logical model creation, protected regions, residual island tracking, fidelity scoring, compile/decompile workers, or Studio review queues. Search surfaced `platform/comp-decomp-todo.md`, but that file states it was executed against a different older commit and should not be used as current-state truth.  
-
-**Required action:**
-Create artifact compiler/decompiler as a first-class platform area with contracts, TS adapters, backend/Java worker services, and Studio UX.
-
-**Priority:** P0 Blocker
+**Priority:** P0.
 
 ---
 
@@ -237,475 +148,297 @@ Create artifact compiler/decompiler as a first-class platform area with contract
 
 ## Package: `@ghatana/canvas`
 
-### Intended Responsibility
+### Intended responsibility
 
-Reusable platform canvas engine for visual authoring, artifact graph display, nodes/edges/elements, selection, grouping, history, viewport, plugins, accessibility, export, telemetry, collaboration readiness, and large-canvas performance.
+Generic canvas runtime: nodes, edges, groups, layers, viewport, pan/zoom, selection, history, tools, plugins, rendering, accessibility, export/import, collaboration readiness, and telemetry.
 
-### Actual Current Responsibility
+### Actual current responsibility
 
-The package is a broad platform canvas package with hybrid renderer, ReactFlow integration, plugin systems, AI integration, telemetry, export, collaboration, React overlays, tools, chrome/panels, accessibility, performance, element primitives, diagram primitives, and semantic zoom.  
+The package currently owns a broad hybrid canvas engine with custom and ReactFlow-style concepts, plugin registries, tools, panels, AI integration, collaboration, telemetry, accessibility, export, performance helpers, and many built-in element types.   
 
-### What Exists
+### What exists
 
-* Hybrid state and controller.
-* Viewport, pan, zoom, fit-to-content, center-on.
-* Selection and select-all.
-* Freeform elements.
-* Graph nodes and edges.
-* Grid config.
-* Undo/redo atoms.
-* Group/ungroup/duplicate utilities.
-* Plugin and registry exports.
-* Collaboration, telemetry, export, AI, accessibility, panels, and diagram exports.
+* Hybrid canvas state atoms.
+* Hybrid canvas controller.
+* Isolated store factory.
+* Deprecated global store facade.
+* Command model exports.
+* Plugin/tool/chrome/accessibility/performance/telemetry/collaboration exports.
+* Extensive element exports.
 
-### What Is Correct
+### What is correct
 
-* Controller dependency injection is improved: store, clock, and ID provider can be injected. 
-* Individual add/update/delete operations capture pre-mutation snapshots. 
-* Deprecated singleton controller was replaced with a new-instance helper. 
+* Undo/redo direction is corrected through pre-mutation snapshots. 
+* Controller mutators capture state before mutations. 
+* Multi-canvas isolation has a store factory. 
+* Canvas no longer exports deprecated UI Builder abstractions from the public barrel. 
 
-### What Is Incomplete
+### What is incomplete
 
-* No runtime-validatable `CanvasDocument` schema evidenced.
-* No versioned migrations evidenced.
-* No round-trip serialization contract evidenced.
-* Public API is too broad for production stability.
-* Composite history is not command-based.
-* Multi-canvas isolation is still fragile via exported global atoms/store.
+* No verified canvas document runtime schema/migration system in the inspected core canvas files.
+* Group/ungroup, duplicate, selection, deletion, node/edge update, and history need full command-level regression coverage.
+* Public API needs stability classification.
 
-### What Is Incorrect
+### What is incorrect or risky
 
-* Default ID provider uses `Date.now()` and `Math.random()` with an inline note that it should be replaced by a proper UUID generator in production. 
-* Composite operations produce non-atomic undo/redo semantics. 
+* Deprecated global `hybridCanvasStore` remains exported.
+* Public barrel exposes too much platform-internal surface.
+* Canvas state snapshots cover elements/nodes/edges, but not necessarily viewport, selection, layers, tool, grid, collaboration, or document metadata.
 
-### Public API Review
+### Production readiness rating
 
-Public API should be reduced and tiered:
-
-```text
-stable:
-  CanvasDocument
-  CanvasProvider
-  CanvasController
-  commands
-  serializer/migrations
-  viewport/selection APIs
-
-experimental:
-  AI integration
-  collaboration
-  semantic zoom
-  panels/chrome
-
-internal:
-  atoms
-  low-level registries
-  implementation utilities
-```
-
-### Production Readiness Rating
-
-**5 / 10**
-
-### Required Fixes
-
-1. Add schema-backed `CanvasDocument`.
-2. Add command-based history.
-3. Add `CanvasProvider` and store factory.
-4. Move global atoms/store to internal or testing.
-5. Reduce public exports.
-6. Add golden serialization and multi-canvas isolation tests.
+**55 / 100 — functional foundation, not stable platform API yet.**
 
 ---
 
 ## Package: `@ghatana/ui-builder`
 
-### Intended Responsibility
+### Intended responsibility
 
-Canonical UI builder model, component registry/contracts, layout, bindings, actions, validation, import/export, preview, codegen, scene projection, and round-trip fidelity.
+Canonical BuilderDocument, component contracts, bindings, actions, validation, scene projection, preview/codegen, import/export, persistence, and safe runtime policy.
 
-### Actual Current Responsibility
+### Actual current responsibility
 
-The package owns document model, bindings, actions, validation, code generation, React/web/preview/testing exports, and JSON schema export. 
+The package now claims a canonical `BuilderDocument` in `builder-document.ts`, exports schema validation, migrations, serialization, operations, validation, codegen, import, persistence, DS binding, telemetry, and scene projection. 
 
-### What Exists
+### What exists
 
-* Canonical schema-backed `BuilderDocument`.
-* Compatibility adapters for legacy document access.
-* Operations for insert, move, delete, update props, bindings, reorder, resize, reposition, responsive variants, actions, batch updates, undo stack.
-* AST-based TSX import using TypeScript compiler API.
-* HTML import for `<ghatana-*>` custom elements.
-* JSON import.
-* React codegen with ownership markers and round-trip loss points.
-* Preview host protocol with acknowledgement-based mount/update/teardown.
+* Zod-backed canonical `BuilderDocumentSchema`.
+* Schema version `1.0.0`.
+* Document factory.
+* Serialization/deserialization.
+* Operations with Immer.
+* Import/codegen/persistence/scene-projection exports.
+* Compatibility normalization from old Map-based shape.
 
-### What Is Correct
+### What is correct
 
-* `BuilderDocumentSchema` provides a real runtime schema foundation. 
-* `types.ts` explicitly directs consumers to import canonical `BuilderDocument` from `builder-document.ts`. 
-* TSX import uses the TypeScript compiler API instead of regex for JSX parsing. 
-* Preview protocol now waits for matching acknowledgements for mount/update/teardown. 
-* Codegen computes loss points and confidence rather than silently claiming perfect round-trip. 
+The package has one canonical exported `BuilderDocument` from `builder-document.ts`; `types.ts` no longer owns that model.  
 
-### What Is Incomplete
+### What is incomplete
 
-* JSON import still checks for legacy `rootNodes` even though canonical structure is layout-based. 
-* HTML import remains best-effort and regex-based for custom tags. 
-* React codegen does not fully encode bindings, responsive variants, state variants, custom/protected code, or unknown contracts; it records these as loss points. 
-* No repository-level artifact decompiler exists here; this is UI-component import/codegen only.
+* Compatibility path still accepts Map-like nodes and old convenience fields.
+* Migrations only show current `1.0.0`; no evidence of multi-version migration coverage.
+* Operations use `new Date()` and `crypto.randomUUID()` through core helpers, which complicates deterministic tests without injection.  
 
-### What Is Incorrect
+### What is incorrect or risky
 
-* Unsafe casts still exist in production paths: operations and import both cast through `unknown`; Studio VisualCanvas casts selection node IDs across package boundaries.   
+* Studio `VisualCanvas` casts canvas `selection.nodeIds` to `NodeId[]`, which is a boundary cast rather than a typed adapter. 
+* Studio’s builder palette uses hard-coded component contracts instead of a real DS/component registry. 
 
-### Production Readiness Rating
+### Production readiness rating
 
-**5.5 / 10**
-
-### Required Fixes
-
-1. Make canonical document strict.
-2. Move legacy compatibility to explicit migration adapters.
-3. Replace unsafe casts with typed adapters.
-4. Fix JSON import to accept canonical schema directly.
-5. Add semantic validation for graph/tree constraints, duplicate parentage, binding expressions, action payloads, and prop schemas.
-6. Add round-trip tests for TSX/JSON/codegen/preview.
+**60 / 100 — canonical model mostly fixed, but adapters and deterministic gates remain.**
 
 ---
 
 ## Package: `@ghatana/ds-generator`
 
-### Intended Responsibility
+### Intended responsibility
 
-Full design-system generation pipeline: token graph, semantic tokens, aliases, component variants/states, accessibility, CSS/JSON/Tailwind/React outputs, deterministic file emission, docs/examples, migrations, and golden tests.
+Full deterministic design-system generation: tokens, semantic aliases, component states/variants, contrast, CSS/JSON/Tailwind/React theme targets, docs/examples/tests, and golden outputs.
 
-### Actual Current Responsibility
+### Actual current responsibility
 
-Preset materialization and brand customization. 
+The package now provides preset materialization, brand customization, semantic aliases, component variants/states, token graph, contrast validation, CSS/JSON/Tailwind/React theme outputs, and file emission. 
 
-### What Exists
+### What exists
 
-* Built-in presets.
-* Color, typography, radius, density, elevation, shadow, motion, and z-index materialization.
-* CSS custom property rendering for presets.
-* Brand overrides.
-* CSS safety validation for custom property names/values.
-* Hex validation for brand color overrides.
-* Extension manifest model.   
+* `DesignSystemDocument`.
+* Semantic token aliases.
+* Component variants/states.
+* Contrast audit helpers.
+* CSS, JSON, Tailwind, React theme emitters.
+* Multi-target `emitFiles()` pipeline.
 
-### What Is Correct
+### What is correct
 
-* Deterministic preset output.
-* Basic safety validation for brand custom properties.
-* Brand `basePresetId` validation against the supplied preset. 
+Contrast validation is implemented at DS-document/pair level with WCAG AA/AAA thresholds.  Multi-target file emission is centralized through `emitFiles()`. 
 
-### What Is Incomplete
+### What is incomplete
 
-* No semantic token graph.
-* No alias token references.
-* No contrast validation.
-* No component state style generation.
-* No Tailwind target.
-* No React theme provider target.
-* No JSON token target as a first-class output.
-* No file emission pipeline.
-* No golden output fixtures evidenced.
-* No Storybook/docs/examples generator evidenced.
+* Component states are open strings, not strict canonical states.
+* `createDesignSystemDocument()` embeds `generatedAt = new Date().toISOString()`, making deterministic output dependent on caller behavior. 
+* No verified golden test suite from inspected paths.
+* No verified Storybook/docs target generation.
+* Future native/desktop targets are not evident.
 
-### What Is Incorrect
+### What is incorrect or risky
 
-`renderBrandToCss()` does not emit the full token set emitted by `renderPresetToCss`; it omits several generated token categories such as shadow, motion, and z-index from the rendered brand CSS path.  
+* `emit-files.ts` describes a “SHA-256-style” checksum but implements a djb2 non-cryptographic 8-character hash. 
+* Invalid color pairs are skipped with a development warning, which is acceptable for helper usage but not strict enough for a production generation gate. 
 
-### Production Readiness Rating
+### Production readiness rating
 
-**3 / 10**
-
-### Required Fixes
-
-1. Introduce `DesignSystemDocument`.
-2. Add token graph and semantic/alias token validation.
-3. Add WCAG contrast validation.
-4. Add target adapters: CSS variables, JSON tokens, Tailwind, React theme, docs.
-5. Add deterministic file emission.
-6. Add golden tests.
+**65 / 100 — strongest improvement area, needs deterministic/golden hardening.**
 
 ---
 
 ## Package: `@ghatana/ghatana-studio`
 
-### Intended Responsibility
+### Intended responsibility
 
-Product-facing Studio experience that orchestrates package capabilities without duplicating internals.
+Customer-facing Studio orchestration: idea/import, scan/decompile, canvas, builder, DS generation, validation, preview, export, re-import, diff/fidelity, traceability, access boundaries, observability, a11y, i18n, and E2E tests.
 
-### Actual Current Responsibility
+### Actual current responsibility
 
-A unified Studio shell with route gating and lifecycle-aware navigation. It depends on Canvas, UI Builder, DS Generator, kernel lifecycle/artifacts/deployment/release, product shell, design system, i18n, platform utils/events, theme, and tokens. 
+Studio provides a route shell and feature routes for canvas, builder, design-system generation, import/decompile, preview, and fidelity reporting.  
 
-### What Exists
+### What exists
 
-* Product shell route structure.
-* Route access guard.
-* Lifecycle capability state.
-* Error boundary.
-* i18n usage.
-* Canvas page.
-* Artifacts page.
-* Builder Studio component/section.
-* VisualCanvas bridge component.
-* LocalStorage-backed builder persistence.
+* ProductShell route orchestration.
+* Canvas route.
+* Builder Studio route.
+* Design System Generator route.
+* Import/Decompile route.
+* Preview iframe route.
+* Fidelity report route.
+* Basic route access guard.
 
-### What Is Correct
+### What is correct
 
-* Studio shell direction is coherent.
-* Route gating and ownership metadata exist.
-* Builder Studio uses UI Builder public APIs for create, validate, serialize, deserialize, insert, update, and persistence. 
+* Studio consumes platform packages instead of fully duplicating them.
+* Builder route mounts a dedicated `BuilderStudio`.
+* Design-system route uses `@ghatana/ds-generator` emitters.
+* Import route invokes `@ghatana/artifact-compiler-ts`.
 
-### What Is Incomplete
+### What is incomplete
 
-* `BuilderStudio.tsx` is not routed in inspected `App.tsx`.
-* `/canvas` is static artifact graph visualization, not full authoring.
-* Canvas node positions use `Math.random()` each render, so layout is nondeterministic. 
-* `VisualCanvas` projects BuilderDocument → Canvas, but does not persist Canvas edits back to BuilderDocument. 
-* Component palette is hardcoded to Button/Input/Card/Typography rather than loaded from the design-system/component registry. 
-* Artifact page displays artifact lifecycle/intelligence metadata but is not an import/decompile/compile review workflow. 
+* `/canvas` visualizes static YAPPC workflow data and does not persist canvas edits or update source/model state. 
+* `/builder` persists through localStorage and uses hard-coded component contracts.  
+* `/design-system` simulates async generation with `setTimeout` and only supports preset/output selection, not full token editing, contrast gating, golden output, or design-system lifecycle. 
+* `/preview` renders router-state source in a sandboxed iframe but is not connected to Builder codegen or artifact compile results. 
+* `/fidelity-report` expects router-state report, but `/import` does not navigate there or push model to Builder/Canvas.  
 
-### Production Readiness Rating
+### Production readiness rating
 
-**4 / 10**
-
-### Required Fixes
-
-1. Add real Studio workflows:
-
-   * import/decompile
-   * artifact model review
-   * canvas visualization/editing
-   * visual builder editing
-   * DS generation
-   * validation
-   * preview
-   * compile/export
-   * re-import/fidelity review
-2. Remove random layout.
-3. Replace localStorage-only persistence with workspace/project-backed persistence.
-4. Route Builder Studio.
-5. Add E2E workflows.
+**45 / 100 — visible workflows exist, but orchestration is not production-grade.**
 
 ---
 
-## D. Artifact Compiler/Decompiler Deep Review
+## Package: Artifact compiler/decompiler
 
-## Artifact Compiler/Decompiler
+### Intended responsibility
 
-### Current Locations
+Source acquisition, scanning, parsing, logical modeling, provenance, projections, compilation, protected-region preservation, fidelity scoring, residual handling, validation, preview, test generation, and evidence packs.
 
-| Location                                                          | Current Role                                                                                                                                                |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platform/typescript/kernel-artifacts`                            | Artifact lifecycle manifest system: artifact entries, packaging, fingerprints, trust, signatures, SBOM, attestation, registry/resolver/validator/storage.   |
-| `platform/typescript/ui-builder/src/core/import.ts`               | UI-level import from JSON, TSX, HTML into `BuilderDocument`; includes fidelity/loss points.                                                                 |
-| `platform/typescript/ui-builder/src/core/codegen.ts`              | React code generation from `BuilderDocument`; includes ownership regions and round-trip fidelity.                                                           |
-| `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx` | Artifact manifest/intelligence display, not decompile/compile workflow.                                                                                     |
-| `platform/comp-decomp-todo.md`                                    | Stale prior audit output from a different commit; exclude as current-state truth.                                                                           |
+### Actual current responsibility
 
-### Current Capabilities
+`@ghatana/artifact-contracts` provides shared contracts.  `@ghatana/artifact-compiler-ts` provides TS/TSX decompile/compile/projection/fidelity/residual APIs. 
 
-* Artifact lifecycle manifests.
-* Fingerprint/trust/signature/SBOM/attestation/retention metadata.
-* Source/provenance references in artifact manifests.
-* UI Builder TSX import via TypeScript compiler API.
-* UI Builder JSON/HTML import.
-* UI Builder React codegen.
-* Loss-point/confidence reporting for UI Builder codegen/import.
+### Current capabilities
 
-### Missing Capabilities
+* TS/TSX parse via TypeScript compiler API.
+* File-kind inference.
+* Import/export extraction.
+* Simplified dependency edges.
+* Basic prop inference from `Props`-like types.
+* Logical model generation.
+* Low-confidence residual stubs.
+* Builder/Canvas/DS projection exports.
+* Fidelity score helpers.
 
-* GitHub/GitLab/local/archive acquisition.
-* Repository scanning.
-* File classification.
-* Dependency graph.
-* Component graph.
+### Missing capabilities
+
+* GitHub/GitLab/local-folder/archive source acquisition.
+* Repository scanner.
+* File classification beyond simple path heuristics.
+* Real dependency graph resolution.
 * Route graph.
+* Component graph.
 * API graph.
-* Multi-language AST parsing beyond UI-level TSX/HTML/JSON.
-* Logical artifact model.
-* Provenance model with source-span traceability.
-* Ownership/protected region system across files.
-* Residual island detection.
-* Fidelity scoring at repository/workspace level.
-* Compile/decompile evidence packs.
-* Human review queue.
-* Studio visual diff.
-* Backend/Java long-running scan/index services.
-* Round-trip CI gates.
+* Config graph.
+* Real provenance from repository URI/commit/path/span.
+* Protected region preservation.
+* Import management.
+* Formatting strategy.
+* Source-preserving round-trip.
+* Re-import diff.
+* Evidence pack pipeline.
+* Backend/Java large-repo service.
 
-### Platform vs Product Boundary
+### Production readiness rating
 
-**Correct platform/shared ownership:**
+**35 / 100 — strong seed, not production-grade artifact intelligence.**
 
-* Artifact contracts.
-* Source/provenance/fidelity/residual/evidence models.
-* Compiler/decompiler result contracts.
-* Validation result contracts.
-* Adapter interfaces.
+---
 
-**Correct TypeScript ownership:**
+## D. Artifact Compiler/Decompiler Capability Matrix
 
-* Studio UX orchestration.
-* UI Builder projection.
-* Canvas projection.
-* DS projection.
-* Browser-side lightweight artifact import.
-* Preview orchestration.
-* UI codegen adapters.
-
-**Correct Java/backend ownership:**
-
-* Large repo scanning.
-* Long-running parsing/indexing.
-* Multi-language dependency graphs.
-* Durable evidence pipelines.
-* Batch compile/decompile.
-* Repository-level diffing.
-* Heavy validation and test execution orchestration.
-
-### Capability Matrix
-
-| Capability                    | Current Location                  | Current Status  | Correct Owner                            | TS / Java / Backend / Shared Contract | Gap                                     | Priority |
-| ----------------------------- | --------------------------------- | --------------- | ---------------------------------------- | ------------------------------------- | --------------------------------------- | -------- |
-| Source acquisition            | Not evidenced                     | Missing         | Artifact compiler platform               | Backend + shared contract             | No repo/folder/archive acquisition      | P0       |
-| Repository scanning           | Not evidenced                     | Missing         | Artifact compiler platform               | Java/backend                          | No scanner/indexer                      | P0       |
-| File classification           | Not evidenced                     | Missing         | Artifact compiler platform               | Java/backend + TS view                | No classifier                           | P0       |
-| Dependency graph              | Not evidenced                     | Missing         | Artifact compiler platform               | Java/backend                          | No graph builder                        | P0       |
-| Component graph               | Partial in UI import              | Partial         | Artifact compiler + UI Builder adapter   | Shared + TS                           | Only JSX element extraction             | P0       |
-| Route graph                   | Not evidenced                     | Missing         | Artifact compiler platform               | Java/backend                          | No route parser                         | P0       |
-| TS/TSX parsing                | `ui-builder/import.ts`            | Partial         | UI Builder adapter / compiler TS adapter | TS                                    | Component-level only                    | P1       |
-| HTML/CSS parsing              | `ui-builder/import.ts`            | Partial         | Compiler adapters                        | TS + backend                          | HTML regex, no CSS model                | P1       |
-| Config parsing                | Not evidenced                     | Missing         | Compiler platform                        | Backend                               | No package/vite/tsconfig graph          | P1       |
-| Design-token discovery        | Not evidenced                     | Missing         | DS adapter                               | TS + backend                          | No token usage scanner                  | P1       |
-| Logical model creation        | Not evidenced                     | Missing         | Shared artifact contracts                | Shared                                | No canonical logical model              | P0       |
-| Provenance tracking           | Artifact manifest refs only       | Partial         | Shared contracts                         | Shared                                | No source span mapping                  | P0       |
-| Ownership markers             | UI codegen only                   | Partial         | Shared + UI Builder                      | Shared + TS                           | Not repo-wide                           | P0       |
-| Residual island detection     | Studio metadata display only      | Partial/Missing | Compiler platform + Studio               | Shared + TS                           | No detector                             | P0       |
-| Fidelity scoring              | UI import/codegen only            | Partial         | Shared + adapters                        | Shared + TS                           | Not repo-wide                           | P0       |
-| Canvas projection             | Studio static projection          | Partial         | Canvas adapter                           | TS                                    | One-way/no persistence                  | P1       |
-| UI-builder projection         | `VisualCanvas` one-way            | Partial         | UI Builder adapter                       | TS                                    | No bidirectional sync                   | P0       |
-| DS-generator projection       | Not evidenced                     | Missing         | DS adapter                               | TS                                    | No DS model bridge                      | P1       |
-| Code generation               | UI Builder React codegen          | Partial         | UI Builder/codegen adapters              | TS                                    | No repo-level compiler                  | P1       |
-| Protected region preservation | UI ownership only                 | Partial         | Compiler platform                        | Shared + TS/backend                   | No file-level region preservation       | P0       |
-| Formatting/import management  | Minimal in codegen                | Partial         | Compiler TS adapter                      | TS/backend                            | No formatter/import manager             | P1       |
-| Re-import                     | UI Builder import                 | Partial         | Compiler + UI Builder                    | TS                                    | No source → model → source → model gate | P0       |
-| Diff                          | Not evidenced                     | Missing         | Compiler platform + Studio               | Backend + TS                          | No visual/model diff                    | P1       |
-| Validation                    | Artifact manifest + UI validation | Partial         | Shared + package validators              | TS/backend                            | No cross-pipeline validation            | P1       |
-| Preview                       | UI Builder protocol               | Partial         | UI Builder + Studio                      | TS                                    | No full runtime parity flow             | P1       |
-| Test generation               | Not evidenced                     | Missing         | Compiler platform                        | TS/backend                            | No generated tests                      | P2       |
-| Evidence pack creation        | Kernel artifact refs only         | Partial         | Kernel/artifact platform                 | Backend                               | No compiler evidence pack               | P0       |
-
-### Production-Grade Target Architecture
-
-```text
-@ghatana/artifact-contracts
-  SourceRef
-  SourceFile
-  SourceSpan
-  ArtifactGraph
-  LogicalArtifactModel
-  ProvenanceRecord
-  OwnershipRegion
-  CompileResult
-  DecompileResult
-  FidelityReport
-  ResidualIslandReport
-  ValidationResult
-  EvidencePack
-
-@ghatana/artifact-compiler-ts
-  TS/TSX/JSX/HTML/CSS lightweight parsers
-  UI artifact codegen
-  BuilderDocument projection
-  Canvas projection
-  DS projection
-
-@ghatana/artifact-compiler-service
-  Java/backend worker
-  repo acquisition
-  large scan/index
-  dependency graph
-  route/API graph
-  durable evidence
-  batch compile/decompile
-  validation orchestration
-
-@ghatana/ui-builder
-  BuilderDocument
-  UI projection
-  UI codegen adapters
-  preview protocol
-
-@ghatana/canvas
-  CanvasDocument
-  graph/scene visualization
-  command-based editing
-
-@ghatana/ds-generator
-  DesignSystemDocument
-  token/component output adapters
-
-@ghatana/ghatana-studio
-  import/decompile workflow
-  residual review
-  visual diff
-  canvas/builder/DS editing
-  preview
-  export/re-import/fidelity report
-```
+| Capability                    | Current Location                       | Current Status | Correct Owner                           | TS / Java / Backend / Shared Contract | Gap                                                                                        | Priority |
+| ----------------------------- | -------------------------------------- | -------------: | --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ | -------- |
+| Source acquisition            | Studio file input                      |        Partial | Studio + backend acquisition service    | Studio + Backend                      | Only browser file upload for `.ts/.tsx`; no GitHub/GitLab/folder/archive                   | P0       |
+| Repository scanning           | Not verified                           |        Missing | Artifact backend service                | Java/Backend                          | No repo-scale scanner/indexer                                                              | P0       |
+| File classification           | `decompile/tsx.ts`                     |        Partial | Artifact compiler                       | TS + Backend                          | Path heuristics only                                                                       | P1       |
+| Dependency graph              | `decompile/tsx.ts`                     |        Partial | Artifact compiler/backend graph service | TS + Backend                          | Relative import string edges, no resolver                                                  | P0       |
+| Component graph               | `decompile/tsx.ts`                     |        Partial | Artifact compiler                       | TS                                    | JSX detection limited to DS usage, not full component tree                                 | P0       |
+| Route graph                   | Not verified                           |        Missing | Artifact compiler/backend graph service | TS + Backend                          | No route extraction                                                                        | P0       |
+| TypeScript/TSX parsing        | `artifact-compiler-ts`                 |        Partial | Artifact compiler TS adapter            | TS                                    | Compiler API present, limited extraction                                                   | P1       |
+| HTML/CSS parsing              | Not verified                           |        Missing | Parser adapters                         | TS/Backend                            | No parser path found                                                                       | P1       |
+| Config parsing                | Path inference only                    |        Partial | Parser adapters                         | TS/Backend                            | No config AST model                                                                        | P1       |
+| Design-token discovery        | DS usage names only                    |        Partial | Artifact compiler + DS adapter          | TS                                    | No real token/theme extraction                                                             | P1       |
+| Logical model creation        | `artifact-contracts` + decompiler      |        Partial | Shared contracts + compiler             | Shared + TS                           | Good start; model too shallow                                                              | P0       |
+| Provenance tracking           | `artifact-contracts`; sourceRef        |        Partial | Shared contracts + compiler/backend     | Shared + Backend                      | Uses `local://` and `working-tree` placeholders                                            | P0       |
+| Ownership markers             | Contracts/codegen types                |        Partial | Shared contracts + compiler             | Shared + TS                           | Not enforced in compile output                                                             | P0       |
+| Residual island detection     | `artifact-compiler-ts` residual export |        Partial | Artifact compiler                       | TS                                    | Present, but not integrated into full Studio review queue                                  | P1       |
+| Fidelity scoring              | `artifact-contracts` + compiler        |        Partial | Shared contracts                        | Shared                                | Basic score, no round-trip proof                                                           | P0       |
+| Canvas projection             | `projection/canvas` export             |        Partial | Artifact compiler adapter               | TS                                    | Needs Studio integration and edit-back mapping                                             | P1       |
+| UI Builder projection         | `projection/builder.ts`                |        Partial | Artifact compiler adapter               | TS                                    | Structural mirror, not canonical UI Builder dependency; timestamps generated at projection | P1       |
+| DS projection                 | `projection/ds` export                 |        Partial | Artifact compiler adapter               | TS                                    | Needs token discovery and Studio binding                                                   | P1       |
+| Code generation               | `compile/react.ts`                     |        Partial | Artifact compiler                       | TS                                    | Emits generic components/stubs, not source-preserving                                      | P0       |
+| Protected region preservation | Not verified                           |        Missing | Artifact compiler                       | TS + Backend                          | No protected/user-authored preservation                                                    | P0       |
+| Formatting/import management  | Not verified                           |        Missing | Artifact compiler                       | TS                                    | No formatter/import manager                                                                | P1       |
+| Re-import                     | Not wired                              |        Missing | Studio + artifact compiler              | TS                                    | No source→model→source→model regression path                                               | P0       |
+| Diff                          | Not verified                           |        Missing | Artifact service + Studio               | Backend + Studio                      | No visual/model/source diff                                                                | P1       |
+| Validation                    | Package tests/config only              |        Partial | Compiler + CI                           | TS + CI                               | No full compile/type/lint/test/a11y pipeline evidence                                      | P0       |
+| Preview                       | Studio iframe                          |        Partial | Studio + UI Builder preview             | Studio                                | Not connected to codegen pipeline                                                          | P1       |
+| Test generation               | Not verified                           |        Missing | Artifact compiler/backend               | TS + Backend                          | No generated tests                                                                         | P2       |
+| Evidence pack                 | Contracts only                         |        Partial | Shared contracts + backend              | Shared + Backend                      | No durable evidence pipeline                                                               | P0       |
 
 ---
 
 ## E. End-to-End Workflow Review
 
-| Workflow Step                  | Current Implementation                               | Owner                       | Status  | Gap                                         | Required Fix                                                | Tests                         |
-| ------------------------------ | ---------------------------------------------------- | --------------------------- | ------- | ------------------------------------------- | ----------------------------------------------------------- | ----------------------------- |
-| 1. Source acquisition          | Not evidenced                                        | Missing                     | Missing | No GitHub/GitLab/folder/archive acquisition | Add `SourceAcquisitionProvider` contracts + backend workers | Acquisition provider tests    |
-| 2. Scan/read                   | Not evidenced                                        | Missing                     | Missing | No repo scan/index                          | Java/backend scanner                                        | Large repo scan integration   |
-| 3. Parse/decompile             | UI Builder TSX/HTML/JSON import                      | UI Builder                  | Partial | UI-level only, not repo-level               | Shared artifact decompiler adapters                         | TSX/HTML/JSON decompile tests |
-| 4. Logical model               | Not evidenced                                        | Missing                     | Missing | No canonical artifact model                 | Add `LogicalArtifactModel`                                  | Schema/golden tests           |
-| 5. Canvas projection           | `CanvasPage` static artifact nodes                   | Studio/Canvas               | Partial | Random layout, no persistence               | ArtifactGraph → CanvasDocument adapter                      | Projection determinism tests  |
-| 6. UI-builder projection       | `VisualCanvas` one-way projection                    | Studio/UI Builder           | Partial | No bidirectional sync                       | BuilderDocument ↔ CanvasDocument adapter                    | Bidirectional sync tests      |
-| 7. Design-system binding       | DS generator exists, not workflow-bound              | DS Generator/Studio         | Partial | No DS workflow                              | DS document + Studio route                                  | DS binding tests              |
-| 8. Validation                  | UI Builder validation + artifact manifest validation | UI Builder/kernel-artifacts | Partial | No cross-workflow validation                | Unified validation result contract                          | Contract tests                |
-| 9. Preview                     | UI Builder preview protocol                          | UI Builder                  | Partial | Protocol exists, Studio runtime not proven  | Routed preview runtime                                      | Handshake + parity tests      |
-| 10. User modification          | Builder local workflow; Canvas static/no-op          | Studio                      | Partial | Canvas edits not persisted                  | Real editor state pipeline                                  | E2E authoring tests           |
-| 11. Compile/generate           | UI Builder React codegen                             | UI Builder                  | Partial | Not repo-level                              | Artifact compiler TS/backend                                | Codegen golden tests          |
-| 12. Export/save                | Builder JSON export; kernel artifact manifests       | Studio/kernel-artifacts     | Partial | No project persistence                      | Workspace-backed persistence                                | Save/export tests             |
-| 13. Re-import                  | UI Builder import                                    | UI Builder                  | Partial | No full round-trip gate                     | Source → model → source → model tests                       | Round-trip tests              |
-| 14. Diff/fidelity report       | UI Builder loss points; Studio metadata display      | UI Builder/Studio           | Partial | No visual diff/review                       | Fidelity and residual review UI                             | Fidelity regression tests     |
-| 15. Regression test generation | Not evidenced                                        | Missing                     | Missing | No generated tests                          | Test generation adapter                                     | Generated test golden tests   |
+| Workflow Step                  | Current Implementation                                   | Owner                   |            Status | Gap                                           | Required Fix                             | Tests                                        |
+| ------------------------------ | -------------------------------------------------------- | ----------------------- | ----------------: | --------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
+| 1. Source acquisition          | Browser upload in `/import`; `.ts/.tsx`, max 1 MB        | Studio                  |           Partial | No GitHub/GitLab/local folder/archive         | Add acquisition service contract         | Upload validation + source acquisition tests |
+| 2. Scan/read                   | User-selected files only                                 | Studio                  |           Partial | No repo scanner                               | Backend scanner/job model                | Scanner contract tests                       |
+| 3. Parse/decompile             | TypeScript compiler API                                  | `artifact-compiler-ts`  |           Partial | Limited extraction                            | Expand AST extraction                    | TSX fixture tests                            |
+| 4. Logical model               | `LogicalArtifactModel`                                   | `artifact-contracts`    |           Partial | Shallow model                                 | Add routes/components/API/config/tokens  | Model schema tests                           |
+| 5. Canvas projection           | Projection export exists; Studio canvas uses static data | Compiler + Studio       |           Partial | No real imported model canvas                 | Wire projection result into Canvas route | Projection + UI E2E                          |
+| 6. UI-builder projection       | `projectToBuilder()` exists                              | Compiler                |           Partial | Structural mirror, not full canonical adapter | Add canonical adapter to UI Builder      | Adapter contract tests                       |
+| 7. Design-system binding       | DS projection export + DS page                           | Compiler + DS generator |           Partial | No token discovery/edit binding               | Add token discovery and binding          | DS projection tests                          |
+| 8. Validation                  | Basic fidelity + UI validation                           | Mixed                   |           Partial | No full compile/type/lint/a11y gate           | Add validation pipeline                  | Validation contract tests                    |
+| 9. Preview                     | iframe from router state                                 | Studio                  |           Partial | Not connected to builder/codegen              | Add preview job source from codegen      | Preview protocol tests                       |
+| 10. User modification          | Builder edits local doc; Canvas mostly visual            | Studio                  |           Partial | No shared workflow state                      | Add durable workflow store               | Builder/canvas edit E2E                      |
+| 11. Compile/generate           | Generic React compiler                                   | Compiler                |           Partial | Stub output, no source preservation           | Source-preserving compiler               | Golden compile tests                         |
+| 12. Export/save                | Browser downloads/localStorage                           | Studio                  |           Partial | No durable artifact save                      | Add artifact save/export service         | Export parity tests                          |
+| 13. Re-import                  | Not wired                                                | Missing                 | Compiler + Studio | Missing                                       | Add generated output re-import           | Round-trip tests                             |
+| 14. Diff/fidelity report       | Fidelity page via router state                           | Studio                  |           Partial | Not linked from import; no diff               | Add workflow-driven reports              | Fidelity report E2E                          |
+| 15. Regression test generation | Not verified                                             | Missing                 |  Compiler/backend | Missing                                       | Add generated tests/evidence             | Golden test generation                       |
 
 ---
 
 ## F. Feature Completeness Matrix
 
-| Capability                 | Canvas          | UI Builder            | DS Generator        | Studio             | Artifact Compiler/Decompiler | Current Status  | Correct Owner              | Priority |
-| -------------------------- | --------------- | --------------------- | ------------------- | ------------------ | ---------------------------- | --------------- | -------------------------- | -------- |
-| Canvas document model      | Partial         | N/A                   | N/A                 | Consumes partial   | Missing for artifacts        | Partial         | Canvas                     | P0       |
-| Runtime schema             | Missing         | Partial/exists        | Partial for presets | Consumes           | Missing                      | Partial         | Package owners             | P0       |
-| Versioned migrations       | Missing         | Minimal               | Missing             | Missing            | Missing                      | Missing         | Package owners             | P0       |
-| Undo/redo                  | Partial         | Partial undo stack    | N/A                 | Not integrated     | N/A                          | Partial         | Canvas/UI Builder          | P0       |
-| Multi-canvas isolation     | Partial         | N/A                   | N/A                 | Not proven         | N/A                          | Partial         | Canvas                     | P1       |
-| BuilderDocument            | N/A             | Partial canonical     | N/A                 | Consumes           | Needs adapter                | Partial         | UI Builder                 | P0       |
-| Component registry         | N/A             | Partial               | N/A                 | Hardcoded palette  | Needs discovery              | Partial         | UI Builder + DS Registry   | P1       |
-| Bindings/actions           | N/A             | Partial               | N/A                 | Not exposed        | Needs model mapping          | Partial         | UI Builder                 | P1       |
-| Scene projection           | Partial         | Partial               | N/A                 | One-way            | Missing                      | Partial         | UI Builder/Canvas adapters | P0       |
-| Codegen                    | N/A             | Partial React codegen | N/A                 | Export JSON only   | Missing repo-level           | Partial         | UI Builder + compiler      | P1       |
-| DS tokens                  | N/A             | Consumes DS contracts | Partial             | Not workflow-bound | Needs token discovery        | Partial         | DS Generator               | P1       |
-| Component state generation | N/A             | Models states         | Missing             | Missing            | Missing                      | Partial/Missing | DS Generator/UI Builder    | P1       |
-| Accessibility validation   | Partial exports | Partial model         | Missing contrast    | Not full flow      | Missing                      | Partial         | All                        | P1       |
-| Preview runtime            | N/A             | Protocol exists       | N/A                 | Not full workflow  | Missing                      | Partial         | UI Builder/Studio          | P1       |
-| Source acquisition         | N/A             | N/A                   | N/A                 | Missing            | Missing                      | Missing         | Compiler backend           | P0       |
-| Repository scanning        | N/A             | N/A                   | N/A                 | Missing            | Missing                      | Missing         | Java/backend               | P0       |
-| Logical artifact model     | N/A             | N/A                   | N/A                 | Missing            | Missing                      | Missing         | Shared contracts           | P0       |
-| Fidelity/residual reports  | N/A             | Partial               | N/A                 | Displays metadata  | Missing repo-level           | Partial         | Shared/compiler/Studio     | P0       |
-| Evidence packs             | N/A             | N/A                   | N/A                 | Displays refs      | Kernel artifact refs only    | Partial         | Kernel/compiler backend    | P0       |
+| Capability                | Canvas       | UI Builder              | DS Generator | Studio           | Artifact Compiler/Decompiler |  Current Status | Correct Owner                | Priority |
+| ------------------------- | ------------ | ----------------------- | ------------ | ---------------- | ---------------------------- | --------------: | ---------------------------- | -------- |
+| Canonical document model  | Partial      | Partial/Good            | Partial/Good | Uses models      | Partial                      |         Partial | Respective platform package  | P0       |
+| Runtime schema validation | Unclear      | Yes                     | Yes          | Consumes         | Yes contracts                |         Partial | Shared/package-specific      | P0       |
+| Undo/redo                 | Partial/Good | Undo stack export       | N/A          | Not fully wired  | N/A                          |         Partial | Canvas/UI Builder            | P0       |
+| Multi-canvas isolation    | Partial/Good | N/A                     | N/A          | Not enforced     | N/A                          |         Partial | Canvas                       | P1       |
+| Visual canvas editing     | Partial      | Via Studio VisualCanvas | N/A          | Partial          | N/A                          |         Partial | Canvas + Studio adapter      | P0       |
+| UI builder editing        | N/A          | Partial                 | N/A          | Partial          | Builder projection partial   |         Partial | UI Builder + Studio          | P0       |
+| DS generation             | N/A          | DS binding              | Partial/Good | Partial          | DS projection partial        |         Partial | DS Generator + Studio        | P1       |
+| Source acquisition        | N/A          | Import JSON             | N/A          | File upload only | Input contract only          |         Partial | Studio + Backend             | P0       |
+| Repo scanning             | N/A          | N/A                     | N/A          | Missing          | Missing                      |         Missing | Backend/Java candidate       | P0       |
+| Decompile TSX             | N/A          | Import partial          | N/A          | Partial          | Partial                      |         Partial | Artifact compiler TS         | P0       |
+| Compile TSX               | N/A          | Codegen export          | N/A          | Not wired        | Partial                      |         Partial | Artifact compiler/UI Builder | P0       |
+| Protected regions         | N/A          | Types only              | N/A          | Missing          | Missing                      |         Missing | Artifact compiler            | P0       |
+| Fidelity scoring          | N/A          | Round-trip type         | N/A          | Page partial     | Partial                      |         Partial | Artifact contracts/compiler  | P0       |
+| Preview runtime           | N/A          | Preview export          | N/A          | iframe partial   | Not integrated               |         Partial | UI Builder + Studio          | P1       |
+| Golden tests              | Needed       | Needed                  | Needed       | Needed           | Needed                       | Missing/Unclear | Package owners               | P0       |
+| A11y/i18n/o11y            | Partial      | Partial                 | Partial      | Partial          | Partial                      |         Partial | All packages                 | P1       |
 
 ---
 
@@ -714,238 +447,174 @@ A unified Studio shell with route gating and lifecycle-aware navigation. It depe
 ### `package.json`
 
 Current role: Root monorepo scripts and governance gates.
-
-Finding: Strong governance script surface exists, including production readiness, production stubs, architecture boundaries, circular deps, design-system conformance, Studio kernel API, deprecated imports/packages, and phase gates. 
-
-Impact: Good foundation; missing compiler/decompiler-specific gate.
-
-Required change: Add `check:artifact-compiler-contracts`, `check:artifact-roundtrip`, `check:artifact-fidelity`, and `check:studio-authoring-workflows`.
-
+Finding: Root has broad governance scripts including `check:circular-deps`, `check:architecture-boundaries`, `check:design-system-conformance`, `check:studio-kernel-api`, `check:production-stubs`, and `check:deprecated-imports`. 
+Impact: Good gate inventory exists, but scoped package-specific round-trip gates are missing.
+Required change: Add explicit `check:artifact-roundtrip`, `check:builder-canonical-document`, `check:canvas-history`, and `check:studio-authoring-workflow`.
 Correct owner: Root governance scripts.
-
-Priority: P1
-
-Tests required: Script unit tests and CI workflow inclusion.
-
----
-
-### `pnpm-workspace.yaml`
-
-Finding: Scoped packages are in workspace: `platform/typescript/*`, `platform/typescript/canvas/*`, and `platform/typescript/ghatana-studio`. 
-
-Required change: Add first-class artifact compiler/decompiler packages once created.
-
-Priority: P0
+Priority: P0.
+Tests required: Script smoke tests and CI wiring tests.
 
 ---
 
 ### `platform/typescript/canvas/package.json`
 
-Finding: Broad exports and dependencies prove Canvas is a large platform surface. 
-
-Required change: Stabilize export policy and mark experimental/internal subpaths.
-
-Priority: P1
+Finding: Public package exports are broad and include many subpaths. 
+Impact: Hard to guarantee stable API and prevent product misuse.
+Required change: Classify exports as stable, preview, deprecated, or internal.
+Priority: P1.
 
 ---
 
 ### `platform/typescript/canvas/src/public/index.ts`
 
-Finding: Public barrel is too broad, exporting many implementation-level systems. It does correctly state Canvas should not own UI Builder abstractions.  
-
-Required change: Split stable/experimental/internal public surfaces.
-
-Priority: P1
-
----
-
-### `platform/typescript/canvas/src/hybrid/types.ts`
-
-Finding: Canvas model is TypeScript-interface based, not runtime schema-backed in inspected files. 
-
-Required change: Add `CanvasDocumentSchema`, migrations, and serializer.
-
-Priority: P0
+Finding: Public barrel exports plugin registries, global reset helpers, hybrid store APIs, tools, chrome, accessibility, performance, and many element types. It also documents that deprecated UI Builder compatibility should not be consumed.  
+Impact: Public API remains too wide for production platform stability.
+Required change: Split stable public API from internal/preview/deprecated API.
+Priority: P1.
 
 ---
 
 ### `platform/typescript/canvas/src/hybrid/state.ts`
 
-Finding: Global atoms and `hybridCanvasStore` facade exist; history restores only elements/nodes/edges.  
-
-Required change: Add instance-scoped store factory and full document history.
-
-Priority: P1
+Finding: History now stores pre-mutation snapshots, and isolated stores exist, but deprecated global `hybridCanvasStore` remains.  
+Impact: Correctness improved; isolation risk remains if products use global store.
+Required change: Add lint/deprecated-import guard against `hybridCanvasStore` outside tests/legacy.
+Priority: P0.
 
 ---
 
 ### `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts`
 
-Finding: Instance-scoped controller exists, but default ID generation is nondeterministic, and composite group/ungroup/duplicate flows are not command-atomic.  
-
-Required change: Add deterministic ID provider by default for imported/generated documents and command transactions.
-
-Priority: P0
+Finding: Controller supports injectable store/clock/id provider and captures snapshots before element/node mutations.  
+Impact: Good production direction.
+Required change: Extend command model to every mutation and test undo/redo for viewport, selection, groups, duplication, edges, and transactions.
+Priority: P0.
 
 ---
 
-### `platform/typescript/ui-builder/package.json`
+### `platform/typescript/ui-builder/src/core/index.ts`
 
-Finding: Correct package ownership is declared for document model, bindings, actions, validation, and code generation. 
-
-Required change: Add explicit artifact adapter exports only after contracts stabilize.
-
-Priority: P1
+Finding: Canonical `BuilderDocument` is explicitly centralized in `builder-document.ts`; old Map model is deprecated. 
+Impact: Prior major blocker is partially resolved.
+Required change: Add boundary tests proving no package imports old document shape.
+Priority: P0.
 
 ---
 
 ### `platform/typescript/ui-builder/src/core/builder-document.ts`
 
-Finding: Canonical schema exists, but compatibility adapters remain central.  
-
-Required change: Enforce canonical model in public APIs; move compatibility to migrations.
-
-Priority: P0
-
----
-
-### `platform/typescript/ui-builder/src/core/types.ts`
-
-Finding: Deprecated note redirects `BuilderDocument` to `builder-document.ts`; this is good but transitional. 
-
-Required change: Remove deprecated document ambiguity after migration phase.
-
-Priority: P1
+Finding: Zod schema exists, but compatibility adapters still support Map-like node records and old convenience fields.  
+Impact: Useful migration bridge, but unsafe if treated as normal API.
+Required change: Move legacy normalization into named `legacyBuilderDocumentAdapter.ts`.
+Priority: P0.
 
 ---
 
 ### `platform/typescript/ui-builder/src/core/operations.ts`
 
-Finding: Operations use canonical document and normalization, but include unsafe casts and snapshot undo stack.  
-
-Required change: Replace casts with typed helpers and add command/event model.
-
-Priority: P0
-
----
-
-### `platform/typescript/ui-builder/src/core/import.ts`
-
-Finding: TSX import is AST-based, but JSON import still requires `rootNodes`; HTML import is best-effort and regex-based for custom elements.  
-
-Required change: Align JSON import with canonical schema and create separate compiler adapter for HTML/TSX.
-
-Priority: P0
+Finding: Operations normalize documents and update timestamps using current time. 
+Impact: Deterministic tests and idempotent generation are harder.
+Required change: Add clock/id provider injection for operation contexts.
+Priority: P1.
 
 ---
 
-### `platform/typescript/ui-builder/src/core/codegen.ts`
+### `platform/typescript/ds-generator/src/model/design-system-document.ts`
 
-Finding: React codegen is honest about loss points and confidence, but many modeled features are not fully generated. 
-
-Required change: Add golden output tests and support bindings/responsive/state variants or explicitly block production claims.
-
-Priority: P1
-
----
-
-### `platform/typescript/ui-builder/src/preview/protocol.ts`
-
-Finding: Acknowledgement-based preview protocol exists. 
-
-Required change: Wire this into a real Studio preview runtime and test mount/update/error/timeout flows.
-
-Priority: P1
+Finding: `DesignSystemDocument` exists, but `generatedAt` is stamped at factory time and component state is an arbitrary string. 
+Impact: Determinism and canonical state coverage are incomplete.
+Required change: Add deterministic generation context and strict state enum.
+Priority: P1.
 
 ---
 
-### `platform/typescript/ds-generator/package.json`
+### `platform/typescript/ds-generator/src/targets/emit-files.ts`
 
-Finding: The package is intentionally scoped as preset/brand customization today. 
-
-Required change: Expand to full DS generation pipeline.
-
-Priority: P1
-
----
-
-### `platform/typescript/ds-generator/src/presets/index.ts`
-
-Finding: Deterministic token materialization exists for colors, typography, radius, spacing, elevation, shadow, motion, and z-index. 
-
-Required change: Add semantic/alias token graph, contrast validation, component tokens.
-
-Priority: P1
-
----
-
-### `platform/typescript/ds-generator/src/brand/index.ts`
-
-Finding: Brand validation exists, but brand CSS output is not as complete as preset CSS output. 
-
-Required change: Emit complete token categories for brand output and add golden tests.
-
-Priority: P1
-
----
-
-### `platform/typescript/ghatana-studio/src/App.tsx`
-
-Finding: Main shell routes exist, but Builder Studio is not routed in inspected route tree. 
-
-Required change: Add routed authoring workflows.
-
-Priority: P0
+Finding: Multi-target file emission exists for CSS, JSON, Tailwind, and React theme; checksum implementation is djb2 despite SHA-style wording. 
+Impact: Good generator foundation; checksum wording and cryptographic expectations are misleading.
+Required change: Rename checksum semantics or switch to SHA-256.
+Priority: P2.
 
 ---
 
 ### `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
 
-Finding: Static artifact graph visualization with random positions and no-op handlers, not production canvas authoring. 
-
-Required change: Replace with deterministic artifact graph/canvas workspace.
-
-Priority: P0
+Finding: Canvas route builds a `BuilderDocument` from static `yappcWorkflowData`, maps it to grid-positioned canvas nodes, sets `canvasEdges` to an empty array, and passes no-op callbacks to `HybridCanvas`. 
+Impact: This is visualization, not a real canvas authoring workspace.
+Required change: Wire to artifact workflow state and implement bidirectional canvas edit adapters.
+Priority: P0.
 
 ---
 
 ### `platform/typescript/ghatana-studio/src/sections/BuilderStudio.tsx`
 
-Finding: Useful local builder workflow exists, but persistence is localStorage-based and palette is hardcoded.  
-
-Required change: Route it, use registry-backed components, and persist to workspace/project backend.
-
-Priority: P0
+Finding: Builder Studio uses localStorage persistence and hard-coded component contracts.  
+Impact: Good prototype; not production persistence or registry-backed editing.
+Required change: Replace localStorage-only production path with workspace/project artifact persistence and DS registry.
+Priority: P0.
 
 ---
 
 ### `platform/typescript/ghatana-studio/src/components/builder/VisualCanvas.tsx`
 
-Finding: One-way BuilderDocument → Canvas projection; selection cast crosses package types via `as unknown as`. 
-
-Required change: Create explicit `BuilderCanvasProjectionAdapter`.
-
-Priority: P0
-
----
-
-### `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`
-
-Finding: Displays artifact manifests/intelligence metadata but is not a compiler/decompiler workflow. 
-
-Required change: Add import/decompile job list, evidence pack, residual review, fidelity report, and recompile actions.
-
-Priority: P0
+Finding: Converts BuilderDocument to canvas nodes/edges, but selection uses `selection.nodeIds as NodeId[]`; canvas edits are not reconciled back to BuilderDocument. 
+Impact: One-way projection, unsafe boundary cast.
+Required change: Create explicit `BuilderCanvasAdapter` with typed mapping and scene delta reconciliation.
+Priority: P0.
 
 ---
 
-### `platform/typescript/kernel-artifacts/src/domain/ArtifactManifest.ts`
+### `platform/typescript/ghatana-studio/src/routes/DesignSystemPage.tsx`
 
-Finding: Strong artifact lifecycle manifest foundation exists, including fingerprints, trust, signatures, SBOM, attestation, retention, sourceRef, provenanceRef. 
+Finding: DS page uses presets and emitters, but simulates async generation with a timeout and does not expose full token editing, contrast gate, golden output comparison, or lifecycle persistence. 
+Impact: Useful workflow shell, not full DS generation workflow.
+Required change: Add token editor, contrast audit, component state editor, output manifest, and save/export flow.
+Priority: P1.
 
-Required change: Extend or pair with compiler/decompiler evidence contracts.
+---
 
-Priority: P0
+### `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx`
+
+Finding: Import/decompile supports browser upload of `.ts/.tsx` files up to 1 MB and invokes `decompileTsx`; it displays model stats and residual islands but does not push results into Canvas/Builder or navigate to fidelity page. 
+Impact: Decompile UI exists but workflow stops after summary.
+Required change: Persist job result and provide “Open in Canvas,” “Open in Builder,” “Generate,” and “View Fidelity Report.”
+Priority: P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/routes/PreviewPage.tsx`
+
+Finding: Preview page renders router-state source in sandboxed `iframe srcDoc`. 
+Impact: Good sandbox seed, but not connected to Builder/codegen/compile output.
+Required change: Make preview consume generated artifact output from workflow state.
+Priority: P1.
+
+---
+
+### `platform/typescript/artifact-contracts/src/index.ts`
+
+Finding: Shared source, model, provenance, fidelity, residual, compile/decompile, and evidence contracts exist. 
+Impact: Correct ownership direction.
+Required change: Expand contracts for acquisition jobs, repository scans, validation results, diffs, protected regions, and evidence packs.
+Priority: P0.
+
+---
+
+### `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts`
+
+Finding: Uses TypeScript compiler API and extracts imports, exports, props, DS component usage, and simplified edges.  
+Impact: Correct parser direction; incomplete artifact intelligence.
+Required change: Add symbol resolution, JSX tree extraction, route/component/API/config extraction, real source spans, and provenance.
+Priority: P0.
+
+---
+
+### `platform/typescript/artifact-compiler-ts/src/compile/react.ts`
+
+Finding: Compiler emits generic React components or residual stubs; DS imports are intentionally omitted until mapping resolves exact symbols. 
+Impact: Good proof of concept, not source-preserving compilation.
+Required change: Add ownership markers, protected regions, import management, formatting, and golden round-trip tests.
+Priority: P0.
 
 ---
 
@@ -953,473 +622,295 @@ Priority: P0
 
 ## Phase 1: Canonical contracts and ownership cleanup
 
-Goal: Establish stable shared contracts and package boundaries.
+**Goal:** Make model ownership unambiguous.
 
-Scope:
+**Scope:**
 
-* UI Builder canonical model.
-* Canvas document model.
-* Artifact compiler/decompiler contracts.
-* DS document model.
-* Public API export tiers.
+* `@ghatana/artifact-contracts`
+* `@ghatana/ui-builder`
+* `@ghatana/canvas`
+* `@ghatana/ds-generator`
+* Studio adapters
 
-Files to modify:
+**Detailed tasks:**
 
-* `platform/typescript/ui-builder/src/core/builder-document.ts`
-* `platform/typescript/ui-builder/src/core/types.ts`
-* `platform/typescript/canvas/src/hybrid/types.ts`
-* `platform/typescript/canvas/src/public/index.ts`
-* `platform/typescript/ds-generator/src/index.ts`
-* root package governance scripts
+* Move UI Builder legacy compatibility into explicit adapter files.
+* Add artifact contracts for acquisition, scan jobs, validation, diff, evidence packs, protected regions, and ownership regions.
+* Classify Canvas exports as stable/preview/deprecated/internal.
+* Add boundary checks preventing internal imports and deprecated package usage.
 
-Files to create:
+**Validation:**
 
-* `platform/typescript/artifact-contracts/package.json`
-* `platform/typescript/artifact-contracts/src/index.ts`
-* `platform/typescript/artifact-contracts/src/source.ts`
-* `platform/typescript/artifact-contracts/src/model.ts`
-* `platform/typescript/artifact-contracts/src/provenance.ts`
-* `platform/typescript/artifact-contracts/src/fidelity.ts`
-* `platform/typescript/artifact-contracts/src/evidence.ts`
+* `pnpm check:architecture-boundaries`
+* `pnpm check:deprecated-imports`
+* New `pnpm check:builder-canonical-document`
 
-Detailed tasks:
-
-1. Define `LogicalArtifactModel`.
-2. Define `SourceRef`, `SourceFile`, `SourceSpan`.
-3. Define `OwnershipRegion`.
-4. Define `ResidualIslandReport`.
-5. Define `FidelityReport`.
-6. Define `CompileResult` and `DecompileResult`.
-7. Move UI Builder legacy compatibility into explicit adapter module.
-8. Add no-unsafe-cast package-boundary check.
-9. Add public export allowlists.
-
-Validation:
-
-* Typecheck all platform packages.
-* Run architecture boundaries.
-* Run no deprecated imports/packages.
-* Add contract schema tests.
-
-Done criteria:
+**Done criteria:**
 
 * One canonical BuilderDocument.
-* One CanvasDocument contract.
-* One artifact contract package.
-* No ambiguous public compatibility exports.
+* No unsafe casts across Studio/package boundaries.
+* Deprecated canvas/UI-builder surfaces blocked by lint.
 
 ---
 
 ## Phase 2: Canvas runtime correctness
 
-Goal: Make Canvas safe for persisted, multi-document authoring.
+**Goal:** Make canvas editing safe, isolated, serializable, and testable.
 
-Scope:
+**Detailed tasks:**
 
-* Canvas document schema.
-* Store isolation.
-* Command history.
-* Deterministic IDs.
-* Serialization.
+* Add runtime canvas document schema and migrations.
+* Convert all mutating operations to commands.
+* Add command history tests for add/update/delete/duplicate/group/ungroup/edge/viewport/selection.
+* Remove production reliance on global `hybridCanvasStore`.
+* Add multi-canvas isolation tests.
 
-Files to modify:
+**Done criteria:**
 
-* `platform/typescript/canvas/src/hybrid/state.ts`
-* `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts`
-* `platform/typescript/canvas/src/hybrid/types.ts`
-* `platform/typescript/canvas/src/public/index.ts`
-
-Files to create:
-
-* `platform/typescript/canvas/src/document/canvas-document.ts`
-* `platform/typescript/canvas/src/document/migrations.ts`
-* `platform/typescript/canvas/src/document/serialization.ts`
-* `platform/typescript/canvas/src/commands/*`
-
-Detailed tasks:
-
-1. Add `CanvasDocumentSchema`.
-2. Add migration registry.
-3. Add `createCanvasStore()`.
-4. Add `CanvasProvider`.
-5. Replace global store usage in public workflows.
-6. Add command model.
-7. Wrap group/ungroup/duplicate as composite commands.
-8. Persist full document state in history, not just arrays.
-
-Tests:
-
-* Undo/redo command tests.
-* Group/ungroup atomicity tests.
-* Multi-canvas isolation tests.
-* Serialization/migration golden tests.
+* Undo/redo passes for every mutation.
+* Two canvases mounted together cannot leak state.
+* Canvas document round-trip tests pass.
 
 ---
 
 ## Phase 3: UI Builder canonical model and operations
 
-Goal: Remove BuilderDocument ambiguity and make operations production-safe.
+**Goal:** Make UI Builder the single source of truth for page/component authoring.
 
-Files to modify:
+**Detailed tasks:**
 
-* `platform/typescript/ui-builder/src/core/builder-document.ts`
-* `platform/typescript/ui-builder/src/core/types.ts`
-* `platform/typescript/ui-builder/src/core/operations.ts`
-* `platform/typescript/ui-builder/src/core/import.ts`
-* `platform/typescript/ui-builder/src/core/codegen.ts`
-* `platform/typescript/ui-builder/src/core/validation.ts`
+* Add explicit `BuilderCanvasAdapter`.
+* Replace VisualCanvas `as NodeId[]` cast with validated adapter mapping.
+* Add deterministic operation context for timestamps and IDs.
+* Replace hard-coded Studio component palette with DS registry-backed component contracts.
+* Add scene delta reconciliation to BuilderDocument.
 
-Detailed tasks:
+**Done criteria:**
 
-1. Remove public reliance on `rootNodes`.
-2. Make JSON import canonical schema-first.
-3. Replace unsafe casts with typed transformation helpers.
-4. Add graph/tree invariants.
-5. Validate binding expressions and action payloads.
-6. Add explicit migration adapters for old docs.
-7. Add codegen golden outputs.
-
-Tests:
-
-* BuilderDocument canonical schema tests.
-* Migration tests.
-* Operation invariant tests.
-* Import/codegen round-trip tests.
+* Canvas edits update BuilderDocument.
+* BuilderDocument serializes/deserializes without loss.
+* Invalid builder states are blocked before preview/codegen.
 
 ---
 
 ## Phase 4: Artifact compiler/decompiler foundation
 
-Goal: Make artifact compiler/decompiler a first-class platform capability.
+**Goal:** Build real artifact intelligence.
 
-Files to create:
+**Detailed tasks:**
 
-* `platform/typescript/artifact-compiler-ts/package.json`
-* `platform/typescript/artifact-compiler-ts/src/index.ts`
-* `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts`
-* `platform/typescript/artifact-compiler-ts/src/compile/react.ts`
-* `platform/typescript/artifact-compiler-ts/src/projection/builder.ts`
-* `platform/typescript/artifact-compiler-ts/src/projection/canvas.ts`
-* `platform/typescript/artifact-compiler-ts/src/projection/ds.ts`
-* backend/Java service package for scanning/indexing if repo layout supports it
+* Add source acquisition contract.
+* Add backend/Java candidate service boundary for repo scanning/indexing.
+* Expand TSX parser to extract JSX tree, route graph, component graph, API usage, config, design-token usage, and source spans.
+* Add protected region and ownership marker model.
+* Add residual island report with human-review status.
+* Add source→model→source golden tests.
 
-Detailed tasks:
+**Done criteria:**
 
-1. Add source acquisition contracts.
-2. Add TS lightweight decompiler adapter.
-3. Add logical model builder.
-4. Add residual island detection.
-5. Add fidelity scorer.
-6. Add protected region model.
-7. Add evidence pack generator.
-8. Add Java/backend scanner design and first implementation for local folder/archive.
-
-Tests:
-
-* Source fixture decompile tests.
-* Logical model golden tests.
-* Residual island tests.
-* Fidelity scoring tests.
+* `.tsx` fixtures decompile into stable logical models.
+* Compilation preserves ownership/protected regions.
+* Fidelity reports identify loss points accurately.
 
 ---
 
 ## Phase 5: Design-system generator completeness
 
-Goal: Promote DS Generator from preset utility to full generator.
+**Goal:** Make DS generation deterministic and accessible.
 
-Files to modify:
+**Detailed tasks:**
 
-* `platform/typescript/ds-generator/src/index.ts`
-* `platform/typescript/ds-generator/src/presets/index.ts`
-* `platform/typescript/ds-generator/src/brand/index.ts`
+* Add strict component state enum: default, hover, active, focus, focus-visible, disabled, loading, selected, error, success, warning.
+* Add deterministic clock/generation context.
+* Add golden tests for CSS/JSON/Tailwind/React theme.
+* Add contrast audit failure mode.
+* Add docs/examples output target if intended.
 
-Files to create:
+**Done criteria:**
 
-* `platform/typescript/ds-generator/src/model/design-system-document.ts`
-* `platform/typescript/ds-generator/src/tokens/token-graph.ts`
-* `platform/typescript/ds-generator/src/validation/contrast.ts`
-* `platform/typescript/ds-generator/src/targets/css.ts`
-* `platform/typescript/ds-generator/src/targets/json.ts`
-* `platform/typescript/ds-generator/src/targets/tailwind.ts`
-* `platform/typescript/ds-generator/src/targets/react-theme.ts`
-
-Detailed tasks:
-
-1. Add token graph.
-2. Add alias/semantic token resolution.
-3. Add WCAG contrast validation.
-4. Add component variants/states.
-5. Add deterministic file emission.
-6. Add golden tests.
+* Same input always emits identical output.
+* WCAG contrast violations fail the production gate.
+* Golden tests cover all output targets.
 
 ---
 
 ## Phase 6: Studio real workflow integration
 
-Goal: Turn Studio from shell into working product-development workflow.
+**Goal:** Convert routes into one coherent product workflow.
 
-Files to modify:
+**Detailed tasks:**
 
-* `platform/typescript/ghatana-studio/src/App.tsx`
-* `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
-* `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx`
-* `platform/typescript/ghatana-studio/src/sections/BuilderStudio.tsx`
-* `platform/typescript/ghatana-studio/src/components/builder/VisualCanvas.tsx`
+* Add `ArtifactWorkflowStore`.
+* Wire `/import` result into `/canvas`, `/builder`, `/design-system`, `/preview`, and `/fidelity-report`.
+* Add “Open in Canvas,” “Open in Builder,” “Generate Source,” “Preview,” and “Re-import” actions.
+* Replace localStorage-only persistence with workspace/project artifact persistence.
+* Keep localStorage only as dev/demo adapter.
 
-Files to create:
+**Done criteria:**
 
-* `src/routes/ImportDecompilePage.tsx`
-* `src/routes/BuilderPage.tsx`
-* `src/routes/DesignSystemPage.tsx`
-* `src/routes/PreviewPage.tsx`
-* `src/routes/FidelityReportPage.tsx`
-* `src/adapters/BuilderCanvasProjectionAdapter.ts`
-* `src/adapters/ArtifactStudioWorkflowAdapter.ts`
-
-Detailed tasks:
-
-1. Route Builder Studio.
-2. Replace random canvas layout with deterministic layout.
-3. Add import/decompile workflow.
-4. Add residual review queue.
-5. Add fidelity report page.
-6. Add DS generator workflow.
-7. Add preview runtime.
-8. Add export/re-import loop.
-
-Tests:
-
-* Studio route tests.
-* End-to-end authoring journey.
-* Import → edit → preview → export → re-import journey.
+* A user can import TSX, inspect model, edit visually, generate output, preview it, and view fidelity.
 
 ---
 
 ## Phase 7: Round-trip and preview hardening
 
-Goal: Prove fidelity.
+**Goal:** Prove source/model/source correctness.
 
-Detailed tasks:
+**Detailed tasks:**
 
-1. Add source → model → source test.
-2. Add model → source → model test.
-3. Add preview mount/update/error/timeout tests.
-4. Add ownership/protected region tests.
-5. Add residual island review workflow.
+* Add round-trip runner.
+* Add generated-file golden snapshots.
+* Add preview runtime protocol test.
+* Add source diff and model diff.
+* Add residual triage UX.
 
-Done criteria:
+**Done criteria:**
 
-* Round-trip cannot silently lose source intent.
-* Every loss point is surfaced to user.
-* Preview runtime matches generated output.
+* Source→model→source→model regression passes.
+* Fidelity score and residual islands are visible and actionable.
 
 ---
 
 ## Phase 8: Testing, CI, and regression gates
 
-Goal: Enforce production readiness.
+**Goal:** Turn claims into enforceable gates.
 
-Add gates:
+**Detailed tasks:**
 
-```bash
-pnpm check:artifact-compiler-contracts
-pnpm check:artifact-roundtrip
-pnpm check:builder-canonical-document
-pnpm check:canvas-document-roundtrip
-pnpm check:studio-authoring-workflows
-pnpm check:ds-generator-golden
-```
+* Add `check:artifact-roundtrip`.
+* Add `check:canvas-history`.
+* Add `check:builder-canvas-adapter`.
+* Add `check:ds-generator-golden`.
+* Add Studio E2E for import→canvas→builder→preview→fidelity.
+
+**Done criteria:**
+
+* CI blocks regressions in scoped package boundaries and workflow correctness.
 
 ---
 
 ## Phase 9: Documentation, examples, and developer experience
 
-Goal: Make adoption safe.
+**Goal:** Make the platform usable without tribal knowledge.
 
-Create:
+**Detailed tasks:**
 
-* Canvas document guide.
-* UI Builder canonical model guide.
-* Artifact compiler/decompiler architecture.
-* Studio workflow guide.
-* DS generator target guide.
-* Example source repos and round-trip fixtures.
+* Add package README examples for each stable API.
+* Document deprecated APIs and migration paths.
+* Add Studio workflow guide.
+* Add artifact compiler fixture guide.
+* Add DS generator output target guide.
+
+**Done criteria:**
+
+* New contributor can run and validate the full workflow locally.
 
 ---
 
 ## I. Exact TODO List
 
-### Phase 1 — Canonical contracts
+### Phase 1
 
-* [ ] `platform/typescript/artifact-contracts/package.json` — create shared contract package.
+* [ ] `platform/typescript/ui-builder/src/core/builder-document.ts` — move Map/legacy compatibility into `legacy-builder-document-adapter.ts`.
 
-  * Why: Compiler/decompiler needs stable shared contracts.
-  * Tests: package build/typecheck.
-  * Priority: P0
+  * Why: Keep canonical document clean.
+  * Tests: legacy adapter migration tests.
+  * Priority: P0.
 
-* [ ] `platform/typescript/artifact-contracts/src/model.ts` — define `LogicalArtifactModel`, `ArtifactNode`, `ArtifactEdge`, `ArtifactKind`.
+* [ ] `platform/typescript/canvas/src/public/index.ts` — split exports into stable and preview/deprecated barrels.
 
-  * Why: Required for source → model → visual editing.
-  * Tests: schema validation tests.
-  * Priority: P0
+  * Why: Reduce unstable public API.
+  * Tests: deprecated import check.
+  * Priority: P1.
 
-* [ ] `platform/typescript/artifact-contracts/src/provenance.ts` — define `SourceRef`, `SourceFile`, `SourceSpan`, `ProvenanceRecord`.
+* [ ] `platform/typescript/artifact-contracts/src/*` — add acquisition, scan, diff, validation, protected-region, and evidence-pack contracts.
 
-  * Why: No source intent should be silently dropped.
-  * Tests: provenance serialization tests.
-  * Priority: P0
+  * Why: Artifact pipeline needs shared contracts before implementation.
+  * Tests: schema parse/round-trip tests.
+  * Priority: P0.
 
-* [ ] `platform/typescript/ui-builder/src/core/types.ts` — remove deprecated BuilderDocument ambiguity from public docs after migration.
+### Phase 2
 
-  * Why: One canonical model.
-  * Tests: import API tests.
-  * Priority: P0
+* [ ] `platform/typescript/canvas/src/hybrid/state.ts` — block production consumers from `hybridCanvasStore`.
 
-* [ ] `scripts/check-builder-document-boundaries.mjs` — reject unsafe cross-package casts and legacy document imports.
+  * Why: Prevent multi-canvas leakage.
+  * Tests: lint rule + isolation tests.
+  * Priority: P0.
 
-  * Why: Prevent regression.
-  * Tests: script fixture tests.
-  * Priority: P0
+* [ ] `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts` — cover every mutation through command/history tests.
 
-### Phase 2 — Canvas correctness
+  * Why: Undo/redo must be deterministic.
+  * Tests: add/update/delete/duplicate/group/ungroup/edge/viewport/selection.
+  * Priority: P0.
 
-* [ ] `platform/typescript/canvas/src/document/canvas-document.ts` — add `CanvasDocumentSchema`.
+### Phase 3
 
-  * Why: Runtime validation.
-  * Tests: valid/invalid schema tests.
-  * Priority: P0
+* [ ] `platform/typescript/ghatana-studio/src/components/builder/VisualCanvas.tsx` — replace `as NodeId[]` cast with explicit adapter validation.
 
-* [ ] `platform/typescript/canvas/src/commands/history.ts` — implement command-based undo/redo.
+  * Why: Avoid unsafe package-boundary casting.
+  * Tests: adapter contract tests.
+  * Priority: P0.
 
-  * Why: Composite operations must undo atomically.
-  * Tests: group/ungroup/duplicate undo tests.
-  * Priority: P0
+* [ ] `platform/typescript/ghatana-studio/src/sections/BuilderStudio.tsx` — replace hard-coded component contracts with DS registry-backed contracts.
 
-* [ ] `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts` — replace default random ID provider.
+  * Why: Studio should not duplicate registry truth.
+  * Tests: registry loading and palette rendering tests.
+  * Priority: P0.
 
-  * Why: Deterministic imported/generated documents.
-  * Tests: deterministic ID tests.
-  * Priority: P1
+### Phase 4
 
-* [ ] `platform/typescript/canvas/src/hybrid/state.ts` — move global store facade behind provider/factory.
+* [ ] `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts` — add real source spans, JSX tree extraction, component graph, and route graph.
 
-  * Why: Multi-canvas isolation.
-  * Tests: two-canvas isolation test.
-  * Priority: P1
+  * Why: Current model is too shallow for visual editing.
+  * Tests: TSX fixture decompile tests.
+  * Priority: P0.
 
-### Phase 3 — UI Builder
+* [ ] `platform/typescript/artifact-compiler-ts/src/compile/react.ts` — add protected region and import-management support.
 
-* [ ] `platform/typescript/ui-builder/src/core/import.ts` — make JSON import canonical-layout based, not `rootNodes` based.
+  * Why: Must not silently drop user-authored source intent.
+  * Tests: protected-region golden tests.
+  * Priority: P0.
 
-  * Why: Current canonical model uses layout/root.
-  * Tests: canonical JSON import test.
-  * Priority: P0
+* [ ] `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx` — persist completed decompile result and expose Open in Canvas/Builder/Fidelity actions.
 
-* [ ] `platform/typescript/ui-builder/src/core/operations.ts` — remove `as unknown as` casts.
+  * Why: Current route stops at summary.
+  * Tests: import route integration tests.
+  * Priority: P0.
 
-  * Why: Package-boundary type safety.
-  * Tests: strict typecheck and operation tests.
-  * Priority: P0
+### Phase 5
 
-* [ ] `platform/typescript/ui-builder/src/core/validation.ts` — add duplicate parentage, cycle, binding/action payload validation.
+* [ ] `platform/typescript/ds-generator/src/model/design-system-document.ts` — add strict component state enum and deterministic generation context.
 
-  * Why: Prevent invalid documents.
-  * Tests: negative validation tests.
-  * Priority: P1
+  * Why: Production output must be deterministic and complete.
+  * Tests: deterministic factory tests.
+  * Priority: P1.
 
-* [ ] `platform/typescript/ui-builder/src/core/codegen.ts` — add golden output tests for all supported component patterns.
+* [ ] `platform/typescript/ds-generator/src/targets/emit-files.ts` — add golden output tests and fix checksum wording or implementation.
 
-  * Why: Deterministic generation.
-  * Tests: golden snapshots.
-  * Priority: P1
+  * Why: Generated artifacts require golden tests.
+  * Tests: CSS/JSON/Tailwind/React theme snapshots.
+  * Priority: P1.
 
-### Phase 4 — Artifact compiler/decompiler
+### Phase 6
 
-* [ ] `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts` — move UI TSX import into compiler adapter.
+* [ ] `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx` — replace static YAPPC data with artifact workflow state.
 
-  * Why: UI Builder should not become repo decompiler.
-  * Tests: TSX fixture tests.
-  * Priority: P0
+  * Why: Canvas must visualize imported/decompiled model.
+  * Tests: import→canvas E2E.
+  * Priority: P0.
 
-* [ ] `platform/typescript/artifact-compiler-ts/src/fidelity/scorer.ts` — create fidelity scorer.
+* [ ] `platform/typescript/ghatana-studio/src/routes/PreviewPage.tsx` — consume generated output from workflow store.
 
-  * Why: Round-trip trust.
-  * Tests: scoring fixtures.
-  * Priority: P0
-
-* [ ] `platform/typescript/artifact-compiler-ts/src/residual/residual-islands.ts` — implement residual island report.
-
-  * Why: Unsupported source intent must be visible.
-  * Tests: unsupported pattern tests.
-  * Priority: P0
-
-* [ ] backend/Java scanner package — implement local folder/archive scanner.
-
-  * Why: Large repo scanning belongs outside browser UI.
-  * Tests: integration scan fixture.
-  * Priority: P0
-
-### Phase 5 — DS Generator
-
-* [ ] `platform/typescript/ds-generator/src/model/design-system-document.ts` — add schema-backed DS document.
-
-  * Why: Full DS generation needs canonical input.
-  * Tests: schema tests.
-  * Priority: P1
-
-* [ ] `platform/typescript/ds-generator/src/validation/contrast.ts` — add WCAG contrast validation.
-
-  * Why: Accessibility gate.
-  * Tests: contrast matrix tests.
-  * Priority: P1
-
-* [ ] `platform/typescript/ds-generator/src/targets/tailwind.ts` — add Tailwind config target.
-
-  * Why: Required platform target.
-  * Tests: golden output.
-  * Priority: P1
-
-* [ ] `platform/typescript/ds-generator/src/brand/index.ts` — emit complete brand CSS token set.
-
-  * Why: Brand output currently less complete than preset output.
-  * Tests: brand CSS golden test.
-  * Priority: P1
-
-### Phase 6 — Studio
-
-* [ ] `platform/typescript/ghatana-studio/src/App.tsx` — route Builder, DS, Preview, Import/Decompile, Fidelity pages.
-
-  * Why: Capabilities must be reachable.
-  * Tests: route tests.
-  * Priority: P0
-
-* [ ] `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx` — remove random layout and no-op handlers.
-
-  * Why: Deterministic, editable workspace.
-  * Tests: deterministic layout + interaction tests.
-  * Priority: P0
-
-* [ ] `platform/typescript/ghatana-studio/src/components/builder/VisualCanvas.tsx` — replace one-way projection with adapter.
-
-  * Why: Visual edits must update BuilderDocument.
-  * Tests: bidirectional sync tests.
-  * Priority: P0
-
-* [ ] `platform/typescript/ghatana-studio/src/routes/ArtifactsPage.tsx` — add decompile jobs, residual queue, fidelity view.
-
-  * Why: Artifact compiler/decompiler workflow.
-  * Tests: E2E import/decompile/fidelity test.
-  * Priority: P0
+  * Why: Preview must validate generated artifacts.
+  * Tests: preview protocol tests.
+  * Priority: P1.
 
 ---
 
 ## J. Commands to Validate
 
-Root commands available from current root scripts include build, test, lint, typecheck, circular dependency checks, architecture boundaries, design-system conformance, Studio kernel API, and production-stub checks. 
-
 ```bash
 pnpm install
-
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -1430,7 +921,6 @@ pnpm check:architecture-boundaries
 pnpm check:design-system-conformance
 pnpm check:studio-kernel-api
 pnpm check:production-stubs
-pnpm check:production-readiness
 pnpm check:deprecated-imports
 pnpm check:deprecated-packages
 ```
@@ -1438,60 +928,56 @@ pnpm check:deprecated-packages
 Package-specific commands:
 
 ```bash
-# Canvas
-pnpm --dir platform/typescript/canvas build
 pnpm --dir platform/typescript/canvas type-check
 pnpm --dir platform/typescript/canvas test
-pnpm --dir platform/typescript/canvas docs:api
+pnpm --dir platform/typescript/canvas build
 
-# UI Builder
-pnpm --dir platform/typescript/ui-builder build
 pnpm --dir platform/typescript/ui-builder type-check
 pnpm --dir platform/typescript/ui-builder test
+pnpm --dir platform/typescript/ui-builder build
 
-# DS Generator
-pnpm --dir platform/typescript/ds-generator build
 pnpm --dir platform/typescript/ds-generator type-check
 pnpm --dir platform/typescript/ds-generator test
+pnpm --dir platform/typescript/ds-generator build
 
-# Ghatana Studio
-pnpm --dir platform/typescript/ghatana-studio build
+pnpm --dir platform/typescript/artifact-contracts type-check
+pnpm --dir platform/typescript/artifact-contracts test
+pnpm --dir platform/typescript/artifact-contracts build
+
+pnpm --dir platform/typescript/artifact-compiler-ts type-check
+pnpm --dir platform/typescript/artifact-compiler-ts test
+pnpm --dir platform/typescript/artifact-compiler-ts build
+
 pnpm --dir platform/typescript/ghatana-studio type-check
 pnpm --dir platform/typescript/ghatana-studio lint
 pnpm --dir platform/typescript/ghatana-studio test
 pnpm --dir platform/typescript/ghatana-studio test:e2e
 pnpm --dir platform/typescript/ghatana-studio test:a11y
-
-# Kernel artifacts
-pnpm --dir platform/typescript/kernel-artifacts build
-pnpm --dir platform/typescript/kernel-artifacts typecheck
-pnpm --dir platform/typescript/kernel-artifacts test
-pnpm --dir platform/typescript/kernel-artifacts lint
+pnpm --dir platform/typescript/ghatana-studio build
 ```
 
-New commands to add:
+New recommended gates:
 
 ```bash
 pnpm check:builder-canonical-document
-pnpm check:canvas-document-roundtrip
-pnpm check:artifact-compiler-contracts
+pnpm check:canvas-history
+pnpm check:builder-canvas-adapter
 pnpm check:artifact-roundtrip
-pnpm check:artifact-fidelity
+pnpm check:artifact-provenance
 pnpm check:ds-generator-golden
-pnpm check:studio-authoring-workflows
+pnpm check:studio-authoring-workflow
 ```
 
 ---
 
 ## K. Final Production Readiness Gate
 
-These areas cannot be called production-grade until all of the following are true:
+Minimum acceptance criteria before calling these areas production-grade:
 
 * [ ] One canonical `BuilderDocument`.
-* [ ] Runtime-validatable `CanvasDocument`.
-* [ ] Versioned Canvas and Builder migrations.
+* [ ] Runtime-validatable canvas document.
 * [ ] Correct command-based canvas undo/redo.
-* [ ] Instance-scoped canvas stores only; no global-state bleed.
+* [ ] Multi-canvas isolation test.
 * [ ] Real Studio canvas workflow.
 * [ ] Real Studio visual UI Builder workflow.
 * [ ] Real DS generation workflow.
@@ -1501,47 +987,41 @@ These areas cannot be called production-grade until all of the following are tru
 * [ ] Golden tests for generated outputs.
 * [ ] Preview runtime parity.
 * [ ] Accessibility, i18n, privacy, security, and observability gates.
-* [ ] No mocks/stubs/placeholders in production code.
+* [ ] No mocks/stubs/placeholders in production code paths.
 * [ ] No unsafe casts across package boundaries.
 * [ ] No deprecated import usage.
 * [ ] No duplicated schemas or duplicate ownership.
-* [ ] No random/non-deterministic layout or generation in production paths.
-* [ ] No localStorage-only persistence for production Studio workflows.
+* [ ] No localStorage-only persistence for production workflows.
+* [ ] No regex-only production TSX/JSX decompilation.
+* [ ] No silent source-intent loss.
 
 ---
 
 ## Final Answer Required
 
 ```markdown
-Final Verdict: No
+Final Verdict: Partial
 
 Are these areas feature-complete and correctly implemented for a production-grade, world-class Ghatana product-development platform?
 
-No. The codebase has meaningful foundations: Canvas has a broad hybrid runtime, UI Builder has moved toward a canonical schema-backed model, DS Generator has deterministic preset/brand materialization, Studio has a real shell, and kernel-artifacts has lifecycle manifest contracts. However, the full product-development loop is not production-grade yet because artifact compiler/decompiler is not first-class, Studio does not yet wire real end-to-end authoring workflows, Canvas lacks schema/migration/command-hardening, DS Generator is not a full design-system generator, and round-trip/fidelity evidence is incomplete.
+No.
 
 Reason:
-The current snapshot proves partial foundations, not feature completeness. The most important missing capability is a real artifact compiler/decompiler platform that can scan source, produce a logical model, preserve provenance, project into Canvas/UI Builder/DS, compile back to source, re-import, and report fidelity/residual islands.
+The repo now has meaningful foundations for Canvas, UI Builder, DS Generator, Studio routes, artifact contracts, and a TypeScript artifact compiler/decompiler. However, the production-grade end-to-end workflow is not complete. Studio workflows are still partly browser-local and route-isolated; artifact compiler/decompiler is not repo-scale; Canvas API remains too broad; UI Builder still carries legacy compatibility paths; DS Generator needs deterministic/golden hardening; and round-trip source/model/source evidence is not yet enforced.
 
 Required minimum work before production:
-1. Canonical shared artifact contracts.
-2. Strict canonical BuilderDocument.
-3. Runtime-validatable CanvasDocument.
-4. Command-based Canvas history.
-5. Full DS generator targets and contrast validation.
-6. Routed Studio workflows for import/decompile, canvas, builder, DS, preview, export, re-import, and fidelity.
-7. Source → model → source → model round-trip gates.
-8. Golden tests and CI gates.
+Canonicalize all contracts, harden Canvas history/isolation/schema, remove unsafe BuilderDocument compatibility from normal paths, build the artifact source acquisition + decompile + projection + compile + re-import pipeline, wire Studio routes into one durable workflow, add golden/round-trip/preview tests, and enforce CI gates.
 
 Recommended next milestone:
-Milestone 1 — Canonical contracts and ownership cleanup across Artifact, Builder, Canvas, DS, and Studio.
+Round-Trip Authoring Foundation.
 
 Recommended first implementation PR:
-Create `@ghatana/artifact-contracts`, harden canonical `BuilderDocument`, introduce `CanvasDocumentSchema`, and add governance checks for unsafe casts/deprecated compatibility paths.
+Canonical artifact workflow state + Studio import/decompile result persistence + projection handoff to Canvas/Builder/Fidelity routes.
 
 Recommended parallel workstreams:
-1. Canvas runtime correctness.
-2. UI Builder canonical model and import/codegen hardening.
-3. Artifact compiler/decompiler foundation with TS adapters and Java/backend scanner.
-4. DS Generator full target pipeline.
-5. Studio workflow integration and E2E authoring tests.
+1. Canvas runtime correctness and API stabilization.
+2. UI Builder canonical model, adapters, and registry-backed Studio editing.
+3. Artifact compiler/decompiler source acquisition, provenance, compile, and round-trip tests.
+4. DS Generator deterministic/golden output hardening.
+5. Studio workflow integration and E2E/a11y validation.
 ```

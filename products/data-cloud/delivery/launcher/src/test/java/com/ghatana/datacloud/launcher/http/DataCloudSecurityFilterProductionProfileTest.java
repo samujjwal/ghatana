@@ -769,4 +769,140 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         assertThat(exception.getMessage()).contains("DC-P0-01");
         assertThat(exception.getMessage()).contains("strictTenantResolution must be true");
     }
+
+    @Test
+    @DisplayName("DC-P1-09: Production profile startup fails if audit sink is not ready")
+    void productionProfileStartupFailsIfAuditSinkNotReady() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        // Audit service that fails to record (simulating unavailable sink)
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit sink unavailable"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        IllegalStateException exception = new IllegalStateException();
+        try {
+            filter.validateProductionRequirements();
+        } catch (IllegalStateException e) {
+            exception = e;
+        }
+
+        assertThat(exception.getMessage()).contains("DC-P1-09");
+        assertThat(exception.getMessage()).contains("Audit sink readiness check failed");
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Production profile startup succeeds when audit sink is ready")
+    void productionProfileStartupSucceedsWhenAuditSinkReady() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService) // Working audit service
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        // Should not throw any exception
+        filter.validateProductionRequirements();
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Audit write failure on critical route does not block request but logs error")
+    void auditWriteFailureOnCriticalRouteDoesNotBlockRequest() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        // Audit service that fails to record
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit write failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/governance/policies")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Request should succeed despite audit write failure (fire-and-forget)
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Local profile skips audit sink readiness check")
+    void localProfileSkipsAuditSinkReadinessCheck() {
+        System.setProperty("DATACLOUD_PROFILE", "local");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("local")
+            .build();
+
+        // Should not throw any exception even if audit service is configured
+        filter.validateProductionRequirements();
+    }
 }

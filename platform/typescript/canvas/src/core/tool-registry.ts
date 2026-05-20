@@ -12,6 +12,7 @@
 
 import { BaseTool, ToolManager } from "../tools/index.js";
 import type { ToolOptions } from "../types/index.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 /**
  * Tool constructor type
@@ -137,7 +138,9 @@ export class ToolRegistry {
     ): T | null {
         const reg = this.registrations.get(name);
         if (!reg) {
-            console.warn(`[ToolRegistry] Unknown tool: ${name}`);
+            emitCanvasDiagnostic("ToolRegistry", "warn", "Unknown tool", {
+                name,
+            });
             return null;
         }
 

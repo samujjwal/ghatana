@@ -19,6 +19,7 @@ import type {
   KeyboardShortcut,
   ContextMenuItem,
 } from "./types";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 /**
  * Registry entry with source plugin info
@@ -54,9 +55,12 @@ class GenericRegistry<T> {
 
     if (this.items.has(id)) {
       const existing = this.items.get(id)!;
-      console.warn(
-        `[${this.name}Registry] Overwriting "${id}" from plugin "${existing.pluginId}" with plugin "${pluginId}"`,
-      );
+      emitCanvasDiagnostic("PluginRegistry", "warn", "Plugin contribution overwritten", {
+        registry: this.name,
+        id,
+        existingPluginId: existing.pluginId,
+        pluginId,
+      });
     }
 
     this.items.set(id, {
@@ -320,10 +324,12 @@ export class ShortcutRegistry {
 
     if (this.shortcuts.has(key)) {
       const existing = this.shortcuts.get(key)!;
-      console.warn(
-        `[ShortcutRegistry] Shortcut "${shortcut.key}" conflicts with existing shortcut ` +
-          `"${existing.name}" from plugin "${existing.pluginId}"`,
-      );
+      emitCanvasDiagnostic("ShortcutRegistry", "warn", "Plugin shortcut conflict", {
+        shortcut: shortcut.key,
+        existingName: existing.name,
+        existingPluginId: existing.pluginId,
+        pluginId,
+      });
     }
 
     this.shortcuts.set(key, { ...shortcut, pluginId });

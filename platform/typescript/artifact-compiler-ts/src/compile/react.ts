@@ -74,6 +74,47 @@ const DEFAULT_OPTIONS: Required<CompileReactOptions> = {
   emitDefaultExport: false,
 };
 
+// ============================================================================
+// PROTECTED REGION MARKERS
+// ============================================================================
+
+/**
+ * Marker constants used for ownership regions in generated code.
+ *
+ * A "protected region" is a code block that the user has authored and that the
+ * artifact compiler must not overwrite during regeneration. The markers are
+ * injected as comments so the round-trip decompiler can parse them back out and
+ * preserve user content.
+ *
+ * Format:
+ * ```ts
+ * // @ghatana-region: begin <regionId> owner=user-authored
+ * // ... user code ...
+ * // @ghatana-region: end <regionId>
+ * ```
+ */
+const REGION_BEGIN_PREFIX = "// @ghatana-region: begin";
+const REGION_END_PREFIX = "// @ghatana-region: end";
+
+/**
+ * Emit a protected region wrapper around a code block.
+ *
+ * @param regionId - A stable identifier for the region (must be unique within the file).
+ * @param ownerKind - The ownership kind annotation written into the marker.
+ * @param innerLines - Lines of code to wrap. May be empty (region is still emitted).
+ */
+function emitProtectedRegion(
+  regionId: string,
+  ownerKind: "user-authored" | "generated" | "protected",
+  innerLines: string[],
+): string[] {
+  return [
+    `${REGION_BEGIN_PREFIX} ${regionId} owner=${ownerKind}`,
+    ...innerLines,
+    `${REGION_END_PREFIX} ${regionId}`,
+  ];
+}
+
 /**
  * Emit a residual stub for nodes below the confidence threshold or with
  * unsupported patterns.
@@ -111,6 +152,11 @@ function emitResidualStub(node: ArtifactNode, opts: Required<CompileReactOptions
 
 /**
  * Emit a full React component for a well-classified ArtifactNode.
+ *
+ * The component body includes a `@ghatana-region: begin body owner=user-authored`
+ * protected block so that round-trip regeneration will not clobber user edits
+ * inside the component body. The import header is `owner=generated` so it is
+ * always refreshed.
  */
 function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOptions>): string {
   const exportedName = node.exportedSymbols[0] ?? node.displayName;
@@ -132,9 +178,18 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
     ? `// Design-system component imports are intentionally omitted until the artifact mapping resolves exact symbols from "${opts.designSystemPackage}".\n`
     : "";
 
+  const regionId = `${node.id}:body`;
+  const bodyLines = emitProtectedRegion(`${regionId}`, "user-authored", [
+    `    <div>`,
+    `      <span data-artifact-component="${node.id}">{${JSON.stringify(node.displayName)}}</span>`,
+    `    </div>`,
+  ]);
+
   const lines: string[] = [
-    `import type { ReactElement } from "react";`,
-    dsImport.trim() ? dsImport : "",
+    ...emitProtectedRegion(`${node.id}:imports`, "generated", [
+      `import type { ReactElement } from "react";`,
+      ...(dsImport.trim() ? [dsImport] : []),
+    ]),
     ``,
     propsInterface,
     ``,
@@ -145,13 +200,12 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
     ` * @doc.pattern Component`,
     ` */`,
     `export function ${exportedName}(props: ${propsInterfaceName}): ReactElement {`,
+    `  void props;`,
     `  return (`,
-    `    <div>`,
-    `      <span data-artifact-component="${node.id}">{${JSON.stringify(node.displayName)}}</span>`,
-    `    </div>`,
+    ...bodyLines.map(l => `    ${l}`),
     `  );`,
     `}`,
-  ].filter((line) => line !== "");
+  ];
 
   if (opts.emitDefaultExport) {
     lines.push(``, `export default ${exportedName};`);

@@ -12,6 +12,7 @@
 
 import { CanvasElement } from "../elements/base.js";
 import type { CanvasElementType, BaseElementProps } from "../types/index.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 /**
  * Element renderer function signature
@@ -279,7 +280,9 @@ export class ElementRegistry {
     ): T | null {
         const registration = this.registrations.get(type);
         if (!registration) {
-            console.warn(`[ElementRegistry] Unknown element type: ${type}`);
+            emitCanvasDiagnostic("ElementRegistry", "warn", "Unknown element type", {
+                type,
+            });
             return null;
         }
 

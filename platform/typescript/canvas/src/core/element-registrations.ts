@@ -12,6 +12,7 @@
 
 import { elementRegistry } from "./element-registry.js";
 import type { ElementDefinition } from "./element-registry.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 // Core elements
 import { ShapeElement, type ShapeProps } from "../elements/shape.js";
@@ -560,7 +561,9 @@ export function registerBuiltInElements(): void {
     },
   });
 
-  console.log(`[ElementRegistrations] Registered ${elementRegistry.getRegisteredTypes().length} element types`);
+  emitCanvasDiagnostic("ElementRegistrations", "info", "Built-in element types registered", {
+    count: elementRegistry.getRegisteredTypes().length,
+  });
 }
 
 // Auto-register on module load

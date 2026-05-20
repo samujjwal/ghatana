@@ -61,9 +61,9 @@ function parseOpenApiContract(filePath) {
     const trimmed = line.trim();
     
     // Detect path definition (2-space indent + /path:)
-    const pathMatch = trimmed.match(/^\/([^:]+):$/);
+    const pathMatch = trimmed.match(/^(\/[^:]+):$/);
     if (pathMatch && line.startsWith('  ')) {
-      currentPath = pathMatch[1];
+      currentPath = pathMatch[1];  // Preserve the leading slash
       continue;
     }
     

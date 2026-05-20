@@ -9,6 +9,8 @@
  * @doc.layer core
  */
 
+import { emitCanvasDiagnostic } from "../diagnostics";
+
 /**
  * Generic layer configuration
  */
@@ -114,7 +116,9 @@ class CanvasConfigRegistry {
 
     setConfig(config: CanvasConfig): void {
         this.config = config;
-        console.log(`✅ Canvas configured for: ${config.appName}`);
+        emitCanvasDiagnostic("CanvasConfigRegistry", "info", "Canvas configured", {
+            appName: config.appName,
+        });
     }
 
     getConfig(): CanvasConfig {

@@ -59,6 +59,7 @@
     "check:kernel-lifecycle-truth": "node ./scripts/check-kernel-lifecycle-truth.mjs",
     "check:agentic-lifecycle-action-contracts": "node ./scripts/check-agentic-lifecycle-action-contracts.mjs",
     "check:studio-kernel-api": "node ./scripts/check-studio-kernel-api.mjs",
+    "check:kernel-authoring-pipeline": "node ./scripts/check-studio-authoring-workflows.mjs",
     "check:yappc-product-unit-intent-handoff": "node ./scripts/check-yappc-product-unit-intent-handoff.mjs",
     "check:yappc-artifact-intelligence-boundary": "node ./scripts/check-yappc-artifact-intelligence-boundary.mjs",
     "check:product-ui-contracts": "node ./scripts/check-product-ui-contracts.mjs",

@@ -30,6 +30,7 @@ import { CanvasRenderer } from "../core/canvas-renderer.js";
 import { Viewport } from "../core/viewport.js";
 import { CanvasOptions } from "../types/index.js";
 import { CanvasElement } from "../elements/base.js";
+import { emitCanvasDiagnostic } from "../diagnostics";
 
 /**
  * Hook for creating and managing a canvas instance
@@ -48,7 +49,7 @@ export function useCanvas(
   useEffect(() => {
     if (!containerRef.current || canvasRef.current) return;
 
-    console.log("Creating new canvas instance");
+    emitCanvasDiagnostic("CanvasReact", "info", "Creating new canvas instance");
     canvasRef.current = new CanvasRenderer(
       containerRef.current,
       optionsRef.current,
@@ -57,7 +58,7 @@ export function useCanvas(
 
     return () => {
       if (canvasRef.current) {
-        console.log("Cleaning up canvas instance");
+        emitCanvasDiagnostic("CanvasReact", "info", "Cleaning up canvas instance");
         canvasRef.current = null;
         setIsReady(false);
       }

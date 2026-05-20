@@ -7,12 +7,6 @@
  *
  * Dependency direction:
  *   products:data-cloud:planes:action:orchestrator → products:data-cloud:planes:action:operator-contracts
- *
- * This module consolidates the orchestration logic that was previously split across
- * the retired AEP (Agentic Event Processor) standalone product boundaries.
- *
- * DC-P1-10: AEP has been retired as a standalone product; all functionality is now
- * part of Data Cloud Action Plane.
  */
 plugins {
     id("java-module")
@@ -103,7 +97,6 @@ dependencies {
 // Test depends on analytics/ingress modules not yet on orchestrator classpath
 // Also exclude test files with outdated ActiveJ APIs (EventloopThread, com.io.activej.promise)
 sourceSets.test {
-    java.exclude("com/ghatana/datacloud/planes/action/orchestrator/di/AepDiModulesTest.java")
     java.exclude("com/ghatana/datacloud/planes/action/orchestrator/engine/registry/AgentMemoryPlaneClientMasteryTest.java")
 }
 
@@ -124,7 +117,7 @@ tasks.test {
 // =============================================================================
 
 /**
- * DC-P1-10: Validates that all Action Plane operator YAML catalog files reference only canonical
+ * Validates that all Action Plane operator YAML catalog files reference only canonical
  * platform enum values (AgentType, AutonomyLevel, DeterminismGuarantee, StateMutability).
  *
  * Run explicitly: ./gradlew :products:data-cloud:planes:action:orchestrator:validateAgentCatalogs

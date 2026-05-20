@@ -16,7 +16,9 @@
 
 import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { useAtomValue } from 'jotai';
 import type { FidelityReport, LossPoint } from '@ghatana/artifact-contracts';
+import { artifactFidelityReportAtom } from '../state/artifactWorkflowStore.js';
 
 // ============================================================================
 // Severity colours
@@ -40,7 +42,9 @@ export default function FidelityReportPage(): ReactElement {
   const location = useLocation();
   const navigate = useNavigate();
   const state = (location.state ?? {}) as FidelityReportPageState;
-  const report = state.report ?? null;
+  // Prefer workflow store report (from decompile job); fall back to router state (legacy)
+  const storeReport = useAtomValue(artifactFidelityReportAtom);
+  const report = storeReport ?? state.report ?? null;
 
   if (report === null) {
     return (

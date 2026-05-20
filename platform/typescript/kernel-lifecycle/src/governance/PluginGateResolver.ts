@@ -57,6 +57,16 @@ interface PluginRegistry {
   readonly plugins: Record<string, PluginRegistryEntry>;
 }
 
+function writePluginGateDiagnostic(
+  level: "warn" | "error",
+  message: string,
+  context?: Record<string, unknown>,
+): void {
+  process.stderr.write(
+    `${JSON.stringify({ level, message, ...context, ts: new Date().toISOString() })}\n`,
+  );
+}
+
 /**
  * Plugin gate resolver.
  */
@@ -107,9 +117,10 @@ export class PluginGateResolver {
 
       // Check if required runtime services are available
       if (!this.hasRequiredServices(entry.requiredRuntimeServices)) {
-        console.warn(
-          `[PluginGateResolver] Skipping plugin "${entry.id}" - missing required runtime services: ${entry.requiredRuntimeServices?.join(", ")}`
-        );
+        writePluginGateDiagnostic("warn", "Skipping plugin with missing required runtime services", {
+          pluginId: entry.id,
+          requiredRuntimeServices: entry.requiredRuntimeServices,
+        });
         continue;
       }
 
@@ -173,10 +184,10 @@ export class PluginGateResolver {
           message: error instanceof Error ? error.message : String(error),
           durationMs: duration,
         });
-        console.error(
-          `[PluginGateResolver] Plugin "${pluginRef.pluginId}" execution failed:`,
-          error
-        );
+        writePluginGateDiagnostic("error", "Plugin execution failed", {
+          pluginId: pluginRef.pluginId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
