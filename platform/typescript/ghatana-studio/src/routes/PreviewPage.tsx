@@ -1,23 +1,28 @@
 /**
  * @fileoverview Preview runtime page.
  *
- * Renders a sandboxed preview of Builder-generated source code inside an
- * isolated `<iframe>` so that arbitrary component output cannot access the
- * Studio's own DOM or JavaScript context.
- *
- * The source to preview is passed via React Router state:
- * `navigate("/preview", { state: { source, mimeType } })`
+ * Renders a sandboxed preview of Builder-generated source code using the
+ * preview runtime protocol. The runtime transpiles TypeScript/TSX source,
+ * injects design-system/theme providers, and renders components in a
+ * sandboxed environment.
  *
  * @doc.type component
  * @doc.purpose Sandboxed preview runtime for generated source code
  * @doc.layer studio
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 import { artifactPreviewSourceAtom } from '../state/artifactWorkflowStore.js';
+import {
+  defaultPreviewRuntime,
+} from '../preview/in-memory-preview-runtime.js';
+import type {
+  PreviewRequest,
+  PreviewResult,
+} from '../preview/preview-protocol.js';
 
 // ============================================================================
 // Types
@@ -35,29 +40,6 @@ interface PreviewPageState {
 type PreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-/**
- * Wrap a raw HTML fragment in a minimal document shell so the iframe can
- * render it correctly.
- */
-function wrapInDocumentShell(source: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Preview</title>
-  <style>body { margin: 0; font-family: system-ui, sans-serif; }</style>
-</head>
-<body>
-${source}
-</body>
-</html>`;
-}
-
-// ============================================================================
 // Component
 // ============================================================================
 
@@ -69,40 +51,109 @@ export default function PreviewPage(): ReactElement {
   // Prefer workflow store source (from artifact compile); fall back to router state
   const workflowSource = useAtomValue(artifactPreviewSourceAtom);
   const rawSource = workflowSource ?? state.source ?? null;
-  const mimeType = state.mimeType ?? 'text/html';
   const title = state.title ?? 'Preview';
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [status, setStatus] = useState<PreviewStatus>(rawSource ? 'loading' : 'idle');
+  const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null);
+  const [sessionId] = useState(() => crypto.randomUUID());
 
-  // Convert source to a `srcdoc` value or a Blob URL
-  const srcdoc =
-    rawSource !== null
-      ? mimeType === 'text/html'
-        ? wrapInDocumentShell(rawSource)
-        : rawSource
-      : null;
+  // Update iframe srcdoc when preview result changes
+  useEffect(() => {
+    if (previewResult?.html && iframeRef.current) {
+      iframeRef.current.srcdoc = previewResult.html;
+    }
+  }, [previewResult]);
 
-  const handleIframeLoad = useCallback(() => {
-    setStatus('ready');
-  }, []);
+  // Render preview using the runtime when source changes
+  useEffect(() => {
+    if (!rawSource) {
+      setStatus('idle');
+      setPreviewResult(null);
+      return;
+    }
 
-  const handleIframeError = useCallback(() => {
-    setStatus('error');
-  }, []);
+    setStatus('loading');
+
+    const request: PreviewRequest = {
+      sessionId,
+      source: rawSource,
+      filePath: 'preview.tsx',
+      designSystem: {
+        packageName: '@ghatana/design-system',
+        version: '1.0.0',
+        availableComponents: ['Button', 'Card', 'Badge', 'Alert'],
+      },
+      theme: {
+        mode: 'light',
+      },
+      securityPolicy: {
+        allowScripts: true,
+        allowSameOrigin: true,
+        allowPopups: false,
+        allowForms: false,
+      },
+    };
+
+    defaultPreviewRuntime.render(request)
+      .then((result) => {
+        setPreviewResult(result);
+        setStatus(result.success ? 'ready' : 'error');
+      })
+      .catch((err) => {
+        setPreviewResult({
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+          logs: [],
+          duration: 0,
+        });
+        setStatus('error');
+      });
+
+    return () => {
+      defaultPreviewRuntime.cleanup(sessionId);
+    };
+  }, [rawSource, sessionId]);
 
   const handleRefresh = useCallback(() => {
-    if (iframeRef.current !== null && srcdoc !== null) {
+    if (rawSource) {
       setStatus('loading');
-      // Force reload by briefly clearing srcdoc — iframe will re-render
-      iframeRef.current.srcdoc = '';
-      requestAnimationFrame(() => {
-        if (iframeRef.current !== null) {
-          iframeRef.current.srcdoc = srcdoc;
-        }
-      });
+      const request: PreviewRequest = {
+        sessionId: crypto.randomUUID(),
+        source: rawSource,
+        filePath: 'preview.tsx',
+        designSystem: {
+          packageName: '@ghatana/design-system',
+          version: '1.0.0',
+          availableComponents: ['Button', 'Card', 'Badge', 'Alert'],
+        },
+        theme: {
+          mode: 'light',
+        },
+        securityPolicy: {
+          allowScripts: true,
+          allowSameOrigin: true,
+          allowPopups: false,
+          allowForms: false,
+        },
+      };
+
+      defaultPreviewRuntime.render(request)
+        .then((result) => {
+          setPreviewResult(result);
+          setStatus(result.success ? 'ready' : 'error');
+        })
+        .catch((err) => {
+          setPreviewResult({
+            success: false,
+            error: err instanceof Error ? err.message : String(err),
+            logs: [],
+            duration: 0,
+          });
+          setStatus('error');
+        });
     }
-  }, [srcdoc]);
+  }, [rawSource]);
 
   return (
     <section className="flex flex-col h-full space-y-0" aria-labelledby="preview-title">
@@ -141,7 +192,7 @@ export default function PreviewPage(): ReactElement {
           )}
 
           {/* Refresh */}
-          {srcdoc !== null && (
+          {previewResult?.html && (
             <button
               type="button"
               onClick={handleRefresh}
@@ -156,7 +207,7 @@ export default function PreviewPage(): ReactElement {
 
       {/* Preview area */}
       <div className="flex-1 bg-gray-100 overflow-hidden">
-        {srcdoc === null ? (
+        {!previewResult?.html && !previewResult?.error ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-2">
               <p className="text-sm font-medium text-gray-600">
@@ -167,15 +218,35 @@ export default function PreviewPage(): ReactElement {
               </p>
             </div>
           </div>
+        ) : previewResult?.error ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-2 max-w-md">
+              <p className="text-sm font-medium text-red-600">
+                Preview failed to render
+              </p>
+              <p className="text-xs text-gray-600">
+                {previewResult.error}
+              </p>
+              {previewResult.logs.length > 0 && (
+                <div className="mt-4 text-left">
+                  <p className="text-xs font-medium text-gray-700 mb-2">Console logs:</p>
+                  <div className="bg-gray-800 text-gray-100 text-xs p-3 rounded-md max-h-40 overflow-auto">
+                    {previewResult.logs.map((log, i) => (
+                      <div key={i} className="mb-1">
+                        <span className="text-gray-400">[{log.level}]</span> {log.message}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <iframe
             ref={iframeRef}
-            srcDoc={srcdoc}
             title={`${title} preview`}
             className="w-full h-full border-0 bg-white"
-            sandbox="allow-same-origin"
-            onLoad={handleIframeLoad}
-            onError={handleIframeError}
+            sandbox="allow-same-origin allow-scripts"
             aria-label={`Sandboxed preview: ${title}`}
           />
         )}

@@ -88,9 +88,9 @@ tags:
   - name: events
     description: Append-only event log operations.
   - name: pipelines
-    description: External-runtime pipeline metadata registry. AEP may consume and update these records; orchestration remains external.
+    description: Data Cloud Action Plane pipeline metadata registry. Pipelines are managed and executed by the Action Plane runtime within Data Cloud.
   - name: checkpoints
-    description: External-runtime checkpoint save/restore, including AEP execution state.
+    description: Data Cloud Action Plane checkpoint persistence for durable execution state across pipeline and workflow runs.
   - name: memory
     description: Agent memory persistence plane (episodic, semantic, procedural, preference).
   - name: brain

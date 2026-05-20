@@ -15,9 +15,10 @@ import { HybridCanvas } from '@ghatana/canvas';
 import type { SelectionState } from '@ghatana/canvas';
 import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
 import {
-  projectBuilderDocumentToCanvas,
+  builderToCanvas,
   filterCanvasSelectionToNodeIds,
-} from '../../adapters/BuilderCanvasAdapter.js';
+  type BuilderCanvasNode,
+} from '../../adapters/BuilderCanvasProjectionAdapter.js';
 
 export interface VisualCanvasProps {
   /** The builder document to render */
@@ -51,10 +52,10 @@ export function VisualCanvas({
   height = '600px',
   readOnly = false,
 }: VisualCanvasProps): ReactElement {
-  // Project BuilderDocument to canvas nodes and edges via typed adapter.
+  // Project BuilderDocument to canvas nodes and edges via canonical adapter.
   const { nodes: canvasNodes, edges: canvasEdges } = useMemo(
-    () => projectBuilderDocumentToCanvas(document, _selectedNodeIds),
-    [document, _selectedNodeIds],
+    () => builderToCanvas(document),
+    [document],
   );
 
   return (

@@ -27,6 +27,7 @@ import type { CanvasCommand, CanvasCommandContext } from './types.js';
 export interface CanvasCommandHost {
   pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void;
   getSnapshot(): HistoryEntry['snapshot'];
+  isInTransaction(): boolean;
 }
 
 /**
@@ -67,6 +68,7 @@ export class CanvasCommandExecutor {
     const ctx: CanvasCommandContext = {
       pushHistory: (params) => this.host.pushHistory(params),
       getSnapshot: () => this.host.getSnapshot(),
+      isInTransaction: () => this.host.isInTransaction(),
     };
 
     command.execute(ctx);

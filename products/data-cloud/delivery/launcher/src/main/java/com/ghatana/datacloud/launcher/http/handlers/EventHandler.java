@@ -260,8 +260,10 @@ public class EventHandler {
                         if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
                             actor = principal.getName();
                         } else {
-                            log.warn("[EventHandler] DC-P0-02: No authenticated principal found for event append in production profile '{}', using 'system' fallback", deploymentProfile);
-                            actor = "system";
+                            // DC-P1-03: Fail-closed — never silently assign "system" as actor in production.
+                            // Event accountability requires an authenticated principal; reject the request.
+                            log.error("[EventHandler] DC-P1-03: No authenticated principal for event append in production profile '{}'. Rejecting to preserve event accountability.", deploymentProfile);
+                            return Promise.of(http.errorResponse(401, "Authenticated principal required for event append in production mode"));
                         }
                     }
                 }
@@ -310,7 +312,7 @@ public class EventHandler {
                     .causationId((String) eventData.get("causationId")) // DC-P0-03: Persist causation ID
                     .actor(finalActor) // DC-P0-03: Persist actor from authenticated principal
                     .classification((String) eventData.get("classification")) // DC-P0-03: Persist classification
-                    .policyContext((String) eventData.get("policyContext")) // DC-P0-03: Persist policy context
+                    .policyContext(serializePolicyContext(eventData.get("policyContext"))) // DC-P1-04: Safe serialization — policyContext may arrive as Map or String
                     .provenance((String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler")) // DC-P0-03: Persist provenance
                     .traceContext(traceContext) // DC-P0-03: Persist trace context
                     .headers(Map.of(
@@ -346,12 +348,39 @@ public class EventHandler {
                             idempotencyStore.put(tenantId, operationScope, idempotencyKey, responseBody);
                         }
                         return http.jsonResponse(responseBody);
-                    });
+                    })
+                    .then(
+                        result -> Promise.of(result),
+                        err -> {
+                            log.error("[EventHandler] DC-BE-003: Event append to client failed for tenant={}: {}",
+                                tenantId, err.getMessage(), err);
+                            return Promise.of(http.errorResponse(500, "Event append failed: " + err.getMessage()));
+                        });
             } catch (Exception e) {
                 log.error("Error appending event", e);
                 return Promise.of(http.errorResponse(400, "Invalid event data: " + e.getMessage()));
             }
         }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    /**
+     * DC-P1-04: Safely serializes a policyContext value to a JSON string.
+     * The value may arrive as a JSON-parsed {@code Map<String,Object>} or already as a {@code String}.
+     * {@code null} values are propagated as {@code null}.
+     */
+    private String serializePolicyContext(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof String s) {
+            return s;
+        }
+        try {
+            return http.objectMapper().writeValueAsString(raw);
+        } catch (Exception e) {
+            log.warn("[EventHandler] DC-P1-04: Failed to JSON-serialize policyContext ({}), using toString()", raw.getClass().getSimpleName(), e);
+            return raw.toString();
+        }
     }
 
     public Promise<HttpResponse> handleQueryEvents(HttpRequest request) {

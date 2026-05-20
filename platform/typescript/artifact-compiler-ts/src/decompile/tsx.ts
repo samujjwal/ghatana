@@ -23,6 +23,77 @@ import type { FidelityReport, LossPoint } from "@ghatana/artifact-contracts";
 import { computeFidelityReport } from "@ghatana/artifact-contracts";
 
 // ============================================================================
+// PROTECTED REGION PARSING
+// ============================================================================
+
+/**
+ * A parsed protected region from source code.
+ */
+export interface ProtectedRegion {
+  /** The region ID from the marker. */
+  readonly regionId: string;
+  /** The owner kind annotation (user-authored, generated, or protected). */
+  readonly ownerKind: string;
+  /** 1-based start line of the region content (after begin marker). */
+  readonly startLine: number;
+  /** 1-based end line of the region content (before end marker). */
+  readonly endLine: number;
+  /** The content lines between the markers (excluding markers themselves). */
+  readonly contentLines: readonly string[];
+}
+
+/**
+ * Parse @ghatana-region markers from a source file.
+ *
+ * Extracts regions marked with:
+ * ```ts
+ * // @ghatana-region: begin <regionId> owner=<ownerKind>
+ * // ... content ...
+ * // @ghatana-region: end <regionId>
+ * ```
+ *
+ * @param sourceFile - The TypeScript source file to scan.
+ * @returns Array of parsed protected regions in source order.
+ */
+export function parseProtectedRegions(sourceFile: ts.SourceFile): ProtectedRegion[] {
+  const regions: ProtectedRegion[] = [];
+  const lines = sourceFile.text.split('\n');
+  const pendingBegins = new Map<string, { startLine: number; ownerKind: string }>();
+
+  const REGION_BEGIN_REGEX = /^\s*\/\/\s*@ghatana-region:\s+begin\s+(\S+)\s+owner=(\S+)/;
+  const REGION_END_REGEX = /^\s*\/\/\s*@ghatana-region:\s+end\s+(\S+)/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const beginMatch = line.match(REGION_BEGIN_REGEX);
+    const endMatch = line.match(REGION_END_REGEX);
+
+    if (beginMatch) {
+      const regionId = beginMatch[1]!;
+      const ownerKind = beginMatch[2]!;
+      pendingBegins.set(regionId, { startLine: i + 1, ownerKind });
+    } else if (endMatch) {
+      const regionId = endMatch[1]!;
+      const pending = pendingBegins.get(regionId);
+      if (pending) {
+        const contentLines = lines.slice(pending.startLine, i);
+        regions.push({
+          regionId,
+          ownerKind: pending.ownerKind,
+          startLine: pending.startLine,
+          endLine: i,
+          contentLines,
+        });
+        pendingBegins.delete(regionId);
+      }
+    }
+  }
+
+  // Any unmatched begin markers are ignored (malformed regions)
+  return regions;
+}
+
+// ============================================================================
 // INPUT CONTRACT
 // ============================================================================
 
@@ -571,6 +642,9 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
       ? extractComponentUsages(sourceFile, dsNames, importSpecifierByName)
       : [];
 
+    // Parse protected regions to preserve user-authored content spans
+    const protectedRegions = parseProtectedRegions(sourceFile);
+
     // Compute real source span
     const totalLines = sourceFile.getLineAndCharacterOfPosition(sourceFile.end).line + 1;
 
@@ -605,6 +679,7 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
         jsxTree: jsxTree as unknown as Record<string, unknown>[],
         detectedRoutes: detectedRoutes as unknown as Record<string, unknown>[],
         componentUsages: componentUsages as unknown as Record<string, unknown>[],
+        protectedRegions: protectedRegions as unknown as Record<string, unknown>[],
       },
     };
 

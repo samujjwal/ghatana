@@ -1,384 +1,883 @@
-Executed the uploaded deterministic audit prompt against fixed commit:
+# Iterative Production-Grade Feature Completeness Audit Report
 
-`521a8c82a2ff53f42043cceb5ac2d93f67412395` — commit message: `dc aep ..`. 
-Prompt source used: uploaded audit prompt. 
+## Ghatana Studio, Canvas, UI Builder, DS Generator, and Artifact Compiler/Decompiler
 
-I audited the snapshot evidence from code/docs/contracts/tests/CI. I did **not** run Gradle locally; the findings below are static, repository-grounded audit findings.
+**Repo:** `samujjwal/ghatana`
+**Target commit:** `63dbb50e070c2efc7866acabc40202bfd4e604d8`
+**Commit verified:** `fd fdfff fffff` 
 
-## Executive verdict
-
-| Area                              | Verdict                                                                             |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| Production ready                  | **No**                                                                              |
-| Feature complete                  | **No**                                                                              |
-| Architecture aligned              | **Mostly improved, still partial**                                                  |
-| Security/privacy production ready | **Improved, but still blocked**                                                     |
-| Agent runtime production ready    | **Partial**                                                                         |
-| Shared-library boundaries healthy | **Improved, still needs deeper split validation**                                   |
-| UI/UX production quality          | **Not verified from current code/docs/tests**                                       |
-| Confidence                        | **High for backend/contracts/security/routing; medium for UI/shared-library depth** |
-
-Highest-risk blocker: **`EventHandler` appears compile-broken and production event envelope logic is internally inconsistent.**
-Most improved area: **contracts + production fail-closed validation + Action Plane naming cleanup.**
-Most unstable area: **generated route security metadata and Action Plane route/contract parity.**
+I inspected the current snapshot through the GitHub connector. I did **not** run the repo locally with `pnpm`; conclusions below are based on current source, scripts, tests, and package wiring visible at the target commit.
 
 ---
 
-## Major improvements at this commit
+## A. Executive Summary
 
-1. **Canonical Data Cloud boundary is clear.** `README.md` states Data Cloud is the AI-native operational data fabric and AEP is only the runtime implementation behind the Action Plane, not a separate product boundary. 
+### Overall readiness rating
 
-2. **Plane architecture remains canonical and coherent.** The architecture doc defines planes, surfaces, Runtime Truth, Action Plane, forbidden dependencies, and shared-platform split rules. 
+**Partial, materially improved from the previous audited state.**
 
-3. **`data-cloud.yaml` is materially better.** It now documents authenticated-identity tenant derivation, production strict mode, header/query tenant hints as compatibility only, tenant mismatch handling, missing tenant claim handling, and fallback tenant disabled in production. 
+This commit adds the exact class of hardening gates that were previously missing: artifact round-trip, canvas history, canonical BuilderDocument, builder/canvas adapter, and DS generator golden checks are now registered in root scripts, and they are included in the broader kernel product boundary and phase-8/world-class readiness gates. 
 
-4. **`action-plane.yaml` is now product-aligned.** It is titled **Data Cloud Action Plane API**, documents AEP as compatibility/runtime implementation, uses Data Cloud servers, and includes bearer/API-key security. 
+### Final verdict
 
-5. **Action Plane routing is cleaner.** Pipelines, memory, learning, autonomy, plugins, and agent catalog are moved toward `/api/v1/action/*`, with legacy routes feature-gated in several places.  
+**Partial.**
 
-6. **Production dependency gates were added.** `DataCloudHttpServer.start()` now runs centralized runtime profile validation and production dependency validation for auth, audit, policy, durable stores, idempotency, transaction manager, metrics, trace export, completion service, and settings persistence. 
+The system is now closer to a production-grade foundation, but it is still not world-class feature-complete. The biggest improvement is that previously aspirational checks are now represented as concrete scripts and Vitest test targets. The remaining blockers are deeper: duplicated builder/canvas adapters, still-shallow artifact round-trip tests, browser-only source acquisition, localStorage-backed Builder persistence, and incomplete true preview/runtime validation.
 
-7. **Agent runtime ownership was cleaned up.** `agent-runtime/OWNER.md` now identifies Data Cloud Action Plane ownership and marks old AEP dependency as deprecated. 
+### Top improvements validated
 
-8. **Orchestrator build metadata was cleaned up.** The orchestrator now uses `com.ghatana.datacloud`, Data Cloud Action Plane descriptions, and Data Cloud Action dependencies instead of stale AEP product naming. 
+1. **Root gates now exist.**
+   `check:artifact-roundtrip`, `check:canvas-history`, `check:builder-canonical-document`, `check:builder-canvas-adapter`, and `check:ds-generator-golden` are root scripts and are wired into `check:kernel-product-boundary-audit` and `check:phase8`. 
 
-9. **CI gates expanded.** The Data Cloud workflow now includes production-profile validation, tenant isolation tests, runtime-truth validation, contract validation, and security-filter tests in addition to build, unit, integration, route parity, and AEP equivalence.  
+2. **DS Generator now has deterministic generation context and canonical component states.**
+   `CANONICAL_COMPONENT_STATES` now includes `default`, `hover`, `active`, `focus`, `focus-visible`, `disabled`, `loading`, `selected`, `error`, `success`, and `warning`; the factory now accepts a `GenerationContext` with injected `clockFn` and `idFn`. 
+
+3. **Artifact compiler has round-trip and protected-region tests.**
+   The new round-trip test covers source → model → source → model at a basic level, and the protected-region test verifies `@ghatana-region` markers and ownership annotations.  
+
+4. **React compiler now emits protected region markers.**
+   `compileReact` now wraps generated import and user-authored body sections with `@ghatana-region` begin/end comments and ownership markers. 
+
+5. **Studio now has a shared artifact workflow store.**
+   `artifactWorkflowStore.ts` centralizes job result, logical model, projected BuilderDocument, preview source, fidelity report, and last decompile timestamp. 
+
+6. **Import → workflow → Canvas/Builder/Fidelity is partially wired.**
+   `ImportDecompilePage` now decompiles files, detects residual islands, projects to BuilderDocument, compiles preview source, stores workflow state, and exposes buttons to open Canvas, Builder, and Fidelity Report. 
+
+### Top production blockers still present
+
+1. **Builder/canvas adapter ownership is duplicated.**
+   There are now at least two adapters: `BuilderCanvasAdapter.ts` and `BuilderCanvasProjectionAdapter.ts`. They overlap in responsibility: both project BuilderDocument to canvas and both handle builder/canvas mapping.  
+
+2. **CanvasPage still uses an unsafe cast.**
+   `CanvasPage` narrows `CanvasNode[]` to `BuilderCanvasNode[]` with `as unknown as BuilderCanvasNode[]`, which violates the “no unsafe casts across package boundaries” goal even though `VisualCanvas` was fixed. 
+
+3. **The artifact round-trip tests are still shallow.**
+   The test proves non-empty output and a stable node count, but it does not prove source intent preservation, import preservation, JSX fidelity, formatting preservation, protected-region rehydration, or semantic equality. 
+
+4. **CI scripts include static presence checks.**
+   `check:artifact-roundtrip` and `check:canvas-history` mostly inspect file existence and source-string presence before delegating to Vitest. They are useful but not sufficient as production-quality verification.  
+
+5. **Preview is still not a real React/Builder runtime preview.**
+   `PreviewPage` reads generated source from the workflow store, but it wraps raw source in an HTML shell and renders it through `srcDoc`; there is no verified transpilation, component runtime, module graph, design-system provider, or preview protocol. 
+
+6. **Source acquisition is still browser-file based.**
+   `ImportDecompilePage` still accepts only `.ts` and `.tsx` files through browser file upload with a 1 MB limit; GitHub/GitLab/local folder/archive acquisition is not implemented in this flow. 
 
 ---
 
-## Root blockers
+## B. Validated Learnings
 
-### DC-P0-01 — `EventHandler` appears compile-broken
+### Learning: UI Builder duplicate BuilderDocument models
 
-**Severity:** P0
-**Root cause:** `EventHandler.EventEnvelope` declares separate fields for `traceContext` and `correlationId`, but the constructor call in `handleAppendEvent` appears to pass only one value before `causationId`, resulting in a mismatched Java record constructor call. 
+**Status:** Mostly fixed, still needs enforcement.
 
-**Why it matters:** If this code compiles as shown, Java record construction must match the declared field count/order. This likely breaks `:products:data-cloud:delivery:launcher:compileJava`, making the product not buildable.
+**Evidence:** Previous canonical model work remains, and this commit adds `check:builder-canonical-document` at root. 
 
-**Required fix:**
-In `EventHandler.handleAppendEvent`, build a canonical envelope with all fields in the exact record order:
+**Impact:** The risk is lower, but the current commit still has adapter-level casts from artifact projection into UI Builder `NodeId[]`, especially in `ModelToBuilderAdapter.ts`. 
 
-```java
-new EventEnvelope(
-  eventId,
-  eventType,
-  tenantId,
-  workspaceId,
-  subject,
-  actor,
-  classification,
-  policyContext,
-  provenance,
-  traceContext,
-  correlationId,
-  causationId,
-  payload,
-  timestamp
-)
+**Required action:** Keep `BuilderDocument` canonical in `@ghatana/ui-builder`, but add a hard rule that any `NodeId` conversion must go through a named validator/adapter.
+
+**Priority:** P0.
+
+---
+
+### Learning: Canvas undo/redo correctness and multi-canvas isolation
+
+**Status:** Significantly improved, not fully closed.
+
+**Evidence:** The new command-history regression tests cover node add/update/delete, edge add/update/delete, duplicate, group/ungroup, transactions, mixed mutations, redo clearing, and isolation.   Multi-canvas isolation tests now cover element, node, edge, history, selection, viewport, clock, ID provider, and concurrent operations.  
+
+**Impact:** Good hardening progress. The remaining concern is transaction semantics: individual controller methods still push their own history entries, and `CommandTransaction.commit()` also pushes a transaction-level entry.   The tests work around this with comments and loops, but production-grade “one transaction = one history entry” is not fully guaranteed.
+
+**Required action:** Add a suppress-history transaction mode or command-only mutation path so mutations inside transactions do not push individual entries.
+
+**Priority:** P0.
+
+---
+
+### Learning: DS Generator was only preset/brand utility
+
+**Status:** Mostly fixed for generator foundation.
+
+**Evidence:** DS generator now has strict canonical component states and deterministic generation context.  Root gate `check:ds-generator-golden` now runs static checks plus golden tests for `golden.test.ts` and `emit-files.test.ts`. 
+
+**Impact:** DS Generator is now a credible deterministic generation foundation. It still needs strict failure gates for contrast violations, full token graph/alias validation, component state output verification, and generated docs/examples if those are expected outputs.
+
+**Required action:** Make `check:ds-generator-golden` validate generated output semantics, not only file/symbol presence. 
+
+**Priority:** P1.
+
+---
+
+### Learning: Studio routes were not wired to real workflows
+
+**Status:** Partially fixed.
+
+**Evidence:** A shared workflow store now exists for import/decompile/edit/preview/fidelity state.  `ImportDecompilePage` stores decompile result, model, projected BuilderDocument, preview source, fidelity report, and exposes route actions.  `CanvasPage`, `BuilderStudio`, `PreviewPage`, and `FidelityReportPage` now read from that shared workflow state.    
+
+**Impact:** This is a major step. However, workflow persistence is still in-memory Jotai for artifact workflow and localStorage for Builder documents. It is not yet workspace/project durable persistence.
+
+**Required action:** Add durable artifact workflow persistence and E2E tests for import → canvas edit → builder edit → preview → fidelity.
+
+**Priority:** P0.
+
+---
+
+### Learning: Artifact compiler/decompiler needs first-class production architecture
+
+**Status:** Improved foundation, still not production-grade.
+
+**Evidence:** `check:artifact-roundtrip` is now registered and backed by round-trip/protected-region tests.   `compileReact` now emits protected region markers. 
+
+**Impact:** The gap is now narrower but still significant. There is still no repo-scale scanner, acquisition service, route graph, real module resolver, import manager, formatter, protected-region rehydration, generated-file diff, or backend/Java heavy-analysis service.
+
+**Required action:** Promote artifact compiler/decompiler from file-level TSX proof to repository-level artifact intelligence pipeline.
+
+**Priority:** P0.
+
+---
+
+## C. Package-by-Package Current State
+
+## Package: `@ghatana/canvas`
+
+### Intended responsibility
+
+Generic, product-agnostic canvas runtime: nodes, edges, groups, layers, selections, viewport, pan/zoom, undo/redo, command history, serialization, multi-canvas isolation, tools, plugins, a11y, observability, and collaboration readiness.
+
+### Actual current responsibility
+
+The package now has stronger command-history and isolation tests. The controller still uses snapshot-based history, and individual mutators still push history entries directly. 
+
+### What exists
+
+* `HybridCanvasController`
+* Command model and executor
+* Command transaction type
+* Pre-mutation snapshot handling
+* Group/ungroup/duplicate history behavior
+* Multi-canvas isolation tests
+
+### What is correct
+
+* Add/update/delete for nodes, edges, and elements now have explicit undo/redo regression tests. 
+* Group/ungroup and transactions are covered. 
+* Isolation tests cover state, history, selection, viewport, dependency injection, separate stores, and concurrent operations.  
+
+### What is incomplete
+
+* Transaction internals still allow individual mutators to push entries inside a transaction. 
+* No verified runtime canvas document schema/migration system from this audit.
+* No verified serialization round-trip tests for the complete canvas document.
+* No verified a11y interaction tests for keyboard canvas workflows.
+
+### Production readiness rating
+
+**70 / 100**
+Improved significantly, but still not fully production-grade because command/transaction history semantics need a true no-double-entry design.
+
+---
+
+## Package: `@ghatana/ui-builder`
+
+### Intended responsibility
+
+Canonical BuilderDocument model, operations, validation, component registry integration, import/export, persistence, preview/codegen, and scene/canvas projection adapters.
+
+### Actual current responsibility
+
+UI Builder remains the canonical document package, and Studio now has adapters that project artifact models and canvas state into/out of BuilderDocument.  
+
+### What exists
+
+* Canonical document gate in root scripts.
+* Model-to-Builder adapter.
+* Builder Studio reads imported workflow document.
+* Builder Studio syncs edits back to workflow store when editing an imported artifact. 
+* Builder palette is now registry-backed through `@ghatana/ds-registry`, not hard-coded. 
+
+### What is incorrect or risky
+
+* `ModelToBuilderAdapter.ts` performs nested casts into `NodeId[]` when transferring projected slots. 
+* The model-to-builder projection loses artifact-specific provenance and ownership unless separately stored in metadata.
+* Builder persistence is still localStorage-backed for Studio documents. 
+
+### Production readiness rating
+
+**68 / 100**
+The canonical document direction is good; the remaining gaps are durable persistence, provenance preservation, and no unsafe conversions.
+
+---
+
+## Package: `@ghatana/ds-generator`
+
+### Intended responsibility
+
+Deterministic design-system generation with token graph, semantic aliases, component variants/states, contrast validation, multi-target file emission, golden tests, and accessibility gates.
+
+### Actual current responsibility
+
+The DS model now includes canonical states and deterministic generation context.  Golden tests are wired into root commands. 
+
+### What exists
+
+* Strict canonical component state enum.
+* Deterministic `GenerationContext`.
+* Golden snapshot test wiring.
+* Multi-target emitter checks through `check:ds-generator-golden`.
+
+### What is correct
+
+* The previous non-deterministic timestamp issue is fixed through context injection. 
+* The previous arbitrary component state string issue is fixed through `z.enum(CANONICAL_COMPONENT_STATES)`. 
+
+### What is incomplete
+
+* `check:ds-generator-golden.mjs` is still largely a static file/symbol presence gate. 
+* Need contrast failure enforcement as part of generation, not only helper availability.
+* Need generated docs/examples if those are part of target production requirements.
+* Need golden tests for component states and semantic alias resolution, not only output target existence.
+
+### Production readiness rating
+
+**78 / 100**
+Best-improved package in this commit. Needs semantic golden tests and contrast/a11y enforcement to be production-grade.
+
+---
+
+## Package: `@ghatana/ghatana-studio`
+
+### Intended responsibility
+
+Product-facing orchestration layer for import/decompile, canvas visualization/editing, UI Builder editing, DS generation, validation, preview, export, re-import, diff/fidelity, and traceability.
+
+### Actual current responsibility
+
+Studio now has a real cross-route workflow store and imports/decompile output can flow into Canvas, Builder, Preview, and Fidelity Report.  
+
+### What exists
+
+* `ArtifactWorkflowStore`
+* Import/decompile route writes workflow state.
+* Canvas reads projected BuilderDocument and writes position updates.
+* Builder reads projected BuilderDocument and syncs edits back.
+* Preview reads workflow preview source.
+* Fidelity Report reads workflow fidelity report.
+* Builder palette now uses DS registry.
+
+### What is correct
+
+* Studio is now meaningfully orchestrating platform packages instead of only showing isolated route shells.
+* Import route now exposes route actions to open Canvas, Builder, and Fidelity. 
+
+### What is incomplete or risky
+
+* Artifact workflow state is Jotai in-memory, not durable.
+* Builder document persistence remains localStorage-backed.
+* `CanvasPage` still has an unsafe `as unknown as BuilderCanvasNode[]` cast. 
+* Preview is still a raw iframe `srcDoc` view of generated source, not a true React runtime preview. 
+* Import/decompile is still browser upload only and limited to `.ts/.tsx` files under 1 MB. 
+
+### Production readiness rating
+
+**62 / 100**
+Substantially improved workflow wiring, but not production durable or fully validated.
+
+---
+
+## Package: Artifact Compiler/Decompiler
+
+### Intended responsibility
+
+Repository acquisition, scanning, parsing, logical model creation, provenance, projection, editing bridge, compilation, protected regions, residual islands, fidelity, validation, preview, re-import, diff, and evidence packs.
+
+### Actual current responsibility
+
+This commit improves proof of round-trip and protected region behavior, but the current implementation is still TS/TSX file-level rather than repository-level artifact intelligence.
+
+### What exists
+
+* Root `check:artifact-roundtrip`.
+* Round-trip tests.
+* Protected-region tests.
+* Protected-region compiler markers.
+* Model-to-Builder adapter.
+* Workflow store integration from import/decompile to Studio routes.
+
+### What is correct
+
+* Protected region markers are now emitted into compiled React output. 
+* Tests verify the marker format and ownership annotations. 
+
+### What is incomplete
+
+* No repo scanning.
+* No GitHub/GitLab/local folder/archive acquisition.
+* No dependency graph resolver.
+* No route graph extraction.
+* No real JSX tree preservation.
+* No import preservation.
+* No protected-region rehydration proof.
+* No generated source diff.
+* No backend/Java candidate service.
+* No durable evidence pipeline.
+
+### Production readiness rating
+
+**45 / 100**
+Improved from foundation to early workflow proof, but not production-grade compiler/decompiler yet.
+
+---
+
+## D. Artifact Compiler/Decompiler Deep Review
+
+### Current locations
+
+| Area                       | Location                                                                                 | Status                  |
+| -------------------------- | ---------------------------------------------------------------------------------------- | ----------------------- |
+| Shared workflow state      | `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts`                  | New and useful          |
+| Import/decompile UI        | `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx`                  | Partially wired         |
+| Model → Builder adapter    | `platform/typescript/ghatana-studio/src/adapters/ModelToBuilderAdapter.ts`               | Exists, but casts slots |
+| Compiler protected regions | `platform/typescript/artifact-compiler-ts/src/compile/react.ts`                          | Improved                |
+| Round-trip tests           | `platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts`               | Exists, shallow         |
+| Protected region tests     | `platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts` | Exists                  |
+| Root gate                  | `scripts/check-artifact-roundtrip.mjs`                                                   | Static + Vitest gate    |
+
+### Capability matrix
+
+| Capability            |    Current Status | Correct Owner                  | TS / Java / Backend / Shared Contract | Gap                                       | Priority |
+| --------------------- | ----------------: | ------------------------------ | ------------------------------------- | ----------------------------------------- | -------- |
+| Source acquisition    |           Partial | Studio + backend               | Studio + backend                      | Browser upload only                       | P0       |
+| Repo scanning         |           Missing | Artifact backend service       | Java/backend candidate                | No repo scanner/indexer                   | P0       |
+| File classification   |           Partial | TS compiler adapter            | TS                                    | Path/heuristic-based                      | P1       |
+| Dependency graph      |           Partial | Compiler/backend graph service | TS + backend                          | No resolver                               | P0       |
+| Component graph       |           Partial | Compiler                       | TS                                    | No full JSX tree model                    | P0       |
+| Route graph           |           Missing | Compiler/backend               | TS + backend                          | No route extraction                       | P0       |
+| Provenance            |           Partial | Contracts + compiler           | Shared + TS                           | Source refs not complete enough           | P0       |
+| Ownership markers     |           Partial | Compiler                       | TS                                    | Markers emitted, but no rehydration proof | P0       |
+| Protected regions     |           Partial | Compiler                       | TS                                    | Emission only; preservation not proven    | P0       |
+| Residual islands      |           Partial | Compiler + Studio              | TS + Studio                           | Shallow UI triage                         | P1       |
+| Fidelity scoring      |           Partial | Contracts/compiler             | Shared + TS                           | No semantic equality                      | P0       |
+| Canvas projection     |           Partial | Studio adapter                 | TS                                    | Duplicated adapters and unsafe cast       | P0       |
+| UI Builder projection |           Partial | Studio adapter                 | TS                                    | Provenance loss and casts                 | P0       |
+| DS projection         |           Partial | Compiler/DS                    | TS                                    | Token discovery missing                   | P1       |
+| Code generation       |           Partial | Compiler                       | TS                                    | Generic output, no import preservation    | P0       |
+| Re-import             | Partial test only | Compiler + Studio              | TS                                    | No route workflow                         | P0       |
+| Diff                  |           Missing | Compiler/backend + Studio      | Backend + Studio                      | No diff/fidelity UI beyond report         | P1       |
+| Evidence pack         | Partial contracts | Shared + backend               | Shared + backend                      | No durable evidence pipeline              | P0       |
+
+---
+
+## E. End-to-End Workflow Review
+
+| Workflow Step         | Current Implementation                              | Owner             |  Status | Gap                                  | Required Fix                                | Tests                      |
+| --------------------- | --------------------------------------------------- | ----------------- | ------: | ------------------------------------ | ------------------------------------------- | -------------------------- |
+| Source acquisition    | Browser `.ts/.tsx` upload, 1 MB limit               | Studio            | Partial | No repo/folder/archive/GitHub/GitLab | Add source acquisition service              | Acquisition contract tests |
+| Scan/read             | FileReader in browser                               | Studio            | Partial | No indexing/scanning                 | Backend/Java scanner                        | Scanner integration tests  |
+| Parse/decompile       | `decompileTsx` via lazy import                      | Artifact compiler | Partial | Limited extraction                   | Expand AST extraction                       | TSX fixture tests          |
+| Logical model         | Stored in workflow atom                             | Studio/contracts  | Partial | Shallow model                        | Add route/component/API/token graph         | Model schema tests         |
+| Canvas projection     | `builderToCanvas` in `CanvasPage`                   | Studio adapter    | Partial | Duplicate adapters, unsafe cast      | Consolidate adapter                         | Adapter tests              |
+| UI Builder projection | `projectModelToBuilderDocument`                     | Studio adapter    | Partial | Casts and provenance loss            | Canonical validated adapter                 | Projection tests           |
+| DS binding            | DS generator exists, not wired to artifact workflow | DS/Studio         | Partial | No token discovery bridge            | Add DS projection workflow                  | DS binding tests           |
+| Validation            | New checks + basic validation panels                | CI/Studio         | Partial | Static checks too shallow            | Add behavior gates                          | Workflow E2E               |
+| Preview               | workflow source → `iframe srcDoc`                   | Studio            | Partial | Not real React preview               | Add preview runtime/protocol                | Preview tests              |
+| User modification     | Canvas/Builder can update projected doc             | Studio            | Partial | No durable persistence               | Workspace artifact state                    | E2E                        |
+| Compile/generate      | `compileReact` during import                        | Compiler          | Partial | Not regenerated after Builder edits  | Compile from current Builder/artifact state | Compile tests              |
+| Export/save           | Browser/localStorage                                | Studio            | Partial | Not production persistence           | Artifact save/export service                | Export parity tests        |
+| Re-import             | Round-trip test only                                | Compiler          | Partial | Not Studio workflow                  | Add re-import route/action                  | Round-trip E2E             |
+| Diff/fidelity report  | Fidelity route reads workflow atom                  | Studio            | Partial | No diff view                         | Add source/model diff                       | Diff tests                 |
+| Regression tests      | New gates                                           | Root/CI           | Partial | Static checks too shallow            | Improve semantic assertions                 | CI gate tests              |
+
+---
+
+## F. Feature Completeness Matrix
+
+| Capability                  | Canvas   | UI Builder   | DS Generator | Studio                 | Artifact Compiler/Decompiler | Current Status | Correct Owner           | Priority |
+| --------------------------- | -------- | ------------ | ------------ | ---------------------- | ---------------------------- | -------------: | ----------------------- | -------- |
+| Canonical BuilderDocument   | N/A      | Stronger     | N/A          | Uses it                | Projects into it             |        Partial | UI Builder              | P0       |
+| Canvas undo/redo            | Stronger | N/A          | N/A          | Uses canvas            | N/A                          |        Partial | Canvas                  | P0       |
+| Multi-canvas isolation      | Stronger | N/A          | N/A          | Not fully E2E          | N/A                          |        Partial | Canvas                  | P1       |
+| Builder/canvas adapter      | N/A      | Partial      | N/A          | Duplicated             | N/A                          |      Duplicate | Studio/platform adapter | P0       |
+| DS deterministic generation | N/A      | N/A          | Stronger     | Partial UI             | N/A                          |        Partial | DS Generator            | P1       |
+| Artifact round-trip         | N/A      | Partial      | N/A          | Partial                | Partial                      |        Partial | Compiler + Studio       | P0       |
+| Protected regions           | N/A      | N/A          | N/A          | Not surfaced           | Partial                      |        Partial | Compiler                | P0       |
+| Preview runtime             | N/A      | Partial      | N/A          | Weak                   | Partial                      |        Partial | Studio + Builder        | P1       |
+| Source acquisition          | N/A      | N/A          | N/A          | Browser only           | Input only                   |        Partial | Backend + Studio        | P0       |
+| Repo scanning               | N/A      | N/A          | N/A          | Missing                | Missing                      |        Missing | Backend/Java            | P0       |
+| Golden tests                | N/A      | Some         | Stronger     | Some                   | Some                         |        Partial | Package owners          | P1       |
+| Durable persistence         | N/A      | localStorage | N/A          | in-memory/localStorage | Missing                      |        Partial | Studio/backend          | P0       |
+
+---
+
+## G. File-by-File Findings
+
+### `package.json`
+
+**Finding:** New gates are added and wired into broader readiness commands. 
+**Impact:** Strong improvement.
+**Required change:** Add a single aggregate `check:studio-artifact-workflow` that runs import/canvas/builder/preview/fidelity E2E, not only unit/static gates.
+**Priority:** P0.
+
+---
+
+### `scripts/check-artifact-roundtrip.mjs`
+
+**Finding:** Useful guard, but mostly file/symbol/string presence validation. 
+**Impact:** Prevents missing files, not semantic regressions.
+**Required change:** Move more validation into executable fixtures and AST-level assertions.
+**Priority:** P1.
+
+---
+
+### `scripts/check-canvas-history.mjs`
+
+**Finding:** Checks existence of mutators, atoms, deprecated global store marking, and test files. 
+**Impact:** Good CI tripwire, but cannot prove pre-mutation ordering by string checks.
+**Required change:** Depend primarily on behavior tests; use static script only for structural policy.
+**Priority:** P1.
+
+---
+
+### `scripts/check-builder-canvas-adapter.mjs`
+
+**Finding:** The script focuses on `BuilderCanvasProjectionAdapter.ts`, but a second adapter `BuilderCanvasAdapter.ts` also exists.  
+**Impact:** The gate unintentionally allows duplicate adapter ownership.
+**Required change:** Enforce one canonical adapter and fail on duplicate builder/canvas projection implementations.
+**Priority:** P0.
+
+---
+
+### `scripts/check-ds-generator-golden.mjs`
+
+**Finding:** It checks source files, symbols, token graph presence, contrast module presence, and target emitter symbols. 
+**Impact:** Helpful but not enough to prove generator correctness.
+**Required change:** Add semantic golden verification for component states, contrast failures, semantic aliases, and emitted file determinism.
+**Priority:** P1.
+
+---
+
+### `platform/typescript/ds-generator/src/model/design-system-document.ts`
+
+**Finding:** Determinism and canonical component states were added. 
+**Impact:** Prior DS generator blocker is mostly resolved.
+**Required change:** Add migration support and golden coverage for all canonical states.
+**Priority:** P1.
+
+---
+
+### `platform/typescript/artifact-compiler-ts/src/compile/react.ts`
+
+**Finding:** Protected region markers were added for generated imports and user-authored body. 
+**Impact:** Important progress toward safe regeneration.
+**Required change:** Add decompiler support to parse and preserve existing region bodies during regeneration.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts`
+
+**Finding:** Basic source → model → source → model tests exist. 
+**Impact:** Good first proof, but still shallow.
+**Required change:** Assert semantic equality, import preservation, JSX shape, protected-region rehydration, and residual/fidelity details.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts`
+
+**Finding:** Tests verify region markers, owner annotations, function signature, residual marker, unique region IDs, and output shape. 
+**Impact:** Useful compiler-marker regression coverage.
+**Required change:** Add test that modifies a protected body region, recompiles, and proves user content is preserved.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts`
+
+**Finding:** Central workflow state exists for decompile result, model, projected BuilderDocument, preview source, fidelity report, and timestamp. 
+**Impact:** Major Studio integration improvement.
+**Required change:** Add persistence adapter and lifecycle/job ID model so state survives reload and can be audited.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx`
+
+**Finding:** Import route now writes model, projected builder document, preview source, and fidelity report to workflow store, and exposes navigation actions. 
+**Impact:** Good cross-route workflow improvement.
+**Required change:** Replace browser-only upload with source acquisition abstraction and add GitHub/GitLab/local/archive providers.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
+
+**Finding:** Canvas route reads projected BuilderDocument from workflow state and writes node changes back, but uses `as unknown as BuilderCanvasNode[]`. 
+**Impact:** Workflow is improved, but type safety is still not clean.
+**Required change:** Normalize canvas change event contract or add a runtime validator before converting to builder nodes.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/adapters/BuilderCanvasAdapter.ts`
+
+**Finding:** Provides typed pure functions for BuilderDocument → canvas projection, selection validation, and geometry delta reconciliation. 
+**Impact:** Good adapter shape, but overlaps with `BuilderCanvasProjectionAdapter.ts`.
+**Required change:** Merge into the canonical adapter and delete the duplicate.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/adapters/BuilderCanvasProjectionAdapter.ts`
+
+**Finding:** Also projects BuilderDocument to canvas and canvas positions back to BuilderDocument. 
+**Impact:** Duplicate ownership risk.
+**Required change:** Consolidate with `BuilderCanvasAdapter.ts` under one file and one test suite.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/adapters/ModelToBuilderAdapter.ts`
+
+**Finding:** Bridges `LogicalArtifactModel` to canonical BuilderDocument but uses casts for slot IDs. 
+**Impact:** Good ownership direction, but must avoid unsafe casts.
+**Required change:** Add a validated `toNodeId()` conversion or UI Builder helper.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/sections/BuilderStudio.tsx`
+
+**Finding:** Builder Studio now reads workflow projected documents, syncs edits back to workflow state, and uses DS registry starter contracts.  
+**Impact:** Major improvement.
+**Required change:** Replace localStorage-only persistence with workspace/project artifact persistence.
+**Priority:** P0.
+
+---
+
+### `platform/typescript/ghatana-studio/src/routes/PreviewPage.tsx`
+
+**Finding:** Preview reads workflow preview source but still renders raw source through iframe `srcDoc`. 
+**Impact:** Not yet a real preview runtime.
+**Required change:** Add actual preview host that transpiles/renders React output with DS/theme providers and security policy.
+**Priority:** P1.
+
+---
+
+### `platform/typescript/ghatana-studio/src/routes/FidelityReportPage.tsx`
+
+**Finding:** Fidelity route now reads from workflow atom, falling back to legacy router state. 
+**Impact:** Good route integration.
+**Required change:** Add residual island triage and diff view, not only loss point list.
+**Priority:** P1.
+
+---
+
+## H. Iterative Production-Grade Implementation Plan
+
+## Phase 1: Consolidate ownership and remove duplicate adapters
+
+**Goal:** Eliminate duplicate builder/canvas ownership.
+
+**Files to modify:**
+
+* `platform/typescript/ghatana-studio/src/adapters/BuilderCanvasAdapter.ts`
+* `platform/typescript/ghatana-studio/src/adapters/BuilderCanvasProjectionAdapter.ts`
+* `scripts/check-builder-canvas-adapter.mjs`
+* `platform/typescript/ghatana-studio/src/components/builder/VisualCanvas.tsx`
+* `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx`
+
+**Tasks:**
+
+* Pick one canonical adapter.
+* Move all projection, selection validation, and geometry reconciliation into it.
+* Delete the duplicate adapter.
+* Fail CI if another builder/canvas projection adapter appears.
+* Replace `as unknown as BuilderCanvasNode[]` in `CanvasPage`.
+
+**Done criteria:** One adapter, no unsafe boundary casts, all tests pass.
+
+---
+
+## Phase 2: Make canvas transactions truly atomic
+
+**Goal:** Ensure one logical transaction produces one undo entry.
+
+**Files to modify:**
+
+* `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts`
+* `platform/typescript/canvas/src/commands/types.ts`
+* `platform/typescript/canvas/src/commands/executor.ts`
+* `platform/typescript/canvas/src/hybrid/__tests__/command-history-regression.test.ts`
+
+**Tasks:**
+
+* Add history suppression mode inside transaction execution.
+* Ensure mutators can operate without pushing individual history when transaction context is active.
+* Assert exact history stack depth, not only visible state.
+* Add tests for transaction abort rollback or explicitly document non-rollback behavior.
+
+**Done criteria:** Group, ungroup, duplicate, and transaction each create exactly one undo entry.
+
+---
+
+## Phase 3: Harden artifact round-trip semantics
+
+**Goal:** Move from “non-empty output” to “source intent preserved.”
+
+**Files to modify:**
+
+* `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts`
+* `platform/typescript/artifact-compiler-ts/src/compile/react.ts`
+* `platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts`
+* `platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts`
+
+**Tasks:**
+
+* Preserve import declarations.
+* Preserve component names, prop interfaces, JSX root shape, and exported symbols.
+* Parse `@ghatana-region` markers during decompile.
+* Preserve user-authored protected body regions during recompile.
+* Add golden fixtures for source → model → source → model semantic equality.
+
+**Done criteria:** Round-trip tests fail on source intent loss.
+
+---
+
+## Phase 4: Replace browser-only source acquisition
+
+**Goal:** Add real source acquisition abstraction.
+
+**Files to create:**
+
+* `platform/typescript/artifact-contracts/src/acquisition.ts`
+* `platform/typescript/ghatana-studio/src/adapters/SourceAcquisitionAdapter.ts`
+* Backend/Java service boundary docs/contracts for repo scanning.
+
+**Tasks:**
+
+* Define `SourceAcquisitionDescriptor`.
+* Support file upload as one provider.
+* Add GitHub/GitLab/local/archive provider contracts.
+* Add long-running job model for large repo scan/index.
+
+**Done criteria:** Import route uses provider abstraction, not direct FileReader-only logic.
+
+---
+
+## Phase 5: Make Studio workflow durable
+
+**Goal:** Persist artifact workflow state.
+
+**Files to modify/create:**
+
+* `artifactWorkflowStore.ts`
+* new `ArtifactWorkflowPersistenceAdapter.ts`
+* Studio route tests
+
+**Tasks:**
+
+* Persist job result, model, builder document, preview source, fidelity report, and residual report.
+* Add reload recovery.
+* Add audit metadata and timestamps.
+* Preserve imported artifacts separately from local demo docs.
+
+**Done criteria:** User can refresh Studio and continue the artifact workflow.
+
+---
+
+## Phase 6: Real preview runtime
+
+**Goal:** Preview compiled UI, not raw generated source.
+
+**Files to modify:**
+
+* `PreviewPage.tsx`
+* UI Builder preview/runtime package
+* Artifact compiler output contract
+
+**Tasks:**
+
+* Add preview document protocol.
+* Transpile/render compiled component output safely.
+* Inject DS/theme provider.
+* Add sandbox policy tests.
+* Add preview parity tests.
+
+**Done criteria:** Preview renders actual UI and fails safely.
+
+---
+
+## Phase 7: DS generator semantic hardening
+
+**Goal:** Make DS generation production-grade.
+
+**Tasks:**
+
+* Add contrast-failure gate.
+* Add semantic alias golden tests.
+* Add component state output tests for all canonical states.
+* Add migration tests for DS document schema.
+* Validate token graph cycles and missing references.
+
+**Done criteria:** `check:ds-generator-golden` proves output semantics, not only symbols.
+
+---
+
+## I. Exact TODO List
+
+* [ ] `platform/typescript/ghatana-studio/src/adapters/BuilderCanvasAdapter.ts` — merge with `BuilderCanvasProjectionAdapter.ts`.
+
+  * Why: Duplicate ownership.
+  * Validation: one canonical adapter only.
+  * Priority: P0.
+
+* [ ] `platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx` — remove `as unknown as BuilderCanvasNode[]`.
+
+  * Why: Unsafe package-boundary cast.
+  * Validation: runtime validator or typed canvas event contract.
+  * Priority: P0.
+
+* [ ] `scripts/check-builder-canvas-adapter.mjs` — fail when multiple builder/canvas adapters exist.
+
+  * Why: Current check allows duplicates.
+  * Validation: script test with duplicate fixture.
+  * Priority: P0.
+
+* [ ] `platform/typescript/canvas/src/hybrid/hybrid-canvas-controller.ts` — add transaction history suppression.
+
+  * Why: Avoid individual entries inside transaction.
+  * Validation: exact stack-depth tests.
+  * Priority: P0.
+
+* [ ] `platform/typescript/artifact-compiler-ts/src/decompile/tsx.ts` — parse protected-region markers and preserve source spans.
+
+  * Why: Protected region emission alone is insufficient.
+  * Validation: modify protected body → recompile → body preserved.
+  * Priority: P0.
+
+* [ ] `platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip.test.ts` — replace weak node-count assertions with semantic equivalence checks.
+
+  * Why: Node count does not prove fidelity.
+  * Validation: golden model/source comparison.
+  * Priority: P0.
+
+* [ ] `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx` — replace direct FileReader acquisition with source acquisition provider.
+
+  * Why: Need GitHub/GitLab/folder/archive support.
+  * Validation: provider contract tests.
+  * Priority: P0.
+
+* [ ] `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts` — add persistence adapter.
+
+  * Why: In-memory workflow state is not production-grade.
+  * Validation: reload recovery tests.
+  * Priority: P0.
+
+* [ ] `platform/typescript/ghatana-studio/src/routes/PreviewPage.tsx` — replace raw `srcDoc` source rendering with real preview runtime.
+
+  * Why: Current preview is not runtime parity.
+  * Validation: preview protocol and sandbox tests.
+  * Priority: P1.
+
+* [ ] `scripts/check-ds-generator-golden.mjs` — add semantic golden validations.
+
+  * Why: Current static checks are insufficient.
+  * Validation: canonical states, aliases, contrast failure tests.
+  * Priority: P1.
+
+---
+
+## J. Commands to Validate
+
+```bash
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+
+pnpm check:circular-deps
+pnpm check:architecture-boundaries
+pnpm check:design-system-conformance
+pnpm check:studio-kernel-api
+pnpm check:production-stubs
+pnpm check:artifact-roundtrip
+pnpm check:canvas-history
+pnpm check:builder-canonical-document
+pnpm check:builder-canvas-adapter
+pnpm check:ds-generator-golden
+pnpm check:kernel-authoring-pipeline
+pnpm check:phase8
+pnpm check:world-class-platform-readiness
 ```
 
-**Required tests:** Compile gate, strict event-envelope unit tests, production append success/failure tests.
+Package-specific commands:
 
----
-
-### DC-P0-02 — Strict event envelope validation is ordered incorrectly
-
-**Severity:** P0
-**Root cause:** In strict production mode, `EventEnvelope.validate(true)` requires `eventId` and `actor`, but the handler only generates default `eventId` and fallback actor after validation. 
-
-**Why it matters:** Production event append either rejects valid events that should be server-enriched or silently stores incomplete envelope data if validation is weakened later.
-
-**Correct target pattern:** Server-owned fields must be enriched **before** canonical envelope validation. Actor must come from authenticated principal, not `"system"` fallback.
-
-**Required fix:**
-Move enrichment before validation:
-
-1. Resolve actor from security/request context.
-2. Generate eventId if absent.
-3. Resolve timestamp, traceContext, correlationId, causationId.
-4. Build `EventEnvelope`.
-5. Validate strict envelope.
-6. Persist the full canonical envelope, not only `type/payload/source`.
-
-**Required tests:** Production event append with missing client eventId, missing actor, malformed timestamp, tenant mismatch, replay envelope completeness.
-
----
-
-### DC-P0-03 — Event persistence still drops canonical envelope fields
-
-**Severity:** P0/P1
-**Root cause:** Even after constructing/enriching event metadata, the persisted `DataCloudClient.Event` only contains `type`, `payload`, and `source`; the canonical fields such as `eventId`, actor, classification, policyContext, provenance, traceContext, correlationId, and causationId are not persisted in the event object shown. 
-
-**Why it matters:** The Event Plane cannot provide durable replay, auditability, lineage, governance evidence, or Action Plane handoff if canonical envelope fields only exist transiently in handler code.
-
-**Required fix:** Extend `DataCloudClient.Event` and event store schema or wrap the full `EventEnvelope` into the persisted event model.
-
-**Required tests:** Event append/query/replay must round-trip all envelope fields.
-
----
-
-### DC-P0-04 — Security filter production profile is not passed from server wiring
-
-**Severity:** P0/P1
-**Root cause:** `DataCloudSecurityFilter` supports `deploymentProfile(...)` and `validateProductionRequirements()`, but `DataCloudHttpServer` constructs the filter without passing `deploymentMode`; therefore the filter defaults to `"local"`.  
-
-**Why it matters:** Server-level `RuntimeProfileValidator` and `validateProductionDependencies()` cover many production invariants, but filter-level profile-sensitive behavior, audit readiness, and production validation do not receive the actual deployment profile.
-
-**Required fix:**
-
-```java
-DataCloudSecurityFilter securityFilter = DataCloudSecurityFilter.builder()
-  .apiKeyResolver(apiKeyResolver)
-  .jwtProvider(jwtProvider)
-  .jwtTenantClaim(jwtTenantClaim)
-  .policyEngine(policyEngine)
-  .auditService(auditService)
-  .strictTenantResolution(strictTenantResolution)
-  .deploymentProfile(deploymentMode)
-  .build();
-```
-
-**Required tests:** Server startup test verifying `deploymentMode=production` is propagated into the filter and production filter validation runs with production semantics.
-
----
-
-### DC-P0-05 — Production-profile test likely fails before its intended assertion
-
-**Severity:** P0
-**Root cause:** `DataCloudSecurityFilter` constructor throws `NullPointerException` if both `apiKeyResolver` and `jwtProvider` are null.  But `DataCloudSecurityFilterProductionProfileTest.productionProfileStartupValidationFailsWithoutAuthMechanism()` builds the filter with both null and expects validation to throw an `IllegalStateException` afterward. 
-
-**Why it matters:** This undermines the new production-profile CI gate and may fail before validating the intended failure mode.
-
-**Required fix:** Either:
-
-1. Make builder validation produce the same production-specific `IllegalStateException`, or
-2. Change the test to assert `NullPointerException` at build time, though the better production-grade pattern is unified configuration validation with a deterministic error envelope/message.
-
----
-
-### DC-P1-06 — Production audit write failures still do not block critical route responses
-
-**Severity:** P1
-**Root cause:** Audit readiness is checked at startup, which is good, but per-request audit emission remains fire-and-forget; write failures are logged and do not affect critical route success.  The production test explicitly documents this behavior: “Audit write failure on critical route does not block request.” 
-
-**Why it matters:** Critical mutations such as retention purge, redaction, policy changes, and model promotion should not succeed without durable audit evidence in production/sovereign profiles.
-
-**Required fix:** For `CRITICAL` routes in production-like profiles, block or compensate if audit persistence fails. Fire-and-forget is acceptable only for local/test or low-risk read telemetry.
-
----
-
-### DC-P1-07 — Route security metadata is generated but still contains stale/non-canonical route surfaces
-
-**Severity:** P1
-**Root cause:** `RouteActionAccessRegistry` says it is generated from OpenAPI contracts, but the registry still includes many non-canonical Action-era paths like `/api/v1/agents`, `/api/v1/agents/catalog`, `/api/v1/memory`, `/api/v1/pipelines`, `/api/v1/plugins`, and `/api/v1/autonomy`, while router canonical routes now use `/api/v1/action/*`.  
-
-**Why it matters:** Generated metadata can drift from actual runtime routes. If route lookup does not contain canonical `/api/v1/action/*` entries for every canonical route, the security filter falls back to path heuristics.
-
-**Required fix:** Regenerate metadata from the canonical route contract after route namespace migration, or include both canonical and explicit deprecated compatibility aliases with retirement metadata.
-
-**Required tests:** Every runtime route must have direct registry metadata; no canonical route should rely only on fallback heuristics.
-
----
-
-### DC-P1-08 — OpenAPI route parity improved, but Action Plane contract parity remains incomplete
-
-**Severity:** P1
-**Root cause:** `OpenApiRouteParity` no longer blindly normalizes `/api/v1/action/*` to `/api/v1/*`, which is good.  However, it is still a route-path parity test only; it does not prove security metadata, idempotency semantics, runtime-truth metadata, error envelopes, or role/policy metadata. 
-
-**Required fix:** Add contract semantic validation:
-
-```text
-path + method
-operationId
-security
-x-surface
-x-runtime-truth
-x-idempotency
-x-audit
-x-policy
-error envelope
-tenant/auth semantics
+```bash
+pnpm --dir platform/typescript/canvas exec vitest run src/hybrid/__tests__/command-history-regression.test.ts src/hybrid/__tests__/multi-canvas-isolation.test.ts
+pnpm --dir platform/typescript/ui-builder exec vitest run src/core/__tests__/builder-document.test.ts
+pnpm --dir platform/typescript/ghatana-studio exec vitest run src/adapters/__tests__/BuilderCanvasProjectionAdapter.test.ts src/adapters/__tests__/BuilderCanvasAdapter.test.ts
+pnpm --dir platform/typescript/artifact-compiler-ts exec vitest run src/__tests__/roundtrip.test.ts src/__tests__/react-protected-regions.test.ts
+pnpm --dir platform/typescript/ds-generator exec vitest run src/__tests__/golden.test.ts src/__tests__/emit-files.test.ts
+pnpm --dir platform/typescript/ghatana-studio test:e2e
+pnpm --dir platform/typescript/ghatana-studio test:a11y
 ```
 
 ---
 
-### DC-P1-09 — Entity write durability improved, but audit is still not atomic with entity/event write
+## K. Final Production Readiness Gate
 
-**Severity:** P1
-**Root cause:** `EntityCrudHandler` now requires durable idempotency, transaction manager, and outbox processor in production.   But `DataCloudHttpServer.withAuditService()` still documents that transaction boundaries for entity write + event append + audit logging are not currently implemented. 
+Before these areas can be called production-grade, the following must be true:
 
-**Why it matters:** Entity/event consistency is improved, but compliance-grade audit consistency is still not guaranteed.
-
-**Required fix:** Include audit event creation in the same transaction/outbox lifecycle as entity write + event append, or use an auditable write ledger with retry/dead-letter guarantees.
-
----
-
-### DC-P1-10 — Production validation is stronger but duplicated and not fully unified
-
-**Severity:** P1/P2
-**Root cause:** Production validation now exists in `RuntimeProfileValidator`, `validateProductionDependencies`, `validateCriticalRuntimeDependencies`, `validateSettingsStorageConfiguration`, `DataCloudSecurityFilter.validateProductionRequirements`, `EntityCrudHandler.validateProductionRequirements`, and `EventHandler.validateProductionRequirements`.   
-
-**Why it matters:** Multiple partially overlapping fail-closed gates can drift. The server should have one canonical production readiness validator with subsystem-specific delegates.
-
-**Required fix:** Keep one canonical `RuntimeProfileValidator` that collects all violations and have subsystem validators register requirements into it.
-
----
-
-## Feature completeness matrix
-
-| Product area              | Status                   | Notes                                                                                          |
-| ------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| Product boundary/docs     | 🟢 Strong                | Data Cloud + Action Plane + AEP compatibility model is now clear.                              |
-| Contract Plane            | 🟡 Improved              | Data Cloud and Action Plane contracts improved, but semantic parity still incomplete.          |
-| Runtime Truth             | 🟡 Partial               | Typed surfaces exist from earlier work; UI/SDK enforcement not verified here.                  |
-| Security/tenant           | 🟡 Improved but blocked  | Contract and filters improved; server does not pass deployment profile into filter.            |
-| Data Plane                | 🟡 Partial               | Entity durability gates improved; audit atomicity remains open.                                |
-| Event Plane               | 🔴 Blocked               | Event envelope implementation appears compile-broken and persistence incomplete.               |
-| Action Plane/AEP boundary | 🟢 Mostly improved       | Routing/docs/ownership/build metadata cleaned up significantly.                                |
-| Agent runtime             | 🟡 Partial               | Ownership cleaned up; runtime governance/durability not deeply verified.                       |
-| Shared libraries          | 🟡 Partial               | Docs define split rules; build still uses broad platform dependencies.                         |
-| Connectors                | 🟡 Partial               | Routes exist; durable sync/evidence/dead-letter not verified.                                  |
-| UI/UX                     | ❓ Not verified           | I did not get enough UI implementation evidence in this pass.                                  |
-| Tests/CI                  | 🟡 Improved but unstable | Many gates added, but at least one production test and EventHandler compile path look suspect. |
+* One canonical BuilderDocument.
+* One canonical Builder ↔ Canvas adapter.
+* No unsafe `as unknown as` package-boundary conversions.
+* Runtime-validatable canvas document with migrations.
+* True command-based undo/redo with atomic transaction history.
+* Real Studio import → canvas → builder → compile → preview → fidelity workflow.
+* Durable workflow persistence.
+* Source acquisition providers beyond browser upload.
+* Repository scanner/indexer boundary.
+* Source → model → source → model semantic equality tests.
+* Protected-region rehydration and preservation tests.
+* Fidelity and residual island triage UI.
+* Golden tests for generated DS and code outputs.
+* Real preview runtime parity.
+* Accessibility, i18n, privacy, security, and observability gates.
+* No localStorage-only production persistence.
+* No duplicated schemas or duplicate ownership.
+* No test theater/static-only production claims.
 
 ---
 
-## Highest-priority implementation TODOs
+## Final Verdict
 
-### P0 — Fix compile and production event envelope
+```markdown
+Final Verdict: Partial
 
-**Files:**
+Are these areas feature-complete and correctly implemented for a production-grade, world-class Ghatana product-development platform?
 
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EventHandler.java
+No, but this commit is a meaningful improvement.
+
+Reason:
+The commit adds important readiness gates, deterministic DS generation context, canonical DS component states, artifact round-trip tests, protected-region markers, a Studio artifact workflow store, and partial import → Canvas/Builder/Preview/Fidelity wiring. However, the implementation is still not production-grade because adapter ownership is duplicated, CanvasPage still has an unsafe boundary cast, round-trip tests are shallow, preview is not a real runtime preview, source acquisition is browser-upload only, and persistence remains in-memory/localStorage rather than durable workspace/project artifact storage.
+
+Required minimum work before production:
+Consolidate BuilderCanvas adapters, remove unsafe casts, make canvas transactions truly atomic, harden artifact round-trip tests to semantic equality, add protected-region rehydration, add source acquisition providers, make workflow state durable, and replace raw srcDoc preview with a real preview runtime.
+
+Recommended next milestone:
+“Production Round-Trip Authoring Workflow v1” — a complete, tested path from source upload/acquisition → decompile → model → canvas/builder edit → compile → preview → re-import → fidelity/diff.
+
+Recommended first implementation PR:
+Consolidate BuilderCanvasAdapter + BuilderCanvasProjectionAdapter into one canonical adapter and remove the unsafe CanvasPage cast.
+
+Recommended parallel workstreams:
+1. Canvas transaction/history correctness.
+2. Artifact compiler protected-region rehydration and semantic round-trip tests.
+3. Studio durable artifact workflow persistence.
+4. Real preview runtime protocol.
+5. Source acquisition and backend/Java scanner boundary.
+6. DS generator semantic golden and contrast gates.
 ```
-
-**Do:**
-
-1. Fix `EventEnvelope` constructor argument mismatch.
-2. Enrich server-owned fields before strict validation.
-3. Resolve actor from authenticated principal/request context, not `"system"`.
-4. Persist the full canonical envelope.
-5. Add compile + unit + integration tests for event envelope round trip.
-
----
-
-### P0 — Pass deployment mode into `DataCloudSecurityFilter`
-
-**Files:**
-
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java
-```
-
-**Do:**
-
-1. Add `.deploymentProfile(deploymentMode)` in the server’s security filter builder.
-2. Add server startup test proving production mode reaches filter.
-3. Remove reliance on `System.setProperty("DATACLOUD_PROFILE")` in filter tests unless production code reads it.
-
----
-
-### P0 — Fix production profile tests
-
-**Files:**
-
-```text
-products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilterProductionProfileTest.java
-```
-
-**Do:**
-
-1. Fix test that builds with both auth mechanisms null.
-2. Use `assertThatThrownBy(...)` rather than initializing `new IllegalStateException()` manually.
-3. Ensure each test sets `deploymentProfile("production")` on the filter when testing filter-level production behavior.
-
----
-
-### P1 — Make critical audit durable per request
-
-**Files:**
-
-```text
-DataCloudSecurityFilter.java
-DataCloudHttpServer.java
-AuditService implementations
-EntityCrudHandler.java
-DataLifecycleHandler.java
-```
-
-**Do:**
-
-1. For CRITICAL routes, require audit persistence before returning success.
-2. Use outbox/transaction pattern for critical audit events.
-3. Add failure-injection tests for audit write failure on redaction, retention purge, policy update, and delete entity.
-
----
-
-### P1 — Regenerate route metadata from canonical routes
-
-**Files:**
-
-```text
-products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteActionAccessRegistry.java
-scripts/generate-route-security-metadata.mjs
-products/data-cloud/contracts/openapi/data-cloud.yaml
-products/data-cloud/contracts/openapi/action-plane.yaml
-```
-
-**Do:**
-
-1. Ensure canonical `/api/v1/action/*` routes exist directly in generated metadata.
-2. Move legacy `/api/v1/pipelines`, `/api/v1/memory`, `/api/v1/plugins`, `/api/v1/autonomy`, `/api/v1/agents/catalog` entries into explicit compatibility metadata.
-3. Fail CI if any runtime route lacks direct metadata.
-
----
-
-### P1 — Complete entity/event/audit atomicity
-
-**Files:**
-
-```text
-EntityCrudHandler.java
-EventHandler.java
-DataCloudClient event/entity stores
-EntityWriteOutboxProcessor implementations
-```
-
-**Do:**
-
-1. Add audit events into the durable transaction/outbox lifecycle.
-2. Add golden tests for entity save → event append → audit emit.
-3. Add failure tests for event append failure, audit failure, outbox failure, semantic index failure.
-
----
-
-## Updated release gate status
-
-| Gate                          | Status at this commit                                                   |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| Build                         | ⚠️ Likely blocked by `EventHandler.EventEnvelope` constructor mismatch  |
-| Unit tests                    | ⚠️ Likely blocked by production-profile test builder/null-auth mismatch |
-| Integration tests             | ❓ Not verified                                                          |
-| OpenAPI route parity          | 🟡 Improved                                                             |
-| AEP/action equivalence        | 🟡 Present, semantic depth not verified                                 |
-| Production profile validation | 🟡 Added, but test quality issues remain                                |
-| Tenant isolation tests        | 🟡 Added in CI                                                          |
-| Runtime Truth validation      | 🟡 Added in CI                                                          |
-| Security filter tests         | 🟡 Added in CI                                                          |
-| UI E2E                        | ❓ Not verified                                                          |
-| a11y/i18n                     | ❓ Not verified                                                          |
-| Connector evidence            | ❓ Not verified                                                          |
-| Agent governance              | ❓ Not verified                                                          |
-| No stale AEP refs             | 🟡 Much improved, still needs repo-wide lint                            |
-
----
-
-## Final assessment
-
-This commit is a **substantial improvement** over the prior audited state. It addresses several earlier architectural blockers: contracts are now Data Cloud/Action Plane aligned, tenant-auth semantics are documented correctly, production dependency validation is much stronger, Action Plane route naming is cleaner, and AEP ownership metadata was mostly cleaned up.
-
-However, it is **not production-ready** because the current snapshot appears to introduce a likely compile blocker in `EventHandler`, production event-envelope logic is not correctly ordered or persisted, the server does not pass `deploymentMode` into `DataCloudSecurityFilter`, and production-profile tests have at least one likely failure path before the intended assertion.
-
-The next pass should be a **stabilization pass**, not a feature pass: fix compile/tests first, then harden event envelope persistence, filter profile propagation, audit atomicity, and generated route metadata.

@@ -212,6 +212,16 @@ export class HybridCanvasController implements HybridCanvasAPI {
   private readonly clock: Clock;
   private readonly idProvider: IdProvider;
   private containerRef: HTMLElement | null = null;
+  /**
+   * Transaction context that suppresses individual history pushes.
+   * When active, mutators should not call pushHistory — the transaction
+   * will push a single entry on commit.
+   */
+  private transactionContext: {
+    active: boolean;
+    description: string;
+    preSnapshot: HistoryEntry['snapshot'] | null;
+  } | null = null;
 
   /**
    * Create a new hybrid canvas controller with optional dependencies.
@@ -783,7 +793,20 @@ export class HybridCanvasController implements HybridCanvasAPI {
   }
 
   pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void {
+    // Suppress individual history pushes when inside a transaction.
+    // The transaction will push a single entry on commit.
+    if (this.transactionContext?.active) {
+      return;
+    }
     this.store.set(pushHistoryAtom, params);
+  }
+
+  /**
+   * Check if currently inside a transaction context.
+   * Used by mutators to determine whether to skip individual history pushes.
+   */
+  isInTransaction(): boolean {
+    return this.transactionContext?.active ?? false;
   }
 
   getSnapshot(): HistoryEntry['snapshot'] {
@@ -801,7 +824,43 @@ export class HybridCanvasController implements HybridCanvasAPI {
   }
 
   beginTransaction(description: string): CommandTransaction {
+    // Capture pre-snapshot and activate transaction context
+    const preSnapshot = this.getSnapshot();
+    this.transactionContext = {
+      active: true,
+      description,
+      preSnapshot,
+    };
+
     return new CommandTransaction(this, description);
+  }
+
+  /**
+   * Internal method called by CommandTransaction on commit.
+   * Pushes the transaction's single history entry and clears the context.
+   */
+  commitTransaction(): void {
+    if (!this.transactionContext?.active) {
+      return;
+    }
+
+    const { description, preSnapshot } = this.transactionContext;
+    if (preSnapshot !== null) {
+      this.store.set(pushHistoryAtom, {
+        action: description,
+        snapshot: preSnapshot,
+      });
+    }
+
+    this.transactionContext = null;
+  }
+
+  /**
+   * Internal method called by CommandTransaction on abort.
+   * Clears the transaction context without pushing history.
+   */
+  abortTransaction(): void {
+    this.transactionContext = null;
   }
 
   // ===========================================================================

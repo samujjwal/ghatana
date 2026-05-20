@@ -424,7 +424,7 @@ describe('Transaction batching — single undo entry', () => {
 
   it('commits a transaction and produces one undo entry for multiple mutations', () => {
     const tx = controller.beginTransaction('Batch add elements');
-    tx.begin(); // capture pre-mutation snapshot
+    // beginTransaction now automatically captures pre-snapshot and activates context
 
     controller.addElement(makeElementFixture(0, 0));
     controller.addElement(makeElementFixture(100, 0));
@@ -435,34 +435,43 @@ describe('Transaction batching — single undo entry', () => {
     expect(controller.getElements()).toHaveLength(3);
 
     // The tx.commit() entry is the most recent on the stack.
-    // Undoing it restores the pre-begin() snapshot (0 elements).
+    // Undoing it restores the pre-beginTransaction snapshot (0 elements).
     controller.undo();
     expect(controller.getElements()).toHaveLength(0);
   });
 
+  it('individual mutations inside transaction do NOT push history entries', () => {
+    const tx = controller.beginTransaction('Batch add elements');
+
+    // These individual adds should NOT push history (transaction context active)
+    controller.addElement(makeElementFixture(0, 0));
+    controller.addElement(makeElementFixture(100, 0));
+    controller.addElement(makeElementFixture(200, 0));
+
+    // Before commit, canUndo should still be false (no individual entries pushed)
+    expect(controller.canUndo()).toBe(false);
+
+    tx.commit(); // Now push one history entry
+
+    expect(controller.canUndo()).toBe(true);
+  });
+
   it('does not add to history if transaction is aborted', () => {
     const tx = controller.beginTransaction('Aborted batch');
-    tx.begin();
 
     controller.addElement(makeElementFixture());
     controller.addElement(makeElementFixture(100, 0));
 
     tx.abort();
 
-    // Since the tx was aborted, state should be rolled back or canUndo should be false
-    // (implementation-dependent — at minimum, the abort should not leave stale history)
-    // The key guarantee is that an aborted transaction is self-contained.
-    // We verify by checking canUndo reflects only committed state.
-    // If abort does a rollback, elements will be 0 and canUndo false.
-    // If abort doesn't roll back (implementation choice), we skip this assertion.
-    // The important contract is: after abort, undo doesn't revert to pre-transaction state.
-    // This is a sanity check that the transaction call itself doesn't throw.
-    expect(typeof controller.canUndo()).toBe('boolean');
+    // Since the tx was aborted, no history entry should be pushed
+    // Elements remain in state (abort doesn't rollback, just skips history)
+    expect(controller.getElements()).toHaveLength(2);
+    expect(controller.canUndo()).toBe(false);
   });
 
   it('committed transaction allows redo after undo', () => {
     const tx = controller.beginTransaction('Redo batch test');
-    tx.begin();
     controller.addElement(makeElementFixture(0, 0));
     controller.addElement(makeElementFixture(50, 0));
     tx.commit();
@@ -475,34 +484,124 @@ describe('Transaction batching — single undo entry', () => {
   });
 
   it('multiple committed transactions each create a top-of-stack restore point', () => {
-    // tx1: captures pre-begin snapshot (0 elements), adds 2, commits
+    // tx1: captures pre-snapshot (0 elements), adds 2, commits
     const tx1 = controller.beginTransaction('First batch');
-    tx1.begin(); // snapshot at 0 elements
     controller.addElement(makeElementFixture(0, 0));
     controller.addElement(makeElementFixture(100, 0));
-    tx1.commit(); // pushes snapshot(0) on top of individual mutation entries
+    tx1.commit(); // pushes snapshot(0)
 
-    // tx2: captures pre-begin snapshot (2 elements), adds 1, commits
+    // tx2: captures pre-snapshot (2 elements), adds 1, commits
     const tx2 = controller.beginTransaction('Second batch');
-    tx2.begin(); // snapshot at 2 elements
     controller.addElement(makeElementFixture(200, 0));
-    tx2.commit(); // pushes snapshot(2) on top
+    tx2.commit(); // pushes snapshot(2)
 
     expect(controller.getElements()).toHaveLength(3);
 
-    // tx2.commit() entry is on top of the stack — undoing it restores to pre-tx2 state (2 elements)
+    // tx2.commit() entry is on top — undoing it restores to pre-tx2 state (2 elements)
     controller.undo();
     expect(controller.getElements()).toHaveLength(2);
 
-    // tx1.commit() entry is now accessible after skipping tx2's individual mutation entries.
-    // The commit entry for tx1 holds a snapshot of 0 elements. We undo through intermediate
-    // entries until we reach it.
-    expect(controller.canUndo()).toBe(true);
-    // Undo all remaining entries until we reach 0 elements
-    while (controller.canUndo() && controller.getElements().length > 0) {
-      controller.undo();
-    }
+    // tx1.commit() entry is now on top — undoing it restores to pre-tx1 state (0 elements)
+    controller.undo();
     expect(controller.getElements()).toHaveLength(0);
+  });
+
+  it('exact stack depth: transaction with 3 mutations produces exactly 1 undo entry', () => {
+    const tx = controller.beginTransaction('Exact depth test');
+
+    controller.addElement(makeElementFixture(0, 0));
+    controller.addElement(makeElementFixture(100, 0));
+    controller.addElement(makeElementFixture(200, 0));
+
+    tx.commit();
+
+    // Exactly 1 undo entry should be on the stack
+    expect(controller.canUndo()).toBe(true);
+
+    // One undo should revert all 3 mutations
+    controller.undo();
+    expect(controller.getElements()).toHaveLength(0);
+    expect(controller.canUndo()).toBe(false);
+  });
+
+  it('exact stack depth: nested operations inside transaction still produce 1 undo entry', () => {
+    const tx = controller.beginTransaction('Nested operations test');
+
+    // Add element
+    const el = controller.addElement(makeElementFixture(0, 0));
+    // Update the element
+    controller.updateElement(el.id, { position: { x: 50, y: 50 } });
+    // Add another element
+    controller.addElement(makeElementFixture(100, 0));
+
+    tx.commit();
+
+    // Exactly 1 undo entry should be on the stack
+    expect(controller.canUndo()).toBe(true);
+
+    // One undo should revert all operations
+    controller.undo();
+    expect(controller.getElements()).toHaveLength(0);
+    expect(controller.canUndo()).toBe(false);
+  });
+
+  it('group operation uses transaction internally and produces exactly 1 undo entry', () => {
+    const el1 = controller.addElement(makeElementFixture(0, 0));
+    const el2 = controller.addElement(makeElementFixture(200, 0));
+    controller.select({ elements: [el1.id, el2.id] });
+
+    const countBeforeGroup = controller.getElements().length;
+    const undoCountBefore = controller.canUndo() ? 1 : 0; // Track approximate undo depth
+
+    controller.groupSelected();
+
+    // groupSelected should use transaction internally
+    const countAfterGroup = controller.getElements().length;
+    expect(countAfterGroup).toBeGreaterThan(countBeforeGroup);
+
+    // Exactly 1 undo entry should be added for the group operation
+    controller.undo();
+    expect(controller.getElements()).toHaveLength(countBeforeGroup);
+    expect(controller.getElements().some((e) => e.type === 'group')).toBe(false);
+  });
+
+  it('duplicate operation uses transaction internally and produces exactly 1 undo entry', () => {
+    const el = controller.addElement(makeElementFixture(0, 0));
+    controller.select({ elements: [el.id] });
+
+    const countBefore = controller.getElements().length;
+
+    controller.duplicateSelected();
+
+    const countAfter = controller.getElements().length;
+    expect(countAfter).toBe(countBefore + 1);
+
+    // Exactly 1 undo entry should be added for the duplicate operation
+    controller.undo();
+    expect(controller.getElements()).toHaveLength(countBefore);
+  });
+
+  it('ungroup operation uses transaction internally and produces exactly 1 undo entry', () => {
+    const el1 = controller.addElement(makeElementFixture(0, 0));
+    const el2 = controller.addElement(makeElementFixture(200, 0));
+    controller.select({ elements: [el1.id, el2.id] });
+    controller.groupSelected();
+
+    const groupElement = controller.getElements().find((e) => e.type === 'group');
+    expect(groupElement).toBeDefined();
+
+    const countAfterGroup = controller.getElements().length;
+    controller.select({ elements: [groupElement!.id] });
+
+    controller.ungroupSelected();
+
+    const countAfterUngroup = controller.getElements().length;
+    expect(countAfterUngroup).toBeLessThan(countAfterGroup);
+
+    // Exactly 1 undo entry should be added for the ungroup operation
+    controller.undo();
+    expect(controller.getElements()).toHaveLength(countAfterGroup);
+    expect(controller.getElements().some((e) => e.type === 'group')).toBe(true);
   });
 });
 

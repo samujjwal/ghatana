@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;

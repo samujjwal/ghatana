@@ -157,6 +157,9 @@ function emitResidualStub(node: ArtifactNode, opts: Required<CompileReactOptions
  * protected block so that round-trip regeneration will not clobber user edits
  * inside the component body. The import header is `owner=generated` so it is
  * always refreshed.
+ *
+ * If protected regions are present in the node metadata, they are preserved
+ * during compilation to maintain user-authored content spans.
  */
 function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOptions>): string {
   const exportedName = node.exportedSymbols[0] ?? node.displayName;
@@ -178,12 +181,24 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
     ? `// Design-system component imports are intentionally omitted until the artifact mapping resolves exact symbols from "${opts.designSystemPackage}".\n`
     : "";
 
+  // Check if node has protected regions from previous decompilation
+  const protectedRegions = (node.metadata?.protectedRegions as unknown as Array<{
+    regionId: string;
+    ownerKind: string;
+    contentLines: string[];
+  }>) ?? [];
+
+  // Find the body region if it exists
+  const bodyRegion = protectedRegions.find(r => r.regionId === `${node.id}:body`);
+
   const regionId = `${node.id}:body`;
-  const bodyLines = emitProtectedRegion(`${regionId}`, "user-authored", [
-    `    <div>`,
-    `      <span data-artifact-component="${node.id}">{${JSON.stringify(node.displayName)}}</span>`,
-    `    </div>`,
-  ]);
+  const bodyLines = bodyRegion
+    ? emitProtectedRegion(regionId, bodyRegion.ownerKind as "user-authored" | "generated" | "protected", bodyRegion.contentLines)
+    : emitProtectedRegion(`${regionId}`, "user-authored", [
+        `    <div>`,
+        `      <span data-artifact-component="${node.id}">{${JSON.stringify(node.displayName)}}</span>`,
+        `    </div>`,
+      ]);
 
   const lines: string[] = [
     ...emitProtectedRegion(`${node.id}:imports`, "generated", [

@@ -109,10 +109,11 @@ describe("Round-trip: source → model → source → model", () => {
     expect(allContent.trim().length).toBeGreaterThan(0);
   });
 
-  it("source → model → source → model (two-pass) produces a stable node count", () => {
+  it("source → model → source → model (two-pass) produces semantically equivalent models", () => {
     // First pass
     const firstDecompile = decompileTsx(makeInput([BUTTON_FIXTURE]));
-    const firstNodeCount = Object.keys(firstDecompile.model.nodes).length;
+    const firstNodeId = Object.keys(firstDecompile.model.nodes)[0];
+    expect(firstNodeId).toBeDefined();
 
     // Compile back to source
     const firstCompile = compileReact(firstDecompile.model);
@@ -127,9 +128,34 @@ describe("Round-trip: source → model → source → model", () => {
     };
     const secondDecompile = decompileTsx(makeInput([secondSource]));
 
-    // Second model should have at least as many nodes as the first
-    const secondNodeCount = Object.keys(secondDecompile.model.nodes).length;
-    expect(secondNodeCount).toBeGreaterThanOrEqual(firstNodeCount);
+    // Semantic equivalence: same node IDs exist in both models
+    const firstNodeIds = new Set(Object.keys(firstDecompile.model.nodes));
+    const secondNodeIds = new Set(Object.keys(secondDecompile.model.nodes));
+
+    // Every node from first pass should have a corresponding node in second pass
+    for (const nodeId of firstNodeIds) {
+      expect(secondNodeIds.has(nodeId)).toBe(true);
+    }
+
+    // If the same node exists in both, verify key semantic properties are preserved
+    if (firstNodeId) {
+      const firstNode = firstDecompile.model.nodes[firstNodeId];
+      const secondNode = secondDecompile.model.nodes[firstNodeId];
+      expect(secondNode).toBeDefined();
+
+      // Kind should be preserved
+      expect(secondNode?.kind).toBe(firstNode.kind);
+      // Display name should be preserved
+      expect(secondNode?.displayName).toBe(firstNode.displayName);
+      // Exported symbols should be preserved
+      expect(secondNode?.exportedSymbols).toEqual(firstNode.exportedSymbols);
+      // Inferred props should be preserved
+      expect(secondNode?.inferredProps).toEqual(firstNode.inferredProps);
+      // Design system usage flag should be preserved
+      expect(secondNode?.usesDesignSystem).toBe(firstNode.usesDesignSystem);
+      // Classification confidence should be preserved
+      expect(secondNode?.classificationConfidence).toBe(firstNode.classificationConfidence);
+    }
   });
 
   it("multi-file round-trip preserves all source files as nodes", () => {
@@ -166,7 +192,7 @@ describe("Round-trip: no silent loss of source intent", () => {
     // Every loss point must have required fields
     for (const lossPoint of result.fidelityReport.lossPoints) {
       expect(typeof lossPoint.code).toBe("string");
-      expect(typeof lossPoint.message).toBe("string");
+      expect(typeof lossPoint.description).toBe("string");
       expect(["critical", "warning", "info"]).toContain(lossPoint.severity);
     }
   });
@@ -180,8 +206,8 @@ describe("Round-trip: no silent loss of source intent", () => {
     expect(Array.isArray(residualReport.islands)).toBe(true);
 
     for (const island of residualReport.islands) {
-      expect(typeof island.islandId).toBe("string");
-      expect(typeof island.reason).toBe("string");
+      expect(typeof island.id).toBe("string");
+      expect(typeof island.description).toBe("string");
     }
   });
 
@@ -221,25 +247,98 @@ describe("Round-trip: ownership and provenance are preserved", () => {
 });
 
 describe("Round-trip: protected regions", () => {
-  it("nodes with isProtected=true are preserved in the model through compile", () => {
-    const result = decompileTsx(makeInput([BUTTON_FIXTURE]));
+  it("protected regions are parsed and preserved through round-trip", () => {
+    // Create a source file with protected region markers
+    const sourceWithRegions: DecompileSourceFile = {
+      relativePath: "src/Button.tsx",
+      content: `
+import type { ReactElement } from "react";
 
-    const nodeEntries = Object.entries(result.model.nodes);
-    expect(nodeEntries.length).toBeGreaterThan(0);
-    const [firstKey, firstNode] = nodeEntries[0]!;
+export interface ButtonProps {
+  readonly label: string;
+}
 
-    // Mark first node as protected
-    const protectedModel: LogicalArtifactModel = {
-      ...result.model,
-      nodes: {
-        ...result.model.nodes,
-        [firstKey]: { ...firstNode, isProtected: true },
-      },
+// @ghatana-region: begin src/Button.tsx:body owner=user-authored
+export function Button({ label }: ButtonProps): ReactElement {
+  return <button>{label}</button>;
+}
+// @ghatana-region: end src/Button.tsx:body
+`.trim(),
     };
 
-    const compileResult = compileReact(protectedModel);
-    expect(compileResult.emittedFiles.length).toBeGreaterThan(0);
-    // Protected flag must survive in the input model (no side effects)
-    expect(protectedModel.nodes[firstKey]?.isProtected).toBe(true);
+    const decompileResult = decompileTsx(makeInput([sourceWithRegions]));
+    const nodeId = Object.keys(decompileResult.model.nodes)[0];
+    expect(nodeId).toBeDefined();
+
+    const node = decompileResult.model.nodes[nodeId!];
+    const protectedRegions = (node.metadata?.protectedRegions as unknown as Array<{
+      regionId: string;
+      ownerKind: string;
+      contentLines: string[];
+    }>) ?? [];
+
+    // Should have parsed the protected region
+    expect(protectedRegions.length).toBeGreaterThan(0);
+    const bodyRegion = protectedRegions.find(r => r.regionId === `${nodeId}:body`);
+    expect(bodyRegion).toBeDefined();
+    expect(bodyRegion?.ownerKind).toBe("user-authored");
+
+    // Compile should preserve the protected region content
+    const compileResult = compileReact(decompileResult.model);
+    const emittedFile = compileResult.emittedFiles.find(f => f.relativePath === sourceWithRegions.relativePath);
+    expect(emittedFile).toBeDefined();
+    expect(emittedFile?.content).toContain("@ghatana-region: begin");
+    expect(emittedFile?.content).toContain("owner=user-authored");
+  });
+
+  it("modified protected region content is preserved on recompile", () => {
+    // Source with protected region
+    const sourceWithRegions: DecompileSourceFile = {
+      relativePath: "src/Button.tsx",
+      content: `
+import type { ReactElement } from "react";
+
+export interface ButtonProps {
+  readonly label: string;
+}
+
+// @ghatana-region: begin src/Button.tsx:body owner=user-authored
+export function Button({ label }: ButtonProps): ReactElement {
+  return <button className="custom-button">{label}</button>;
+}
+// @ghatana-region: end src/Button.tsx:body
+`.trim(),
+    };
+
+    const decompileResult = decompileTsx(makeInput([sourceWithRegions]));
+    const nodeId = Object.keys(decompileResult.model.nodes)[0];
+
+    // Modify the protected region content in metadata
+    const node = decompileResult.model.nodes[nodeId!];
+    const protectedRegions = (node.metadata?.protectedRegions as unknown as Array<{
+      regionId: string;
+      ownerKind: string;
+      contentLines: string[];
+    }>) ?? [];
+    
+    const bodyRegion = protectedRegions.find(r => r.regionId === `${nodeId}:body`);
+    expect(bodyRegion).toBeDefined();
+    
+    // Simulate user modification: change the content
+    if (bodyRegion) {
+      (bodyRegion as any).contentLines = [
+        "export function Button({ label }: ButtonProps): ReactElement {",
+        "  return <button className=\"user-modified\">{label}</button>;",
+        "}",
+      ];
+    }
+
+    // Recompile - should preserve the modified content
+    const compileResult = compileReact(decompileResult.model);
+    const emittedFile = compileResult.emittedFiles.find(f => f.relativePath === sourceWithRegions.relativePath);
+    expect(emittedFile).toBeDefined();
+    expect(emittedFile?.content).toContain("user-modified");
+    expect(emittedFile?.content).toContain("@ghatana-region: begin");
+    expect(emittedFile?.content).toContain("@ghatana-region: end");
   });
 });

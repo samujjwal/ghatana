@@ -72,6 +72,12 @@ export interface CanvasCommandContext {
    * Must reflect the state at the moment of the call.
    */
   getSnapshot(): HistoryEntry['snapshot'];
+
+  /**
+   * Check if currently inside a transaction context.
+   * When true, individual history pushes are suppressed.
+   */
+  isInTransaction(): boolean;
 }
 
 // ============================================================================
@@ -118,10 +124,12 @@ export class CompositeCommand implements CanvasCommand {
  * composed up front (e.g., when intermediate results determine subsequent
  * mutations).
  *
+ * The controller manages the transaction context (pre-snapshot and suppression).
+ * This class provides a convenient API for callers to begin/commit/abort transactions.
+ *
  * Usage:
  * ```ts
- * const tx = new CommandTransaction(ctx, 'Group elements');
- * tx.begin();
+ * const tx = controller.beginTransaction('Group elements');
  * // ... perform mutations via the controller ...
  * tx.commit();
  * ```
@@ -129,48 +137,42 @@ export class CompositeCommand implements CanvasCommand {
  * Only one undo/redo entry is created per committed transaction, regardless
  * of how many individual mutations occurred inside it.
  *
- * If `begin()` is called without a subsequent `commit()`, the transaction
- * is a no-op for history purposes (callers that abort mid-flow should handle
- * cleanup themselves).
+ * If `commit()` is never called, the transaction context is cleared on abort
+ * (or when the transaction object goes out of scope, the controller's context
+ * is reset by the next operation).
  */
 export class CommandTransaction {
-  private readonly ctx: CanvasCommandContext;
+  private readonly controller: any; // HybridCanvasController (avoid circular import)
   private readonly description: string;
-  private preSnapshot: HistoryEntry['snapshot'] | null = null;
+  private committed = false;
 
-  constructor(ctx: CanvasCommandContext, description: string) {
-    this.ctx = ctx;
+  constructor(controller: any, description: string) {
+    this.controller = controller;
     this.description = description;
   }
 
   /**
-   * Capture a pre-mutation snapshot. Must be called before any mutations.
-   */
-  begin(): void {
-    this.preSnapshot = this.ctx.getSnapshot();
-  }
-
-  /**
-   * Push one history entry covering all mutations since `begin()`.
-   * Safe to call multiple times — only the first commit after a `begin()` pushes.
+   * Mark the transaction as committed.
+   * The controller will push the single history entry using the pre-snapshot
+   * captured when beginTransaction was called.
+   *
+   * Safe to call multiple times — only the first commit pushes history.
    */
   commit(): void {
-    if (this.preSnapshot === null) {
-      // No snapshot taken — either begin() was not called or already committed.
+    if (this.committed) {
       return;
     }
-    this.ctx.pushHistory({
-      action: this.description,
-      snapshot: this.preSnapshot,
-    });
-    this.preSnapshot = null;
+    this.controller.commitTransaction();
+    this.committed = true;
   }
 
   /**
-   * Discard the pending snapshot without pushing a history entry.
-   * Use this when a transaction is aborted due to no effective mutation.
+   * Abort the transaction without pushing a history entry.
+   * Use this when a transaction is aborted due to validation failure or
+   * no effective mutation.
    */
   abort(): void {
-    this.preSnapshot = null;
+    this.controller.abortTransaction();
+    this.committed = true;
   }
 }

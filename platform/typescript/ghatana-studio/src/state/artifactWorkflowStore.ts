@@ -6,6 +6,8 @@
  * FidelityReport) read and write from these atoms rather than using React Router `state`
  * or independent local state.
  *
+ * Includes persistence adapter for durable workflow state across page reloads.
+ *
  * Atom graph (write path):
  *   ImportDecompilePage → artifactWorkflowAtom (set jobResult + model)
  *   CanvasPage → reads artifactWorkflowAtom.projectedBuilderDocument
@@ -24,6 +26,96 @@ import type { DecompileJobResult } from '../adapters/ArtifactStudioWorkflowAdapt
 import type { BuilderDocument } from '@ghatana/ui-builder';
 import type { FidelityReport } from '@ghatana/artifact-contracts';
 import type { LogicalArtifactModel } from '@ghatana/artifact-contracts';
+
+// ============================================================================
+// PERSISTENCE ADAPTER
+// ============================================================================
+
+/**
+ * Audit metadata for workflow state persistence.
+ */
+export interface WorkflowAuditMetadata {
+  /** ISO-8601 timestamp when state was last persisted. */
+  readonly persistedAt: string;
+  /** ISO-8601 timestamp when state was last modified. */
+  readonly lastModifiedAt: string;
+  /** Number of times the state has been persisted. */
+  readonly persistenceVersion: number;
+}
+
+/**
+ * Persisted workflow state with audit metadata.
+ */
+export interface PersistedWorkflowState {
+  /** The workflow state. */
+  readonly state: ArtifactWorkflowState;
+  /** Audit metadata. */
+  readonly audit: WorkflowAuditMetadata;
+}
+
+/**
+ * Persistence adapter interface for workflow state.
+ *
+ * Implementations can use localStorage, sessionStorage, IndexedDB, or remote storage.
+ */
+export interface WorkflowPersistenceAdapter {
+  /**
+   * Persist the workflow state with audit metadata.
+   */
+  persist(state: ArtifactWorkflowState, audit: WorkflowAuditMetadata): Promise<void>;
+
+  /**
+   * Load the persisted workflow state with audit metadata.
+   */
+  load(): Promise<PersistedWorkflowState | null>;
+
+  /**
+   * Clear all persisted workflow state.
+   */
+  clear(): Promise<void>;
+}
+
+/**
+ * LocalStorage-based persistence adapter.
+ */
+class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
+  private readonly STORAGE_KEY = 'ghatana-studio-workflow-state';
+
+  async persist(state: ArtifactWorkflowState, audit: WorkflowAuditMetadata): Promise<void> {
+    try {
+      const persisted: PersistedWorkflowState = { state, audit };
+      const serialized = JSON.stringify(persisted);
+      localStorage.setItem(this.STORAGE_KEY, serialized);
+    } catch (err) {
+      console.error('Failed to persist workflow state:', err);
+    }
+  }
+
+  async load(): Promise<PersistedWorkflowState | null> {
+    try {
+      const serialized = localStorage.getItem(this.STORAGE_KEY);
+      if (!serialized) return null;
+      const parsed = JSON.parse(serialized) as PersistedWorkflowState;
+      return parsed;
+    } catch (err) {
+      console.error('Failed to load persisted workflow state:', err);
+      return null;
+    }
+  }
+
+  async clear(): Promise<void> {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear persisted workflow state:', err);
+    }
+  }
+}
+
+/**
+ * Default persistence adapter using localStorage.
+ */
+export const defaultPersistenceAdapter: WorkflowPersistenceAdapter = new LocalStoragePersistenceAdapter();
 
 // ============================================================================
 // STATE SHAPE
@@ -91,6 +183,37 @@ const INITIAL_STATE: ArtifactWorkflowState = {
  */
 export const artifactWorkflowAtom = atom<ArtifactWorkflowState>(INITIAL_STATE);
 
+/**
+ * Internal audit metadata tracking (not part of public state).
+ */
+let currentAuditVersion = 0;
+
+/**
+ * Write atom for updating workflow state with persistence.
+ *
+ * Automatically persists to the configured adapter on write with audit metadata.
+ */
+export const setArtifactWorkflowAtom = atom(
+  null,
+  async (get, set, update: Partial<ArtifactWorkflowState>) => {
+    const current = get(artifactWorkflowAtom);
+    const newState = { ...current, ...update };
+    set(artifactWorkflowAtom, newState);
+
+    // Increment audit version
+    currentAuditVersion += 1;
+
+    // Persist with audit metadata
+    const audit: WorkflowAuditMetadata = {
+      persistedAt: new Date().toISOString(),
+      lastModifiedAt: newState.lastDecompileAt ?? current.lastDecompileAt ?? new Date().toISOString(),
+      persistenceVersion: currentAuditVersion,
+    };
+
+    await defaultPersistenceAdapter.persist(newState, audit);
+  },
+);
+
 // ============================================================================
 // DERIVED READ ATOMS
 // ============================================================================
@@ -137,23 +260,34 @@ export const hasArtifactWorkflowResultAtom = atom<boolean>(
 /**
  * Action atom: merge a partial ArtifactWorkflowState update into the root atom.
  *
+ * This atom is defined earlier with persistence support.
+ *
  * Usage:
  * ```tsx
  * const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
  * setWorkflow({ model, fidelityReport, projectedBuilderDocument });
  * ```
  */
-export const setArtifactWorkflowAtom = atom(
-  null,
-  (get, set, update: Partial<ArtifactWorkflowState>) => {
-    const current = get(artifactWorkflowAtom);
-    set(artifactWorkflowAtom, { ...current, ...update });
-  },
-);
 
 /**
  * Action atom: clear all workflow state (e.g. when starting a new import).
+ * Also clears persisted state.
  */
-export const clearArtifactWorkflowAtom = atom(null, (_get, set) => {
+export const clearArtifactWorkflowAtom = atom(null, async (_get, set) => {
   set(artifactWorkflowAtom, INITIAL_STATE);
+  currentAuditVersion = 0;
+  await defaultPersistenceAdapter.clear();
+});
+
+/**
+ * Action atom: reload workflow state from persistence.
+ *
+ * Call this on app initialization to restore the previous session.
+ */
+export const reloadWorkflowStateAtom = atom(null, async (_get, set) => {
+  const persisted = await defaultPersistenceAdapter.load();
+  if (persisted) {
+    set(artifactWorkflowAtom, persisted.state);
+    currentAuditVersion = persisted.audit.persistenceVersion;
+  }
 });

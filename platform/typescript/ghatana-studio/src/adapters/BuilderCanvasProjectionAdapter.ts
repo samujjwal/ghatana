@@ -1,17 +1,19 @@
 /**
- * @fileoverview Bidirectional adapter between @ghatana/ui-builder (BuilderDocument)
+ * @fileoverview Canonical bidirectional adapter between @ghatana/ui-builder (BuilderDocument)
  * and @ghatana/canvas (CanvasNode / CanvasEdge).
  *
- * Provides two pure functions:
+ * Provides pure functions:
  * - `builderToCanvas`: projects a BuilderDocument into canvas-ready nodes + edges.
  * - `canvasToBuilder`: merges position/size mutations from canvas back into a
  *   BuilderDocument (partial update — only structure/metadata is affected, prop
  *   values are not overwritten).
+ * - `filterCanvasSelectionToNodeIds`: validates canvas selection against document.
+ * - `reconcileCanvasGeometryDeltas`: converts geometry deltas to builder operations.
  *
  * Neither function mutates its input.
  *
  * @doc.type module
- * @doc.purpose BuilderDocument ↔ Canvas node/edge projection
+ * @doc.purpose BuilderDocument ↔ Canvas node/edge projection (canonical adapter)
  * @doc.layer studio
  * @doc.pattern Adapter
  */
@@ -161,4 +163,108 @@ export function canvasToBuilder(options: CanvasToBuilderOptions): BuilderDocumen
   }
 
   return { ...baseDocument, nodes: updatedNodes };
+}
+
+// ============================================================================
+// Selection Validation: canvas string[] → typed NodeId[]
+// ============================================================================
+
+/**
+ * Helper function to brand a validated string as a NodeId.
+ *
+ * This function is intentionally unsafe to call directly - it should only be used
+ * after the ID has been validated against the document's known node keys.
+ */
+function asNodeId(id: string): NodeId {
+  return id as NodeId;
+}
+
+/**
+ * Validate and convert canvas-provided string IDs to typed `NodeId` values by
+ * checking them against the document's known node keys.
+ *
+ * This replaces unsafe array casts at canvas adapter boundaries.
+ *
+ * @param document - The current BuilderDocument (used as the source of truth
+ *   for valid node IDs).
+ * @param canvasNodeIds - Raw string IDs from the canvas selection event.
+ * @returns Only the IDs that exist in the document, branded as `NodeId`.
+ */
+export function filterCanvasSelectionToNodeIds(
+  document: BuilderDocument,
+  canvasNodeIds: readonly string[],
+): NodeId[] {
+  const knownIds = new Set<string>(Object.keys(document.nodes));
+  const validIds: NodeId[] = [];
+  for (const id of canvasNodeIds) {
+    if (knownIds.has(id)) {
+      validIds.push(asNodeId(id));
+    }
+  }
+  return validIds;
+}
+
+// ============================================================================
+// Geometry Reconciliation: canvas deltas → builder operations
+// ============================================================================
+
+/**
+ * A geometry delta applied to a node in the canvas.
+ */
+export interface CanvasNodeGeometryDelta {
+  /** The canvas node ID whose geometry changed. */
+  canvasNodeId: string;
+  /** New position, if changed. */
+  position?: { x: number; y: number };
+  /** New size, if changed. */
+  size?: { width: number; height: number };
+}
+
+/**
+ * A builder operation produced by reconciling canvas geometry deltas.
+ */
+export interface BuilderGeometryOperation {
+  kind: 'update-node-geometry';
+  nodeId: NodeId;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+}
+
+/**
+ * Convert canvas geometry deltas (from drag/resize interactions) into typed
+ * builder geometry operations.
+ *
+ * Only deltas whose `canvasNodeId` corresponds to a document node are emitted;
+ * unknown IDs (e.g. virtual canvas groups) are silently dropped.
+ *
+ * @param document - The current BuilderDocument.
+ * @param deltas - Geometry deltas from the canvas change event.
+ * @returns Builder geometry operations for known nodes.
+ */
+export function reconcileCanvasGeometryDeltas(
+  document: BuilderDocument,
+  deltas: readonly CanvasNodeGeometryDelta[],
+): BuilderGeometryOperation[] {
+  const knownIds = new Set<string>(Object.keys(document.nodes));
+  const ops: BuilderGeometryOperation[] = [];
+
+  for (const delta of deltas) {
+    if (!knownIds.has(delta.canvasNodeId)) {
+      continue;
+    }
+
+    const op: BuilderGeometryOperation = {
+      kind: 'update-node-geometry',
+      nodeId: delta.canvasNodeId as NodeId,
+    };
+    if (delta.position !== undefined) {
+      op.position = delta.position;
+    }
+    if (delta.size !== undefined) {
+      op.size = delta.size;
+    }
+    ops.push(op);
+  }
+
+  return ops;
 }

@@ -551,7 +551,16 @@ public class EntityCrudHandler {
                 // DC-BE-003: Wrap entity save + event append in transaction when available
                 if (transactionManager != null) {
                     return executeSaveInTransaction(
-                        resolvedTenantId, finalCollection, provenanced, request, handlerSpan, idempotencyKey);
+                        resolvedTenantId, finalCollection, provenanced, request, handlerSpan, idempotencyKey)
+                        .then(
+                            result -> Promise.of(result),
+                            err -> {
+                                log.error("[EntityCrudHandler] DC-BE-003: Transaction failed for " +
+                                    "tenant={}, collection={}: {}",
+                                    resolvedTenantId, finalCollection, err.getMessage(), err);
+                                return Promise.of(http.errorResponse(500,
+                                    "Transaction failed: " + err.getMessage()));
+                            });
                 }
                 
                 // Non-transactional path (existing behavior)

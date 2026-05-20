@@ -74,7 +74,7 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
     void setUp() {
         client = mock(DataCloudClient.class);
         httpSupport = new HttpHandlerSupport(
-            com.fasterxml.jackson.databind.ObjectMapper.findWellKnownModule(),
+            new com.fasterxml.jackson.databind.ObjectMapper(),
             "*", "GET,POST,PUT,DELETE", "Content-Type,Authorization,X-Tenant-Id,X-Idempotency-Key",
             false, "production"
         );
@@ -90,6 +90,7 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
             .withIdempotencyStore(entityIdempotencyStore)
             .withTransactionManager(transactionManager)
             .withOutboxProcessor(outboxProcessor)
+            .withAuditService(auditService)
             .withDeploymentProfile("production")
             .withTraceSupport(TraceSpanSupport.disabled())
             .withTenantQuotaService(quotaService);
@@ -356,35 +357,21 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
         private int transactionCount = 0;
 
         @Override
-        public <T> Promise<T> executeInTransaction(String tenantId, java.util.function.Function<com.ghatana.datacloud.spi.TransactionContext, Promise<T>> operation) {
+        public <T> Promise<T> executeInTransaction(java.util.function.Supplier<Promise<T>> operation) {
             transactionCount++;
-            return operation.apply(new com.ghatana.datacloud.spi.TransactionContext() {
-                @Override
-                public String tenantId() {
-                    return tenantId;
-                }
-
-                @Override
-                public String transactionId() {
-                    return "tx-" + transactionCount;
-                }
-            });
+            return operation.get();
         }
 
         @Override
-        public <T> Promise<T> executeInTransactionWithContext(String tenantId, java.util.function.Function<com.ghatana.datacloud.spi.TransactionContext, Promise<T>> operation) {
+        public <T> Promise<T> executeInTransaction(String tenantId, java.util.function.Supplier<Promise<T>> operation) {
             transactionCount++;
-            return operation.apply(new com.ghatana.datacloud.spi.TransactionContext() {
-                @Override
-                public String tenantId() {
-                    return tenantId;
-                }
+            return operation.get();
+        }
 
-                @Override
-                public String transactionId() {
-                    return "tx-" + transactionCount;
-                }
-            });
+        @Override
+        public <T> Promise<T> executeInTransactionWithContext(String tenantId, TransactionManager.TransactionalOperation<T> operation) {
+            transactionCount++;
+            return operation.execute(com.ghatana.datacloud.spi.TransactionContext.create(tenantId));
         }
 
         public int getTransactionCount() {
@@ -408,22 +395,22 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
         public Promise<Void> process(com.ghatana.datacloud.spi.EntityWriteOutbox outbox) {
             // DC-P1-09: Emit audit event if auditPayload is present
             if (outbox.auditPayload() != null && auditService != null) {
-                AuditEvent auditEvent = AuditEvent.builder()
+                Map<String, Object> payload = outbox.auditPayload();
+                AuditEvent.Builder builder = AuditEvent.builder()
                     .tenantId(outbox.tenantId())
-                    .eventType(outbox.auditPayload().getOrDefault("eventType", "ENTITY_WRITE"))
-                    .principal(outbox.auditPayload().getOrDefault("principal", "system"))
+                    .eventType((String) payload.getOrDefault("eventType", "ENTITY_WRITE"))
+                    .principal((String) payload.getOrDefault("principal", "system"))
                     .resourceType("ENTITY")
                     .resourceId(outbox.collection() + "/" + outbox.entityId())
-                    .success(outbox.auditPayload().getOrDefault("success", true))
-                    .build();
-
-                for (Map.Entry<String, Object> entry : outbox.auditPayload().entrySet()) {
+                    .success((Boolean) payload.getOrDefault("success", Boolean.TRUE));
+                for (Map.Entry<String, Object> entry : payload.entrySet()) {
                     if (!"eventType".equals(entry.getKey()) &&
                         !"principal".equals(entry.getKey()) &&
                         !"success".equals(entry.getKey())) {
-                        auditEvent = auditEvent.detail(entry.getKey(), entry.getValue());
+                        builder.detail(entry.getKey(), entry.getValue());
                     }
                 }
+                AuditEvent auditEvent = builder.build();
 
                 return auditService.record(auditEvent)
                     .then($ -> {

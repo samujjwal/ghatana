@@ -30,25 +30,23 @@ import type {
   SourceEntry,
 } from '../adapters/ArtifactStudioWorkflowAdapter.js';
 import { setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
+import {
+  defaultProviderRegistry,
+  type SourceFileEntry,
+} from '../providers/source-acquisition.js';
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-const MAX_FILE_SIZE_BYTES = 1_000_000; // 1 MB
-const ALLOWED_EXTENSIONS = ['.ts', '.tsx'];
-
-function isAllowedFile(name: string): boolean {
-  return ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext));
-}
-
-async function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsText(file);
-  });
+/**
+ * Convert SourceFileEntry from provider to SourceEntry for workflow adapter.
+ */
+function sourceEntryFromProvider(entry: SourceFileEntry): SourceEntry {
+  return {
+    filePath: entry.relativePath,
+    content: entry.content,
+  };
 }
 
 // ============================================================================
@@ -64,31 +62,17 @@ export default function ImportDecompilePage(): ReactElement {
 
   const handleFilesSelected = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files ?? []);
-      const errors: string[] = [];
-      const sources: SourceEntry[] = [];
+      const files = event.target.files;
+      if (!files) return;
 
-      for (const file of files) {
-        if (!isAllowedFile(file.name)) {
-          errors.push(`Skipped "${file.name}": only .ts and .tsx files are supported.`);
-          continue;
-        }
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-          errors.push(`Skipped "${file.name}": file exceeds 1 MB limit.`);
-          continue;
-        }
-        try {
-          const content = await readFileAsText(file);
-          sources.push({ filePath: file.name, content });
-        } catch {
-          errors.push(`Could not read "${file.name}".`);
-        }
-      }
+      // Use provider registry to acquire sources
+      const acquisitionResult = await defaultProviderRegistry.acquire({ files });
 
-      setFileErrors(errors);
+      setFileErrors([...acquisitionResult.errors]);
 
-      if (sources.length === 0) return;
+      if (acquisitionResult.sources.length === 0) return;
 
+      const sources: SourceEntry[] = acquisitionResult.sources.map(sourceEntryFromProvider);
       const jobId = crypto.randomUUID();
       const startedAt = new Date().toISOString();
 

@@ -626,24 +626,31 @@ public final class DataCloudSecurityFilter {
                     "Configure DATACLOUD_API_KEY_RESOLVER or DATACLOUD_JWT_PROVIDER.");
             }
 
-            // Check audit service
+            // DC-P0-01: strictTenantResolution must be enabled in production-like profiles
+            if (!strictTenantResolution) {
+                throw new IllegalStateException(
+                    "DC-P0-01: strictTenantResolution must be true in production/staging/sovereign profiles. " +
+                    "Set strictTenantResolution=true to enforce tenant isolation.");
+            }
+
+            // Check AuditService
             if (!auditConfigured) {
                 throw new IllegalStateException(
-                    "DC-P0-01: Audit service must be configured in production profile for compliance. " +
+                    "DC-P0-01: AuditService is required in production profile for compliance. " +
                     "Configure DATACLOUD_AUDIT_SERVICE.");
             }
 
-            // Check policy engine for strict tenant resolution
+            // Check PolicyEngine for strict tenant resolution
             if (strictTenantResolution && !policyConfigured) {
                 throw new IllegalStateException(
-                    "DC-P0-01: Policy engine must be configured when strictTenantResolution=true in production profile. " +
+                    "DC-P0-01: PolicyEngine is required when strictTenantResolution=true in production profile. " +
                     "Configure DATACLOUD_POLICY_ENGINE_URL.");
             }
 
             // DC-P0-01: Additional filter-specific validation for enforcing mode
             if (enforcing && policyEngine == null) {
                 throw new IllegalStateException(
-                    "DC-P0-01: Policy engine is required when enforcing=true in production/staging/sovereign profiles. " +
+                    "DC-P0-01: PolicyEngine is required when enforcing=true in production/staging/sovereign profiles. " +
                     "Configure DATACLOUD_POLICY_ENGINE_URL.");
             }
 
@@ -674,6 +681,20 @@ public final class DataCloudSecurityFilter {
     @Deprecated
     public void validateProductionRequirements() {
         getProductionRequirementsValidator().accept(deploymentProfile);
+    }
+
+    /**
+     * DC-P0-01: Validates production requirements against a specific profile.
+     *
+     * <p>Useful in tests and startup code where the caller controls which
+     * profile constraint to enforce, independently of the stored deploymentProfile.
+     *
+     * @param profile the deployment profile to validate against
+     * @deprecated Use {@link #getProductionRequirementsValidator()} instead
+     */
+    @Deprecated
+    public void validateProductionRequirements(String profile) {
+        getProductionRequirementsValidator().accept(profile);
     }
 
     /**

@@ -18,6 +18,7 @@ import {
   builderToCanvas,
   canvasToBuilder,
   type BuilderCanvasNode,
+  filterCanvasSelectionToNodeIds,
 } from '../adapters/BuilderCanvasProjectionAdapter.js';
 
 type TranslateFn = (key: StudioTranslationKey) => string;
@@ -104,10 +105,19 @@ export default function CanvasPage(): ReactElement {
 
   // Write position changes back to the workflow store.
   // The `onNodesChange` callback receives the full node list after any drag/resize.
-  // The nodes we put in are BuilderCanvasNode[], so we narrow the type explicitly.
+  // We validate nodes against the document to ensure type safety without unsafe casts.
   const handleNodesChange = useCallback(
     (updatedNodes: CanvasNode[]) => {
-      const builderNodes = updatedNodes as unknown as BuilderCanvasNode[];
+      // Filter and validate canvas nodes against the document
+      const validNodeIds = new Set<string>(Object.keys(canvasDocument.nodes));
+      const builderNodes: BuilderCanvasNode[] = updatedNodes.filter(
+        (node): node is BuilderCanvasNode =>
+          validNodeIds.has(node.id) &&
+          node.type === 'default' &&
+          'data' in node &&
+          'nodeId' in node.data
+      );
+
       const updatedDoc = canvasToBuilder({ baseDocument: canvasDocument, canvasNodes: builderNodes });
       setWorkflow({ projectedBuilderDocument: updatedDoc });
     },
