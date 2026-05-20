@@ -9,6 +9,7 @@
  */
 
 import * as React from 'react';
+import { emitThemeDiagnostic } from './diagnostics';
 import type {
   ThemeMode,
   ResolvedTheme,
@@ -44,7 +45,7 @@ function getStoredTheme(storageKey: string): ThemeMode | null {
       return stored;
     }
   } catch (e) {
-    console.warn('Failed to read theme from storage:', e);
+    emitThemeDiagnostic({ level: 'warn', component: 'ThemeProvider', message: 'Failed to read theme from storage', error: e });
   }
 
   return null;
@@ -61,7 +62,7 @@ function storeTheme(storageKey: string, theme: ThemeMode): void {
   try {
     localStorage.setItem(storageKey, theme);
   } catch (e) {
-    console.warn('Failed to store theme:', e);
+    emitThemeDiagnostic({ level: 'warn', component: 'ThemeProvider', message: 'Failed to store theme', error: e });
   }
 }
 

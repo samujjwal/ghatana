@@ -61,6 +61,8 @@ import java.util.stream.Collectors;
 public class DefaultDataCloudBrain implements DataCloudBrain {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultDataCloudBrain.class);
+    private static final List<PatternMatch> NO_PATTERN_MATCHES = List.of();
+    private static final List<String> NO_MATCHING_RULE_IDS = List.of();
 
     // Executor for blocking operations
     private static final Executor BLOCKING_EXECUTOR = Executors.newCachedThreadPool();
@@ -375,7 +377,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             LOG.warn("Pattern matching failed: {}", e.getMessage());
-            return List.of();
+            return NO_PATTERN_MATCHES;
         }
     }
 
@@ -412,7 +414,7 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                     .map(rule -> rule.getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            return List.of();
+            return NO_MATCHING_RULE_IDS;
         }
     }
 

@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * API Context for Flashit Mobile
  * Provides FlashitApiClient instance to all screens
@@ -30,7 +31,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
         try {
           return await AsyncStorage.getItem('flashit_token');
         } catch (error) {
-          console.error('Error getting token:', error);
+          emitFlashItMobileDiagnostic({ level: 'error', component: 'ApiContext', message: 'Error getting token', error });
           return null;
         }
       },
@@ -44,7 +45,7 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
             setToken(null);
           }
         } catch (error) {
-          console.error('Error saving token:', error);
+          emitFlashItMobileDiagnostic({ level: 'error', component: 'ApiContext', message: 'Error saving token', error });
         }
       },
       onUnauthorized: () => {

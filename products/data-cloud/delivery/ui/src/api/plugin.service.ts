@@ -91,6 +91,8 @@ export interface PluginMarketplaceItem {
   updateAvailable: boolean;
 }
 
+const NO_MARKETPLACE_PLUGINS: readonly PluginMarketplaceItem[] = Object.freeze([]);
+
 export interface PluginInstallRequest {
   pluginId: string;
   version?: string;
@@ -221,7 +223,7 @@ export class PluginService {
     official?: boolean;
   }): Promise<PluginMarketplaceItem[]> {
     void params;
-    return [];
+    return Array.from(NO_MARKETPLACE_PLUGINS);
   }
 
   async getMarketplacePlugin(pluginId: string): Promise<PluginMarketplaceItem> {

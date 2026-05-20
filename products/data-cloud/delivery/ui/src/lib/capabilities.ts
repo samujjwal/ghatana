@@ -13,6 +13,7 @@
  * Feature flags interface (must match the store definition)
  */
 import type { GeneratedFeatureGateId } from "@/lib/generated/feature-gates.generated";
+import { emitDataCloudDiagnostic } from "../diagnostics";
 
 export type FeatureFlags = Record<GeneratedFeatureGateId, boolean>;
 
@@ -311,9 +312,10 @@ export async function loadCapabilitySchema(): Promise<CapabilitySchema> {
         }
 
         if (endpoint !== RUNTIME_SCHEMA_ENDPOINTS[0]) {
-          console.warn(
-            `Capability schema fetched from compatibility endpoint ${endpoint}; prefer ${RUNTIME_SCHEMA_ENDPOINTS[0]}.`,
-          );
+          emitDataCloudDiagnostic("Capabilities", "warn", "Capability schema fetched from compatibility endpoint", {
+            endpoint,
+            preferredEndpoint: RUNTIME_SCHEMA_ENDPOINTS[0],
+          });
         }
 
         cachedSchema = envelope.data;
@@ -325,7 +327,9 @@ export async function loadCapabilitySchema(): Promise<CapabilitySchema> {
 
     throw lastError ?? new Error('Failed to fetch capability schema from all configured runtime endpoints');
   } catch (error) {
-    console.error('Failed to load capability schema from backend, falling back to mock:', error);
+    emitDataCloudDiagnostic("Capabilities", "error", "Failed to load capability schema from backend, falling back to mock", {
+      error,
+    });
     // Fallback to mock schema for development
     cachedSchema = mockSchema;
     return cachedSchema;

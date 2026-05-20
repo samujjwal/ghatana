@@ -13,6 +13,7 @@
 import { setupWorker } from 'msw/browser';
 import { handlers } from './handlers';
 import { isRecoverableMswStartupError } from './mswRecovery';
+import { emitDataCloudDiagnostic } from '../diagnostics';
 
 /**
  * MSW service worker instance configured with all application handlers.
@@ -43,7 +44,9 @@ export async function startMswBrowser(): Promise<boolean> {
     return true;
   } catch (error) {
     if (isRecoverableMswStartupError(error)) {
-      console.warn('[msw] Browser worker unavailable, continuing without MSW.', error);
+      emitDataCloudDiagnostic("MSWBrowser", "warn", "Browser worker unavailable, continuing without MSW", {
+        error,
+      });
       return false;
     }
 

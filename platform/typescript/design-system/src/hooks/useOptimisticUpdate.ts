@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { emitDesignSystemDiagnostic } from '../diagnostics';
 
 /**
  * Minimal toast interface for optimistic update notifications.
@@ -7,14 +8,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
  */
 const toast = {
   success: (message: string) => {
-    if (typeof console !== 'undefined') {
-      console.info('[toast:success]', message);
-    }
+    emitDesignSystemDiagnostic("useOptimisticUpdate", "info", "Toast success", { message });
   },
   error: (message: string) => {
-    if (typeof console !== 'undefined') {
-      console.warn('[toast:error]', message);
-    }
+    emitDesignSystemDiagnostic("useOptimisticUpdate", "warn", "Toast error", { message });
   },
 };
 

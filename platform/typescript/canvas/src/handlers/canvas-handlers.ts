@@ -30,6 +30,8 @@ const emitCanvasStateEvent = (
   );
 };
 
+const NO_CANVAS_CONNECTIONS: readonly { from: string; to: string }[] = Object.freeze([]);
+
 /**
  * Canvas element types
  */
@@ -124,7 +126,7 @@ class CanvasStateManager {
   getAllConnections(): Array<{ from: string; to: string }> {
     // Mock implementation - returns empty array for now
     // In production, this would track actual connections between elements
-    return [];
+    return Array.from(NO_CANVAS_CONNECTIONS);
   }
 
   getElementById(id: string): CanvasElement | undefined {

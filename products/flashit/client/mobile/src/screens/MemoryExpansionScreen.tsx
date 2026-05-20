@@ -45,6 +45,8 @@ interface Moment {
 
 type ExpansionType = MemoryExpansion['type'];
 
+const NO_MEMORY_EXPANSIONS: readonly MemoryExpansion[] = Object.freeze([]);
+
 const EXPANSION_TYPES: Array<{ type: ExpansionType; label: string; icon: keyof typeof Ionicons.glyphMap; description: string }> = [
   { type: 'deep_analysis', label: 'Deep Analysis', icon: 'telescope-outline', description: 'Discover hidden insights and deeper meaning' },
   { type: 'context_enrichment', label: 'Context Enrichment', icon: 'layers-outline', description: 'Add relevant context and background' },
@@ -64,7 +66,7 @@ export default function MemoryExpansionScreen() {
     queryKey: ['memory-expansions'],
     queryFn: async () => {
       // Placeholder — replace with actual /api/memory-expansion endpoint
-      return [];
+      return Array.from(NO_MEMORY_EXPANSIONS);
     },
   });
 

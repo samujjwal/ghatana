@@ -28,6 +28,7 @@ import type {
   LSPDiagnostic,
   LSPClientMetrics,
 } from '../types';
+import { emitCodeEditorDiagnostic } from '../../diagnostics';
 
 /**
  * LSP hook configuration
@@ -171,7 +172,9 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
           }, 5000);
         }
       } catch (error) {
-        console.error('Failed to initialize LSP:', error);
+        emitCodeEditorDiagnostic("useLSP", "error", "Failed to initialize LSP", {
+          error,
+        });
         setState((prev) => ({
           ...prev,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -221,7 +224,10 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
         metrics: managerRef.current!.getMetrics(),
       }));
     } catch (error) {
-      console.error(`Failed to restart server ${serverId}:`, error);
+      emitCodeEditorDiagnostic("useLSP", "error", "Failed to restart server", {
+        serverId,
+        error,
+      });
     }
   }, []);
 
@@ -278,7 +284,9 @@ export function useEnhancedLSP(
     if (!enableAutoRestart || !baseHook.error) return;
 
     autoRestartTimeoutRef.current = setTimeout(() => {
-      console.log('Auto-restarting LSP servers due to error');
+      emitCodeEditorDiagnostic("useLSP", "info", "Auto-restarting LSP servers due to error", {
+        serverId: baseHook.activeServers[0],
+      });
       baseHook.restartServer(baseHook.activeServers[0]);
     }, autoRestartDelay);
 

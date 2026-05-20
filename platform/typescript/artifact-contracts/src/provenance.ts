@@ -120,3 +120,75 @@ export type FileOwnershipMap = z.infer<typeof FileOwnershipMapSchema>;
  * Key = relative file path.
  */
 export type WorkspaceOwnershipMap = Record<string, FileOwnershipMap>;
+
+// ============================================================================
+// PROTECTED REGION (explicit first-class contract)
+// ============================================================================
+
+/**
+ * The canonical marker prefix embedded in source code to declare a protected block.
+ * Example usage in TSX:  `// @ghatana-protected:my-handler`
+ */
+export const PROTECTED_REGION_MARKER_PREFIX = "@ghatana-protected:" as const;
+
+/**
+ * Regular expression that matches a protected-region marker string.
+ * Group 1 = the stable region identifier after the prefix.
+ */
+export const PROTECTED_REGION_MARKER_RE =
+  /^@ghatana-protected:([a-zA-Z0-9_\-]+)$/;
+
+/**
+ * Schema for a protected-region marker string.
+ * Must match the pattern: `@ghatana-protected:<id>` where `<id>` is
+ * alphanumeric, hyphens, or underscores.
+ */
+export const ProtectedRegionMarkerSchema = z
+  .string()
+  .regex(PROTECTED_REGION_MARKER_RE, {
+    message:
+      "Protected region marker must match @ghatana-protected:<id> where <id> is [a-zA-Z0-9_-]+",
+  });
+
+/**
+ * A ProtectedRegion is an OwnershipRegion with `kind === "protected"`.
+ * It is a first-class contract used by the compiler to refuse overwriting
+ * user-authored code blocks even when re-generating the surrounding file.
+ *
+ * Protected regions are identified by an embedded marker comment and must
+ * have a stable `regionMarker` for round-trip preservation.
+ */
+export const ProtectedRegionSchema = OwnershipRegionSchema.extend({
+  kind: z.literal("protected"),
+  /** Required for protected regions — used to re-locate the block on re-compile. */
+  regionMarker: ProtectedRegionMarkerSchema,
+});
+
+export type ProtectedRegion = z.infer<typeof ProtectedRegionSchema>;
+
+/**
+ * Create a ProtectedRegion from a stable region identifier.
+ *
+ * @param filePath - File path relative to the workspace root.
+ * @param regionId - Stable, unique ID for this region (used in marker comment).
+ * @param startOffset - Start byte offset (inclusive).
+ * @param endOffset - End byte offset (exclusive).
+ * @param note - Optional human-readable description of this region.
+ * @returns A validated ProtectedRegion contract value.
+ */
+export function createProtectedRegion(
+  filePath: string,
+  regionId: string,
+  startOffset: number,
+  endOffset: number,
+  note?: string,
+): ProtectedRegion {
+  return ProtectedRegionSchema.parse({
+    filePath,
+    startOffset,
+    endOffset,
+    kind: "protected",
+    regionMarker: `${PROTECTED_REGION_MARKER_PREFIX}${regionId}`,
+    note,
+  });
+}

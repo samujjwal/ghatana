@@ -16,6 +16,7 @@ import type {
 } from "@ghatana/kernel-product-contracts";
 
 const execAsync = promisify(exec);
+const NO_SCRIPT_GATES: readonly string[] = Object.freeze([]);
 
 export interface ScriptBasedGateProviderOptions {
   readonly providerId: string;
@@ -122,6 +123,6 @@ export class ScriptBasedGateProvider implements GateProvider {
   async listGates(): Promise<readonly string[]> {
     // Script-based providers typically handle a single gate or a related group
     // Return empty array - gate registration happens at factory level
-    return [];
+    return Array.from(NO_SCRIPT_GATES);
   }
 }

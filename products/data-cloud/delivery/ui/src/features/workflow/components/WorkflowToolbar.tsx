@@ -29,6 +29,7 @@ import {
 } from '../stores/workflow.store';
 import { useWorkflow } from '../hooks/useWorkflow';
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution';
+import { emitDataCloudDiagnostic } from '../../../diagnostics';
 
 /**
  * WorkflowToolbar component props.
@@ -79,7 +80,10 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
       await saveWorkflow();
       setShowSaveConfirm(false);
     } catch (error) {
-      console.error('Save failed:', error);
+      emitDataCloudDiagnostic("WorkflowToolbar", "error", "Save failed", {
+        workflowId,
+        error,
+      });
     }
   }, [saveWorkflow]);
 
@@ -88,7 +92,7 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
    */
   const handleExecute = useCallback(async () => {
     if (!workflowId) {
-      console.error('No workflow ID');
+      emitDataCloudDiagnostic("WorkflowToolbar", "error", "Workflow execution requested without workflow ID");
       return;
     }
 
@@ -97,7 +101,10 @@ export const WorkflowToolbar: React.FC<WorkflowToolbarProps> = ({
       onExecutionStart?.(executionId);
       setShowExecuteConfirm(false);
     } catch (error) {
-      console.error('Execution failed:', error);
+      emitDataCloudDiagnostic("WorkflowToolbar", "error", "Execution failed", {
+        workflowId,
+        error,
+      });
     }
   }, [workflowId, executeWorkflow, onExecutionStart]);
 

@@ -85,6 +85,7 @@ const CURRENT_KEY = `${STORAGE_PREFIX}current`;
 const HISTORY_KEY = `${STORAGE_PREFIX}history`;
 const INDEX_KEY = `${STORAGE_PREFIX}index`;
 const MAX_HISTORY_SIZE = 50;
+const NO_WORKFLOW_HISTORY: readonly WorkflowDefinition[] = Object.freeze([]);
 const ORIGINAL_SET_ITEM = (localStorage as any).setItem;
 
 type PersistenceDiagnosticLevel = 'info' | 'warn' | 'error';
@@ -189,7 +190,7 @@ export function loadHistory(): WorkflowDefinition[] {
   try {
     const json = localStorage.getItem(HISTORY_KEY);
     if (!json) {
-      return [];
+      return Array.from(NO_WORKFLOW_HISTORY);
     }
     const history = (JSON.parse(json) as WorkflowDefinition[]).map((workflow) =>
       normalizeWorkflow(workflow)
@@ -197,7 +198,7 @@ export function loadHistory(): WorkflowDefinition[] {
     return history;
   } catch (error) {
     emitPersistenceDiagnostic('error', 'Failed to load history', { error });
-    return [];
+    return Array.from(NO_WORKFLOW_HISTORY);
   }
 }
 

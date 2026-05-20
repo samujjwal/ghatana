@@ -11,8 +11,11 @@ import java.util.UUID;
  * (event append, audit, indexing, websocket broadcast). The outbox stores the intent
  * to perform these operations, which are processed asynchronously after the transaction commits.
  *
+ * <p>DC-P1-09: Audit events are now included in the outbox for atomic entity/event/audit writes.
+ * The auditPayload field contains the audit event that should be emitted after event append succeeds.
+ *
  * @doc.type class
- * @doc.purpose Outbox entry for atomic entity write lifecycle
+ * @doc.purpose Outbox entry for atomic entity write lifecycle with audit
  * @doc.layer product
  * @doc.pattern Outbox
  */
@@ -25,6 +28,7 @@ public class EntityWriteOutbox {
     private final String operationType;
     private final Map<String, Object> entitySnapshot;
     private final Map<String, Object> eventPayload;
+    private final Map<String, Object> auditPayload; // DC-P1-09: Audit event payload
     private final String correlationId;
     private final Instant createdAt;
     private final Instant processedAt;
@@ -46,6 +50,7 @@ public class EntityWriteOutbox {
         this.operationType = builder.operationType;
         this.entitySnapshot = builder.entitySnapshot;
         this.eventPayload = builder.eventPayload;
+        this.auditPayload = builder.auditPayload; // DC-P1-09
         this.correlationId = builder.correlationId;
         this.createdAt = builder.createdAt;
         this.processedAt = builder.processedAt;
@@ -81,6 +86,11 @@ public class EntityWriteOutbox {
         return eventPayload;
     }
     
+    // DC-P1-09: Audit payload getter
+    public Map<String, Object> auditPayload() {
+        return auditPayload;
+    }
+    
     public String correlationId() {
         return correlationId;
     }
@@ -113,6 +123,7 @@ public class EntityWriteOutbox {
         private String operationType;
         private Map<String, Object> entitySnapshot;
         private Map<String, Object> eventPayload;
+        private Map<String, Object> auditPayload; // DC-P1-09
         private String correlationId;
         private Instant createdAt;
         private Instant processedAt;
@@ -151,6 +162,12 @@ public class EntityWriteOutbox {
         
         public Builder eventPayload(Map<String, Object> eventPayload) {
             this.eventPayload = eventPayload;
+            return this;
+        }
+        
+        // DC-P1-09: Audit payload builder method
+        public Builder auditPayload(Map<String, Object> auditPayload) {
+            this.auditPayload = auditPayload;
             return this;
         }
         

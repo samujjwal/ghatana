@@ -19,6 +19,9 @@ import {
   truncateToolchainOutput,
 } from "../execution/ToolchainExecutionResultFactory.js";
 
+const NO_UNEXPECTED_ARTIFACTS: readonly string[] = Object.freeze([]);
+const NO_COMPOSE_VALIDATION_ERRORS: readonly { path: string; message: string }[] = Object.freeze([]);
+
 /**
  * @doc.type class
  * @doc.purpose Manages Docker Compose local deployments for Kernel lifecycle deploy / verify / rollback phases.
@@ -913,13 +916,13 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
           },
         ];
       }
-      return [];
+      return Array.from(NO_COMPOSE_VALIDATION_ERRORS);
     });
     return {
       status: errors.length > 0 ? "invalid" : "valid",
       errors,
       missingArtifacts: errors.map((error) => error.path),
-      unexpectedArtifacts: [],
+      unexpectedArtifacts: Array.from(NO_UNEXPECTED_ARTIFACTS),
     };
   }
 

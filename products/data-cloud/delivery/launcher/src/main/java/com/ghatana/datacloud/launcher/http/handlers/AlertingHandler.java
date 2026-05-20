@@ -43,6 +43,8 @@ public final class AlertingHandler {
     static final String ALERT_RULES_COLLECTION = "dc_alert_rules";
     private static final Logger log = LoggerFactory.getLogger(AlertingHandler.class);
     private static final String MISSING_TENANT_MESSAGE = "X-Tenant-Id header is required";
+    private static final List<Map<String, Object>> NO_ALERT_GROUPS = List.of();
+    private static final List<String> NO_STRING_VALUES = List.of();
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
@@ -949,7 +951,7 @@ public final class AlertingHandler {
         if (alerts.size() > 1) {
             return List.of(buildGroup("active-incident", alerts, true));
         }
-        return List.of();
+        return NO_ALERT_GROUPS;
     }
 
     private Map<String, Object> buildGroup(String key, List<Map<String, Object>> alerts, boolean globalGroup) {
@@ -1326,7 +1328,7 @@ public final class AlertingHandler {
         if (value instanceof List<?> list) {
             return list.stream().map(String::valueOf).toList();
         }
-        return List.of();
+        return NO_STRING_VALUES;
     }
 
     /**

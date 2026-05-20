@@ -5,8 +5,7 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
-import com.ghatana.platform.event.OutboxProcessor;
-import com.ghatana.platform.event.WriteIdempotencyStore;
+import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -55,9 +54,6 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
 
     @Mock
     private HttpHandlerSupport http;
-
-    @Mock
-    private OutboxProcessor outboxProcessor;
 
     @Mock
     private WriteIdempotencyStore idempotencyStore;
@@ -372,6 +368,107 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
         // Should reject as duplicate (409 Conflict)
         assertThat(response).isSameAs(errorResponse);
         verify(http).errorResponse(eq(409), anyString());
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Event append failure is handled gracefully with error response")
+    void eventAppendFailureIsHandledGracefullyWithErrorResponse() {
+        String eventJson = "{\"eventId\":\"event-fail-1\",\"type\":\"entity.created\",\"actor\":\"user-1\",\"timestamp\":\"2026-01-01T00:00:00Z\",\"data\":{}}";
+
+        when(request.loadBody()).thenReturn(Promise.of(eventJson));
+        when(idempotencyStore.checkIdempotency("tenant-1", any()))
+            .thenReturn(Promise.ofOptional(Optional.empty()));
+        when(outboxProcessor.enqueue(any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Event store unavailable")));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should return error response (503 Service Unavailable)
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(503), anyString());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Outbox processor failure prevents event append success")
+    void outboxProcessorFailurePreventsEventAppendSuccess() {
+        String eventJson = "{\"eventId\":\"event-fail-2\",\"type\":\"entity.created\",\"actor\":\"user-1\",\"timestamp\":\"2026-01-01T00:00:00Z\",\"data\":{}}";
+
+        when(request.loadBody()).thenReturn(Promise.of(eventJson));
+        when(idempotencyStore.checkIdempotency("tenant-1", any()))
+            .thenReturn(Promise.ofOptional(Optional.empty()));
+        when(outboxProcessor.enqueue(any()))
+            .thenReturn(Promise.ofException(new IllegalStateException("Outbox queue full")));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should return error response due to outbox failure
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(503), anyString());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Idempotency store failure is handled gracefully")
+    void idempotencyStoreFailureIsHandledGracefully() {
+        String eventJson = "{\"eventId\":\"event-fail-3\",\"type\":\"entity.created\",\"actor\":\"user-1\",\"timestamp\":\"2026-01-01T00:00:00Z\",\"data\":{}}";
+
+        when(request.loadBody()).thenReturn(Promise.of(eventJson));
+        when(idempotencyStore.checkIdempotency("tenant-1", any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Idempotency store unavailable")));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should return error response (503 Service Unavailable)
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(503), anyString());
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Event append with invalid payload returns 400 Bad Request")
+    void eventAppendWithInvalidPayloadReturns400BadRequest() {
+        // Invalid JSON payload
+        String malformedEventJson = "{invalid json}";
+
+        when(request.loadBody()).thenReturn(Promise.of(malformedEventJson));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should reject with 400 Bad Request
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(400), anyString());
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Event append with missing required type returns 400 Bad Request")
+    void eventAppendWithMissingRequiredTypeReturns400BadRequest() {
+        // Missing type field
+        String eventJson = "{\"eventId\":\"event-no-type\",\"actor\":\"user-1\",\"timestamp\":\"2026-01-01T00:00:00Z\",\"data\":{}}";
+
+        when(request.loadBody()).thenReturn(Promise.of(eventJson));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should reject with 400 Bad Request
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(400), anyString());
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Event append with missing required payload returns 400 Bad Request")
+    void eventAppendWithMissingRequiredPayloadReturns400BadRequest() {
+        // Missing payload field
+        String eventJson = "{\"eventId\":\"event-no-payload\",\"type\":\"entity.created\",\"actor\":\"user-1\",\"timestamp\":\"2026-01-01T00:00:00Z\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(eventJson));
+
+        HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+
+        // Should reject with 400 Bad Request
+        assertThat(response).isSameAs(errorResponse);
+        verify(http).errorResponse(eq(400), anyString());
         verify(outboxProcessor, never()).enqueue(any());
     }
 }

@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +28,8 @@ import java.util.Objects;
  * @doc.pattern Adapter
  */
 public final class PolicyMemoryItemAdapter implements MemoryItem {
+
+    private static final List<MemoryLink> NO_LINKS = List.of();
 
     private final Policy policy;
     private final String tenantId;
@@ -107,7 +108,7 @@ public final class PolicyMemoryItemAdapter implements MemoryItem {
     @Override
     @NotNull
     public List<MemoryLink> getLinks() {
-        return Collections.emptyList();
+        return NO_LINKS;
     }
 
     @Override

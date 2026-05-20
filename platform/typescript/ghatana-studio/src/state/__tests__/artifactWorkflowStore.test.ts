@@ -10,7 +10,7 @@
  * All tests operate against the real atoms without mocking Jotai internals.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createStore } from 'jotai';
 import {
   artifactWorkflowAtom,

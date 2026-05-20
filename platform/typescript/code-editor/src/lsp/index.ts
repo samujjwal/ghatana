@@ -121,6 +121,9 @@ export interface LSPCompletionItem {
   filterText?: string;
 }
 
+const NO_LSP_COMPLETIONS: readonly LSPCompletionItem[] = Object.freeze([]);
+const NO_LSP_LOCATIONS: readonly unknown[] = Object.freeze([]);
+
 /**
  * LSP Client Manager
  */
@@ -257,7 +260,7 @@ export class LSPClientManager {
                 serverId: serverConfig.id,
                 error,
               });
-              return [];
+              return Array.from(NO_LSP_LOCATIONS);
             }
           },
         }
@@ -618,7 +621,7 @@ class LSPServerInstance {
     position: monaco.Position
   ): Promise<LSPCompletionItem[]> {
     // Simplified completion - in real implementation would call LSP server
-    return [];
+    return Array.from(NO_LSP_COMPLETIONS);
   }
 
   /**
@@ -629,7 +632,7 @@ class LSPServerInstance {
     position: monaco.Position
   ): Promise<unknown[]> {
     // Simplified definition - in real implementation would call LSP server
-    return [];
+    return Array.from(NO_LSP_LOCATIONS);
   }
 
   /**

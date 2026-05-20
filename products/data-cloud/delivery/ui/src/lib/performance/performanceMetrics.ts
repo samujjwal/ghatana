@@ -29,6 +29,8 @@
  * @doc.pattern Utility (Metrics)
  */
 
+import { emitDataCloudDiagnostic } from '../../diagnostics';
+
 interface OperationMetrics {
   name: string;
   startTime: number;
@@ -80,7 +82,9 @@ class PerformanceTracker {
   end(operationId: string): void {
     const startTime = this.activeTrackers.get(operationId);
     if (!startTime) {
-      console.warn(`Operation ${operationId} not found`);
+      emitDataCloudDiagnostic("PerformanceMetrics", "warn", "Operation not found", {
+        operationId,
+      });
       return;
     }
 
@@ -173,9 +177,13 @@ class PerformanceTracker {
    */
   logReport(): void {
     const report = this.getReport();
-    console.table(report);
+    emitDataCloudDiagnostic("PerformanceMetrics", "debug", "Performance report generated", {
+      report,
+    });
     if (report.bottlenecks.length > 0) {
-      console.warn('Bottlenecks detected:', report.bottlenecks);
+      emitDataCloudDiagnostic("PerformanceMetrics", "warn", "Bottlenecks detected", {
+        bottlenecks: report.bottlenecks,
+      });
     }
   }
 

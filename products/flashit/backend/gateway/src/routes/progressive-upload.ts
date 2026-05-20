@@ -15,6 +15,7 @@ import AWS from 'aws-sdk';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../lib/auth.js';
 import { prisma } from '../lib/prisma.js';
+import { systemLogger } from '../lib/logger.js';
 
 // S3 configuration
 const s3 = new AWS.S3({
@@ -78,7 +79,12 @@ const cleanupExpiredSessions = () => {
           Bucket: S3_BUCKET,
           Key: `progressive/${session.userId}/${session.id}/${session.fileName}`,
           UploadId: session.multipartUploadId,
-        }).promise().catch(console.error);
+        }).promise().catch((error: unknown) => {
+          systemLogger.error('Failed to abort expired progressive upload', error, {
+            sessionId,
+            uploadId: session.multipartUploadId,
+          });
+        });
       }
       progressiveSessions.delete(sessionId);
     }

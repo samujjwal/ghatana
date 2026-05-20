@@ -46,6 +46,7 @@ public final class JdbcWorkflowDefinitionRegistry implements WorkflowDefinitionR
 
     private static final TypeReference<List<WorkflowStepDefinition>> STEPS_TYPE = new TypeReference<>() {};
     private static final TypeReference<Map<String, String>> META_TYPE = new TypeReference<>() {};
+    private static final List<WorkflowStepDefinition> NO_WORKFLOW_STEPS = List.of();
 
     private static final String UPSERT_SQL = """
         INSERT INTO workflow_definitions
@@ -204,12 +205,12 @@ public final class JdbcWorkflowDefinitionRegistry implements WorkflowDefinitionR
     }
 
     private List<WorkflowStepDefinition> fromJsonSteps(String json) {
-        if (json == null || json.isBlank()) return List.of();
+        if (json == null || json.isBlank()) return NO_WORKFLOW_STEPS;
         try {
             return MAPPER.readValue(json, STEPS_TYPE);
         } catch (JsonProcessingException e) {
             log.warn("Failed to parse steps JSON: {}", e.getMessage());
-            return List.of();
+            return NO_WORKFLOW_STEPS;
         }
     }
 

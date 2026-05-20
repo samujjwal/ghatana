@@ -127,6 +127,8 @@ import java.util.List;
  */
 public interface TypedAgent<I, O> {
 
+    List<String> NO_SKILL_REFS = List.of();
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Metadata
     // ═══════════════════════════════════════════════════════════════════════════
@@ -265,7 +267,7 @@ public interface TypedAgent<I, O> {
      */
     @NotNull
     default List<String> skillRefs() {
-        return List.of();
+        return NO_SKILL_REFS;
     }
 
     /**

@@ -74,6 +74,7 @@ import {
   Filter,
   Info,
 } from "lucide-react";
+import { emitDataCloudDiagnostic } from "../diagnostics";
 
 interface MasteryPageProps {
   tenantId: string;
@@ -123,7 +124,10 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       // Refetch data
       window.location.reload();
     } catch (error) {
-      console.error("Failed to approve delta:", error);
+      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to approve delta", {
+        deltaId,
+        error,
+      });
     }
   };
 
@@ -132,7 +136,10 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       await masteryService.rejectDelta(deltaId, "Rejected by admin");
       window.location.reload();
     } catch (error) {
-      console.error("Failed to reject delta:", error);
+      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to reject delta", {
+        deltaId,
+        error,
+      });
     }
   };
 
@@ -141,7 +148,10 @@ export function MasteryPage({ tenantId }: MasteryPageProps) {
       await masteryService.promoteDelta(deltaId);
       window.location.reload();
     } catch (error) {
-      console.error("Failed to promote delta:", error);
+      emitDataCloudDiagnostic("MasteryPage", "error", "Failed to promote delta", {
+        deltaId,
+        error,
+      });
     }
   };
 

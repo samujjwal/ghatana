@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +28,8 @@ import java.util.Objects;
  * @doc.pattern Adapter
  */
 public final class FactMemoryItemAdapter implements MemoryItem {
+
+    private static final List<MemoryLink> NO_LINKS = List.of();
 
     private final Fact fact;
     private final String tenantId;
@@ -106,7 +107,7 @@ public final class FactMemoryItemAdapter implements MemoryItem {
     @Override
     @NotNull
     public List<MemoryLink> getLinks() {
-        return Collections.emptyList();
+        return NO_LINKS;
     }
 
     @Override

@@ -11,6 +11,7 @@ import type {
 } from '../ToolchainAdapter.js';
 
 const execAsync = promisify(require('node:child_process').exec);
+const NO_VITEST_ARTIFACTS: readonly string[] = Object.freeze([]);
 
 /**
  * Vitest adapter for running unit/integration tests
@@ -173,6 +174,6 @@ export class VitestAdapter implements ToolchainAdapter {
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
     // Implementation note: Parse Vitest output to extract artifact paths (coverage reports, etc.)
-    return [];
+    return Array.from(NO_VITEST_ARTIFACTS);
   }
 }

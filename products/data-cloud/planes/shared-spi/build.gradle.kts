@@ -18,6 +18,9 @@ dependencies {
     api(project(":platform:java:core"))        // Offset type
     api(project(":platform:java:domain"))      // Platform event-store contracts for migration bridge
     api(libs.activej.promise)                  // Promise<T> in EventLogStore
+    
+    // DC-P1-09: Audit service for atomic entity/event/audit writes in outbox processor
+    implementation(project(":platform:java:audit"))
 
     // JPA + Hibernate: needed for @MappedSuperclass DataRecord and @Entity Collection
     api(libs.jakarta.persistence.api)

@@ -16,7 +16,7 @@
 
 import { useState, useCallback } from 'react';
 import type { ReactElement, ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
 import {
   createDecompileJobState,

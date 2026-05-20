@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRegister } from '../hooks/use-api';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ export default function RegisterPage() {
       await register.mutateAsync({ email, password, displayName: displayName || undefined });
       navigate('/');
     } catch (error) {
-      console.error('Registration failed:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'RegisterPage', message: 'Registration failed', error });
     }
   };
 

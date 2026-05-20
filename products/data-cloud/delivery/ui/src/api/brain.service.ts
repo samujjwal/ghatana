@@ -81,6 +81,8 @@ export interface SpotlightItem {
   metadata: Record<string, unknown>;
 }
 
+const NO_SPOTLIGHT_ITEMS: readonly SpotlightItem[] = Object.freeze([]);
+
 export interface AutonomyAction {
   id: string;
   timestamp: string;
@@ -300,7 +302,7 @@ export class BrainService {
     const response = await apiClient.get<BackendWorkspaceStatusResponse>('/brain/workspace');
     BrainWorkspaceStatusSchema.parse(response);
     void response;
-    return [];
+    return Array.from(NO_SPOTLIGHT_ITEMS);
   }
 
   /**

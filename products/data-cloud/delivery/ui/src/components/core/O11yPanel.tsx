@@ -70,6 +70,7 @@ interface O11yPanelProps {
 
 const EXECUTION_VISIBILITY_NOTE = 'Execution telemetry is not exposed by the standalone launcher API.';
 const SYSTEM_HEALTH_NOTE = 'System health summary is not exposed by the standalone launcher API.';
+const NO_EXECUTIONS: readonly Execution[] = Object.freeze([]);
 
 function getTenantId(): string {
     return SessionBootstrap.getTenantId() ?? '';
@@ -77,12 +78,12 @@ function getTenantId(): string {
 
 async function fetchActiveExecutions(): Promise<Execution[]> {
     void getTenantId();
-    return [];
+    return Array.from(NO_EXECUTIONS);
 }
 
 async function fetchRecentExecutions(): Promise<Execution[]> {
     void getTenantId();
-    return [];
+    return Array.from(NO_EXECUTIONS);
 }
 
 async function fetchSystemMetrics(): Promise<SystemMetrics | null> {

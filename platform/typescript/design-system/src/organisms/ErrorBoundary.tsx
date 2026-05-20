@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import type { ReactNode } from 'react';
+import { emitDesignSystemDiagnostic } from '../diagnostics';
 
 /**
  * Error context passed to error handler callbacks.
@@ -173,7 +174,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     // Log error to console in development
     if (logErrors && process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      emitDesignSystemDiagnostic("ErrorBoundary", "error", "ErrorBoundary caught an error", {
+        error,
+        errorInfo,
+      });
     }
 
     // Update state with error info

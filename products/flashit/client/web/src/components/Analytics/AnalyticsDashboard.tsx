@@ -26,6 +26,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // Types
 interface DashboardData {
@@ -497,7 +498,7 @@ function InsightCard({ insight }: { insight: DashboardData['insights'][0] }) {
         setActionTaken(true);
       }
     } catch (error) {
-      console.error('Failed to mark action as taken:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'AnalyticsDashboard', message: 'Failed to mark action as taken', error });
     }
   };
 

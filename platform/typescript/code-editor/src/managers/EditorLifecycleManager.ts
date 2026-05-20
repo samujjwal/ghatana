@@ -25,6 +25,7 @@ import type {
   EditorInstance,
   EditorMetrics,
 } from '../components/EnhancedCodeEditor';
+import { emitCodeEditorDiagnostic } from '../diagnostics';
 
 /**
  * Editor pool configuration
@@ -203,7 +204,9 @@ export class EditorLifecycleManager {
       this.removeEditor(fileId);
     });
     if (toRemove.length > 0) {
-      console.log(`Cleaned up ${toRemove.length} idle editors`);
+      emitCodeEditorDiagnostic("EditorLifecycleManager", "info", "Cleaned up idle editors", {
+        count: toRemove.length,
+      });
     }
   }
 
@@ -218,9 +221,10 @@ export class EditorLifecycleManager {
         ?.usedJSHeapSize || 0;
 
     if (memoryUsage > this.config.memoryThreshold) {
-      console.warn(
-        `Memory usage (${memoryUsage} bytes) exceeds threshold, forcing cleanup`
-      );
+      emitCodeEditorDiagnostic("EditorLifecycleManager", "warn", "Memory usage exceeds threshold, forcing cleanup", {
+        memoryUsage,
+        memoryThreshold: this.config.memoryThreshold,
+      });
 
       // Force cleanup of all unmounted editors
       const toRemove: string[] = [];

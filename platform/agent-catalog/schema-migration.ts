@@ -437,14 +437,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const target = args[1];
 
   if ((mode !== '--check' && mode !== '--fix') || !target) {
-    console.error('Usage: pnpm tsx platform/agent-catalog/schema-migration.ts --check|--fix <file-or-directory>');
+    process.stderr.write('Usage: pnpm tsx platform/agent-catalog/schema-migration.ts --check|--fix <file-or-directory>\n');
     process.exit(2);
   }
 
   const result = canonicalize(target, mode === '--fix');
   for (const error of result.errors) {
-    console.error(error);
+    process.stderr.write(`${error}\n`);
   }
-  console.log(`checked=${result.checked.length} changed=${result.changed.length} failed=${result.failed.length}`);
+  process.stdout.write(`checked=${result.checked.length} changed=${result.changed.length} failed=${result.failed.length}\n`);
   process.exit(result.failed.length > 0 ? 1 : 0);
 }

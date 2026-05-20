@@ -12,6 +12,8 @@ import { prisma } from '../../lib/prisma.js';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
 import { systemLogger } from '../../lib/logger.js';
 
+const NO_SEARCH_SUGGESTIONS: readonly string[] = Object.freeze([]);
+
 // Search types
 export type SearchType = 'semantic' | 'text' | 'hybrid' | 'similar';
 
@@ -738,7 +740,7 @@ export class EnhancedSearchService {
 
     } catch (error) {
       systemLogger.error('Failed to get search suggestions', { error });
-      return [];
+      return Array.from(NO_SEARCH_SUGGESTIONS);
     }
   }
 }

@@ -80,6 +80,8 @@ export interface MaterializedViewSuggestion {
   refreshInterval?: string;
 }
 
+const NO_MATERIALIZED_VIEW_SUGGESTIONS: readonly MaterializedViewSuggestion[] = Object.freeze([]);
+
 export interface HotnessMetric {
   datasetId: string;
   tier: 'HOT' | 'WARM' | 'COLD';
@@ -181,7 +183,7 @@ export class CostService {
    * When the materialized-view API lands, this will call the real route.
    */
   async getMaterializedViewSuggestions(): Promise<MaterializedViewSuggestion[]> {
-    return [];
+    return Array.from(NO_MATERIALIZED_VIEW_SUGGESTIONS);
   }
 
   /**

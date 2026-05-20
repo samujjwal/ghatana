@@ -29,8 +29,9 @@ export { HybridCanvasController } from "./hybrid-canvas-controller";
 export type { HybridCanvasAPI } from "./hybrid-canvas-controller";
 
 // State management
+/** @deprecated Use {@link createCanvasStore} for isolated per-canvas state. This global facade will be removed in a future version. */
+export { hybridCanvasStore } from './state.js';
 export {
-  hybridCanvasStore,
   createCanvasStore,
   createHybridCanvasStore,
   useHybridCanvasState,
@@ -38,7 +39,7 @@ export {
   useSelection,
   useRenderingMode,
   useActiveLayer,
-} from "./state";
+} from './state.js';
 
 // Provider
 export { HybridCanvasProvider } from "./HybridCanvasProvider";

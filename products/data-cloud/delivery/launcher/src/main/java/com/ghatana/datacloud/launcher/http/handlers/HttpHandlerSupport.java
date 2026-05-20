@@ -117,6 +117,29 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * DC-P0-01: Resolves the distributed trace context from the request.
+     * Extracts the traceparent header (W3C trace context format) or falls back to correlation ID.
+     *
+     * @param request inbound HTTP request
+     * @return trace context ID, or null if not present
+     */
+    public String resolveTraceContext(HttpRequest request) {
+        // W3C traceparent format: trace-id-span-id-trace-flags
+        String traceParent = request.getHeader(HttpHeaders.of("traceparent"));
+        if (traceParent != null && !traceParent.isBlank()) {
+            String[] parts = traceParent.split("-");
+            if (parts.length >= 1) {
+                return parts[0]; // Return trace-id portion
+            }
+        }
+        // Fallback to X-Trace-Id header
+        String fromTraceId = request.getHeader(HttpHeaders.of("X-Trace-Id"));
+        if (fromTraceId != null && !fromTraceId.isBlank()) return fromTraceId.trim();
+        // Fallback to correlation ID
+        return resolveCorrelationId(request);
+    }
+
+    /**
      * Builds a 200 OK JSON response with CORS headers.
      */
     public HttpResponse jsonResponse(Map<String, Object> data) {

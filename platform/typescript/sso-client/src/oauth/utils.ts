@@ -11,6 +11,7 @@ import type {
   UserInfoResponse,
   OAuthUser,
 } from './types';
+import { emitSsoDiagnostic } from '../diagnostics';
 
 /**
  * OAuth utilities class
@@ -207,7 +208,7 @@ export class OAuthUtils {
     try {
       localStorage.setItem(key, JSON.stringify(token));
     } catch (error) {
-      console.warn('Failed to store OAuth token:', error);
+      emitSsoDiagnostic({ level: 'warn', component: 'OAuthUtils', message: 'Failed to store OAuth token', error });
     }
   }
 
@@ -221,7 +222,7 @@ export class OAuthUtils {
       const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) : null;
     } catch (error) {
-      console.warn('Failed to retrieve OAuth token:', error);
+      emitSsoDiagnostic({ level: 'warn', component: 'OAuthUtils', message: 'Failed to retrieve OAuth token', error });
       return null;
     }
   }
@@ -234,7 +235,7 @@ export class OAuthUtils {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.warn('Failed to clear OAuth token:', error);
+      emitSsoDiagnostic({ level: 'warn', component: 'OAuthUtils', message: 'Failed to clear OAuth token', error });
     }
   }
 }

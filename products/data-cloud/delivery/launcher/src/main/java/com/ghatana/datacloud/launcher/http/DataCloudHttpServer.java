@@ -26,6 +26,8 @@ import com.ghatana.datacloud.launcher.compaction.StorageCompactionTask;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
+import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
+import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -322,6 +324,12 @@ public class DataCloudHttpServer {
      * When {@code null}, falls back to an in-memory ConcurrentHashMap (local/embedded only).
      */
     private EntityWriteIdempotencyStore entityWriteIdempotencyStore;
+
+    /**
+     * Optional entity write outbox processor for transaction/audit side effects.
+     * Production-like deployments must provide a durable implementation.
+     */
+    private EntityWriteOutboxProcessor entityWriteOutboxProcessor;
 
     /**
      * Optional durable generic idempotency store for all mutating routes (DC-BE-002).
@@ -725,6 +733,18 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withIdempotencyStore(EntityWriteIdempotencyStore store) {
         this.entityWriteIdempotencyStore = store;
+        return this;
+    }
+
+    /**
+     * Attaches the entity-write outbox processor used for atomic entity/event/audit side effects.
+     * Non-local deployments must provide a durable processor so pending outbox entries survive restarts.
+     *
+     * @param processor the outbox processor implementation; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withEntityWriteOutboxProcessor(EntityWriteOutboxProcessor processor) {
+        this.entityWriteOutboxProcessor = requireNonNull(processor, "processor must not be null");
         return this;
     }
 
@@ -1347,23 +1367,6 @@ public class DataCloudHttpServer {
         boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
         boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
 
-        // DC-P0-001: Centralized fail-closed gate — accumulates ALL violations before throwing.
-        RuntimeProfileValidator.builder()
-            .deploymentProfile(deploymentMode)
-            .strictTenantResolution(strictTenantResolution)
-            .authConfigured(authConfigured)
-            .auditConfigured(auditService != null)
-            .policyEngineConfigured(policyEngine != null)
-            .durableEntityStore(entityStoreDurable)
-            .durableEventStore(coreEventStoreDurable)
-            .durableIdempotencyStore(genericIdempotencyStore != null)
-            .transactionManagerConfigured(transactionManager != null)
-            .metricsConfigured(metricsCollectorConfigured)
-            .traceExportConfigured(traceExportService != null)
-            .completionServiceConfigured(completionService != null)
-            .build()
-            .validate();
-
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
         enforceLoopbackInInsecureMode(authConfigured, strictTenantResolution, listenHost, log);
         validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
@@ -1430,26 +1433,38 @@ public class DataCloudHttpServer {
         if (openSearchConnector != null) entityHandler.withOpenSearchConnector(openSearchConnector);
         if (tenantQuotaService != null) entityHandler.withTenantQuotaService(tenantQuotaService);
         if (transactionManager != null) entityHandler.withTransactionManager(transactionManager);
-        if (entityWriteOutboxProcessor != null) entityHandler.withOutboxProcessor(entityWriteOutboxProcessor);
+        
+        EntityWriteOutboxProcessor configuredOutboxProcessor = entityWriteOutboxProcessor;
+        if (configuredOutboxProcessor == null) {
+            if (isProductionMode(deploymentMode)) {
+                throw new IllegalStateException(
+                    "Durable entity write outbox processor is required for deployment profile '" + deploymentMode + "'");
+            }
+            configuredOutboxProcessor = new InMemoryEntityWriteOutboxProcessor(auditService);
+            log.info("[DC-P1-02] Configured local entity write outbox processor for deployment profile '{}'", deploymentMode);
+        }
+        entityHandler.withOutboxProcessor(configuredOutboxProcessor);
+        
         entityHandler.withTraceSupport(traceSpanSupport);
         entityHandler.withSemanticSearchPorts(semanticSearchHandler::indexEntity, semanticSearchHandler::deleteEntity);
         // DC-P1-05: Set deployment profile for production validation
         entityHandler.withDeploymentProfile(deploymentMode);
-        // DC-P1-05: Validate production requirements for entity write durability
-        entityHandler.validateProductionRequirements();
+        // DC-P1-04: Wire audit service for transaction/outbox lifecycle
+        if (auditService != null) {
+            entityHandler.withAuditService(auditService);
+        }
 
         exportHandler     = new EntityExportHandler(exportService, httpSupport);
         anomalyHandler    = new EntityAnomalyHandler(anomalyDetector, httpSupport, eventLogStore, objectMapper);
         validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
 
+        // DC-P1-10: Configure event handler
         eventHandler = new EventHandler(client, httpSupport);
         eventHandler.withTraceSupport(traceSpanSupport);
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
         if (genericIdempotencyStore != null) eventHandler.withIdempotencyStore(genericIdempotencyStore);
-        // DC-P1-06: Set deployment profile for production validation
         eventHandler.withDeploymentProfile(deploymentMode);
-        // DC-P1-06: Validate production requirements for event durability
-        eventHandler.validateProductionRequirements();
+
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         if (genericIdempotencyStore != null) pipelineCheckpointHandler.withIdempotencyStore(genericIdempotencyStore);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
@@ -1705,6 +1720,30 @@ public class DataCloudHttpServer {
             .withUserActivityRoutes(userActivityHandler)
             .build();
 
+        // DC-P1-10: Unified production validation using RuntimeProfileValidator
+        // All subsystems register their requirements, and the validator collects all violations
+        RuntimeProfileValidator runtimeProfileValidator = RuntimeProfileValidator.builder()
+            .deploymentProfile(deploymentMode)
+            .strictTenantResolution(strictTenantResolution)
+            .authConfigured(apiKeyResolver != null || jwtProvider != null)
+            .auditConfigured(auditService != null)
+            .policyEngineConfigured(policyEngine != null)
+            .durableEntityStore(isDurableStoreBacking(client != null ? client.entityStore() : null))
+            .durableEventStore(eventLogStore != null)
+            .durableIdempotencyStore(entityWriteIdempotencyStore != null)
+            .transactionManagerConfigured(transactionManager != null)
+            .metricsConfigured(metricsCollector != null)
+            .traceExportConfigured(traceExportService != null)
+            .completionServiceConfigured(completionService != null)
+            .build();
+        
+        // Validate all production requirements in one centralized check
+        runtimeProfileValidator.validate();
+        
+        // Subsystem-specific validation for handlers that have additional requirements
+        entityHandler.validateProductionRequirements();
+        eventHandler.validateProductionRequirements();
+
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
 
         // DC-E1: wrap router with security filter when API key or JWT auth is configured
@@ -1717,13 +1756,14 @@ public class DataCloudHttpServer {
                 .policyEngine(policyEngine)
                 .auditService(auditService)
                 .strictTenantResolution(strictTenantResolution)
+                .deploymentProfile(deploymentMode) // DC-P0-04: Pass deployment mode into filter
                 .build();
-            securityFilter.validateProductionRequirements(); // added this line
             rootServlet = securityFilter.apply(filteredRouter);
-            log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {})",
+            log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {}, deployment profile: {})",
                 apiKeyResolver != null ? "enabled" : "disabled",
                 jwtProvider != null ? "enabled" : "disabled",
-                policyEngine != null ? "enabled" : "fail-closed");
+                policyEngine != null ? "enabled" : "fail-closed",
+                deploymentMode);
         } else {
             rootServlet = filteredRouter;
             log.info("[DC-E1] security filter inactive — withApiKeyResolver/withJwtProvider not called");

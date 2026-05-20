@@ -12,6 +12,7 @@
  */
 
 import { WebSocketClient, type WebSocketConfig, type WebSocketConnectionState } from '../client';
+import { emitRealtimeDiagnostic } from '../diagnostics';
 
 /**
  * Configuration for ActiveJ stream connections.
@@ -204,7 +205,12 @@ export class ActiveJStreamClient {
                 const message = wsMessage.payload as ActiveJStreamMessage;
                 this.dispatchMessage(message);
             } catch (error) {
-                console.error('[ActiveJStreamClient] Failed to process message:', error);
+                emitRealtimeDiagnostic({
+                    level: 'error',
+                    component: 'ActiveJStreamClient',
+                    message: 'Failed to process message',
+                    error,
+                });
             }
         });
 
@@ -353,7 +359,12 @@ export class ActiveJStreamClient {
      */
     send<T = unknown>(message: ActiveJStreamMessage<T>): void {
         if (!this.connected) {
-            console.warn('[ActiveJStreamClient] Cannot send message: not connected');
+            emitRealtimeDiagnostic({
+                level: 'warn',
+                component: 'ActiveJStreamClient',
+                message: 'Cannot send message: not connected',
+                context: { messageType: message.type },
+            });
             return;
         }
 

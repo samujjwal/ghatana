@@ -36,6 +36,7 @@ import {
 } from "../contracts/schemas";
 import { MOCK_COLLECTIONS, MOCK_WORKFLOWS } from "../lib/mock-data";
 import type { z } from "zod";
+import { emitDataCloudDiagnostic } from "../diagnostics";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -57,10 +58,9 @@ function contractJson<T extends z.ZodTypeAny>(
 ): ReturnType<typeof HttpResponse.json> {
   const result = schema.safeParse(data);
   if (!result.success) {
-    console.warn(
-      "[MSW contract violation]",
-      result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
-    );
+    emitDataCloudDiagnostic("MSWHandlers", "warn", "MSW contract violation", {
+      issues: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+    });
   }
   return HttpResponse.json(data as Record<string, unknown>, init);
 }

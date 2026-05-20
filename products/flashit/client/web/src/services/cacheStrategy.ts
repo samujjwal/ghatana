@@ -8,6 +8,8 @@
  * @doc.pattern CacheService
  */
 
+import { emitFlashItDiagnostic } from '@/diagnostics';
+
 // ============================================================================
 // Types & Interfaces
 // ============================================================================
@@ -406,7 +408,7 @@ class CacheStrategyService {
       try {
         sessionStorage.setItem(key, JSON.stringify(entry));
       } catch {
-        console.warn('Session storage full, unable to cache');
+        emitFlashItDiagnostic({ level: 'warn', component: 'cacheStrategy', message: 'Session storage full, unable to cache' });
       }
     }
   }
@@ -451,7 +453,7 @@ class CacheStrategyService {
       try {
         localStorage.setItem(key, JSON.stringify(entry));
       } catch {
-        console.warn('Local storage full, unable to cache');
+        emitFlashItDiagnostic({ level: 'warn', component: 'cacheStrategy', message: 'Local storage full, unable to cache' });
       }
     }
   }
@@ -539,7 +541,7 @@ class CacheStrategyService {
         request.onerror = () => reject(request.error);
       });
     } catch (e) {
-      console.warn('IndexedDB write failed:', e);
+      emitFlashItDiagnostic({ level: 'warn', component: 'cacheStrategy', message: 'IndexedDB write failed', error: e });
     }
   }
 

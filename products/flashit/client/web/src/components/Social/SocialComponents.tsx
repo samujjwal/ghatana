@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // Types
 interface User {
@@ -108,7 +109,7 @@ export function SphereShareDialog({
         message: message.trim() || undefined,
       });
     } catch (error) {
-      console.error('Failed to share sphere:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'SocialComponents', message: 'Failed to share sphere', error });
     } finally {
       setIsLoading(false);
     }
@@ -515,7 +516,7 @@ export function UserSearchAndFollow() {
         user.email.toLowerCase().includes(query.toLowerCase())
       ));
     } catch (error) {
-      console.error('Search failed:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'SocialComponents', message: 'Search failed', error });
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -526,7 +527,7 @@ export function UserSearchAndFollow() {
     try {
       await followMutation.mutateAsync(userId);
     } catch (error) {
-      console.error('Failed to follow user:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'SocialComponents', message: 'Failed to follow user', error });
     }
   };
 

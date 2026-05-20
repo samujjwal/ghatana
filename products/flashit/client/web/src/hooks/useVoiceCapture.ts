@@ -9,6 +9,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface VoiceCaptureState {
   isRecording: boolean;
@@ -188,7 +189,7 @@ export function useVoiceCapture(options: UseVoiceCaptureOptions = {}): {
 
       analyze();
     } catch (error) {
-      console.error('Failed to start audio analysis:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'useVoiceCapture', message: 'Failed to start audio analysis', error });
     }
   }, [visualizerFftSize]);
 

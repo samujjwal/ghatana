@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
  */
 public interface ContractValidator {
 
+    List<KernelContract.ContractFamily> ALL_CONTRACT_FAMILIES = List.of();
+
     /**
      * Validation result: either valid or carrying error messages.
      */
@@ -125,6 +127,6 @@ public interface ContractValidator {
      * Returns the contract families this validator applies to, or empty for all families.
      */
     default List<KernelContract.ContractFamily> applicableFamilies() {
-        return List.of();
+        return ALL_CONTRACT_FAMILIES;
     }
 }

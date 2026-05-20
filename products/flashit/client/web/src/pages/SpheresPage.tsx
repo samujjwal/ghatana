@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useSpheres, useCreateSphere, useDeleteSphere } from '../hooks/use-api';
 import Layout from '../components/Layout';
 import { Plus, Layers, Trash2, Users, Lock, Eye } from 'lucide-react';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export default function SpheresPage() {
   const { data: spheres, refetch } = useSpheres();
@@ -33,7 +34,7 @@ export default function SpheresPage() {
       setNewSphereDescription('');
       refetch();
     } catch (error) {
-      console.error('Failed to create sphere:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'SpheresPage', message: 'Failed to create sphere', error });
       alert('Failed to create sphere');
     }
   };
@@ -44,7 +45,7 @@ export default function SpheresPage() {
         await deleteSphere.mutateAsync(id);
         refetch();
       } catch (error) {
-        console.error('Failed to delete sphere:', error);
+        emitFlashItDiagnostic({ level: 'error', component: 'SpheresPage', message: 'Failed to delete sphere', error });
         alert('Failed to delete sphere');
       }
     }

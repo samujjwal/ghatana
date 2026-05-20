@@ -27,6 +27,8 @@ export interface QueuedItem {
   status: "pending" | "uploading" | "failed" | "completed";
 }
 
+const NO_QUEUED_ITEMS: readonly QueuedItem[] = Object.freeze([]);
+
 /**
  * Offline Queue Service
  *
@@ -74,10 +76,10 @@ class OfflineQueueService {
   async getQueue(): Promise<QueuedItem[]> {
     try {
       const queueJson = await AsyncStorage.getItem(QUEUE_KEY);
-      return queueJson ? JSON.parse(queueJson) : [];
+      return queueJson ? JSON.parse(queueJson) : Array.from(NO_QUEUED_ITEMS);
     } catch (error) {
       queueDiagnostic("error", "Error getting queue", { error });
-      return [];
+      return Array.from(NO_QUEUED_ITEMS);
     }
   }
 

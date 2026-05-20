@@ -14,6 +14,7 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import { EventCloudTopology, type EventCloudTopologyProps } from './EventCloudTopology';
 import { useEventCloudStream, type UseEventCloudStreamOptions } from '../../hooks';
 import { cn, cardStyles, textStyles, bgStyles } from '../../lib/theme';
+import { emitDataCloudDiagnostic } from '../../diagnostics';
 
 // ============================================
 // TYPES
@@ -208,7 +209,9 @@ export function EventCloudLiveTopology({
         try {
             await connect();
         } catch (err) {
-            console.error('Failed to reconnect:', err);
+            emitDataCloudDiagnostic("EventCloudLiveTopology", "error", "Failed to reconnect", {
+                error: err,
+            });
         }
     }, [connect]);
 

@@ -31,6 +31,7 @@ import java.util.concurrent.Executor;
 public class YieldCurveService {
 
     private static final Logger log = LoggerFactory.getLogger(YieldCurveService.class);
+    private static final List<TenorPoint> NO_TENORS = List.of();
 
     private final DataSource dataSource;
     private final Executor         executor;
@@ -238,7 +239,7 @@ public class YieldCurveService {
                 }
             }
         }
-        return List.of();
+        return NO_TENORS;
     }
 
     private String buildTenorJson(List<TenorPoint> tenors) {

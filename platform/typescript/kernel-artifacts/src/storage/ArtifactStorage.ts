@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import type { ArtifactEntry, ArtifactPackaging, ArtifactType } from '../domain/ArtifactManifest.js';
 
+const NO_ARTIFACT_ENTRIES: readonly ArtifactEntry[] = Object.freeze([]);
+
 /**
  * Artifact storage
  */
@@ -59,7 +61,7 @@ export class ArtifactStorage {
       await fs.access(productPath);
       await this.listArtifactsRecursive(productPath, artifacts, productId, surface || '');
     } catch {
-      return [];
+      return Array.from(NO_ARTIFACT_ENTRIES);
     }
 
     return artifacts;

@@ -37,6 +37,7 @@ import {
   Info,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // ============================================================================
 // Types
@@ -450,7 +451,7 @@ export const SummaryViewer: React.FC<SummaryViewerProps> = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download failed:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'SummaryViewer', message: 'Download failed', error });
     } finally {
       setIsDownloading(false);
     }

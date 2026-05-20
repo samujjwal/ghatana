@@ -223,6 +223,8 @@ import java.util.stream.Stream;
  */
 final class CustomPersistenceUnitInfo implements PersistenceUnitInfo {
     private static final Logger LOG = LoggerFactory.getLogger(CustomPersistenceUnitInfo.class);
+    private static final List<String> NO_MAPPING_FILES = List.of();
+    private static final List<URL> NO_JAR_FILE_URLS = List.of();
 
     private final String persistenceUnitName;
     private final List<String> entityClassNames;
@@ -456,12 +458,12 @@ final class CustomPersistenceUnitInfo implements PersistenceUnitInfo {
 
     @Override
     public List<String> getMappingFileNames() {
-        return List.of();
+        return NO_MAPPING_FILES;
     }
 
     @Override
     public List<URL> getJarFileUrls() {
-        return List.of();
+        return NO_JAR_FILE_URLS;
     }
 
     @Override

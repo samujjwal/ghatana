@@ -52,6 +52,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { emitDesignSystemDiagnostic } from '../diagnostics';
 
 // Simple cn utility function
 const cn = (...classes: (string | undefined | null | false)[]): string => {
@@ -201,7 +202,9 @@ export function MobileShell({
             try {
                 await onRefresh();
             } catch (error) {
-                console.error('Refresh failed:', error);
+                emitDesignSystemDiagnostic("MobileShell", "error", "Refresh failed", {
+                    error,
+                });
             } finally {
                 setIsRefreshing(false);
             }

@@ -20,6 +20,7 @@ import { LoadingState } from "./components/common/LoadingState";
 import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
 import { RoleProtectedRoute } from "./components/security/RoleProtectedRoute";
 import { RuntimeCapabilityRouteGate } from "./components/security/RuntimeCapabilityRouteGate";
+import { emitDataCloudDiagnostic } from "./diagnostics";
 import {
   isAgentCatalogSurfaceEnabled,
   isAlertsSurfaceEnabled,
@@ -208,9 +209,9 @@ function PageLoader(): React.ReactElement {
     const startTime = Date.now();
     const timer = setTimeout(() => {
       const elapsed = Date.now() - startTime;
-      console.warn(
-        `[PageLoader] Chunk still loading after ${elapsed}ms. Check for large bundles, circular deps, or network issues.`,
-      );
+      emitDataCloudDiagnostic("PageLoader", "warn", "Chunk still loading", {
+        elapsedMs: elapsed,
+      });
     }, SLOW_LOAD_WARN_MS);
     return () => clearTimeout(timer);
   }, []);
@@ -233,17 +234,19 @@ class LazyLoadErrorBoundary extends React.Component<
 
   static getDerivedStateFromError(error: Error) {
     if (import.meta.env.DEV) {
-      console.error("[LazyLoadErrorBoundary]", error);
+      emitDataCloudDiagnostic("LazyLoadErrorBoundary", "error", "Lazy page failed to load", {
+        error,
+      });
     }
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (import.meta.env.DEV) {
-      console.error(
-        "[LazyLoadErrorBoundary] Component stack:",
-        info.componentStack,
-      );
+      emitDataCloudDiagnostic("LazyLoadErrorBoundary", "error", "Lazy page component stack captured", {
+        error,
+        componentStack: info.componentStack,
+      });
     }
   }
 

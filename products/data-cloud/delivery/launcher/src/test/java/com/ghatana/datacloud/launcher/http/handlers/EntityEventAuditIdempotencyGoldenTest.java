@@ -7,8 +7,8 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
-import com.ghatana.datacloud.launcher.http.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
+import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
@@ -176,6 +176,65 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("DC-P1-09: Outbox processor emits audit event from auditPayload")
+    void outboxProcessorEmitsAuditEventFromPayload() {
+        // DC-P1-09: Verify that outbox processor emits audit events when auditPayload is present
+        InMemoryOutboxProcessor processorWithAudit = new InMemoryOutboxProcessor(auditService);
+
+        Map<String, Object> auditPayload = Map.of(
+            "eventType", "ENTITY_CREATE",
+            "principal", "user-123",
+            "success", true,
+            "collection", "orders",
+            "entityId", "order-456"
+        );
+
+        com.ghatana.datacloud.spi.EntityWriteOutbox outbox = com.ghatana.datacloud.spi.EntityWriteOutbox.builder()
+            .tenantId("tenant-1")
+            .collection("orders")
+            .entityId("order-456")
+            .operationType("CREATE")
+            .entitySnapshot(Map.of("id", "order-456", "amount", 100))
+            .eventPayload(Map.of("type", "order.created"))
+            .auditPayload(auditPayload)
+            .correlationId("corr-123")
+            .build();
+
+        // Process the outbox entry
+        runPromise(() -> processorWithAudit.process(outbox));
+
+        // Verify audit event was emitted
+        assertThat(auditService.getAuditEvents()).hasSize(1);
+        AuditEvent emitted = auditService.getAuditEvents().get(0);
+        assertThat(emitted.tenantId()).isEqualTo("tenant-1");
+        assertThat(emitted.eventType()).isEqualTo("ENTITY_CREATE");
+        assertThat(emitted.principal()).isEqualTo("user-123");
+        assertThat(emitted.resourceType()).isEqualTo("ENTITY");
+        assertThat(emitted.resourceId()).isEqualTo("orders/order-456");
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Outbox processor continues without audit when auditPayload absent")
+    void outboxProcessorContinuesWithoutAuditWhenPayloadAbsent() {
+        // DC-P1-09: Verify that outbox processing continues even when auditPayload is absent
+        com.ghatana.datacloud.spi.EntityWriteOutbox outbox = com.ghatana.datacloud.spi.EntityWriteOutbox.builder()
+            .tenantId("tenant-1")
+            .collection("orders")
+            .entityId("order-456")
+            .operationType("CREATE")
+            .entitySnapshot(Map.of("id", "order-456", "amount", 100))
+            .eventPayload(Map.of("type", "order.created"))
+            .correlationId("corr-123")
+            .build();
+
+        // Process the outbox entry - should complete without error
+        runPromise(() -> outboxProcessor.process(outbox));
+
+        // Verify no audit event was emitted
+        assertThat(auditService.getAuditEvents()).isEmpty();
+    }
+
+    @Test
     @DisplayName("Audit service receives entity mutation events")
     void auditServiceReceivesEntityMutationEvents() {
         // Verify audit service is configured
@@ -335,8 +394,67 @@ class EntityEventAuditIdempotencyGoldenTest extends EventloopTestBase {
 
     private static class InMemoryOutboxProcessor implements EntityWriteOutboxProcessor {
         private final List<com.ghatana.datacloud.spi.EntityWriteOutbox> outboxEntries = new ArrayList<>();
+        private final AuditService auditService;
+
+        public InMemoryOutboxProcessor() {
+            this(null);
+        }
+
+        public InMemoryOutboxProcessor(AuditService auditService) {
+            this.auditService = auditService;
+        }
 
         @Override
+        public Promise<Void> process(com.ghatana.datacloud.spi.EntityWriteOutbox outbox) {
+            // DC-P1-09: Emit audit event if auditPayload is present
+            if (outbox.auditPayload() != null && auditService != null) {
+                AuditEvent auditEvent = AuditEvent.builder()
+                    .tenantId(outbox.tenantId())
+                    .eventType(outbox.auditPayload().getOrDefault("eventType", "ENTITY_WRITE"))
+                    .principal(outbox.auditPayload().getOrDefault("principal", "system"))
+                    .resourceType("ENTITY")
+                    .resourceId(outbox.collection() + "/" + outbox.entityId())
+                    .success(outbox.auditPayload().getOrDefault("success", true))
+                    .build();
+
+                for (Map.Entry<String, Object> entry : outbox.auditPayload().entrySet()) {
+                    if (!"eventType".equals(entry.getKey()) &&
+                        !"principal".equals(entry.getKey()) &&
+                        !"success".equals(entry.getKey())) {
+                        auditEvent = auditEvent.detail(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                return auditService.record(auditEvent)
+                    .then($ -> {
+                        outboxEntries.add(outbox);
+                        return Promise.of((Void) null);
+                    });
+            }
+            outboxEntries.add(outbox);
+            return Promise.of((Void) null);
+        }
+
+        @Override
+        public Promise<Integer> pollAndProcess(String tenantId, int limit) {
+            return Promise.of(0);
+        }
+
+        @Override
+        public Promise<List<com.ghatana.datacloud.spi.EntityWriteOutbox>> getPendingEntries(String tenantId, int limit) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<Void> markCompleted(String outboxId) {
+            return Promise.of((Void) null);
+        }
+
+        @Override
+        public Promise<Void> markFailed(String outboxId, String errorMessage) {
+            return Promise.of((Void) null);
+        }
+
         public void addPending(com.ghatana.datacloud.spi.EntityWriteOutbox outbox) {
             outboxEntries.add(outbox);
         }

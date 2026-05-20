@@ -9,6 +9,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { emitFlashItSharedDiagnostic } from '../diagnostics';
 
 // Recording modes
 export type RecordingMode = 'upload' | 'live' | 'progressive';
@@ -223,7 +224,12 @@ export function useAudioRecorderV2(mode: RecordingMode = 'upload'): MediaRecorde
       setStreamStatus('connected');
     } catch (error) {
       setStreamStatus('disconnected');
-      console.error('Live stream error:', error);
+      emitFlashItSharedDiagnostic({
+        level: 'error',
+        component: 'useMediaCaptureV2',
+        message: 'Live stream error',
+        error,
+      });
     }
   }, [(config as any).liveStreamEndpoint, config.mimeType]);
 

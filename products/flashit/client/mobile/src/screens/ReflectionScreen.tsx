@@ -63,6 +63,10 @@ interface PeriodicReflection {
   createdAt: string;
 }
 
+const NO_INSIGHTS: readonly Insight[] = Object.freeze([]);
+const NO_PATTERNS: readonly Pattern[] = Object.freeze([]);
+const NO_CONNECTIONS: readonly Connection[] = Object.freeze([]);
+
 export default function ReflectionScreen() {
   const { apiClient } = useApi();
   const queryClient = useQueryClient();
@@ -80,7 +84,7 @@ export default function ReflectionScreen() {
   // Fetch all reflection data
   const { data: insights, isLoading: insightsLoading } = useQuery<Insight[]>({
     queryKey: ['reflection', 'insights', activeSphereId],
-    queryFn: async () => [],
+    queryFn: async () => Array.from(NO_INSIGHTS),
     placeholderData: [],
     enabled: Boolean(activeSphereId),
   });
@@ -89,7 +93,7 @@ export default function ReflectionScreen() {
     queryKey: ['reflection', 'patterns'],
     queryFn: async () => {
       // Placeholder — replace with actual /api/reflection/patterns
-      return [];
+      return Array.from(NO_PATTERNS);
     },
   });
 
@@ -97,7 +101,7 @@ export default function ReflectionScreen() {
     queryKey: ['reflection', 'connections'],
     queryFn: async () => {
       // Placeholder — replace with actual /api/reflection/connections
-      return [];
+      return Array.from(NO_CONNECTIONS);
     },
   });
 

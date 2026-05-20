@@ -54,12 +54,18 @@ export type {
   OwnershipRegion,
   FileOwnershipMap,
   WorkspaceOwnershipMap,
+  ProtectedRegion,
 } from "./provenance.js";
 export {
   ProvenanceRecordSchema,
   OwnershipKindSchema,
   OwnershipRegionSchema,
   FileOwnershipMapSchema,
+  ProtectedRegionMarkerSchema,
+  ProtectedRegionSchema,
+  PROTECTED_REGION_MARKER_PREFIX,
+  PROTECTED_REGION_MARKER_RE,
+  createProtectedRegion,
 } from "./provenance.js";
 
 // Fidelity

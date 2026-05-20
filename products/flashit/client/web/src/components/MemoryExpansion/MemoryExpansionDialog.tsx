@@ -15,6 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface MemoryExpansionDialogProps {
   isOpen: boolean;
@@ -106,7 +107,7 @@ export default function MemoryExpansionDialog({
         onClose();
       }, 2000);
     } catch (error) {
-      console.error('Failed to request expansion:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'MemoryExpansionDialog', message: 'Failed to request expansion', error });
     }
   };
 

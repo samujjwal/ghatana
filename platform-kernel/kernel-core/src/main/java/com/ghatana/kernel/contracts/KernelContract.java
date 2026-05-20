@@ -24,6 +24,8 @@ import java.util.Objects;
  */
 public abstract class KernelContract {
 
+    private static final List<String> NO_VALIDATION_ERRORS = List.of();
+
     private final String contractId;
     private final String name;
     private final String version;
@@ -127,7 +129,7 @@ public abstract class KernelContract {
     public List<String> getValidationErrors() {
         try {
             validate();
-            return List.of();
+            return NO_VALIDATION_ERRORS;
         } catch (IllegalArgumentException e) {
             return List.of(e.getMessage());
         }

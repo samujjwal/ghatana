@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // Widget types
 export type WidgetType =
@@ -128,7 +129,7 @@ export function CustomizableDashboard() {
 
       await refreshData();
     } catch (error) {
-      console.error('Failed to load dashboard config:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'CustomizableDashboard', message: 'Failed to load dashboard config', error });
     } finally {
       setLoading(false);
     }
@@ -147,7 +148,7 @@ export function CustomizableDashboard() {
         setData(dashboardData);
       }
     } catch (error) {
-      console.error('Failed to refresh dashboard data:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'CustomizableDashboard', message: 'Failed to refresh dashboard data', error });
     }
   };
 

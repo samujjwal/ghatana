@@ -15,6 +15,7 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { isFeatureGateEnabled, loadCapabilitySchema } from "@/lib/capabilities";
+import { emitDataCloudDiagnostic } from "@/diagnostics";
 import {
   GENERATED_FEATURE_GATE_CONFIG,
   type GeneratedFeatureGateId,
@@ -171,7 +172,9 @@ export const initializeCapabilitySchemaAtom = atom(null, async (_get, set) => {
     await loadCapabilitySchema();
     set(capabilitySchemaLoadedAtom, true);
   } catch (error) {
-    console.error("Failed to load capability schema:", error);
+    emitDataCloudDiagnostic("FeatureFlagsStore", "error", "Failed to load capability schema", {
+      error,
+    });
     // Continue with defaults if schema fails to load
     set(capabilitySchemaLoadedAtom, false);
   }

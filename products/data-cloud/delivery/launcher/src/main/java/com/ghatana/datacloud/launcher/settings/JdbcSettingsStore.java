@@ -42,6 +42,7 @@ import java.util.Optional;
 public class JdbcSettingsStore implements SettingsStore {
 
     private static final Logger log = LoggerFactory.getLogger(JdbcSettingsStore.class);
+    private static final List<Map<String, Object>> NO_SETTINGS_LIST = List.of();
 
     private static final String TABLE = "dc_settings";
     private static final String INIT_SQL =
@@ -234,13 +235,13 @@ public class JdbcSettingsStore implements SettingsStore {
         ensureSchema();
         String json = readJson(tenantId, category);
         if (json == null || json.isBlank()) {
-            return Collections.emptyList();
+            return NO_SETTINGS_LIST;
         }
         try {
             return objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
         } catch (Exception e) {
             log.warn("[SETTINGS] Failed to deserialise {} for tenant {} — returning empty list", category, tenantId, e);
-            return Collections.emptyList();
+            return NO_SETTINGS_LIST;
         }
     }
 

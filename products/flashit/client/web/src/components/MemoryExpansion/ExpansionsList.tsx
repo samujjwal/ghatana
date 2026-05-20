@@ -19,6 +19,7 @@ import {
 import { format } from 'date-fns';
 import MemoryExpansionDialog from './MemoryExpansionDialog';
 import ExpansionResultCard from './ExpansionResultCard';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export default function ExpansionsList() {
   const [showDialog, setShowDialog] = useState(false);
@@ -186,7 +187,7 @@ export default function ExpansionsList() {
         isOpen={showDialog}
         onClose={() => setShowDialog(false)}
         onExpansionRequested={(jobId) => {
-          console.log('Expansion requested:', jobId);
+          emitFlashItDiagnostic({ level: 'info', component: 'ExpansionsList', message: 'Expansion requested', context: { jobId } });
           setShowDialog(false);
         }}
       />

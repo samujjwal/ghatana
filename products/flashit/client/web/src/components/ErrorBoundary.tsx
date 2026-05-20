@@ -10,6 +10,7 @@
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 import { flashitWebColors, flashitWebAlpha, flashitWebGradients } from '@/styles/designTokens';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // ============================================================================
 // Types & Interfaces
@@ -35,6 +36,7 @@ interface ErrorBoundaryState {
 // ============================================================================
 
 const MAX_ERROR_RESET_ATTEMPTS = 5;
+const NO_ERROR_LOGS: readonly unknown[] = Object.freeze([]);
 
 // ============================================================================
 // Error Boundary Component
@@ -75,7 +77,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error Boundary caught error:', error, errorInfo);
+      emitFlashItDiagnostic({ level: 'error', component: 'ErrorBoundary', message: 'Error boundary caught error', error, context: { componentStack: errorInfo.componentStack } });
     }
 
     // Log error to monitoring service
@@ -145,16 +147,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       // Implementation note: Send to error logging service (e.g., Sentry)
       // errorLogger.log(errorData);
     } catch (e) {
-      console.error('Failed to log error:', e);
+      emitFlashItDiagnostic({ level: 'error', component: 'ErrorBoundary', message: 'Failed to persist error log', error: e });
     }
   }
 
   private getStoredErrors(): unknown[] {
     try {
       const stored = localStorage.getItem('flashit_error_logs');
-      return stored ? JSON.parse(stored) : [];
+      return stored ? JSON.parse(stored) : Array.from(NO_ERROR_LOGS);
     } catch {
-      return [];
+      return Array.from(NO_ERROR_LOGS);
     }
   }
 
@@ -443,9 +445,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 export function getErrorLogs(): unknown[] {
   try {
     const stored = localStorage.getItem('flashit_error_logs');
-    return stored ? JSON.parse(stored) : [];
+    return stored ? JSON.parse(stored) : Array.from(NO_ERROR_LOGS);
   } catch {
-    return [];
+    return Array.from(NO_ERROR_LOGS);
   }
 }
 

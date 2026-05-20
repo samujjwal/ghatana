@@ -45,6 +45,8 @@ export interface EmbeddingResult {
   processingTimeMs: number;
 }
 
+const NO_SIMILAR_MOMENTS: readonly SimilarMoment[] = Object.freeze([]);
+
 // Queue configuration
 const EMBEDDING_QUEUE = 'flashit-embeddings';
 
@@ -302,7 +304,7 @@ export class VectorEmbeddingService {
     // If no OpenAI key configured, return empty results
     if (!process.env.OPENAI_API_KEY) {
       systemLogger.warn('OPENAI_API_KEY not configured, vector search unavailable');
-      return [];
+      return Array.from(NO_SIMILAR_MOMENTS);
     }
 
     try {
@@ -357,7 +359,7 @@ export class VectorEmbeddingService {
       }
       
       systemLogger.error('Vector search failed', error);
-      return [];
+      return Array.from(NO_SIMILAR_MOMENTS);
     }
   }
 
@@ -374,7 +376,7 @@ export class VectorEmbeddingService {
       const searchTerms = query.split(/\s+/).filter(t => t.length > 2).join(' & ');
       
       if (!searchTerms) {
-        return [];
+        return Array.from(NO_SIMILAR_MOMENTS);
       }
 
       const results = await prisma.$queryRaw<Array<{
@@ -416,7 +418,7 @@ export class VectorEmbeddingService {
 
     } catch (error) {
       systemLogger.error('Fallback text search failed', error);
-      return [];
+      return Array.from(NO_SIMILAR_MOMENTS);
     }
   }
 

@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.join(__dirname, '..');
 const CONTRACTS_DIR = path.join(PROJECT_ROOT, 'contracts/openapi');
 const OUTPUT_DIR = path.join(PROJECT_ROOT, 'delivery/ui/src/lib/routing');
+const COMPATIBILITY_REGISTRY = path.join(CONTRACTS_DIR, 'route-compatibility-registry.yaml');
 
 // Check mode flag
 const CHECK_MODE = process.argv.includes('--check');
@@ -44,93 +45,208 @@ class RouteMetadata {
 }
 
 /**
- * Parse OpenAPI YAML file and extract route metadata
+ * DC-P1-07: Parse route compatibility registry YAML
+ * Extracts canonical action routes and legacy route mappings
+ */
+function parseCompatibilityRegistry() {
+  if (!fs.existsSync(COMPATIBILITY_REGISTRY)) {
+    console.warn(`[DC-P1-07] Compatibility registry not found: ${COMPATIBILITY_REGISTRY}`);
+    return { canonicalRoutes: [], legacyRoutes: [] };
+  }
+
+  const content = fs.readFileSync(COMPATIBILITY_REGISTRY, 'utf-8');
+  const lines = content.split('\n');
+  
+  const canonicalRoutes = [];
+  const legacyRoutes = [];
+  let currentSection = null;
+  let currentRoute = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const indent = line.search(/\S|$/);
+    
+    if (trimmed === 'legacy_routes:') {
+      currentSection = 'legacy';
+      continue;
+    }
+    
+    if (trimmed === 'canonical_action_routes:') {
+      currentSection = 'canonical';
+      continue;
+    }
+    
+    if (trimmed.startsWith('- path:')) {
+      const path = trimmed.split(':')[1].trim();
+      currentRoute = { path };
+      if (currentSection === 'canonical') {
+        canonicalRoutes.push(currentRoute);
+      } else if (currentSection === 'legacy') {
+        legacyRoutes.push(currentRoute);
+      }
+      continue;
+    }
+    
+    if (currentRoute && trimmed.startsWith('methods:')) {
+      const methodsStr = trimmed.split(':')[1].trim();
+      currentRoute.methods = methodsStr.match(/\[([^\]]+)\]/)[1].split(',').map(m => m.trim());
+      continue;
+    }
+    
+    if (currentRoute && trimmed.startsWith('canonical:')) {
+      currentRoute.canonical = trimmed.split(':')[1].trim();
+      continue;
+    }
+    
+    if (currentRoute && trimmed.startsWith('owner:')) {
+      currentRoute.owner = trimmed.split(':')[1].trim();
+      continue;
+    }
+    
+    if (currentRoute && trimmed.startsWith('purpose:')) {
+      currentRoute.purpose = trimmed.split(':')[1].trim();
+      continue;
+    }
+  }
+  
+  console.log(`[DC-P1-07] Parsed ${canonicalRoutes.length} canonical routes from compatibility registry`);
+  console.log(`[DC-P1-07] Parsed ${legacyRoutes.length} legacy routes from compatibility registry`);
+  
+  return { canonicalRoutes, legacyRoutes };
+}
+
+/**
+ * Simple YAML parser for OpenAPI paths section
+ * Extracts paths, methods, and extensions without requiring external dependencies
  */
 function parseOpenApiContract(filePath) {
+  console.log(`[DC-P1-07] Reading file: ${filePath}`);
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
+  console.log(`[DC-P1-07] File has ${lines.length} lines`);
   
   const routes = [];
   let currentPath = null;
   let currentMethod = null;
   let currentOperationId = null;
-  let inOperation = false;
+  let currentIndent = 0;
+  let inPathsSection = false;
+  let operationExtensions = {};
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
+    const indent = line.search(/\S|$/);
+    
+    // Detect paths section
+    if (trimmed === 'paths:') {
+      inPathsSection = true;
+      continue;
+    }
+    
+    // Exit paths section when we reach a top-level section
+    if (inPathsSection && indent === 0 && trimmed && !trimmed.startsWith('#') && trimmed !== 'paths:') {
+      break;
+    }
+    
+    if (!inPathsSection) continue;
     
     // Detect path definition (2-space indent + /path:)
     const pathMatch = trimmed.match(/^(\/[^:]+):$/);
-    if (pathMatch && line.startsWith('  ')) {
-      currentPath = pathMatch[1];  // Preserve the leading slash
-      continue;
-    }
-    
-    // Detect HTTP method (4-space indent + get:/post:/etc)
-    const methodMatch = trimmed.match(/^(get|post|put|patch|delete|head|options|trace):$/);
-    if (methodMatch && line.startsWith('    ')) {
-      currentMethod = methodMatch[1];
-      currentOperationId = null;
-      inOperation = true;
-      continue;
-    }
-    
-    // Exit operation when indentation returns to 2 spaces
-    if (inOperation && line.startsWith('  ') && !line.startsWith('    ')) {
+    if (pathMatch && indent === 2) {
+      // Save previous operation if exists
       if (currentPath && currentMethod) {
         routes.push(new RouteMetadata(
           currentPath,
           currentMethod,
           currentOperationId,
-          extractSensitivity(lines, i, currentPath),
-          extractAccessLevel(lines, i, currentPath, currentMethod),
-          extractRequiresAuth(lines, i, currentPath),
-          extractTenantRequired(lines, i, currentPath)
+          operationExtensions.sensitivity || inferSensitivity(currentPath, currentMethod),
+          operationExtensions.accessLevel || inferAccessLevel(currentPath, currentMethod),
+          inferRequiresAuth(currentPath),
+          inferTenantRequired(currentPath)
         ));
       }
-      inOperation = false;
+      currentPath = pathMatch[1];
       currentMethod = null;
+      currentOperationId = null;
+      operationExtensions = {};
       continue;
     }
     
-    // Extract operationId
-    if (inOperation && trimmed.startsWith('operationId:')) {
-      currentOperationId = trimmed.split(':')[1].trim();
+    // Detect HTTP method (4-space indent + get:/post:/etc)
+    const methodMatch = trimmed.match(/^(get|post|put|patch|delete|head|options|trace):$/);
+    if (methodMatch && indent === 4 && currentPath) {
+      // Save previous operation if exists
+      if (currentMethod) {
+        routes.push(new RouteMetadata(
+          currentPath,
+          currentMethod,
+          currentOperationId,
+          operationExtensions.sensitivity || inferSensitivity(currentPath, currentMethod),
+          operationExtensions.accessLevel || inferAccessLevel(currentPath, currentMethod),
+          inferRequiresAuth(currentPath),
+          inferTenantRequired(currentPath)
+        ));
+      }
+      currentMethod = methodMatch[1];
+      currentOperationId = null;
+      operationExtensions = {};
+      continue;
+    }
+    
+    // Extract operationId and extensions (6-space indent or deeper)
+    if (currentMethod && indent >= 6) {
+      if (trimmed.startsWith('operationId:')) {
+        currentOperationId = trimmed.split(':')[1].trim();
+      }
+      if (trimmed.startsWith('x-ghatana-sensitivity:')) {
+        operationExtensions.sensitivity = trimmed.split(':')[1].trim();
+      }
+      if (trimmed.startsWith('x-ghatana-access-level:')) {
+        operationExtensions.accessLevel = trimmed.split(':')[1].trim();
+      }
+    }
+    
+    // Exit operation when indentation returns to 4 spaces (new method)
+    if (currentMethod && indent === 4 && !methodMatch) {
+      routes.push(new RouteMetadata(
+        currentPath,
+        currentMethod,
+        currentOperationId,
+        operationExtensions.sensitivity || inferSensitivity(currentPath, currentMethod),
+        operationExtensions.accessLevel || inferAccessLevel(currentPath, currentMethod),
+        inferRequiresAuth(currentPath),
+        inferTenantRequired(currentPath)
+      ));
+      currentMethod = null;
+      currentOperationId = null;
+      operationExtensions = {};
     }
   }
   
   // Handle last operation
-  if (currentPath && currentMethod && inOperation) {
+  if (currentPath && currentMethod) {
     routes.push(new RouteMetadata(
       currentPath,
       currentMethod,
       currentOperationId,
-      extractSensitivity(lines, lines.length, currentPath),
-      extractAccessLevel(lines, lines.length, currentPath, currentMethod),
-      extractRequiresAuth(lines, lines.length, currentPath),
-      extractTenantRequired(lines, lines.length, currentPath)
+      operationExtensions.sensitivity || inferSensitivity(currentPath, currentMethod),
+      operationExtensions.accessLevel || inferAccessLevel(currentPath, currentMethod),
+      inferRequiresAuth(currentPath),
+      inferTenantRequired(currentPath)
     ));
   }
   
+  console.log(`[DC-P1-07] Parsed ${routes.length} routes from ${filePath}`);
   return routes;
 }
 
 /**
- * Extract sensitivity from OpenAPI extension or infer from method/path
+ * Infer sensitivity from method/path
  */
-function extractSensitivity(lines, currentIndex, currentPath) {
-  // Look backward for x-ghatana-sensitivity extension
-  for (let i = currentIndex - 1; i >= Math.max(0, currentIndex - 20); i--) {
-    const line = lines[i];
-    if (line && line.includes('x-ghatana-sensitivity:')) {
-      return line.split(':')[1].trim();
-    }
-  }
-  
-  // Infer from method/path if not explicitly set
-  if (!currentPath) return 'INTERNAL';
-  const lowerPath = currentPath.toLowerCase();
+function inferSensitivity(path, method) {
+  const lowerPath = path.toLowerCase();
   
   if (lowerPath.includes('/governance/') || lowerPath.includes('/learning/review/')) {
     return 'CRITICAL';
@@ -139,22 +255,11 @@ function extractSensitivity(lines, currentIndex, currentPath) {
 }
 
 /**
- * Extract access level from OpenAPI extension or infer from path/method patterns
- * Based on existing RouteActionAccessRegistry patterns
+ * Infer access level from path/method patterns
  */
-function extractAccessLevel(lines, currentIndex, currentPath, currentMethod) {
-  // Look backward for x-ghatana-access-level extension
-  for (let i = currentIndex - 1; i >= Math.max(0, currentIndex - 20); i++) {
-    const line = lines[i];
-    if (line && line.includes('x-ghatana-access-level:')) {
-      return line.split(':')[1].trim();
-    }
-  }
-  
-  // Infer from path/method patterns based on existing registry
-  if (!currentPath) return 'VIEWER';
-  const lowerPath = currentPath.toLowerCase();
-  const lowerMethod = currentMethod ? currentMethod.toLowerCase() : '';
+function inferAccessLevel(path, method) {
+  const lowerPath = path.toLowerCase();
+  const lowerMethod = method.toLowerCase();
   
   // ADMIN routes: governance mutations, settings, keys, approvals, model promote
   if (lowerPath.includes('/governance/') && 
@@ -232,13 +337,10 @@ function extractAccessLevel(lines, currentIndex, currentPath, currentMethod) {
 }
 
 /**
- * Extract whether auth is required
+ * Infer whether auth is required
  */
-function extractRequiresAuth(lines, currentIndex, currentPath) {
-  // Public paths: /health, /ready, /live, /metrics, /info
-  if (!currentPath) return true;
-  const lowerPath = currentPath.toLowerCase();
-  
+function inferRequiresAuth(path) {
+  const lowerPath = path.toLowerCase();
   if (lowerPath.includes('/health') || lowerPath.includes('/ready') || lowerPath.includes('/live') ||
       lowerPath.includes('/metrics') || lowerPath.includes('/info')) {
     return false;
@@ -247,19 +349,17 @@ function extractRequiresAuth(lines, currentIndex, currentPath) {
 }
 
 /**
- * Extract whether tenant is required
+ * Infer whether tenant is required
  */
-function extractTenantRequired(lines, currentIndex, currentPath) {
-  // Most API routes require tenant
-  if (!currentPath) return true;
-  const lowerPath = currentPath.toLowerCase();
-  
+function inferTenantRequired(path) {
+  const lowerPath = path.toLowerCase();
   if (lowerPath.includes('/health') || lowerPath.includes('/ready') || lowerPath.includes('/live') ||
       lowerPath.includes('/metrics') || lowerPath.includes('/info')) {
     return false;
   }
   return true;
 }
+
 
 /**
  * Generate TypeScript route registry from parsed metadata
@@ -349,10 +449,84 @@ function generateJavaRegistry(routes, contractName) {
 }
 
 /**
+ * DC-P1-07: Validate that all canonical routes from registry exist in OpenAPI contracts
+ */
+function validateCanonicalRoutesInContracts(canonicalRoutes, contractRoutes) {
+  const contractRouteKeys = new Set(
+    contractRoutes.map(r => `${r.method.toLowerCase()} ${r.path}`)
+  );
+  
+  const missingRoutes = [];
+  for (const canonical of canonicalRoutes) {
+    for (const method of canonical.methods) {
+      const key = `${method.toLowerCase()} ${canonical.path}`;
+      if (!contractRouteKeys.has(key)) {
+        missingRoutes.push({
+          path: canonical.path,
+          method: method,
+          owner: canonical.owner,
+          purpose: canonical.purpose
+        });
+      }
+    }
+  }
+  
+  if (missingRoutes.length > 0) {
+    console.error('[DC-P1-07] ERROR: Canonical routes missing from OpenAPI contracts:');
+    for (const route of missingRoutes) {
+      console.error(`  - ${route.method} ${route.path} (${route.owner}: ${route.purpose})`);
+    }
+    console.error('[DC-P1-07] All canonical routes must be defined in OpenAPI contracts.');
+    process.exit(1);
+  }
+  
+  console.log(`[DC-P1-07] All ${canonicalRoutes.length} canonical routes found in OpenAPI contracts`);
+}
+
+/**
+ * DC-P1-07: Generate compatibility metadata for legacy routes
+ */
+function generateLegacyCompatibilityMetadata(legacyRoutes) {
+  const lines = [
+    '// Auto-generated from route-compatibility-registry.yaml by generate-route-security-metadata.mjs',
+    '// DC-P1-07: Legacy route compatibility metadata - do not edit manually',
+    '',
+    'export interface LegacyRouteMapping {',
+    '  path: string;',
+    '  canonical: string;',
+    '  methods: string[];',
+    '  deprecatedSince: string;',
+    '  retirementTarget: string;',
+    '  featureFlag: string;',
+    '}',
+    '',
+    'export const legacyRouteMappings: LegacyRouteMapping[] = [',
+  ];
+  
+  for (const route of legacyRoutes) {
+    lines.push('  {');
+    lines.push(`    path: '${route.path}',`);
+    lines.push(`    canonical: '${route.canonical}',`);
+    lines.push(`    methods: [${route.methods.map(m => `'${m}'`).join(', ')}],`);
+    lines.push(`    deprecatedSince: '${route.deprecated_since || '2026-03-27'}',`);
+    lines.push(`    retirementTarget: '${route.retirement_target || '2026-12-31'}',`);
+    lines.push(`    featureFlag: '${route.feature_flag || 'DataCloudFeature.LEGACY_ACTION_ROUTES'}',`);
+    lines.push('  },');
+  }
+  
+  lines.push('];');
+  
+  return lines.join('\n');
+}
+
+/**
  * Main execution
  */
 function main() {
   console.log('[DC-P1-07] Generating route/security/runtime-truth metadata from contracts...');
+  
+  // DC-P1-07: Parse compatibility registry first
+  const { canonicalRoutes, legacyRoutes } = parseCompatibilityRegistry();
   
   const dataCloudYaml = path.join(CONTRACTS_DIR, 'data-cloud.yaml');
   const actionPlaneYaml = path.join(CONTRACTS_DIR, 'action-plane.yaml');
@@ -377,6 +551,11 @@ function main() {
   
   const allRoutes = [...dataCloudRoutes, ...actionPlaneRoutes];
   console.log(`[DC-P1-07] Total routes: ${allRoutes.length}`);
+  
+  // DC-P1-07: Validate all canonical routes exist in contracts
+  if (canonicalRoutes.length > 0) {
+    validateCanonicalRoutesInContracts(canonicalRoutes, allRoutes);
+  }
   
   // Generate TypeScript registry
   const tsRegistry = generateTypeScriptRegistry(allRoutes, 'data-cloud.yaml + action-plane.yaml');
@@ -437,6 +616,27 @@ function main() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
     fs.writeFileSync(postureOutputPath, postureMetadata);
     console.log(`[DC-P1-07] Generated runtime-truth posture: ${postureOutputPath}`);
+  }
+  
+  // DC-P1-07: Generate legacy route compatibility metadata
+  if (legacyRoutes.length > 0) {
+    const legacyMetadata = generateLegacyCompatibilityMetadata(legacyRoutes);
+    const legacyOutputPath = path.join(OUTPUT_DIR, 'LegacyRouteMappings.generated.ts');
+    
+    if (CHECK_MODE) {
+      if (fs.existsSync(legacyOutputPath)) {
+        const existing = fs.readFileSync(legacyOutputPath, 'utf-8');
+        if (existing !== legacyMetadata) {
+          console.error('[ERROR] Generated legacy route compatibility metadata does not match existing file');
+          console.error('[ERROR] Run without --check to regenerate: node scripts/generate-route-security-metadata.mjs');
+          process.exit(1);
+        }
+      }
+    } else {
+      fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+      fs.writeFileSync(legacyOutputPath, legacyMetadata);
+      console.log(`[DC-P1-07] Generated legacy route compatibility metadata: ${legacyOutputPath}`);
+    }
   }
   
   console.log('[DC-P1-07] Route/security/runtime-truth metadata generation completed successfully');

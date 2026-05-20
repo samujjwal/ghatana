@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * Capture Screen for Flashit Mobile
  * Full text capture with emotions, tags, importance, and sphere selection
@@ -46,7 +47,7 @@ export default function CaptureScreen({ navigation }: Props) {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'CaptureScreen', message: 'Navigation error', error });
     }
   };
 

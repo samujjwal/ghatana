@@ -27,6 +27,14 @@ import {
   type NodeId,
 } from '@ghatana/ui-builder';
 import type { BuilderDocument, ComponentInstance } from '@ghatana/ui-builder';
+import {
+  findBuilderComponents,
+  registerStarterContracts,
+  getRegistryStore,
+  type BuilderPaletteEntry,
+} from '@ghatana/ds-registry';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { projectedBuilderDocumentAtom, setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
 import { studioLogger } from '../logging/studioLogger';
 
 // Import visual builder components
@@ -127,6 +135,21 @@ interface DocumentListItem {
   document: StudioBuilderDocument;
 }
 
+/**
+ * Map a DS registry BuilderPaletteEntry to the ComponentPalette's ComponentContract shape.
+ * This is the single place where registry entries are adapted to the palette API.
+ */
+function paletteEntryToComponentContract(entry: BuilderPaletteEntry): ComponentContract {
+  return {
+    name: entry.name,
+    displayName: entry.displayName,
+    description: entry.tooltip,
+    category: entry.group,
+    deprecated: entry.status === 'deprecated',
+    props: entry.defaultProps,
+  };
+}
+
 
 
 export default function BuilderStudio(): ReactElement {
@@ -137,6 +160,12 @@ export default function BuilderStudio(): ReactElement {
   const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>(null);
   const [selectedInstance, setSelectedInstance] = useState<ComponentInstance | null>(null);
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBuilderDocument> | null>(null);
+  const [paletteContracts, setPaletteContracts] = useState<ComponentContract[]>([]);
+
+  // Workflow store integration: read the artifact projected document and sync into builder.
+  const projectedDocument = useAtomValue(projectedBuilderDocumentAtom);
+  const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
+  const [isUsingImportedDocument, setIsUsingImportedDocument] = useState(false);
 
   // Use custom persistence adapter that supports list and delete operations.
   // Wrapped in useMemo so a new instance is NOT created on every render.
@@ -145,10 +174,47 @@ export default function BuilderStudio(): ReactElement {
     []
   );
 
+  // Seed the DS registry with starter contracts once on mount, then derive
+  // the palette entries from the store so the palette is always registry-backed.
+  useEffect(() => {
+    const store = getRegistryStore();
+    registerStarterContracts(store);
+    const entries = findBuilderComponents(store);
+    setPaletteContracts(entries.map(paletteEntryToComponentContract));
+  }, []);
+
   // Load documents from persistence adapter
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  // Sync an imported artifact document into the builder when a new projected document arrives.
+  // Depends only on the document ID so that position-update writes from CanvasPage do not
+  // replace local edits to the same document.
+  useEffect(() => {
+    if (!projectedDocument) {
+      setIsUsingImportedDocument(false);
+      return;
+    }
+    const importedItem: DocumentListItem = {
+      id: projectedDocument.documentId,
+      name: projectedDocument.metadata.description ?? 'Imported Artifact',
+      updatedAt: projectedDocument.metadata.updatedAt,
+      document: projectedDocument,
+    };
+    setDocuments((prev) => {
+      const idx = prev.findIndex((d) => d.id === importedItem.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = importedItem;
+        return next;
+      }
+      return [importedItem, ...prev];
+    });
+    setSelectedDocument(importedItem);
+    setIsUsingImportedDocument(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectedDocument?.documentId]);
 
   const loadDocuments = async (): Promise<void> => {
     setError(null);
@@ -168,7 +234,13 @@ export default function BuilderStudio(): ReactElement {
         }
       }
       
-      setDocuments(docs);
+      // Preserve any workflow-store-imported documents not yet in localStorage,
+      // avoiding a race where this async callback overwrites the sync workflow effect.
+      const localIds = new Set(docs.map((d) => d.id));
+      setDocuments((prev) => {
+        const workflowOnly = prev.filter((d) => !localIds.has(d.id));
+        return [...workflowOnly, ...docs];
+      });
     } catch (err) {
       studioLogger.error('Failed to load documents', { error: err });
       setError('Failed to load documents');
@@ -252,6 +324,8 @@ export default function BuilderStudio(): ReactElement {
     setSelectedDocument(doc);
     setSelectedNodeId(null);
     setSelectedInstance(null);
+    // Track whether the selected document is the imported artifact, so edits sync back.
+    setIsUsingImportedDocument(doc.id === projectedDocument?.documentId);
   };
 
   const handleNodeSelect = (nodeId: NodeId): void => {
@@ -276,6 +350,10 @@ export default function BuilderStudio(): ReactElement {
       setSelectedDocument(updatedListItem);
       setSelectedInstance(updatedDoc.nodes[instanceId] || null);
       validateCurrentDocument();
+      // Sync edits back to the workflow store so Canvas and Preview routes see the change.
+      if (isUsingImportedDocument) {
+        setWorkflow({ projectedBuilderDocument: updatedDoc });
+      }
     } catch (err) {
       studioLogger.error('Failed to update property', { error: err });
       setError('Failed to update property');
@@ -307,6 +385,10 @@ export default function BuilderStudio(): ReactElement {
       
       setSelectedDocument(updatedListItem);
       validateCurrentDocument();
+      // Sync edits back to the workflow store so Canvas and Preview routes see the change.
+      if (isUsingImportedDocument) {
+        setWorkflow({ projectedBuilderDocument: updatedDoc });
+      }
     } catch (err) {
       studioLogger.error('Failed to add component', { error: err });
       setError('Failed to add component');
@@ -395,6 +477,21 @@ export default function BuilderStudio(): ReactElement {
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <Typography variant="body2" className="text-red-600">
               {error}
+            </Typography>
+          </div>
+        )}
+
+        {isUsingImportedDocument && (
+          <div
+            className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3"
+            role="status"
+            aria-label="Imported artifact active"
+          >
+            <Typography variant="body2" className="text-blue-700 font-medium">
+              ✓ Imported artifact is active in the Builder.
+            </Typography>
+            <Typography variant="body2" className="text-blue-600">
+              Edits are synced to the Canvas and Preview routes.
             </Typography>
           </div>
         )}
@@ -507,12 +604,7 @@ export default function BuilderStudio(): ReactElement {
                       <CardHeader title="Components" />
                       <CardContent className="flex-1 p-0">
                         <ComponentPalette
-                          contracts={[
-                            { name: 'Button', displayName: 'Button', category: 'Form', description: 'Clickable button component' },
-                            { name: 'Input', displayName: 'Input', category: 'Form', description: 'Text input field' },
-                            { name: 'Card', displayName: 'Card', category: 'Layout', description: 'Card container component' },
-                            { name: 'Typography', displayName: 'Typography', category: 'Content', description: 'Text display component' },
-                          ]}
+                          contracts={paletteContracts}
                           onComponentSelect={handleComponentSelect}
                         />
                       </CardContent>

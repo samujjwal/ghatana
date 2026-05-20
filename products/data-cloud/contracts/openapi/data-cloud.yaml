@@ -4332,6 +4332,8 @@ paths:
       summary: Approve a policy from the review queue
       operationId: apiV1LearningReviewReviewIdApprovePost
       tags: [learning]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - name: reviewId
           in: path
@@ -4347,6 +4349,8 @@ paths:
       summary: Reject a policy from the review queue
       operationId: apiV1LearningReviewReviewIdRejectPost
       tags: [learning]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - name: reviewId
           in: path
@@ -6150,6 +6154,8 @@ paths:
       summary: Trigger a data purge for expired entities (CRITICAL)
       operationId: apiV1GovernanceRetentionPurgePost
       tags: [governance]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
@@ -6170,6 +6176,8 @@ paths:
       summary: Redact PII fields from an entity
       operationId: apiV1GovernancePrivacyRedactPost
       tags: [governance]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
@@ -6246,6 +6254,8 @@ paths:
       summary: Create a new governance policy (DC-P1-009)
       operationId: apiV1GovernancePoliciesPost
       tags: [governance]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
@@ -6346,6 +6356,8 @@ paths:
       summary: Toggle a governance policy active/inactive (DC-P1-009)
       operationId: apiV1GovernancePoliciesIdTogglePost
       tags: [governance]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
         - name: id
@@ -6523,6 +6535,8 @@ paths:
       summary: Rotate API key secret
       operationId: apiV1SettingsKeysIdRotatePost
       tags: [settings]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - name: id
           in: path
@@ -6692,6 +6706,8 @@ paths:
       summary: Approve a pending settings change (P3.5)
       operationId: apiV1SettingsApprovalsIdApprovePost
       tags: [surfaces]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - name: id
           in: path
@@ -6711,6 +6727,8 @@ paths:
       summary: Reject a pending settings change (P3.5)
       operationId: apiV1SettingsApprovalsIdRejectPost
       tags: [surfaces]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - name: id
           in: path
@@ -7257,6 +7275,8 @@ paths:
       summary: Rotate connector credentials
       operationId: apiV1ConnectorsConnectionIdRotateCredentialsPost
       tags: [connectors]
+      x-ghatana-sensitivity: CRITICAL
+      x-ghatana-access-level: ADMIN
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
         - name: connectionId

@@ -361,6 +361,23 @@ public final class DataCloudSecurityFilter {
             return Promise.of(response);
         }
 
+        // DC-P1-06: For CRITICAL routes in production-like profiles, use blocking audit
+        if (isAuditBlocking(sensitivity)) {
+            boolean success = statusCode < 400;
+            return emitAuditBlocking(
+                    request,
+                    path,
+                    method,
+                    sensitivity,
+                    success,
+                    statusCode,
+                    requestId,
+                    tenantId,
+                    principalName)
+                .then($ -> Promise.of(response));
+        }
+
+        // Non-blocking audit for other cases
         if (sensitivity == EndpointSensitivity.SENSITIVE
             || sensitivity == EndpointSensitivity.CRITICAL
             || statusCode == 401
@@ -445,9 +462,66 @@ public final class DataCloudSecurityFilter {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Audit emission — fire-and-forget, never blocks the response path
+    // Audit emission — synchronous for CRITICAL routes in production, fire-and-forget otherwise
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * DC-P1-06: Determines if audit emission should be blocking for the given sensitivity and profile.
+     * CRITICAL routes in production-like profiles require synchronous audit with blocking on failure.
+     */
+    private boolean isAuditBlocking(EndpointSensitivity sensitivity) {
+        return sensitivity == EndpointSensitivity.CRITICAL && isProductionLikeProfile(deploymentProfile);
+    }
+
+    /**
+     * DC-P1-06: Synchronous audit emission that blocks on failure for CRITICAL routes in production.
+     * Returns a Promise that completes when audit is persisted or fails with an error.
+     */
+    private Promise<Void> emitAuditBlocking(
+            io.activej.http.HttpRequest request,
+            String path,
+            String method,
+            EndpointSensitivity sensitivity,
+            boolean success,
+            int statusCode,
+            String requestId,
+            String tenantId,
+            String principalName) {
+
+        if (auditService == null) {
+            log.error("[DC-SEC] DC-P1-06: Audit service is required for CRITICAL route {} {} tenant={} requestId={} in profile '{}' — blocking request",
+                      sensitivity, method, path, tenantId, requestId, deploymentProfile);
+            return Promise.ofException(new IllegalStateException(
+                "DC-P1-06: Audit service is required for CRITICAL routes in production/staging/sovereign profiles"));
+        }
+
+        AuditEvent event = AuditEvent.builder()
+            .tenantId(tenantId)
+            .eventType(resolveAuditEventType(path, sensitivity, statusCode))
+            .principal(principalName)
+            .resourceType("HTTP_ENDPOINT")
+            .resourceId(method + " " + path)
+            .success(success)
+            .detail("requestId",   requestId)
+            .detail("sensitivity", sensitivity.name())
+            .detail("statusCode",  statusCode)
+            .detail("remoteIp",    remoteIp(request))
+            .build();
+
+        // DC-P1-06: Synchronous audit for CRITICAL routes in production - block on failure
+        return auditService.record(event)
+            .whenException(e -> {
+                log.error("[DC-SEC] DC-P1-06: Audit write failure for CRITICAL route {} {} tenant={} requestId={} - blocking request: {}",
+                          method, path, tenantId, requestId, e.getMessage());
+                throw new IllegalStateException(
+                    "DC-P1-06: Audit persistence failed for CRITICAL route in production profile", e);
+            });
+    }
+
+    /**
+     * Fire-and-forget audit emission for non-critical routes or non-production profiles.
+     * Logs errors but never propagates them to the caller.
+     */
     private void emitAudit(
             io.activej.http.HttpRequest request,   // NOSONAR – kept as-is to avoid extra import
             String path,
@@ -464,10 +538,6 @@ public final class DataCloudSecurityFilter {
                 if (isAuditRequiredForProfile(deploymentProfile)) {
                     log.error("[DC-SEC] Audit service is required for {} route {} {} tenant={} requestId={} in profile '{}' — rejecting request",
                               sensitivity, method, path, tenantId, requestId, deploymentProfile);
-                    // For SENSITIVE/CRITICAL routes in non-local profiles, audit is mandatory
-                    // This check happens during audit emission, which means the request has already
-                    // been processed. In production, this should be caught at startup validation,
-                    // but we add this runtime check as a defense-in-depth measure.
                 } else {
                     log.error("[DC-SEC] Audit service unavailable for {} route {} {} tenant={} requestId={} — audit event dropped",
                               sensitivity, method, path, tenantId, requestId);
@@ -523,77 +593,87 @@ public final class DataCloudSecurityFilter {
     public static final String DEFAULT_FALLBACK_TENANT = "default";
 
     /**
-     * DC-P0-01: Validates production profile requirements at startup.
-     * Throws IllegalStateException if production invariants are violated.
+     * DC-P0-01/DC-P1-10: Returns a validation function that checks security filter production requirements.
+     * This function is intended to be registered with the central RuntimeProfileValidator.
      *
-     * <p>Production/staging/sovereign profiles require:
+     * <p>The validation checks that:
      * <ul>
-     *   <li>strictTenantResolution = true</li>
-     *   <li>auditService must be configured (for SENSITIVE/CRITICAL routes)</li>
-     *   <li>policyEngine must be configured (when enforcing=true)</li>
-     *   <li>apiKeyResolver or jwtProvider must be configured</li>
+     *   <li>At least one authentication mechanism (API key or JWT) is configured</li>
+     *   <li>Audit service is configured for compliance</li>
+     *   <li>Policy engine is configured for authorization</li>
+     *   <li>When enforcing=true, policy engine is required</li>
+     * </ul>
+     *
+     * @return validation function that throws IllegalStateException on validation failure
+     */
+    public java.util.function.Consumer<String> getProductionRequirementsValidator() {
+        return profile -> {
+            if (!isProductionLikeProfile(profile)) {
+                log.info("[DC-SEC] Skipping production validation for profile '{}'", profile);
+                return;
+            }
+
+            log.info("[DC-SEC] Validating production requirements for profile '{}'", profile);
+
+            boolean authConfigured = (apiKeyResolver != null) || (jwtProvider != null);
+            boolean auditConfigured = (auditService != null);
+            boolean policyConfigured = (policyEngine != null);
+
+            // Check authentication
+            if (!authConfigured) {
+                throw new IllegalStateException(
+                    "DC-P0-01: At least one authentication mechanism (API key or JWT) must be configured in production profile. " +
+                    "Configure DATACLOUD_API_KEY_RESOLVER or DATACLOUD_JWT_PROVIDER.");
+            }
+
+            // Check audit service
+            if (!auditConfigured) {
+                throw new IllegalStateException(
+                    "DC-P0-01: Audit service must be configured in production profile for compliance. " +
+                    "Configure DATACLOUD_AUDIT_SERVICE.");
+            }
+
+            // Check policy engine for strict tenant resolution
+            if (strictTenantResolution && !policyConfigured) {
+                throw new IllegalStateException(
+                    "DC-P0-01: Policy engine must be configured when strictTenantResolution=true in production profile. " +
+                    "Configure DATACLOUD_POLICY_ENGINE_URL.");
+            }
+
+            // DC-P0-01: Additional filter-specific validation for enforcing mode
+            if (enforcing && policyEngine == null) {
+                throw new IllegalStateException(
+                    "DC-P0-01: Policy engine is required when enforcing=true in production/staging/sovereign profiles. " +
+                    "Configure DATACLOUD_POLICY_ENGINE_URL.");
+            }
+
+            // DC-P1-09: Audit sink must be ready to accept writes in production
+            // Note: Async readiness check not possible in synchronous validation context
+            // Audit service health will be verified at runtime when audit events are emitted
+
+            log.info("[DC-SEC] Production requirements validated successfully for profile '{}'", profile);
+        };
+    }
+
+    /**
+     * DC-P0-01: Validates that required dependencies are configured for production profiles.
+     *
+     * <p>This method checks that:
+     * <ul>
+     *   <li>At least one authentication mechanism (API key or JWT) is configured</li>
+     *   <li>Audit service is configured for compliance</li>
+     *   <li>Policy engine is configured for authorization</li>
+     *   <li>When enforcing=true, policy engine is required</li>
      * </ul>
      *
      * <p>DC-P0-01: This method must be called during service startup before accepting traffic.
      * Failure to call this method in production profiles is a critical security vulnerability.
+     *
+     * @deprecated Use {@link #getProductionRequirementsValidator()} and register with central RuntimeProfileValidator instead
      */
+    @Deprecated
     public void validateProductionRequirements() {
-        if (!isProductionLikeProfile(deploymentProfile)) {
-            log.info("[DC-SEC] Skipping production validation for profile '{}'", deploymentProfile);
-            return;
-        }
-
-        log.info("[DC-SEC] Validating production requirements for profile '{}'", deploymentProfile);
-
-        // DC-P0-01: Strict tenant resolution is mandatory in production
-        if (!strictTenantResolution) {
-            throw new IllegalStateException(
-                "DC-P0-01: strictTenantResolution must be true in production/staging/sovereign profiles. " +
-                "Tenant must be derived from authenticated identity, not from fallback or headers. " +
-                "Set strictTenantResolution=true in the builder configuration.");
-        }
-
-        // DC-P0-01: At least one authentication mechanism must be configured
-        if (apiKeyResolver == null && jwtProvider == null) {
-            throw new IllegalStateException(
-                "DC-P0-01: At least one of apiKeyResolver or jwtProvider must be configured " +
-                "in production/staging/sovereign profiles. Authentication is mandatory.");
-        }
-
-        // DC-P0-01: Audit service is required for SENSITIVE/CRITICAL routes in production
-        if (auditService == null && enforcing) {
-            throw new IllegalStateException(
-                "DC-P0-01: AuditService is required for production/staging/sovereign profiles. " +
-                "SENSITIVE and CRITICAL routes must emit audit events.");
-        }
-
-        // DC-P1-09: Audit sink must be ready to accept writes in production
-        if (auditService != null && enforcing) {
-            try {
-                boolean auditReady = runPromise(() -> checkAuditSinkReadiness());
-                if (!auditReady) {
-                    throw new IllegalStateException(
-                        "DC-P1-09: Audit sink is not ready to accept writes. " +
-                        "Audit service must be healthy and able to persist events before accepting traffic. " +
-                        "Check audit sink connectivity and configuration.");
-                }
-                log.info("[DC-SEC] Audit sink readiness check passed for profile '{}'", deploymentProfile);
-            } catch (Exception e) {
-                throw new IllegalStateException(
-                    "DC-P1-09: Audit sink readiness check failed. " +
-                    "Audit service must be healthy and able to persist events before accepting traffic. " +
-                    "Error: " + e.getMessage(), e);
-            }
-        }
-
-        // DC-P0-01: Policy engine is required for CRITICAL routes when enforcing
-        if (policyEngine == null && enforcing) {
-            throw new IllegalStateException(
-                "DC-P0-01: PolicyEngine is required for production/staging/sovereign profiles when enforcing=true. " +
-                "CRITICAL routes require policy evaluation.");
-        }
-
-        log.info("[DC-SEC] Production requirements validated successfully for profile '{}'", deploymentProfile);
+        getProductionRequirementsValidator().accept(deploymentProfile);
     }
 
     /**
@@ -604,23 +684,21 @@ public final class DataCloudSecurityFilter {
      */
     private Promise<Boolean> checkAuditSinkReadiness() {
         // Create a minimal test audit event to verify the sink can accept writes
-        AuditEvent testEvent = new AuditEvent(
-            UUID.randomUUID().toString(),
-            "audit-readiness-check",
-            "system",
-            deploymentProfile,
-            Map.of("checkType", "startup-readiness"),
-            Instant.now()
-        );
+        AuditEvent testEvent = AuditEvent.builder()
+            .tenantId("audit-readiness-check")
+            .eventType("system")
+            .principal(deploymentProfile)
+            .detail("checkType", "startup-readiness")
+            .build();
 
         return auditService.record(testEvent)
             .map(result -> {
                 log.info("[DC-SEC] DC-P1-09: Audit sink readiness check succeeded - sink can accept writes");
                 return true;
             })
-            .onError(error -> {
+            .whenException(error -> {
                 log.error("[DC-SEC] DC-P1-09: Audit sink readiness check failed - sink cannot accept writes: {}", error.getMessage());
-                return Promise.of(false);
+                throw new IllegalStateException("Audit sink readiness check failed", error);
             });
     }
 

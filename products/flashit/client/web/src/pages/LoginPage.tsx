@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../hooks/use-api';
 import { useAtomValue } from 'jotai';
 import { isAuthenticatedAtom } from '../store/atoms';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -23,7 +24,7 @@ export default function LoginPage() {
       await login.mutateAsync({ email, password });
       // Navigation will happen in useEffect when isAuthenticated updates
     } catch (error) {
-      console.error('Login failed:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'LoginPage', message: 'Login failed', error });
     }
   };
 

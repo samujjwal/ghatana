@@ -13,6 +13,7 @@ import SphereSelector from '../components/SphereSelector';
 import VoiceRecorder from '../components/media/VoiceRecorder';
 import VideoRecorder from '../components/media/VideoRecorder';
 import ImageCapture from '../components/media/ImageCapture';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 const CAPTURE_TYPES = ['TEXT', 'VOICE', 'VIDEO', 'IMAGE'];
 const EMOTION_OPTIONS = [
@@ -104,7 +105,7 @@ export default function CapturePage() {
           });
           finalSphereId = result.sphereId;
         } catch (error) {
-          console.warn('AI classification failed, proceeding without sphere assignment:', error);
+          emitFlashItDiagnostic({ level: 'warn', component: 'CapturePage', message: 'AI classification failed, proceeding without sphere assignment', error });
           // Continue without sphere assignment - backend may handle it
         }
       }
@@ -133,7 +134,7 @@ export default function CapturePage() {
       // Navigate to moments page
       navigate('/moments');
     } catch (error) {
-      console.error('Failed to capture moment:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'CapturePage', message: 'Failed to capture moment', error });
       alert('Failed to capture moment. Please try again.');
     }
   };

@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 import React, { useState } from 'react';
 import {
   View,
@@ -31,7 +32,7 @@ export const UnifiedCaptureScreen: React.FC = () => {
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Navigation error:', error);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'UnifiedCaptureScreen', message: 'Navigation error', error });
     }
   };
   const [selectedMode, setSelectedMode] = useState<CaptureMode>('text');
@@ -44,7 +45,7 @@ export const UnifiedCaptureScreen: React.FC = () => {
 
   const navigateToCapture = (mode: CaptureMode) => {
     if (!navigation) {
-      console.error('Navigation not available');
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'UnifiedCaptureScreen', message: 'Navigation not available' });
       return;
     }
 

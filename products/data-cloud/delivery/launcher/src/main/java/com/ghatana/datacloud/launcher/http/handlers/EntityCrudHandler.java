@@ -8,6 +8,7 @@ import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.InMemoryEntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
@@ -91,6 +92,9 @@ public class EntityCrudHandler {
     /** DC-P1-05: Deployment profile for production validation. */
     private String deploymentProfile = "local";
 
+    /** DC-P1-04: Audit service for audit emission in transaction lifecycle. */
+    private com.ghatana.platform.audit.AuditService auditService;
+
     private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
     /**
@@ -164,6 +168,17 @@ public class EntityCrudHandler {
     }
 
     /**
+     * DC-P1-04: Attaches an audit service for audit emission in transaction lifecycle.
+     *
+     * @param auditService the audit service
+     * @return {@code this} for method chaining
+     */
+    public EntityCrudHandler withAuditService(com.ghatana.platform.audit.AuditService auditService) {
+        this.auditService = auditService;
+        return this;
+    }
+
+    /**
      * DC-P1-05: Sets the deployment profile for production validation.
      *
      * @param profile the deployment profile (e.g., "local", "production", "staging", "sovereign")
@@ -205,6 +220,13 @@ public class EntityCrudHandler {
             throw new IllegalStateException(
                 "DC-P1-05: TransactionManager is required in production/staging/sovereign profiles. " +
                 "Entity writes must be atomic with event append and audit emission.");
+        }
+
+        // DC-P1-04: Audit service is required for audit emission in transaction lifecycle
+        if (auditService == null) {
+            throw new IllegalStateException(
+                "DC-P1-04: AuditService is required in production/staging/sovereign profiles. " +
+                "Audit events must be emitted in the transaction/outbox lifecycle.");
         }
 
         // DC-P1-05: Outbox processor is required for durable side-effect processing in production
@@ -316,6 +338,34 @@ public class EntityCrudHandler {
                         Map.of("collection", entity.collection(), "event.type", "entity.saved"),
                         () -> client.appendEvent(tenantId, cdcEvent))
                         .then(savedEvent -> {
+                            // DC-P1-04: Create audit event for entity save
+                            Map<String, Object> auditPayload = null;
+                            if (auditService != null) {
+                                String principalId = http.resolvePrincipalId(request);
+                                AuditEvent auditEvent = AuditEvent.builder()
+                                    .tenantId(tenantId)
+                                    .eventType("entity.saved")
+                                    .principal(principalId != null ? principalId : "system")
+                                    .resourceType("entity")
+                                    .resourceId(entity.id())
+                                    .success(true)
+                                    .detail("collection", collection)
+                                    .detail("entityVersion", entity.version())
+                                    .build();
+                                
+                                auditPayload = Map.of(
+                                    "id", auditEvent.id(),
+                                    "tenantId", auditEvent.tenantId(),
+                                    "eventType", auditEvent.eventType(),
+                                    "principal", auditEvent.principal(),
+                                    "resourceType", auditEvent.resourceType(),
+                                    "resourceId", auditEvent.resourceId(),
+                                    "success", auditEvent.success(),
+                                    "details", auditEvent.details(),
+                                    "timestamp", auditEvent.timestamp().toString()
+                                );
+                            }
+
                             // DC-P1-05: Create outbox entry for async websocket broadcast and semantic indexing
                             if (outboxProcessor != null) {
                                 EntityWriteOutbox outbox = EntityWriteOutbox.builder()
@@ -333,6 +383,7 @@ public class EntityCrudHandler {
                                         "eventType", "entity.saved",
                                         "source", "datacloud.launcher.entity-crud"
                                     ))
+                                    .auditPayload(auditPayload) // DC-P1-04: Include audit in outbox
                                     .correlationId(correlationId)
                                     .build();
 

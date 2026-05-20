@@ -85,6 +85,7 @@ export interface PerformanceMetrics {
 const METRICS_KEY = '@ghatana/flashit-metrics';
 const LOGS_KEY = '@ghatana/flashit-logs';
 const CRASHES_KEY = '@ghatana/flashit-crashes';
+const NO_CRASH_REPORTS: readonly CrashReport[] = Object.freeze([]);
 const MAX_BREADCRUMBS = 100;
 const MAX_STORED_METRICS = 1000;
 const MAX_STORED_LOGS = 500;
@@ -487,9 +488,9 @@ class MonitoringService {
   private async getStoredCrashes(): Promise<CrashReport[]> {
     try {
       const json = await AsyncStorage.getItem(CRASHES_KEY);
-      return json ? JSON.parse(json) : [];
+      return json ? JSON.parse(json) : Array.from(NO_CRASH_REPORTS);
     } catch {
-      return [];
+      return Array.from(NO_CRASH_REPORTS);
     }
   }
 }

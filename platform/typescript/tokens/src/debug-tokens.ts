@@ -27,7 +27,6 @@ function findFunctions(obj: unknown, path = ''): string[] {
 if (process.env.NODE_ENV !== 'production') {
   const functions = findFunctions(tokens);
   if (functions.length > 0) {
-    console.log('Functions found in tokens:');
-    functions.forEach(f => console.log(`  - ${f}`));
+    process.stdout.write(`Functions found in tokens:\n${functions.map((f) => `  - ${f}`).join('\n')}\n`);
   }
 }

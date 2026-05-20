@@ -37,6 +37,8 @@ import type {
   AIGenerateElementResult,
 } from "./types.js";
 
+const NO_AI_GENERATED_ELEMENTS: readonly AIGenerateElementResult[] = Object.freeze([]);
+
 // ---------------------------------------------------------------------------
 // No-op default adapter (platform does not provide a real one)
 // ---------------------------------------------------------------------------
@@ -262,7 +264,7 @@ export function AICanvasProvider({
       } catch (e) {
         const msg = e instanceof Error ? e.message : "AI error";
         dispatch({ type: "SET_ERROR", payload: msg });
-        return [];
+        return Array.from(NO_AI_GENERATED_ELEMENTS);
       }
     },
     [adapter],

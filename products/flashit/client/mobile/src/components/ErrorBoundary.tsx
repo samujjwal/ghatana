@@ -47,6 +47,7 @@ interface ErrorLog {
 
 const ERROR_LOG_KEY = '@ghatana/flashit-error_logs';
 const MAX_ERROR_LOGS = 50;
+const NO_ERROR_LOGS: readonly ErrorLog[] = Object.freeze([]);
 const MAX_ERROR_RESET_ATTEMPTS = 3;
 
 const errorBoundaryDiagnostic = (message: string, error: unknown): void => {
@@ -375,10 +376,10 @@ const styles = StyleSheet.create({
 export async function getErrorLogs(): Promise<ErrorLog[]> {
   try {
     const logsJson = await AsyncStorage.getItem(ERROR_LOG_KEY);
-    return logsJson ? JSON.parse(logsJson) : [];
+    return logsJson ? JSON.parse(logsJson) : Array.from(NO_ERROR_LOGS);
   } catch (e) {
     errorBoundaryDiagnostic('Failed to get error logs', e);
-    return [];
+    return Array.from(NO_ERROR_LOGS);
   }
 }
 

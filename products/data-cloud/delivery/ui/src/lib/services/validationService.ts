@@ -8,6 +8,7 @@ import type {
   ValidationWarning,
   NodeTypeValue,
 } from '@/types/workflow.types';
+import { emitDataCloudDiagnostic } from '../../diagnostics';
 
 /**
  * Workflow validation service.
@@ -73,9 +74,9 @@ export function validateWorkflow(workflow: WorkflowDefinition): ValidationResult
     warnings,
   };
 
-  // Debug: print validation result when running tests to diagnose unexpected warnings
-   
-  console.debug('validateWorkflow result:', JSON.stringify(result, null, 2));
+  emitDataCloudDiagnostic("ValidationService", "debug", "Workflow validation completed", {
+    result,
+  });
 
   return result;
 }

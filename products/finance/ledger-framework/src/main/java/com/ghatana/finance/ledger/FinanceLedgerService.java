@@ -41,6 +41,11 @@ import java.util.concurrent.Executor;
  */
 public final class FinanceLedgerService {
 
+    private static final List<FinanceAccount> NO_FINANCE_ACCOUNTS = List.of();
+    private static final FinanceJournal NO_FINANCE_JOURNAL = null;
+    private static final List<FinanceJournal> NO_FINANCE_JOURNALS = List.of();
+    private static final List<String> NO_VIOLATIONS = List.of();
+
     // ── Finance-Specific Inner Ports ───────────────────────────────────────────────
 
     /** Financial account management with regulatory tracking. */
@@ -265,7 +270,7 @@ public final class FinanceLedgerService {
 
             return new FinanceTransactionResult(
                 transaction.transactionId(), journalId, true, "COMPLETED",
-                List.of(), updatedBalances
+                NO_VIOLATIONS, updatedBalances
             );
         });
     }
@@ -507,12 +512,12 @@ public final class FinanceLedgerService {
 
         @Override
         public Promise<List<FinanceAccount>> getAccountsByTenant(String tenantId) {
-            return Promise.of(List.of());
+            return Promise.of(NO_FINANCE_ACCOUNTS);
         }
 
         @Override
         public Promise<Void> updateAccountBalance(String accountId, FinanceBalance newBalance) {
-            return Promise.of(null);
+            return Promise.complete();
         }
     }
 
@@ -524,17 +529,17 @@ public final class FinanceLedgerService {
 
         @Override
         public Promise<FinanceJournal> getJournal(String journalId) {
-            return Promise.of(null);
+            return Promise.of(NO_FINANCE_JOURNAL);
         }
 
         @Override
         public Promise<List<FinanceJournal>> getJournalsByTenant(String tenantId, LocalDate startDate, LocalDate endDate) {
-            return Promise.of(List.of());
+            return Promise.of(NO_FINANCE_JOURNALS);
         }
 
         @Override
         public Promise<List<FinanceJournal>> getJournalsByReference(String reference) {
-            return Promise.of(List.of());
+            return Promise.of(NO_FINANCE_JOURNALS);
         }
     }
 
@@ -568,7 +573,7 @@ public final class FinanceLedgerService {
 
         @Override
         public Promise<Void> reportToRegulator(FinanceRegulatoryReport report) {
-            return Promise.of(null);
+            return Promise.complete();
         }
     }
 }

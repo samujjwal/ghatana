@@ -51,6 +51,8 @@ export interface ErrorLogEntry {
   lastSeen: Date;
 }
 
+const NO_ERROR_LOG_ENTRIES: readonly ErrorLogEntry[] = Object.freeze([]);
+
 export interface ErrorStats {
   total: number;
   byCategory: Record<ErrorCategory, number>;
@@ -217,7 +219,7 @@ class ErrorLoggerService {
   ): Promise<ErrorLogEntry[]> {
     // In a real implementation, query the database
     // For now, return empty array
-    return [];
+    return Array.from(NO_ERROR_LOG_ENTRIES);
   }
 
   /**

@@ -263,6 +263,14 @@ jobs:
           chmod +x products/data-cloud/scripts/check-openapi-drift.sh
           bash products/data-cloud/scripts/check-openapi-drift.sh
 
+      # DC-P1-06: Route metadata generation check - ensures all runtime routes
+      #    have direct metadata in the generated registry. Fails CI if contracts
+      #    change but generated metadata is not updated.
+      - name: DC-P1-06: Check route metadata generation
+        run: |
+          cd products/data-cloud
+          node scripts/generate-route-security-metadata.mjs --check
+
       - name: Canonical doc boundary lint
         run: |
           chmod +x products/data-cloud/scripts/check-doc-boundaries.sh

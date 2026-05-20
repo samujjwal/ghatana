@@ -10,6 +10,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { flashitWebColors, flashitWebAlpha } from '@/styles/designTokens';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // ============================================================================
 // Types & Interfaces
@@ -129,7 +130,7 @@ export function ErrorRecovery({
     try {
       await onRetry();
     } catch (err) {
-      console.error('Retry failed:', err);
+      emitFlashItDiagnostic({ level: 'error', component: 'ErrorRecovery', message: 'Retry failed', error: err });
     } finally {
       setIsRetrying(false);
     }

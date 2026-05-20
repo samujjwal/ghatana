@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * Haptic Feedback System
  * 
@@ -99,7 +100,7 @@ export class HapticService {
       }
     } catch (error) {
       // Silently fail if haptics are not supported
-      console.warn('Haptic feedback not supported:', error);
+      emitFlashItMobileDiagnostic({ level: 'warn', component: 'haptics', message: 'Haptic feedback not supported', error });
     }
   }
 

@@ -24,6 +24,7 @@
 
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import type * as Monaco from 'monaco-editor';
+import { emitCodeEditorDiagnostic } from './diagnostics';
 
 // ============================================================================
 // Types
@@ -159,7 +160,9 @@ export const LazyMonacoEditor: React.FC<LazyMonacoEditorProps> = ({
     return () => {
       if (isLoaded) {
         const loadTime = performance.now() - startTime;
-        console.debug(`[Monaco] Editor loaded in ${loadTime.toFixed(0)}ms`);
+        emitCodeEditorDiagnostic("LazyMonacoEditor", "debug", "Monaco editor loaded", {
+          loadTimeMs: Math.round(loadTime),
+        });
       }
     };
   }, [isLoaded]);

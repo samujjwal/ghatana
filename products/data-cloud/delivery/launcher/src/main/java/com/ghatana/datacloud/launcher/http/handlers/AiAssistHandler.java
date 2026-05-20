@@ -80,6 +80,7 @@ import java.util.concurrent.Executor;
 public class AiAssistHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AiAssistHandler.class);
+    private static final HttpResponse NO_IDEMPOTENCY_RESPONSE = null;
 
     /** Confidence threshold below which the response is flagged as fallback. */
     private static final double FALLBACK_CONFIDENCE_THRESHOLD = 0.40;
@@ -196,12 +197,12 @@ public class AiAssistHandler {
      */
     private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
         if (idempotencyStore == null) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String principalId = http.resolvePrincipalId(request);

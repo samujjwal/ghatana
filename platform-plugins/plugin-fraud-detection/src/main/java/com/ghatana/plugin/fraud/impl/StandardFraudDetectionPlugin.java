@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class StandardFraudDetectionPlugin implements FraudDetectionPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(StandardFraudDetectionPlugin.class);
+    private static final FraudPattern NO_FRAUD_PATTERN = null;
 
     private final Map<String, FraudAssessment> assessments = new ConcurrentHashMap<>();
     private final Map<String, ModelMetrics> modelMetrics = new ConcurrentHashMap<>();
@@ -189,7 +190,7 @@ public class StandardFraudDetectionPlugin implements FraudDetectionPlugin {
             return Promise.of(pattern);
         }
 
-        return Promise.of(null);
+        return Promise.of(NO_FRAUD_PATTERN);
     }
 
     @Override

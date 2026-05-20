@@ -17,13 +17,11 @@ import type {
 } from './agent-client.js';
 import { prisma } from '../../lib/prisma.js';
 import { fetchMoments } from './moment-helpers.js';
+import { Logger } from '../../lib/logger.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const logger = {
-  warn: (msg: string, ...args: unknown[]) => console.warn(`[knowledge-graph-client] ${msg}`, ...args),
-  error: (msg: string, ...args: unknown[]) => console.error(`[knowledge-graph-client] ${msg}`, ...args),
-};
+const logger = Logger.create({ component: 'KnowledgeGraphClient' });
 
 /**
  * Extract knowledge graph from a user's recent moments.
@@ -234,12 +232,11 @@ async function persistGraphNodes(
   const validEdges = response.edges.filter((edge) => {
     // C3 FIX: Validate UUIDs before attempting DB writes
     if (!UUID_REGEX.test(edge.sourceId) || !UUID_REGEX.test(edge.targetId)) {
-      logger.warn(
-        'Skipping edge with invalid UUID: sourceId=%s, targetId=%s, edgeType=%s',
-        edge.sourceId,
-        edge.targetId,
-        edge.edgeType
-      );
+      logger.warn('Skipping edge with invalid UUID', {
+        sourceId: edge.sourceId,
+        targetId: edge.targetId,
+        edgeType: edge.edgeType,
+      });
       return false;
     }
     return true;

@@ -25,6 +25,8 @@ import java.util.Optional;
  */
 class PluginContextAdapter implements PluginContext {
 
+    private static final List<Plugin> NO_PLUGINS = List.of();
+
     private final KernelContext kernelContext;
 
     PluginContextAdapter(KernelContext kernelContext) {
@@ -50,7 +52,7 @@ class PluginContextAdapter implements PluginContext {
 
     @Override
     public List<Plugin> findPluginsByCapability(Class<? extends PluginCapability> capability) {
-        return List.of();
+        return NO_PLUGINS;
     }
 
     @Override

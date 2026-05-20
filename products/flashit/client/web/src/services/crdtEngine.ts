@@ -8,6 +8,8 @@
  * @doc.pattern CRDT
  */
 
+import { emitFlashItDiagnostic } from '@/diagnostics';
+
 // ============================================================================
 // Types & Interfaces
 // ============================================================================
@@ -401,7 +403,7 @@ class CRDTEngine {
       try {
         listener(operation);
       } catch (error) {
-        console.error('Error in CRDT listener:', error);
+        emitFlashItDiagnostic({ level: 'error', component: 'crdtEngine', message: 'Error in CRDT listener', error });
       }
     });
   }

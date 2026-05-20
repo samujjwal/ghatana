@@ -237,45 +237,14 @@ public class EventHandler {
 
                 Map<String, Object> payload = (Map<String, Object>) payloadMap;
 
-                // DC-P1-06: In production, enforce canonical event envelope with all required fields
-                if (strictEventValidation) {
-                    String eventId = (String) eventData.get("eventId");
-                    String actor = (String) eventData.get("actor");
-                    Instant timestamp = eventData.containsKey("timestamp")
-                        ? Instant.parse((String) eventData.get("timestamp"))
-                        : Instant.now();
-
-                    // Build canonical envelope for validation
-                    EventEnvelope envelope = new EventEnvelope(
-                        eventId,
-                        eventType,
-                        tenantId,
-                        (String) eventData.get("workspaceId"),
-                        (String) eventData.get("subject"),
-                        actor,
-                        (String) eventData.get("classification"),
-                        (Map<String, Object>) eventData.getOrDefault("policyContext", Map.of()),
-                        (String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler"),
-                        http.resolveCorrelationId(request),
-                        (String) eventData.get("causationId"),
-                        payload,
-                        timestamp
-                    );
-
-                    String validationError = envelope.validate(true);
-                    if (validationError != null) {
-                        log.warn("[EventHandler] DC-P1-06: Event envelope validation failed in production profile '{}': {}",
-                            deploymentProfile, validationError);
-                        return Promise.of(http.errorResponse(400,
-                            "Invalid event envelope in production mode: " + validationError));
-                    }
-                }
-
-                // DC-P1-06: Enrich server-owned fields in production
+                // DC-P0-01/DC-P0-02: Enrich server-owned fields BEFORE validation in production
                 String eventId = (String) eventData.get("eventId");
                 String actor = (String) eventData.get("actor");
                 String correlationId = http.resolveCorrelationId(request);
-                Instant timestamp = Instant.now();
+                String traceContext = http.resolveTraceContext(request); // DC-P0-01: Extract trace context
+                Instant timestamp = eventData.containsKey("timestamp")
+                    ? Instant.parse((String) eventData.get("timestamp"))
+                    : Instant.now();
 
                 if (isProductionLikeProfile(deploymentProfile)) {
                     // In production, generate eventId if not provided
@@ -283,17 +252,73 @@ public class EventHandler {
                         eventId = java.util.UUID.randomUUID().toString();
                     }
                     // In production, actor should be enriched from authenticated principal
-                    // This is a placeholder - actual principal extraction happens at filter level
+                    // DC-P0-02: Resolve actor from authenticated principal, not "system" fallback
                     if (actor == null || actor.isBlank()) {
-                        actor = "system"; // Will be replaced with actual principal in production
+                        // Extract from authenticated principal attached by security filter
+                        com.ghatana.platform.governance.security.Principal principal =
+                            request.getAttachment(com.ghatana.platform.governance.security.Principal.class);
+                        if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+                            actor = principal.getName();
+                        } else {
+                            log.warn("[EventHandler] DC-P0-02: No authenticated principal found for event append in production profile '{}', using 'system' fallback", deploymentProfile);
+                            actor = "system";
+                        }
+                    }
+                }
+                
+                // Make effectively final for lambda use
+                final String finalEventId = eventId;
+                final String finalActor = actor;
+
+                // DC-P0-01/DC-P0-02: In production, enforce canonical event envelope with all required fields AFTER enrichment
+                if (strictEventValidation) {
+                    // Build canonical envelope for validation with correct field order
+                    EventEnvelope envelope = new EventEnvelope(
+                        finalEventId,
+                        eventType,
+                        tenantId,
+                        (String) eventData.get("workspaceId"),
+                        (String) eventData.get("subject"),
+                        finalActor,
+                        (String) eventData.get("classification"),
+                        (Map<String, Object>) eventData.getOrDefault("policyContext", Map.of()),
+                        (String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler"),
+                        traceContext,           // DC-P0-01: traceContext (was missing)
+                        correlationId,          // DC-P0-01: correlationId (was in wrong position)
+                        (String) eventData.get("causationId"),
+                        payload,
+                        timestamp
+                    );
+
+                    String validationError = envelope.validate(true);
+                    if (validationError != null) {
+                        log.warn("[EventHandler] DC-P0-02: Event envelope validation failed in production profile '{}': {}",
+                            deploymentProfile, validationError);
+                        return Promise.of(http.errorResponse(400,
+                            "Invalid event envelope in production mode: " + validationError));
                     }
                 }
 
-                // DC-P1-06: Build canonical event with enriched fields
+                // DC-P0-03: Build canonical event with all enriched envelope fields for persistence
                 DataCloudClient.Event event = DataCloudClient.Event.builder()
                     .type(eventType)
                     .payload(payload)
                     .source("datacloud.launcher.event-handler")
+                    .subjectType((String) eventData.get("subjectType")) // Optional from request
+                    .subjectId((String) eventData.get("subject")) // Optional from request
+                    .correlationId(correlationId) // DC-P0-03: Persist correlation ID
+                    .causationId((String) eventData.get("causationId")) // DC-P0-03: Persist causation ID
+                    .actor(finalActor) // DC-P0-03: Persist actor from authenticated principal
+                    .classification((String) eventData.get("classification")) // DC-P0-03: Persist classification
+                    .policyContext((String) eventData.get("policyContext")) // DC-P0-03: Persist policy context
+                    .provenance((String) eventData.getOrDefault("provenance", "datacloud.launcher.event-handler")) // DC-P0-03: Persist provenance
+                    .traceContext(traceContext) // DC-P0-03: Persist trace context
+                    .headers(Map.of(
+                        "eventId", finalEventId != null ? finalEventId : "",
+                        "workspaceId", (String) eventData.getOrDefault("workspaceId", ""),
+                        "tenantId", tenantId
+                    ))
+                    .timestamp(timestamp)
                     .build();
 
                 return traceSupport.trace(
@@ -301,15 +326,15 @@ public class EventHandler {
                     tenantId,
                     "datacloud.event.store.append",
                     handlerSpan.spanId(),
-                    Map.of("event.type", eventType, "event.id", eventId != null ? eventId : "auto"),
+                    Map.of("event.type", eventType, "event.id", finalEventId != null ? finalEventId : "auto"),
                     () -> client.appendEvent(tenantId, event))
                     .map(offset -> {
                         Map<String, Object> responseBody = new LinkedHashMap<>();
                         responseBody.put("offset", offset.value());
                         responseBody.put("type", eventType);
                         responseBody.put("eventType", eventType);
-                        if (eventId != null) {
-                            responseBody.put("eventId", eventId);
+                        if (finalEventId != null) {
+                            responseBody.put("eventId", finalEventId);
                         }
                         responseBody.put("timestamp", timestamp.toString());
                         if (correlationId != null) {

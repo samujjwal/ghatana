@@ -111,7 +111,29 @@ export function assertProductConformance(config?: Partial<ConformanceConfig>): v
     throw new Error(`Product conformance validation failed:\n${result.errors.join('\n')}`);
   }
   if (result.warnings.length > 0) {
-    console.warn(`Product conformance warnings:\n${result.warnings.join('\n')}`);
+    writeConformanceWarning(`Product conformance warnings:\n${result.warnings.join('\n')}`);
+  }
+}
+
+function writeConformanceWarning(message: string): void {
+  const proc = (globalThis as {
+    process?: { stderr?: { write?: (message: string) => void } };
+  }).process;
+
+  if (typeof proc?.stderr?.write === 'function') {
+    proc.stderr.write(`${message}\n`);
+    return;
+  }
+
+  if (
+    typeof globalThis.dispatchEvent === 'function' &&
+    typeof CustomEvent !== 'undefined'
+  ) {
+    globalThis.dispatchEvent(
+      new CustomEvent('product-conformance-diagnostic', {
+        detail: { level: 'warn', message },
+      }),
+    );
   }
 }
 

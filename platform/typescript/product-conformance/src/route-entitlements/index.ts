@@ -29,6 +29,9 @@ export interface EntitledCardContract {
   readonly surface?: 'dashboard' | 'detail' | 'sidebar' | 'modal';
 }
 
+const NO_ENTITLED_ACTIONS: readonly EntitledActionContract[] = Object.freeze([]);
+const NO_ENTITLED_CARDS: readonly EntitledCardContract[] = Object.freeze([]);
+
 export interface ProductRouteEntitlementContract {
   readonly product: string;
   readonly principalId: string;
@@ -193,7 +196,7 @@ function parseOptionalActions(value: unknown, errors: string[]): readonly Entitl
     const owner = `entitlement.actions[${index}]`;
     if (!record) {
       errors.push(`${owner} must be an object`);
-      return [];
+      return Array.from(NO_ENTITLED_ACTIONS);
     }
     requireNonBlankString(record, 'id', errors, owner);
     requireNonBlankString(record, 'label', errors, owner);
@@ -202,7 +205,7 @@ function parseOptionalActions(value: unknown, errors: string[]): readonly Entitl
       errors.push(`${owner}.requiresConfirmation must be boolean when present`);
     }
     if (!isNonBlankString(record.id) || !isNonBlankString(record.label)) {
-      return [];
+      return Array.from(NO_ENTITLED_ACTIONS);
     }
     return [{
       id: record.id,
@@ -229,7 +232,7 @@ function parseOptionalCards(value: unknown, errors: string[]): readonly Entitled
     const owner = `entitlement.cards[${index}]`;
     if (!record) {
       errors.push(`${owner} must be an object`);
-      return [];
+      return Array.from(NO_ENTITLED_CARDS);
     }
     requireNonBlankString(record, 'id', errors, owner);
     requireNonBlankString(record, 'title', errors, owner);
@@ -238,7 +241,7 @@ function parseOptionalCards(value: unknown, errors: string[]): readonly Entitled
       errors.push(`${owner}.surface must be one of dashboard, detail, sidebar, modal`);
     }
     if (!isNonBlankString(record.id) || !isNonBlankString(record.title)) {
-      return [];
+      return Array.from(NO_ENTITLED_CARDS);
     }
     return [{
       id: record.id,

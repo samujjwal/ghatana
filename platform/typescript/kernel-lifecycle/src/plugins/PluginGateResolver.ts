@@ -17,6 +17,8 @@ import type {
 } from '@ghatana/kernel-product-contracts';
 import type { ProductGatePlan, ProductLifecyclePhase } from '../domain/ProductLifecyclePhase.js';
 
+const NO_PLUGIN_GATE_OUTPUTS: readonly string[] = Object.freeze([]);
+
 /**
  * Configuration for plugin gate resolution.
  */
@@ -131,7 +133,7 @@ export class PluginGateResolver {
     // 3. Return the gate IDs
 
     // For now, return empty array as plugin registry integration is pending
-    return [];
+    return Array.from(NO_PLUGIN_GATE_OUTPUTS);
   }
 
   /**

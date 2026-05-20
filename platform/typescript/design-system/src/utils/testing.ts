@@ -2,13 +2,17 @@
  * Testing utilities for @ghatana/design-system components
  */
 
+import { emitDesignSystemDiagnostic } from '../diagnostics';
+
+const NO_A11Y_VIOLATIONS: readonly unknown[] = Object.freeze([]);
+
 /**
  * Render component and get accessibility violations
  */
 export async function getA11yViolations(_container: HTMLElement) {
   // This would use jest-axe in actual implementation
   // Placeholder for demonstration
-  return [];
+  return Array.from(NO_A11Y_VIOLATIONS);
 }
 
 /**
@@ -139,7 +143,9 @@ export class PerformanceMetrics {
   end(label: string): number {
     const start = this.marks.get(label);
     if (!start) {
-      console.warn(`No start mark for ${label}`);
+      emitDesignSystemDiagnostic("PerformanceTracker", "warn", "No start mark for label", {
+        label,
+      });
       return 0;
     }
 

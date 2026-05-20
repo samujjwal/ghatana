@@ -16,6 +16,7 @@
  */
 
 import React from 'react';
+import { emitDataCloudUiComponentDiagnostic } from '../../diagnostics';
 
 interface Props {
   children: React.ReactNode;
@@ -39,9 +40,14 @@ function generateErrorId(): string {
  * Extend this function to integrate with Sentry, Datadog, or similar.
  */
 function reportError(error: Error, errorId: string, info: React.ErrorInfo): void {
-  // In production, replace this console call with your error-reporting service.
   if (import.meta.env.DEV) {
-    console.error('[AppErrorBoundary] Unhandled error', { errorId, error, componentStack: info.componentStack });
+    emitDataCloudUiComponentDiagnostic({
+      level: 'error',
+      component: 'AppErrorBoundary',
+      message: 'Unhandled error',
+      error,
+      context: { errorId, componentStack: info.componentStack },
+    });
   }
   // Example Sentry integration (uncomment when configured):
   // Sentry.captureException(error, { extra: { errorId, componentStack: info.componentStack } });

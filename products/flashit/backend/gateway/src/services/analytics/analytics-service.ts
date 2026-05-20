@@ -70,6 +70,15 @@ export interface InsightData {
   actionable: boolean;
 }
 
+interface RealtimeMetricPoint {
+  value: number;
+  timestamp: Date;
+  tags?: Record<string, any>;
+}
+
+const NO_REALTIME_METRICS: readonly RealtimeMetricPoint[] = Object.freeze([]);
+const NO_INSIGHTS: readonly InsightData[] = Object.freeze([]);
+
 // Create analytics queue
 export const analyticsQueue = new Queue<AnalyticsJobData>(ANALYTICS_QUEUE, {
   connection: redis,
@@ -134,11 +143,7 @@ export class MetricsCollector {
     since: Date,
     userId?: string,
     sphereId?: string
-  ): Promise<Array<{
-    value: number;
-    timestamp: Date;
-    tags?: Record<string, any>;
-  }>> {
+  ): Promise<RealtimeMetricPoint[]> {
     try {
       const whereClause = [
         'metric_name = $1',
@@ -172,7 +177,7 @@ export class MetricsCollector {
 
     } catch (error) {
       systemLogger.error('Failed to get realtime metrics', error, { metricName, userId, sphereId });
-      return [];
+      return Array.from(NO_REALTIME_METRICS);
     }
   }
 
@@ -539,11 +544,11 @@ export class InsightsGenerator {
         }));
       }
 
-      return [];
+      return Array.from(NO_INSIGHTS);
 
     } catch (error) {
       systemLogger.error('Failed to generate insights', error, { userId });
-      return [];
+      return Array.from(NO_INSIGHTS);
     }
   }
 
@@ -701,7 +706,7 @@ export class InsightsGenerator {
 
     } catch (error) {
       systemLogger.error('Failed to generate productivity insights', error, { userId });
-      return [];
+      return Array.from(NO_INSIGHTS);
     }
   }
 }

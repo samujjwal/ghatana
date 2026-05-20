@@ -7,6 +7,7 @@ import { useState, useMemo } from 'react';
 import { X, Link2, Search, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import { useSearchMoments, useCreateMomentLink, useLinkSuggestions } from '../../hooks/use-api';
 import { formatDistanceToNow } from 'date-fns';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface MomentLinkDialogProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export default function MomentLinkDialog({
       onLinkCreated?.();
       onClose();
     } catch (error) {
-      console.error('Failed to create link:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'MomentLinkDialog', message: 'Failed to create link', error });
       alert('Failed to create link. Please try again.');
     }
   };

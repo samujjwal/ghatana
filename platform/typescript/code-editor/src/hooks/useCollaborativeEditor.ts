@@ -34,6 +34,7 @@ import {
   type CollaborativeCursor,
   type EditConflict,
 } from '../managers/CollaborativeEditingManager';
+import { emitCodeEditorDiagnostic } from '../diagnostics';
 
 /**
  * Collaborative editor hook configuration
@@ -379,7 +380,9 @@ export function useEnhancedCollaborativeEditor(
         setSaveStatus('saved');
       } catch (error) {
         setSaveStatus('error');
-        console.error('Auto-save failed:', error);
+        emitCodeEditorDiagnostic("useCollaborativeEditor", "error", "Auto-save failed", {
+          error,
+        });
       }
     }, autoSaveInterval);
 
@@ -394,7 +397,9 @@ export function useEnhancedCollaborativeEditor(
       setSaveStatus('saved');
     } catch (error) {
       setSaveStatus('error');
-      console.error('Save failed:', error);
+      emitCodeEditorDiagnostic("useCollaborativeEditor", "error", "Save failed", {
+        error,
+      });
     }
   }, [baseHook.syncToYjs]);
 

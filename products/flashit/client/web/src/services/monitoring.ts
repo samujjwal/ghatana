@@ -8,6 +8,8 @@
  * @doc.pattern MonitoringService
  */
 
+import { emitFlashItDiagnostic } from '@/diagnostics';
+
 // ============================================================================
 // Types & Interfaces
 // ============================================================================
@@ -298,7 +300,7 @@ class MonitoringService {
     //   body: JSON.stringify(this.metrics),
     // });
 
-    console.debug('Sending metrics:', this.metrics.length);
+    emitFlashItDiagnostic({ level: 'debug', component: 'MonitoringService', message: 'Sending metrics', context: { count: this.metrics.length } });
   }, 5000);
 
   private sendMetrics(): void {
@@ -330,7 +332,7 @@ class MonitoringService {
         entryTypes: ['navigation', 'resource', 'paint', 'measure'],
       });
     } catch (e) {
-      console.warn('Failed to setup performance observer:', e);
+      emitFlashItDiagnostic({ level: 'warn', component: 'MonitoringService', message: 'Failed to setup performance observer', error: e });
     }
   }
 

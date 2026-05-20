@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Link2, ArrowRight, ArrowLeft, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useMomentLinks, useDeleteMomentLink } from '../../hooks/use-api';
 import { formatDistanceToNow } from 'date-fns';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface LinkedMomentsPanelProps {
   momentId: string;
@@ -67,7 +68,7 @@ export default function LinkedMomentsPanel({
       await deleteLink.mutateAsync({ momentId, linkId });
       refetch();
     } catch (error) {
-      console.error('Failed to delete link:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'LinkedMomentsPanel', message: 'Failed to delete link', error });
       alert('Failed to remove link. Please try again.');
     }
   };

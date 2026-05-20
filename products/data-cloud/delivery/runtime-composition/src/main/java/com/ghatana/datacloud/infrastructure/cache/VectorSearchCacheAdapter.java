@@ -48,6 +48,7 @@ import java.util.UUID;
 public class VectorSearchCacheAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(VectorSearchCacheAdapter.class);
+    private static final List<SearchResult> CACHE_MISS = null;
     private static final String CACHE_PREFIX = "vector_search:";
     private static final String SCHEMA_VERSION_PREFIX = "schema_version:";
     private static final long TTL_SECONDS = 60 * 60; // 1 hour
@@ -113,11 +114,11 @@ public class VectorSearchCacheAdapter {
 
             metricsCollector.incrementCounter("cache.vector_search.misses");
             log.debug("Vector search cache miss");
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         } catch (Exception e) {
             log.error("Error reading from cache: {}", cacheKeyStr, e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         }
     }
 
@@ -137,7 +138,7 @@ public class VectorSearchCacheAdapter {
 
             log.info("Invalidated vector search cache for collection: {}", collectionId);
             metricsCollector.incrementCounter("cache.vector_search.invalidations");
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             log.error("Error invalidating cache for collection: {}", collectionId, e);
             metricsCollector.incrementCounter("cache.vector_search.errors");
@@ -158,7 +159,7 @@ public class VectorSearchCacheAdapter {
                 log.info("Cleared {} search results from cache", keys.size());
                 metricsCollector.incrementCounter("cache.vector_search.clears");
             }
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             log.error("Error clearing cache", e);
             metricsCollector.incrementCounter("cache.vector_search.errors");

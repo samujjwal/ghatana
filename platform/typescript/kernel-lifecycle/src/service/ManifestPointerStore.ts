@@ -7,6 +7,8 @@ import type {
 } from '../domain/ProductLifecyclePhase.js';
 import { KernelLifecycleError, ManifestNotFoundError } from './KernelLifecycleErrors.js';
 
+const NO_MANIFEST_RUN_DIRECTORIES: readonly string[] = Object.freeze([]);
+
 export interface ManifestPointers extends ProductLifecycleManifestRefs {
   readonly runId: string;
   readonly correlationId: string;
@@ -98,7 +100,7 @@ export class ManifestPointerStore {
         .map((entry) => path.join(root, entry.name))
         .sort();
     } catch {
-      return [];
+      return Array.from(NO_MANIFEST_RUN_DIRECTORIES);
     }
   }
 

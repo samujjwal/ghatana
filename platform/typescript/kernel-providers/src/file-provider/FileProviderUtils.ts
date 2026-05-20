@@ -11,6 +11,8 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { LifecycleProviderResult, LifecycleProviderWriteOptions } from "@ghatana/kernel-product-contracts";
 
+const NO_VALIDATION_ERRORS: readonly string[] = Object.freeze([]);
+
 /**
  * Atomic write: writes to temp file then renames for atomicity.
  */
@@ -141,7 +143,7 @@ export function validateNonEmptyStringArray(
   if (value.some((item) => typeof item !== "string" || item.trim().length === 0)) {
     return [`${fieldName} must contain non-empty strings`];
   }
-  return [];
+  return Array.from(NO_VALIDATION_ERRORS);
 }
 
 /**

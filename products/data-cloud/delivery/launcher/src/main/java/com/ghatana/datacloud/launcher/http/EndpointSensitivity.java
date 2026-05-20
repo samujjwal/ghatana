@@ -102,6 +102,14 @@ public enum EndpointSensitivity {
     );
 
     /**
+     * DC-P1-04: Action engine routes - pipeline automation and execution.
+     * All action routes are SENSITIVE as they involve automated execution and potential side effects.
+     */
+    public static final Set<String> ACTION_PATH_PREFIXES = Set.of(
+        "/api/v1/actions/"
+    );
+
+    /**
      * Path prefixes whose operations are SENSITIVE (authenticated writes, AI inference, voice).
      * Checked only after CRITICAL checks have not matched.
      *
@@ -128,7 +136,8 @@ public enum EndpointSensitivity {
         "/api/v1/features",
         "/api/v1/models",
         "/api/v1/learning/",          // POST trigger and streaming reads
-        "/api/v1/voice/"
+        "/api/v1/voice/",
+        "/api/v1/actions/"            // DC-P1-04: Action engine routes
     );
 
     /**
@@ -152,7 +161,13 @@ public enum EndpointSensitivity {
         "POST /api/v1/voice/intent",
         "POST /api/v1/voice/classify",
         "POST /api/v1/memory/search",
-        "POST /api/v1/pipelines/{id}/execute"
+        "POST /api/v1/pipelines/{id}/execute",
+        "POST /api/v1/actions/{id}",           // DC-P1-04: Execute action
+        "POST /api/v1/actions",                // DC-P1-04: Create action
+        "GET /api/v1/actions",                 // DC-P1-04: List actions
+        "GET /api/v1/actions/{id}",            // DC-P1-04: Get action
+        "PUT /api/v1/actions/{id}",            // DC-P1-04: Update action
+        "DELETE /api/v1/actions/{id}"          // DC-P1-04: Delete action
     );
 
     /**

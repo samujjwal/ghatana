@@ -213,7 +213,7 @@ class SuggestionService {
    */
   clearCache(): void {
     this.suggestionCache.clear();
-    console.debug("Suggestion cache cleared");
+    emitDataCloudDiagnostic("SuggestionService", "debug", "Suggestion cache cleared");
   }
 
   /**
@@ -221,7 +221,7 @@ class SuggestionService {
    */
   clearFeedbackHistory(): void {
     this.feedbackHistory = [];
-    console.debug("Feedback history cleared");
+    emitDataCloudDiagnostic("SuggestionService", "debug", "Feedback history cleared");
   }
 
   /**
@@ -244,3 +244,4 @@ class SuggestionService {
 export const suggestionService = new SuggestionService();
 
 export default suggestionService;
+import { emitDataCloudDiagnostic } from '../diagnostics';

@@ -30,6 +30,7 @@ import {
   CommandHistoryEntry,
 } from '../stores/commandBar.store';
 import { brainService } from '../api/brain.service';
+import { emitDataCloudDiagnostic } from '../diagnostics';
 
 /**
  * Navigation commands for quick access
@@ -276,7 +277,10 @@ export function useCommandBar(): UseCommandBarReturn {
             const memories = await brainService.recallMemory(queryToExecute);
             // If we got results, display them in workspace (future: wire to workspace panel)
             if (memories.length > 0 && import.meta.env.DEV) {
-              console.log('Brain recall results:', memories);
+              emitDataCloudDiagnostic("useCommandBar", "debug", "Brain recall results returned", {
+                count: memories.length,
+                memories,
+              });
             }
           } catch {
             // Brain API not available, continue with basic handling

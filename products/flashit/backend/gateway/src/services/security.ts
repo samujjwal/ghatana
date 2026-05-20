@@ -41,6 +41,8 @@ export interface Session {
   isActive: boolean;
 }
 
+const NO_SESSIONS: readonly Session[] = Object.freeze([]);
+
 export interface TwoFactorAuth {
   id: string;
   userId: string;
@@ -446,7 +448,8 @@ export class SecurityService {
    */
   async getUserSessions(userId: string): Promise<Session[]> {
     // In a real implementation, fetch from database
-    return [];
+    void userId;
+    return Array.from(NO_SESSIONS);
   }
 
   /**

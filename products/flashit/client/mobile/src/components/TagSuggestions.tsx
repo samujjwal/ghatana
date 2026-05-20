@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * Tag Suggestions Component (Mobile) - AI-Powered Tag Recommendations
  *
@@ -170,7 +171,7 @@ export function TagSuggestions({
       setEntities(result.entities || []);
       setLastAnalyzedContent(content);
     } catch (err) {
-      console.error('[TagSuggestions] Error fetching suggestions:', err);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'TagSuggestions', message: 'Error fetching suggestions', error: err });
       setError(err instanceof Error ? err.message : 'Failed to load suggestions');
     } finally {
       setIsLoading(false);
@@ -278,7 +279,7 @@ export function TagSuggestions({
         }),
       });
     } catch (err) {
-      console.warn('[TagSuggestions] Failed to send feedback:', err);
+      emitFlashItMobileDiagnostic({ level: 'warn', component: 'TagSuggestions', message: 'Failed to send feedback', error: err });
     }
   };
 

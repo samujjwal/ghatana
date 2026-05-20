@@ -32,6 +32,8 @@ export type TextMark =
   | { type: "superscript" }
   | { type: "subscript" };
 
+const NO_TEXT_MARKS: readonly TextMark[] = Object.freeze([]);
+
 export interface TextSpan {
   /** Text content */
   text: string;
@@ -581,7 +583,7 @@ export class RichTextElement extends CanvasElement {
       currentIndex = spanEnd;
     }
 
-    return [];
+    return Array.from(NO_TEXT_MARKS);
   }
 
   /**

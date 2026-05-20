@@ -22,6 +22,7 @@ import type { editor } from 'monaco-editor';
 import type * as Y from 'yjs';
 
 import type { CollaborativeCursor } from '../components/EnhancedCodeEditor';
+import { emitCodeEditorDiagnostic } from '../diagnostics';
 
 /**
  * Binding configuration
@@ -233,7 +234,10 @@ export class YjsMonacoBinding {
           this.ytext.length - deleteLength + text.length >
           this.config.maxTextLength
         ) {
-          console.warn('Text length exceeds maximum, skipping sync');
+          emitCodeEditorDiagnostic("YjsMonacoBinding", "warn", "Text length exceeds maximum, skipping sync", {
+            textLength: monacoText.length,
+            maxTextLength: this.config.maxTextLength,
+          });
           return;
         }
 
@@ -257,7 +261,9 @@ export class YjsMonacoBinding {
       this.metrics.syncOperations++;
       this.updateMetrics();
     } catch (error) {
-      console.error('Error syncing Monaco to Yjs:', error);
+      emitCodeEditorDiagnostic("YjsMonacoBinding", "error", "Error syncing Monaco to Yjs", {
+        error,
+      });
       this.metrics.conflicts++;
     } finally {
       this.isLocalChange = false;
@@ -347,7 +353,9 @@ export class YjsMonacoBinding {
       this.metrics.syncOperations++;
       this.updateMetrics();
     } catch (error) {
-      console.error('Error syncing Yjs to Monaco:', error);
+      emitCodeEditorDiagnostic("YjsMonacoBinding", "error", "Error syncing Yjs to Monaco", {
+        error,
+      });
       this.metrics.conflicts++;
     } finally {
       this.isRemoteChange = false;

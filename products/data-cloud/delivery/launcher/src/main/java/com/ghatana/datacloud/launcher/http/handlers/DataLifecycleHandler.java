@@ -92,6 +92,8 @@ import java.util.stream.Collectors;
 public class DataLifecycleHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DataLifecycleHandler.class);
+    private static final List<String> NO_PII_FIELDS = List.of();
+    private static final List<String> NO_SCOPED_COLLECTIONS = List.of();
 
     /** Well-known retention tiers with associated default duration. */
     private static final Map<String, Period> RETENTION_TIERS = Map.of(
@@ -1237,7 +1239,7 @@ public class DataLifecycleHandler {
         if (likelyPiiCollection) {
             return GLOBAL_PII_FIELDS.stream().sorted().toList();
         }
-        return List.of();
+        return NO_PII_FIELDS;
     }
 
     /**
@@ -1248,7 +1250,7 @@ public class DataLifecycleHandler {
      */
     private static List<String> scanFieldsForPiiPatterns(Map<String, Object> data) {
         if (data == null || data.isEmpty()) {
-            return List.of();
+            return NO_PII_FIELDS;
         }
         return data.keySet().stream()
             .filter(field -> PII_FIELD_NAME_PATTERNS.stream()
@@ -1507,7 +1509,7 @@ public class DataLifecycleHandler {
     private List<String> readPolicyPiiFields(Map<String, Object> policy) {
         Object raw = policy.get("piiFields");
         if (!(raw instanceof List<?> fields)) {
-            return List.of();
+            return NO_PII_FIELDS;
         }
 
         return fields.stream()
@@ -2185,7 +2187,7 @@ public class DataLifecycleHandler {
     private static List<String> extractScopedCollections(Map<String, Object> scope) {
         Object datasets = scope.get("datasets");
         if (!(datasets instanceof List<?> list)) {
-            return List.of();
+            return NO_SCOPED_COLLECTIONS;
         }
 
         return list.stream()

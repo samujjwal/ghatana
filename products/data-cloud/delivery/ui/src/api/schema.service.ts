@@ -3,6 +3,7 @@ import {
   CollectionEntityListResponseSchema,
   type CollectionEntity as BackendCollectionEntity,
 } from '../contracts/schemas';
+import { emitDataCloudDiagnostic } from '../diagnostics';
 
 /**
  * Schema service for managing collection schemas.
@@ -107,7 +108,9 @@ class SchemaService {
     // Check cache
     const cached = this.schemaCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.debug('Schema cache hit:', cacheKey);
+      emitDataCloudDiagnostic("SchemaService", "debug", "Schema cache hit", {
+        cacheKey,
+      });
       return cached.data;
     }
 
@@ -141,10 +144,16 @@ class SchemaService {
         timestamp: Date.now(),
       });
 
-      console.debug('Schema fetched and cached:', cacheKey);
+      emitDataCloudDiagnostic("SchemaService", "debug", "Schema fetched and cached", {
+        cacheKey,
+      });
       return schema;
     } catch (error) {
-      console.error('Error fetching schema:', error);
+      emitDataCloudDiagnostic("SchemaService", "error", "Error fetching schema", {
+        tenantId,
+        collectionName,
+        error,
+      });
       throw new Error(`Failed to fetch collection schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -312,7 +321,7 @@ class SchemaService {
   clearCache(): void {
     this.schemaCache.clear();
     this.fieldsCache.clear();
-    console.debug('Schema cache cleared');
+    emitDataCloudDiagnostic("SchemaService", "debug", "Schema cache cleared");
   }
 
   /**

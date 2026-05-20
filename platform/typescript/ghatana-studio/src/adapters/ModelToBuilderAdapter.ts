@@ -54,7 +54,9 @@ export function projectModelToBuilderDocument(
     doc = insertNode(doc, {
       contractName: instance.contractName,
       props: instance.props as Record<string, unknown>,
-      slots: instance.slots as Record<string, string[]>,
+      slots: Object.fromEntries(
+        Object.entries(instance.slots).map(([k, v]) => [k, v as string[] as import('@ghatana/ui-builder').NodeId[]]),
+      ) as Record<string, import('@ghatana/ui-builder').NodeId[]>,
       bindings: [],
       metadata: {
         name: instance.metadata.name,

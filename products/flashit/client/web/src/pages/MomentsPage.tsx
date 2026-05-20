@@ -10,6 +10,7 @@ import Layout from '../components/Layout';
 import { Search, Filter, Trash2, Calendar, Link2, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { MomentLinkDialog, LinkedMomentsPanel, LinkSuggestionsCard } from '../components/Links';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 interface Moment {
   id: string;
@@ -49,7 +50,7 @@ export default function MomentsPage() {
         await deleteMoment.mutateAsync(id);
         refetch();
       } catch (error) {
-        console.error('Failed to delete moment:', error);
+        emitFlashItDiagnostic({ level: 'error', component: 'MomentsPage', message: 'Failed to delete moment', error });
         alert('Failed to delete moment');
       }
     }

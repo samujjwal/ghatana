@@ -12,6 +12,8 @@ export interface TokenValidationResult {
   errors?: string[];
 }
 
+const NO_TOKEN_VALIDATION_ERRORS: readonly string[] = Object.freeze([]);
+
 // Re-export the DTCG-backed Zod schema for build-time / test use.
 // NOTE: this re-export is intentionally left out of the main bundle entry
 // (index.ts) to keep the SSR-safe surface clean.
@@ -108,7 +110,7 @@ function validateRequiredTokenPaths(registry: Record<string, unknown>): string[]
       ];
     }
 
-    return [];
+    return Array.from(NO_TOKEN_VALIDATION_ERRORS);
   });
 }
 

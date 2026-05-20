@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { cn, textStyles, buttonStyles, cardStyles, inputStyles, badgeStyles } from '../../lib/theme';
 import { executeAnalyticsQuery } from '../../api/analytics.service';
+import { emitDataCloudDiagnostic } from '../../diagnostics';
 
 /**
  * SQL suggestion from AI
@@ -196,7 +197,10 @@ export function SmartSQLAssistant({
             const result = await generateSQLFromNL(input, collectionName, schema);
             setSuggestion(result);
         } catch (error) {
-            console.error('Failed to generate SQL:', error);
+            emitDataCloudDiagnostic("SmartSQLAssistant", "error", "Failed to generate SQL", {
+                collectionName,
+                error,
+            });
         } finally {
             setIsGenerating(false);
         }

@@ -24,6 +24,8 @@
  *
  * @throws {Error} when the URL is invalid or uses an insecure scheme in production.
  */
+import { emitDataCloudDiagnostic } from '../../diagnostics';
+
 export function validateWebSocketUrl(rawUrl: string): string {
     let parsed: URL;
     try {
@@ -185,7 +187,9 @@ export class WebSocketClient {
                     this.handleEvent(data);
                 } catch (error) {
                     if (import.meta.env.DEV) {
-                        console.error('[WebSocket] Failed to parse message:', error);
+                        emitDataCloudDiagnostic("WebSocketClient", "error", "Failed to parse message", {
+                            error,
+                        });
                     }
                 }
             };

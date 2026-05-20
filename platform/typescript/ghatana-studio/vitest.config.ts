@@ -18,6 +18,8 @@ export default defineConfig({
       '@ghatana/artifact-compiler-ts': path.resolve(__dirname, '../artifact-compiler-ts/src/index.ts'),
       '@ghatana/artifact-contracts': path.resolve(__dirname, '../artifact-contracts/src/index.ts'),
       '@ghatana/ds-generator': path.resolve(__dirname, '../ds-generator/src/index.ts'),
+      '@ghatana/ds-registry': path.resolve(__dirname, '../ds-registry/src/index.ts'),
+      '@ghatana/ds-schema': path.resolve(__dirname, '../ds-schema/src/index.ts'),
     },
   },
   test: {

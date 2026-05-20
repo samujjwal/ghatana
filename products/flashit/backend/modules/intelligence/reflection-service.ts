@@ -31,6 +31,15 @@ const writeReflectionLog = (
   })}\n`);
 };
 
+const NO_RELATED_MOMENTS: readonly {
+  id: string;
+  content: string;
+  capturedAt: Date;
+  emotions: string[];
+  tags: string[];
+  similarity?: number;
+}[] = Object.freeze([]);
+
 // Redis connection
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -406,7 +415,7 @@ class ReflectionContextBuilder {
         sphereId,
         error,
       });
-      return [];
+      return Array.from(NO_RELATED_MOMENTS);
     }
   }
 

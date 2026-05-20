@@ -333,6 +333,8 @@ export interface AccessRequest {
   reviewedAt?: string;
 }
 
+const NO_ACCESS_REQUESTS: readonly AccessRequest[] = Object.freeze([]);
+
 function unwrapEnvelope<T>(envelope: { data: T }): T {
   return envelope.data;
 }
@@ -972,7 +974,7 @@ export class GovernanceService {
 
   async getAccessRequests(status?: string): Promise<AccessRequest[]> {
     void status;
-    return [];
+    return Array.from(NO_ACCESS_REQUESTS);
   }
 
   async requestAccess(datasetId: string, reason: string): Promise<AccessRequest> {

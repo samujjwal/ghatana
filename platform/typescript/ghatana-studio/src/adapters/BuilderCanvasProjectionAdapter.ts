@@ -69,6 +69,9 @@ export function builderToCanvas(doc: BuilderDocument): BuilderToCanvasResult {
 
   let index = 0;
   for (const [nodeId, instance] of Object.entries(doc.nodes)) {
+    // RootContainer is an internal structural node; it should not appear on the canvas
+    if (instance.contractName === 'RootContainer') continue;
+
     const metadata = instance.metadata as { position?: { x: number; y: number } };
     const position: { x: number; y: number } = metadata?.position ?? {
       x: MARGIN_X + (index % GRID_COLUMNS) * CELL_WIDTH,

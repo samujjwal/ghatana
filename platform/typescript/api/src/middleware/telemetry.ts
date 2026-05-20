@@ -326,25 +326,53 @@ export function createCorrelationMiddleware(
 }
 
 /**
- * Create a simple console logger middleware for debugging.
+ * Create a simple stdout/stderr logger middleware for debugging.
  */
 export function createLoggerMiddleware(
     prefix = '[API]'
 ): TelemetryMiddleware {
     return createTelemetryMiddleware({
         onRequest: (event) => {
-            console.log(`${prefix} → ${event.method} ${event.url}`);
+            writeTelemetryDiagnostic(`${prefix} -> ${event.method} ${event.url}`, 'info');
         },
         onResponse: (event) => {
-            const status = event.success ? '✓' : '✗';
-            console.log(
-                `${prefix} ← ${status} ${event.status} ${event.url} (${event.durationMs}ms)`
+            const status = event.success ? 'ok' : 'error';
+            writeTelemetryDiagnostic(
+                `${prefix} <- ${status} ${event.status} ${event.url} (${event.durationMs}ms)`,
+                event.success ? 'info' : 'warn'
             );
         },
         onError: (event) => {
-            console.error(
-                `${prefix} ✗ ${event.status || 'ERR'} ${event.url}: ${event.error}`
+            writeTelemetryDiagnostic(
+                `${prefix} error ${event.status || 'ERR'} ${event.url}: ${event.error}`,
+                'error'
             );
         },
     });
+}
+
+function writeTelemetryDiagnostic(message: string, level: 'info' | 'warn' | 'error'): void {
+    const proc = (globalThis as {
+        process?: {
+            stdout?: { write?: (message: string) => void };
+            stderr?: { write?: (message: string) => void };
+        };
+    }).process;
+    const stream = level === 'error' ? proc?.stderr : proc?.stdout;
+
+    if (typeof stream?.write === 'function') {
+        stream.write(`${message}\n`);
+        return;
+    }
+
+    if (
+        typeof globalThis.dispatchEvent === 'function' &&
+        typeof CustomEvent !== 'undefined'
+    ) {
+        globalThis.dispatchEvent(
+            new CustomEvent('ghatana-api-telemetry-diagnostic', {
+                detail: { level, message },
+            })
+        );
+    }
 }

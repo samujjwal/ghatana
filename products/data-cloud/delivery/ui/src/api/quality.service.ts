@@ -65,6 +65,8 @@ export interface ValidationRule {
   metadata: Record<string, unknown>;
 }
 
+const NO_VALIDATION_RULES: readonly ValidationRule[] = Object.freeze([]);
+
 export interface AnomalyEvent {
   id: string;
   timestamp: string;
@@ -234,7 +236,7 @@ export class QualityService {
    */
   async getValidationRules(datasetId?: string): Promise<ValidationRule[]> {
     void datasetId;
-    return [];
+    return Array.from(NO_VALIDATION_RULES);
   }
 
   /**

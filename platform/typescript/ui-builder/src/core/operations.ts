@@ -97,7 +97,53 @@ export interface OperationEventBus {
 /** A no-op event bus for use in tests or environments without observability. */
 export const noopEventBus: OperationEventBus = {};
 
-function nextUpdatedAt(previous?: string): string {
+// ============================================================================
+// Operation Context — clock and ID injection for deterministic testing/DI
+// ============================================================================
+
+/**
+ * Injectable context for deterministic operation execution.
+ * Provide this to any operation function to override the system clock and
+ * node ID generator. Useful for testing, replays, and audit-trail recording.
+ *
+ * @example — deterministic test context:
+ * ```ts
+ * const ctx = createTestOperationContext('2024-01-01T00:00:00.000Z', ['node-a', 'node-b']);
+ * const next = insertNode(doc, instance, undefined, undefined, undefined, ctx);
+ * expect(next.metadata.updatedAt).toBe('2024-01-01T00:00:00.000Z');
+ * ```
+ */
+export interface OperationContext {
+  /** Returns the current ISO timestamp string. Defaults to system clock. */
+  readonly clock?: () => string;
+  /** Returns a new unique node ID string. Defaults to `createNodeId()`. */
+  readonly idProvider?: () => NodeId;
+}
+
+/**
+ * Create a deterministic operation context for use in tests.
+ *
+ * @param fixedIsoTimestamp - ISO timestamp returned by every `clock()` call.
+ * @param idSequence - Node IDs returned in order; cycles if exhausted.
+ */
+export function createTestOperationContext(
+  fixedIsoTimestamp: string,
+  idSequence: readonly string[] = [],
+): OperationContext {
+  let idIndex = 0;
+  return {
+    clock: () => fixedIsoTimestamp,
+    idProvider:
+      idSequence.length > 0
+        ? () => (idSequence[idIndex++ % idSequence.length] as NodeId)
+        : undefined,
+  };
+}
+
+function nextUpdatedAt(previous: string | undefined, ctx?: OperationContext): string {
+  if (ctx?.clock) {
+    return ctx.clock();
+  }
   const now = new Date();
   if (previous && now.toISOString() === previous) {
     now.setTime(now.getTime() + 1);
@@ -116,6 +162,7 @@ export function insertNode(
   parentId?: NodeId,
   slotName?: string,
   bus?: OperationEventBus,
+  ctx?: OperationContext,
 ): BuilderDocument {
   if (!instance.contractName) {
     throw new Error('insertNode: contractName is required');
@@ -125,7 +172,7 @@ export function insertNode(
   // Capture contractName before produce to avoid any Immer freeze issues.
   const { contractName } = instance;
   const next = produce(document, (draft) => {
-    const id = createNodeId();
+    const id = ctx?.idProvider?.() ?? createNodeId();
     insertedId = id;
     const newInstance: ComponentInstance = {
       ...instance,
@@ -158,7 +205,7 @@ export function insertNode(
       }
     }
     
-    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt) };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onNodeInserted?.({
     documentId: document.documentId,
@@ -177,6 +224,7 @@ export function moveNode(
   newParentId: NodeId | null,
   newSlotName?: string,
   bus?: OperationEventBus,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
@@ -219,7 +267,7 @@ export function moveNode(
       }
     }
     
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onNodeMoved?.({ documentId: document.documentId, nodeId, newParentId, newSlotName });
   return attachBuilderDocumentCompatibility(next);
@@ -230,6 +278,7 @@ export function setNodePosition(
   document: BuilderDocument,
   nodeId: NodeId,
   position: { x: number; y: number },
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
@@ -237,7 +286,7 @@ export function setNodePosition(
     if (node) {
       node.metadata = { ...node.metadata, position };
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   return attachBuilderDocumentCompatibility(next);
 }
@@ -246,11 +295,12 @@ export function setNodePosition(
 export function duplicateNode(
   document: BuilderDocument,
   nodeId: NodeId,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const source = document.nodes[nodeId];
   if (!source) return document;
-  const newId = createNodeId();
+  const newId = ctx?.idProvider?.() ?? createNodeId();
   const next = produce(document, (draft) => {
     draft.nodes[newId] = {
       ...source,
@@ -271,7 +321,7 @@ export function duplicateNode(
       }
       rootLayoutNode.children = children;
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   return attachBuilderDocumentCompatibility(next);
 }
@@ -290,7 +340,7 @@ export function batchOperations(
 }
 
 /** Delete a node and its children. */
-export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: OperationEventBus): BuilderDocument {
+export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: OperationEventBus, ctx?: OperationContext): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const idsToDelete = collectNodeIds(document, nodeId);
   const next = produce(document, (draft) => {
@@ -321,7 +371,7 @@ export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: Oper
       delete draft.nodes[id];
     }
     
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onNodeDeleted?.({ documentId: document.documentId, nodeId, deletedCount: idsToDelete.length });
   return attachBuilderDocumentCompatibility(next);
@@ -333,6 +383,7 @@ export function updateNodeProps(
   nodeId: NodeId,
   props: Record<string, unknown>,
   bus?: OperationEventBus,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
@@ -340,7 +391,7 @@ export function updateNodeProps(
     if (node) {
       node.props = { ...node.props, ...props };
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onNodePropsUpdated?.({ documentId: document.documentId, nodeId, updatedKeys: Object.keys(props) });
   return attachBuilderDocumentCompatibility(next);
@@ -352,6 +403,7 @@ export function addBinding(
   nodeId: NodeId,
   binding: Binding,
   bus?: OperationEventBus,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
@@ -359,7 +411,7 @@ export function addBinding(
     if (node) {
       node.bindings = [...node.bindings, binding];
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onBindingAdded?.({
     documentId: document.documentId,
@@ -377,6 +429,7 @@ export function removeBinding(
   nodeId: NodeId,
   bindingId: string,
   bus?: OperationEventBus,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   const next = produce(document, (draft) => {
@@ -384,7 +437,7 @@ export function removeBinding(
     if (node) {
       node.bindings = node.bindings.filter((b) => b.id !== bindingId);
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   });
   bus?.onBindingRemoved?.({ documentId: document.documentId, nodeId, bindingId });
   return attachBuilderDocumentCompatibility(next);
@@ -399,6 +452,7 @@ export function reorderNode(
   document: BuilderDocument,
   nodeId: NodeId,
   toIndex: number,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -430,7 +484,7 @@ export function reorderNode(
       }
     }
 
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -443,6 +497,7 @@ export function resizeNode(
   document: BuilderDocument,
   nodeId: NodeId,
   size: { readonly width: number; readonly height: number },
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -450,7 +505,7 @@ export function resizeNode(
     if (node) {
       node.metadata = { ...node.metadata, size };
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -459,6 +514,7 @@ export function repositionNode(
   document: BuilderDocument,
   nodeId: NodeId,
   position: { readonly x: number; readonly y: number },
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -466,7 +522,7 @@ export function repositionNode(
     if (node) {
       node.metadata = { ...node.metadata, position };
     }
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -484,6 +540,7 @@ export function setResponsiveVariant(
   document: BuilderDocument,
   nodeId: NodeId,
   variant: ResponsiveVariant,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -495,7 +552,7 @@ export function setResponsiveVariant(
       ...node.metadata,
       responsiveVariants: [...filtered, variant],
     };
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -506,6 +563,7 @@ export function removeResponsiveVariant(
   document: BuilderDocument,
   nodeId: NodeId,
   breakpoint: string,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -516,7 +574,7 @@ export function removeResponsiveVariant(
       ...node.metadata,
       responsiveVariants: existing.filter((v) => v.breakpoint !== breakpoint),
     };
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -535,6 +593,7 @@ export function upsertAction(
   document: BuilderDocument,
   nodeId: NodeId,
   action: ActionDefinition,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -549,7 +608,7 @@ export function upsertAction(
       next.push(action);
     }
     node.metadata = { ...node.metadata, actions: next };
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 
@@ -560,6 +619,7 @@ export function removeAction(
   document: BuilderDocument,
   nodeId: NodeId,
   actionId: string,
+  ctx?: OperationContext,
 ): BuilderDocument {
   document = normalizeBuilderDocument(document);
   return attachBuilderDocumentCompatibility(produce(document, (draft) => {
@@ -569,7 +629,7 @@ export function removeAction(
       ...node.metadata,
       actions: (node.metadata.actions ?? []).filter((a) => a.id !== actionId),
     };
-    draft.metadata = { ...draft.metadata, updatedAt: new Date().toISOString() };
+    draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
   }));
 }
 

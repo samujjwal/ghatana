@@ -45,6 +45,7 @@ import java.util.Objects;
 public final class DataMigrationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DataMigrationService.class);
+    private static final List<MigrationReport> NO_MIGRATION_REPORTS = List.of();
 
     private final DataSource dataSource;
     private final List<ZeroDowntimeMigrationStrategy> strategies = new ArrayList<>();
@@ -81,7 +82,7 @@ public final class DataMigrationService {
     public List<MigrationReport> runAll() {
         if (strategies.isEmpty()) {
             LOG.info("[DataMigrationService] No strategies registered — nothing to run.");
-            return List.of();
+            return NO_MIGRATION_REPORTS;
         }
 
         LOG.info("[DataMigrationService] Starting {} zero-downtime migration strategy/strategies", strategies.size());

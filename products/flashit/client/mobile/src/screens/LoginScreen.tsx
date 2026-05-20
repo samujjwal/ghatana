@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * Login Screen for Flashit Mobile
  * User authentication with email and password
@@ -47,7 +48,7 @@ export default function LoginScreen({ navigation }: Props) {
       setCurrentUser(response.user);
       // Navigation handled automatically by auth state change
     } catch (error: any) {
-      console.error('Login error:', error);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'LoginScreen', message: 'Login error', error });
       Alert.alert(
         'Login Failed',
         error.response?.data?.message || 'Invalid email or password'

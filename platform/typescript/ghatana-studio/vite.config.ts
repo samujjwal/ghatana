@@ -12,6 +12,8 @@ export default defineConfig({
       '@ghatana/product-shell': path.resolve(__dirname, '../product-shell/src/index.ts'),
       '@ghatana/tokens': path.resolve(__dirname, '../tokens/src/index.ts'),
       '@ghatana/theme': path.resolve(__dirname, '../theme/src/index.ts'),
+      '@ghatana/ds-registry': path.resolve(__dirname, '../ds-registry/src/index.ts'),
+      '@ghatana/ds-schema': path.resolve(__dirname, '../ds-schema/src/index.ts'),
     },
   },
   server: {

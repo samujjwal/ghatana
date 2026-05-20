@@ -43,6 +43,7 @@ public class FinanceAIEvaluationImpl implements AIEvaluationFramework {
     private static final double DEFAULT_PRECISION_THRESHOLD = 0.80;
     private static final double DEFAULT_RECALL_THRESHOLD    = 0.80;
     private static final long   DEFAULT_LATENCY_THRESHOLD_MS = 2_000L;
+    private static final List<String> NO_AGENT_IDS = List.of();
 
     private final Map<String, List<EvaluationResult>> evaluationHistory = new ConcurrentHashMap<>();
 
@@ -227,7 +228,7 @@ public class FinanceAIEvaluationImpl implements AIEvaluationFramework {
         return new ComparisonReport() {
             @Override
             public List<String> getAgentIds() {
-                return List.of();
+                return NO_AGENT_IDS;
             }
 
             @Override

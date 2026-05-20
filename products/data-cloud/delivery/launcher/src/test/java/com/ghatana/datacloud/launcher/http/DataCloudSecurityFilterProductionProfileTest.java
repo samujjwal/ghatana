@@ -629,29 +629,24 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("DC-P0-01: Production profile startup validation fails without authentication mechanism")
+    @DisplayName("DC-P0-05: Production profile startup validation fails without authentication mechanism")
     void productionProfileStartupValidationFailsWithoutAuthMechanism() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
-        filter = DataCloudSecurityFilter.builder()
-            .apiKeyResolver(null)
-            .jwtProvider(null) // No auth mechanism
-            .policyEngine(policyEngine)
-            .auditService(auditService)
-            .enforcing(true)
-            .strictTenantResolution(true)
-            .deploymentProfile("production")
-            .build();
-
-        IllegalStateException exception = new IllegalStateException();
-        try {
-            filter.validateProductionRequirements();
-        } catch (IllegalStateException e) {
-            exception = e;
-        }
-
-        assertThat(exception.getMessage()).contains("DC-P0-01");
-        assertThat(exception.getMessage()).contains("apiKeyResolver or jwtProvider must be configured");
+        // DC-P0-05: Use assertThatThrownBy to catch NullPointerException from builder
+        assertThatThrownBy(() -> {
+            DataCloudSecurityFilter.builder()
+                .apiKeyResolver(null)
+                .jwtProvider(null) // No auth mechanism - this will throw NullPointerException in constructor
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(true)
+                .strictTenantResolution(true)
+                .deploymentProfile("production")
+                .build();
+        })
+            .isInstanceOf(NullPointerException.class)
+            .hasMessageContaining("Either apiKeyResolver or jwtProvider must be configured");
     }
 
     @Test
@@ -839,8 +834,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("DC-P1-09: Audit write failure on critical route does not block request but logs error")
-    void auditWriteFailureOnCriticalRouteDoesNotBlockRequest() {
+    @DisplayName("DC-P1-06: Audit write failure on redaction route blocks request in production")
+    void auditWriteFailureOnRedactionRouteBlocksRequestInProduction() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
         // Audit service that fails to record
@@ -876,14 +871,204 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .deploymentProfile("production")
             .build();
 
-        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/governance/policies")
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/governance/privacy/redact")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        // DC-P1-06: Redaction route should block on audit write failure in production
+        assertThatThrownBy(() -> runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Audit persistence failed");
+    }
+
+    @Test
+    @DisplayName("DC-P1-06: Audit write failure on retention purge route blocks request in production")
+    void auditWriteFailureOnRetentionPurgeRouteBlocksRequestInProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit write failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/data/lifecycle/retention/purge")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        assertThatThrownBy(() -> runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Audit persistence failed");
+    }
+
+    @Test
+    @DisplayName("DC-P1-06: Audit write failure on policy update route blocks request in production")
+    void auditWriteFailureOnPolicyUpdateRouteBlocksRequestInProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit write failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.PUT, "http://localhost/api/v1/governance/policies")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        assertThatThrownBy(() -> runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Audit persistence failed");
+    }
+
+    @Test
+    @DisplayName("DC-P1-06: Audit write failure on delete entity route blocks request in production")
+    void auditWriteFailureOnDeleteEntityRouteBlocksRequestInProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit write failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/entities/test-collection/entity-123")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        assertThatThrownBy(() -> runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request)))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("Audit persistence failed");
+    }
+
+    @Test
+    @DisplayName("DC-P1-06: Audit write failure on non-critical route does not block request")
+    void auditWriteFailureOnNonCriticalRouteDoesNotBlockRequest() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        // Audit service that fails to record
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit write failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/collections")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
             .build();
 
         HttpResponse response = runPromise(() ->
             filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
 
-        // Request should succeed despite audit write failure (fire-and-forget)
+        // Non-critical routes should succeed despite audit write failure (fire-and-forget)
         assertThat(response.getCode()).isEqualTo(200);
     }
 

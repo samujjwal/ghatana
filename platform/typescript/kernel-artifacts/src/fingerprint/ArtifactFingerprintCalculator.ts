@@ -12,6 +12,8 @@ export interface ArtifactFingerprintCalculatorOptions {
   readonly ignorePatterns?: readonly string[];
 }
 
+const NO_FILES: readonly string[] = Object.freeze([]);
+
 export class ArtifactFingerprintCalculator {
   private readonly ignorePatterns: readonly string[];
 
@@ -78,7 +80,7 @@ export class ArtifactFingerprintCalculator {
         const entryPath = path.join(directoryPath, entry.name);
         const relativePath = path.relative(directoryPath, entryPath).replace(/\\/g, '/');
         if (this.shouldIgnore(relativePath)) {
-          return [];
+          return Array.from(NO_FILES);
         }
 
         if (entry.isDirectory()) {
@@ -86,14 +88,14 @@ export class ArtifactFingerprintCalculator {
         }
 
         if (entry.isSymbolicLink()) {
-          return [];
+          return Array.from(NO_FILES);
         }
 
         if (entry.isFile()) {
           return [entryPath];
         }
 
-        return [];
+        return Array.from(NO_FILES);
       }),
     );
 
@@ -107,7 +109,7 @@ export class ArtifactFingerprintCalculator {
         const entryPath = path.join(directoryPath, entry.name);
         const relativePath = path.relative(rootPath, entryPath).replace(/\\/g, '/');
         if (this.shouldIgnore(relativePath)) {
-          return [];
+          return Array.from(NO_FILES);
         }
 
         if (entry.isDirectory()) {
@@ -115,14 +117,14 @@ export class ArtifactFingerprintCalculator {
         }
 
         if (entry.isSymbolicLink()) {
-          return [];
+          return Array.from(NO_FILES);
         }
 
         if (entry.isFile()) {
           return [entryPath];
         }
 
-        return [];
+        return Array.from(NO_FILES);
       }),
     );
 

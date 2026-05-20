@@ -4,6 +4,7 @@ import { collectionsApi } from '../lib/api/collections';
 import { CollectionForm } from '../features/collection/components/CollectionForm';
 import type { CollectionFormData } from '../features/collection/components/CollectionForm';
 import { toast } from 'sonner';
+import { emitDataCloudDiagnostic } from '../diagnostics';
 
 export function CreateCollectionPage() {
   const navigate = useNavigate();
@@ -23,7 +24,10 @@ export function CreateCollectionPage() {
       toast.success('Collection created successfully');
       navigate('/data');
     } catch (error) {
-      console.error('Error creating collection:', error);
+      emitDataCloudDiagnostic("CreateCollectionPage", "error", "Error creating collection", {
+        name: data.name,
+        error,
+      });
       toast.error('Failed to create collection');
     } finally {
       setIsSubmitting(false);

@@ -115,7 +115,7 @@ const DEFAULT_SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3
  *   momentUpdates 
  * } = useRealtime({
  *   authToken: userToken,
- *   onConnect: () => console.log('Connected'),
+ *   onConnect: handleRealtimeConnect,
  * });
  * 
  * // Join a sphere for updates

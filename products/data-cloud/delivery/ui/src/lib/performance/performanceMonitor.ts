@@ -17,6 +17,8 @@
  * @doc.layer frontend
  */
 
+import { emitDataCloudDiagnostic } from '../../diagnostics';
+
 interface PerformanceMetric {
   name: string;
   duration: number;
@@ -90,23 +92,29 @@ export class PerformanceMonitor {
     switch (metric.type) {
       case 'render':
         if (metric.duration > this.thresholds.renderTime) {
-          console.warn(
-            `Render time exceeded: ${metric.name} (${metric.duration}ms)`
-          );
+          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Render time exceeded", {
+            name: metric.name,
+            duration: metric.duration,
+            threshold: this.thresholds.renderTime,
+          });
         }
         break;
       case 'interaction':
         if (metric.duration > this.thresholds.interactionLatency) {
-          console.warn(
-            `Interaction latency exceeded: ${metric.name} (${metric.duration}ms)`
-          );
+          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Interaction latency exceeded", {
+            name: metric.name,
+            duration: metric.duration,
+            threshold: this.thresholds.interactionLatency,
+          });
         }
         break;
       case 'memory':
         if (metric.duration > this.thresholds.memoryUsage) {
-          console.warn(
-            `Memory usage exceeded: ${metric.name} (${metric.duration}MB)`
-          );
+          emitDataCloudDiagnostic("PerformanceMonitor", "warn", "Memory usage exceeded", {
+            name: metric.name,
+            duration: metric.duration,
+            threshold: this.thresholds.memoryUsage,
+          });
         }
         break;
     }

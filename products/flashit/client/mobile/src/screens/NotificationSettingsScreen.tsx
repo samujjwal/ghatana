@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * FlashIt Mobile - Notification Settings Screen
  *
@@ -110,7 +111,7 @@ const NotificationSettingsScreen: React.FC = () => {
       const prefs = notificationService.getPreferences();
       setPreferences(prefs);
     } catch (error) {
-      console.error('Failed to load preferences:', error);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'NotificationSettingsScreen', message: 'Failed to load preferences', error });
     } finally {
       setLoading(false);
     }
@@ -126,7 +127,7 @@ const NotificationSettingsScreen: React.FC = () => {
       try {
         await notificationService.updatePreferences({ [key]: value });
       } catch (error) {
-        console.error('Failed to update preference:', error);
+        emitFlashItMobileDiagnostic({ level: 'error', component: 'NotificationSettingsScreen', message: 'Failed to update preference', error });
         // Revert on error
         setPreferences(preferences);
       }

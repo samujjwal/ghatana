@@ -78,6 +78,7 @@ import java.util.Objects;
 public final class AgentDefinitionLoader {
 
     private static final Logger log = LoggerFactory.getLogger(AgentDefinitionLoader.class);
+    private static final List<AgentDefinition> NO_AGENT_DEFINITIONS = List.of();
 
     private final YamlTemplateEngine templateEngine;
     private final ObjectMapper yamlMapper;
@@ -189,13 +190,13 @@ public final class AgentDefinitionLoader {
         URL dirUrl = getClass().getClassLoader().getResource(classpathDir);
         if (dirUrl == null) {
             log.debug("Classpath directory '{}' not found — returning empty list", classpathDir);
-            return List.of();
+            return NO_AGENT_DEFINITIONS;
         }
 
         // Only "file:" URLs support directory listing without a custom URL file handler
         if (!"file".equals(dirUrl.getProtocol())) {
             log.warn("Classpath directory '{}' is inside a JAR; use loadFromDirectory() instead");
-            return List.of();
+            return NO_AGENT_DEFINITIONS;
         }
 
         Path dirPath = Path.of(dirUrl.getPath());
@@ -203,7 +204,7 @@ public final class AgentDefinitionLoader {
             return loadFromDirectory(dirPath);
         } catch (IOException e) {
             log.warn("Failed to scan classpath directory '{}': {}", classpathDir, e.getMessage());
-            return List.of();
+            return NO_AGENT_DEFINITIONS;
         }
     }
 

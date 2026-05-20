@@ -62,6 +62,7 @@ import java.util.Set;
 public final class DataSourceRegistryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DataSourceRegistryHandler.class);
+    private static final HttpResponse NO_IDEMPOTENCY_RESPONSE = null;
     private static final String DC_CONNECTIONS = "dc_connections";
     private static final String CREDENTIALS_KEY = "credentials";
     private static final String SECRET_REFERENCE_KEY = "secretRef";
@@ -152,12 +153,12 @@ public final class DataSourceRegistryHandler {
      */
     private Promise<HttpResponse> checkIdempotency(String tenantId, String connectionId, String routeAction, HttpRequest request) {
         if (idempotencyStore == null) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String principalId = http.resolvePrincipalId(request);

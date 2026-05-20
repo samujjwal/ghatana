@@ -23,6 +23,8 @@ import type {
   LifecycleProviderWriteOptions,
 } from "@ghatana/kernel-product-contracts";
 
+const NO_ARTIFACT_VALIDATION_ERRORS: readonly string[] = Object.freeze([]);
+
 export interface FileArtifactProviderOptions {
   readonly outputDirectory: string;
   readonly artifactRootDirectory?: string;
@@ -214,7 +216,7 @@ export class FileArtifactProvider implements LifecycleArtifactProvider {
           )}`,
         ];
       }
-      return [];
+      return Array.from(NO_ARTIFACT_VALIDATION_ERRORS);
     }
 
     const actual = await this.fingerprintCalculator.calculateForPath(artifactPath);

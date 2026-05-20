@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-api';
 import Layout from '../components/Layout';
 import { Brain, Sparkles, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export default function MemoryExpansionPage() {
   const [selectedSphere, setSelectedSphere] = useState('');
@@ -28,7 +29,7 @@ export default function MemoryExpansionPage() {
       await requestExpansion.mutateAsync({ sphereId: selectedSphere });
       refetch();
     } catch (err) {
-      console.error('Failed to request expansion:', err);
+      emitFlashItDiagnostic({ level: 'error', component: 'MemoryExpansionPage', message: 'Failed to request expansion', error: err });
     }
   };
 

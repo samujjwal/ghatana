@@ -24,7 +24,9 @@
       "@ghatana/i18n": ["../i18n/src/index.ts"],
       "@ghatana/product-shell": ["../product-shell/src/index.ts"],
       "@ghatana/ds-generator": ["../ds-generator/src/index.ts"],
-      "@ghatana/ds-generator/adapters": ["../ds-generator/src/adapters/index.ts"]
+      "@ghatana/ds-generator/adapters": ["../ds-generator/src/adapters/index.ts"],
+      "@ghatana/ds-registry": ["../ds-registry/src/index.ts"],
+      "@ghatana/ds-schema": ["../ds-schema/src/index.ts"]
     }
   },
   "include": ["src"]

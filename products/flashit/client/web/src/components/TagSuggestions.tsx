@@ -21,6 +21,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // ============================================================================
 // Types
@@ -162,7 +163,7 @@ export function TagSuggestions({
       setEntities(result.entities || []);
       setLastAnalyzedContent(content);
     } catch (err) {
-      console.error('[TagSuggestions] Error fetching suggestions:', err);
+      emitFlashItDiagnostic({ level: 'error', component: 'TagSuggestions', message: 'Error fetching suggestions', error: err });
       setError(err instanceof Error ? err.message : 'Failed to load suggestions');
     } finally {
       setIsLoading(false);
@@ -266,7 +267,7 @@ export function TagSuggestions({
         }),
       });
     } catch (err) {
-      console.warn('[TagSuggestions] Failed to send feedback:', err);
+      emitFlashItDiagnostic({ level: 'warn', component: 'TagSuggestions', message: 'Failed to send feedback', error: err });
     }
   };
 

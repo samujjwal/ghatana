@@ -70,7 +70,22 @@ export function getContrastRatio(color1: string, color2: string): number {
   const rgb2 = parseHexColor(color2);
 
   if (!rgb1 || !rgb2) {
-    console.warn('Invalid hex color format');
+    if (
+      typeof globalThis.dispatchEvent === 'function' &&
+      typeof CustomEvent !== 'undefined'
+    ) {
+      globalThis.dispatchEvent(
+        new CustomEvent('platform-utils-diagnostic', {
+          detail: {
+            level: 'warn',
+            component: 'accessibility',
+            message: 'Invalid hex color format',
+            color1,
+            color2,
+          },
+        })
+      );
+    }
     return 1;
   }
 

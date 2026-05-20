@@ -209,6 +209,119 @@ class OpenApiRouteParity_DC_CON_001_Test {
                 .isGreaterThanOrEqualTo(100);
     }
 
+    @Test
+    @DisplayName("DC-P1-08: Critical routes have security schemes defined in OpenAPI")
+    void criticalRoutesHaveSecuritySchemesDefined() throws IOException {
+        List<String> criticalRoutesWithoutSecurity = new ArrayList<>();
+        
+        for (String path : extractOpenApiPaths()) {
+            if (isCriticalRoute(path)) {
+                if (!hasSecurityScheme(path)) {
+                    criticalRoutesWithoutSecurity.add(path);
+                }
+            }
+        }
+
+        assertThat(criticalRoutesWithoutSecurity)
+                .as("Critical routes must have security schemes defined in OpenAPI")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("DC-P1-08: Sensitive routes have x-surface tags defined")
+    void sensitiveRoutesHaveSurfaceTags() throws IOException {
+        List<String> routesWithoutSurfaceTag = new ArrayList<>();
+        
+        for (String path : extractOpenApiPaths()) {
+            if (isSensitiveRoute(path)) {
+                if (!hasExtension(path, "x-surface")) {
+                    routesWithoutSurfaceTag.add(path);
+                }
+            }
+        }
+
+        assertThat(routesWithoutSurfaceTag)
+                .as("Sensitive routes must have x-surface tags defined in OpenAPI")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("DC-P1-08: Routes have x-runtime-truth extension defined")
+    void routesHaveRuntimeTruthExtension() throws IOException {
+        List<String> routesWithoutRuntimeTruth = new ArrayList<>();
+        
+        for (String path : extractOpenApiPaths()) {
+            // Only check production routes (not health/metrics)
+            if (!path.startsWith("/health") && !path.startsWith("/metrics") && 
+                !path.startsWith("/ready") && !path.startsWith("/live")) {
+                if (!hasExtension(path, "x-runtime-truth")) {
+                    routesWithoutRuntimeTruth.add(path);
+                }
+            }
+        }
+
+        assertThat(routesWithoutRuntimeTruth)
+                .as("Production routes must have x-runtime-truth extension defined in OpenAPI")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("DC-P1-08: Write operations have idempotency metadata")
+    void writeOperationsHaveIdempotencyMetadata() throws IOException {
+        List<String> writeRoutesWithoutIdempotency = new ArrayList<>();
+        
+        for (String route : extractRouterRoutes()) {
+            String method = route.split(" ")[0];
+            String path = route.substring(route.indexOf(' ') + 1);
+            
+            if (isWriteMethod(method) && !isHealthOrMetricsRoute(path)) {
+                if (!hasIdempotencyMetadata(route)) {
+                    writeRoutesWithoutIdempotency.add(route);
+                }
+            }
+        }
+
+        assertThat(writeRoutesWithoutIdempotency)
+                .as("Write operations must have idempotency metadata defined")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("DC-P1-08: Sensitive routes have audit metadata")
+    void sensitiveRoutesHaveAuditMetadata() throws IOException {
+        List<String> routesWithoutAudit = new ArrayList<>();
+        
+        for (String path : extractOpenApiPaths()) {
+            if (isSensitiveRoute(path) || isCriticalRoute(path)) {
+                if (!hasExtension(path, "x-audit")) {
+                    routesWithoutAudit.add(path);
+                }
+            }
+        }
+
+        assertThat(routesWithoutAudit)
+                .as("Sensitive and critical routes must have x-audit metadata defined")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("DC-P1-08: Governance routes have policy metadata")
+    void governanceRoutesHavePolicyMetadata() throws IOException {
+        List<String> routesWithoutPolicy = new ArrayList<>();
+        
+        for (String path : extractOpenApiPaths()) {
+            if (isGovernanceRoute(path)) {
+                if (!hasExtension(path, "x-policy")) {
+                    routesWithoutPolicy.add(path);
+                }
+            }
+        }
+
+        assertThat(routesWithoutPolicy)
+                .as("Governance routes must have x-policy metadata defined")
+                .isEmpty();
+    }
+
     // -------------------------------------------------------------------------
     // Extraction helpers
     // -------------------------------------------------------------------------
@@ -303,5 +416,127 @@ class OpenApiRouteParity_DC_CON_001_Test {
             }
         }
         throw new IOException("Could not locate repo root from: " + cwd);
+    }
+
+    // -------------------------------------------------------------------------
+    // DC-P1-08: Semantic validation helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * DC-P1-08: Checks if a route is critical (requires ADMIN access).
+     */
+    private boolean isCriticalRoute(String path) {
+        return path.contains("/governance/") ||
+               path.contains("/settings/security") ||
+               path.contains("/settings/keys") ||
+               path.contains("/models/:modelName/promote") ||
+               path.contains("/learning/review/:reviewId");
+    }
+
+    /**
+     * DC-P1-08: Checks if a route is sensitive (requires OPERATOR or higher).
+     */
+    private boolean isSensitiveRoute(String path) {
+        return path.contains("/pipelines/") ||
+               path.contains("/executions/") ||
+               path.contains("/alerts/") ||
+               path.contains("/memory/") ||
+               path.contains("/events") ||
+               path.contains("/entities/:collection") && 
+               (path.contains("POST") || path.contains("DELETE") || path.contains("PUT"));
+    }
+
+    /**
+     * DC-P1-08: Checks if a route is a governance route.
+     */
+    private boolean isGovernanceRoute(String path) {
+        return path.contains("/governance/");
+    }
+
+    /**
+     * DC-P1-08: Checks if a route has security schemes defined in OpenAPI.
+     */
+    private boolean hasSecurityScheme(String path) throws IOException {
+        Path yamlFile = resolveFromRepoRoot(OPENAPI_FILE);
+        List<String> lines = Files.readAllLines(yamlFile);
+        
+        // Find the path section in the YAML
+        int pathIndex = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            String normalizedPath = lines.get(i).trim();
+            if (normalizedPath.equals(path + ":") || 
+                normalizedPath.equals(path.replace(":", "{") + ":")) {
+                pathIndex = i;
+                break;
+            }
+        }
+        
+        if (pathIndex == -1) return false;
+        
+        // Look for security schemes in the next 20 lines
+        for (int i = pathIndex; i < Math.min(pathIndex + 20, lines.size()); i++) {
+            String line = lines.get(i).trim();
+            if (line.startsWith("security:") || line.contains("securitySchemes")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * DC-P1-08: Checks if a route has a specific OpenAPI extension.
+     */
+    private boolean hasExtension(String path, String extension) throws IOException {
+        Path yamlFile = resolveFromRepoRoot(OPENAPI_FILE);
+        List<String> lines = Files.readAllLines(yamlFile);
+        
+        // Find the path section in the YAML
+        int pathIndex = -1;
+        for (int i = 0; i < lines.size(); i++) {
+            String normalizedPath = lines.get(i).trim();
+            if (normalizedPath.equals(path + ":") || 
+                normalizedPath.equals(path.replace(":", "{") + ":")) {
+                pathIndex = i;
+                break;
+            }
+        }
+        
+        if (pathIndex == -1) return false;
+        
+        // Look for the extension in the next 30 lines
+        for (int i = pathIndex; i < Math.min(pathIndex + 30, lines.size()); i++) {
+            String line = lines.get(i).trim();
+            if (line.startsWith(extension + ":")) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * DC-P1-08: Checks if an HTTP method is a write method.
+     */
+    private boolean isWriteMethod(String method) {
+        return "POST".equals(method) || "PUT".equals(method) || 
+               "PATCH".equals(method) || "DELETE".equals(method);
+    }
+
+    /**
+     * DC-P1-08: Checks if a route is a health or metrics route.
+     */
+    private boolean isHealthOrMetricsRoute(String path) {
+        return path.startsWith("/health") || path.startsWith("/metrics") ||
+               path.startsWith("/ready") || path.startsWith("/live");
+    }
+
+    /**
+     * DC-P1-08: Checks if a route has idempotency metadata.
+     * For now, this is a placeholder that checks for x-idempotency extension.
+     */
+    private boolean hasIdempotencyMetadata(String route) throws IOException {
+        String path = route.contains(" ") ? route.substring(route.indexOf(' ') + 1) : route;
+        return hasExtension(path, "x-idempotency") || hasExtension(path, "x-idempotent");
     }
 }

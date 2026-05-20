@@ -2,8 +2,9 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const srcRoot = join(root, 'src');
 const sourceExtensions = new Set(['.ts', '.tsx']);
 const violations = [];

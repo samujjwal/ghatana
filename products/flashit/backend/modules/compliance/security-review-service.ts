@@ -73,6 +73,8 @@ export interface VulnerabilityAssessment {
   status: 'open' | 'mitigated' | 'resolved';
 }
 
+const NO_VULNERABILITIES: readonly VulnerabilityAssessment[] = Object.freeze([]);
+
 /**
  * Security Review Service
  */
@@ -902,22 +904,22 @@ export class SecurityReviewService {
 
   private static async testSqlInjectionVulnerabilities(): Promise<VulnerabilityAssessment[]> {
     // Simulated SQL injection tests
-    return [];
+    return Array.from(NO_VULNERABILITIES);
   }
 
   private static async testXssVulnerabilities(): Promise<VulnerabilityAssessment[]> {
     // Simulated XSS tests
-    return [];
+    return Array.from(NO_VULNERABILITIES);
   }
 
   private static async testAuthenticationVulnerabilities(): Promise<VulnerabilityAssessment[]> {
     // Simulated authentication tests
-    return [];
+    return Array.from(NO_VULNERABILITIES);
   }
 
   private static async testDataExposureVulnerabilities(): Promise<VulnerabilityAssessment[]> {
     // Simulated data exposure tests
-    return [];
+    return Array.from(NO_VULNERABILITIES);
   }
 
   /**

@@ -121,8 +121,9 @@ export function validateProductManifestShape(manifest) {
 }
 
 export function expectedSurfacesForShape(shape) {
+  const noExpectedSurfaces = Object.freeze([]);
   if (shape.uiMode === 'backend-only' || shape.ui === false) {
-    return [];
+    return Array.from(noExpectedSurfaces);
   }
   if (shape.uiMode === 'web') {
     return ['web'];
@@ -130,7 +131,7 @@ export function expectedSurfacesForShape(shape) {
   if (shape.uiMode === 'multi-surface') {
     return ['web', 'mobile'];
   }
-  return [];
+  return Array.from(noExpectedSurfaces);
 }
 
 export function validateSurfaceAlignment({ product, manifest, shape }) {

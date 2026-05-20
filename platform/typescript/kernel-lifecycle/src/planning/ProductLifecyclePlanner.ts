@@ -37,6 +37,7 @@ const PACKAGE_PHASES = new Set<ProductLifecyclePhase>(['package']);
 
 /** Surface phases that delegate to the surface-level build adapter. */
 const SURFACE_PHASES = new Set<ProductLifecyclePhase>(['dev', 'validate', 'test', 'build']);
+const NO_EXPECTED_ARTIFACTS: readonly ProductExpectedArtifact[] = Object.freeze([]);
 
 /** Internal registry shape loaded from toolchain-adapter-registry.json */
 type ToolchainRegistry = Record<string, Record<string, unknown>>;
@@ -872,7 +873,7 @@ export class ProductLifecyclePlanner {
         },
       ];
     }
-    return [];
+    return Array.from(NO_EXPECTED_ARTIFACTS);
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

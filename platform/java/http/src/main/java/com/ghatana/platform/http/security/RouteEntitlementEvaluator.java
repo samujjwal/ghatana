@@ -19,6 +19,8 @@ import java.util.Objects;
  */
 public final class RouteEntitlementEvaluator {
 
+    private static final List<ProductRouteEntitlement.RouteEntitlement> NO_ROUTE_ENTITLEMENTS = List.of();
+
     private final RoleEvaluator roleEvaluator;
 
     public RouteEntitlementEvaluator(RoleEvaluator roleEvaluator) {
@@ -46,7 +48,7 @@ public final class RouteEntitlementEvaluator {
                 .filter(route -> roleEvaluator.isRoleSufficient(currentRole, route.minimumRole(), roleOrder))
                 .toList();
         } catch (IllegalArgumentException e) {
-            return List.of();
+            return NO_ROUTE_ENTITLEMENTS;
         }
     }
 

@@ -12,6 +12,7 @@
 
 import * as React from 'react';
 import { createContext, useContext, useMemo, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { emitDataCloudDiagnostic } from '../../diagnostics';
 
 // ============================================
 // BASE TYPES (Local definitions to avoid import issues)
@@ -185,7 +186,9 @@ function createWebSocketHook<T>(
                             lastEventTime: new Date(),
                         }));
                     } catch (err) {
-                        console.error('Failed to parse WebSocket message:', err);
+                        emitDataCloudDiagnostic("RealtimeIntegration", "error", "Failed to parse WebSocket message", {
+                            error: err,
+                        });
                     }
                 };
 

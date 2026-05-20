@@ -4,6 +4,7 @@ import { collectionsApi, type Collection } from '../lib/api/collections';
 import { CollectionForm } from '../features/collection/components/CollectionForm';
 import type { CollectionFormData } from '../features/collection/components/CollectionForm';
 import { toast } from 'sonner';
+import { emitDataCloudDiagnostic } from '../diagnostics';
 
 function EditCollectionPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,7 +21,10 @@ function EditCollectionPage() {
         const response = await collectionsApi.get(id);
         setCollection(response);
       } catch (error) {
-        console.error('Error loading collection:', error);
+        emitDataCloudDiagnostic("EditCollectionPage", "error", "Error loading collection", {
+          id,
+          error,
+        });
         toast.error('Failed to load collection');
         navigate('/data');
       } finally {
@@ -61,7 +65,10 @@ function EditCollectionPage() {
       toast.success('Collection updated successfully');
       navigate(`/data/${id}`);
     } catch (error) {
-      console.error('Error updating collection:', error);
+      emitDataCloudDiagnostic("EditCollectionPage", "error", "Error updating collection", {
+        id,
+        error,
+      });
       toast.error('Failed to update collection');
     } finally {
       setIsSubmitting(false);

@@ -13,6 +13,8 @@ import type {
   GateProvider,
 } from "@ghatana/kernel-product-contracts";
 
+const NO_BOOTSTRAP_GATES: readonly string[] = Object.freeze([]);
+
 export interface FileBootstrapGateProviderOptions {
   readonly providerId?: string;
   readonly version?: string;
@@ -88,6 +90,6 @@ export class FileBootstrapGateProvider implements GateProvider {
   }
 
   async listGates(): Promise<readonly string[]> {
-    return [];
+    return Array.from(NO_BOOTSTRAP_GATES);
   }
 }

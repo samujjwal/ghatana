@@ -190,6 +190,60 @@ class DataCloudHttpServerProfileTest {
         assertThat(body).containsEntry("service", "datacloud");
     }
 
+    @Test
+    @DisplayName("DC-P0-07: Production mode is passed to security filter during server startup")
+    void productionModePassedToSecurityFilterDuringServerStartup() throws Exception {
+        // Start server with production mode
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("production");
+        server.start();
+        waitForServerReady(port);
+
+        // Verify server started successfully with production mode
+        HttpResponse<String> response = get("/health");
+        assertThat(response.statusCode()).isEqualTo(200);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "UP");
+    }
+
+    @Test
+    @DisplayName("DC-P0-07: Staging mode is passed to security filter during server startup")
+    void stagingModePassedToSecurityFilterDuringServerStartup() throws Exception {
+        // Start server with staging mode
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("staging");
+        server.start();
+        waitForServerReady(port);
+
+        // Verify server started successfully with staging mode
+        HttpResponse<String> response = get("/health");
+        assertThat(response.statusCode()).isEqualTo(200);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "UP");
+    }
+
+    @Test
+    @DisplayName("DC-P0-07: Local mode is passed to security filter during server startup")
+    void localModePassedToSecurityFilterDuringServerStartup() throws Exception {
+        // Start server with local mode (default)
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local");
+        server.start();
+        waitForServerReady(port);
+
+        // Verify server started successfully with local mode
+        HttpResponse<String> response = get("/health");
+        assertThat(response.statusCode()).isEqualTo(200);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+        assertThat(body).containsEntry("status", "UP");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void startServer() throws Exception {

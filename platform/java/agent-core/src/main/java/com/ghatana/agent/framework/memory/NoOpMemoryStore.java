@@ -21,6 +21,8 @@ import java.util.Map;
 final class NoOpMemoryStore implements MemoryStore {
 
     static final NoOpMemoryStore INSTANCE = new NoOpMemoryStore();
+    private static final Policy NO_POLICY = null;
+    private static final String NO_PREFERENCE = null;
 
     private NoOpMemoryStore() {}
 
@@ -73,7 +75,7 @@ final class NoOpMemoryStore implements MemoryStore {
 
     @Override
     public @NotNull Promise<Policy> getPolicy(@NotNull String policyId) {
-        return Promise.of(null);
+        return Promise.of(NO_POLICY);
     }
 
     // ── Negative Knowledge ─────────────────────────────────────────────────────
@@ -125,7 +127,7 @@ final class NoOpMemoryStore implements MemoryStore {
 
     @Override
     public @NotNull Promise<String> getPreference(@NotNull String key) {
-        return Promise.of(null);
+        return Promise.of(NO_PREFERENCE);
     }
 
     @Override

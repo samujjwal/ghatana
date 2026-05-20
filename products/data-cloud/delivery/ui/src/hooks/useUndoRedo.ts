@@ -18,6 +18,7 @@ import {
   loadHistoryIndex,
   isStorageAvailable,
 } from '@/lib/persistence';
+import { emitDataCloudDiagnostic } from '@/diagnostics';
 
 /**
  * Hook for undo/redo functionality with persistence.
@@ -143,7 +144,7 @@ export function useUndoRedo() {
    */
   useEffect(() => {
     if (!isStorageAvailable()) {
-      console.warn('localStorage is not available');
+      emitDataCloudDiagnostic("useUndoRedo", "warn", "localStorage is not available");
       return;
     }
 

@@ -173,7 +173,7 @@ export default function PreviewPage(): ReactElement {
             srcDoc={srcdoc}
             title={`${title} preview`}
             className="w-full h-full border-0 bg-white"
-            sandbox="allow-scripts"
+            sandbox="allow-same-origin"
             onLoad={handleIframeLoad}
             onError={handleIframeError}
             aria-label={`Sandboxed preview: ${title}`}

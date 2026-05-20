@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class InMemoryIdempotencyStore implements IdempotencyStore {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryIdempotencyStore.class);
+    private static final IdempotencyEntry CACHE_MISS = null;
 
     // Composite key: tenantId:scope:idempotencyKey:principalId
     private final Map<String, IdempotencyEntry> store = new ConcurrentHashMap<>();
@@ -35,13 +36,13 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
         IdempotencyEntry entry = store.get(key);
         
         if (entry == null) {
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         }
         
         // Clean up expired entries
         if (entry.isExpired()) {
             store.remove(key);
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         }
         
         return Promise.of(entry);
@@ -54,7 +55,7 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
         IdempotencyEntry entry = new IdempotencyEntry(idempotencyKey, payloadHash, response);
         store.put(key, entry);
         log.debug("[Idempotency] Stored entry for key={}", key);
-        return Promise.of(null);
+        return Promise.complete();
     }
 
     @Override

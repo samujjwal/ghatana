@@ -7,8 +7,9 @@ package com.ghatana.datacloud.launcher.http.handlers;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
-import com.ghatana.platform.database.TransactionManager;
-import com.ghatana.platform.event.OutboxProcessor;
+import com.ghatana.datacloud.spi.TransactionManager;
+import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
+import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -31,14 +32,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * DC-P1-05: Golden tests for entity write durability.
+ * DC-P1-05/DC-P1-09: Golden tests for entity write durability and atomicity.
  *
  * <p>Verifies that entity save operations are durable across restarts, support
  * idempotency, handle partial failures with transaction rollback, and properly
  * integrate with the outbox pattern for event emission.
  *
+ * <p>DC-P1-09: Verifies atomicity of entity write + event append + audit emission
+ * with failure scenarios for event append, audit, outbox, and semantic index.
+ *
  * @doc.type class
- * @doc.purpose Golden tests for entity write durability (DC-P1-05)
+ * @doc.purpose Golden tests for entity write durability (DC-P1-05) and atomicity (DC-P1-09)
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -70,7 +74,7 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
     private TransactionManager transactionManager;
 
     @Mock
-    private OutboxProcessor outboxProcessor;
+    private EntityWriteOutboxProcessor outboxProcessor;
 
     @Mock
     private EntityWriteIdempotencyStore idempotencyStore;
@@ -369,5 +373,150 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
 
         // Verify events were enqueued in order
         verify(outboxProcessor, times(2)).enqueue(any());
+    }
+
+    // ==================== DC-P1-09: Atomicity and Failure Tests ====================
+
+    @Test
+    @DisplayName("DC-P1-09: Golden test - entity save → event append → audit emit atomicity")
+    void entitySaveEventAppendAuditEmitAtomicity() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.of(Map.of(
+                "id", "entity-1",
+                "status", "created",
+                "eventId", "event-123",
+                "auditId", "audit-456"
+            )));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.of("entity-1"));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        assertThat(response).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200);
+        
+        // Verify all three operations were executed in the transaction
+        verify(transactionManager).execute(any());
+        verify(client).save("tenant-1", "test-collection", any());
+        verify(outboxProcessor).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Event append failure rolls back entity save")
+    void eventAppendFailureRollsBackEntitySave() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Event store unavailable")));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.of("entity-1"));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        // Should return error response
+        assertThat(response).isSameAs(errorResponse);
+        
+        // Verify entity was saved but transaction failed (rolled back)
+        verify(client).save("tenant-1", "test-collection", any());
+        // Verify outbox was NOT enqueued due to transaction rollback
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Audit write failure rolls back transaction in production")
+    void auditWriteFailureRollsBackTransactionInProduction() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Audit write failed")));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.of("entity-1"));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        // Should return error response
+        assertThat(response).isSameAs(errorResponse);
+        
+        // Verify transaction was attempted but failed
+        verify(transactionManager).execute(any());
+        // Verify outbox was NOT enqueued due to transaction rollback
+        verify(outboxProcessor, never()).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Outbox failure does not block transaction commit")
+    void outboxFailureDoesNotBlockTransactionCommit() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.of(Map.of("id", "entity-1", "status", "created")));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.of("entity-1"));
+        when(outboxProcessor.enqueue(any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Outbox queue unavailable")));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        // Entity save should succeed despite outbox failure (outbox is async)
+        assertThat(response).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200);
+        
+        // Verify transaction committed successfully
+        verify(transactionManager).execute(any());
+        // Verify outbox enqueue was attempted
+        verify(outboxProcessor).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Semantic index failure does not block transaction commit")
+    void semanticIndexFailureDoesNotBlockTransactionCommit() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.of(Map.of("id", "entity-1", "status", "created")));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.of("entity-1"));
+        when(openSearchConnector.indexEntity(anyString(), anyString(), any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Semantic index unavailable")));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        // Entity save should succeed despite semantic index failure
+        assertThat(response).isNotNull();
+        assertThat(response.getCode()).isEqualTo(200);
+        
+        // Verify transaction committed successfully
+        verify(transactionManager).execute(any());
+        // Verify outbox was enqueued for async processing
+        verify(outboxProcessor).enqueue(any());
+    }
+
+    @Test
+    @DisplayName("DC-P1-09: Transaction rollback on entity save failure does not emit event or audit")
+    void transactionRollbackOnEntitySaveFailureDoesNotEmitEventOrAudit() {
+        String entityJson = "{\"id\":\"entity-1\",\"name\":\"Test\"}";
+
+        when(request.loadBody()).thenReturn(Promise.of(entityJson));
+        when(transactionManager.execute(any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Entity store constraint violation")));
+        when(client.save("tenant-1", "test-collection", any()))
+            .thenReturn(Promise.ofException(new RuntimeException("Constraint violation")));
+
+        HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
+
+        // Should return error response
+        assertThat(response).isSameAs(errorResponse);
+        
+        // Verify transaction was attempted but failed
+        verify(transactionManager).execute(any());
+        // Verify outbox was NOT enqueued due to transaction rollback
+        verify(outboxProcessor, never()).enqueue(any());
     }
 }

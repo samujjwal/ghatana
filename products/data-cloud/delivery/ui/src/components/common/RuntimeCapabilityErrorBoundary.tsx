@@ -13,6 +13,7 @@
 import React from 'react';
 import { useSurfaceRegistry } from '../../api/surfaces.service';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { emitDataCloudDiagnostic } from '../../diagnostics';
 
 interface Props {
   children: React.ReactNode;
@@ -37,7 +38,10 @@ export class RuntimeCapabilityErrorBoundary extends React.Component<Props, State
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (import.meta.env.DEV) {
-      console.error('[RuntimeCapabilityErrorBoundary]', error, info.componentStack);
+      emitDataCloudDiagnostic("RuntimeCapabilityErrorBoundary", "error", "Runtime capability page failed", {
+        error,
+        componentStack: info.componentStack,
+      });
     }
   }
 

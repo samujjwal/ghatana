@@ -12,6 +12,7 @@ import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma.js';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
 import { requireAiSecret } from '../../lib/ai-mode.js';
+import { Logger } from '../../lib/logger.js';
 
 // ============================================================================
 // Types & Interfaces
@@ -52,6 +53,8 @@ export interface VisualElement {
   boundingBox?: BoundingBox;
 }
 
+const NO_VISUAL_ELEMENTS: readonly VisualElement[] = Object.freeze([]);
+
 export interface BoundingBox {
   x: number;
   y: number;
@@ -80,6 +83,8 @@ export interface VisualSearchResponse {
     searchTimeMs: number;
   };
 }
+
+const logger = Logger.create({ component: 'VisualSearchService' });
 
 // ============================================================================
 // Visual Search Service
@@ -279,7 +284,7 @@ Respond in JSON format with these fields:
         style: parsed.style || [],
       };
     } catch (error) {
-      console.error('Image analysis failed:', error);
+      logger.error('Image analysis failed', error);
       return {
         description: 'Analysis failed',
         objects: [],
@@ -478,7 +483,7 @@ Respond in JSON format with these fields:
       ].slice(0, 10);
     }
 
-    return [];
+    return Array.from(NO_VISUAL_ELEMENTS);
   }
 
   /**
@@ -623,7 +628,7 @@ Respond in JSON format with these fields:
         },
       });
     } catch (error) {
-      console.error(`Failed to index image for moment ${momentId}:`, error);
+      logger.error('Failed to index image for moment', error, { momentId });
     }
   }
 

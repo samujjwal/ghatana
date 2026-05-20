@@ -161,7 +161,7 @@ export const performanceMonitor = new PerformanceMonitor();
  * Prisma version where query instrumentation must use Client Extensions.
  */
 export function enableQueryLogging() {
-  console.log('Query logging middleware disabled (Prisma $use deprecated)');
+  logger.info('Query logging middleware disabled because Prisma $use is deprecated');
   
   /*
   // Prisma middleware to log slow queries
@@ -172,7 +172,7 @@ export function enableQueryLogging() {
 
     // Log slow queries
     if (duration > 500) {
-      console.warn({
+      logger.warn('Slow database query', {
         msg: 'Slow database query',
         model: params.model,
         action: params.action,

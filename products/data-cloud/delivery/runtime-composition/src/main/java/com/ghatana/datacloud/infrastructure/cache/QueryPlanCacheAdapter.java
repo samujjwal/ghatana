@@ -49,6 +49,7 @@ import java.util.UUID;
 public class QueryPlanCacheAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(QueryPlanCacheAdapter.class);
+    private static final QueryPlan CACHE_MISS = null;
     private static final String CACHE_PREFIX = "query_plan:";
     private static final String SCHEMA_VERSION_PREFIX = "schema_version:";
     private static final long TTL_SECONDS = 60 * 60; // 1 hour
@@ -111,11 +112,11 @@ public class QueryPlanCacheAdapter {
 
             metricsCollector.incrementCounter("cache.query_plan.misses");
             log.debug("Query plan cache miss");
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         } catch (Exception e) {
             log.error("Error reading from cache: {}", cacheKeyStr, e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
-            return Promise.of(null);
+            return Promise.of(CACHE_MISS);
         }
     }
 
@@ -135,7 +136,7 @@ public class QueryPlanCacheAdapter {
 
             log.info("Invalidated query plan cache for collection: {}", collectionId);
             metricsCollector.incrementCounter("cache.query_plan.invalidations");
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             log.error("Error invalidating cache for collection: {}", collectionId, e);
             metricsCollector.incrementCounter("cache.query_plan.errors");
@@ -156,7 +157,7 @@ public class QueryPlanCacheAdapter {
                 log.info("Cleared {} query plans from cache", keys.size());
                 metricsCollector.incrementCounter("cache.query_plan.clears");
             }
-            return Promise.of(null);
+            return Promise.complete();
         } catch (Exception e) {
             log.error("Error clearing cache", e);
             metricsCollector.incrementCounter("cache.query_plan.errors");

@@ -1,3 +1,4 @@
+import { emitFlashItMobileDiagnostic } from '@/diagnostics';
 /**
  * Register Screen for Flashit Mobile
  * New user registration
@@ -58,7 +59,7 @@ export default function RegisterScreen({ navigation }: Props) {
       setCurrentUser(response.user);
       // Navigation handled automatically by auth state change
     } catch (error: any) {
-      console.error('Registration error:', error);
+      emitFlashItMobileDiagnostic({ level: 'error', component: 'RegisterScreen', message: 'Registration error', error });
       Alert.alert(
         'Registration Failed',
         error.response?.data?.message || 'An error occurred during registration'

@@ -101,8 +101,9 @@ export {
   HybridCanvasController,
   type HybridCanvasAPI,
 } from '../hybrid/hybrid-canvas-controller.js';
+/** @deprecated Use {@link createCanvasStore} for isolated per-canvas state. This global facade will be removed in a future version. */
+export { hybridCanvasStore } from '../hybrid/state.js';
 export {
-  hybridCanvasStore,
   createCanvasStore,
   createHybridCanvasStore,
   useHybridCanvasState,

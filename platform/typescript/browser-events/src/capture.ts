@@ -135,11 +135,21 @@ export abstract class AbstractBrowserEventCapture
       try {
         await handler(event);
       } catch (err) {
-        // Non-fatal: log and continue dispatching to other handlers
-        console.error(
-          `[BrowserEventCapture] Handler error for event "${event.type}":`,
-          err
-        );
+        if (
+          typeof globalThis.dispatchEvent === 'function' &&
+          typeof CustomEvent !== 'undefined'
+        ) {
+          globalThis.dispatchEvent(
+            new CustomEvent('browser-event-capture-diagnostic', {
+              detail: {
+                level: 'error',
+                message: 'Handler error while dispatching browser event',
+                eventType: event.type,
+                error: err,
+              },
+            })
+          );
+        }
       }
     }
   }

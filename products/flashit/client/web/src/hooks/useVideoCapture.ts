@@ -9,6 +9,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface VideoCaptureState {
   isRecording: boolean;
@@ -284,7 +285,7 @@ export function useVideoCapture(options: UseVideoCaptureOptions = {}): {
         try {
           await video.play();
         } catch (playErr) {
-          console.warn('Video play failed:', playErr);
+          emitFlashItDiagnostic({ level: 'warn', component: 'useVideoCapture', message: 'Video play failed', error: playErr });
           // Continue anyway
         }
       }
@@ -397,7 +398,7 @@ export function useVideoCapture(options: UseVideoCaptureOptions = {}): {
         );
       });
     } catch (error) {
-      console.error('Failed to generate thumbnail:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'useVideoCapture', message: 'Failed to generate thumbnail', error });
       return null;
     }
   }, []);

@@ -1,18 +1,24 @@
 import type { ReactElement } from 'react';
+import { useCallback } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { HybridCanvas } from '@ghatana/canvas/hybrid';
+import type { CanvasNode } from '@ghatana/canvas/hybrid';
 import { createBuilderDocument } from '@ghatana/ui-builder';
-import type { BuilderDocument, ComponentInstance } from '@ghatana/ui-builder';
-import type { CanvasNode, CanvasEdge } from '@ghatana/canvas/hybrid';
+import type { BuilderDocument } from '@ghatana/ui-builder';
 import { insertNode } from '@ghatana/ui-builder';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { getStudioCapabilityState } from '../api/kernelLifecycleClient';
 import { useStudioLifecycleData } from '../data/StudioLifecycleDataContext';
 import type { StudioTranslationKey } from '../i18n/studioTranslations';
 import { useStudioTranslation } from '../i18n/studioTranslations';
 import { artifactGraphSummary, residualIslandReport, riskHotspotReport, semanticArtifactReferences } from './yappcWorkflowData';
 import IdeationRouteStatusPanel from './IdeationRouteStatusPanel';
-import { projectedBuilderDocumentAtom } from '../state/artifactWorkflowStore.js';
+import { projectedBuilderDocumentAtom, setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
+import {
+  builderToCanvas,
+  canvasToBuilder,
+  type BuilderCanvasNode,
+} from '../adapters/BuilderCanvasProjectionAdapter.js';
 
 type TranslateFn = (key: StudioTranslationKey) => string;
 
@@ -86,38 +92,27 @@ export default function CanvasPage(): ReactElement {
 
   // Read workflow store: use imported document if available, fall back to static demo data.
   const workflowDocument = useAtomValue(projectedBuilderDocumentAtom);
+  const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
   // Create canvas document from artifact data (static fallback)
   const staticCanvasDocument = createArtifactCanvasDocument();
   const canvasDocument = workflowDocument ?? staticCanvasDocument;
 
-  // Convert BuilderDocument to canvas format using deterministic grid layout.
-  // Positions are computed from node index so they are stable across renders.
-  const nodeEntries = Object.values(canvasDocument.nodes) as ComponentInstance[];
-  const GRID_COLUMNS = 4;
-  const CELL_WIDTH = 220;
-  const CELL_HEIGHT = 120;
-  const MARGIN_X = 40;
-  const MARGIN_Y = 40;
+  // Project BuilderDocument → canvas nodes + edges using the typed adapter.
+  // This replaces the manual node-building code and correctly emits slot edges.
+  const { nodes: canvasNodes, edges: canvasEdges } = builderToCanvas(canvasDocument);
 
-  const canvasNodes: CanvasNode<Record<string, unknown>>[] = nodeEntries.map((node: ComponentInstance, index: number) => {
-    const col = index % GRID_COLUMNS;
-    const row = Math.floor(index / GRID_COLUMNS);
-    return {
-      id: node.id,
-      type: 'artifactNode',
-      position: {
-        x: MARGIN_X + col * CELL_WIDTH,
-        y: MARGIN_Y + row * CELL_HEIGHT,
-      },
-      data: {
-        contractName: node.contractName,
-        props: node.props,
-        metadata: node.metadata,
-      },
-    };
-  });
-  const canvasEdges: CanvasEdge<Record<string, unknown>>[] = [];
+  // Write position changes back to the workflow store.
+  // The `onNodesChange` callback receives the full node list after any drag/resize.
+  // The nodes we put in are BuilderCanvasNode[], so we narrow the type explicitly.
+  const handleNodesChange = useCallback(
+    (updatedNodes: CanvasNode[]) => {
+      const builderNodes = updatedNodes as unknown as BuilderCanvasNode[];
+      const updatedDoc = canvasToBuilder({ baseDocument: canvasDocument, canvasNodes: builderNodes });
+      setWorkflow({ projectedBuilderDocument: updatedDoc });
+    },
+    [canvasDocument, setWorkflow],
+  );
 
   const getConfidenceTone = (confidence: number): 'success' | 'warning' | 'danger' => {
     if (confidence >= 0.9) return 'success';
@@ -150,14 +145,14 @@ export default function CanvasPage(): ReactElement {
           <Badge tone="success" variant="soft" className="text-xs">Live</Badge>
         </div>
         <HybridCanvas
-          nodes={canvasNodes}
-          edges={canvasEdges}
+          nodes={[...canvasNodes]}
+          edges={[...canvasEdges]}
           mode="hybrid-graph"
           width="100%"
           height="600px"
           readOnly={false}
           onElementsChange={() => {}}
-          onNodesChange={() => {}}
+          onNodesChange={handleNodesChange}
           onEdgesChange={() => {}}
           onSelectionChange={() => {}}
           onViewportChange={() => {}}

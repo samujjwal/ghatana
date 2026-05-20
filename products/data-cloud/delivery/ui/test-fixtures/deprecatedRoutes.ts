@@ -7,6 +7,8 @@
  * @doc.pattern Adapter
  */
 
+import { emitDataCloudDiagnostic } from "../src/diagnostics";
+
 export const COLLECTION_RUNTIME_OPENAPI_PATHS = [
   "/api/v1/entities/{collection}",
   "/api/v1/entities/{collection}/{id}",
@@ -49,7 +51,10 @@ export function warnDeprecatedRoute(
   canonicalPath: string,
 ): string {
   const warning = formatDeprecatedRouteWarning(legacyPath, canonicalPath);
-  console.warn(warning);
+  emitDataCloudDiagnostic("deprecatedRoutes", "warn", warning, {
+    legacyPath,
+    canonicalPath,
+  });
   return warning;
 }
 

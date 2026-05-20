@@ -52,7 +52,7 @@ public final class InMemoryAgentRuntimeGovernanceRegistry implements AgentRuntim
             }
             return newRecords;
         });
-        return Promise.of(null);
+        return Promise.complete();
     }
 
     @Override
@@ -65,7 +65,7 @@ public final class InMemoryAgentRuntimeGovernanceRegistry implements AgentRuntim
             @NotNull String reason) {
         String key = agentKey(agentId, tenantId);
         previousVersionsByAgent.put(key, toVersion);
-        return Promise.of(null);
+        return Promise.complete();
     }
 
     @Override

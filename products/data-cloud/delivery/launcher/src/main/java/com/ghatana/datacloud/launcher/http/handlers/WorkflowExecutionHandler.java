@@ -35,6 +35,7 @@ public class WorkflowExecutionHandler {
     private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionHandler.class);
     private static final String MISSING_TENANT_MESSAGE = "X-Tenant-Id header or tenantId query parameter is required";
     private static final String HANDLER_NAME = "WorkflowExecutionHandler";
+    private static final HttpResponse NO_IDEMPOTENCY_RESPONSE = null;
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
@@ -89,12 +90,12 @@ public class WorkflowExecutionHandler {
      */
     private Promise<HttpResponse> checkIdempotency(String tenantId, String pipelineId, String routeAction, HttpRequest request) {
         if (idempotencyStore == null) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String principalId = http.resolvePrincipalId(request);

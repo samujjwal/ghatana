@@ -17,6 +17,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 export interface LinkSuggestionsCardProps {
   momentId: string;
@@ -107,7 +108,7 @@ export default function LinkSuggestionsCard({
       onLinkCreated?.(result.id);
       setDismissedIds((prev) => new Set([...prev, suggestion.id]));
     } catch (error) {
-      console.error('Failed to create link:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'LinkSuggestionsCard', message: 'Failed to create link', error });
     } finally {
       setCreatingLinkFor(null);
     }

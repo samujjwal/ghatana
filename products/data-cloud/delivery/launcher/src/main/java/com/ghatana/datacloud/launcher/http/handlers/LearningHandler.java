@@ -28,6 +28,7 @@ import java.util.Map;
 public class LearningHandler {
 
     private static final Logger log = LoggerFactory.getLogger(LearningHandler.class);
+    private static final HttpResponse NO_IDEMPOTENCY_RESPONSE = null;
 
     private final DataCloudLearningBridge learningBridge;
     private final HttpHandlerSupport http;
@@ -56,12 +57,12 @@ public class LearningHandler {
      */
     private Promise<HttpResponse> checkIdempotency(String tenantId, String routeAction, HttpRequest request) {
         if (idempotencyStore == null) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String idempotencyKey = IdempotencyHelper.extractIdempotencyKey(request);
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            return Promise.of(null);
+            return Promise.of(NO_IDEMPOTENCY_RESPONSE);
         }
 
         String principalId = http.resolvePrincipalId(request);

@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createCRDTEngine, Operation, CRDTState } from '../services/crdtEngine';
 import { io, Socket } from 'socket.io-client';
+import { emitFlashItDiagnostic } from '@/diagnostics';
 
 // ============================================================================
 // Types & Interfaces
@@ -109,12 +110,12 @@ export function useCollaborativeEdit(
     // Connection events
     socket.on('connect', () => {
       setIsConnected(true);
-      console.log('Connected to collaborative editing server');
+      emitFlashItDiagnostic({ level: 'info', component: 'useCollaborativeEdit', message: 'Connected to collaborative editing server' });
     });
 
     socket.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Disconnected from collaborative editing server');
+      emitFlashItDiagnostic({ level: 'info', component: 'useCollaborativeEdit', message: 'Disconnected from collaborative editing server' });
     });
 
     // Document initialization
@@ -339,7 +340,7 @@ export function useCollaborativeEdit(
         text: engineRef.current.getText(),
       });
     } catch (error) {
-      console.error('Failed to save document:', error);
+      emitFlashItDiagnostic({ level: 'error', component: 'useCollaborativeEdit', message: 'Failed to save document', error });
     }
   }, [documentId]);
 

@@ -102,10 +102,12 @@ export {
   mergeDocuments,
   lastWriteWins,
   noopEventBus,
+  createTestOperationContext,
 } from './operations';
 
 export type {
   OperationEventBus,
+  OperationContext,
   NodeInsertedPayload,
   NodeMovedPayload,
   NodeDeletedPayload,

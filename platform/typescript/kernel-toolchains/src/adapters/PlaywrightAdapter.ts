@@ -11,6 +11,7 @@ import type {
 } from '../ToolchainAdapter.js';
 
 const execAsync = promisify(require('node:child_process').exec);
+const NO_PLAYWRIGHT_ARTIFACTS: readonly string[] = Object.freeze([]);
 
 /**
  * Playwright adapter for running E2E tests
@@ -173,6 +174,6 @@ export class PlaywrightAdapter implements ToolchainAdapter {
 
   private extractArtifacts(_stdout: string, _context: ToolchainAdapterContext): string[] {
     // Implementation note: Parse Playwright output to extract artifact paths (test reports, screenshots, traces)
-    return [];
+    return Array.from(NO_PLAYWRIGHT_ARTIFACTS);
   }
 }

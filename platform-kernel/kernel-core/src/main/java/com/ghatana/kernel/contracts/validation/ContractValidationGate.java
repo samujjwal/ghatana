@@ -20,6 +20,8 @@ import java.util.*;
  */
 public class ContractValidationGate {
 
+    private static final List<ComplianceViolation> NO_RECORDED_VIOLATIONS = List.of();
+
     private final Map<KernelContract.ContractFamily, ContractValidator> validators;
     private boolean enforceCompliance = true;
 
@@ -138,7 +140,7 @@ public class ContractValidationGate {
      * @return list of compliance violations
      */
     public List<ComplianceViolation> getViolations() {
-        return new ArrayList<>();
+        return NO_RECORDED_VIOLATIONS;
     }
 
     /**

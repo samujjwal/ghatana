@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
 import { Button } from '../../atoms/Button';
+import { emitDesignSystemDiagnostic } from '../../diagnostics';
 
 export interface TourStep {
   /** Unique step ID */
@@ -96,7 +97,9 @@ export function Tour({
 
       const target = document.querySelector(step.target);
       if (!target) {
-        console.warn(`Tour target not found: ${step.target}`);
+        emitDesignSystemDiagnostic('Tour', 'warn', 'Tour target not found', {
+          target: step.target,
+        });
         return;
       }
 

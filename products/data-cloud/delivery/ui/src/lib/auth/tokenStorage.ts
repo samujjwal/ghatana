@@ -27,6 +27,8 @@
  * @doc.pattern Repository Pattern
  */
 
+import { emitDataCloudDiagnostic } from '../../diagnostics';
+
 const TOKEN_KEY = 'auth_token';
 const EXPIRY_KEY = 'auth_token_expiry';
 const AUTH_MODE_KEY = 'dc:auth:mode';
@@ -216,7 +218,9 @@ export const TokenStorage = {
       this.set(newToken);
       return true;
     } catch (error) {
-      console.error('[TokenStorage] Token refresh failed:', error);
+      emitDataCloudDiagnostic("TokenStorage", "error", "Token refresh failed", {
+        error,
+      });
       this.clear();
       return false;
     }

@@ -22,6 +22,13 @@ import java.util.List;
 public interface EntityWriteOutboxProcessor {
     
     /**
+     * Adds an outbox entry to the pending queue for async processing.
+     *
+     * @param outbox the outbox entry to add
+     */
+    void addPending(EntityWriteOutbox outbox);
+    
+    /**
      * Processes a pending outbox entry.
      * 
      * <p>This method should:

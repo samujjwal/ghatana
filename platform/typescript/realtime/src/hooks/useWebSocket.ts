@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   getWebSocketClient,
 } from '../client';
+import { emitRealtimeDiagnostic } from '../diagnostics';
 
 import type {
   WebSocketClient,
@@ -174,7 +175,12 @@ export function useWebSocket(
   useEffect(() => {
     if (autoConnect && connectionState.status === 'disconnected') {
       client.connect().catch((error) => {
-        console.error('Auto-connect failed:', error);
+        emitRealtimeDiagnostic({
+          level: 'error',
+          component: 'useWebSocket',
+          message: 'Auto-connect failed',
+          error,
+        });
       });
     }
 
@@ -194,7 +200,12 @@ export function useWebSocket(
     try {
       await client.connect();
     } catch (error) {
-      console.error('Connection failed:', error);
+      emitRealtimeDiagnostic({
+        level: 'error',
+        component: 'useWebSocket',
+        message: 'Connection failed',
+        error,
+      });
       throw error;
     }
   }, [client]);

@@ -1,6 +1,8 @@
 import React from 'react';
 import { tokens } from '@ghatana/tokens';
 
+const NO_PAGES: readonly (number | '...')[] = Object.freeze([]);
+
 export interface PaginationProps {
   /** Current page (1-indexed) */
   currentPage: number;
@@ -75,7 +77,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       return [1, '...', ...middleRange, '...', totalPages];
     }
 
-    return [];
+    return Array.from(NO_PAGES);
   };
 
   const pages = generatePageNumbers();

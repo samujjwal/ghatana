@@ -96,10 +96,16 @@ export function auditContrastPairs(
       // Skip invalid hex values — the raw validation utilities already throw
       // descriptive errors; here we just continue so the rest of the audit
       // succeeds.
-      const _gProc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-      if (_gProc?.env?.['NODE_ENV'] !== 'production') {
-        console.warn(
-          `[ds-generator/validation] Skipping invalid color pair: "${pair.foreground}" / "${pair.background}"`,
+      const _gProc = (globalThis as {
+        process?: {
+          env?: Record<string, string | undefined>;
+          stderr?: { write?: (message: string) => void };
+        };
+      }).process;
+      const stderr = _gProc?.stderr;
+      if (_gProc?.env?.['NODE_ENV'] !== 'production' && typeof stderr?.write === 'function') {
+        stderr.write(
+          `[ds-generator/validation] Skipping invalid color pair: "${pair.foreground}" / "${pair.background}"\n`,
         );
       }
     }
