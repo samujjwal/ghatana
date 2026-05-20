@@ -102,7 +102,7 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
             .thenReturn(Optional.empty());
         when(request.loadBody()).thenReturn(
             Promise.of(ByteBuf.wrapForReading(
-                "{\"type\":\"entity.created\",\"data\":{\"key\":\"v\"},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
+                "{\"type\":\"entity.created\",\"payload\":{\"key\":\"v\"},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
         when(client.appendEvent(anyString(), any()))
             .thenReturn(Promise.of(DataCloudClient.Offset.of(1L)));
 
@@ -118,7 +118,7 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
     void successfulEventAppendWithoutIdempotencyKeyCallsClient() {
         when(request.loadBody()).thenReturn(
             Promise.of(ByteBuf.wrapForReading(
-                "{\"type\":\"entity.created\",\"data\":{},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
+                "{\"type\":\"entity.created\",\"payload\":{\"k\":\"v\"},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
         when(client.appendEvent(anyString(), any()))
             .thenReturn(Promise.of(DataCloudClient.Offset.of(2L)));
 
@@ -162,7 +162,7 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
     void clientFailureReturnsErrorResponse() {
         when(request.loadBody()).thenReturn(
             Promise.of(ByteBuf.wrapForReading(
-                "{\"type\":\"entity.created\",\"data\":{\"k\":\"v\"},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
+                "{\"type\":\"entity.created\",\"payload\":{\"k\":\"v\"},\"actor\":\"user-1\"}".getBytes(StandardCharsets.UTF_8))));
         when(client.appendEvent(anyString(), any()))
             .thenReturn(Promise.ofException(new RuntimeException("Event store unavailable")));
 
@@ -210,7 +210,7 @@ class EventHandlerDurabilityTest extends EventloopTestBase {
     @DisplayName("DC-P1-06: Concurrent appends with same idempotency key — second returns cached")
     void concurrentAppendsWithSameIdempotencyKeySecondReturnsCached() {
         String idempotencyKey = "concurrent-event-key";
-        byte[] body = "{\"type\":\"entity.created\",\"data\":{},\"actor\":\"u\"}".getBytes(StandardCharsets.UTF_8);
+        byte[] body = "{\"type\":\"entity.created\",\"payload\":{\"k\":\"v\"},\"actor\":\"u\"}".getBytes(StandardCharsets.UTF_8);
         when(request.getHeader(HttpHeaders.of("X-Idempotency-Key"))).thenReturn(idempotencyKey);
         when(idempotencyStore.get("tenant-1", "events:append", idempotencyKey))
             .thenReturn(Optional.empty())

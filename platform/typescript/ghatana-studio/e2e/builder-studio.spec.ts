@@ -1,8 +1,8 @@
 /**
- * @fileoverview E2E tests for BuilderStudio workflow
+ * @fileoverview E2E tests for the current Builder Studio workflow.
  *
- * Tests the complete workflow of creating, editing, and previewing
- * BuilderDocuments in the Studio.
+ * These tests exercise the real route and stable accessible controls rather
+ * than historical test ids from the retired BuilderStudio prototype.
  *
  * @doc.type test
  * @doc.purpose BuilderStudio workflow E2E tests
@@ -11,109 +11,65 @@
 
 import { expect, test } from '@playwright/test';
 
+async function createDocument(page: import('@playwright/test').Page) {
+  await page.goto('/builder');
+  await page.getByRole('button', { name: 'New Document', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /New Document/ })).toBeVisible();
+}
+
 test.describe('BuilderStudio Workflow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/studio/builder');
+    await page.goto('/builder');
   });
 
-  test('loads BuilderStudio with document list', async ({ page }) => {
+  test('loads Builder Studio with document controls', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Builder Studio' })).toBeVisible();
-    await expect(page.getByTestId('document-list')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Documents' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Import' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'New Document', exact: true })).toBeVisible();
   });
 
-  test('creates a new BuilderDocument', async ({ page }) => {
-    await page.getByTestId('create-document-button').click();
-    
-    // Fill in document details
-    await page.getByTestId('document-name-input').fill('Test Document');
-    await page.getByTestId('document-description-input').fill('Test description');
-    
-    await page.getByTestId('save-document-button').click();
-    
-    // Verify document was created
-    await expect(page.getByText('Test Document')).toBeVisible();
+  test('creates a new BuilderDocument and opens the authoring workspace', async ({ page }) => {
+    await createDocument(page);
+
+    await expect(page.getByRole('heading', { name: 'Components' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tree', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Canvas' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: /^Validation$/ })).toBeVisible();
   });
 
-  test('edits an existing BuilderDocument', async ({ page }) => {
-    // Select a document
-    await page.getByTestId('document-item').first().click();
-    
-    // Add a component
-    await page.getByTestId('add-component-button').click();
-    await page.getByTestId('component-selector').selectOption('Button');
-    await page.getByTestId('add-component-confirm').click();
-    
-    // Verify component was added
-    await expect(page.getByTestId('component-node')).toBeVisible();
+  test('adds a palette component to the selected document', async ({ page }) => {
+    await createDocument(page);
+
+    const paletteButton = page
+      .getByRole('button')
+      .filter({ hasText: /button|card|input|container/i })
+      .first();
+    await expect(paletteButton).toBeVisible();
+    await paletteButton.click();
+
+    await expect(page.getByText(/button|card|input|container/i).first()).toBeVisible();
   });
 
-  test('deletes a BuilderDocument', async ({ page }) => {
-    // Select first document
-    await page.getByTestId('document-item').first().click();
-    
-    // Click delete
-    await page.getByTestId('delete-document-button').click();
-    
-    // Confirm deletion
-    await page.getByTestId('confirm-delete-button').click();
-    
-    // Verify document was deleted
-    await expect(page.getByText('Document deleted')).toBeVisible();
+  test('validates and exports a BuilderDocument', async ({ page }) => {
+    await createDocument(page);
+
+    await page.getByRole('button', { name: 'Validate', exact: true }).click();
+    await expect(page.getByText(/valid|error|warning/i).first()).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export' }).first().click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/New Document \d+\.json$/);
   });
 
-  test('exports a BuilderDocument', async ({ page }) => {
-    await page.getByTestId('document-item').first().click();
-    await page.getByTestId('export-button').click();
-    
-    // Verify export dialog appears
-    await expect(page.getByTestId('export-dialog')).toBeVisible();
-    await page.getByTestId('export-json-button').click();
-    
-    // Verify download happened
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByTestId('export-confirm-button').click(),
-    ]);
-    
-    expect(download.suggestedFilename()).toMatch(/\.json$/);
-  });
+  test('deletes a BuilderDocument from the document list', async ({ page }) => {
+    await createDocument(page);
 
-  test('imports a BuilderDocument', async ({ page }) => {
-    await page.getByTestId('import-button').click();
-    
-    // Upload a file
-    const fileInput = page.getByTestId('import-file-input');
-    await fileInput.setInputFiles('./fixtures/test-document.json');
-    
-    await page.getByTestId('import-confirm-button').click();
-    
-    // Verify import was successful
-    await expect(page.getByText('Document imported successfully')).toBeVisible();
-  });
-
-  test('switches between canvas and code views', async ({ page }) => {
-    await page.getByTestId('document-item').first().click();
-    
-    // Switch to canvas view
-    await page.getByTestId('view-canvas').click();
-    await expect(page.getByTestId('hybrid-canvas')).toBeVisible();
-    
-    // Switch to code view
-    await page.getByTestId('view-code').click();
-    await expect(page.getByTestId('code-editor')).toBeVisible();
-  });
-
-  test('persists document changes', async ({ page }) => {
-    await page.getByTestId('document-item').first().click();
-    
-    // Make a change
-    await page.getByTestId('document-name-input').fill('Updated Name');
-    await page.getByTestId('save-button').click();
-    
-    // Reload page
-    await page.reload();
-    
-    // Verify change persisted
-    await expect(page.getByTestId('document-name-input')).toHaveValue('Updated Name');
+    await page.getByRole('button', { name: 'Delete' }).first().click();
+    await expect(
+      page.getByText('Select a document to view details or create a new document to get started.'),
+    ).toBeVisible();
   });
 });

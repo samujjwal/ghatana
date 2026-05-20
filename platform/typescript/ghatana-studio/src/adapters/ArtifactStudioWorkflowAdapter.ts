@@ -15,10 +15,13 @@
  */
 
 import type {
+  CompileResult,
+  EvidencePack,
   LogicalArtifactModel,
   FidelityReport,
   ResidualIslandReport,
 } from '@ghatana/artifact-contracts';
+import { createResidualIslandReport } from '@ghatana/artifact-contracts';
 
 // ============================================================================
 // Types
@@ -36,6 +39,11 @@ export interface SourceEntry {
   /** Relative file path within the project (e.g. "src/Button.tsx"). */
   readonly filePath: string;
   /** UTF-8 source content. */
+  readonly content: string;
+}
+
+export interface GeneratedSourceEntry {
+  readonly relativePath: string;
   readonly content: string;
 }
 
@@ -181,5 +189,59 @@ export function mergeModels(
     ...base,
     nodes: mergedNodes,
     edges: mergedEdges,
+  };
+}
+
+export function buildStudioEvidencePack(params: {
+  readonly jobResult: DecompileJobResult;
+  readonly generatedSources: readonly GeneratedSourceEntry[];
+  readonly compileFidelity: FidelityReport;
+  readonly compileResiduals?: ResidualIslandReport;
+  readonly durationMs?: number;
+}): EvidencePack | null {
+  const { jobResult } = params;
+  if (
+    jobResult.model === null ||
+    jobResult.fidelityReport === null ||
+    jobResult.residualIslandReport === null
+  ) {
+    return null;
+  }
+
+  const compileResult: CompileResult = {
+    success: true,
+    emittedFiles: Object.fromEntries(
+      params.generatedSources.map((source) => [source.relativePath, source.content]),
+    ),
+    fidelity: params.compileFidelity,
+    residuals: params.compileResiduals ?? createResidualIslandReport([]),
+    errors: [],
+    warnings: [],
+    compiledAt: new Date().toISOString(),
+    durationMs: params.durationMs,
+  };
+
+  return {
+    evidenceId: `evidence:${jobResult.jobId}`,
+    createdAt: jobResult.completedAt,
+    modelId: jobResult.model.modelId,
+    label: `Studio artifact workflow ${jobResult.jobId}`,
+    stage: 'round-trip',
+    fidelity: jobResult.fidelityReport,
+    residuals: jobResult.residualIslandReport,
+    decompileResult: {
+      success: jobResult.status === 'complete',
+      modelId: jobResult.model.modelId,
+      nodeCount: Object.keys(jobResult.model.nodes).length,
+      edgeCount: jobResult.model.edges.length,
+      fidelity: jobResult.fidelityReport,
+      residuals: jobResult.residualIslandReport,
+      errors: jobResult.errors.map((message) => ({ code: 'studio-decompile-error', message })),
+      decompiledAt: jobResult.completedAt,
+      durationMs: Math.max(0, new Date(jobResult.completedAt).getTime() - new Date(jobResult.startedAt).getTime()),
+    },
+    compileResult,
+    summary: `Round-trip workflow generated ${params.generatedSources.length} file${params.generatedSources.length === 1 ? '' : 's'} from ${Object.keys(jobResult.model.nodes).length} artifact node${Object.keys(jobResult.model.nodes).length === 1 ? '' : 's'}.`,
+    reviewStatus: 'pending',
   };
 }

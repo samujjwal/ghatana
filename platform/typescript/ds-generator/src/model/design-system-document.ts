@@ -104,7 +104,7 @@ export const ComponentVariantDefinitionSchema = z.object({
    * Named variants (e.g. `primary`, `secondary`, `ghost`).
    * Each variant maps to a record of CSS custom property overrides.
    */
-  variants: z.record(z.string(), z.record(z.string(), z.string())),
+  variants: z.record(z.string(), z.record(z.string(), z.unknown())),
   /** State-specific token overrides applied after variant resolution. */
   states: z.array(ComponentStateSchema).default([]),
 });
@@ -137,6 +137,8 @@ export const DesignSystemDocumentSchema = z.object({
    * `undefined` means the document uses the raw preset without brand overrides.
    */
   brandName: z.string().optional(),
+  /** Optional brand URL preserved for legacy documents and Studio metadata. */
+  brandUrl: z.string().url().optional(),
   /** Semantic token aliases that map component-level names to base tokens. */
   semanticAliases: z.array(SemanticTokenAliasSchema).default([]),
   /** Per-component variant and state definitions. */
@@ -148,10 +150,25 @@ export const DesignSystemDocumentSchema = z.object({
    * the full materialization pipeline.
    */
   resolvedTokens: z.record(z.string(), z.unknown()),
+  /**
+   * Legacy alias for `resolvedTokens` used by older DS generator artifacts.
+   * Kept optional so modern callers can rely on `resolvedTokens`, while
+   * migration tests can prove old token documents still round-trip.
+   */
+  tokens: z.record(z.string(), z.unknown()).optional(),
   /** ISO-8601 timestamp when this document was last generated. */
   generatedAt: z.string(),
   /** Free-form metadata (product, team, version notes, etc.). */
   metadata: z.record(z.string(), z.unknown()).optional(),
+}).superRefine((doc, ctx) => {
+  const legacyColorTokens = doc.tokens?.['color'];
+  if (legacyColorTokens !== undefined && !hasOnlyStringLeaves(legacyColorTokens)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['tokens', 'color'],
+      message: 'Legacy color token leaves must be strings.',
+    });
+  }
 });
 
 export type DesignSystemDocument = z.infer<typeof DesignSystemDocumentSchema>;
@@ -186,6 +203,21 @@ const DEFAULT_GENERATION_CONTEXT: GenerationContext = {
   clockFn: () => new Date().toISOString(),
   idFn: () => crypto.randomUUID(),
 };
+
+function hasOnlyStringLeaves(value: unknown): boolean {
+  if (typeof value === 'string') return true;
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  return Object.values(value).every(hasOnlyStringLeaves);
+}
+
+function normalizeSemanticAliases(
+  aliases: readonly SemanticTokenAlias[] | undefined,
+): SemanticTokenAlias[] {
+  return (aliases ?? []).map((alias) => ({
+    ...alias,
+    category: alias.category ?? 'other',
+  }));
+}
 
 // ============================================================================
 // Factory
@@ -225,9 +257,11 @@ export function createDesignSystemDocument(
     basePresetId,
     resolvedTokens,
     generatedAt: context.clockFn(),
-    semanticAliases: overrides?.semanticAliases ?? [],
+    tokens: resolvedTokens,
+    semanticAliases: normalizeSemanticAliases(overrides?.semanticAliases),
     componentVariants: overrides?.componentVariants ?? [],
     brandName: overrides?.brandName,
+    brandUrl: overrides?.brandUrl,
     metadata: overrides?.metadata,
   };
 }

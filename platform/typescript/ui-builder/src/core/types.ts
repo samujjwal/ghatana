@@ -249,6 +249,8 @@ export interface DocumentMetadata {
   readonly visibilityContract?: VisibilityContract;
   /** Trust level governing preview and execution. */
   readonly trustLevel?: TrustLevel;
+  /** Diagnostics captured while projecting external artifact models into BuilderDocument. */
+  readonly artifactProjectionDiagnostics?: readonly string[];
 }
 
 // ============================================================================

@@ -12,6 +12,8 @@ info:
     Data Cloud includes the Action Plane runtime implementation for plugin-backed workflow execution and observability.
     The Action Plane provides agentic orchestration, pattern detection, anomaly analysis, time-series forecasting,
     pipeline execution, and governance/operation surfaces.
+    In this API, workflow and pipeline execution means data-local plugin runtime execution.
+    AEP still owns broader agentic orchestration.
 
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
@@ -129,44 +131,6 @@ tags:
     description: Catalog of agent descriptors served by Data Cloud Action Plane.
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Error Response Components (DC-P0-01)
-# ─────────────────────────────────────────────────────────────────────────────
-components:
-  schemas:
-    ErrorResponse:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: object
-          required:
-            - code
-            - message
-          properties:
-            code:
-              type: string
-              enum:
-                - UNAUTHENTICATED
-                - FORBIDDEN
-                - TENANT_REQUIRED
-                - TENANT_MISMATCH
-                - POLICY_DENY
-                - AUDIT_SERVICE_REQUIRED
-                - MISSING_TENANT_CLAIM
-                - DELEGATED_ACCESS_DENIED
-            message:
-              type: string
-            requestId:
-              type: string
-              format: uuid
-      example:
-        error:
-          code: "TENANT_MISMATCH"
-          message: "Requested tenant does not match authenticated tenant"
-          requestId: "550e8400-e29b-41d4-a716-446655440000"
-
-# ─────────────────────────────────────────────────────────────────────────────
 # Reusable components
 # ─────────────────────────────────────────────────────────────────────────────
 security:
@@ -267,14 +231,6 @@ components:
       description: Plugin identifier.
       schema:
         type: string
-
-    tenantIdHeader:
-      name: X-Tenant-ID
-      in: header
-      description: Tenant identifier supplied as a request header.
-      schema:
-        type: string
-        example: "tenant-123"
 
     limitQuery:
       name: limit

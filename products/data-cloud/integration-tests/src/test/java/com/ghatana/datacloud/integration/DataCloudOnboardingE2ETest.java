@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -261,7 +262,7 @@ class DataCloudOnboardingE2ETest {
             .header("X-Tenant-Id", ONBOARDING_TENANT)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = sendWithSingleRetry(request);
 
         assertThat(response.statusCode()).isIn(200, 404, 500, 503);
         if (response.statusCode() == 200) {
@@ -363,5 +364,15 @@ class DataCloudOnboardingE2ETest {
             }
         }
         throw new IllegalStateException("Server did not start within 10 seconds on port " + port);
+    }
+
+    private HttpResponse<String> sendWithSingleRetry(HttpRequest request) throws Exception {
+        try {
+            return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException firstFailure) {
+            // Mitigate occasional transport EOF race while the embedded server settles.
+            Thread.sleep(100);
+            return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        }
     }
 }

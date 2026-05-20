@@ -6,8 +6,8 @@
  * @doc.layer frontend
  */
 import React, { Suspense } from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@ghatana/theme';
@@ -18,6 +18,9 @@ import { AuthProvider } from '@/context/AuthContext';
 import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
 import { CapabilityKeys } from '@/api/capabilities';
 import { ACTION_MINIMUM_ROLES } from '@/lib/action-permissions';
+import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { LoginPage } from '@/pages/LoginPage';
 
 vi.mock('@/lib/feature-flags', () => ({
   FEATURE_FLAGS: {
@@ -42,6 +45,11 @@ vi.mock('@/api/ai-actions', () => ({
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
+});
+
+afterEach(() => {
+  cleanup();
+  queryClient.clear();
 });
 
 function renderRoute(
@@ -151,14 +159,12 @@ describe('Route contracts', () => {
     expect(isRouteAllowedForRoles(budgetRoute!, ['marketing-director'])).toBe(true);
   });
 
-  it('renders login page at /login', async () => {
-    const { LoginPage } = await import('@/pages/LoginPage');
+  it('renders login page at /login', () => {
     renderRoute('/login', <Routes><Route path="/login" element={<LoginPage />} /></Routes>);
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  }, 15000);
+  });
 
-  it('redirects unauthenticated user from /approvals to /login', async () => {
-    const { ApprovalQueuePage } = await import('@/pages/ApprovalQueuePage');
+  it('redirects unauthenticated user from /approvals to /login', () => {
     renderRoute(
       '/workspaces/ws-1/approvals',
       <Routes>
@@ -168,10 +174,9 @@ describe('Route contracts', () => {
       undefined,
     );
     expect(screen.getByTestId('login-page')).toBeInTheDocument();
-  }, 15000);
+  });
 
-  it('renders approval queue page for authenticated user', async () => {
-    const { ApprovalQueuePage } = await import('@/pages/ApprovalQueuePage');
+  it('renders approval queue page for authenticated user', () => {
     renderRoute(
       '/workspaces/ws-1/approvals',
       <Routes>
@@ -182,8 +187,7 @@ describe('Route contracts', () => {
     expect(screen.getByTestId('approval-queue-page')).toBeInTheDocument();
   });
 
-  it('renders dashboard page for authenticated user', async () => {
-    const { DashboardPage } = await import('@/pages/DashboardPage');
+  it('renders dashboard page for authenticated user', () => {
     renderRoute(
       '/workspaces/ws-1/dashboard',
       <Routes>

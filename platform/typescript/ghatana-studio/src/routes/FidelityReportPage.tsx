@@ -18,7 +18,10 @@ import type { ReactElement } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 import type { FidelityReport, LossPoint } from '@ghatana/artifact-contracts';
-import { artifactFidelityReportAtom } from '../state/artifactWorkflowStore.js';
+import {
+  artifactFidelityReportAtom,
+  artifactRoundTripDiffReportAtom,
+} from '../state/artifactWorkflowStore.js';
 
 // ============================================================================
 // Severity colours
@@ -44,6 +47,7 @@ export default function FidelityReportPage(): ReactElement {
   const state = (location.state ?? {}) as FidelityReportPageState;
   // Prefer workflow store report (from decompile job); fall back to router state (legacy)
   const storeReport = useAtomValue(artifactFidelityReportAtom);
+  const diffReport = useAtomValue(artifactRoundTripDiffReportAtom);
   const report = storeReport ?? state.report ?? null;
 
   if (report === null) {
@@ -159,6 +163,47 @@ export default function FidelityReportPage(): ReactElement {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {diffReport !== null && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h3 className="text-base font-semibold text-gray-900">
+            Round-trip diff
+          </h3>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-gray-500">Files</dt>
+              <dd className="font-semibold text-gray-900">{diffReport.diffs.length}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Semantic matches</dt>
+              <dd className="font-semibold text-gray-900">
+                {diffReport.diffs.filter((diff) => diff.semanticallyEquivalent).length}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Lossless</dt>
+              <dd className="font-semibold text-gray-900">{diffReport.isLossless ? 'Yes' : 'No'}</dd>
+            </div>
+          </dl>
+          {diffReport.diffs.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {diffReport.diffs.slice(0, 5).map((diff) => (
+                <li key={diff.diffId} className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-gray-700">{diff.generatedPath}</span>
+                    <span className={diff.semanticallyEquivalent ? 'text-green-700' : 'text-red-700'}>
+                      {diff.semanticallyEquivalent ? 'Semantic match' : 'Review required'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    +{diff.addedLines} / -{diff.removedLines} / ={diff.unchangedLines}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </section>

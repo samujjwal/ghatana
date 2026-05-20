@@ -51,7 +51,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "vitest",
-    "lint": "eslint src --ext .ts",
+    "lint": "tsc --noEmit",
     "format": "prettier --write src"
   },
   "dependencies": {

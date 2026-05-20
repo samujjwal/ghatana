@@ -24,8 +24,9 @@
 import { atom } from 'jotai';
 import type { DecompileJobResult } from '../adapters/ArtifactStudioWorkflowAdapter.js';
 import type { BuilderDocument } from '@ghatana/ui-builder';
-import type { FidelityReport } from '@ghatana/artifact-contracts';
+import type { EvidencePack, FidelityReport, RoundTripDiffReport } from '@ghatana/artifact-contracts';
 import type { LogicalArtifactModel } from '@ghatana/artifact-contracts';
+import { studioLogger } from '../logging/studioLogger';
 
 // ============================================================================
 // PERSISTENCE ADAPTER
@@ -87,7 +88,7 @@ class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
       const serialized = JSON.stringify(persisted);
       localStorage.setItem(this.STORAGE_KEY, serialized);
     } catch (err) {
-      console.error('Failed to persist workflow state:', err);
+      studioLogger.error('Failed to persist workflow state', { error: err });
     }
   }
 
@@ -98,7 +99,7 @@ class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
       const parsed = JSON.parse(serialized) as PersistedWorkflowState;
       return parsed;
     } catch (err) {
-      console.error('Failed to load persisted workflow state:', err);
+      studioLogger.error('Failed to load persisted workflow state', { error: err });
       return null;
     }
   }
@@ -107,7 +108,7 @@ class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
     } catch (err) {
-      console.error('Failed to clear persisted workflow state:', err);
+      studioLogger.error('Failed to clear persisted workflow state', { error: err });
     }
   }
 }
@@ -157,6 +158,16 @@ export interface ArtifactWorkflowState {
   readonly fidelityReport: FidelityReport | null;
 
   /**
+   * Durable evidence pack for the latest import/compile/preview workflow.
+   */
+  readonly evidencePack: EvidencePack | null;
+
+  /**
+   * Source/model/source diff report for the latest round-trip.
+   */
+  readonly roundTripDiffReport: RoundTripDiffReport | null;
+
+  /**
    * ISO-8601 timestamp of the last successful decompile run.
    */
   readonly lastDecompileAt: string | null;
@@ -173,6 +184,8 @@ const INITIAL_STATE: ArtifactWorkflowState = {
   projectedBuilderDocument: null,
   previewSource: null,
   fidelityReport: null,
+  evidencePack: null,
+  roundTripDiffReport: null,
   lastDecompileAt: null,
 };
 
@@ -244,6 +257,14 @@ export const artifactFidelityReportAtom = atom<FidelityReport | null>(
  */
 export const artifactPreviewSourceAtom = atom<string | null>(
   (get) => get(artifactWorkflowAtom).previewSource,
+);
+
+export const artifactEvidencePackAtom = atom<EvidencePack | null>(
+  (get) => get(artifactWorkflowAtom).evidencePack,
+);
+
+export const artifactRoundTripDiffReportAtom = atom<RoundTripDiffReport | null>(
+  (get) => get(artifactWorkflowAtom).roundTripDiffReport,
 );
 
 /**

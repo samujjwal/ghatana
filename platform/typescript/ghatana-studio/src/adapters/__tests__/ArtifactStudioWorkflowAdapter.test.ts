@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createDecompileJobState,
   buildDecompileJobResult,
+  buildStudioEvidencePack,
   fidelityTrafficLight,
   fidelitySummaryText,
   mergeModels,
@@ -25,6 +26,7 @@ import {
 import {
   createLogicalArtifactModel,
   createPerfectFidelityReport,
+  createResidualIslandReport,
   computeFidelityReport,
 } from '@ghatana/artifact-contracts';
 
@@ -103,6 +105,67 @@ describe('buildDecompileJobResult', () => {
   it('preserves the startedAt value from params', () => {
     const result = buildDecompileJobResult({ ...baseParams, errors: [] });
     expect(result.startedAt).toBe('2024-01-01T00:00:00.000Z');
+  });
+});
+
+describe('buildStudioEvidencePack', () => {
+  it('builds a round-trip evidence pack for a complete workflow', () => {
+    const model = createLogicalArtifactModel('model-1', 'test');
+    const modelWithNode = {
+      ...model,
+      nodes: {
+        'src/Button.tsx': {
+          id: 'src/Button.tsx',
+          displayName: 'Button',
+          kind: 'component' as const,
+          exportedSymbols: ['Button'],
+          inferredProps: {},
+          usesDesignSystem: false,
+          classificationConfidence: 1,
+          metadata: {},
+        },
+      },
+    };
+    const fidelityReport = createPerfectFidelityReport('model-1');
+    const residualIslandReport = createResidualIslandReport([]);
+    const jobResult = buildDecompileJobResult({
+      jobId: 'job-evidence',
+      model: modelWithNode,
+      fidelityReport,
+      residualIslandReport,
+      errors: [],
+      startedAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    const pack = buildStudioEvidencePack({
+      jobResult,
+      generatedSources: [{ relativePath: 'src/Button.tsx', content: 'export function Button() {}' }],
+      compileFidelity: fidelityReport,
+    });
+
+    expect(pack).not.toBeNull();
+    expect(pack?.stage).toBe('round-trip');
+    expect(pack?.decompileResult?.nodeCount).toBe(1);
+    expect(pack?.compileResult?.emittedFiles['src/Button.tsx']).toContain('Button');
+  });
+
+  it('returns null when required workflow pieces are absent', () => {
+    const jobResult = buildDecompileJobResult({
+      jobId: 'job-missing',
+      model: null,
+      fidelityReport: null,
+      residualIslandReport: null,
+      errors: ['failed'],
+      startedAt: '2024-01-01T00:00:00.000Z',
+    });
+
+    const pack = buildStudioEvidencePack({
+      jobResult,
+      generatedSources: [],
+      compileFidelity: createPerfectFidelityReport('missing'),
+    });
+
+    expect(pack).toBeNull();
   });
 });
 

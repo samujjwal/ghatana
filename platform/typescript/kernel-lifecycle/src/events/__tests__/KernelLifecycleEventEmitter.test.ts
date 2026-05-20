@@ -383,15 +383,24 @@ describe('KernelLifecycleEventEmitter', () => {
   });
 
   it('logs events when telemetry is not configured', async () => {
-    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const emitter = new KernelLifecycleEventEmitter();
+    const logger = {
+      warn: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+    };
+    const emitter = new KernelLifecycleEventEmitter({ logger });
 
     await emitter.emitGateEvaluated('product-1', 'run-1', 'validate', 'lint', false, 'lint failed', [], 1);
 
-    expect(consoleLog).toHaveBeenCalledTimes(1);
-    expect(consoleLog.mock.calls[0]?.[0]).toContain('"eventType": "lifecycle.gate.evaluated"');
-
-    consoleLog.mockRestore();
+    expect(logger.info).toHaveBeenCalledTimes(1);
+    expect(logger.info).toHaveBeenCalledWith(
+      'Lifecycle event emitted',
+      expect.objectContaining({
+        event: expect.objectContaining({
+          metadata: expect.objectContaining({ eventType: 'lifecycle.gate.evaluated' }),
+        }),
+      }),
+    );
   });
 
   it('logs a structured warning when telemetry emission fails', async () => {

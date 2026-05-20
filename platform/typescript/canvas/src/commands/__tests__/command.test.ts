@@ -145,6 +145,7 @@ describe('CompositeCommand', () => {
     const ctx: CanvasCommandContext = {
       pushHistory: () => { /* no-op */ },
       getSnapshot: () => ({ elements: [], nodes: [], edges: [] }),
+      isInTransaction: () => false,
     };
 
     composite.execute(ctx);
@@ -176,49 +177,57 @@ describe('CompositeCommand', () => {
 // ============================================================================
 
 describe('CommandTransaction', () => {
-  it('captures pre-mutation snapshot at begin() and pushes at commit()', () => {
-    const { host, history, currentTag } = makeFakeHost('pre');
-    const tx = new CommandTransaction(host, 'Transaction');
+  function makeFakeTransactionController() {
+    return {
+      commitCount: 0,
+      abortCount: 0,
+      commitTransaction() {
+        this.commitCount++;
+      },
+      abortTransaction() {
+        this.abortCount++;
+      },
+    };
+  }
 
-    tx.begin();
-    currentTag.value = 'post'; // simulate mutation between begin and commit
+  it('delegates commit to the controller transaction context', () => {
+    const controller = makeFakeTransactionController();
+    const tx = new CommandTransaction(controller, 'Transaction');
+
     tx.commit();
 
-    expect(history).toHaveLength(1);
-    expect(history[0]?.action).toBe('Transaction');
-    // Snapshot must reflect 'pre' (state at begin time)
-    expect((history[0]?.snapshot.elements[0] as { id: string } | undefined)?.id).toBe('pre');
+    expect(controller.commitCount).toBe(1);
+    expect(controller.abortCount).toBe(0);
   });
 
-  it('does not push to history if commit() is called without begin()', () => {
-    const { host, history } = makeFakeHost();
-    const tx = new CommandTransaction(host, 'Never started');
+  it('lets the controller decide whether a commit has an active transaction', () => {
+    const controller = makeFakeTransactionController();
+    const tx = new CommandTransaction(controller, 'Never started');
 
-    tx.commit(); // no begin() called first
+    tx.commit();
 
-    expect(history).toHaveLength(0);
+    expect(controller.commitCount).toBe(1);
   });
 
-  it('does not push to history after abort()', () => {
-    const { host, history } = makeFakeHost();
-    const tx = new CommandTransaction(host, 'Aborted transaction');
+  it('delegates abort to the controller and prevents later commit', () => {
+    const controller = makeFakeTransactionController();
+    const tx = new CommandTransaction(controller, 'Aborted transaction');
 
-    tx.begin();
     tx.abort();
     tx.commit(); // commit after abort should be a no-op
 
-    expect(history).toHaveLength(0);
+    expect(controller.abortCount).toBe(1);
+    expect(controller.commitCount).toBe(0);
   });
 
   it('only commits once for multiple commit() calls', () => {
-    const { host, history } = makeFakeHost();
-    const tx = new CommandTransaction(host, 'Double commit');
+    const controller = makeFakeTransactionController();
+    const tx = new CommandTransaction(controller, 'Double commit');
 
-    tx.begin();
     tx.commit();
     tx.commit(); // second call should not push again
 
-    expect(history).toHaveLength(1);
+    expect(controller.commitCount).toBe(1);
   });
 });
 
@@ -259,7 +268,6 @@ describe('HybridCanvasController.execute()', () => {
     expect(ctrl.canUndo()).toBe(false);
 
     const tx = ctrl.beginTransaction('Batch update');
-    tx.begin();
     // ... multiple mutations could happen here ...
     tx.commit();
 

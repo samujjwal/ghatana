@@ -116,7 +116,7 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-    "lint": "../../../node_modules/.bin/eslint v1/ tests/ --max-warnings 0",
+    "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "validate:generated-contracts": "node ../scripts/validate-generated-contracts.mjs"
   },

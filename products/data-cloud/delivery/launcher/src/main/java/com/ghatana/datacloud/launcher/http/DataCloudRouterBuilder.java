@@ -601,6 +601,14 @@ public class DataCloudRouterBuilder {
      * DC-P1-03: All Action Plane routes are under canonical /api/v1/action/* namespace.
      */
     public DataCloudRouterBuilder withAgentCatalogRoutes(AgentCatalogHandler agentCatalogHandler) {
+        boolean enableLegacyRoutes = DataCloudFeatureFlags.isEnabled(DataCloudFeature.LEGACY_ACTION_ROUTES);
+
+        if (enableLegacyRoutes) {
+            builder
+                .with(HttpMethod.GET, "/api/v1/agents/catalog", agentCatalogHandler::handleListCatalog)
+                .with(HttpMethod.GET, "/api/v1/agents/catalog/:id", agentCatalogHandler::handleGetAgent);
+        }
+
         // Canonical Action Plane routes
         builder
             .with(HttpMethod.GET, "/api/v1/action/agents/catalog", agentCatalogHandler::handleListCatalog)

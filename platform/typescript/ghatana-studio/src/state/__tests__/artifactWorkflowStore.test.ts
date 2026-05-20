@@ -18,6 +18,8 @@ import {
   projectedBuilderDocumentAtom,
   artifactFidelityReportAtom,
   artifactPreviewSourceAtom,
+  artifactEvidencePackAtom,
+  artifactRoundTripDiffReportAtom,
   hasArtifactWorkflowResultAtom,
   setArtifactWorkflowAtom,
   clearArtifactWorkflowAtom,
@@ -63,6 +65,16 @@ describe('artifactWorkflowAtom — initial state', () => {
     const store = makeStore();
     expect(store.get(artifactWorkflowAtom).lastDecompileAt).toBeNull();
   });
+
+  it('starts with null evidencePack', () => {
+    const store = makeStore();
+    expect(store.get(artifactWorkflowAtom).evidencePack).toBeNull();
+  });
+
+  it('starts with null roundTripDiffReport', () => {
+    const store = makeStore();
+    expect(store.get(artifactWorkflowAtom).roundTripDiffReport).toBeNull();
+  });
 });
 
 // ============================================================================
@@ -93,6 +105,16 @@ describe('derived read atoms — initial state', () => {
   it('artifactPreviewSourceAtom is null initially', () => {
     const store = makeStore();
     expect(store.get(artifactPreviewSourceAtom)).toBeNull();
+  });
+
+  it('artifactEvidencePackAtom is null initially', () => {
+    const store = makeStore();
+    expect(store.get(artifactEvidencePackAtom)).toBeNull();
+  });
+
+  it('artifactRoundTripDiffReportAtom is null initially', () => {
+    const store = makeStore();
+    expect(store.get(artifactRoundTripDiffReportAtom)).toBeNull();
   });
 });
 

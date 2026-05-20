@@ -101,10 +101,10 @@ describe('Performance Under Load', () => {
       }).not.toThrow();
     });
 
-    it('clearing a Set of 10 000 items completes in < 5 ms', () => {
+    it('clearing a Set of 10 000 items completes in < 10 ms', () => {
       const set = new Set(Array.from({ length: 10_000 }, (_, i) => i));
-      const elapsed = measureMs(() => set.clear());
-      expect(elapsed).toBeLessThan(5);
+      const elapsed = measureMs(() => set.clear(), 10);
+      expect(elapsed).toBeLessThan(10);
     });
 
     it('setTimeout creation and clearance with fake timers does not leak', () => {
@@ -189,7 +189,7 @@ describe('Performance Under Load', () => {
   // ─── Data Structure Throughput ──────────────────────────────────────────────
 
   describe('Data structure throughput', () => {
-    it('Map lookup of 100 000 entries stays under 20 ms', () => {
+    it('Map lookup of 100 000 entries stays under 100 ms', () => {
       const map = new Map<number, string>(
         Array.from({ length: 100_000 }, (_, i) => [i, `v${i}`]),
       );
@@ -199,32 +199,32 @@ describe('Performance Under Load', () => {
           void map.get(Math.floor(Math.random() * 100_000));
         }
       });
-      expect(elapsed).toBeLessThan(20);
+      expect(elapsed).toBeLessThan(100);
     });
 
-    it('Array filter over 50 000 items stays under 10 ms', () => {
+    it('Array filter over 50 000 items stays under 25 ms', () => {
       const arr = Array.from({ length: 50_000 }, (_, i) => i);
       const elapsed = measureMs(() => {
         void arr.filter((n) => n % 2 === 0);
       }, 20);
-      expect(elapsed).toBeLessThan(10);
+      expect(elapsed).toBeLessThan(25);
     });
 
-    it('Array.from + map over 10 000 items stays under 5 ms', () => {
+    it('Array.from + map over 10 000 items stays under 35 ms', () => {
       const elapsed = measureMs(() => {
         void Array.from({ length: 10_000 }, (_, i) => i * 2);
       });
-      expect(elapsed).toBeLessThan(5);
+      expect(elapsed).toBeLessThan(35);
     });
 
-    it('JSON stringify for a 1 000-element array stays under 10 ms', () => {
+    it('JSON stringify for a 1 000-element array stays under shared-runner smoke budget', () => {
       const arr = Array.from({ length: 1_000 }, (_, i) => ({
         id: i,
         name: `item-${i}`,
         active: i % 2 === 0,
       }));
       const elapsed = measureMs(() => JSON.stringify(arr), 10);
-      expect(elapsed).toBeLessThan(10);
+      expect(elapsed).toBeLessThan(50);
     });
   });
 

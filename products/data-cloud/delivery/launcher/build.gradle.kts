@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.spotbugs)
 }
 
+sourceSets {
+    named("main") {
+        java {
+            // Keep contract-generated snippet artifacts out of javac inputs.
+            exclude("**/*.generated.java")
+        }
+    }
+}
+
 val runLauncher by tasks.registering(JavaExec::class) {
     group = "application"
     description = "Runs the Data Cloud standalone launcher"

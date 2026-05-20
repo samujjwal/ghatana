@@ -16,6 +16,11 @@ import {
   type ArtifactEdge,
   type ArtifactKind,
   type ArtifactDependencyKind,
+  type ComponentUsageRecord,
+  type DetectedRoute,
+  type ExtractedProtectedRegion,
+  type JsxTreeNode,
+  type SourceImportRecord,
   createLogicalArtifactModel,
   type LogicalArtifactModel,
 } from "@ghatana/artifact-contracts";
@@ -25,22 +30,6 @@ import { computeFidelityReport } from "@ghatana/artifact-contracts";
 // ============================================================================
 // PROTECTED REGION PARSING
 // ============================================================================
-
-/**
- * A parsed protected region from source code.
- */
-export interface ProtectedRegion {
-  /** The region ID from the marker. */
-  readonly regionId: string;
-  /** The owner kind annotation (user-authored, generated, or protected). */
-  readonly ownerKind: string;
-  /** 1-based start line of the region content (after begin marker). */
-  readonly startLine: number;
-  /** 1-based end line of the region content (before end marker). */
-  readonly endLine: number;
-  /** The content lines between the markers (excluding markers themselves). */
-  readonly contentLines: readonly string[];
-}
 
 /**
  * Parse @ghatana-region markers from a source file.
@@ -55,8 +44,8 @@ export interface ProtectedRegion {
  * @param sourceFile - The TypeScript source file to scan.
  * @returns Array of parsed protected regions in source order.
  */
-export function parseProtectedRegions(sourceFile: ts.SourceFile): ProtectedRegion[] {
-  const regions: ProtectedRegion[] = [];
+export function parseProtectedRegions(sourceFile: ts.SourceFile): ExtractedProtectedRegion[] {
+  const regions: ExtractedProtectedRegion[] = [];
   const lines = sourceFile.text.split('\n');
   const pendingBegins = new Map<string, { startLine: number; ownerKind: string }>();
 
@@ -221,22 +210,6 @@ function detectDesignSystemUsage(
 // ============================================================================
 
 /**
- * A lightweight node in the extracted JSX element tree.
- */
-export interface JsxTreeNode {
-  /** JSX tag name (e.g. "Button", "div", "Route"). */
-  readonly tagName: string;
-  /** Whether the tag is a HTML intrinsic (lower-case first letter). */
-  readonly isIntrinsic: boolean;
-  /** Child JSX tree nodes (direct children). */
-  readonly children: readonly JsxTreeNode[];
-  /** 1-based start line in the source file. */
-  readonly startLine: number;
-  /** 1-based end line in the source file. */
-  readonly endLine: number;
-}
-
-/**
  * Extract the JSX element tree from all JSX-rendering function bodies in a
  * source file. Returns a flat list of root JSX trees (one per render function).
  */
@@ -306,20 +279,6 @@ export function extractJsxTree(sourceFile: ts.SourceFile): JsxTreeNode[] {
 // ============================================================================
 // ROUTE GRAPH DETECTION
 // ============================================================================
-
-/**
- * A detected route declaration.
- */
-export interface DetectedRoute {
-  /** The `path` prop value (e.g. "/dashboard/:id"). */
-  readonly path: string;
-  /** The component element name bound to this route. */
-  readonly componentName: string;
-  /** Whether this is an index route (no `path` prop). */
-  readonly isIndex: boolean;
-  /** 1-based source line where the route element appears. */
-  readonly sourceLine: number;
-}
 
 /**
  * Extract React Router v6 route declarations from a source file.
@@ -400,20 +359,6 @@ export function extractRouteGraph(sourceFile: ts.SourceFile): DetectedRoute[] {
 // ============================================================================
 
 /**
- * A record of a component usage (JSX element reference) in a file.
- */
-export interface ComponentUsageRecord {
-  /** The component tag name used in JSX. */
-  readonly tagName: string;
-  /** Whether this refers to a known design-system component. */
-  readonly isDesignSystem: boolean;
-  /** 1-based source line of the JSX element. */
-  readonly sourceLine: number;
-  /** The import specifier this tag was resolved from (if any). */
-  readonly importedFrom: string | null;
-}
-
-/**
  * Extract all component usages (non-intrinsic JSX tags) from a source file.
  * Returns an array of usage records that can be linked to the component graph.
  */
@@ -454,11 +399,11 @@ export function extractComponentUsages(
  * Collect imported module specifiers and the names of exported symbols.
  */
 function collectImportsAndExports(sourceFile: ts.SourceFile): {
-  imports: Array<{ specifier: string; isTypeOnly: boolean; decl: ts.ImportDeclaration }>;
+  imports: Array<{ specifier: string; isTypeOnly: boolean; decl: ts.ImportDeclaration; record: SourceImportRecord }>;
   exportedSymbols: string[];
   hasDynamicImport: boolean;
 } {
-  const imports: Array<{ specifier: string; isTypeOnly: boolean; decl: ts.ImportDeclaration }> = [];
+  const imports: Array<{ specifier: string; isTypeOnly: boolean; decl: ts.ImportDeclaration; record: SourceImportRecord }> = [];
   const exportedSymbols: string[] = [];
   let hasDynamicImport = false;
 
@@ -467,7 +412,19 @@ function collectImportsAndExports(sourceFile: ts.SourceFile): {
     if (ts.isImportDeclaration(node)) {
       const specifier = (node.moduleSpecifier as ts.StringLiteral).text;
       const isTypeOnly = node.importClause?.isTypeOnly === true;
-      imports.push({ specifier, isTypeOnly, decl: node });
+      const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      imports.push({
+        specifier,
+        isTypeOnly,
+        decl: node,
+        record: {
+          moduleSpecifier: specifier,
+          importClauseText: node.importClause?.getText(sourceFile) ?? null,
+          isTypeOnly,
+          sourceLine: line + 1,
+          text: node.getText(sourceFile),
+        },
+      });
     }
 
     // Dynamic import()
@@ -602,6 +559,7 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
 
     const { imports, exportedSymbols, hasDynamicImport } =
       collectImportsAndExports(sourceFile);
+    const sourceImports = imports.map((item) => item.record);
 
     // Build import name → specifier map for component usage resolution
     const importSpecifierByName = new Map<string, string>();
@@ -642,16 +600,22 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
       ? extractComponentUsages(sourceFile, dsNames, importSpecifierByName)
       : [];
 
-    // Parse protected regions to preserve user-authored content spans
+    // Parse protected regions to preserve user-authored content spans.
+    // Generated files carry the original artifact node id in the body region marker,
+    // so a re-imported `*.gen.tsx` can still round-trip to the same model node.
     const protectedRegions = parseProtectedRegions(sourceFile);
+    const preservedBodyRegionId = protectedRegions
+      .map((region) => region.regionId)
+      .find((regionId) => regionId.endsWith(":body"));
+    const effectiveNodeId = preservedBodyRegionId?.slice(0, -":body".length) ?? nodeId;
 
     // Compute real source span
     const totalLines = sourceFile.getLineAndCharacterOfPosition(sourceFile.end).line + 1;
 
     // Build the ArtifactNode
     const node: ArtifactNode = {
-      id: nodeId,
-      displayName: displayNameFromPath(file.relativePath),
+      id: effectiveNodeId,
+      displayName: displayNameFromPath(effectiveNodeId),
       kind,
       sourceRef: {
         repositoryUri: "local://",
@@ -672,18 +636,26 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
       inferredProps,
       usesDesignSystem,
       classificationConfidence: fileLossPoints.length === 0 ? 1 : 0.8,
+      jsxTree,
+      detectedRoutes,
+      componentUsages,
+      protectedRegions,
+      sourceImports,
       metadata: {
         jsxTreeRoots: jsxTree.length,
         detectedRouteCount: detectedRoutes.length,
         componentUsageCount: componentUsages.length,
-        jsxTree: jsxTree as unknown as Record<string, unknown>[],
-        detectedRoutes: detectedRoutes as unknown as Record<string, unknown>[],
-        componentUsages: componentUsages as unknown as Record<string, unknown>[],
-        protectedRegions: protectedRegions as unknown as Record<string, unknown>[],
+        protectedRegionCount: protectedRegions.length,
+        sourceImportCount: sourceImports.length,
+        jsxTree,
+        detectedRoutes,
+        componentUsages,
+        protectedRegions,
+        sourceImports,
       },
     };
 
-    mutableNodes[nodeId] = node;
+    mutableNodes[effectiveNodeId] = node;
 
     // Build edges from imports
     for (const { specifier, isTypeOnly, decl } of imports) {
@@ -695,7 +667,7 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
         .replace(/\/\.\//g, "/")
         .replace(/\\/g, "/");
       // Strip extension-less paths — we'll match by prefix
-      const edgeId = `${nodeId}→${resolvedPath}`;
+      const edgeId = `${effectiveNodeId}→${resolvedPath}`;
       if (!edgeIdSet.has(edgeId)) {
         edgeIdSet.add(edgeId);
         const kind: ArtifactDependencyKind = isTypeOnly
@@ -703,7 +675,7 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
           : dependencyKindFromImport(decl);
         mutableEdges.push({
           id: edgeId,
-          fromId: nodeId,
+          fromId: effectiveNodeId,
           toId: resolvedPath,
           kind,
           importSpecifier: specifier,
@@ -712,7 +684,7 @@ export function decompileTsx(input: DecompileTsxInput): DecompileTsxResult {
     }
 
     // Compute per-file fidelity
-    const fileReport = computeFidelityReport(fileLossPoints, nodeId, "file");
+    const fileReport = computeFidelityReport(fileLossPoints, effectiveNodeId, "file");
     perFileFidelity.set(file.relativePath, fileReport);
     pipelineLossPoints.push(...fileLossPoints);
   }

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type React from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { ThemeProvider } from '../provider';
 import {

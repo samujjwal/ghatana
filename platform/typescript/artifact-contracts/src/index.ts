@@ -47,6 +47,22 @@ export {
   createLogicalArtifactModel,
 } from "./model.js";
 
+// Structure
+export type {
+  JsxTreeNode,
+  DetectedRoute,
+  ComponentUsageRecord,
+  ExtractedProtectedRegion,
+  SourceImportRecord,
+} from "./structure.js";
+export {
+  JsxTreeNodeSchema,
+  DetectedRouteSchema,
+  ComponentUsageRecordSchema,
+  ExtractedProtectedRegionSchema,
+  SourceImportRecordSchema,
+} from "./structure.js";
+
 // Provenance
 export type {
   ProvenanceRecord,

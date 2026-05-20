@@ -1,12 +1,13 @@
 package com.ghatana.datacloud.launcher.http;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
 /**
- * DC-P1-07: Runtime posture metadata for surface records.
- * Captures auth, durability, audit, policy, metrics, tracing, and health state.
+ * @doc.type record
+ * @doc.purpose Captures runtime posture metadata including auth, durability, audit, policy, metrics, tracing, and dependency health state.
+ * @doc.layer product
+ * @doc.pattern Data Transfer Object
  */
 public record RuntimePosture(
     boolean authEnabled,           // Authentication is configured and operational

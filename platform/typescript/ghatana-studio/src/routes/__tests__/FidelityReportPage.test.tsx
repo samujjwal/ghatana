@@ -137,6 +137,44 @@ describe('FidelityReportPage', () => {
 
       expect(screen.getByText('my-scope')).toBeInTheDocument();
     });
+
+    it('renders a round-trip diff summary when available', () => {
+      const store = createStore();
+      const report = createPerfectFidelityReport('diff-scope');
+      store.set(setArtifactWorkflowAtom, {
+        fidelityReport: report,
+        roundTripDiffReport: {
+          reportId: 'diff-report',
+          modelId: 'model-1',
+          diffs: [{
+            diffId: 'src/App.tsx->src/App.tsx',
+            originalPath: 'src/App.tsx',
+            generatedPath: 'src/App.tsx',
+            semanticallyEquivalent: true,
+            hunks: [],
+            addedLines: 0,
+            removedLines: 0,
+            unchangedLines: 10,
+            diffedAt: '2024-01-01T00:00:00.000Z',
+          }],
+          fidelity: report,
+          residuals: {
+            totalCount: 0,
+            blockingCount: 0,
+            islands: [],
+            canCompileWithResiduals: true,
+          },
+          isLossless: true,
+          generatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      });
+
+      renderWithStore(store);
+
+      expect(screen.getByText('Round-trip diff')).toBeInTheDocument();
+      expect(screen.getByText('Semantic match')).toBeInTheDocument();
+      expect(screen.getByText('src/App.tsx')).toBeInTheDocument();
+    });
   });
 
   describe('router-state fallback (legacy path)', () => {

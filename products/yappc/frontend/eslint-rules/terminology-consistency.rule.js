@@ -108,4 +108,8 @@ const rule = {
   },
 };
 
-module.exports = rule;
+export default {
+  rules: {
+    productAsProject: rule,
+  },
+};

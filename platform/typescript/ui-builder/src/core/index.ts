@@ -84,6 +84,17 @@ export {
 } from './types';
 
 export {
+  parseNodeId,
+  parseNodeIdArray,
+  validateNodeId,
+} from './node-id';
+
+export type {
+  NodeIdValidationIssue,
+  ParseNodeIdArrayResult,
+} from './node-id';
+
+export {
   insertNode,
   moveNode,
   deleteNode,

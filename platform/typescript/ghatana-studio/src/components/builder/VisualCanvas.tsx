@@ -17,7 +17,6 @@ import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
 import {
   builderToCanvas,
   filterCanvasSelectionToNodeIds,
-  type BuilderCanvasNode,
 } from '../../adapters/BuilderCanvasProjectionAdapter.js';
 
 export interface VisualCanvasProps {

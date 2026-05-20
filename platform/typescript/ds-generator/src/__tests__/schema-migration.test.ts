@@ -463,8 +463,8 @@ describe('Migration — Backward Compatibility', () => {
 
     const parsed = DesignSystemDocumentSchema.parse(minimalDoc);
     expect(parsed.documentId).toBe('doc-minimal');
-    expect(parsed.semanticAliases).toBeUndefined();
-    expect(parsed.componentVariants).toBeUndefined();
+    expect(parsed.semanticAliases).toEqual([]);
+    expect(parsed.componentVariants).toEqual([]);
     expect(parsed.brandName).toBeUndefined();
   });
 

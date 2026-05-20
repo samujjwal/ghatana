@@ -23,6 +23,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Composable security filter chain for Data-Cloud HTTP endpoints.
@@ -508,14 +511,16 @@ public final class DataCloudSecurityFilter {
             .detail("remoteIp",    remoteIp(request))
             .build();
 
-        // DC-P1-06: Synchronous audit for CRITICAL routes in production - block on failure
+        // DC-P1-06: Synchronous audit for CRITICAL routes in production - block on failure.
         return auditService.record(event)
-            .whenException(e -> {
-                log.error("[DC-SEC] DC-P1-06: Audit write failure for CRITICAL route {} {} tenant={} requestId={} - blocking request: {}",
-                          method, path, tenantId, requestId, e.getMessage());
-                throw new IllegalStateException(
-                    "DC-P1-06: Audit persistence failed for CRITICAL route in production profile", e);
-            });
+            .then(
+                $ -> Promise.complete(),
+                e -> {
+                    log.error("[DC-SEC] DC-P1-06: Audit write failure for CRITICAL route {} {} tenant={} requestId={} - blocking request: {}",
+                              method, path, tenantId, requestId, e.getMessage());
+                    return Promise.ofException(new IllegalStateException(
+                        "DC-P1-06: Audit persistence failed for CRITICAL route in production profile", e));
+                });
     }
 
     /**
@@ -655,8 +660,37 @@ public final class DataCloudSecurityFilter {
             }
 
             // DC-P1-09: Audit sink must be ready to accept writes in production
-            // Note: Async readiness check not possible in synchronous validation context
-            // Audit service health will be verified at runtime when audit events are emitted
+            if (auditConfigured) {
+                AtomicReference<Throwable> readinessError = new AtomicReference<>();
+                CountDownLatch latch = new CountDownLatch(1);
+
+                checkAuditSinkReadiness().whenComplete((ready, error) -> {
+                    if (error != null) {
+                        readinessError.set(error);
+                    } else if (!Boolean.TRUE.equals(ready)) {
+                        readinessError.set(new IllegalStateException("Audit sink readiness check returned false"));
+                    }
+                    latch.countDown();
+                });
+
+                try {
+                    boolean completed = latch.await(5, TimeUnit.SECONDS);
+                    if (!completed) {
+                        throw new IllegalStateException(
+                            "DC-P1-09: Audit sink readiness check failed - timeout while validating startup readiness");
+                    }
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(
+                        "DC-P1-09: Audit sink readiness check failed - validation interrupted", interrupted);
+                }
+
+                Throwable error = readinessError.get();
+                if (error != null) {
+                    throw new IllegalStateException(
+                        "DC-P1-09: Audit sink readiness check failed", error);
+                }
+            }
 
             log.info("[DC-SEC] Production requirements validated successfully for profile '{}'", profile);
         };
@@ -713,14 +747,15 @@ public final class DataCloudSecurityFilter {
             .build();
 
         return auditService.record(testEvent)
-            .map(result -> {
-                log.info("[DC-SEC] DC-P1-09: Audit sink readiness check succeeded - sink can accept writes");
-                return true;
-            })
-            .whenException(error -> {
-                log.error("[DC-SEC] DC-P1-09: Audit sink readiness check failed - sink cannot accept writes: {}", error.getMessage());
-                throw new IllegalStateException("Audit sink readiness check failed", error);
-            });
+            .then(
+                $ -> {
+                    log.info("[DC-SEC] DC-P1-09: Audit sink readiness check succeeded - sink can accept writes");
+                    return Promise.of(Boolean.TRUE);
+                },
+                error -> {
+                    log.error("[DC-SEC] DC-P1-09: Audit sink readiness check failed - sink cannot accept writes: {}", error.getMessage());
+                    return Promise.ofException(new IllegalStateException("Audit sink readiness check failed", error));
+                });
     }
 
     /**
@@ -928,12 +963,23 @@ public final class DataCloudSecurityFilter {
     }
 
     private AccessLevel requiredAccess(String method, String path, EndpointSensitivity sensitivity) {
-        AccessLevel routeActionLevel = RouteActionAccessRegistry.requiredAccess(method, path);
-        if (routeActionLevel != null) {
-            return routeActionLevel;
-        }
         if (path.startsWith("/api/v1/governance/")) {
             return "GET".equalsIgnoreCase(method) ? AccessLevel.AUDITOR : AccessLevel.ADMIN;
+        }
+
+        AccessLevel routeActionLevel = RouteActionAccessRegistry.requiredAccess(method, path);
+        if (routeActionLevel != null) {
+            if (path.startsWith("/mcp/")
+                    && routeActionLevel == AccessLevel.OPERATOR
+                    && sensitivity != EndpointSensitivity.CRITICAL) {
+                return AccessLevel.VIEWER;
+            }
+            if ("GET".equalsIgnoreCase(method)
+                    && routeActionLevel == AccessLevel.OPERATOR
+                    && sensitivity == EndpointSensitivity.INTERNAL) {
+                return AccessLevel.VIEWER;
+            }
+            return routeActionLevel;
         }
         if (path.startsWith("/api/v1/autonomy/")
                 || path.startsWith("/api/v1/plugins/")

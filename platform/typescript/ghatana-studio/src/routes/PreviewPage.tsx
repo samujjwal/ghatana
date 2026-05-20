@@ -89,7 +89,7 @@ export default function PreviewPage(): ReactElement {
       },
       securityPolicy: {
         allowScripts: true,
-        allowSameOrigin: true,
+        allowSameOrigin: false,
         allowPopups: false,
         allowForms: false,
       },
@@ -132,7 +132,7 @@ export default function PreviewPage(): ReactElement {
         },
         securityPolicy: {
           allowScripts: true,
-          allowSameOrigin: true,
+          allowSameOrigin: false,
           allowPopups: false,
           allowForms: false,
         },
@@ -246,7 +246,7 @@ export default function PreviewPage(): ReactElement {
             ref={iframeRef}
             title={`${title} preview`}
             className="w-full h-full border-0 bg-white"
-            sandbox="allow-same-origin allow-scripts"
+            sandbox="allow-scripts"
             aria-label={`Sandboxed preview: ${title}`}
           />
         )}

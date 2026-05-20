@@ -69,7 +69,8 @@ describe('Preview Runtime — Sandbox Policy', () => {
     const result = await runtime.render(request);
 
     expect(result.success).toBe(true);
-    expect(result.html).toContain('sandbox="allow-same-origin allow-scripts"');
+    expect(result.html).toContain('sandbox="allow-scripts"');
+    expect(result.html).not.toContain('allow-same-origin');
   });
 
   it('applies allowSameOrigin=true in sandbox when securityPolicy.allowSameOrigin is true', async () => {
@@ -79,7 +80,8 @@ describe('Preview Runtime — Sandbox Policy', () => {
     const result = await runtime.render(request);
 
     expect(result.success).toBe(true);
-    expect(result.html).toContain('sandbox="allow-same-origin allow-scripts"');
+    expect(result.html).toContain('sandbox="allow-same-origin"');
+    expect(result.html).not.toContain('allow-scripts');
   });
 
   it('disallows popups when securityPolicy.allowPopups is false', async () => {
@@ -278,6 +280,42 @@ export function Component(): ReactElement {
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
+  });
+
+  it('rejects browser globals before preview evaluation', async () => {
+    const sourceWithBrowserAccess = `
+import type { ReactElement } from 'react';
+
+export function Component(): ReactElement {
+  window.location.href = 'https://example.com';
+  return <div>Unsafe</div>;
+}
+`.trim();
+
+    const request = makeBaseRequest({ source: sourceWithBrowserAccess });
+    const result = await runtime.render(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('sandbox policy');
+    expect(result.error).toContain('window');
+  });
+
+  it('rejects disallowed module imports during preview evaluation', async () => {
+    const sourceWithDisallowedImport = `
+import fs from 'node:fs';
+
+export function Component() {
+  void fs;
+  return <div>Unsafe import</div>;
+}
+`.trim();
+
+    const request = makeBaseRequest({ source: sourceWithDisallowedImport });
+    const result = await runtime.render(request);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('not allowed');
+    expect(result.error).toContain('node:fs');
   });
 });
 

@@ -315,10 +315,11 @@ class EndpointSensitivityTest {
         }
 
         @Test
-        @DisplayName("CRITICAL_PATH_PREFIXES covers governance, learning review, and voice transcripts (always-critical)")
+        @DisplayName("CRITICAL_PATH_PREFIXES covers governance, lifecycle, learning review, and voice transcripts (always-critical)")
         void criticalPrefixes_coversExpectedResources() { 
             Set<String> expected = Set.of( 
                 "/api/v1/governance/",
+                "/api/v1/data/lifecycle/",
                 "/api/v1/learning/review/",
                 "/api/v1/voice/transcripts"
             );

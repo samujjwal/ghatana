@@ -7,7 +7,8 @@
  *   2. decompileTsx + compileReact form a two-way pipeline.
  *   3. fidelityGate and FIDELITY_THRESHOLDS are exported.
  *   4. ResidualIslandReport is exported from artifact-contracts.
- *   5. Round-trip golden tests exist.
+ *   5. Typed extracted-structure contracts are exported.
+ *   6. Import preservation, semantic diff, and repository scan tests exist.
  *
  * Exit 0 = pass, exit 1 = fail.
  *
@@ -137,6 +138,93 @@ check(
   contractsIndex.includes("CompileResult") && contractsIndex.includes("DecompileResult"),
   "artifact-contracts exports CompileResult and DecompileResult",
   "artifact-contracts index.ts must export CompileResult and DecompileResult"
+);
+
+const structureSrc = readSource("platform/typescript/artifact-contracts/src/structure.ts");
+check(
+  structureSrc.includes("JsxTreeNodeSchema") &&
+    structureSrc.includes("DetectedRouteSchema") &&
+    structureSrc.includes("ComponentUsageRecordSchema") &&
+    (
+      structureSrc.includes("ProtectedRegionSchema") ||
+      structureSrc.includes("ExtractedProtectedRegionSchema")
+    ),
+  "artifact-contracts declares typed JSX, route, component usage, and protected-region schemas",
+  "artifact-contracts must declare typed schemas for extracted JSX/routes/usages/protected regions"
+);
+check(
+  structureSrc.includes("SourceImportRecordSchema") &&
+    readSource("platform/typescript/artifact-contracts/src/scan.ts").includes("RoundTripDiffReportSchema"),
+  "artifact-contracts declares source import and round-trip diff schemas",
+  "artifact-contracts must declare source import and round-trip diff schemas"
+);
+check(
+  contractsIndex.includes("JsxTreeNode") &&
+    contractsIndex.includes("DetectedRoute") &&
+    contractsIndex.includes("ComponentUsageRecord") &&
+    contractsIndex.includes("ProtectedRegion") &&
+    contractsIndex.includes("RoundTripDiffReport"),
+  "artifact-contracts exports typed extracted-structure and diff contracts",
+  "artifact-contracts index.ts must export typed extracted-structure and diff contracts"
+);
+
+// ── Semantic round-trip and import preservation ──────────────────────────────
+console.log("\n7. Semantic round-trip and import preservation");
+
+const protectedRegionTest = readSource("platform/typescript/artifact-compiler-ts/src/__tests__/react-protected-regions.test.ts");
+check(
+  protectedRegionTest.includes("preserves original static import") ||
+    protectedRegionTest.includes("preserves static imports") ||
+    protectedRegionTest.includes("import preservation"),
+  "react-protected-regions.test.ts covers import preservation",
+  "react-protected-regions.test.ts must assert import preservation"
+);
+
+const roundtripDiffTest = "platform/typescript/artifact-compiler-ts/src/__tests__/roundtrip-diff.test.ts";
+check(
+  existsSync(resolve(root, roundtripDiffTest)),
+  `exists: ${roundtripDiffTest}`,
+  `Missing semantic round-trip diff test: ${roundtripDiffTest}`
+);
+
+const roundtripDiffSrc = readSource("platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts");
+check(
+  roundtripDiffSrc.includes("buildRoundTripDiffReport") &&
+    roundtripDiffSrc.includes("semanticallyEquivalent"),
+  "roundtrip-diff.ts builds semantic diff reports",
+  "roundtrip-diff.ts must expose buildRoundTripDiffReport with semantic equivalence"
+);
+
+// ── Repository-scale scan facade ────────────────────────────────────────────
+console.log("\n8. Repository-scale scan facade");
+
+const repositoryScanFile = "platform/typescript/artifact-compiler-ts/src/scan/repository-scan.ts";
+check(
+  existsSync(resolve(root, repositoryScanFile)),
+  `exists: ${repositoryScanFile}`,
+  `Missing repository scan facade: ${repositoryScanFile}`
+);
+
+const repositoryScanSrc = readSource(repositoryScanFile);
+check(
+  repositoryScanSrc.includes("scanRepositorySources") &&
+    repositoryScanSrc.includes("ScanResult") &&
+    repositoryScanSrc.includes("FileScanResult"),
+  "repository-scan.ts builds contract-level scan results",
+  "repository-scan.ts must build ScanResult/FileScanResult contracts"
+);
+check(
+  repositoryScanSrc.includes("detectResidualIslands") &&
+    repositoryScanSrc.includes("decompileTsx"),
+  "repository-scan.ts connects decompile and residual detection",
+  "repository-scan.ts must connect decompileTsx and residual detection"
+);
+
+const repositoryScanTest = "platform/typescript/artifact-compiler-ts/src/__tests__/repository-scan.test.ts";
+check(
+  existsSync(resolve(root, repositoryScanTest)),
+  `exists: ${repositoryScanTest}`,
+  `Missing repository scan test: ${repositoryScanTest}`
 );
 
 // ── Summary ───────────────────────────────────────────────────────────────────

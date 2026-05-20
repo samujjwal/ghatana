@@ -126,6 +126,8 @@ export type SourceRef = z.infer<typeof SourceRefSchema>;
 
 /** Type of source acquisition strategy. */
 export type SourceAcquisitionKind =
+  | "browser-upload" // Browser File/FileList upload
+  | "pasted-source" // Source pasted into Studio
   | "github" // GitHub REST or GraphQL API
   | "gitlab" // GitLab API
   | "local-folder" // Local filesystem folder
@@ -133,6 +135,8 @@ export type SourceAcquisitionKind =
   | "git-clone"; // Direct git clone
 
 export const SourceAcquisitionKindSchema = z.enum([
+  "browser-upload",
+  "pasted-source",
   "github",
   "gitlab",
   "local-folder",

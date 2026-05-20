@@ -22,6 +22,7 @@ info:
     - The `X-Tenant-ID` header and `tenantId` query parameter are treated as **compatibility hints only**
     - If provided, these hints must match the authenticated tenant; mismatch results in `403 Forbidden`
     - Missing tenant claim in authentication results in `400 Bad Request`
+    - Standard tenant/auth error codes: `TENANT_REQUIRED`, `TENANT_MISMATCH`, `MISSING_TENANT_CLAIM`
 
     ### Local/Development Tenant Identity
     In local, test, and embedded profiles:
@@ -33,7 +34,6 @@ info:
     url: https://github.com/samujjwal/ghatana
   license:
     name: Proprietary — Ghatana Internal
-    identifier: LicenseRef-Ghatana-Proprietary
 
 servers:
   - url: http://localhost:8082

@@ -61,6 +61,7 @@ const REQUIRED_MUTATORS = [
   'beginTransaction',
   'undo', 'redo',
   'canUndo', 'canRedo',
+  'getHistoryDepths',
 ];
 
 console.log('\n2. Required mutator methods in HybridCanvasController');
@@ -156,6 +157,12 @@ for (const scenario of REQUIRED_TEST_SCENARIOS) {
     `Regression test missing coverage for '${scenario}'`,
   );
 }
+
+check(
+  regressionSrc.includes('getHistoryDepths') && regressionSrc.includes('undo: 1'),
+  'Regression tests assert exact undo/redo history depth',
+  'Regression tests must assert exact undo/redo history depth',
+);
 
 // Anti-theater: tests must import real production code
 check(

@@ -36,6 +36,7 @@ import {
   toolAtom,
   gridAtom,
   pushHistoryAtom,
+  historyAtom,
   undoAtom,
   redoAtom,
   canUndoAtom,
@@ -183,6 +184,7 @@ export interface HybridCanvasAPI {
   canRedo(): boolean;
   undo(): void;
   redo(): void;
+  getHistoryDepths(): { undo: number; redo: number };
   pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void;
   /** Returns a snapshot of the mutable arrays tracked by history (elements, nodes, edges). */
   getSnapshot(): HistoryEntry['snapshot'];
@@ -790,6 +792,14 @@ export class HybridCanvasController implements HybridCanvasAPI {
 
   redo(): void {
     this.store.set(redoAtom);
+  }
+
+  getHistoryDepths(): { undo: number; redo: number } {
+    const history = this.store.get(historyAtom);
+    return {
+      undo: history.past.length,
+      redo: history.future.length,
+    };
   }
 
   pushHistory(params: { action: string; snapshot: HistoryEntry['snapshot'] }): void {

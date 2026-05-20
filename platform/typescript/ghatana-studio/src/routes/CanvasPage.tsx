@@ -17,8 +17,7 @@ import { projectedBuilderDocumentAtom, setArtifactWorkflowAtom } from '../state/
 import {
   builderToCanvas,
   canvasToBuilder,
-  type BuilderCanvasNode,
-  filterCanvasSelectionToNodeIds,
+  filterValidBuilderCanvasNodes,
 } from '../adapters/BuilderCanvasProjectionAdapter.js';
 
 type TranslateFn = (key: StudioTranslationKey) => string;
@@ -108,16 +107,7 @@ export default function CanvasPage(): ReactElement {
   // We validate nodes against the document to ensure type safety without unsafe casts.
   const handleNodesChange = useCallback(
     (updatedNodes: CanvasNode[]) => {
-      // Filter and validate canvas nodes against the document
-      const validNodeIds = new Set<string>(Object.keys(canvasDocument.nodes));
-      const builderNodes: BuilderCanvasNode[] = updatedNodes.filter(
-        (node): node is BuilderCanvasNode =>
-          validNodeIds.has(node.id) &&
-          node.type === 'default' &&
-          'data' in node &&
-          'nodeId' in node.data
-      );
-
+      const builderNodes = filterValidBuilderCanvasNodes(canvasDocument, updatedNodes);
       const updatedDoc = canvasToBuilder({ baseDocument: canvasDocument, canvasNodes: builderNodes });
       setWorkflow({ projectedBuilderDocument: updatedDoc });
     },

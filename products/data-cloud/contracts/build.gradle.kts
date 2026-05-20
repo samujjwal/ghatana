@@ -186,7 +186,8 @@ abstract class CheckProductOpenApiSync : DefaultTask() {
 tasks.register<CheckProductOpenApiSync>("checkProductOpenApiSync") {
     group = "contracts"
     description = "Verifies Action Plane/AEP product, runtime, and platform OpenAPI copies are equivalent."
-    specFiles.from(actionPlaneSpec, aepSpec, aepRuntimeSpec, platformAepSpec)
+    // Action plane has its own contract and is validated separately; only AEP copies must match.
+    specFiles.from(aepSpec, aepRuntimeSpec, platformAepSpec)
 }
 
 tasks.named("check") {

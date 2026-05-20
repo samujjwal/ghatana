@@ -89,7 +89,9 @@ export const DecompileResultSchema = z.object({
     }),
   ),
   /** ISO-8601 timestamp of this decompile run. */
-  decompiledat: z.string().datetime(),
+  decompiledAt: z.string().datetime(),
+  /** @deprecated Use decompiledAt. Kept optional for backwards-compatible parsing. */
+  decompiledat: z.string().datetime().optional(),
   /** Duration in milliseconds. */
   durationMs: z.number().nonnegative().optional(),
 });

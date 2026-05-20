@@ -51,6 +51,7 @@
     "build",
     "dist",
     ".gradle",
+    "coverage",
     "__tests__",
     "/test/",
     "/tests/",

@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +18,9 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * DC-P2-002: Profile endpoint tests for {@code /live}, {@code /info}, and {@code /metrics}.
@@ -191,39 +194,29 @@ class DataCloudHttpServerProfileTest {
     }
 
     @Test
-    @DisplayName("DC-P0-07: Production mode is passed to security filter during server startup")
-    void productionModePassedToSecurityFilterDuringServerStartup() throws Exception {
-        // Start server with production mode
+        @DisplayName("DC-P0-07: Production mode fails fast when required security dependencies are missing")
+        void productionModeFailsFastWhenSecurityDependenciesMissing() {
         server = new DataCloudHttpServer(mockClient, port)
-                .withDeploymentMode("production");
-        server.start();
-        waitForServerReady(port);
+            .withSettingsStore(mockPersistentSettingsStore())
+            .withDeploymentMode("production");
 
-        // Verify server started successfully with production mode
-        HttpResponse<String> response = get("/health");
-        assertThat(response.statusCode()).isEqualTo(200);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "UP");
+        assertThatThrownBy(() -> server.start())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18")
+            .hasMessageContaining("Authentication is required for production profiles");
     }
 
     @Test
-    @DisplayName("DC-P0-07: Staging mode is passed to security filter during server startup")
-    void stagingModePassedToSecurityFilterDuringServerStartup() throws Exception {
-        // Start server with staging mode
+        @DisplayName("DC-P0-07: Staging mode fails fast when required security dependencies are missing")
+        void stagingModeFailsFastWhenSecurityDependenciesMissing() {
         server = new DataCloudHttpServer(mockClient, port)
-                .withDeploymentMode("staging");
-        server.start();
-        waitForServerReady(port);
+            .withSettingsStore(mockPersistentSettingsStore())
+            .withDeploymentMode("staging");
 
-        // Verify server started successfully with staging mode
-        HttpResponse<String> response = get("/health");
-        assertThat(response.statusCode()).isEqualTo(200);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = mapper.readValue(response.body(), Map.class);
-        assertThat(body).containsEntry("status", "UP");
+        assertThatThrownBy(() -> server.start())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18")
+            .hasMessageContaining("Authentication is required for production profiles");
     }
 
     @Test
@@ -250,6 +243,12 @@ class DataCloudHttpServerProfileTest {
         server = new DataCloudHttpServer(mockClient, port);
         server.start();
         waitForServerReady(port);
+    }
+
+    private SettingsStore mockPersistentSettingsStore() {
+        SettingsStore store = mock(SettingsStore.class);
+        when(store.getStorageMode()).thenReturn("persistent");
+        return store;
     }
 
     private HttpResponse<String> get(String path) throws Exception {

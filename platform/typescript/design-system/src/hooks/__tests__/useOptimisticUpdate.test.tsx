@@ -2,17 +2,21 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useOptimisticList, useOptimisticUpdate } from '../useOptimisticUpdate';
+import type { DesignSystemDiagnosticEvent } from '../../diagnostics';
 
 describe('useOptimisticUpdate', () => {
-  const successSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-  const errorSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  const diagnostics: DesignSystemDiagnosticEvent[] = [];
+  const diagnosticListener = (event: Event) => {
+    diagnostics.push((event as CustomEvent<DesignSystemDiagnosticEvent>).detail);
+  };
 
   beforeEach(() => {
-    successSpy.mockClear();
-    errorSpy.mockClear();
+    diagnostics.length = 0;
+    globalThis.addEventListener('design-system-diagnostic', diagnosticListener);
   });
 
   afterEach(() => {
+    globalThis.removeEventListener('design-system-diagnostic', diagnosticListener);
     vi.clearAllMocks();
   });
 
@@ -34,7 +38,13 @@ describe('useOptimisticUpdate', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(onSuccess).toHaveBeenCalledWith({ id: '1', title: 'new-saved' });
-    expect(successSpy).toHaveBeenCalled();
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        source: 'useOptimisticUpdate',
+        level: 'info',
+        message: 'Toast success',
+      })
+    );
   });
 
   it('rolls back optimistic update and surfaces error on failure', async () => {
@@ -58,7 +68,13 @@ describe('useOptimisticUpdate', () => {
     expect(result.current.error).toBe(failure);
     expect(result.current.isLoading).toBe(false);
     expect(onError).toHaveBeenCalledWith(failure);
-    expect(errorSpy).toHaveBeenCalled();
+    expect(diagnostics).toContainEqual(
+      expect.objectContaining({
+        source: 'useOptimisticUpdate',
+        level: 'warn',
+        message: 'Toast error',
+      })
+    );
   });
 
   it('resets to the latest initial data', async () => {

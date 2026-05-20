@@ -45,7 +45,7 @@ function renderWithStore(store = createStore()) {
   );
 }
 
-const SAMPLE_HTML = '<p>Hello from preview</p>';
+const SAMPLE_HTML = 'export default function PreviewFixture() { return <p>Hello from preview</p>; }';
 
 // ============================================================================
 // Tests
@@ -75,12 +75,12 @@ describe('PreviewPage', () => {
   });
 
   describe('workflow store source (preferred path)', () => {
-    it('renders the preview iframe when previewSource is set in the store', () => {
+    it('renders the preview iframe when previewSource is set in the store', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       renderWithStore(store);
 
-      const iframe = screen.getByTitle(/Preview/i);
+      const iframe = await screen.findByTitle(/Preview/i);
       expect(iframe).toBeInTheDocument();
       expect(iframe.tagName).toBe('IFRAME');
     });
@@ -93,28 +93,28 @@ describe('PreviewPage', () => {
       expect(screen.getByRole('heading', { name: /Preview/i })).toBeInTheDocument();
     });
 
-    it('iframe has sandbox attribute that does not allow scripts or top-navigation', () => {
+    it('iframe has sandbox attribute that allows scripts but not same-origin or top-navigation', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       renderWithStore(store);
 
-      const iframe = screen.getByTitle(/Preview/i) as HTMLIFrameElement;
+      const iframe = await screen.findByTitle(/Preview/i) as HTMLIFrameElement;
       const sandbox = iframe.getAttribute('sandbox') ?? '';
-      // Must NOT grant allow-scripts or allow-top-navigation
-      expect(sandbox).not.toContain('allow-scripts');
+      expect(sandbox).toContain('allow-scripts');
+      expect(sandbox).not.toContain('allow-same-origin');
       expect(sandbox).not.toContain('allow-top-navigation');
     });
   });
 
   describe('router-state fallback (legacy path)', () => {
-    it('renders the iframe from router-state source when store is empty', () => {
+    it('renders the iframe from router-state source when store is empty', async () => {
       locationStateMock = { source: SAMPLE_HTML, title: 'Legacy Preview' };
       renderWithStore(); // fresh store
-      const iframe = screen.getByTitle(/Preview/i);
+      const iframe = await screen.findByTitle(/Preview/i);
       expect(iframe).toBeInTheDocument();
     });
 
-    it('prefers store source over router state when both are present', () => {
+    it('prefers store source over router state when both are present', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       locationStateMock = { source: '<p>legacy</p>' };
@@ -122,7 +122,7 @@ describe('PreviewPage', () => {
 
       // Both paths render an iframe — the key is that the store path wins;
       // we verify the iframe is present (the distinction is internal state).
-      expect(screen.getByTitle(/Preview/i)).toBeInTheDocument();
+      expect(await screen.findByTitle(/Preview/i)).toBeInTheDocument();
     });
   });
 
@@ -138,12 +138,12 @@ describe('PreviewPage', () => {
   });
 
   describe('refresh', () => {
-    it('renders the Refresh button when preview source is available', () => {
+    it('renders the Refresh button when preview source is available', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       renderWithStore(store);
 
-      expect(screen.getByRole('button', { name: /Refresh/i })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: /Refresh/i })).toBeInTheDocument();
     });
 
     it('Refresh button is not rendered when no preview source is set', () => {

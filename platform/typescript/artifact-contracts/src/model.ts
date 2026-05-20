@@ -14,6 +14,13 @@
 
 import { z } from "zod";
 import { SourceRefSchema } from "./source.js";
+import {
+  ComponentUsageRecordSchema,
+  DetectedRouteSchema,
+  ExtractedProtectedRegionSchema,
+  JsxTreeNodeSchema,
+  SourceImportRecordSchema,
+} from "./structure.js";
 
 // ============================================================================
 // ARTIFACT KIND
@@ -134,6 +141,16 @@ export const ArtifactNodeSchema = z.object({
   classificationConfidence: z.number().min(0).max(1).default(1),
   /** Additional key-value metadata for extensibility. */
   metadata: z.record(z.string(), z.unknown()).default({}),
+  /** Extracted JSX render trees for component/page/layout artifacts. */
+  jsxTree: z.array(JsxTreeNodeSchema).optional(),
+  /** React Router route declarations detected in this artifact. */
+  detectedRoutes: z.array(DetectedRouteSchema).optional(),
+  /** Non-intrinsic JSX component usages detected in this artifact. */
+  componentUsages: z.array(ComponentUsageRecordSchema).optional(),
+  /** Protected source regions parsed from this artifact. */
+  protectedRegions: z.array(ExtractedProtectedRegionSchema).optional(),
+  /** Static import declarations parsed from this artifact. */
+  sourceImports: z.array(SourceImportRecordSchema).optional(),
 });
 
 export type ArtifactNode = z.infer<typeof ArtifactNodeSchema>;

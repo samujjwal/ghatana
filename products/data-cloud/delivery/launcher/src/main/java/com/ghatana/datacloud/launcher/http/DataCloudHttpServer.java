@@ -1440,7 +1440,7 @@ public class DataCloudHttpServer {
                 throw new IllegalStateException(
                     "Durable entity write outbox processor is required for deployment profile '" + deploymentMode + "'");
             }
-            configuredOutboxProcessor = new InMemoryEntityWriteOutboxProcessor(auditService);
+            configuredOutboxProcessor = new InMemoryEntityWriteOutboxProcessor();
             log.info("[DC-P1-02] Configured local entity write outbox processor for deployment profile '{}'", deploymentMode);
         }
         entityHandler.withOutboxProcessor(configuredOutboxProcessor);

@@ -10,6 +10,7 @@ import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
+import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
@@ -77,6 +78,7 @@ class DataCloudHttpServerAiAssistTest {
     private WriteIdempotencyStore mockGenericIdempotencyStore;
     private TransactionManager mockTransactionManager;
     private EventLogStore mockEventLogStore;
+    private EntityWriteOutboxProcessor mockEntityWriteOutboxProcessor;
     private MetricsCollector mockMetricsCollector;
     private TraceExportService mockTraceExportService;
     private com.ghatana.platform.governance.security.ApiKeyResolver mockApiKeyResolver;
@@ -96,6 +98,7 @@ class DataCloudHttpServerAiAssistTest {
         mockGenericIdempotencyStore = mock(WriteIdempotencyStore.class);
         mockTransactionManager = mock(TransactionManager.class);
         mockEventLogStore = mock(EventLogStore.class);
+        mockEntityWriteOutboxProcessor = mock(EntityWriteOutboxProcessor.class);
         mockMetricsCollector = mock(MetricsCollector.class);
         mockTraceExportService = mock(TraceExportService.class);
         mockApiKeyResolver = mock(com.ghatana.platform.governance.security.ApiKeyResolver.class);
@@ -183,6 +186,7 @@ class DataCloudHttpServerAiAssistTest {
                 .withAuditService(mockAuditService)
                 .withPolicyEngine(mockPolicyEngine)
                 .withIdempotencyStore(mockIdempotencyStore)
+                .withEntityWriteOutboxProcessor(mockEntityWriteOutboxProcessor)
                 .withGenericIdempotencyStore(mockGenericIdempotencyStore)
                 .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)
@@ -233,6 +237,7 @@ class DataCloudHttpServerAiAssistTest {
                 .withAuditService(mockAuditService)
                 .withPolicyEngine(mockPolicyEngine)
                 .withIdempotencyStore(mockIdempotencyStore)
+                .withEntityWriteOutboxProcessor(mockEntityWriteOutboxProcessor)
                 .withGenericIdempotencyStore(mockGenericIdempotencyStore)
                 .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)

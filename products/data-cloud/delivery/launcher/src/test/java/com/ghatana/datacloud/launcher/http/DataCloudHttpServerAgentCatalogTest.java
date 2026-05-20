@@ -2,6 +2,8 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.feature.DataCloudFeature;
+import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,11 +53,13 @@ class DataCloudHttpServerAgentCatalogTest {
         port        = findFreePort(); 
         httpClient  = HttpClient.newBuilder().build(); 
         lenient().doNothing().when(mockMetrics).incrementCounter(anyString(), anyString(), anyString()); 
+        DataCloudFeatureFlags.override(DataCloudFeature.LEGACY_ACTION_ROUTES, true);
     }
 
     @AfterEach
     void tearDown() { 
         if (server != null) server.stop(); 
+        DataCloudFeatureFlags.clearOverrides();
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

@@ -28,7 +28,7 @@ import {
   artifactWorkflowAtom,
   hasArtifactWorkflowResultAtom,
 } from '../../state/artifactWorkflowStore.js';
-import { createLogicalArtifactModel, createPerfectFidelityReport } from '@ghatana/artifact-contracts';
+import { createLogicalArtifactModel, createPerfectFidelityReport, createResidualIslandReport } from '@ghatana/artifact-contracts';
 
 // ============================================================================
 // Mocks
@@ -42,6 +42,7 @@ vi.mock('react-router', () => ({
 // Create a minimal LogicalArtifactModel for the mock compiler result
 const MOCK_MODEL = createLogicalArtifactModel('model-test', 'test-import');
 const MOCK_FIDELITY = createPerfectFidelityReport('model-test');
+const MOCK_RESIDUALS = createResidualIslandReport([]);
 
 // Mock the compiler module that is dynamically imported
 vi.mock('@ghatana/artifact-compiler-ts', () => ({
@@ -49,9 +50,19 @@ vi.mock('@ghatana/artifact-compiler-ts', () => ({
     model: MOCK_MODEL,
     fidelityReport: MOCK_FIDELITY,
   })),
-  detectResidualIslands: vi.fn(() => ({ islands: [] })),
+  detectResidualIslands: vi.fn(() => MOCK_RESIDUALS),
   compileReact: vi.fn(() => ({
     emittedFiles: [{ relativePath: 'out.tsx', content: '<p>generated</p>' }],
+    overallFidelity: MOCK_FIDELITY,
+  })),
+  buildRoundTripDiffReport: vi.fn(() => ({
+    reportId: 'round-trip:test',
+    modelId: 'model-test',
+    diffs: [],
+    fidelity: MOCK_FIDELITY,
+    residuals: MOCK_RESIDUALS,
+    isLossless: true,
+    generatedAt: new Date().toISOString(),
   })),
 }));
 
@@ -131,6 +142,11 @@ describe('ImportDecompilePage', () => {
       expect(input).toBeInTheDocument();
       expect(input.getAttribute('accept')).toBe('.ts,.tsx');
       expect(input.getAttribute('multiple')).toBeDefined();
+    });
+
+    it('renders a provider selector', () => {
+      renderWithStore();
+      expect(screen.getByLabelText(/Source provider/i)).toBeInTheDocument();
     });
 
     it('does not show any action buttons before a job has run', () => {
@@ -244,6 +260,32 @@ describe('ImportDecompilePage', () => {
       });
     });
 
+    it('persists an evidence pack into the workflow store', async () => {
+      const { store } = renderWithStore();
+      const input = screen.getByLabelText(/Select source files/i);
+
+      uploadFiles(input, [makeFile('App.tsx', 'export default function App() { return null; }')]);
+
+      await waitFor(() => {
+        const state = store.get(artifactWorkflowAtom);
+        expect(state.evidencePack).not.toBeNull();
+        expect(state.evidencePack?.stage).toBe('round-trip');
+      });
+    });
+
+    it('persists a round-trip diff report into the workflow store', async () => {
+      const { store } = renderWithStore();
+      const input = screen.getByLabelText(/Select source files/i);
+
+      uploadFiles(input, [makeFile('App.tsx', 'export default function App() { return null; }')]);
+
+      await waitFor(() => {
+        const state = store.get(artifactWorkflowAtom);
+        expect(state.roundTripDiffReport).not.toBeNull();
+        expect(state.roundTripDiffReport?.reportId).toBe('round-trip:test');
+      });
+    });
+
     it('shows the Open in Canvas and Open in Builder buttons after success', async () => {
       renderWithStore();
       const input = screen.getByLabelText(/Select source files/i);
@@ -264,6 +306,35 @@ describe('ImportDecompilePage', () => {
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /View Fidelity Report/i })).toBeInTheDocument();
+      });
+    });
+
+    it('can decompile pasted source through the provider registry', async () => {
+      const { store } = renderWithStore();
+
+      await userEvent.selectOptions(screen.getByLabelText(/Source provider/i), 'paste');
+      await userEvent.clear(screen.getByLabelText(/Source path/i));
+      await userEvent.type(screen.getByLabelText(/Source path/i), 'src/Pasted.tsx');
+      fireEvent.change(screen.getByLabelText(/Source content/i), {
+        target: { value: 'export function Pasted() { return <div>Pasted</div>; }' },
+      });
+      await userEvent.click(screen.getByRole('button', { name: /Decompile pasted source/i }));
+
+      await waitFor(() => {
+        expect(store.get(hasArtifactWorkflowResultAtom)).toBe(true);
+      });
+    });
+
+    it('surfaces repository scanner boundary errors for repository providers', async () => {
+      renderWithStore();
+
+      await userEvent.selectOptions(screen.getByLabelText(/Source provider/i), 'github-repository');
+      await userEvent.type(screen.getByLabelText(/Repository URL/i), 'https://github.com/example/repo');
+      await userEvent.click(screen.getByRole('button', { name: /Start repository acquisition/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText(/requires backend acquisition job/i)).toBeInTheDocument();
       });
     });
   });

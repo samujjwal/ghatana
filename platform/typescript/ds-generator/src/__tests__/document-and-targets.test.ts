@@ -16,11 +16,16 @@ import {
   flattenTokenRecord,
   graphToRecord,
 } from '../tokens/token-graph.js';
-import { auditContrastPairs, deriveColorPairs } from '../validation/contrast.js';
+import {
+  assertDocumentContrastCompliance,
+  auditContrastPairs,
+  deriveColorPairs,
+} from '../validation/contrast.js';
 import { emitCss } from '../targets/css.js';
 import { emitJson } from '../targets/json.js';
 import { emitTailwind } from '../targets/tailwind.js';
 import { emitReactTheme } from '../targets/react-theme.js';
+import { emitFiles } from '../targets/emit-files.js';
 import type { SemanticTokenAlias } from '../model/design-system-document.js';
 
 // ============================================================================
@@ -155,6 +160,45 @@ describe('auditContrastPairs', () => {
     expect(result.isFullyCompliant).toBe(true);
     expect(result.entries[0]?.passesAA).toBe(true);
     expect(result.entries[0]?.passesAAA).toBe(true);
+  });
+});
+
+describe('assertDocumentContrastCompliance', () => {
+  it('passes a document with accessible canonical pairs', () => {
+    const doc = makeSimpleDoc();
+    expect(() => assertDocumentContrastCompliance(doc)).not.toThrow();
+  });
+
+  it('blocks file emission when canonical pairs fail WCAG AA', () => {
+    const doc = createDesignSystemDocument(
+      'doc-low-contrast',
+      'Low Contrast DS',
+      'preset',
+      {
+        colors: {
+          background: '#ffffff',
+          text: '#ffffff',
+        },
+      },
+    );
+
+    expect(() => emitFiles(doc)).toThrow(/contrast gate failed/);
+  });
+
+  it('allows explicit opt-out for exploratory generation', () => {
+    const doc = createDesignSystemDocument(
+      'doc-low-contrast-optout',
+      'Low Contrast DS',
+      'preset',
+      {
+        colors: {
+          background: '#ffffff',
+          text: '#ffffff',
+        },
+      },
+    );
+
+    expect(() => emitFiles(doc, { enforceContrast: false })).not.toThrow();
   });
 });
 

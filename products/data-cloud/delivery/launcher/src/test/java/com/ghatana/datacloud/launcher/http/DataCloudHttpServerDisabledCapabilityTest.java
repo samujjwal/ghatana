@@ -148,11 +148,11 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class PluginUpgradeDisabledTests {
 
         @Test
-        @DisplayName("POST /api/v1/plugins/:id/upgrade returns 501 when upgrade is disabled")
+        @DisplayName("POST /api/v1/action/plugins/:id/upgrade returns 501 when upgrade is disabled")
         void upgradePlugin_withoutFlag_returns501() throws Exception {
             startServer(); // pluginUpgradeEnabled defaults to false
 
-            HttpResponse<String> response = post("/api/v1/plugins/some-plugin/upgrade");
+            HttpResponse<String> response = post("/api/v1/action/plugins/some-plugin/upgrade");
 
             assertThat(response.statusCode()).isEqualTo(501);
         }

@@ -11,6 +11,10 @@
 export * from './core/index';
 export * from './ai/index';
 export {
+  attachBuilderDocumentCompatibility,
+  normalizeBuilderDocument,
+} from './core/legacy-builder-document-adapter';
+export {
   builderDocumentV1Schema,
   BUILDER_DOCUMENT_V1_SCHEMA_ID,
   BUILDER_DOCUMENT_V1_VERSION,

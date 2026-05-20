@@ -6,6 +6,8 @@
 
 import { describe, it, expect } from "vitest";
 import {
+  SourceAcquisitionDescriptorSchema,
+  SourceAcquisitionKindSchema,
   SourceSpanSchema,
   SourceFileSchema,
   SourceRefSchema,
@@ -109,5 +111,30 @@ describe("SourceRefSchema", () => {
   it("rejects missing repositoryUri", () => {
     const { repositoryUri: _, ...withoutUri } = validRef;
     expect(SourceRefSchema.safeParse(withoutUri).success).toBe(false);
+  });
+});
+
+describe("SourceAcquisitionDescriptorSchema", () => {
+  it("accepts browser and pasted Studio acquisition descriptors", () => {
+    expect(SourceAcquisitionKindSchema.safeParse("browser-upload").success).toBe(true);
+    expect(SourceAcquisitionKindSchema.safeParse("pasted-source").success).toBe(true);
+    expect(SourceAcquisitionDescriptorSchema.safeParse({
+      kind: "pasted-source",
+      uri: "pasted://src/App.tsx",
+      label: "src/App.tsx",
+    }).success).toBe(true);
+  });
+
+  it("accepts repository and archive acquisition descriptors", () => {
+    expect(SourceAcquisitionDescriptorSchema.safeParse({
+      kind: "github",
+      uri: "https://github.com/example/repo",
+      ref: "main",
+    }).success).toBe(true);
+    expect(SourceAcquisitionDescriptorSchema.safeParse({
+      kind: "archive",
+      uri: "archive://source.zip",
+      label: "source.zip",
+    }).success).toBe(true);
   });
 });

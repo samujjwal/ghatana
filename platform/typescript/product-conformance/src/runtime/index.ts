@@ -125,11 +125,12 @@ function writeConformanceWarning(message: string): void {
     return;
   }
 
-  if (
-    typeof globalThis.dispatchEvent === 'function' &&
-    typeof CustomEvent !== 'undefined'
-  ) {
-    globalThis.dispatchEvent(
+  const eventTarget = globalThis as unknown as {
+    dispatchEvent?: (event: CustomEvent<{ level: 'warn'; message: string }>) => boolean;
+  };
+
+  if (typeof eventTarget.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+    eventTarget.dispatchEvent(
       new CustomEvent('product-conformance-diagnostic', {
         detail: { level: 'warn', message },
       }),

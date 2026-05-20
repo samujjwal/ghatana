@@ -328,7 +328,7 @@ const governanceOverrides = [
   // Design-system enforcement for ALL production UI (excluding tests and examples)
   {
     files: ['web/src/**/*.{ts,tsx}'],
-    excludedFiles: [
+    ignores: [
       '**/*.test.{ts,tsx}',
       '**/*.spec.{ts,tsx}',
       '**/__tests__/**/*',

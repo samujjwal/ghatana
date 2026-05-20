@@ -160,6 +160,7 @@ export default defineConfig({
       'yappc-ui': resolve(__dirname, './libs/yappc-ui/src'),
       '@ghatana/canvas': resolve(__dirname, '../../../platform/typescript/canvas/src'),
       '@ghatana/code-editor': resolve(__dirname, '../../../platform/typescript/code-editor/src'),
+      '@ghatana/ui-builder': resolve(__dirname, '../../../platform/typescript/ui-builder/src/index.ts'),
       '@ghatana/design-system': resolve(
         __dirname,
         '../../../platform/typescript/design-system/src'

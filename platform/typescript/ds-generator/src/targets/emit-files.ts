@@ -16,6 +16,7 @@ import { emitCss, type CssTargetOptions } from './css.js';
 import { emitJson, type JsonTargetOptions } from './json.js';
 import { emitTailwind, type TailwindTargetOptions } from './tailwind.js';
 import { emitReactTheme, type ReactThemeTargetOptions } from './react-theme.js';
+import { assertDocumentContrastCompliance } from '../validation/contrast.js';
 
 // ============================================================================
 // Types
@@ -74,6 +75,11 @@ export interface EmitFilesOptions {
    * Default: derived from document name (kebab-case), e.g. "my-design-system".
    */
   basename?: string;
+  /**
+   * Block output when derivable foreground/background color pairs fail WCAG AA.
+   * Default: true.
+   */
+  enforceContrast?: boolean;
 }
 
 // ============================================================================
@@ -137,7 +143,12 @@ export function emitFiles(
     tailwind = true,
     reactTheme = true,
     basename,
+    enforceContrast = true,
   } = options;
+
+  if (enforceContrast) {
+    assertDocumentContrastCompliance(doc);
+  }
 
   const base = basename ?? toKebabCase(doc.name || doc.documentId);
   const files = new Map<string, EmittedFile>();

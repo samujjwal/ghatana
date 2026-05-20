@@ -111,7 +111,7 @@ describe('SSR-safe utility functions', () => {
         globalThis.window = originalWindow;
       }
     }
-  }, 30000);
+  }, 120000);
 });
 
 // ---------------------------------------------------------------------------

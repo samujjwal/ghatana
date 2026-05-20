@@ -16,9 +16,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { projectModelToBuilderDocument } from '../ModelToBuilderAdapter.js';
+import {
+  materializeProjectedBuilderDocument,
+  projectModelToBuilderDocument,
+} from '../ModelToBuilderAdapter.js';
 import { createLogicalArtifactModel } from '@ghatana/artifact-contracts';
 import type { LogicalArtifactModel, ArtifactNode } from '@ghatana/artifact-contracts';
+import type { ProjectedBuilderDocument } from '@ghatana/artifact-compiler-ts';
 
 // ============================================================================
 // Helpers
@@ -162,5 +166,88 @@ describe('projectModelToBuilderDocument', () => {
       expect(contractNames).toContain('HomePage');
       expect(contractNames).not.toContain('useAuth');
     });
+
+    it('preserves projected node IDs for coherent slot references', () => {
+      const projected = makeProjectedDocument({
+        parent: {
+          id: 'parent',
+          contractName: 'Parent',
+          props: {},
+          slots: { children: ['child'] },
+          bindings: [],
+          metadata: { name: 'Parent', locked: false, hidden: false },
+        },
+        child: {
+          id: 'child',
+          contractName: 'Child',
+          props: {},
+          slots: {},
+          bindings: [],
+          metadata: { name: 'Child', locked: false, hidden: false },
+        },
+      });
+
+      const doc = materializeProjectedBuilderDocument(projected, {
+        owner: 'test-owner',
+        description: 'Projected',
+      });
+
+      expect(doc.nodes.parent?.slots.children).toEqual(['child']);
+      expect(doc.nodes.child?.contractName).toBe('Child');
+    });
+
+    it('drops invalid projected slot IDs and records diagnostics', () => {
+      const projected = makeProjectedDocument({
+        parent: {
+          id: 'parent',
+          contractName: 'Parent',
+          props: {},
+          slots: { children: ['child', 'missing'] },
+          bindings: [],
+          metadata: { name: 'Parent', locked: false, hidden: false },
+        },
+        child: {
+          id: 'child',
+          contractName: 'Child',
+          props: {},
+          slots: {},
+          bindings: [],
+          metadata: { name: 'Child', locked: false, hidden: false },
+        },
+      });
+
+      const doc = materializeProjectedBuilderDocument(projected, {
+        owner: 'test-owner',
+      });
+
+      expect(doc.nodes.parent?.slots.children).toEqual(['child']);
+      expect(doc.metadata.artifactProjectionDiagnostics).toEqual([
+        'Dropped invalid slot reference "missing" from "parent.children": unknown.',
+      ]);
+    });
   });
 });
+
+function makeProjectedDocument(
+  nodes: ProjectedBuilderDocument['nodes'],
+): ProjectedBuilderDocument {
+  const rootChildren = Object.keys(nodes);
+  return {
+    schemaVersion: '1.0.0',
+    documentId: 'projected-doc',
+    label: 'Projected',
+    nodes,
+    layout: {
+      rootId: 'root',
+      nodes: {
+        root: { children: rootChildren },
+        ...Object.fromEntries(rootChildren.map((id) => [id, { children: [] }])),
+      },
+    },
+    metadata: {
+      createdAt: new Date(0).toISOString(),
+      updatedAt: new Date(0).toISOString(),
+      sourceModelId: 'model',
+    },
+  };
+}

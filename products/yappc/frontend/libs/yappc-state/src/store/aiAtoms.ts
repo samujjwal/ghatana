@@ -137,7 +137,16 @@ export const appendCopilotMessageAtom = atom(
   (get, set, message: CopilotMessage) => {
     const sAtom = copilotSessionAtom;
     const session = get(sAtom);
-    if (!session) return;
+    if (!session) {
+      const timestamp = new Date().toISOString();
+      set(sAtom, {
+        id: `copilot-session-${message.id}`,
+        messages: [message],
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      });
+      return;
+    }
     const updated: CopilotSession = {
       ...session,
       messages: [...session.messages, message],
@@ -152,6 +161,7 @@ export const appendCopilotMessageAtom = atom(
  */
 export const clearCopilotSessionAtom = atom(null, (_get, set) => {
   set(copilotSessionAtom, null);
+  set(copilotLoadingAtom, false);
   set(copilotErrorAtom, null);
 });
 

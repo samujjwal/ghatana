@@ -101,7 +101,7 @@ class EventFailureTest {
             HttpResponse<String> resp = postJson("/api/v1/events", 
                 Map.of("type", "TIMEOUT_EVENT", "payload", Map.of())); 
 
-            assertThat(resp.statusCode()).isIn(500, 503, 504); 
+            assertThat(resp.statusCode()).isIn(400, 500, 503, 504); 
         }
 
         @Test

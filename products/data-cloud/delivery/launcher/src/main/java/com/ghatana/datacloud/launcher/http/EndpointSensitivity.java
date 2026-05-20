@@ -81,6 +81,7 @@ public enum EndpointSensitivity {
      */
     public static final Set<String> CRITICAL_PATH_PREFIXES = Set.of(
         "/api/v1/governance/",        // all governance and lifecycle endpoints
+        "/api/v1/data/lifecycle/",    // lifecycle purge/redaction style operations
         "/api/v1/learning/review/",   // approve / reject review items
         "/api/v1/voice/transcripts"   // transcript management (access + deletion)
     );
@@ -137,7 +138,8 @@ public enum EndpointSensitivity {
         "/api/v1/models",
         "/api/v1/learning/",          // POST trigger and streaming reads
         "/api/v1/voice/",
-        "/api/v1/actions/"            // DC-P1-04: Action engine routes
+        "/api/v1/action/",            // Canonical Action Plane routes
+        "/api/v1/actions/"            // Legacy action namespace (if still used)
     );
 
     /**
@@ -146,6 +148,11 @@ public enum EndpointSensitivity {
     private static final Set<String> CRITICAL_ROUTE_ACTIONS = Set.of(
         "POST /api/v1/governance/retention/purge",
         "POST /api/v1/governance/privacy/redact",
+        "POST /api/v1/data/lifecycle/retention/purge",
+        "POST /api/v1/settings/security",
+        "POST /api/v1/plugins/{id}/enable",
+        "POST /api/v1/connectors/{id}/rotate-credentials",
+        "PUT /api/v1/autonomy/level",
         "POST /api/v1/learning/review/{id}/approve",
         "POST /api/v1/learning/review/{id}/reject",
         "POST /api/v1/models/{id}/promote",
@@ -191,17 +198,6 @@ public enum EndpointSensitivity {
             return PUBLIC;
         }
 
-        DataCloudSecurityFilter.AccessLevel accessLevel = RouteActionAccessRegistry.requiredAccess(method, path);
-        if (accessLevel == DataCloudSecurityFilter.AccessLevel.ADMIN) {
-            return CRITICAL;
-        }
-        if (accessLevel == DataCloudSecurityFilter.AccessLevel.AUDITOR) {
-            return CRITICAL;
-        }
-        if (accessLevel == DataCloudSecurityFilter.AccessLevel.OPERATOR) {
-            return SENSITIVE;
-        }
-
         String actionKey = method.toUpperCase() + " " + normalizePath(path);
         if (CRITICAL_ROUTE_ACTIONS.contains(actionKey)) {
             return CRITICAL;
@@ -233,7 +229,9 @@ public enum EndpointSensitivity {
         if (path.contains("/promote")
                 || path.contains("/approve")
                 || path.contains("/reject")
-                || path.contains("/retain")) {
+                || path.contains("/retain")
+                || path.contains("/rotate")
+                || path.contains("/revoke")) {
             return CRITICAL;
         }
 
@@ -244,6 +242,9 @@ public enum EndpointSensitivity {
 
         // ── 5. Authenticated reads: most GETs are INTERNAL; memory is SENSITIVE ─
         if ("GET".equalsIgnoreCase(method)) {
+            if (path.startsWith("/mcp/")) {
+                return INTERNAL;
+            }
             // Memory tier reads expose personal-data → elevated to SENSITIVE.
             if (path.equals("/api/v1/memory") || path.startsWith("/api/v1/memory/")) {
                 return SENSITIVE;
@@ -265,6 +266,16 @@ public enum EndpointSensitivity {
             return SENSITIVE;
         }
 
+        // Route-access registry is a fallback only; explicit sensitivity rules above take precedence.
+        DataCloudSecurityFilter.AccessLevel accessLevel = RouteActionAccessRegistry.requiredAccess(method, path);
+        if (accessLevel == DataCloudSecurityFilter.AccessLevel.ADMIN
+                || accessLevel == DataCloudSecurityFilter.AccessLevel.AUDITOR) {
+            return CRITICAL;
+        }
+        if (accessLevel == DataCloudSecurityFilter.AccessLevel.OPERATOR) {
+            return SENSITIVE;
+        }
+
         return INTERNAL;
     }
 
@@ -273,6 +284,8 @@ public enum EndpointSensitivity {
         normalized = normalized.replaceAll("/learning/review/[^/]+/(approve|reject)$", "/learning/review/{id}/$1");
         normalized = normalized.replaceAll("/models/[^/]+/promote$", "/models/{id}/promote");
         normalized = normalized.replaceAll("/pipelines/[^/]+/execute$", "/pipelines/{id}/execute");
+        normalized = normalized.replaceAll("/plugins/[^/]+/enable$", "/plugins/{id}/enable");
+        normalized = normalized.replaceAll("/connectors/[^/]+/rotate-credentials$", "/connectors/{id}/rotate-credentials");
         normalized = normalized.replaceAll("/entities/[^/]+/[^/]+$", "/entities/{collection}/{id}");
         normalized = normalized.replaceAll("/entities/[^/]+$", "/entities/{collection}");
         return normalized;

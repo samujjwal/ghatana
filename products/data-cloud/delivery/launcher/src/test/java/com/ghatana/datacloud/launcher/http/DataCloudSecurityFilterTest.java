@@ -1009,10 +1009,9 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .withHeader(HttpHeaders.HOST, "localhost")
                     .build();
 
-            // Should use authenticated tenant, not query parameter
-            // The filter should ignore the query parameter and use the principal's tenant
+            // In strict mode, tenant hints that do not match authenticated identity are rejected.
             int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
-            assertThat(status).isEqualTo(200);
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
@@ -1134,7 +1133,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         void productionProfile_allowsDelegatedAccessWithClaims() {
             // DC-P0-04: Delegated access (e.g., support team) requires proper claims
             // Simulate a support principal with delegated access claim
-            Principal supportPrincipal = new Principal("support-user", List.of("support", "delegated_access"), TEST_TENANT);
+            Principal supportPrincipal = new Principal("support-user", List.of("support", "delegated_access", "operator"), TEST_TENANT);
             when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(supportPrincipal));
 
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
@@ -1145,7 +1144,12 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .strictTenantResolution(true)
                     .build();
 
-            HttpRequest req = get(INTERNAL_PATH);
+                // Use the actual SENSITIVE route signature (POST /api/v1/voice/intent).
+                HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
             int status = runPromise(() -> filter.apply(OK_DELEGATE).serve(req).map(HttpResponse::getCode));
             assertThat(status).isEqualTo(200);

@@ -133,6 +133,26 @@ check(
   "ArtifactsPage missing ResidualReviewQueue"
 );
 
+// ── Preview runtime safety ───────────────────────────────────────────────────
+console.log("\n7. Preview runtime safety");
+
+const previewRuntimeSrc = readSource(`${studioBase}/preview/in-memory-preview-runtime.ts`);
+check(
+  !/\bFunction\s*\(/.test(previewRuntimeSrc) && !/\bnew\s+Function\b/.test(previewRuntimeSrc),
+  "Preview runtime does not construct dynamic functions",
+  "Preview runtime must not use Function/new Function for imported source"
+);
+check(
+  previewRuntimeSrc.includes("parsePreviewSource") && previewRuntimeSrc.includes("renderStaticPreviewHtml"),
+  "Preview runtime uses static TypeScript AST preview extraction",
+  "Preview runtime must use static AST preview extraction"
+);
+check(
+  previewRuntimeSrc.includes("module \"") && previewRuntimeSrc.includes("is not allowed"),
+  "Preview runtime rejects disallowed module imports",
+  "Preview runtime must reject disallowed module imports"
+);
+
 // ── Result ────────────────────────────────────────────────────────────────────
 console.log(`\n${failures === 0 ? "✅ All checks passed." : `❌ ${failures} check(s) failed.`}\n`);
 process.exit(failures > 0 ? 1 : 0);

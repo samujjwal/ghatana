@@ -12,7 +12,14 @@
  * @doc.pattern Adapter
  */
 
-import type { ArtifactNode, LogicalArtifactModel } from "@ghatana/artifact-contracts";
+import {
+  ExtractedProtectedRegionSchema,
+  SourceImportRecordSchema,
+  type ArtifactNode,
+  type ExtractedProtectedRegion,
+  type LogicalArtifactModel,
+  type SourceImportRecord,
+} from "@ghatana/artifact-contracts";
 import type { FidelityReport, LossPoint } from "@ghatana/artifact-contracts";
 import { computeFidelityReport } from "@ghatana/artifact-contracts";
 
@@ -120,7 +127,7 @@ function emitProtectedRegion(
  * unsupported patterns.
  */
 function emitResidualStub(node: ArtifactNode, opts: Required<CompileReactOptions>): string {
-  const exportedName = node.exportedSymbols[0] ?? node.displayName;
+  const exportedName = selectRuntimeExportName(node);
   const lines: string[] = [
     `// RESIDUAL: "${node.displayName}" — classification confidence ${(node.classificationConfidence * 100).toFixed(0)}%`,
     `// Review and complete this component before using in production.`,
@@ -162,7 +169,7 @@ function emitResidualStub(node: ArtifactNode, opts: Required<CompileReactOptions
  * during compilation to maintain user-authored content spans.
  */
 function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOptions>): string {
-  const exportedName = node.exportedSymbols[0] ?? node.displayName;
+  const exportedName = selectRuntimeExportName(node);
   const propsInterfaceName = `${exportedName}Props`;
 
   // Build props interface
@@ -176,17 +183,12 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
         ].join("\n")
       : `export type ${propsInterfaceName} = Record<string, never>;`;
 
-  // Determine imports
-  const dsImport = node.usesDesignSystem
+  const dsImportLine = node.usesDesignSystem
     ? `// Design-system component imports are intentionally omitted until the artifact mapping resolves exact symbols from "${opts.designSystemPackage}".\n`
     : "";
+  const importLines = buildImportLines(node, dsImportLine);
 
-  // Check if node has protected regions from previous decompilation
-  const protectedRegions = (node.metadata?.protectedRegions as unknown as Array<{
-    regionId: string;
-    ownerKind: string;
-    contentLines: string[];
-  }>) ?? [];
+  const protectedRegions = getProtectedRegions(node);
 
   // Find the body region if it exists
   const bodyRegion = protectedRegions.find(r => r.regionId === `${node.id}:body`);
@@ -201,10 +203,7 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
       ]);
 
   const lines: string[] = [
-    ...emitProtectedRegion(`${node.id}:imports`, "generated", [
-      `import type { ReactElement } from "react";`,
-      ...(dsImport.trim() ? [dsImport] : []),
-    ]),
+    ...emitProtectedRegion(`${node.id}:imports`, "generated", importLines),
     ``,
     propsInterface,
     ``,
@@ -226,6 +225,70 @@ function emitComponentFile(node: ArtifactNode, opts: Required<CompileReactOption
     lines.push(``, `export default ${exportedName};`);
   }
   return lines.join("\n");
+}
+
+function buildImportLines(node: ArtifactNode, dsImportLine: string): string[] {
+  const importLines = getSourceImports(node).map((sourceImport) => sourceImport.text);
+  const hasReactElementImport = importLines.some((line) => (
+    /from\s+["']react["']/.test(line) && /\bReactElement\b/.test(line)
+  ));
+
+  if (!hasReactElementImport) {
+    importLines.push(`import type { ReactElement } from "react";`);
+  }
+
+  if (dsImportLine.trim()) {
+    importLines.push(dsImportLine.trim());
+  }
+
+  return [...new Set(importLines)];
+}
+
+function getSourceImports(node: ArtifactNode): SourceImportRecord[] {
+  if (node.sourceImports !== undefined) {
+    return node.sourceImports;
+  }
+
+  const legacyImports = node.metadata?.sourceImports;
+  if (!Array.isArray(legacyImports)) {
+    return [];
+  }
+
+  const imports: SourceImportRecord[] = [];
+  for (const sourceImport of legacyImports) {
+    const parsed = SourceImportRecordSchema.safeParse(sourceImport);
+    if (parsed.success) {
+      imports.push(parsed.data);
+    }
+  }
+  return imports;
+}
+
+function selectRuntimeExportName(node: ArtifactNode): string {
+  if (node.exportedSymbols.includes(node.displayName)) {
+    return node.displayName;
+  }
+  return node.exportedSymbols.find((symbol) => !/[Pp]rops$/.test(symbol)) ?? node.exportedSymbols[0] ?? node.displayName;
+}
+
+function getProtectedRegions(node: ArtifactNode): ExtractedProtectedRegion[] {
+  if (node.protectedRegions !== undefined) {
+    return node.protectedRegions;
+  }
+
+  const legacyRegions = node.metadata?.protectedRegions;
+  if (!Array.isArray(legacyRegions)) {
+    return [];
+  }
+
+  const regions: ExtractedProtectedRegion[] = [];
+  for (const region of legacyRegions) {
+    const parsed = ExtractedProtectedRegionSchema.safeParse(region);
+    if (parsed.success) {
+      regions.push(parsed.data);
+    }
+  }
+  return regions;
 }
 
 /**

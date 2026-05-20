@@ -77,3 +77,18 @@ export {
   detectResidualIslands,
   type ParsedSourceFile,
 } from "./residual/residual-islands.js";
+
+// Round-trip diff
+export {
+  buildRoundTripDiffReport,
+  type BuildRoundTripDiffReportOptions,
+  type RoundTripDiffSourceFile,
+} from "./diff/roundtrip-diff.js";
+
+// Repository scan facade
+export {
+  scanRepositorySources,
+  type RepositoryScanOptions,
+  type RepositoryScanOutput,
+  type RepositoryScanSourceEntry,
+} from "./scan/repository-scan.js";

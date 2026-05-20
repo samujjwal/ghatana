@@ -14,9 +14,10 @@
  */
 
 import { projectToBuilder } from '@ghatana/artifact-compiler-ts';
-import { createBuilderDocument, insertNode } from '@ghatana/ui-builder';
+import { createBuilderDocument, parseNodeId, parseNodeIdArray } from '@ghatana/ui-builder';
 import type { LogicalArtifactModel } from '@ghatana/artifact-contracts';
-import type { BuilderDocument } from '@ghatana/ui-builder';
+import type { ProjectedBuilderDocument } from '@ghatana/artifact-compiler-ts';
+import type { BuilderDocument, ComponentInstance } from '@ghatana/ui-builder';
 
 // ============================================================================
 // ADAPTER
@@ -44,27 +45,70 @@ export function projectModelToBuilderDocument(
     includeKinds: ['component', 'page', 'layout'],
   });
 
-  // Start with an empty document owned by the model ID
-  let doc = createBuilderDocument(model.modelId, {
-    metadata: { description: model.label },
+  return materializeProjectedBuilderDocument(projected, {
+    owner: model.modelId,
+    description: model.label,
   });
+}
 
-  // Insert each projected component instance into the document
+export interface MaterializeProjectedBuilderDocumentOptions {
+  readonly owner: string;
+  readonly description?: string;
+}
+
+export function materializeProjectedBuilderDocument(
+  projected: ProjectedBuilderDocument,
+  options: MaterializeProjectedBuilderDocumentOptions,
+): BuilderDocument {
+  const knownProjectedIds = new Set(Object.keys(projected.nodes));
+  const nodes: Record<string, ComponentInstance> = {};
+  const diagnostics: string[] = [];
+
+  // Preserve projected node IDs so validated slot and root references remain coherent.
   for (const instance of Object.values(projected.nodes)) {
-    doc = insertNode(doc, {
+    const nodeId = parseNodeId(instance.id, knownProjectedIds);
+    if (nodeId === null) {
+      diagnostics.push(`Dropped projected node with invalid id "${String(instance.id)}".`);
+      continue;
+    }
+
+    const slots: ComponentInstance['slots'] = {};
+    for (const [slotName, rawSlotIds] of Object.entries(instance.slots)) {
+      const parsed = parseNodeIdArray(rawSlotIds, knownProjectedIds);
+      slots[slotName] = parsed.nodeIds;
+      for (const issue of parsed.issues) {
+        diagnostics.push(
+          `Dropped invalid slot reference "${String(issue.value)}" from "${instance.id}.${slotName}": ${issue.reason}.`,
+        );
+      }
+    }
+
+    nodes[nodeId] = {
+      id: nodeId,
       contractName: instance.contractName,
-      props: instance.props as Record<string, unknown>,
-      slots: Object.fromEntries(
-        Object.entries(instance.slots).map(([k, v]) => [k, v as string[] as import('@ghatana/ui-builder').NodeId[]]),
-      ) as Record<string, import('@ghatana/ui-builder').NodeId[]>,
+      props: instance.props,
+      slots,
       bindings: [],
       metadata: {
         name: instance.metadata.name,
         locked: instance.metadata.locked,
         hidden: instance.metadata.hidden,
       },
-    });
+    };
   }
 
-  return doc;
+  const rootChildren = projected.layout.nodes[projected.layout.rootId]?.children ?? [];
+  const rootNodeResult = parseNodeIdArray(rootChildren, knownProjectedIds);
+  for (const issue of rootNodeResult.issues) {
+    diagnostics.push(`Dropped invalid root node reference "${String(issue.value)}": ${issue.reason}.`);
+  }
+
+  return createBuilderDocument(options.owner, {
+    nodes,
+    rootNodes: rootNodeResult.nodeIds,
+    metadata: {
+      description: options.description,
+      artifactProjectionDiagnostics: diagnostics,
+    },
+  });
 }

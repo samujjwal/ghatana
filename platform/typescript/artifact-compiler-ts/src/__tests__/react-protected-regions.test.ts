@@ -66,6 +66,29 @@ describe('compileReact — protected region markers', () => {
     expect(file?.content).toMatch(/export function \w+/);
   });
 
+  it('preserves original static import declarations in the generated import region', () => {
+    const source = `
+import React from "react";
+import { Button as DsButton } from "@ghatana/design-system";
+import type { ReactElement } from "react";
+
+export interface ButtonProps {
+  readonly label: string;
+}
+
+export function Button(props: ButtonProps): ReactElement {
+  return <DsButton>{props.label}</DsButton>;
+}
+`.trim();
+
+    const result = decompileAndCompile(source);
+    const file = result.emittedFiles.find((f) => !f.isResidualStub);
+
+    expect(file?.content).toContain('import React from "react";');
+    expect(file?.content).toContain('import { Button as DsButton } from "@ghatana/design-system";');
+    expect(file?.content).toContain('import type { ReactElement } from "react";');
+  });
+
   it('emits a residual stub with a RESIDUAL comment for low-confidence nodes', () => {
     // Use a file that won't be well-classified (empty content)
     const result = decompileAndCompile(

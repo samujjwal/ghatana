@@ -21,6 +21,16 @@ const API_BASE_URL = import.meta.env.DEV
 
 const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL ?? '/graphql';
 
+export function useConfigData() {
+  return {
+    personas: usePersonas(),
+    domains: useDomains(),
+    templates: useTemplates(),
+    workflows: useWorkflows(),
+    tasks: useTasks(),
+  };
+}
+
 async function parseJsonResponse<T>(
   response: Response,
   context: string

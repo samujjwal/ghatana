@@ -15,11 +15,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { ReactElement, ChangeEvent } from 'react';
+import type { ReactElement, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
 import {
   createDecompileJobState,
+  buildStudioEvidencePack,
   buildDecompileJobResult,
   fidelityTrafficLight,
   fidelitySummaryText,
@@ -32,6 +33,9 @@ import type {
 import { setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
 import {
   defaultProviderRegistry,
+  type ArchiveUploadInput,
+  type PastedSourceInput,
+  type RepositorySourceInput,
   type SourceFileEntry,
 } from '../providers/source-acquisition.js';
 
@@ -57,17 +61,17 @@ export default function ImportDecompilePage(): ReactElement {
   const [jobState, setJobState] = useState<DecompileJobState | null>(null);
   const [completedResult, setCompletedResult] = useState<DecompileJobResult | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
+  const [providerKind, setProviderKind] = useState<'upload' | 'paste' | 'github-repository' | 'gitlab-repository' | 'archive'>('upload');
+  const [pastedPath, setPastedPath] = useState('src/App.tsx');
+  const [pastedContent, setPastedContent] = useState('');
+  const [repositoryUrl, setRepositoryUrl] = useState('');
+  const [repositoryRef, setRepositoryRef] = useState('');
   const navigate = useNavigate();
   const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
-  const handleFilesSelected = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files) return;
-
-      // Use provider registry to acquire sources
-      const acquisitionResult = await defaultProviderRegistry.acquire({ files });
-
+  const runAcquisition = useCallback(
+    async (input: unknown) => {
+      const acquisitionResult = await defaultProviderRegistry.acquire(input);
       setFileErrors([...acquisitionResult.errors]);
 
       if (acquisitionResult.sources.length === 0) return;
@@ -118,9 +122,35 @@ export default function ImportDecompilePage(): ReactElement {
         const projectedBuilderDocument = projectModelToBuilderDocument(result.model);
 
         // Compile preview source from the top-level components
-        const { compileReact } = await import('@ghatana/artifact-compiler-ts');
+        const { buildRoundTripDiffReport, compileReact } = await import('@ghatana/artifact-compiler-ts');
         const compiled = compileReact(result.model);
         const previewSource = compiled.emittedFiles.map(f => f.content).join('\n\n');
+        const reimported = decompileTsx({
+          label: `${result.model.label} re-import`,
+          modelId: result.model.modelId,
+          files: compiled.emittedFiles.map((file) => ({
+            relativePath: file.relativePath,
+            content: file.content,
+          })),
+        });
+        const roundTripDiffReport = buildRoundTripDiffReport({
+          reportId: `round-trip:${jobId}`,
+          model: result.model,
+          originalSources: sources.map((source) => ({
+            relativePath: source.filePath,
+            content: source.content,
+          })),
+          generatedSources: compiled.emittedFiles,
+          reimportedModel: reimported.model,
+          fidelity: compiled.overallFidelity,
+          residuals: residualReport,
+        });
+        const evidencePack = buildStudioEvidencePack({
+          jobResult,
+          generatedSources: compiled.emittedFiles,
+          compileFidelity: compiled.overallFidelity,
+          compileResiduals: residualReport,
+        });
 
         // Persist into the workflow store so all routes can read it
         setWorkflow({
@@ -129,6 +159,8 @@ export default function ImportDecompilePage(): ReactElement {
           projectedBuilderDocument,
           previewSource,
           fidelityReport: result.fidelityReport,
+          evidencePack,
+          roundTripDiffReport,
           lastDecompileAt: new Date().toISOString(),
         });
 
@@ -153,6 +185,54 @@ export default function ImportDecompilePage(): ReactElement {
       }
     },
     [],
+  );
+
+  const handleFilesSelected = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files) return;
+      await runAcquisition({ files });
+    },
+    [runAcquisition],
+  );
+
+  const handlePasteSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const input: PastedSourceInput = {
+        kind: 'pasted-source',
+        relativePath: pastedPath,
+        content: pastedContent,
+      };
+      await runAcquisition(input);
+    },
+    [pastedContent, pastedPath, runAcquisition],
+  );
+
+  const handleRepositorySubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const input: RepositorySourceInput = {
+        kind: providerKind === 'gitlab-repository' ? 'gitlab-repository' : 'github-repository',
+        repositoryUrl,
+        ref: repositoryRef.trim() || undefined,
+      };
+      await runAcquisition(input);
+    },
+    [providerKind, repositoryRef, repositoryUrl, runAcquisition],
+  );
+
+  const handleArchiveSelected = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const input: ArchiveUploadInput = {
+        kind: 'archive-upload',
+        file,
+      };
+      await runAcquisition(input);
+    },
+    [runAcquisition],
   );
 
   const trafficLight = fidelityTrafficLight(completedResult?.fidelityReport);
@@ -181,25 +261,123 @@ export default function ImportDecompilePage(): ReactElement {
         </p>
       </div>
 
-      {/* File upload */}
-      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6">
-        <label
-          htmlFor="source-file-input"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Select source files (.ts / .tsx)
+      <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-6">
+        <label htmlFor="source-provider-select" className="block text-sm font-medium text-gray-700">
+          Source provider
         </label>
-        <input
-          id="source-file-input"
-          type="file"
-          multiple
-          accept=".ts,.tsx"
-          onChange={handleFilesSelected}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0 file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          aria-describedby={fileErrors.length > 0 ? 'file-errors' : undefined}
-        />
+        <select
+          id="source-provider-select"
+          value={providerKind}
+          onChange={(event) => { setProviderKind(event.target.value as typeof providerKind); }}
+          className="block w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
+        >
+          <option value="upload">Browser upload</option>
+          <option value="paste">Pasted source</option>
+          <option value="github-repository">GitHub repository</option>
+          <option value="gitlab-repository">GitLab repository</option>
+          <option value="archive">Archive upload</option>
+        </select>
+
+        {providerKind === 'upload' && (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
+            <label
+              htmlFor="source-file-input"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Select source files (.ts / .tsx)
+            </label>
+            <input
+              id="source-file-input"
+              type="file"
+              multiple
+              accept=".ts,.tsx"
+              onChange={handleFilesSelected}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0 file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              aria-describedby={fileErrors.length > 0 ? 'file-errors' : undefined}
+            />
+          </div>
+        )}
+
+        {providerKind === 'paste' && (
+          <form className="space-y-3 rounded-lg border border-gray-200 bg-white p-4" onSubmit={handlePasteSubmit}>
+            <label htmlFor="pasted-source-path" className="block text-sm font-medium text-gray-700">
+              Source path
+            </label>
+            <input
+              id="pasted-source-path"
+              type="text"
+              value={pastedPath}
+              onChange={(event) => { setPastedPath(event.target.value); }}
+              className="block w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <label htmlFor="pasted-source-content" className="block text-sm font-medium text-gray-700">
+              Source content
+            </label>
+            <textarea
+              id="pasted-source-content"
+              value={pastedContent}
+              onChange={(event) => { setPastedContent(event.target.value); }}
+              rows={8}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+            >
+              Decompile pasted source
+            </button>
+          </form>
+        )}
+
+        {(providerKind === 'github-repository' || providerKind === 'gitlab-repository') && (
+          <form className="space-y-3 rounded-lg border border-gray-200 bg-white p-4" onSubmit={handleRepositorySubmit}>
+            <label htmlFor="repository-url" className="block text-sm font-medium text-gray-700">
+              Repository URL
+            </label>
+            <input
+              id="repository-url"
+              type="url"
+              value={repositoryUrl}
+              onChange={(event) => { setRepositoryUrl(event.target.value); }}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <label htmlFor="repository-ref" className="block text-sm font-medium text-gray-700">
+              Ref
+            </label>
+            <input
+              id="repository-ref"
+              type="text"
+              value={repositoryRef}
+              onChange={(event) => { setRepositoryRef(event.target.value); }}
+              className="block w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+            >
+              Start repository acquisition
+            </button>
+          </form>
+        )}
+
+        {providerKind === 'archive' && (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
+            <label htmlFor="archive-file-input" className="block text-sm font-medium text-gray-700 mb-2">
+              Select source archive
+            </label>
+            <input
+              id="archive-file-input"
+              type="file"
+              accept=".zip,.tar,.tgz,.tar.gz"
+              onChange={handleArchiveSelected}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0 file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+        )}
       </div>
 
       {/* File validation errors */}

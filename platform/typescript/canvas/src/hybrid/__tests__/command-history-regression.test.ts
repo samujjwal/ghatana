@@ -513,15 +513,16 @@ describe('Transaction batching — single undo entry', () => {
     controller.addElement(makeElementFixture(100, 0));
     controller.addElement(makeElementFixture(200, 0));
 
+    expect(controller.getHistoryDepths()).toEqual({ undo: 0, redo: 0 });
+
     tx.commit();
 
-    // Exactly 1 undo entry should be on the stack
-    expect(controller.canUndo()).toBe(true);
+    expect(controller.getHistoryDepths()).toEqual({ undo: 1, redo: 0 });
 
     // One undo should revert all 3 mutations
     controller.undo();
     expect(controller.getElements()).toHaveLength(0);
-    expect(controller.canUndo()).toBe(false);
+    expect(controller.getHistoryDepths()).toEqual({ undo: 0, redo: 1 });
   });
 
   it('exact stack depth: nested operations inside transaction still produce 1 undo entry', () => {
@@ -534,15 +535,16 @@ describe('Transaction batching — single undo entry', () => {
     // Add another element
     controller.addElement(makeElementFixture(100, 0));
 
+    expect(controller.getHistoryDepths()).toEqual({ undo: 0, redo: 0 });
+
     tx.commit();
 
-    // Exactly 1 undo entry should be on the stack
-    expect(controller.canUndo()).toBe(true);
+    expect(controller.getHistoryDepths()).toEqual({ undo: 1, redo: 0 });
 
     // One undo should revert all operations
     controller.undo();
     expect(controller.getElements()).toHaveLength(0);
-    expect(controller.canUndo()).toBe(false);
+    expect(controller.getHistoryDepths()).toEqual({ undo: 0, redo: 1 });
   });
 
   it('group operation uses transaction internally and produces exactly 1 undo entry', () => {
@@ -551,13 +553,14 @@ describe('Transaction batching — single undo entry', () => {
     controller.select({ elements: [el1.id, el2.id] });
 
     const countBeforeGroup = controller.getElements().length;
-    const undoCountBefore = controller.canUndo() ? 1 : 0; // Track approximate undo depth
+    const undoDepthBefore = controller.getHistoryDepths().undo;
 
     controller.groupSelected();
 
     // groupSelected should use transaction internally
     const countAfterGroup = controller.getElements().length;
     expect(countAfterGroup).toBeGreaterThan(countBeforeGroup);
+    expect(controller.getHistoryDepths().undo).toBe(undoDepthBefore + 1);
 
     // Exactly 1 undo entry should be added for the group operation
     controller.undo();

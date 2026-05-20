@@ -236,6 +236,9 @@ public class EventHandler {
                 }
 
                 Map<String, Object> payload = (Map<String, Object>) payloadMap;
+                if (payload.isEmpty()) {
+                    return Promise.of(http.errorResponse(400, "payload must not be empty"));
+                }
 
                 // DC-P0-01/DC-P0-02: Enrich server-owned fields BEFORE validation in production
                 String eventId = (String) eventData.get("eventId");

@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -200,8 +200,7 @@ describe('ApprovalDetailPage', () => {
 
   it('opens decide dialog on button click', async () => {
     renderPage('req-42');
-    const user = userEvent.setup();
-    await user.click(await screen.findByTestId('open-decide-dialog'));
+    fireEvent.click(await screen.findByTestId('open-decide-dialog'));
     expect(screen.getByTestId('decide-dialog')).toBeInTheDocument();
   });
 

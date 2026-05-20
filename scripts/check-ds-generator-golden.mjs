@@ -108,10 +108,13 @@ check(graphSrc.includes("missing-token") || graphSrc.includes("missing-alias"), 
 console.log("\n5. Contrast validation");
 
 const contrastSrc = readSource("platform/typescript/ds-generator/src/validation/contrast.ts");
+const emitFilesSrc = readSource("platform/typescript/ds-generator/src/targets/emit-files.ts");
 check(contrastSrc.includes("auditContrastPairs"), "auditContrastPairs exported", "auditContrastPairs missing");
+check(contrastSrc.includes("assertDocumentContrastCompliance"), "assertDocumentContrastCompliance exported", "assertDocumentContrastCompliance missing");
 
 // Semantic validation: contrast-failure gate
 check(contrastSrc.includes("fail") || contrastSrc.includes("threshold") || contrastSrc.includes("gate"), "Contrast failure gate/threshold present", "Contrast failure gate missing");
+check(emitFilesSrc.includes("assertDocumentContrastCompliance") && emitFilesSrc.includes("enforceContrast"), "emitFiles blocks contrast failures by default", "emitFiles must enforce contrast compliance by default");
 check(contrastSrc.includes("WCAG") || contrastSrc.includes("AA") || contrastSrc.includes("AAA"), "WCAG compliance check present", "WCAG compliance check missing");
 
 // ── Target emitters ────────────────────────────────────────────────────────────
@@ -156,7 +159,7 @@ console.log("\n9. Index exports");
 const indexSrc = readSource("platform/typescript/ds-generator/src/index.ts");
 const expectedSymbols = [
   "emitCss", "emitJson", "emitTailwind", "emitReactTheme",
-  "buildTokenGraph", "auditContrastPairs",
+  "buildTokenGraph", "auditContrastPairs", "assertDocumentContrastCompliance",
   "createDesignSystemDocument", "DS_DOCUMENT_SCHEMA_VERSION",
 ];
 for (const sym of expectedSymbols) {

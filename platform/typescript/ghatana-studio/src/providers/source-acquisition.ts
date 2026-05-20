@@ -11,6 +11,12 @@
  * @doc.pattern Provider
  */
 
+import type {
+  AcquisitionJob,
+  SourceAcquisitionDescriptor,
+  SourceAcquisitionKind,
+} from '@ghatana/artifact-contracts';
+
 // ============================================================================
 // Source Acquisition Contracts
 // ============================================================================
@@ -31,6 +37,11 @@ export interface SourceFileEntry {
   };
 }
 
+function getBrowserFileRelativePath(file: File): string {
+  const relativePath = (file as File & { readonly webkitRelativePath?: string }).webkitRelativePath;
+  return relativePath && relativePath.trim().length > 0 ? relativePath : file.name;
+}
+
 /**
  * Result of a source acquisition operation.
  */
@@ -41,6 +52,10 @@ export interface SourceAcquisitionResult {
   readonly errors: readonly string[];
   /** Whether the acquisition was partially successful. */
   readonly partial: boolean;
+  /** Canonical source descriptor used for this acquisition. */
+  readonly descriptor?: SourceAcquisitionDescriptor;
+  /** Backend acquisition job boundary when acquisition is asynchronous. */
+  readonly acquisitionJob?: AcquisitionJob;
 }
 
 /**
@@ -105,7 +120,32 @@ export interface SourceAcquisitionProvider {
  */
 export interface BrowserFileUploadInput {
   /** FileList from an HTML file input element. */
-  readonly files: FileList;
+  readonly files: FileList | readonly File[];
+}
+
+export interface PastedSourceInput {
+  readonly kind: 'pasted-source';
+  readonly relativePath: string;
+  readonly content: string;
+}
+
+export interface RepositorySourceInput {
+  readonly kind: 'github-repository' | 'gitlab-repository';
+  readonly repositoryUrl: string;
+  readonly ref?: string;
+}
+
+export interface ArchiveUploadInput {
+  readonly kind: 'archive-upload';
+  readonly file: File;
+}
+
+export interface LocalFolderInput {
+  readonly kind: 'local-folder';
+  readonly descriptor: {
+    readonly rootLabel: string;
+    readonly files: readonly SourceFileEntry[];
+  };
 }
 
 /**
@@ -116,6 +156,51 @@ export const DEFAULT_ACQUISITION_OPTIONS: Required<SourceAcquisitionOptions> = {
   allowedExtensions: ['.ts', '.tsx'],
   includeHidden: false,
 };
+
+function hasFileListShape(value: unknown): value is FileList | readonly File[] {
+  return (
+    Array.isArray(value) ||
+    (
+      typeof value === 'object' &&
+      value !== null &&
+      'length' in value &&
+      typeof value.length === 'number'
+    )
+  );
+}
+
+function allowedExtensionsLabel(extensions: readonly string[]): string {
+  if (extensions.length <= 1) return extensions.join('');
+  return `${extensions.slice(0, -1).join(', ')} and ${extensions[extensions.length - 1]}`;
+}
+
+function megabytesLabel(bytes: number): string {
+  const mb = bytes / 1_000_000;
+  return Number.isInteger(mb) ? `${mb.toFixed(0)} MB` : `${mb.toFixed(1)} MB`;
+}
+
+function createJobId(prefix: string): string {
+  const random = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(16).slice(2);
+  return `${prefix}:${random}`;
+}
+
+function createDescriptor(kind: SourceAcquisitionKind, uri: string, label?: string, ref?: string): SourceAcquisitionDescriptor {
+  return {
+    kind,
+    uri,
+    ...(ref ? { ref } : {}),
+    ...(label ? { label } : {}),
+  };
+}
+
+function createPendingAcquisitionJob(descriptor: SourceAcquisitionDescriptor): AcquisitionJob {
+  return {
+    jobId: createJobId(`acquire:${descriptor.kind}`),
+    status: 'pending',
+    descriptor,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 /**
  * Browser-based file upload provider using FileReader.
@@ -130,7 +215,7 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       typeof input === 'object' &&
       input !== null &&
       'files' in input &&
-      input.files instanceof FileList
+      hasFileListShape(input.files)
     );
   }
 
@@ -152,19 +237,21 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
     const errors: string[] = [];
 
     for (const file of files) {
+      const relativePath = getBrowserFileRelativePath(file);
+
       // Skip hidden files if configured
-      if (!opts.includeHidden && file.name.startsWith('.')) {
-        errors.push(`Skipped "${file.name}": hidden file.`);
+      if (!opts.includeHidden && relativePath.split('/').some((part) => part.startsWith('.'))) {
+        errors.push(`Skipped "${relativePath}": hidden file.`);
         continue;
       }
 
       // Check file extension
       const hasAllowedExtension = opts.allowedExtensions.some((ext) =>
-        file.name.endsWith(ext),
+        relativePath.endsWith(ext),
       );
       if (!hasAllowedExtension) {
         errors.push(
-          `Skipped "${file.name}": only ${opts.allowedExtensions.join(', ')} files are supported.`,
+          `Skipped "${relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`,
         );
         continue;
       }
@@ -172,7 +259,7 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       // Check file size
       if (file.size > opts.maxFileSize) {
         errors.push(
-          `Skipped "${file.name}": file exceeds ${(opts.maxFileSize / 1_000_000).toFixed(1)} MB limit.`,
+          `Skipped "${relativePath}": file exceeds ${megabytesLabel(opts.maxFileSize)} limit.`,
         );
         continue;
       }
@@ -180,7 +267,7 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       try {
         const content = await this.readFileAsText(file);
         sources.push({
-          relativePath: file.name,
+          relativePath,
           content,
           metadata: {
             size: file.size,
@@ -198,6 +285,7 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       sources,
       errors,
       partial: errors.length > 0 && sources.length > 0,
+      descriptor: createDescriptor('browser-upload', 'browser://file-input', 'Browser upload'),
     };
   }
 
@@ -211,6 +299,174 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
       reader.readAsText(file);
     });
+  }
+}
+
+export class PastedSourceProvider implements SourceAcquisitionProvider {
+  readonly providerName = 'PastedSource';
+
+  canHandle(input: unknown): input is PastedSourceInput {
+    return (
+      typeof input === 'object' &&
+      input !== null &&
+      'kind' in input &&
+      input.kind === 'pasted-source' &&
+      'relativePath' in input &&
+      typeof input.relativePath === 'string' &&
+      'content' in input &&
+      typeof input.content === 'string'
+    );
+  }
+
+  async acquire(
+    input: unknown,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
+    if (!this.canHandle(input)) {
+      return { sources: [], errors: ['Invalid input for PastedSourceProvider'], partial: false };
+    }
+
+    const opts = { ...DEFAULT_ACQUISITION_OPTIONS, ...options };
+    const hasAllowedExtension = opts.allowedExtensions.some((ext) => input.relativePath.endsWith(ext));
+    if (!hasAllowedExtension) {
+      return {
+        sources: [],
+        errors: [`Skipped "${input.relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`],
+        partial: false,
+      };
+    }
+
+    return {
+      sources: [
+        {
+          relativePath: input.relativePath,
+          content: input.content,
+          metadata: {
+            size: new Blob([input.content]).size,
+            contentType: 'text/plain',
+          },
+        },
+      ],
+      errors: [],
+      partial: false,
+      descriptor: createDescriptor('pasted-source', `pasted://${input.relativePath}`, input.relativePath),
+    };
+  }
+}
+
+export class LocalFolderDescriptorProvider implements SourceAcquisitionProvider {
+  readonly providerName = 'LocalFolderDescriptor';
+
+  canHandle(input: unknown): input is LocalFolderInput {
+    return (
+      typeof input === 'object' &&
+      input !== null &&
+      'kind' in input &&
+      input.kind === 'local-folder' &&
+      'descriptor' in input &&
+      typeof input.descriptor === 'object' &&
+      input.descriptor !== null
+    );
+  }
+
+  async acquire(
+    input: unknown,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
+    if (!this.canHandle(input)) {
+      return { sources: [], errors: ['Invalid input for LocalFolderDescriptorProvider'], partial: false };
+    }
+
+    const opts = { ...DEFAULT_ACQUISITION_OPTIONS, ...options };
+    const sources: SourceFileEntry[] = [];
+    const errors: string[] = [];
+    for (const source of input.descriptor.files) {
+      const hasAllowedExtension = opts.allowedExtensions.some((ext) => source.relativePath.endsWith(ext));
+      if (!hasAllowedExtension) {
+        errors.push(`Skipped "${source.relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`);
+        continue;
+      }
+      if (!opts.includeHidden && source.relativePath.split('/').some((part) => part.startsWith('.'))) {
+        errors.push(`Skipped "${source.relativePath}": hidden file.`);
+        continue;
+      }
+      sources.push(source);
+    }
+    return {
+      sources,
+      errors,
+      partial: errors.length > 0 && sources.length > 0,
+      descriptor: createDescriptor('local-folder', `local-folder://${input.descriptor.rootLabel}`, input.descriptor.rootLabel),
+    };
+  }
+}
+
+export class RepositorySourceProvider implements SourceAcquisitionProvider {
+  readonly providerName = 'RepositorySource';
+
+  canHandle(input: unknown): input is RepositorySourceInput {
+    return (
+      typeof input === 'object' &&
+      input !== null &&
+      'kind' in input &&
+      (input.kind === 'github-repository' || input.kind === 'gitlab-repository') &&
+      'repositoryUrl' in input &&
+      typeof input.repositoryUrl === 'string'
+    );
+  }
+
+  async acquire(input: unknown): Promise<SourceAcquisitionResult> {
+    if (!this.canHandle(input)) {
+      return { sources: [], errors: ['Invalid input for RepositorySourceProvider'], partial: false };
+    }
+
+    const descriptor = createDescriptor(
+      input.kind === 'github-repository' ? 'github' : 'gitlab',
+      input.repositoryUrl,
+      input.repositoryUrl,
+      input.ref,
+    );
+
+    return {
+      sources: [],
+      errors: [
+        `${input.kind} acquisition for "${input.repositoryUrl}" requires backend acquisition job "${descriptor.kind}".`,
+      ],
+      partial: false,
+      descriptor,
+      acquisitionJob: createPendingAcquisitionJob(descriptor),
+    };
+  }
+}
+
+export class ArchiveUploadProvider implements SourceAcquisitionProvider {
+  readonly providerName = 'ArchiveUpload';
+
+  canHandle(input: unknown): input is ArchiveUploadInput {
+    return (
+      typeof input === 'object' &&
+      input !== null &&
+      'kind' in input &&
+      input.kind === 'archive-upload' &&
+      'file' in input &&
+      input.file instanceof File
+    );
+  }
+
+  async acquire(input: unknown): Promise<SourceAcquisitionResult> {
+    if (!this.canHandle(input)) {
+      return { sources: [], errors: ['Invalid input for ArchiveUploadProvider'], partial: false };
+    }
+
+    const descriptor = createDescriptor('archive', `archive://${input.file.name}`, input.file.name);
+
+    return {
+      sources: [],
+      errors: [`Archive acquisition for "${input.file.name}" requires backend acquisition job "${descriptor.kind}".`],
+      partial: false,
+      descriptor,
+      acquisitionJob: createPendingAcquisitionJob(descriptor),
+    };
   }
 }
 
@@ -278,3 +534,7 @@ export class SourceAcquisitionProviderRegistry {
  */
 export const defaultProviderRegistry = new SourceAcquisitionProviderRegistry();
 defaultProviderRegistry.register(new BrowserFileUploadProvider());
+defaultProviderRegistry.register(new PastedSourceProvider());
+defaultProviderRegistry.register(new LocalFolderDescriptorProvider());
+defaultProviderRegistry.register(new RepositorySourceProvider());
+defaultProviderRegistry.register(new ArchiveUploadProvider());

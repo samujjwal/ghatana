@@ -110,6 +110,7 @@ export {
   passesComponent,
   suggestContrastImprovements,
   auditContrastPairs,
+  assertDocumentContrastCompliance,
   deriveColorPairs,
 } from "./validation/contrast.js";
 

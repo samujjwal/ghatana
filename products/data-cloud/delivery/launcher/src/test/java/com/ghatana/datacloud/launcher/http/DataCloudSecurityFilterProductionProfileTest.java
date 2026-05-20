@@ -839,6 +839,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     void auditWriteFailureOnRedactionRouteBlocksRequestInProduction() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
         // Audit service that fails to record
         AuditService failingAuditService = new AuditService() {
             @Override
@@ -863,7 +865,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         };
 
         filter = DataCloudSecurityFilter.builder()
-            .apiKeyResolver(apiKeyResolver)
+            .apiKeyResolver(adminApiKeyResolver)
             .jwtProvider(jwtProvider)
             .policyEngine(policyEngine)
             .auditService(failingAuditService)
@@ -935,6 +937,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     void auditWriteFailureOnPolicyUpdateRouteBlocksRequestInProduction() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
         AuditService failingAuditService = new AuditService() {
             @Override
             public Promise<Void> record(AuditEvent event) {
@@ -958,7 +962,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         };
 
         filter = DataCloudSecurityFilter.builder()
-            .apiKeyResolver(apiKeyResolver)
+            .apiKeyResolver(adminApiKeyResolver)
             .jwtProvider(jwtProvider)
             .policyEngine(policyEngine)
             .auditService(failingAuditService)
@@ -982,6 +986,8 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     void auditWriteFailureOnDeleteEntityRouteBlocksRequestInProduction() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
         AuditService failingAuditService = new AuditService() {
             @Override
             public Promise<Void> record(AuditEvent event) {
@@ -1005,7 +1011,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         };
 
         filter = DataCloudSecurityFilter.builder()
-            .apiKeyResolver(apiKeyResolver)
+            .apiKeyResolver(adminApiKeyResolver)
             .jwtProvider(jwtProvider)
             .policyEngine(policyEngine)
             .auditService(failingAuditService)

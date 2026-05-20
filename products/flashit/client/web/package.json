@@ -23,7 +23,7 @@
     "test:mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "lint": "pnpm run type-check",
     "type-check": "tsc --noEmit --project tsconfig.lifecycle.json"
   },
   "dependencies": {

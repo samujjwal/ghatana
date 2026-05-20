@@ -18,6 +18,7 @@
  * @doc.pattern Adapter
  */
 
+import { parseNodeId, validateNodeId } from '@ghatana/ui-builder';
 import type { BuilderDocument, NodeId, ComponentInstance } from '@ghatana/ui-builder';
 import type { HybridCanvasNode, HybridCanvasEdge } from '@ghatana/canvas';
 
@@ -73,45 +74,90 @@ export function builderToCanvas(doc: BuilderDocument): BuilderToCanvasResult {
   for (const [nodeId, instance] of Object.entries(doc.nodes)) {
     // RootContainer is an internal structural node; it should not appear on the canvas
     if (instance.contractName === 'RootContainer') continue;
+    const builderNodeId = parseNodeId(nodeId, Object.keys(doc.nodes));
+    if (builderNodeId === null) continue;
 
-    const metadata = instance.metadata as { position?: { x: number; y: number } };
-    const position: { x: number; y: number } = metadata?.position ?? {
-      x: MARGIN_X + (index % GRID_COLUMNS) * CELL_WIDTH,
-      y: MARGIN_Y + Math.floor(index / GRID_COLUMNS) * CELL_HEIGHT,
-    };
+    const position: { x: number; y: number } = isCanvasPosition(instance.metadata.position)
+      ? instance.metadata.position
+      : {
+          x: MARGIN_X + (index % GRID_COLUMNS) * CELL_WIDTH,
+          y: MARGIN_Y + Math.floor(index / GRID_COLUMNS) * CELL_HEIGHT,
+        };
     index++;
 
-    nodes.push({
+    const canvasNode: BuilderCanvasNode = {
       id: nodeId,
       type: 'default',
       position,
       data: {
-        nodeId,
+        nodeId: builderNodeId,
         contractName: instance.contractName,
         props: instance.props,
         label: instance.contractName,
       },
-    } as BuilderCanvasNode);
+    };
+    nodes.push(canvasNode);
 
     // Create edges for slot relationships
-    for (const [slotName, childIds] of Object.entries(instance.slots) as [string, NodeId[]][]) {
+    for (const [slotName, childIds] of Object.entries(instance.slots)) {
       for (const childId of childIds) {
-        edges.push({
+        const canvasEdge: BuilderCanvasEdge = {
           id: `${nodeId}__${slotName}__${childId}`,
           source: nodeId,
           target: childId,
           data: {
-            parentId: nodeId as NodeId,
-            childId: childId as NodeId,
+            parentId: builderNodeId,
+            childId,
             slotName,
             relationKind: 'slot',
           },
-        } as BuilderCanvasEdge);
+        };
+        edges.push(canvasEdge);
       }
     }
   }
 
   return { nodes, edges };
+}
+
+function isCanvasPosition(value: unknown): value is { x: number; y: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'x' in value &&
+    'y' in value &&
+    typeof value.x === 'number' &&
+    typeof value.y === 'number'
+  );
+}
+
+function hasObjectData(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function isBuilderCanvasNode(
+  document: BuilderDocument,
+  node: HybridCanvasNode<Record<string, unknown>>,
+): node is BuilderCanvasNode {
+  const knownIds = Object.keys(document.nodes);
+  if (!validateNodeId(node.id, knownIds)) return false;
+  if (node.type !== undefined && typeof node.type !== 'string') return false;
+  if (!isCanvasPosition(node.position)) return false;
+  if (!hasObjectData(node.data)) return false;
+  if (!validateNodeId(node.data.nodeId, knownIds)) return false;
+  if (node.data.nodeId !== node.id) return false;
+  return (
+    typeof node.data.contractName === 'string' &&
+    hasObjectData(node.data.props) &&
+    typeof node.data.label === 'string'
+  );
+}
+
+export function filterValidBuilderCanvasNodes(
+  document: BuilderDocument,
+  nodes: readonly HybridCanvasNode<Record<string, unknown>>[],
+): BuilderCanvasNode[] {
+  return nodes.filter((node): node is BuilderCanvasNode => isBuilderCanvasNode(document, node));
 }
 
 // ============================================================================
@@ -151,12 +197,11 @@ export function canvasToBuilder(options: CanvasToBuilderOptions): BuilderDocumen
   for (const [nodeId, instance] of Object.entries(baseDocument.nodes)) {
     const newPosition = positionMap.get(nodeId);
     if (newPosition !== undefined) {
-      const existingMetadata =
-        (instance.metadata as Record<string, unknown> | undefined) ?? {};
+      const existingMetadata = instance.metadata ?? {};
       updatedNodes[nodeId] = {
         ...instance,
         metadata: { ...existingMetadata, position: newPosition },
-      } as ComponentInstance;
+      };
     } else {
       updatedNodes[nodeId] = instance;
     }
@@ -168,16 +213,6 @@ export function canvasToBuilder(options: CanvasToBuilderOptions): BuilderDocumen
 // ============================================================================
 // Selection Validation: canvas string[] → typed NodeId[]
 // ============================================================================
-
-/**
- * Helper function to brand a validated string as a NodeId.
- *
- * This function is intentionally unsafe to call directly - it should only be used
- * after the ID has been validated against the document's known node keys.
- */
-function asNodeId(id: string): NodeId {
-  return id as NodeId;
-}
 
 /**
  * Validate and convert canvas-provided string IDs to typed `NodeId` values by
@@ -197,8 +232,9 @@ export function filterCanvasSelectionToNodeIds(
   const knownIds = new Set<string>(Object.keys(document.nodes));
   const validIds: NodeId[] = [];
   for (const id of canvasNodeIds) {
-    if (knownIds.has(id)) {
-      validIds.push(asNodeId(id));
+    const nodeId = parseNodeId(id, knownIds);
+    if (nodeId !== null) {
+      validIds.push(nodeId);
     }
   }
   return validIds;
@@ -249,13 +285,14 @@ export function reconcileCanvasGeometryDeltas(
   const ops: BuilderGeometryOperation[] = [];
 
   for (const delta of deltas) {
-    if (!knownIds.has(delta.canvasNodeId)) {
+    const nodeId = parseNodeId(delta.canvasNodeId, knownIds);
+    if (nodeId === null) {
       continue;
     }
 
     const op: BuilderGeometryOperation = {
       kind: 'update-node-geometry',
-      nodeId: delta.canvasNodeId as NodeId,
+      nodeId,
     };
     if (delta.position !== undefined) {
       op.position = delta.position;

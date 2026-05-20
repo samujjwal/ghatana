@@ -34,6 +34,7 @@ export type {
 import {
   calculateContrastRatio,
 } from '../tokens/contrast.js';
+import type { DesignSystemDocument } from '../model/design-system-document.js';
 
 // ============================================================================
 // DS-document level contrast audit
@@ -174,4 +175,36 @@ export function deriveColorPairs(
   }
 
   return pairs;
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.values(value).every((entry) => typeof entry === 'string')
+  );
+}
+
+/**
+ * Assert that a DesignSystemDocument's canonical color pairs pass WCAG AA.
+ *
+ * Documents without derivable foreground/background pairs are allowed through;
+ * callers that require stricter coverage can pass explicit pairs to
+ * {@link auditContrastPairs}. When pairs are derivable, any AA failure blocks
+ * emission with a deterministic, actionable error message.
+ */
+export function assertDocumentContrastCompliance(doc: DesignSystemDocument): ContrastAuditResult {
+  const colors = doc.resolvedTokens['colors'];
+  const pairs = isStringRecord(colors) ? deriveColorPairs(colors) : [];
+  const result = auditContrastPairs(pairs);
+
+  if (!result.isFullyCompliant) {
+    const failures = result.entries
+      .filter((entry) => entry.isFailing)
+      .map((entry) => `${entry.label} (${entry.ratio.toFixed(2)}:1)`)
+      .join(', ');
+    throw new Error(`Design-system contrast gate failed: ${failures}`);
+  }
+
+  return result;
 }
