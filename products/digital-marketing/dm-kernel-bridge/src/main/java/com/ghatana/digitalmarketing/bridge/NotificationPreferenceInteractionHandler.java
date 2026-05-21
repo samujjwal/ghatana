@@ -7,6 +7,7 @@ import com.ghatana.kernel.interaction.ProductInteractionStatus;
 import io.activej.promise.Promise;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * DMOS provider handler for notification preference lookups.
@@ -23,6 +24,18 @@ public final class NotificationPreferenceInteractionHandler
 
     public static final String CONTRACT_ID =
             "kernel://interactions/digital-marketing.notification-preference.v1";
+    private static final List<String> NOTIFICATION_PREFERENCE_EVIDENCE_REFS = List.of(
+            "products/digital-marketing/lifecycle/evidence/notification-preference.yaml");
+
+    private final NotificationPreferenceService preferenceService;
+
+    public NotificationPreferenceInteractionHandler() {
+        this(new DefaultNotificationPreferenceService());
+    }
+
+    public NotificationPreferenceInteractionHandler(NotificationPreferenceService preferenceService) {
+        this.preferenceService = Objects.requireNonNull(preferenceService, "preferenceService must not be null");
+    }
 
     @Override
     public String contractId() {
@@ -47,17 +60,27 @@ public final class NotificationPreferenceInteractionHandler
                     request.interactionId(),
                     ProductInteractionStatus.BLOCKED,
                     "product_interaction.policy_denied",
-                    List.of("products/digital-marketing/lifecycle/evidence/notification-preference.yaml")));
+                    NOTIFICATION_PREFERENCE_EVIDENCE_REFS));
         }
-        NotificationPreferenceResponse response = new NotificationPreferenceResponse(
-                request.payload().subjectId(),
-                true,
-                false,
-                "tenant-scoped-preference");
-        return Promise.of(ProductInteractionOutcome.succeeded(
-                request.interactionId(),
-                List.of("products/digital-marketing/lifecycle/evidence/notification-preference.yaml"),
-                response));
+        return preferenceService.lookup(request)
+                .map(response -> ProductInteractionOutcome.succeeded(
+                        request.interactionId(),
+                        NOTIFICATION_PREFERENCE_EVIDENCE_REFS,
+                        response));
+    }
+
+    /**
+     * Product service boundary used by the Kernel bridge handler.
+     *
+     * @doc.type interface
+     * @doc.purpose Resolve tenant-scoped notification preferences for product interactions
+     * @doc.layer product
+     * @doc.pattern Port
+     */
+    @FunctionalInterface
+    public interface NotificationPreferenceService {
+        Promise<NotificationPreferenceResponse> lookup(
+                ProductInteractionRequest<NotificationPreferenceRequest> request);
     }
 
     public record NotificationPreferenceRequest(
@@ -71,4 +94,17 @@ public final class NotificationPreferenceInteractionHandler
             boolean emailEnabled,
             String source
     ) {}
+
+    private static final class DefaultNotificationPreferenceService implements NotificationPreferenceService {
+        @Override
+        public Promise<NotificationPreferenceResponse> lookup(
+                ProductInteractionRequest<NotificationPreferenceRequest> request) {
+            NotificationPreferenceRequest payload = request.payload();
+            return Promise.of(new NotificationPreferenceResponse(
+                    payload.subjectId(),
+                    true,
+                    false,
+                    "tenant-scoped-preference"));
+        }
+    }
 }

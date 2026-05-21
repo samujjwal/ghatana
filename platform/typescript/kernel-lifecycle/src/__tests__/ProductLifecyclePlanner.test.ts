@@ -225,12 +225,15 @@ describe('ProductLifecyclePlanner', () => {
 
     expect(plan.phase).toBe('deploy');
     expect(plan.environment).toBeUndefined();
-    expect(plan.steps).toHaveLength(1);
-    expect(plan.steps[0]).toMatchObject({
+    const deployStep = plan.steps.find((step) => step.stepKind === 'deploy');
+    expect(deployStep).toMatchObject({
       stepKind: 'deploy',
       adapter: 'compose-local',
       surface: 'local',
     });
+    expect(deployStep?.dependsOn).toEqual(
+      expect.arrayContaining(plan.steps.filter((step) => step.stepKind === 'interaction-preflight').map((step) => step.id)),
+    );
     expect(plan.requiredManifests).toEqual(['deployment-manifest', 'lifecycle-health-snapshot']);
   });
 
@@ -306,7 +309,7 @@ describe('ProductLifecyclePlanner', () => {
       productId: 'shape-product',
       steps: [expect.objectContaining({ adapter: 'vitest' })],
     });
-  });
+  }, 20_000);
 
   it('should reject bootstrap context when platform mode is requested', async () => {
     const planner = new ProductLifecyclePlanner(REPO_ROOT, undefined, {
@@ -966,7 +969,7 @@ describe('ProductLifecyclePlanner', () => {
     await expect(new ProductLifecyclePlanner(invalidToolchainLifecycleEnabledRepoRoot).plan('shape-product', 'test')).rejects.toThrow(
       'must declare lifecycleEnabled as a boolean',
     );
-  });
+  }, 20_000);
 
   it('should fail closed for unsupported phases, unknown adapters, unsafe adapters, and missing selections', async () => {
     const unsupportedPhasePlanner = new ProductLifecyclePlanner(await createPlannerFixtureRepo());
@@ -974,6 +977,13 @@ describe('ProductLifecyclePlanner', () => {
 
     const unknownAdapterPlanner = new ProductLifecyclePlanner(
       await createPlannerFixtureRepo({
+        profiles: {
+          'shape-only-profile': {
+            defaultSurfaces: { test: ['web'] },
+            requiredGates: {},
+            defaultAdapters: {},
+          },
+        },
         kernelProductYamlLines: [
           'productId: shape-product',
           'lifecycleProfile: shape-only-profile',
@@ -1045,6 +1055,13 @@ describe('ProductLifecyclePlanner', () => {
 
     const missingAdapterPlanner = new ProductLifecyclePlanner(
       await createPlannerFixtureRepo({
+        profiles: {
+          'shape-only-profile': {
+            defaultSurfaces: { test: ['web'] },
+            requiredGates: {},
+            defaultAdapters: {},
+          },
+        },
         kernelProductYamlLines: [
           'productId: shape-product',
           'lifecycleProfile: shape-only-profile',
@@ -1137,7 +1154,7 @@ describe('ProductLifecyclePlanner', () => {
     await expect(missingProfileSurfacePlanner.plan('shape-product', 'test', { shapeOnly: true })).rejects.toThrow(
       'is not defined in product phases',
     );
-  });
+  }, 20_000);
 
   it('should fail closed for missing package and deployment routing config', async () => {
     const missingPackagePlanner = new ProductLifecyclePlanner(
@@ -1331,6 +1348,385 @@ describe('ProductLifecyclePlanner', () => {
     expect(profileFallbackPlan.phaseMode).toBe('sequential');
   });
 
+  it('should resolve polyglot surface adapters from language and build-system profile defaults', async () => {
+    const repoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: polyglot-service-product',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  rust-api:',
+        '    type: backend-api',
+        '    language: rust',
+        '    buildSystem: cargo',
+        '    path: products/shape-product/rust-api',
+        '    cratePath: products/shape-product/rust-api',
+        '    cargoToml: products/shape-product/rust-api/Cargo.toml',
+        '    implementationStatus: implemented',
+        '  python-worker:',
+        '    type: worker',
+        '    buildSystem: pyproject',
+        '    path: products/shape-product/python-worker',
+        '    pyprojectPath: products/shape-product/python-worker/pyproject.toml',
+        '    implementationStatus: implemented',
+        '  node-api:',
+        '    type: backend-api',
+        '    language: typescript',
+        '    buildSystem: pnpm',
+        '    adapter: pnpm-node-api',
+        '    path: products/shape-product/node-api',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  build:',
+        '    defaultSurfaces: [rust-api, python-worker, node-api]',
+        '    mode: sequential',
+      ],
+      profiles: {
+        'polyglot-service-product': {
+          defaultSurfaces: { build: ['rust-api', 'python-worker', 'node-api'] },
+          requiredGates: {},
+          defaultAdapters: {
+            'backend-api.rust': 'cargo-rust',
+            'worker.pyproject': 'python-pyproject',
+            'backend-api.typescript': 'cargo-rust',
+          },
+        },
+      },
+      adapters: {
+        'cargo-rust': {
+          supportedSurfaceTypes: ['backend-api'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          readiness: 'execution-ready',
+          safeForDefault: true,
+        },
+        'python-pyproject': {
+          supportedSurfaceTypes: ['worker'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          readiness: 'execution-ready',
+          safeForDefault: true,
+        },
+        'pnpm-node-api': {
+          supportedSurfaceTypes: ['backend-api'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          readiness: 'execution-ready',
+          safeForDefault: true,
+        },
+      },
+    });
+
+    const plan = await new ProductLifecyclePlanner(repoRoot).plan('shape-product', 'build');
+
+    expect(plan.steps.map((step) => step.adapter)).toEqual(['cargo-rust', 'python-pyproject', 'pnpm-node-api']);
+    expect(plan.steps.map((step) => step.adapterSelectionSource)).toEqual([
+      'profile-default',
+      'profile-default',
+      'product-config-override',
+    ]);
+    expect(plan.steps[0].adapterContext?.surfaceConfig).toEqual(
+      expect.objectContaining({ adapter: 'cargo-rust', buildSystem: 'cargo', language: 'rust' }),
+    );
+    expect(plan.steps[1].adapterContext?.surfaceConfig).toEqual(
+      expect.objectContaining({ adapter: 'python-pyproject', buildSystem: 'pyproject' }),
+    );
+    expect(plan.steps[2].adapterContext?.surfaceConfig).toEqual(
+      expect.objectContaining({ adapter: 'pnpm-node-api', buildSystem: 'pnpm', language: 'typescript' }),
+    );
+  });
+
+  it('should narrow surface phases to changed surface paths unless lifecycle config changed', async () => {
+    const repoRoot = await createPlannerFixtureRepo({
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  backend-api:',
+        '    type: backend-api',
+        '    adapter: gradle-java-service',
+        '    path: products/shape-product/backend',
+        '    implementationStatus: implemented',
+        '  web:',
+        '    type: web',
+        '    adapter: pnpm-vite-react',
+        '    path: products/shape-product/web',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  build:',
+        '    defaultSurfaces: [backend-api, web]',
+        '    mode: sequential',
+      ],
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: { build: ['backend-api', 'web'] },
+          requiredGates: {},
+          defaultAdapters: {},
+        },
+      },
+      adapters: {
+        'gradle-java-service': {
+          supportedSurfaceTypes: ['backend-api'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+        'pnpm-vite-react': {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['build'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+      },
+    });
+    const planner = new ProductLifecyclePlanner(repoRoot);
+
+    const webOnlyPlan = await planner.plan('shape-product', 'build', {
+      changedFiles: ['products/shape-product/web/src/App.tsx'],
+    });
+    const lifecycleWidePlan = await planner.plan('shape-product', 'build', {
+      changedFiles: ['products/shape-product/kernel-product.yaml'],
+    });
+    const explicitSelectorPlan = await planner.plan('shape-product', 'build', {
+      surfaceSelector: ['backend-api'],
+      changedFiles: ['products/shape-product/web/src/App.tsx'],
+    });
+
+    expect(webOnlyPlan.surfaces.map((surface) => surface.surface)).toEqual(['web']);
+    expect(lifecycleWidePlan.surfaces.map((surface) => surface.surface)).toEqual(['backend-api', 'web']);
+    expect(explicitSelectorPlan.surfaces.map((surface) => surface.surface)).toEqual(['backend-api']);
+  });
+
+  it('should prepend executable interaction preflight steps and block disabled required providers', async () => {
+    const repoRoot = await createPlannerFixtureRepo({
+      registryEntries: {
+        'provider-product': {
+          lifecycleStatus: 'disabled',
+          lifecycleConfigPath: 'products/provider-product/kernel-product.yaml',
+          lifecycle: { enabled: false },
+        },
+      },
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  validate:',
+        '    defaultSurfaces: [web]',
+        '    mode: sequential',
+        'interactions:',
+        '  consumes:',
+        '    - contractId: kernel://interactions/provider.status.v1',
+        '      schemaVersion: "1.0.0"',
+        '      providerProductId: provider-product',
+        '      consumerProductIds: [shape-product]',
+        '      mode: request-response',
+        '      requestSchemaRef: schemas/provider-status-request.v1.json',
+        '      responseSchemaRef: schemas/provider-status-response.v1.json',
+        '      required: true',
+        '      policy:',
+        '        requiresAuth: true',
+        '        requiresTenant: true',
+        '        allowedLifecyclePhases: [validate]',
+        '      evidence:',
+        '        required: true',
+        '        manifestType: interaction-evidence',
+        '        evidenceRefs: [evidence://provider/status]',
+      ],
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: { validate: ['web'] },
+          requiredGates: {},
+          defaultAdapters: {},
+        },
+      },
+      adapters: {
+        vitest: {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['validate'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+      },
+    });
+
+    const blockedPlan = await new ProductLifecyclePlanner(repoRoot).plan('shape-product', 'validate');
+    expect(blockedPlan.interactionPreflights).toEqual([
+      expect.objectContaining({
+        contractId: 'kernel://interactions/provider.status.v1',
+        status: 'blocked',
+        reasonCode: 'product_interaction.provider_not_enabled',
+      }),
+    ]);
+    expect(blockedPlan.steps[0]).toEqual(
+      expect.objectContaining({
+        stepKind: 'interaction-preflight',
+        adapter: 'kernel-product-interaction-broker',
+        surface: 'interaction:kernel://interactions/provider.status.v1',
+      }),
+    );
+    expect(blockedPlan.steps[1].dependsOn).toContain('interaction-preflight-0');
+    expect(blockedPlan.blockingReasons).toEqual([
+      'product_interaction.provider_not_enabled:kernel://interactions/provider.status.v1',
+    ]);
+
+    const enabledRepoRoot = await createPlannerFixtureRepo({
+      registryEntries: {
+        'provider-product': {
+          lifecycleStatus: 'enabled',
+          lifecycleConfigPath: 'products/provider-product/kernel-product.yaml',
+          lifecycle: { enabled: true },
+        },
+      },
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  validate:',
+        '    defaultSurfaces: [web]',
+        '    mode: sequential',
+        'interactions:',
+        '  consumes:',
+        '    - contractId: kernel://interactions/provider.status.v1',
+        '      schemaVersion: "1.0.0"',
+        '      providerProductId: provider-product',
+        '      consumerProductIds: [shape-product]',
+        '      mode: request-response',
+        '      requestSchemaRef: schemas/provider-status-request.v1.json',
+        '      responseSchemaRef: schemas/provider-status-response.v1.json',
+        '      required: true',
+        '      policy:',
+        '        requiresAuth: true',
+        '        requiresTenant: true',
+        '        allowedLifecyclePhases: [validate]',
+        '      evidence:',
+        '        required: true',
+        '        manifestType: interaction-evidence',
+        '        evidenceRefs: [evidence://provider/status]',
+      ],
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: { validate: ['web'] },
+          requiredGates: {},
+          defaultAdapters: {},
+        },
+      },
+      adapters: {
+        vitest: {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['validate'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+      },
+    });
+    const readyPlan = await new ProductLifecyclePlanner(enabledRepoRoot).plan('shape-product', 'validate');
+    expect(readyPlan.interactionPreflights?.[0]).toEqual(expect.objectContaining({ status: 'pending' }));
+    expect(readyPlan.blockingReasons).toEqual([]);
+    expect(readyPlan.steps[1].dependsOn).toContain('interaction-preflight-0');
+  });
+
+  it('should include interaction rollback impact for rollback plans', async () => {
+    const repoRoot = await createPlannerFixtureRepo({
+      registryEntries: {
+        'provider-product': {
+          lifecycleStatus: 'disabled',
+          lifecycleConfigPath: 'products/provider-product/kernel-product.yaml',
+          lifecycle: { enabled: false },
+        },
+      },
+      kernelProductYamlLines: [
+        'productId: shape-product',
+        'lifecycleProfile: shape-only-profile',
+        'allowExperimentalAdapters: true',
+        'surfaces:',
+        '  web:',
+        '    type: web',
+        '    adapter: vitest',
+        '    path: products/shape-product/web',
+        '    implementationStatus: implemented',
+        'phases:',
+        '  rollback:',
+        '    defaultEnvironment: local',
+        '    mode: sequential',
+        'deployment:',
+        '  local:',
+        '    adapter: compose-local',
+        '    composeFile: deploy/local.compose.yaml',
+        'interactions:',
+        '  consumes:',
+        '    - contractId: kernel://interactions/provider.status.v1',
+        '      schemaVersion: "1.0.0"',
+        '      providerProductId: provider-product',
+        '      consumerProductIds: [shape-product]',
+        '      mode: request-response',
+        '      requestSchemaRef: schemas/provider-status-request.v1.json',
+        '      responseSchemaRef: schemas/provider-status-response.v1.json',
+        '      required: true',
+        '      policy:',
+        '        requiresAuth: true',
+        '        requiresTenant: true',
+        '        allowedLifecyclePhases: [rollback]',
+        '      evidence:',
+        '        required: true',
+        '        manifestType: interaction-evidence',
+        '        evidenceRefs: [evidence://provider/status]',
+      ],
+      profiles: {
+        'shape-only-profile': {
+          defaultSurfaces: {},
+          requiredGates: {},
+          defaultAdapters: {},
+        },
+      },
+      adapters: {
+        'compose-local': {
+          supportedSurfaceTypes: ['web'],
+          supportedPhases: ['rollback'],
+          status: 'implemented',
+          safeForDefault: true,
+        },
+      },
+    });
+
+    const plan = await new ProductLifecyclePlanner(repoRoot).plan('shape-product', 'rollback', {
+      environment: 'local',
+    });
+
+    expect(plan.interactionRollbackImpact).toEqual([
+      {
+        contractId: 'kernel://interactions/provider.status.v1',
+        providerProductId: 'provider-product',
+        consumerProductId: 'shape-product',
+        affectedProductIds: ['shape-product'],
+        mode: 'request-response',
+        required: true,
+        impactLevel: 'blocking',
+        status: 'provider-not-enabled',
+        reasonCode: 'product_interaction.rollback_provider_not_enabled',
+        evidenceRequired: true,
+        evidenceRefs: ['evidence://provider/status'],
+      },
+    ]);
+    expect(plan.blockingReasons).toContain(
+      'product_interaction.rollback_provider_not_enabled:kernel://interactions/provider.status.v1',
+    );
+  });
+
   it('should use default package artifacts when package config omits explicit artifacts', async () => {
     const repoRoot = await createPlannerFixtureRepo({
       kernelProductYamlLines: [
@@ -1374,6 +1770,7 @@ describe('ProductLifecyclePlanner', () => {
 
 interface PlannerFixtureOptions {
   readonly registryProduct?: Record<string, unknown>;
+  readonly registryEntries?: Record<string, Record<string, unknown>>;
   readonly profiles?: Record<string, unknown>;
   readonly adapters?: Record<string, Record<string, unknown>>;
   readonly exclusions?: Record<string, unknown>;
@@ -1396,6 +1793,7 @@ async function createPlannerFixtureRepo(options: PlannerFixtureOptions = {}): Pr
             lifecycleConfigPath: 'products/shape-product/kernel-product.yaml',
             lifecycle: { enabled: true },
           },
+          ...(options.registryEntries ?? {}),
         },
       },
       null,

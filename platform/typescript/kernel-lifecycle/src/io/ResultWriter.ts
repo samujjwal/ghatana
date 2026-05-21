@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
 import { ProductLifecycleResult } from '../domain/ProductLifecyclePhase.js';
 
 /**
@@ -9,8 +10,7 @@ export class ResultWriter {
    * Write lifecycle result to file
    */
   async writeResult(result: ProductLifecycleResult, outputPath: string): Promise<void> {
-    const dir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
     const content = JSON.stringify(result, null, 2);
     await fs.writeFile(outputPath, content, 'utf-8');
@@ -29,15 +29,14 @@ export class ResultWriter {
    */
   async writeSummary(result: ProductLifecycleResult, outputPath: string): Promise<void> {
     const summary = this.generateSummary(result);
-    const dir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
     await fs.writeFile(outputPath, summary, 'utf-8');
   }
 
   /**
    * Generate human-readable summary
    */
-  private generateSummary(result: ProductLifecycleResult): string {
+  generateSummary(result: ProductLifecycleResult): string {
     const lines: string[] = [];
 
     lines.push('# Lifecycle Execution Summary');
@@ -57,8 +56,17 @@ export class ResultWriter {
     let skippedCount = 0;
 
     for (const step of result.steps) {
-      const statusIcon = step.status === 'succeeded' ? '✓' : step.status === 'failed' ? '✗' : '○';
-      lines.push(`${statusIcon} ${step.stepId} (${step.status}) - ${step.durationMs}ms`);
+      lines.push(`[${this.statusLabel(step.status)}] ${step.stepId} (${step.status}) - ${step.durationMs}ms`);
+      if (step.errors !== undefined && step.errors.length > 0) {
+        for (const error of step.errors) {
+          lines.push(`  Error: ${error}`);
+        }
+      }
+      if (step.warnings !== undefined && step.warnings.length > 0) {
+        for (const warning of step.warnings) {
+          lines.push(`  Warning: ${warning}`);
+        }
+      }
 
       if (step.status === 'succeeded') successCount++;
       else if (step.status === 'failed') failureCount++;
@@ -72,8 +80,7 @@ export class ResultWriter {
     lines.push('');
 
     for (const gate of result.gates) {
-      const statusIcon = gate.status === 'passed' ? '✓' : gate.status === 'failed' ? '✗' : '○';
-      lines.push(`${statusIcon} ${gate.gateName} (${gate.status})`);
+      lines.push(`[${this.gateStatusLabel(gate.status)}] ${gate.gateName} (${gate.status})`);
     }
     lines.push('');
     lines.push(`## Artifacts (${result.artifacts.length})`);
@@ -94,8 +101,52 @@ export class ResultWriter {
       if (result.failure.cause) {
         lines.push(`Cause: ${result.failure.cause}`);
       }
+      lines.push('');
+      lines.push('## Recovery Guidance');
+      lines.push('');
+      for (const guidance of this.recoveryGuidance(result)) {
+        lines.push(`- ${guidance}`);
+      }
     }
 
     return lines.join('\n');
+  }
+
+  private statusLabel(status: ProductLifecycleResult['steps'][number]['status']): string {
+    if (status === 'succeeded') {
+      return 'PASS';
+    }
+    if (status === 'failed') {
+      return 'FAIL';
+    }
+    return 'SKIP';
+  }
+
+  private gateStatusLabel(status: ProductLifecycleResult['gates'][number]['status']): string {
+    if (status === 'passed') {
+      return 'PASS';
+    }
+    if (status === 'failed') {
+      return 'FAIL';
+    }
+    return 'SKIP';
+  }
+
+  private recoveryGuidance(result: ProductLifecycleResult): string[] {
+    const failedStep = result.steps.find((step) => step.status === 'failed');
+    const guidance = [
+      `Inspect run ${result.runId} artifacts in ${result.outputDirectory}.`,
+      'Re-run the same lifecycle phase after correcting the failed step.',
+    ];
+    if (result.failure?.reasonCode !== undefined) {
+      guidance.push(`Use failure reason code ${result.failure.reasonCode} when searching logs and evidence.`);
+    }
+    if (failedStep?.adapter !== undefined) {
+      guidance.push(`Start with adapter ${failedStep.adapter} for step ${failedStep.stepId}.`);
+    }
+    if (result.manifestRefs !== undefined) {
+      guidance.push('Review emitted lifecycle manifests before retrying.');
+    }
+    return guidance;
   }
 }

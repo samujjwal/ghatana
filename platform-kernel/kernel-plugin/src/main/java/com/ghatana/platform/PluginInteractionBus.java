@@ -118,4 +118,12 @@ public interface PluginInteractionBus {
     default List<PluginInteractionAuditRecord> auditRecords() {
         return List.of();
     }
+
+    /**
+     * Returns broker-local metrics when the implementation supports it.
+     */
+    @NotNull
+    default PluginInteractionBrokerMetrics metrics() {
+        return new PluginInteractionBrokerMetrics(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
 }

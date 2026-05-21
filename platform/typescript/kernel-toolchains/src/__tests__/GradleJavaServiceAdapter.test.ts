@@ -37,6 +37,49 @@ describe('GradleJavaServiceAdapter', () => {
     await expect(adapter.plan(context)).rejects.toThrow('gradleModule is required');
   });
 
+  it('preflights Gradle wrapper, module config, and source path', async () => {
+    await fs.writeFile(path.join(repoRoot, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew'), '');
+    await fs.mkdir(path.join(repoRoot, 'products', 'digital-marketing', 'backend'), { recursive: true });
+    const adapter = new GradleJavaServiceAdapter({ repoRoot });
+
+    const result = await adapter.preflight(createContext(repoRoot));
+
+    expect(result.status).toBe('ready');
+    expect(result.blockingIssues).toHaveLength(0);
+    expect(result.checks.map((check) => check.checkId)).toEqual([
+      'gradle-wrapper',
+      'gradle-module-config',
+      'gradle-surface-source',
+    ]);
+  });
+
+  it('blocks preflight when Gradle wrapper or source path is missing', async () => {
+    const adapter = new GradleJavaServiceAdapter({ repoRoot });
+
+    const result = await adapter.preflight(createContext(repoRoot));
+
+    expect(result.status).toBe('blocked');
+    expect(result.blockingIssues).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('gradle-wrapper'),
+        expect.stringContaining('gradle-surface-source'),
+      ]),
+    );
+  });
+
+  it('classifies Gradle module configuration failures', async () => {
+    const adapter = new GradleJavaServiceAdapter({ repoRoot });
+
+    const classification = await adapter.classifyFailure(
+      new Error('gradle-module-not-found: missing module'),
+      createContext(repoRoot),
+    );
+
+    expect(classification.category).toBe('config');
+    expect(classification.relatedFailureCodes).toContain('gradle-java-service-module-config');
+    expect(classification.requiresHumanIntervention).toBe(true);
+  });
+
   it('returns schema-backed dry-run evidence without executing commands', async () => {
     const commandRunner = new FakeCommandRunner([]);
     const adapter = new GradleJavaServiceAdapter({ repoRoot, commandRunner });

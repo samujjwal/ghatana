@@ -220,6 +220,19 @@ class DataCloudHttpServerProfileTest {
     }
 
     @Test
+        @DisplayName("DC-P0-07: Sovereign mode fails fast when required security dependencies are missing")
+        void sovereignModeFailsFastWhenSecurityDependenciesMissing() {
+        server = new DataCloudHttpServer(mockClient, port)
+            .withSettingsStore(mockPersistentSettingsStore())
+            .withDeploymentMode("sovereign");
+
+        assertThatThrownBy(() -> server.start())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P1.18")
+            .hasMessageContaining("Authentication is required for production profiles");
+    }
+
+    @Test
     @DisplayName("DC-P0-07: Local mode is passed to security filter during server startup")
     void localModePassedToSecurityFilterDuringServerStartup() throws Exception {
         // Start server with local mode (default)
@@ -235,6 +248,20 @@ class DataCloudHttpServerProfileTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(response.body(), Map.class);
         assertThat(body).containsEntry("status", "UP");
+    }
+
+    @Test
+    @DisplayName("DC-P0-07: Test mode fails fast when required security dependencies are missing")
+    void testModeFailsFastWhenSecurityDependenciesMissing() {
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("test");
+
+        assertThatThrownBy(() -> server.start())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Runtime profile 'test' validation failed")
+                .hasMessageContaining("Authentication (API key or JWT) is required")
+                .hasMessageContaining("Audit service is required")
+                .hasMessageContaining("Policy engine is required");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

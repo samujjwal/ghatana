@@ -95,16 +95,19 @@ describe("ToolchainAdapterRegistry", () => {
 });
 
 describe("createDefaultToolchainAdapterRegistry", () => {
-  it("registers all four canonical adapters", () => {
+  it("registers all seven canonical execution-ready adapters", () => {
     const { registry } = createDefaultToolchainAdapterRegistry({
       repoRoot: "/repo",
     });
 
     expect(registry.has("gradle-java-service")).toBe(true);
     expect(registry.has("pnpm-vite-react")).toBe(true);
+    expect(registry.has("pnpm-node-api")).toBe(true);
+    expect(registry.has("cargo-rust")).toBe(true);
+    expect(registry.has("python-pyproject")).toBe(true);
     expect(registry.has("docker-buildx")).toBe(true);
     expect(registry.has("compose-local")).toBe(true);
-    expect(registry.getAll()).toHaveLength(4);
+    expect(registry.getAll()).toHaveLength(7);
   });
 
   it("docker-buildx supports only the package phase", () => {

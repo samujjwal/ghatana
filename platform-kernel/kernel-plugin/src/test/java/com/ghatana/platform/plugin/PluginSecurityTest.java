@@ -4,6 +4,8 @@
  */
 package com.ghatana.platform.plugin;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.impl.DefaultPluginContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -13,7 +15,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.time.Duration;
@@ -35,6 +40,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @DisplayName("Plugin Security")
 class PluginSecurityTest extends EventloopTestBase {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private PluginResourceEnforcer resourceEnforcer;
     private PluginTierEnforcer tierEnforcer;
@@ -349,6 +356,27 @@ class PluginSecurityTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("SEC-6a2: Policy evaluator denies disallowed lifecycle phases")
+        void policyEvaluatorDeniesDisallowedLifecyclePhase() {
+            PluginInteractionPolicyEvaluator evaluator = PluginInteractionPolicyEvaluator.defaultEvaluator();
+            PluginInteractionEnvelope<String> envelope = interactionEnvelopeForPhase(
+                    "risk-plugin",
+                    "approval-plugin",
+                    "deploy",
+                    "payload");
+            PluginInteractionPolicy policy = new PluginInteractionPolicy(
+                    false,
+                    false,
+                    Set.of(),
+                    Set.of("verify"));
+
+            PluginInteractionPolicyDecision decision = evaluator.evaluate(envelope, policy);
+
+            assertThat(decision.allowed()).isFalse();
+            assertThat(decision.reasonCode()).isEqualTo("plugin.lifecycle_phase_denied");
+        }
+
+        @Test
         @DisplayName("SEC-6b: Envelope request denies before target dispatch when policy blocks caller")
         void envelopeRequestDeniesBeforeTargetDispatchWhenPolicyBlocksCaller() {
             PluginRegistry registry = new PluginRegistry();
@@ -467,6 +495,129 @@ class PluginSecurityTest extends EventloopTestBase {
                     .extracting(PluginInteractionAuditRecord::reasonCode)
                     .contains("plugin.published", "plugin.delivered");
         }
+
+        @Test
+        @DisplayName("SEC-6g2: Typed publish denies lifecycle phase outside topic policy")
+        void typedPublishDeniesLifecyclePhaseOutsideTopicPolicy() {
+            PluginRegistry registry = new PluginRegistry();
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+
+            assertThatThrownBy(() -> ctx.getInteractionBus().publish(
+                    stringTopicContract(new PluginInteractionPolicy(false, false, Set.of(), Set.of("verify"))),
+                    interactionEnvelopeForPhase("risk-plugin", null, "deploy", "payload")))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.lifecycle_phase_denied");
+            assertThat(ctx.getInteractionBus().auditRecords())
+                    .extracting(PluginInteractionAuditRecord::reasonCode)
+                    .contains("plugin.lifecycle_phase_denied");
+        }
+
+        @Test
+        @DisplayName("SEC-6h: Successful envelope request persists plugin interaction evidence")
+        void successfulEnvelopeRequestPersistsPluginInteractionEvidence(@TempDir Path tempDir) throws Exception {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            FilePluginInteractionEvidenceWriter evidenceWriter = new FilePluginInteractionEvidenceWriter(tempDir);
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of(), evidenceWriter);
+            ctx.getInteractionBus().registerHandler("approval-plugin", (String request) -> Promise.of("approved:" + request));
+
+            String response = runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1)));
+
+            PluginInteractionAuditRecord succeededRecord = ctx.getInteractionBus().auditRecords().stream()
+                    .filter(record -> record.reasonCode().equals("plugin.succeeded"))
+                    .findFirst()
+                    .orElseThrow();
+            Path evidencePath = evidenceWriter.evidencePath(succeededRecord);
+            JsonNode record = OBJECT_MAPPER.readTree(evidencePath.toFile());
+
+            assertThat(response).isEqualTo("approved:payload");
+            assertThat(Files.exists(evidencePath)).isTrue();
+            assertThat(record.path("schemaVersion").asText()).isEqualTo("1.0.0");
+            assertThat(record.path("evidenceId").asText()).startsWith("plugin-interaction-evidence-");
+            assertThat(record.path("manifestType").asText()).isEqualTo("plugin-interaction-evidence");
+            assertThat(record.path("interactionId").asText()).isEqualTo("interaction-test-1");
+            assertThat(record.path("contractId").asText()).isEqualTo("kernel://plugins/test-string.v1");
+            assertThat(record.path("contractSchemaVersion").asText()).isEqualTo("1.0.0");
+            assertThat(record.path("callerPluginId").asText()).isEqualTo("risk-plugin");
+            assertThat(record.path("targetPluginId").asText()).isEqualTo("approval-plugin");
+            assertThat(record.path("tenantId").asText()).isEqualTo("tenant-test");
+            assertThat(record.path("workspaceId").asText()).isEqualTo("workspace-test");
+            assertThat(record.path("lifecyclePhase").asText()).isEqualTo("verify");
+            assertThat(record.path("correlationId").asText()).isEqualTo("corr-test");
+            assertThat(record.path("mode").asText()).isEqualTo("request-response");
+            assertThat(record.path("outcome").asText()).isEqualTo("succeeded");
+            assertThat(record.path("reasonCode").asText()).isEqualTo("plugin.succeeded");
+            assertThat(record.path("observedAt").asText()).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("SEC-6i: Broker metrics count request, publish, delivery, and blocked outcomes")
+        void brokerMetricsCountInteractionOutcomes() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+            ctx.getInteractionBus().registerHandler("approval-plugin", (String request) -> Promise.of("approved:" + request));
+            ctx.getInteractionBus().subscribe("risk.approved", ignored -> {
+            });
+
+            String response = runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1)));
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "missing-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1))))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.target_not_registered");
+            ctx.getInteractionBus().publish(
+                    stringTopicContract(),
+                    interactionEnvelope("risk-plugin", null, "payload"));
+
+            PluginInteractionBrokerMetrics metrics = ctx.getInteractionBus().metrics();
+            assertThat(response).isEqualTo("approved:payload");
+            assertThat(metrics.requests()).isEqualTo(2);
+            assertThat(metrics.dispatched()).isEqualTo(1);
+            assertThat(metrics.succeeded()).isEqualTo(1);
+            assertThat(metrics.blocked()).isEqualTo(1);
+            assertThat(metrics.published()).isEqualTo(1);
+            assertThat(metrics.delivered()).isEqualTo(1);
+            assertThat(metrics.evidenceFailures()).isZero();
+            assertThat(metrics.maxLatencyMs()).isGreaterThanOrEqualTo(0);
+            assertThat(metrics.averageLatencyMs()).isGreaterThanOrEqualTo(0.0d);
+        }
+
+        @Test
+        @DisplayName("SEC-6j: Broker metrics count evidence writer failures")
+        void brokerMetricsCountEvidenceWriterFailures() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(
+                    registry,
+                    Map.of(),
+                    record -> {
+                        throw new IllegalStateException("evidence unavailable");
+                    });
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1))))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("evidence unavailable");
+
+            PluginInteractionBrokerMetrics metrics = ctx.getInteractionBus().metrics();
+            assertThat(metrics.requests()).isEqualTo(1);
+            assertThat(metrics.evidenceFailures()).isEqualTo(1);
+            assertThat(metrics.blocked()).isZero();
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -483,6 +634,14 @@ class PluginSecurityTest extends EventloopTestBase {
             String callerPluginId,
             String targetPluginId,
             String payload) {
+        return interactionEnvelopeForPhase(callerPluginId, targetPluginId, "verify", payload);
+    }
+
+    private static PluginInteractionEnvelope<String> interactionEnvelopeForPhase(
+            String callerPluginId,
+            String targetPluginId,
+            String lifecyclePhase,
+            String payload) {
         return new PluginInteractionEnvelope<>(
                 "1.0.0",
                 "interaction-test-1",
@@ -493,6 +652,7 @@ class PluginSecurityTest extends EventloopTestBase {
                 "tenant-test",
                 "workspace-test",
                 "run-test",
+                lifecyclePhase,
                 "corr-test",
                 Instant.parse("2026-05-21T00:00:00Z"),
                 payload);
@@ -523,6 +683,10 @@ class PluginSecurityTest extends EventloopTestBase {
     }
 
     private static PluginTopicContract<String> stringTopicContract() {
+        return stringTopicContract(PluginInteractionPolicy.allowAll());
+    }
+
+    private static PluginTopicContract<String> stringTopicContract(PluginInteractionPolicy policy) {
         return new PluginTopicContract<>() {
             @Override
             public @NotNull String topic() {
@@ -537,6 +701,11 @@ class PluginSecurityTest extends EventloopTestBase {
             @Override
             public @NotNull Class<String> eventType() {
                 return String.class;
+            }
+
+            @Override
+            public @NotNull PluginInteractionPolicy policy() {
+                return policy;
             }
         };
     }

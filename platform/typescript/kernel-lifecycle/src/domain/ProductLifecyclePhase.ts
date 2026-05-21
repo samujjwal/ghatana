@@ -38,10 +38,17 @@ export type ProductSurfaceType =
  */
 export interface ProductSurface {
   type: ProductSurfaceType;
-  adapter: string;
+  adapter?: string;
+  adapterHint?: string;
   path: string;
   implementationStatus: "implemented" | "planned" | "backend-only";
+  language?: string;
+  runtime?: string;
+  buildSystem?: string;
   packagePath?: string;
+  cratePath?: string;
+  cargoToml?: string;
+  pyprojectPath?: string;
   [key: string]: unknown;
 }
 
@@ -191,6 +198,7 @@ export interface LifecycleStepAdapterContext {
   deploymentConfig?: Record<string, unknown>;
   artifactConfig?: Record<string, unknown>;
   environmentConfig?: Record<string, unknown>;
+  interactionPreflight?: Record<string, unknown>;
 }
 
 /**
@@ -303,6 +311,7 @@ export interface ProductLifecyclePlan {
   requiredPlugins: ProductLifecycleRequiredPlugin[];
   approvalRequirements: ProductLifecycleApprovalRequirement[];
   interactionPreflights?: readonly ProductInteractionPreflight[];
+  interactionRollbackImpact?: readonly ProductInteractionRollbackImpact[];
   /** Health check probes derived from surface configurations. */
   healthChecks: readonly ProductLifecycleHealthCheck[];
   outputDirectory: string;
@@ -321,6 +330,20 @@ export interface ProductInteractionPreflight {
   mode: ProductInteractionContract["mode"];
   required: boolean;
   status: "pending" | "blocked" | "skipped";
+  reasonCode?: string;
+  evidenceRequired: boolean;
+  evidenceRefs?: readonly string[];
+}
+
+export interface ProductInteractionRollbackImpact {
+  contractId: string;
+  providerProductId: string;
+  consumerProductId: string;
+  affectedProductIds: readonly string[];
+  mode: ProductInteractionContract["mode"];
+  required: boolean;
+  impactLevel: "none" | "review" | "blocking";
+  status: "provider-enabled" | "provider-not-enabled";
   reasonCode?: string;
   evidenceRequired: boolean;
   evidenceRefs?: readonly string[];

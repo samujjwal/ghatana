@@ -42,6 +42,48 @@ describe('PnpmViteReactAdapter', () => {
     await expect(adapter.plan(context)).rejects.toThrow('packagePath is required');
   });
 
+  it('preflights package.json and lifecycle script readiness', async () => {
+    await writeWebPackageJson(repoRoot);
+    const adapter = new PnpmViteReactAdapter({ repoRoot });
+
+    const result = await adapter.preflight(createContext(repoRoot));
+
+    expect(result.status).toBe('ready');
+    expect(result.blockingIssues).toHaveLength(0);
+    expect(result.checks.map((check) => check.checkId)).toEqual([
+      'pnpm-package-json',
+      'pnpm-package-script',
+    ]);
+  });
+
+  it('blocks preflight when packagePath is missing or the lifecycle script is absent', async () => {
+    await writeWebPackageJson(repoRoot, { build: undefined });
+    const adapter = new PnpmViteReactAdapter({ repoRoot });
+    const missingConfigContext = createContext(repoRoot);
+    delete missingConfigContext.surfaceConfig.packagePath;
+
+    const missingConfig = await adapter.preflight(missingConfigContext);
+    const missingScript = await adapter.preflight(createContext(repoRoot));
+
+    expect(missingConfig.status).toBe('blocked');
+    expect(missingConfig.blockingIssues).toContainEqual(expect.stringContaining('pnpm-package-path-config'));
+    expect(missingScript.status).toBe('blocked');
+    expect(missingScript.blockingIssues).toContainEqual(expect.stringContaining('pnpm-package-script'));
+  });
+
+  it('classifies package configuration failures', async () => {
+    const adapter = new PnpmViteReactAdapter({ repoRoot });
+
+    const classification = await adapter.classifyFailure(
+      new Error('script-not-found: package does not define script "build"'),
+      createContext(repoRoot),
+    );
+
+    expect(classification.category).toBe('config');
+    expect(classification.relatedFailureCodes).toContain('pnpm-vite-react-package-config');
+    expect(classification.requiresHumanIntervention).toBe(true);
+  });
+
   it('returns schema-backed dry-run evidence without executing commands', async () => {
     const commandRunner = new FakeCommandRunner([]);
     const adapter = new PnpmViteReactAdapter({ repoRoot, commandRunner });
@@ -231,6 +273,36 @@ describe('PnpmViteReactAdapter', () => {
       expect(result.status).toBe('succeeded');
       expect(result.manifestRefs?.artifactManifest).toBe('products/digital-marketing/web/build/artifact-manifest.json');
       expect(result.evidenceRefs).toContain('artifact:products/digital-marketing/web/dist');
+      const manifest = JSON.parse(await fs.readFile(
+        path.join(webDir, 'build', 'artifact-manifest.json'),
+        'utf-8',
+      )) as {
+        schemaVersion: string;
+        adapter: string;
+        source: { path: string };
+        trustState: { status: string; validation: string };
+        artifacts: Array<{
+          path: string;
+          type: string;
+          directory: boolean;
+          sizeBytes: number;
+          fingerprint: { algorithm: string; hash: string };
+          metadata: { adapter: string; sourcePath: string };
+        }>;
+      };
+      expect(manifest.schemaVersion).toBe('1.0.0');
+      expect(manifest.adapter).toBe('pnpm-vite-react');
+      expect(manifest.source.path).toBe('products/digital-marketing/web');
+      expect(manifest.trustState).toMatchObject({ status: 'verified', validation: 'expected-output-validation' });
+      expect(manifest.artifacts[0]).toMatchObject({
+        path: 'products/digital-marketing/web/dist',
+        type: 'static-web-bundle',
+        directory: true,
+        fingerprint: { algorithm: 'sha256' },
+        metadata: { adapter: 'pnpm-vite-react', sourcePath: 'products/digital-marketing/web' },
+      });
+      expect(manifest.artifacts[0].sizeBytes).toBe('<html></html>'.length);
+      expect(manifest.artifacts[0].fingerprint.hash).toMatch(/^[a-f0-9]{64}$/);
     });
 
     it('packages with an absolute package path', async () => {

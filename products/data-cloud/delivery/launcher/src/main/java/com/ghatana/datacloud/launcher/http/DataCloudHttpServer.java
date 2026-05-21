@@ -957,10 +957,6 @@ public class DataCloudHttpServer {
     /**
      * Attaches an {@link AuditService} for security and governance audit persistence.
      *
-     * <p><b>DC-BE-003 Note:</b> Transaction boundaries for multi-step writes (entity write + event append + audit logging)
-     * are not currently implemented. This requires wrapping write + event + audit flows atomically to prevent
-     * partial writes from leaving invalid state. Failure injection tests are required to verify atomic behavior.
-     *
      * @param service audit service; must not be {@code null}
      * @return {@code this} for method chaining
      *
@@ -1914,6 +1910,10 @@ public class DataCloudHttpServer {
         runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
         runtimePosture.put("contextStoreMode", contextStore.getClass().getSimpleName());
         runtimePosture.put("contextStoreDurable", !(contextStore instanceof InMemoryContextStore));
+        runtimePosture.put("transactionOrchestrationMode", transactionManager != null ? "transactional" : "non-transactional");
+        runtimePosture.put("entityWriteOutboxMode", entityWriteOutboxProcessor != null
+            ? entityWriteOutboxProcessor.getClass().getSimpleName()
+            : "in-memory-fallback");
 
         surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,

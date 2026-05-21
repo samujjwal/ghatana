@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -29,16 +30,22 @@ public class DefaultPluginContext implements PluginContext {
     private final PluginInteractionBus bus;
 
     public DefaultPluginContext(PluginRegistry registry, Map<Class<?>, Object> configuration) {
+        this(registry, configuration, PluginInteractionEvidenceWriter.noop());
+    }
+
+    public DefaultPluginContext(
+            PluginRegistry registry,
+            Map<Class<?>, Object> configuration,
+            PluginInteractionEvidenceWriter evidenceWriter) {
         this.registry = registry;
         this.configuration = new ConcurrentHashMap<>(configuration);
-        this.bus = new DefaultPluginInteractionBus(registry);
+        this.bus = new DefaultPluginInteractionBus(registry, evidenceWriter);
     }
 
     @Override
     public <T> @Nullable T getConfig(@NotNull Class<T> configType) {
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        Map rawConfig = configuration;
-        return (T) rawConfig.get(configType);
+        Object value = configuration.get(configType);
+        return value == null ? null : configType.cast(value);
     }
 
     @Override
@@ -79,9 +86,28 @@ public class DefaultPluginContext implements PluginContext {
         private final Map<String, List<Consumer<Object>>> subscribers = new ConcurrentHashMap<>();
         /** Broker-local audit records for request/publish/delivery outcomes. */
         private final List<PluginInteractionAuditRecord> auditRecords = new CopyOnWriteArrayList<>();
+        private final PluginInteractionEvidenceWriter evidenceWriter;
+        private final AtomicLong requests = new AtomicLong();
+        private final AtomicLong dispatched = new AtomicLong();
+        private final AtomicLong succeeded = new AtomicLong();
+        private final AtomicLong blocked = new AtomicLong();
+        private final AtomicLong denied = new AtomicLong();
+        private final AtomicLong failed = new AtomicLong();
+        private final AtomicLong published = new AtomicLong();
+        private final AtomicLong delivered = new AtomicLong();
+        private final AtomicLong evidenceFailures = new AtomicLong();
+        private final AtomicLong totalLatencyMs = new AtomicLong();
+        private final AtomicLong maxLatencyMs = new AtomicLong();
 
         public DefaultPluginInteractionBus(PluginRegistry registry) {
+            this(registry, PluginInteractionEvidenceWriter.noop());
+        }
+
+        public DefaultPluginInteractionBus(
+                PluginRegistry registry,
+                PluginInteractionEvidenceWriter evidenceWriter) {
             this.registry = registry;
+            this.evidenceWriter = java.util.Objects.requireNonNull(evidenceWriter, "evidenceWriter must not be null");
         }
 
         /**
@@ -104,6 +130,7 @@ public class DefaultPluginContext implements PluginContext {
         @SuppressWarnings("unchecked")
         public <Req, Res> @NotNull Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request,
                 @NotNull Class<Res> responseType, @NotNull Duration timeout) {
+            requests.incrementAndGet();
             PluginInteractionEnvelope<Req> envelope = new PluginInteractionEnvelope<>(
                     "1.0.0",
                     java.util.UUID.randomUUID().toString(),
@@ -123,6 +150,7 @@ public class DefaultPluginContext implements PluginContext {
         @Override
         public <Req, Res> @NotNull Promise<Res> request(@NotNull PluginInteractionEnvelope<Req> envelope,
                 @NotNull PluginContract<Req, Res> contract, @NotNull Duration timeout) {
+            requests.incrementAndGet();
             if (!contract.contractId().equals(envelope.contractId())) {
                 recordAudit(envelope, null, "blocked", "plugin.contract_not_registered");
                 return Promise.ofException(new PluginCapabilityException(
@@ -185,7 +213,30 @@ public class DefaultPluginContext implements PluginContext {
         }
 
         @Override
+        public <Event> void publish(
+                @NotNull PluginTopicContract<Event> contract,
+                @NotNull PluginInteractionEnvelope<Event> envelope) {
+            if (!contract.contractId().equals(envelope.contractId())) {
+                recordAudit(envelope, contract.topic(), "blocked", "plugin.contract_not_registered");
+                throw new PluginCapabilityException(
+                        "plugin.contract_not_registered: Interaction envelope contractId does not match the typed topic contract");
+            }
+            if (!contract.schemaVersion().equals(envelope.schemaVersion())) {
+                recordAudit(envelope, contract.topic(), "blocked", "plugin.contract_version_mismatch");
+                throw new PluginCapabilityException(
+                        "plugin.contract_version_mismatch: Interaction envelope schemaVersion does not match the typed topic contract");
+            }
+            PluginInteractionPolicyDecision decision = policyEvaluator.evaluate(envelope, contract.policy());
+            if (!decision.allowed()) {
+                recordAudit(envelope, contract.topic(), "denied", decision.reasonCode());
+                throw new PluginCapabilityException(decision.reasonCode() + ": " + decision.message());
+            }
+            publish(contract.topic(), envelope);
+        }
+
+        @Override
         public void publish(@NotNull String topic, @NotNull Object event) {
+            published.incrementAndGet();
             PluginInteractionEnvelope<?> envelope = event instanceof PluginInteractionEnvelope<?>
                     ? (PluginInteractionEnvelope<?>) event
                     : null;
@@ -196,6 +247,7 @@ public class DefaultPluginContext implements PluginContext {
             if (listeners != null) {
                 listeners.forEach(l -> {
                     l.accept(event);
+                    delivered.incrementAndGet();
                     if (envelope != null) {
                         recordAudit(envelope, topic, "delivered", "plugin.delivered");
                     }
@@ -213,12 +265,28 @@ public class DefaultPluginContext implements PluginContext {
             return List.copyOf(auditRecords);
         }
 
+        @Override
+        public @NotNull PluginInteractionBrokerMetrics metrics() {
+            return new PluginInteractionBrokerMetrics(
+                    requests.get(),
+                    dispatched.get(),
+                    succeeded.get(),
+                    blocked.get(),
+                    denied.get(),
+                    failed.get(),
+                    published.get(),
+                    delivered.get(),
+                    evidenceFailures.get(),
+                    totalLatencyMs.get(),
+                    maxLatencyMs.get());
+        }
+
         private void recordAudit(
                 @NotNull PluginInteractionEnvelope<?> envelope,
                 String topic,
                 String outcome,
                 String reasonCode) {
-            auditRecords.add(new PluginInteractionAuditRecord(
+            PluginInteractionAuditRecord record = new PluginInteractionAuditRecord(
                     envelope.interactionId(),
                     envelope.contractId(),
                     envelope.schemaVersion(),
@@ -227,10 +295,50 @@ public class DefaultPluginContext implements PluginContext {
                     topic,
                     envelope.tenantId(),
                     envelope.workspaceId(),
+                    envelope.lifecyclePhase(),
                     envelope.correlationId(),
                     outcome,
                     reasonCode,
-                    java.time.Instant.now()));
+                    java.time.Instant.now());
+            try {
+                evidenceWriter.write(record);
+            } catch (RuntimeException error) {
+                evidenceFailures.incrementAndGet();
+                throw error;
+            }
+            auditRecords.add(record);
+            incrementMetric(outcome);
+            if (isTerminalOutcome(outcome)) {
+                recordLatency(envelope);
+            }
+        }
+
+        private void incrementMetric(String outcome) {
+            switch (outcome) {
+                case "dispatched" -> dispatched.incrementAndGet();
+                case "succeeded" -> succeeded.incrementAndGet();
+                case "blocked" -> blocked.incrementAndGet();
+                case "denied" -> denied.incrementAndGet();
+                case "failed" -> failed.incrementAndGet();
+                default -> {
+                    // Publication and delivery metrics are counted at the operation boundary.
+                }
+            }
+        }
+
+        private boolean isTerminalOutcome(String outcome) {
+            return outcome.equals("succeeded")
+                    || outcome.equals("blocked")
+                    || outcome.equals("denied")
+                    || outcome.equals("failed");
+        }
+
+        private void recordLatency(@NotNull PluginInteractionEnvelope<?> envelope) {
+            long durationMs = Math.max(0, java.time.Duration.between(
+                    envelope.requestedAt(),
+                    java.time.Instant.now()).toMillis());
+            totalLatencyMs.addAndGet(durationMs);
+            maxLatencyMs.accumulateAndGet(durationMs, Math::max);
         }
     }
 }

@@ -662,6 +662,62 @@ describe('ProductLifecycleExecutor', () => {
     expect(completionOrder).toEqual(['fast', 'slow']);
   });
 
+  it('serializes ready steps that share an adapter while allowing different adapters to overlap', async () => {
+    let activeExecutions = 0;
+    let maxActiveExecutions = 0;
+    let sharedAdapterExecutions = 0;
+    let maxSharedAdapterExecutions = 0;
+
+    class TrackingAdapter implements Adapter {
+      constructor(
+        private readonly shared: boolean,
+        private readonly delayMs: number,
+      ) {}
+
+      async execute(_context: AdapterContext): Promise<AdapterResult> {
+        activeExecutions++;
+        maxActiveExecutions = Math.max(maxActiveExecutions, activeExecutions);
+        if (this.shared) {
+          sharedAdapterExecutions++;
+          maxSharedAdapterExecutions = Math.max(maxSharedAdapterExecutions, sharedAdapterExecutions);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+
+        if (this.shared) {
+          sharedAdapterExecutions--;
+        }
+        activeExecutions--;
+        return { status: 'succeeded' };
+      }
+    }
+
+    adapterRegistry.register('shared-gradle-adapter', new TrackingAdapter(true, 10));
+    adapterRegistry.register('vite-adapter', new TrackingAdapter(false, 10));
+
+    const plan = makePlan({
+      productId: 'test-parallel-safety',
+      phase: 'build' as ProductLifecyclePhase,
+      phaseMode: 'parallel',
+      steps: [
+        makeStep({ id: 'api-tests', adapter: 'shared-gradle-adapter' }),
+        makeStep({ id: 'worker-tests', adapter: 'shared-gradle-adapter', surface: 'worker' }),
+        makeStep({ id: 'web-tests', adapter: 'vite-adapter', surface: 'web' }),
+      ],
+    });
+
+    const result = await executor.executePlan(plan, {
+      dryRun: false,
+      outputDirectory: '/tmp/output',
+      logger,
+    });
+
+    expect(result.status).toBe('succeeded');
+    expect(result.steps).toHaveLength(3);
+    expect(maxActiveExecutions).toBe(2);
+    expect(maxSharedAdapterExecutions).toBe(1);
+  });
+
   it('honours DAG dependencies even in parallel mode', async () => {
     const completionOrder: string[] = [];
 

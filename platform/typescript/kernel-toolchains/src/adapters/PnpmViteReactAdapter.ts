@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
+import { createHash } from 'node:crypto';
 import type {
   ToolchainAdapter,
   ToolchainAdapterContext,
@@ -9,6 +10,7 @@ import type {
   ProductLifecyclePhase,
   ProductSurfaceType,
   AdapterPreflightResult,
+  AdapterPreflightCheck,
   LifecycleFailureClassifier,
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
@@ -20,7 +22,6 @@ import {
   truncateToolchainOutput,
 } from '../execution/ToolchainExecutionResultFactory.js';
 import {
-  createDefaultPreflightResult,
   createDefaultFailureClassifier,
 } from '../ToolchainAdapter.js';
 
@@ -217,38 +218,67 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     const buildDir = path.join(packageDirectory, 'build');
     await fs.mkdir(buildDir, { recursive: true });
 
-    const manifestArtifacts: Array<{
-      path: string;
-      metadata: {
-        type: 'static-web-bundle';
-        productId: string;
-        phase: ProductLifecyclePhase;
-        surfaceType: ProductSurfaceType;
-        adapter: string;
-      };
-    }> = staticArtifacts.map(
-      (artifactPath) => ({
-        path: artifactPath,
-        metadata: {
-          type: 'static-web-bundle',
-          productId: context.productId,
-          phase: context.phase,
-          surfaceType: context.surface.type,
-          adapter: this.id,
-        },
-      }),
-    );
+    const generatedAt = new Date().toISOString();
+    const manifestArtifacts = await Promise.all(staticArtifacts.map((artifactPath) =>
+      this.artifactManifestEntry(context, artifactPath, generatedAt)));
 
     const manifest = {
+      schemaVersion: '1.0.0',
       productId: context.productId,
       phase: context.phase,
-      generatedAt: new Date().toISOString(),
+      surface: context.surface.type,
+      adapter: this.id,
+      generatedAt,
+      source: {
+        path: context.surface.path,
+        ...(typeof context.metadata?.gitCommit === 'string' ? { gitCommit: context.metadata.gitCommit } : {}),
+        ...(typeof context.metadata?.gitBranch === 'string' ? { gitBranch: context.metadata.gitBranch } : {}),
+      },
+      trustState: {
+        status: 'verified',
+        verifiedAt: generatedAt,
+        validation: 'expected-output-validation',
+      },
       artifacts: manifestArtifacts,
     };
 
     const manifestPath = path.join(buildDir, 'artifact-manifest.json');
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
     return path.relative(this.repoRoot, manifestPath).replace(/\\/g, '/');
+  }
+
+  private async artifactManifestEntry(
+    context: ToolchainAdapterContext,
+    artifactPath: string,
+    generatedAt: string,
+  ): Promise<Record<string, unknown>> {
+    const absoluteArtifact = path.isAbsolute(artifactPath) ? artifactPath : path.join(this.repoRoot, artifactPath);
+    const stats = await fs.stat(absoluteArtifact);
+    const fingerprint = stats.isDirectory()
+      ? await this.hashDirectory(absoluteArtifact)
+      : await this.hashFile(absoluteArtifact);
+    return {
+      id: this.artifactId(context.productId, context.surface.type, artifactPath),
+      path: artifactPath,
+      type: 'static-web-bundle',
+      expected: true,
+      found: true,
+      directory: stats.isDirectory(),
+      sizeBytes: stats.isDirectory() ? await this.directorySize(absoluteArtifact) : stats.size,
+      fingerprint: {
+        algorithm: 'sha256',
+        hash: fingerprint,
+      },
+      metadata: {
+        type: 'static-web-bundle',
+        productId: context.productId,
+        phase: context.phase,
+        surfaceType: context.surface.type,
+        adapter: this.id,
+        generatedAt,
+        sourcePath: context.surface.path,
+      },
+    };
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
@@ -283,11 +313,90 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     };
   }
 
-  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
-    return createDefaultPreflightResult();
+  async preflight(context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    const checkedAt = new Date().toISOString();
+    const checks: AdapterPreflightCheck[] = [];
+    const packagePath = context.surfaceConfig.packagePath;
+
+    if (typeof packagePath !== 'string' || packagePath.trim().length === 0) {
+      checks.push({
+        checkId: 'pnpm-package-path-config',
+        checkName: 'pnpm package path configuration',
+        status: 'failed',
+        message: 'surfaceConfig.packagePath must be a non-empty string',
+        severity: 'critical',
+        remediation: ['Set surfaceConfig.packagePath to the web surface package.json path.'],
+        checkedAt,
+      });
+    } else {
+      const packageDirectory = this.resolvePackageDirectory(packagePath);
+      const packageJsonPath = path.join(
+        path.isAbsolute(packageDirectory) ? packageDirectory : path.join(this.repoRoot, packageDirectory),
+        'package.json',
+      );
+      checks.push(await this.filePreflightCheck(
+        'pnpm-package-json',
+        'pnpm package.json',
+        packageJsonPath,
+        checkedAt,
+        'Create package.json for the web surface or correct surfaceConfig.packagePath.',
+      ));
+
+      if (await this.exists(packageJsonPath)) {
+        const packageJson = await this.readPackageJson(packageDirectory);
+        const script = this.mapPhaseToScript(context.phase, context.surfaceConfig, packageJson);
+        checks.push({
+          checkId: 'pnpm-package-script',
+          checkName: 'pnpm package script',
+          status: hasPackageScript(packageJson, script) ? 'passed' : 'failed',
+          message: hasPackageScript(packageJson, script)
+            ? `Found script "${script}"`
+            : `package.json does not define script "${script}"`,
+          severity: 'critical',
+          remediation: [`Add the "${script}" script or configure the phase-specific script override.`],
+          checkedAt,
+        });
+      }
+    }
+
+    const blockingIssues = checks
+      .filter((check) => check.status === 'failed')
+      .map((check) => `${check.checkId}: ${check.message}`);
+
+    return {
+      status: blockingIssues.length > 0 ? 'blocked' : 'ready',
+      checks,
+      blockingIssues,
+      warnings: [],
+    };
   }
 
   async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    if (/package-path-not-found|invalid-package-json|script-not-found|packagePath/i.test(error.message)) {
+      return {
+        category: 'config',
+        severity: 'high',
+        retryable: false,
+        requiresHumanIntervention: true,
+        remediationSteps: [
+          'Verify surfaceConfig.packagePath points to a valid package.json.',
+          'Ensure the package declares the required lifecycle script.',
+        ],
+        relatedFailureCodes: ['pnpm-vite-react-package-config'],
+        component: this.id,
+      };
+    }
+    if (/pnpm|ENOENT|not found/i.test(error.message)) {
+      return {
+        category: 'environment',
+        severity: 'high',
+        retryable: false,
+        requiresHumanIntervention: true,
+        remediationSteps: ['Install pnpm with the repo-supported version before executing web lifecycle phases.'],
+        relatedFailureCodes: ['pnpm-vite-react-toolchain-missing'],
+        component: this.id,
+      };
+    }
     return createDefaultFailureClassifier(error, this.id);
   }
 
@@ -436,6 +545,52 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     return parsed;
   }
 
+  private async hashFile(filePath: string): Promise<string> {
+    const content = await fs.readFile(filePath);
+    return createHash('sha256').update(content).digest('hex');
+  }
+
+  private async hashDirectory(directoryPath: string): Promise<string> {
+    const hash = createHash('sha256');
+    for (const filePath of await this.listFiles(directoryPath)) {
+      const relativePath = path.relative(directoryPath, filePath).replace(/\\/g, '/');
+      hash.update(relativePath);
+      hash.update('\0');
+      hash.update(await this.hashFile(filePath));
+      hash.update('\0');
+    }
+    return hash.digest('hex');
+  }
+
+  private async directorySize(directoryPath: string): Promise<number> {
+    let size = 0;
+    for (const filePath of await this.listFiles(directoryPath)) {
+      size += (await fs.stat(filePath)).size;
+    }
+    return size;
+  }
+
+  private async listFiles(directoryPath: string): Promise<string[]> {
+    const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+    const files: string[] = [];
+    for (const entry of entries) {
+      const entryPath = path.join(directoryPath, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...await this.listFiles(entryPath));
+      } else if (entry.isFile()) {
+        files.push(entryPath);
+      }
+    }
+    return files.sort((left, right) => left.localeCompare(right));
+  }
+
+  private artifactId(productId: string, surfaceType: string, artifactPath: string): string {
+    return createHash('sha256')
+      .update(`${productId}|${surfaceType}|${artifactPath}`)
+      .digest('hex')
+      .slice(0, 24);
+  }
+
   private async exists(targetPath: string): Promise<boolean> {
     try {
       await fs.access(targetPath);
@@ -443,6 +598,25 @@ export class PnpmViteReactAdapter implements ToolchainAdapter {
     } catch {
       return false;
     }
+  }
+
+  private async filePreflightCheck(
+    checkId: string,
+    checkName: string,
+    targetPath: string,
+    checkedAt: string,
+    remediation: string,
+  ): Promise<AdapterPreflightCheck> {
+    const exists = await this.exists(targetPath);
+    return {
+      checkId,
+      checkName,
+      status: exists ? 'passed' : 'failed',
+      message: exists ? `Found ${targetPath}` : `Missing ${targetPath}`,
+      severity: 'critical',
+      remediation: [remediation],
+      checkedAt,
+    };
   }
 }
 

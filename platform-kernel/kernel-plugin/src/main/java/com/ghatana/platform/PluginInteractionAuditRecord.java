@@ -22,6 +22,7 @@ public record PluginInteractionAuditRecord(
         @Nullable String topic,
         @Nullable String tenantId,
         @Nullable String workspaceId,
+        @Nullable String lifecyclePhase,
         @NotNull String correlationId,
         @NotNull String outcome,
         @NotNull String reasonCode,

@@ -210,6 +210,31 @@ class AepOpenApiSurfaceDriftTest {
         }
 
         @Test
+        @DisplayName("analytics KPI endpoint uses explicit KPI snapshot schemas")
+        void analyticsKpisEndpointUsesExplicitSchemas() throws IOException {
+            String spec = Files.readString(findRepoFile("products/data-cloud/contracts/openapi/aep.yaml"));
+            String block = blockForPath(spec, "/api/v1/analytics/kpis");
+
+            assertThat(block)
+                .contains("$ref: '#/components/schemas/KpiSnapshotRequest'")
+                .contains("$ref: '#/components/schemas/KpiSaveResponse'")
+                .contains("$ref: '#/components/schemas/KpiQueryResponse'")
+                .doesNotContain("additionalProperties: true");
+        }
+
+        @Test
+        @DisplayName("analytics query endpoint uses an explicit request wrapper")
+        void analyticsQueryEndpointUsesExplicitSchema() throws IOException {
+            String spec = Files.readString(findRepoFile("products/data-cloud/contracts/openapi/aep.yaml"));
+            String block = blockForPath(spec, "/api/v1/analytics/query");
+
+            assertThat(block)
+                .contains("$ref: '#/components/schemas/AnalyticsQueryRequest'")
+                .contains("$ref: '#/components/schemas/AnalyticsQueryResponse'")
+                .doesNotContain("additionalProperties: true");
+        }
+
+        @Test
         @DisplayName("endpoints with path parameters have parameter schemas")
         void endpointsWithPathParametersHaveParameterSchemas() throws IOException { 
             String spec = Files.readString(findRepoFile("products/data-cloud/contracts/openapi/aep.yaml"));

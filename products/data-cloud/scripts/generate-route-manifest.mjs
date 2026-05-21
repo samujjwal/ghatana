@@ -8,13 +8,13 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-function parseJavaRegistry(registryPath) {
-  const content = fs.readFileSync(registryPath, 'utf-8');
+function parseJavaRegistry(content) {
   const routes = [];
   const pattern = /route\(map,\s*"([A-Z]+)",\s*"([^"]+)",\s*EndpointSensitivity\.([A-Z_]+),\s*(true|false),\s*(true|false),\s*(true|false),\s*(true|false),\s*DataCloudSecurityFilter\.AccessLevel\.([A-Z_]+),\s*(true|false),\s*"([^"]*)",\s*"([^"]*)",\s*"([^"]*)"\);/g;
 
@@ -41,6 +41,11 @@ function parseJavaRegistry(registryPath) {
   return routes;
 }
 
+function parseRegistryChecksum(content) {
+  const checksumMatch = content.match(/GENERATED_ROUTER_CHECKSUM:\s*([a-f0-9]{64})/i);
+  return checksumMatch ? checksumMatch[1].toLowerCase() : null;
+}
+
 function parseRouterRoutes(routerPath) {
   const content = fs.readFileSync(routerPath, 'utf-8');
   const routes = [];
@@ -53,6 +58,14 @@ function parseRouterRoutes(routerPath) {
     });
   }
   return Array.from(new Map(routes.map(route => [`${route.method} ${route.path}`, route])).values());
+}
+
+function computeRouterChecksum(routerRoutes) {
+  const canonical = routerRoutes
+    .map(route => `${route.method} ${route.path}`)
+    .sort()
+    .join('\n');
+  return crypto.createHash('sha256').update(canonical).digest('hex');
 }
 
 function assertRouterRegistryParity(routerRoutes, registryRoutes) {
@@ -224,9 +237,27 @@ async function main() {
     }
   }
 
-  const routes = parseJavaRegistry(javaRegistryPath);
+  const registryContent = fs.readFileSync(javaRegistryPath, 'utf-8');
+  const routes = parseJavaRegistry(registryContent);
   const routerRoutes = parseRouterRoutes(routerPath);
+  const expectedRouterChecksum = computeRouterChecksum(routerRoutes);
+  const registryChecksum = parseRegistryChecksum(registryContent);
+
+  if (!registryChecksum) {
+    console.error('✗ RouteSecurityRegistry.java is missing GENERATED_ROUTER_CHECKSUM marker');
+    process.exit(1);
+  }
+
+  if (registryChecksum !== expectedRouterChecksum) {
+    console.error('✗ RouteSecurityRegistry.java checksum mismatch');
+    console.error(`  Expected: ${expectedRouterChecksum}`);
+    console.error(`  Found:    ${registryChecksum}`);
+    console.error('  Regenerate RouteSecurityRegistry entries or update checksum marker after router changes.');
+    process.exit(1);
+  }
+
   console.log(`  ✓ Found ${routes.length} registered routes`);
+  console.log(`  ✓ Route registry checksum verified (${expectedRouterChecksum.slice(0, 12)}...)`);
   assertRouterRegistryParity(routerRoutes, routes);
   console.log(`  ✓ Runtime/router parity verified (${routerRoutes.length} routes)`);
 

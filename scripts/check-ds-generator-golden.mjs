@@ -173,6 +173,30 @@ check(docSrc.includes("schemaVersion"), "Schema version field present in documen
 check(docSrc.includes("DS_DOCUMENT_SCHEMA_VERSION"), "Schema version constant exported", "Schema version constant missing");
 check(docSrc.includes("1.0.0"), "Schema version 1.0.0 defined", "Schema version 1.0.0 missing");
 
+// ── Semantic golden tests for canonical states and alias resolution ────────────
+console.log("\n11. Semantic canonical-states and alias-resolution test coverage");
+
+const semanticTestPath = "platform/typescript/ds-generator/src/__tests__/canonical-states-and-aliases.test.ts";
+check(existsSync(resolve(root, semanticTestPath)), "canonical-states-and-aliases.test.ts exists", "Missing semantic golden test: canonical-states-and-aliases.test.ts");
+
+const semanticTestSrc = readSource(semanticTestPath);
+check(semanticTestSrc.includes("CANONICAL_COMPONENT_STATES"), "Semantic test validates CANONICAL_COMPONENT_STATES array", "Semantic test missing CANONICAL_COMPONENT_STATES assertion");
+check(semanticTestSrc.includes("buildTokenGraph"), "Semantic test exercises buildTokenGraph", "Semantic test missing buildTokenGraph coverage");
+check(semanticTestSrc.includes("cycle"), "Semantic test covers cycle detection", "Semantic test missing cycle detection coverage");
+check(
+  semanticTestSrc.includes("missing-token") || semanticTestSrc.includes("missing-alias"),
+  "Semantic test covers missing-reference errors",
+  "Semantic test missing missing-reference error coverage",
+);
+check(semanticTestSrc.includes("graphToRecord"), "Semantic test covers graphToRecord output", "Semantic test missing graphToRecord coverage");
+check(semanticTestSrc.includes("flattenTokenRecord"), "Semantic test covers flattenTokenRecord", "Semantic test missing flattenTokenRecord coverage");
+check(semanticTestSrc.includes("disabled"), "Semantic test covers 'disabled' canonical state", "Semantic test missing 'disabled' state coverage");
+check(semanticTestSrc.includes("ComponentVariantDefinitionSchema"), "Semantic test validates ComponentVariantDefinitionSchema", "Semantic test missing ComponentVariantDefinitionSchema coverage");
+
+// Verify token graph exports graphToRecord and flattenTokenRecord
+check(graphSrc.includes("graphToRecord"), "token-graph.ts exports graphToRecord", "token-graph.ts missing graphToRecord");
+check(graphSrc.includes("flattenTokenRecord"), "token-graph.ts exports flattenTokenRecord", "token-graph.ts missing flattenTokenRecord");
+
 // ── Result ────────────────────────────────────────────────────────────────────
 console.log(`\n${failures === 0 ? "✅ All checks passed." : `❌ ${failures} check(s) failed.`}\n`);
 process.exit(failures > 0 ? 1 : 0);

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 
 const __filename = fileURLToPath(import.meta.url);
-const repoRoot = resolve(new URL('..', import.meta.url).pathname);
+const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const registryPath = join(repoRoot, 'config', 'canonical-product-registry.json');
 const registryDocument = JSON.parse(readFileSync(registryPath, 'utf8'));
 const registry = registryDocument.registry ?? registryDocument;

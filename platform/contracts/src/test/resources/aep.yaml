@@ -615,16 +615,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/KpiSnapshotRequest'
       responses:
         '200':
           description: KPI saved
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/KpiSaveResponse'
     get:
       summary: Query KPI values
       operationId: queryKpis
@@ -635,8 +633,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/KpiQueryResponse'
 
   /api/v1/analytics/query:
     post:
@@ -648,16 +645,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AnalyticsQueryRequest'
       responses:
         '200':
           description: Analytics query result
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/AnalyticsQueryResponse'
 
   /api/v1/reports:
     post:
@@ -3243,6 +3238,133 @@ components:
           type: number
           format: double
           description: Confidence interval (0.0 – 1.0)
+        timestamp:
+          type: string
+          format: date-time
+
+    KpiSnapshotRequest:
+      type: object
+      required: [kpiName, value]
+      properties:
+        tenantId:
+          type: string
+          default: default
+        kpiName:
+          type: string
+        value:
+          type: number
+          format: double
+        unit:
+          type: string
+          description: Unit of measure for the KPI value.
+        capturedAt:
+          type: string
+          format: date-time
+          description: Measurement timestamp; defaults to now when omitted.
+        tags:
+          type: array
+          items:
+            type: string
+        previousValue:
+          type: number
+          format: double
+          nullable: true
+        changePercent:
+          type: number
+          format: double
+          nullable: true
+
+    KpiSnapshot:
+      type: object
+      required: [id, kpiName, value, unit, capturedAt]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        kpiName:
+          type: string
+        value:
+          type: number
+          format: double
+        unit:
+          type: string
+        capturedAt:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        previousValue:
+          type: number
+          format: double
+          nullable: true
+        changePercent:
+          type: number
+          format: double
+          nullable: true
+
+    KpiSaveResponse:
+      type: object
+      required: [kpi, timestamp]
+      properties:
+        kpi:
+          $ref: '#/components/schemas/KpiSnapshot'
+        timestamp:
+          type: string
+          format: date-time
+
+    KpiQueryResponse:
+      type: object
+      required: [kpis, count, timestamp]
+      properties:
+        kpis:
+          type: array
+          items:
+            $ref: '#/components/schemas/KpiSnapshot'
+        count:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    AnalyticsQueryRequest:
+      type: object
+      required: [collection]
+      properties:
+        tenantId:
+          type: string
+          default: default
+        collection:
+          type: string
+          description: Collection name to query (patterns, pipelines, anomalies, or kpis).
+        offset:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+          format: int64
+        filters:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        sorts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    AnalyticsQueryResponse:
+      type: object
+      required: [collection, result, timestamp]
+      properties:
+        collection:
+          type: string
+        result:
+          type: object
+          additionalProperties: true
         timestamp:
           type: string
           format: date-time

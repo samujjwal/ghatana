@@ -4,7 +4,17 @@ plugins {
 
 description = "Cross-product contract tests for AEP and YAPPC Data Cloud integrations"
 
+val runtimeInteractionTest by sourceSets.creating
 val productInteractionTest by sourceSets.creating
+
+productInteractionTest.compileClasspath += sourceSets.main.get().output
+productInteractionTest.runtimeClasspath += sourceSets.main.get().output
+runtimeInteractionTest.compileClasspath += sourceSets.main.get().output
+runtimeInteractionTest.runtimeClasspath += sourceSets.main.get().output
+
+dependencies {
+    implementation(project(":platform-kernel:kernel-core"))
+}
 
 dependencies {
     testImplementation(project(":platform:java:testing"))
@@ -27,6 +37,13 @@ dependencies {
     add("productInteractionTestImplementation", project(":products:digital-marketing:dm-kernel-bridge"))
     add("productInteractionTestImplementation", project(":products:phr"))
     add("productInteractionTestImplementation", libs.bundles.testing.core)
+
+    add("runtimeInteractionTestImplementation", project(":platform-kernel:kernel-core"))
+    add("runtimeInteractionTestImplementation", project(":platform-kernel:kernel-testing"))
+    add("runtimeInteractionTestImplementation", project(":platform:java:testing"))
+    add("runtimeInteractionTestImplementation", project(":products:digital-marketing:dm-kernel-bridge"))
+    add("runtimeInteractionTestImplementation", project(":products:phr"))
+    add("runtimeInteractionTestImplementation", libs.bundles.testing.core)
 }
 
 tasks.test {
@@ -47,4 +64,18 @@ tasks.register<Test>("productInteractionTest") {
     testClassesDirs = productInteractionTest.output.classesDirs
     classpath = productInteractionTest.runtimeClasspath
     useJUnitPlatform()
+}
+
+tasks.register<Test>("runtimeInteractionTest") {
+    group = "verification"
+    description = "Runs kernel interaction runtime integration tests"
+    testClassesDirs = runtimeInteractionTest.output.classesDirs
+    classpath = runtimeInteractionTest.runtimeClasspath
+    useJUnitPlatform()
+}
+
+tasks.register("interactionReleaseGate") {
+    group = "verification"
+    description = "Runs product and runtime interaction suites required for release gating"
+    dependsOn("productInteractionTest", "runtimeInteractionTest")
 }

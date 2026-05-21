@@ -98,6 +98,7 @@ export class ProductLifecycleStepRunner {
     context: StepContext,
   ): Promise<ProductLifecycleStepResult> {
     const startTime = Date.now();
+    const startedAt = new Date(startTime).toISOString();
     context.logger.info(`Running step: ${step.id}`, {
       phase: step.phase,
       surface: step.surface,
@@ -105,6 +106,10 @@ export class ProductLifecycleStepRunner {
     });
 
     try {
+      if (step.stepKind === 'interaction-preflight') {
+        return this.runInteractionPreflight(step, context, startTime);
+      }
+
       const adapter = this.adapterRegistry.getAdapter(step.adapter);
       const adapterContext = this.buildAdapterContext(step, context);
 
@@ -120,6 +125,8 @@ export class ProductLifecycleStepRunner {
           surface: step.surface,
           adapter: step.adapter,
           status: 'failed',
+          startedAt,
+          completedAt: new Date().toISOString(),
           exitCode: 1,
           durationMs: Date.now() - startTime,
           stderr: result.stderr ?? result.failure?.cause ?? `Required step ${step.id} was skipped`,
@@ -150,6 +157,8 @@ export class ProductLifecycleStepRunner {
         surface: step.surface,
         adapter: step.adapter,
         status: completedStatus,
+        startedAt,
+        completedAt: new Date().toISOString(),
         exitCode: completedStatus === 'failed' ? 1 : 0,
         ...(stdout !== undefined ? { stdout } : {}),
         ...(stderr !== undefined ? { stderr } : {}),
@@ -178,6 +187,8 @@ export class ProductLifecycleStepRunner {
         surface: step.surface,
         adapter: step.adapter,
         status: 'failed',
+        startedAt,
+        completedAt: new Date().toISOString(),
         exitCode: 1,
         stderr: error instanceof Error ? error.message : String(error),
         durationMs: Date.now() - startTime,
@@ -246,6 +257,114 @@ export class ProductLifecycleStepRunner {
       metadata: context.metadata,
       outputDir: context.outputDirectory,
     };
+  }
+
+  private runInteractionPreflight(
+    step: ProductLifecycleStep,
+    context: StepContext,
+    startTime: number,
+  ): ProductLifecycleStepResult {
+    const preflight = step.adapterContext?.interactionPreflight;
+    if (!this.isRecord(preflight) || !this.isInteractionPreflightStatus(preflight.status)) {
+      const message = `Interaction preflight step ${step.id} is missing a valid preflight status`;
+      context.logger.error(message, {
+        phase: step.phase,
+        surface: step.surface,
+        adapter: step.adapter,
+      });
+      return {
+        stepId: step.id,
+        phase: step.phase,
+        surface: step.surface,
+        adapter: step.adapter,
+        status: 'failed',
+        exitCode: 1,
+        stderr: message,
+        durationMs: Date.now() - startTime,
+        errors: ['product_interaction.preflight_context_invalid', message],
+      };
+    }
+
+    const reasonCode = this.readOptionalString(preflight.reasonCode);
+    const contractId = this.readOptionalString(preflight.contractId);
+    const evidenceRefs = this.readStringList(preflight.evidenceRefs);
+    const resultStatus: ProductLifecycleStepResult['status'] =
+      preflight.status === 'pending' ? 'succeeded' : preflight.status === 'skipped' ? 'skipped' : 'failed';
+    const message = this.buildInteractionPreflightMessage(step, preflight.status, contractId, reasonCode);
+    const result: ProductLifecycleStepResult = {
+      stepId: step.id,
+      phase: step.phase,
+      surface: step.surface,
+      adapter: step.adapter,
+      status: resultStatus,
+      startedAt: new Date(startTime).toISOString(),
+      completedAt: new Date().toISOString(),
+      exitCode: resultStatus === 'failed' ? 1 : 0,
+      durationMs: Date.now() - startTime,
+      ...(evidenceRefs.length > 0 ? { evidenceRefs } : {}),
+      ...(resultStatus === 'succeeded' ? { stdout: message } : {}),
+      ...(resultStatus === 'failed'
+        ? {
+            stderr: message,
+            errors: reasonCode !== undefined ? [reasonCode, message] : [message],
+          }
+        : {}),
+      ...(resultStatus === 'skipped'
+        ? { warnings: reasonCode !== undefined ? [reasonCode, message] : [message] }
+        : {}),
+    };
+
+    const logMetadata = {
+      phase: step.phase,
+      surface: step.surface,
+      adapter: step.adapter,
+      contractId,
+      status: result.status,
+    };
+    if (result.status === 'failed') {
+      context.logger.error(message, logMetadata);
+    } else if (result.status === 'skipped') {
+      context.logger.warn(message, logMetadata);
+    } else {
+      context.logger.info(message, logMetadata);
+    }
+
+    return result;
+  }
+
+  private buildInteractionPreflightMessage(
+    step: ProductLifecycleStep,
+    status: 'pending' | 'blocked' | 'skipped',
+    contractId: string | undefined,
+    reasonCode: string | undefined,
+  ): string {
+    const contractLabel = contractId ?? step.surface.replace(/^interaction:/u, '');
+    if (status === 'pending') {
+      return `Interaction preflight ready: ${contractLabel}`;
+    }
+    if (status === 'skipped') {
+      return `Interaction preflight skipped: ${contractLabel}${reasonCode !== undefined ? ` (${reasonCode})` : ''}`;
+    }
+    return `Interaction preflight blocked: ${contractLabel}${reasonCode !== undefined ? ` (${reasonCode})` : ''}`;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private isInteractionPreflightStatus(value: unknown): value is 'pending' | 'blocked' | 'skipped' {
+    return value === 'pending' || value === 'blocked' || value === 'skipped';
+  }
+
+  private readOptionalString(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+  }
+
+  private readStringList(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    return value.filter((ref): ref is string => typeof ref === 'string' && ref.trim().length > 0);
   }
 
   private resolveCompletedStatus(status: AdapterResult['status']): ProductLifecycleStepResult['status'] {

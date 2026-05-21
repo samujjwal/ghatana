@@ -4,6 +4,7 @@ import com.ghatana.kernel.interaction.ProductInteractionOutcome;
 import com.ghatana.kernel.interaction.ProductInteractionRequest;
 import com.ghatana.kernel.interaction.ProductInteractionStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,30 @@ class NotificationPreferenceInteractionHandlerTest extends EventloopTestBase {
         assertThat(outcome.payload()).isNull();
     }
 
+    @Test
+    @DisplayName("delegates preference lookup to the product preference service when provided")
+    void delegatesPreferenceLookupToProductPreferenceService() {
+        RecordingPreferenceService preferenceService = new RecordingPreferenceService(
+                new NotificationPreferenceInteractionHandler.NotificationPreferenceResponse(
+                        "subject-1",
+                        false,
+                        true,
+                        "contact-preference-service"));
+        NotificationPreferenceInteractionHandler handler =
+                new NotificationPreferenceInteractionHandler(preferenceService);
+
+        ProductInteractionOutcome<NotificationPreferenceInteractionHandler.NotificationPreferenceResponse> outcome =
+                runPromise(() -> handler.handle(request("tenant-1")));
+
+        assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+        assertThat(outcome.payload().smsEnabled()).isFalse();
+        assertThat(outcome.payload().emailEnabled()).isTrue();
+        assertThat(outcome.payload().source()).isEqualTo("contact-preference-service");
+        assertThat(preferenceService.lastRequest).isNotNull();
+        assertThat(preferenceService.lastRequest.tenantId()).isEqualTo("tenant-1");
+        assertThat(preferenceService.lastRequest.payload().purpose()).isEqualTo("care-plan-notification");
+    }
+
     private static ProductInteractionRequest<NotificationPreferenceInteractionHandler.NotificationPreferenceRequest> request(
             String tenantId) {
         return new ProductInteractionRequest<>(
@@ -62,5 +87,23 @@ class NotificationPreferenceInteractionHandlerTest extends EventloopTestBase {
                 new NotificationPreferenceInteractionHandler.NotificationPreferenceRequest(
                         "subject-1",
                         "care-plan-notification"));
+    }
+
+    private static final class RecordingPreferenceService
+            implements NotificationPreferenceInteractionHandler.NotificationPreferenceService {
+        private final NotificationPreferenceInteractionHandler.NotificationPreferenceResponse response;
+        private ProductInteractionRequest<NotificationPreferenceInteractionHandler.NotificationPreferenceRequest> lastRequest;
+
+        private RecordingPreferenceService(
+                NotificationPreferenceInteractionHandler.NotificationPreferenceResponse response) {
+            this.response = response;
+        }
+
+        @Override
+        public Promise<NotificationPreferenceInteractionHandler.NotificationPreferenceResponse> lookup(
+                ProductInteractionRequest<NotificationPreferenceInteractionHandler.NotificationPreferenceRequest> request) {
+            lastRequest = request;
+            return Promise.of(response);
+        }
     }
 }

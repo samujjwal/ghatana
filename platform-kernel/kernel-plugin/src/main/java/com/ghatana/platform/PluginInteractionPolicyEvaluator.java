@@ -30,6 +30,13 @@ public interface PluginInteractionPolicyEvaluator {
                 return PluginInteractionPolicyDecision.denied("plugin.policy_denied",
                         "Workspace scope is required by this interaction contract");
             }
+            if (!policy.allowedLifecyclePhases().isEmpty()
+                    && (envelope.lifecyclePhase() == null
+                    || envelope.lifecyclePhase().isBlank()
+                    || !policy.allowedLifecyclePhases().contains(envelope.lifecyclePhase()))) {
+                return PluginInteractionPolicyDecision.denied("plugin.lifecycle_phase_denied",
+                        "Lifecycle phase is not allowed by this interaction contract");
+            }
             return PluginInteractionPolicyDecision.allow();
         };
     }

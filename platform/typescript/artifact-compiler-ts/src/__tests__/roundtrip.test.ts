@@ -342,3 +342,218 @@ export function Button({ label }: ButtonProps): ReactElement {
     expect(emittedFile?.content).toContain("@ghatana-region: end");
   });
 });
+
+// ============================================================================
+// Round-trip: import preservation
+// ============================================================================
+
+describe("Round-trip: import preservation", () => {
+  it("static import declarations are preserved through source → model → source", () => {
+    const SOURCE_WITH_IMPORTS: DecompileSourceFile = {
+      relativePath: "src/Card.tsx",
+      content: `
+import React from "react";
+import { useState } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { Badge } from "@ghatana/design-system";
+
+export interface CardProps {
+  readonly title: string;
+  readonly children: ReactNode;
+}
+
+export function Card({ title, children }: CardProps): ReactElement {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <div className="card">
+      <Badge>{title}</Badge>
+      {expanded && children}
+    </div>
+  );
+}
+`.trim(),
+    };
+
+    const decompileResult = decompileTsx(makeInput([SOURCE_WITH_IMPORTS]));
+    const nodeId = Object.keys(decompileResult.model.nodes)[0];
+    expect(nodeId).toBeDefined();
+    const node = decompileResult.model.nodes[nodeId!];
+
+    // The node must record all source imports — accessed via metadata (stable path)
+    const sourceImports = node.metadata?.sourceImports as Array<{
+      moduleSpecifier: string;
+      isTypeOnly: boolean;
+    }> | undefined;
+    expect(Array.isArray(sourceImports)).toBe(true);
+    expect(sourceImports!.length).toBeGreaterThanOrEqual(3);
+
+    const specifiers = sourceImports!.map((i) => i.moduleSpecifier);
+    expect(specifiers).toContain("react");
+    expect(specifiers).toContain("@ghatana/design-system");
+
+    // Compile back and verify import lines are emitted
+    const compileResult = compileReact(decompileResult.model);
+    const emittedFile = compileResult.emittedFiles.find((f) =>
+      f.relativePath === SOURCE_WITH_IMPORTS.relativePath,
+    );
+    expect(emittedFile).toBeDefined();
+    expect(emittedFile!.content).toContain('import React from "react"');
+    expect(emittedFile!.content).toContain('"@ghatana/design-system"');
+  });
+
+  it("type-only imports are marked as type-only through round-trip", () => {
+    const SOURCE: DecompileSourceFile = {
+      relativePath: "src/Widget.tsx",
+      content: `
+import type { ReactElement, FC } from "react";
+import type { ButtonProps } from "./Button";
+import { formatDate } from "../utils/date";
+
+export type WidgetProps = { label: string };
+
+export function Widget({ label }: WidgetProps): ReactElement {
+  return <span>{label}</span>;
+}
+`.trim(),
+    };
+
+    const decompileResult = decompileTsx(makeInput([SOURCE]));
+    const nodeId = Object.keys(decompileResult.model.nodes)[0];
+    const node = decompileResult.model.nodes[nodeId!];
+
+    const sourceImports = node.metadata?.sourceImports as Array<{
+      moduleSpecifier: string;
+      isTypeOnly: boolean;
+    }> | undefined;
+    expect(Array.isArray(sourceImports)).toBe(true);
+
+    const typeOnlyImport = sourceImports!.find((i) => i.moduleSpecifier === "react" && i.isTypeOnly);
+    expect(typeOnlyImport).toBeDefined();
+    expect(typeOnlyImport!.isTypeOnly).toBe(true);
+
+    const valueImport = sourceImports!.find((i) => i.moduleSpecifier === "../utils/date");
+    expect(valueImport).toBeDefined();
+    expect(valueImport!.isTypeOnly).toBe(false);
+  });
+});
+
+// ============================================================================
+// Round-trip: JSX shape preservation
+// ============================================================================
+
+describe("Round-trip: JSX shape preservation", () => {
+  it("JSX tree root count is stable across decompile", () => {
+    const SOURCE: DecompileSourceFile = {
+      relativePath: "src/Layout.tsx",
+      content: `
+import type { ReactElement, ReactNode } from "react";
+
+export interface LayoutProps {
+  readonly header: ReactNode;
+  readonly children: ReactNode;
+}
+
+export function Layout({ header, children }: LayoutProps): ReactElement {
+  return (
+    <div className="layout">
+      <header>{header}</header>
+      <main>{children}</main>
+    </div>
+  );
+}
+`.trim(),
+    };
+
+    const decompileResult = decompileTsx(makeInput([SOURCE]));
+    const nodeId = Object.keys(decompileResult.model.nodes)[0];
+    const node = decompileResult.model.nodes[nodeId!];
+
+    // JSX tree must be extracted — accessed via metadata (stable path)
+    const jsxTree = (node.metadata?.jsxTree as unknown[]) ?? [];
+    expect(jsxTree.length).toBeGreaterThan(0);
+
+    // Compile back and verify root component signature is preserved
+    const compileResult = compileReact(decompileResult.model);
+    const emittedFile = compileResult.emittedFiles.find(
+      (f) => f.relativePath === SOURCE.relativePath,
+    );
+    expect(emittedFile).toBeDefined();
+    expect(emittedFile!.content).toMatch(/export function Layout/);
+  });
+
+  it("exported symbol names survive compile and remain stable on two-pass decompile", () => {
+    const SOURCE: DecompileSourceFile = {
+      relativePath: "src/Button.tsx",
+      content: `
+import type { ReactElement } from "react";
+
+export interface ButtonProps {
+  readonly label: string;
+  readonly disabled?: boolean;
+}
+
+export function Button({ label, disabled }: ButtonProps): ReactElement {
+  return <button disabled={disabled}>{label}</button>;
+}
+`.trim(),
+    };
+
+    const firstDecompile = decompileTsx(makeInput([SOURCE]));
+    const firstNodeId = Object.keys(firstDecompile.model.nodes)[0]!;
+    const firstNode = firstDecompile.model.nodes[firstNodeId];
+
+    // "Button" and "ButtonProps" must appear in exported symbols
+    expect(firstNode.exportedSymbols).toContain("Button");
+    expect(firstNode.exportedSymbols).toContain("ButtonProps");
+
+    // Compile and two-pass decompile
+    const compiled = compileReact(firstDecompile.model);
+    const genFile = compiled.emittedFiles.find((f) => f.relativePath === SOURCE.relativePath);
+    expect(genFile).toBeDefined();
+
+    const secondDecompile = decompileTsx(
+      makeInput([{ relativePath: "src/Button.gen.tsx", content: genFile!.content }]),
+    );
+    const secondNodeId = Object.keys(secondDecompile.model.nodes)[0]!;
+    const secondNode = secondDecompile.model.nodes[secondNodeId];
+
+    // Exported symbol names must be preserved
+    expect(secondNode.exportedSymbols).toContain("Button");
+    expect(secondNode.exportedSymbols).toContain("ButtonProps");
+    expect(secondNode.inferredProps).toHaveProperty("label");
+    expect(secondNode.inferredProps).toHaveProperty("disabled");
+  });
+});
+
+// ============================================================================
+// Round-trip: fidelity score stability
+// ============================================================================
+
+describe("Round-trip: fidelity score stability", () => {
+  it("fidelity score is non-zero for well-structured component", () => {
+    const decompileResult = decompileTsx(makeInput([BUTTON_FIXTURE]));
+    expect(decompileResult.fidelityReport.score).toBeGreaterThan(0.5);
+  });
+
+  it("per-file fidelity is recorded for each source file", () => {
+    const decompileResult = decompileTsx(makeInput([BUTTON_FIXTURE, CARD_FIXTURE]));
+    expect(decompileResult.perFileFidelity.size).toBe(2);
+    for (const [path, report] of decompileResult.perFileFidelity) {
+      expect(typeof path).toBe("string");
+      expect(typeof report.score).toBe("number");
+      expect(report.score).toBeGreaterThanOrEqual(0);
+      expect(report.score).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("loss points have required fields and valid severity values", () => {
+    const decompileResult = decompileTsx(makeInput([BUTTON_FIXTURE, CARD_FIXTURE, INDEX_FIXTURE]));
+    for (const lossPoint of decompileResult.fidelityReport.lossPoints) {
+      expect(typeof lossPoint.code).toBe("string");
+      expect(lossPoint.code.length).toBeGreaterThan(0);
+      expect(typeof lossPoint.description).toBe("string");
+      expect(["critical", "warning", "info"]).toContain(lossPoint.severity);
+      expect(typeof lossPoint.confidenceImpact).toBe("number");
+    }
+  });
+});

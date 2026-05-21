@@ -51,6 +51,9 @@ export interface LifecycleRunSummary {
   readonly productUnitId: string;
   readonly phase?: ProductLifecyclePhase;
   readonly status: 'succeeded' | 'failed' | 'skipped' | 'planned' | 'unknown';
+  readonly lifecycleProfile?: string;
+  readonly environment?: string;
+  readonly sourceRef?: string;
   readonly manifestRefs?: Record<string, string>;
   readonly failureReasonCode?: string;
   readonly approvalRefs?: readonly string[];
@@ -95,8 +98,12 @@ export interface RunLifecyclePhaseOptions extends CreateLifecyclePlanOptions {
 
 export interface LifecycleRunQuery {
   readonly phase?: ProductLifecyclePhase;
+  readonly status?: LifecycleRunSummary['status'];
   readonly correlationId?: string;
   readonly providerMode?: 'bootstrap' | 'platform';
+  readonly lifecycleProfile?: string;
+  readonly environment?: string;
+  readonly sourceRef?: string;
 }
 
 export interface ApprovalResult {
@@ -381,7 +388,7 @@ export class KernelLifecycleService {
       const runDirs = await this.pointerStore.listRunDirectories(productUnitId, phase);
       for (const runDir of runDirs) {
         const summary = await this.loadRunSummary(productUnitId, phase, path.basename(runDir));
-        if (summary !== null && (query.correlationId === undefined || summary.correlationId === query.correlationId)) {
+        if (summary !== null && this.matchesLifecycleRunQuery(summary, query)) {
           summaries.push(summary);
         }
       }
@@ -1057,6 +1064,9 @@ export class KernelLifecycleService {
         productUnitId: result.productId,
         phase: result.phase,
         status: result.status,
+        ...(result.lifecycleProfile === undefined ? {} : { lifecycleProfile: result.lifecycleProfile }),
+        ...(result.environment === undefined ? {} : { environment: result.environment }),
+        ...(result.sourceRef === undefined ? {} : { sourceRef: result.sourceRef }),
         ...(result.manifestRefs === undefined ? {} : { manifestRefs: this.manifestRefsToRecord(result.manifestRefs) }),
         ...(result.failure?.reasonCode === undefined ? {} : { failureReasonCode: result.failure.reasonCode }),
         ...(result.approvalRefs === undefined ? {} : { approvalRefs: result.approvalRefs.map((approval) => approval.ref) }),
@@ -1074,8 +1084,21 @@ export class KernelLifecycleService {
       productUnitId: plan.productId,
       phase: plan.phase,
       status: 'planned',
+      lifecycleProfile: plan.lifecycleProfile,
+      ...(plan.environment === undefined ? {} : { environment: plan.environment }),
+      ...(plan.sourceRef === undefined ? {} : { sourceRef: plan.sourceRef }),
       manifestRefs: { lifecyclePlan: planPath },
     };
+  }
+
+  private matchesLifecycleRunQuery(summary: LifecycleRunSummary, query: LifecycleRunQuery): boolean {
+    return (
+      (query.correlationId === undefined || summary.correlationId === query.correlationId) &&
+      (query.status === undefined || summary.status === query.status) &&
+      (query.lifecycleProfile === undefined || summary.lifecycleProfile === query.lifecycleProfile) &&
+      (query.environment === undefined || summary.environment === query.environment) &&
+      (query.sourceRef === undefined || summary.sourceRef === query.sourceRef)
+    );
   }
 
   private async recordRuntimeTruth(

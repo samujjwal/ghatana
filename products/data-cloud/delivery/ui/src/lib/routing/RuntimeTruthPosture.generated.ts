@@ -4,7 +4,7 @@
  * Generated from canonical route manifest by generate-route-manifest.mjs
  * To regenerate, run: npm run generate:route-manifest
  *
- * Generated at: 2026-05-21T01:05:43.168Z
+ * Generated at: 2026-05-21T20:20:42.006Z
  * Source: DataCloudRouterBuilder.java + RouteSecurityRegistry.java
  *
  * DC-P0-03: Runtime truth for UI feature gating and route visibility

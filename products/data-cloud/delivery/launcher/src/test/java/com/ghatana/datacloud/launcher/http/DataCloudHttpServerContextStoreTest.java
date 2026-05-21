@@ -34,10 +34,14 @@ class DataCloudHttpServerContextStoreTest {
     }
 
     @Test
-    @DisplayName("allows InMemoryContextStore only in local deployment mode")
-    void allowsInMemoryContextStoreLocally() {
+    @DisplayName("allows InMemoryContextStore in local and test deployment modes")
+    void allowsInMemoryContextStoreForLocalAndTestModes() {
         assertThatCode(() ->
                 DataCloudHttpServer.validateContextStoreConfiguration("local", new InMemoryContextStore()))
+            .doesNotThrowAnyException();
+
+        assertThatCode(() ->
+                DataCloudHttpServer.validateContextStoreConfiguration("test", new InMemoryContextStore()))
             .doesNotThrowAnyException();
     }
 }

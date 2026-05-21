@@ -9,6 +9,7 @@ import type {
   ProductLifecyclePhase,
   ProductSurfaceType,
   AdapterPreflightResult,
+  AdapterPreflightCheck,
   LifecycleFailureClassifier,
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
@@ -20,7 +21,6 @@ import {
   truncateToolchainOutput,
 } from '../execution/ToolchainExecutionResultFactory.js';
 import {
-  createDefaultPreflightResult,
   createDefaultFailureClassifier,
 } from '../ToolchainAdapter.js';
 import type { ToolchainCoverageResults, ToolchainTestResults } from '../ToolchainAdapter.js';
@@ -41,9 +41,50 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     this.commandRunner = options.commandRunner ?? new SpawnCommandRunner();
   }
 
-  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
-    // Default preflight - can be enhanced with Gradle-specific checks
-    return createDefaultPreflightResult();
+  async preflight(context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    const checkedAt = new Date().toISOString();
+    const checks: AdapterPreflightCheck[] = [];
+    const wrapperPath = path.join(this.repoRoot, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
+    checks.push(await this.filePreflightCheck(
+      'gradle-wrapper',
+      'Gradle wrapper',
+      wrapperPath,
+      checkedAt,
+      'Add the repository Gradle wrapper before executing Java lifecycle phases.',
+    ));
+
+    const gradleModule = context.surfaceConfig.gradleModule;
+    checks.push({
+      checkId: 'gradle-module-config',
+      checkName: 'Gradle module configuration',
+      status: typeof gradleModule === 'string' && gradleModule.trim().length > 0 ? 'passed' : 'failed',
+      message: typeof gradleModule === 'string' && gradleModule.trim().length > 0
+        ? `Configured Gradle module ${gradleModule}`
+        : 'surfaceConfig.gradleModule must be a non-empty string',
+      severity: 'critical',
+      remediation: ['Set surfaceConfig.gradleModule to the included Gradle project path.'],
+      checkedAt,
+    });
+
+    const sourcePath = this.resolveSurfacePath(context);
+    checks.push(await this.filePreflightCheck(
+      'gradle-surface-source',
+      'Gradle surface source path',
+      sourcePath,
+      checkedAt,
+      'Create the surface source directory or correct surface.path/source.',
+    ));
+
+    const blockingIssues = checks
+      .filter((check) => check.status === 'failed')
+      .map((check) => `${check.checkId}: ${check.message}`);
+
+    return {
+      status: blockingIssues.length > 0 ? 'blocked' : 'ready',
+      checks,
+      blockingIssues,
+      warnings: [],
+    };
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
@@ -216,6 +257,31 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
   }
 
   async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    if (/gradle-module-not-found|settings\.gradle|gradleModule/i.test(error.message)) {
+      return {
+        category: 'config',
+        severity: 'high',
+        retryable: false,
+        requiresHumanIntervention: true,
+        remediationSteps: [
+          'Verify surfaceConfig.gradleModule matches the Gradle project path.',
+          'Ensure settings.gradle(.kts) or applied settings files include the module.',
+        ],
+        relatedFailureCodes: ['gradle-java-service-module-config'],
+        component: this.id,
+      };
+    }
+    if (/gradlew|ENOENT|not found/i.test(error.message)) {
+      return {
+        category: 'environment',
+        severity: 'high',
+        retryable: false,
+        requiresHumanIntervention: true,
+        remediationSteps: ['Restore the Gradle wrapper or install the required Java build environment.'],
+        relatedFailureCodes: ['gradle-java-service-toolchain-missing'],
+        component: this.id,
+      };
+    }
     return createDefaultFailureClassifier(error, this.id);
   }
 
@@ -559,6 +625,25 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
     } catch {
       return false;
     }
+  }
+
+  private async filePreflightCheck(
+    checkId: string,
+    checkName: string,
+    targetPath: string,
+    checkedAt: string,
+    remediation: string,
+  ): Promise<AdapterPreflightCheck> {
+    const exists = await this.exists(targetPath);
+    return {
+      checkId,
+      checkName,
+      status: exists ? 'passed' : 'failed',
+      message: exists ? `Found ${targetPath}` : `Missing ${targetPath}`,
+      severity: 'critical',
+      remediation: [remediation],
+      checkedAt,
+    };
   }
 }
 

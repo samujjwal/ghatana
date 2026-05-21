@@ -296,6 +296,55 @@ class RuntimeProfileValidatorTest {
     }
 
     // =========================================================================
+    // TEST profile — non-local fail-closed core controls, but not full durable stack
+    // =========================================================================
+
+    @Nested
+    @DisplayName("TEST profile")
+    class TestProfile {
+
+        @Test
+        @DisplayName("fails without auth, audit, and policy")
+        void testProfile_missingCoreSecurityControls_fails() {
+            assertThatThrownBy(() ->
+                RuntimeProfileValidator.builder()
+                    .deploymentProfile("test")
+                    .strictTenantResolution(false)
+                    .authConfigured(false)
+                    .auditConfigured(false)
+                    .policyEngineConfigured(false)
+                    .build()
+                    .validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Authentication")
+                .hasMessageContaining("Audit service")
+                .hasMessageContaining("Policy engine");
+        }
+
+        @Test
+        @DisplayName("passes without production-only durable stack when core controls are present")
+        void testProfile_coreControlsPresent_passesWithoutProductionOnlyRequirements() {
+            assertThatCode(() ->
+                RuntimeProfileValidator.builder()
+                    .deploymentProfile("test")
+                    .strictTenantResolution(false)
+                    .authConfigured(true)
+                    .auditConfigured(true)
+                    .policyEngineConfigured(true)
+                    .durableEntityStore(false)
+                    .durableEventStore(false)
+                    .durableIdempotencyStore(false)
+                    .transactionManagerConfigured(false)
+                    .metricsConfigured(false)
+                    .traceExportConfigured(false)
+                    .completionServiceConfigured(false)
+                    .build()
+                    .validate())
+                .doesNotThrowAnyException();
+        }
+    }
+
+    // =========================================================================
     // toPostureSnapshot
     // =========================================================================
 
@@ -363,6 +412,7 @@ class RuntimeProfileValidatorTest {
             assertThat(RuntimeProfileValidator.isLocal("local")).isTrue();
             assertThat(RuntimeProfileValidator.isLocal("LOCAL")).isTrue();
             assertThat(RuntimeProfileValidator.isLocal("embedded")).isTrue();
+            assertThat(RuntimeProfileValidator.isLocal("test")).isFalse();
             assertThat(RuntimeProfileValidator.isLocal(null)).isTrue();
             assertThat(RuntimeProfileValidator.isLocal("production")).isFalse();
         }
@@ -373,6 +423,7 @@ class RuntimeProfileValidatorTest {
             assertThat(RuntimeProfileValidator.isProductionLike("production")).isTrue();
             assertThat(RuntimeProfileValidator.isProductionLike("staging")).isTrue();
             assertThat(RuntimeProfileValidator.isProductionLike("PRODUCTION")).isTrue();
+            assertThat(RuntimeProfileValidator.isProductionLike("test")).isFalse();
             assertThat(RuntimeProfileValidator.isProductionLike("local")).isFalse();
             assertThat(RuntimeProfileValidator.isProductionLike("sovereign")).isFalse();
             assertThat(RuntimeProfileValidator.isProductionLike(null)).isFalse();

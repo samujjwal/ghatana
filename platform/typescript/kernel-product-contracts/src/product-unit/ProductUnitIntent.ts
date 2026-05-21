@@ -566,6 +566,14 @@ function formatProductUnitIntentIssue(issue: z.ZodIssue): string {
     const index = path.split(".")[2];
     return `productUnit.surfaces[${index}].implementationStatus is not supported`;
   }
+  if (/^productUnit\.surfaces\.\d+\.language$/.test(path)) {
+    const index = path.split(".")[2];
+    return `productUnit.surfaces[${index}].language is not supported`;
+  }
+  if (/^productUnit\.surfaces\.\d+\.buildSystem$/.test(path)) {
+    const index = path.split(".")[2];
+    return `productUnit.surfaces[${index}].buildSystem is not supported`;
+  }
   if (path === "governanceHints.evidencePrivacyClassification") {
     return "governanceHints.evidencePrivacyClassification is invalid";
   }

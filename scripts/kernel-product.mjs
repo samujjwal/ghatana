@@ -169,7 +169,7 @@ function parseArgs(argv) {
       return { mode: 'plan', productId: positional[2] === 'status' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
     }
     if (positional[0] === 'product' && (positional[1] === 'recover' || positional[2] === 'recover')) {
-      return { mode: 'plan', productId: positional[2] === 'recover' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
+      return { mode: 'recover', productId: positional[2] === 'recover' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
     }
     throw new Error('Usage: product plan <productId> <phase> [options]');
   }
@@ -230,18 +230,24 @@ function assertAdapterContractCompliance(plan, registry) {
   const stepsWithoutAdapter = plan.steps.filter((step) => !step.adapter);
   if (stepsWithoutAdapter.length > 0) {
     errors.push(
-      `Lifecycle execution requires all steps to have adapter contracts; ${stepsWithoutAdapter.length} steps missing adapter: ${stepsWithoutAdapter.map((s) => s.stepId).join(', ')}`,
+      `Lifecycle execution requires all steps to have adapter contracts; ${stepsWithoutAdapter.length} steps missing adapter: ${stepsWithoutAdapter.map((s) => s.id).join(', ')}`,
     );
   }
 
   // Check that all adapter IDs are registered in the bridge
-  const adapterIds = new Set(plan.steps.map((step) => step.adapter).filter(Boolean));
+  const kernelNativeAdapters = new Set(['kernel-product-interaction-broker']);
+  const adapterIds = new Set(
+    plan.steps
+      .filter((step) => step.stepKind !== 'interaction-preflight')
+      .map((step) => step.adapter)
+      .filter(Boolean),
+  );
   const registeredAdapters = new Set(
     typeof registry.getAll === 'function'
       ? registry.getAll().map((adapter) => adapter.id)
       : [],
   );
-  const unregisteredAdapters = [...adapterIds].filter((id) => !registeredAdapters.has(id));
+  const unregisteredAdapters = [...adapterIds].filter((id) => !registeredAdapters.has(id) && !kernelNativeAdapters.has(id));
   if (unregisteredAdapters.length > 0) {
     errors.push(
       `Lifecycle execution requires all adapters to be registered; unregistered adapters: ${unregisteredAdapters.join(', ')}`,
@@ -250,11 +256,11 @@ function assertAdapterContractCompliance(plan, registry) {
 
   // Check that no step attempts to bypass adapter with raw command execution
   const stepsWithRawCommand = plan.steps.filter((step) => 
-    step.command && !step.adapter
+    step.execution && !step.adapter
   );
   if (stepsWithRawCommand.length > 0) {
     errors.push(
-      `Lifecycle execution must go through adapter contracts; ${stepsWithRawCommand.length} steps attempt raw command execution: ${stepsWithRawCommand.map((s) => s.stepId).join(', ')}`,
+      `Lifecycle execution must go through adapter contracts; ${stepsWithRawCommand.length} steps attempt raw command execution: ${stepsWithRawCommand.map((s) => s.id).join(', ')}`,
     );
   }
 
@@ -376,6 +382,48 @@ function explainPlan(plan) {
   };
 }
 
+function recoverPlan(plan) {
+  const blockingReasons = plan.blockingReasons ?? [];
+  const warnings = plan.warnings ?? [];
+  const interactionActions = (plan.interactionPreflights ?? [])
+    .filter((preflight) => preflight.status === 'blocked')
+    .map((preflight) => ({
+      reasonCode: preflight.reasonCode ?? 'product_interaction.blocked',
+      action: `Resolve interaction contract ${preflight.contractId} with provider ${preflight.providerProductId}`,
+      evidenceRequired: preflight.evidenceRequired,
+    }));
+  const approvalActions = plan.approvalRequirements
+    .filter((approval) => approval.required && (!approval.requiredApprovers || approval.requiredApprovers.length === 0))
+    .map((approval) => ({
+      reasonCode: 'approval.required_approvers_missing',
+      action: `Add required approvers for ${approval.approvalId}`,
+      riskLevel: approval.riskLevel,
+    }));
+
+  return {
+    productId: plan.productId,
+    phase: plan.phase,
+    status: blockingReasons.length > 0 ? 'blocked' : 'ready',
+    summary: blockingReasons.length > 0
+      ? `${blockingReasons.length} blocking reason(s) must be resolved before execution`
+      : 'No blocking reasons detected in the latest lifecycle plan',
+    actions: [
+      ...blockingReasons.map((reasonCode) => ({
+        reasonCode,
+        action: `Resolve lifecycle blocker: ${reasonCode}`,
+      })),
+      ...interactionActions,
+      ...approvalActions,
+      ...warnings.map((warning) => ({
+        reasonCode: 'lifecycle.warning',
+        action: `Review lifecycle warning: ${warning}`,
+      })),
+    ],
+    verifyCommand: `node scripts/kernel-product.mjs product plan ${plan.productId} ${plan.phase} --json --explain`,
+    executeCommand: `node scripts/kernel-product.mjs product ${plan.phase} ${plan.productId} --dry-run --json`,
+  };
+}
+
 async function main() {
   const { mode: commandMode, productId, phase, options } = parseArgs(process.argv.slice(2));
   const repoRoot = resolve('.');
@@ -398,7 +446,7 @@ async function main() {
   });
 
   let result = null;
-  if (commandMode !== 'plan') {
+  if (commandMode === 'execute') {
     assertApprovalSafety(plan, options);
     const logger = new ConsoleExecutionLogger('[kernel-product]');
     const collector = new ExecutionResultCollector(logger);
@@ -436,14 +484,17 @@ async function main() {
   }
 
   const manifestPointers = collectManifestPointers(plan, result);
+  const recovery = commandMode === 'recover' ? recoverPlan(plan) : undefined;
 
   if (options.json) {
     const payload = commandMode === 'plan'
       ? (options.explain ? { plan, explain: explainPlan(plan) } : plan)
-      : { plan, result, manifests: manifestPointers, ...(options.explain ? { explain: explainPlan(plan) } : {}) };
+      : commandMode === 'recover'
+        ? { plan, recover: recovery, manifests: manifestPointers, ...(options.explain ? { explain: explainPlan(plan) } : {}) }
+        : { plan, result, manifests: manifestPointers, ...(options.explain ? { explain: explainPlan(plan) } : {}) };
     console.log(JSON.stringify(payload, null, 2));
   } else {
-    const status = result ? result.status : 'planned';
+    const status = recovery ? recovery.status : result ? result.status : 'planned';
     const stepCount = plan.steps?.length ?? 0;
     const durationMs = result?.durationMs ?? 0;
     console.log(`\n[kernel] ${productId} / ${phase} — ${status.toUpperCase()} (${stepCount} steps, ${durationMs}ms)`);
@@ -454,10 +505,17 @@ async function main() {
     if (options.explain) {
       const explanation = explainPlan(plan);
       console.log(`  surfaces:      ${explanation.surfaces.map((surface) => surface.surfaceId).join(', ') || 'none'}`);
-      console.log(`  adapters:      ${explanation.adapters.join(', ') || 'none'}`);
+      console.log(`  adapters:      ${explanation.adapterIds.join(', ') || 'none'}`);
       console.log(`  gates:         ${explanation.gates.map((gate) => gate.gateId).join(', ') || 'none'}`);
       console.log(`  approvals:     ${explanation.approvals.map((approval) => approval.approvalId).join(', ') || 'none'}`);
       console.log(`  artifacts:     ${explanation.expectedArtifacts.map((artifact) => artifact.artifactId).join(', ') || 'none'}\n`);
+    }
+    if (recovery) {
+      console.log(`  recovery:      ${recovery.summary}`);
+      for (const action of recovery.actions.slice(0, 5)) {
+        console.log(`  action:        ${action.action}`);
+      }
+      console.log(`  verify:        ${recovery.verifyCommand}\n`);
     }
     if (result?.failure) {
       console.error(`  FAILURE: ${result.failure.message}`);

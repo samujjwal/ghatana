@@ -17,6 +17,8 @@ import { PRODUCT_UNIT_KINDS } from "./ProductUnitKind.js";
 import type { ProductUnitSurface } from "./ProductUnitSurface.js";
 import {
   IMPLEMENTATION_STATUSES,
+  PRODUCT_SURFACE_BUILD_SYSTEMS,
+  PRODUCT_SURFACE_LANGUAGES,
   PRODUCT_UNIT_SURFACE_TYPES,
 } from "./ProductUnitSurface.js";
 import type { ProductShape } from "./ProductShape.js";
@@ -381,9 +383,14 @@ export const ProductUnitSurfaceSchema = z
     type: z.enum(PRODUCT_UNIT_SURFACE_TYPES),
     sourceRef: z.string().trim().min(1).optional(),
     implementationStatus: z.enum(IMPLEMENTATION_STATUSES),
+    language: z.enum(PRODUCT_SURFACE_LANGUAGES).optional(),
     runtime: z.string().trim().min(1).optional(),
+    buildSystem: z.enum(PRODUCT_SURFACE_BUILD_SYSTEMS).optional(),
     packagePath: z.string().trim().min(1).optional(),
     gradleModule: z.string().trim().min(1).optional(),
+    cratePath: z.string().trim().min(1).optional(),
+    cargoToml: z.string().trim().min(1).optional(),
+    pyprojectPath: z.string().trim().min(1).optional(),
     adapterHint: z.string().trim().min(1).optional(),
   })
   .strict();
@@ -532,6 +539,14 @@ function formatProductUnitIssue(issue: z.ZodIssue): string {
   if (/^surfaces\.\d+\.implementationStatus$/.test(path)) {
     const index = path.split(".")[1];
     return `surfaces[${index}].implementationStatus is not a known implementation status`;
+  }
+  if (/^surfaces\.\d+\.language$/.test(path)) {
+    const index = path.split(".")[1];
+    return `surfaces[${index}].language is not a known surface language`;
+  }
+  if (/^surfaces\.\d+\.buildSystem$/.test(path)) {
+    const index = path.split(".")[1];
+    return `surfaces[${index}].buildSystem is not a known surface build system`;
   }
   return issue.message;
 }

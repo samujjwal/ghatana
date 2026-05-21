@@ -302,6 +302,64 @@ class DataCloudProviderTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("interaction evidence provider persists typed evidence with tenant scope")
+    void interactionEvidenceProviderPersistsTypedEvidenceWithTenantScope() {
+        when(adapter.writeData(org.mockito.ArgumentMatchers.any(DataWriteRequest.class)))
+            .thenReturn(Promise.complete());
+        DataCloudProductInteractionEvidenceProvider provider =
+            new DataCloudProductInteractionEvidenceProvider(adapter, context);
+
+        DataCloudProductInteractionEvidenceProvider.InteractionEvidencePersistResponse response = runPromise(() ->
+            provider.persistInteractionEvidenceTyped(
+                new DataCloudProductInteractionEvidenceProvider.InteractionEvidencePersistRequest(
+                    "interaction-evidence-1",
+                    "kernel://interactions/phr.consent-status.v1",
+                    "phr",
+                    "digital-marketing",
+                    Map.of("status", "allowed", "evidenceRefs", java.util.List.of("datacloud://consent/1")),
+                    Instant.parse("2026-05-21T00:00:00.000Z"),
+                    "corr-interaction-evidence"
+                )));
+
+        ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
+        verify(adapter).writeData(captor.capture());
+        DataWriteRequest request = captor.getValue();
+        String data = new String(request.getData(), StandardCharsets.UTF_8);
+        assertThat(response.success()).isTrue();
+        assertThat(response.evidenceId()).isEqualTo("interaction-evidence-1");
+        assertThat(request.getDatasetId()).isEqualTo("kernel.interaction-evidence.tenant-provider");
+        assertThat(request.getRecordId()).isEqualTo("interaction-evidence-1");
+        assertThat(request.getMetadata()).containsEntry("provider", "interaction-evidence");
+        assertThat(data)
+            .contains("\"contractId\":\"kernel://interactions/phr.consent-status.v1\"")
+            .contains("\"providerProductId\":\"phr\"")
+            .contains("\"consumerProductId\":\"digital-marketing\"")
+            .contains("\"tenantId\":\"tenant-provider\"")
+            .contains("\"correlationId\":\"corr-interaction-evidence\"")
+            .contains("\"capturedAt\":\"2026-05-21T00:00:00Z\"");
+    }
+
+    @Test
+    @DisplayName("interaction evidence provider rejects typed evidence without correlation ID")
+    void interactionEvidenceProviderRejectsTypedEvidenceWithoutCorrelationId() {
+        DataCloudProductInteractionEvidenceProvider provider =
+            new DataCloudProductInteractionEvidenceProvider(adapter, context);
+
+        assertThatThrownBy(() -> runPromise(() -> provider.persistInteractionEvidenceTyped(
+            new DataCloudProductInteractionEvidenceProvider.InteractionEvidencePersistRequest(
+                "interaction-evidence-1",
+                "kernel://interactions/phr.consent-status.v1",
+                "phr",
+                "digital-marketing",
+                Map.of("status", "allowed"),
+                Instant.parse("2026-05-21T00:00:00.000Z"),
+                ""
+            ))))
+            .isInstanceOf(DataCloudProviderException.class)
+            .hasMessageContaining("correlationId is required");
+    }
+
+    @Test
     @DisplayName("Data Cloud provider rejects missing tenant context")
     void providerRejectsMissingTenantContext() {
         BridgeContext missingTenantContext = BridgeContext.builder()
@@ -365,9 +423,11 @@ class DataCloudProviderTest extends EventloopTestBase {
             .persistRuntimeTruth("runtime-1", Map.of("mode", "platform")));
         runPromise(() -> new DataCloudPolicyEvidenceProvider(adapter, context)
             .persistPolicyEvidence("policy-1", Map.of("decision", "allow")));
+        runPromise(() -> new DataCloudProductInteractionEvidenceProvider(adapter, context)
+            .persistInteractionEvidence("interaction-1", Map.of("decision", "allow")));
 
         ArgumentCaptor<DataWriteRequest> captor = ArgumentCaptor.forClass(DataWriteRequest.class);
-        verify(adapter, org.mockito.Mockito.times(7)).writeData(captor.capture());
+        verify(adapter, org.mockito.Mockito.times(8)).writeData(captor.capture());
         assertThat(captor.getAllValues())
             .extracting(DataWriteRequest::getDatasetId)
             .containsExactly(
@@ -377,7 +437,8 @@ class DataCloudProviderTest extends EventloopTestBase {
                 "kernel.memory.tenant-provider",
                 "kernel.knowledge.tenant-provider",
                 "kernel.runtime-truth.tenant-provider",
-                "kernel.policy-evidence.tenant-provider"
+                "kernel.policy-evidence.tenant-provider",
+                "kernel.interaction-evidence.tenant-provider"
             );
     }
 }

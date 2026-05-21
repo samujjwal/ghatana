@@ -24,11 +24,38 @@ export type ProductInteractionFailureCode =
   | "product_interaction.consumer_not_authorized"
   | "product_interaction.contract_missing"
   | "product_interaction.contract_version_mismatch"
+  | "product_interaction.schema_version_unsupported"
+  | "product_interaction.contract_version_unsupported"
+  | "product_interaction.interaction_id_required"
+  | "product_interaction.event_id_required"
+  | "product_interaction.contract_required"
+  | "product_interaction.provider_required"
+  | "product_interaction.consumer_required"
+  | "product_interaction.product_unit_required"
+  | "product_interaction.tenant_required"
+  | "product_interaction.workspace_required"
+  | "product_interaction.run_required"
+  | "product_interaction.correlation_required"
+  | "product_interaction.request_time_required"
+  | "product_interaction.event_time_required"
+  | "product_interaction.policy_context_required"
+  | "product_interaction.topic_required"
+  | "product_interaction.handler_unavailable"
+  | "product_interaction.event_handler_unavailable"
+  | "product_interaction.handler_version_mismatch"
+  | "product_interaction.invalid_payload"
+  | "product_interaction.runtime_error"
+  | "product_interaction.event_delivery_failed"
+  | "product_interaction.outcome_required"
+  | "product_interaction.outcome_interaction_mismatch"
+  | "product_interaction.evidence_required"
+  | "product_interaction.reason_required"
   | "product_interaction.consent_missing"
   | "product_interaction.policy_denied"
   | "product_interaction.provider_unhealthy"
   | "product_interaction.timeout"
   | "product_interaction.evidence_write_failed"
+  | "product_interaction.evidence_persistence_failed"
   | "product_interaction.degraded_not_allowed";
 
 export type ProductInteractionOutcomeStatus =
@@ -228,11 +255,38 @@ export const ProductInteractionFailureCodeSchema = z.enum([
   "product_interaction.consumer_not_authorized",
   "product_interaction.contract_missing",
   "product_interaction.contract_version_mismatch",
+  "product_interaction.schema_version_unsupported",
+  "product_interaction.contract_version_unsupported",
+  "product_interaction.interaction_id_required",
+  "product_interaction.event_id_required",
+  "product_interaction.contract_required",
+  "product_interaction.provider_required",
+  "product_interaction.consumer_required",
+  "product_interaction.product_unit_required",
+  "product_interaction.tenant_required",
+  "product_interaction.workspace_required",
+  "product_interaction.run_required",
+  "product_interaction.correlation_required",
+  "product_interaction.request_time_required",
+  "product_interaction.event_time_required",
+  "product_interaction.policy_context_required",
+  "product_interaction.topic_required",
+  "product_interaction.handler_unavailable",
+  "product_interaction.event_handler_unavailable",
+  "product_interaction.handler_version_mismatch",
+  "product_interaction.invalid_payload",
+  "product_interaction.runtime_error",
+  "product_interaction.event_delivery_failed",
+  "product_interaction.outcome_required",
+  "product_interaction.outcome_interaction_mismatch",
+  "product_interaction.evidence_required",
+  "product_interaction.reason_required",
   "product_interaction.consent_missing",
   "product_interaction.policy_denied",
   "product_interaction.provider_unhealthy",
   "product_interaction.timeout",
   "product_interaction.evidence_write_failed",
+  "product_interaction.evidence_persistence_failed",
   "product_interaction.degraded_not_allowed",
 ]);
 

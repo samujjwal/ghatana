@@ -19,6 +19,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -26,8 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -159,6 +165,22 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         return HttpRequest.put("http://localhost" + CRITICAL_PATH)
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+    }
+
+    private static HttpRequest request(String method, String path, String apiKey, String tenantId) {
+        HttpRequest.Builder builder;
+        switch (method) {
+            case "POST" -> builder = HttpRequest.post("http://localhost" + path);
+            case "PUT" -> builder = HttpRequest.put("http://localhost" + path);
+            case "DELETE" -> builder = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost" + path);
+            case "PATCH" -> builder = HttpRequest.builder(io.activej.http.HttpMethod.PATCH, "http://localhost" + path);
+            default -> builder = HttpRequest.get("http://localhost" + path);
+        }
+        return builder
+                .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
                 .withHeader(HttpHeaders.HOST, "localhost")
                 .build();
     }
@@ -490,6 +512,60 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             assertThat(status).isEqualTo(200);
         }
+
+        @ParameterizedTest(name = "role={0} {2} {1} -> {3}")
+        @MethodSource("roleAccessMatrix")
+        @DisplayName("role access matrix enforces route-level access without bypass")
+        void roleAccessMatrixEnforcesRouteLevelAccess(
+                String role,
+                String path,
+                String method,
+                int expectedStatus,
+                boolean policyEvaluated) {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                    .thenReturn(Optional.of(new Principal("matrix-user", List.of(role), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+
+            int status = runPromise(() -> secured
+                    .serve(request(method, path, VALID_API_KEY, TEST_TENANT))
+                    .map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(expectedStatus);
+            if (policyEvaluated) {
+                verify(policyEngine).evaluate(anyString(), any());
+            } else {
+                verify(policyEngine, never()).evaluate(anyString(), any());
+            }
+        }
+
+        private static Stream<Arguments> roleAccessMatrix() {
+            return Stream.of(
+                    // P0-04: PROCESSOR and API_CLIENT must not bypass ADMIN operations.
+                    Arguments.of("processor", "/api/v1/governance/retention/purge", "POST", 403, false),
+                    Arguments.of("api_client", "/api/v1/governance/retention/purge", "POST", 403, false),
+                    // PROCESSOR can execute OPERATOR routes, API_CLIENT cannot without explicit OPERATOR role.
+                    Arguments.of("processor", SENSITIVE_PATH, "POST", 200, false),
+                    Arguments.of("api_client", SENSITIVE_PATH, "POST", 403, false),
+                    // PROCESSOR can read viewer routes.
+                    Arguments.of("processor", INTERNAL_PATH, "GET", 200, false)
+            );
+        }
+
+        private static HttpRequest request(String method, String path, String apiKey, String tenantId) {
+            HttpRequest.Builder builder;
+            switch (method) {
+                case "POST" -> builder = HttpRequest.post("http://localhost" + path);
+                case "PUT" -> builder = HttpRequest.put("http://localhost" + path);
+                case "DELETE" -> builder = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, "http://localhost" + path);
+                case "PATCH" -> builder = HttpRequest.builder(io.activej.http.HttpMethod.PATCH, "http://localhost" + path);
+                default -> builder = HttpRequest.get("http://localhost" + path);
+            }
+            return builder
+                    .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -739,6 +815,105 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             assertThat(status).isEqualTo(200);
             verify(policyEngine, never()).evaluate(anyString(), any());
+        }
+
+        @ParameterizedTest(name = "{index}: {1} {0} -> policyEvaluated={2}")
+        @MethodSource("requiresPolicyMatrix")
+        @DisplayName("requiresPolicy metadata controls policy evaluation")
+        void requiresPolicyMetadataControlsPolicyEvaluation(String path, String method, boolean policyEvaluated) {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .deploymentProfile("production")
+                    .build();
+
+            int status = runPromise(() -> filter.apply(OK_DELEGATE)
+                    .serve(request(method, path, VALID_API_KEY, TEST_TENANT))
+                    .map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
+            if (policyEvaluated) {
+                verify(policyEngine).evaluate(anyString(), any());
+            } else {
+                verify(policyEngine, never()).evaluate(anyString(), any());
+            }
+        }
+
+        @ParameterizedTest(name = "{index}: {1} {0} -> blocksOnAuditFailure={2}")
+        @MethodSource("requiresBlockingAuditMatrix")
+        @DisplayName("requiresBlockingAudit metadata controls fail-closed audit behavior")
+        void requiresBlockingAuditControlsAuditFailureBehavior(String path, String method, boolean blocksOnAuditFailure) {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+            when(auditService.record(any(AuditEvent.class)))
+                .thenReturn(Promise.ofException(new RuntimeException("audit sink unavailable")));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .deploymentProfile("production")
+                    .build();
+
+            if (blocksOnAuditFailure) {
+                assertThatThrownBy(() -> runPromise(() -> filter.apply(OK_DELEGATE)
+                        .serve(request(method, path, VALID_API_KEY, TEST_TENANT))
+                        .map(HttpResponse::getCode)))
+                        .isInstanceOf(RuntimeException.class);
+            } else {
+                assertThatCode(() -> runPromise(() -> filter.apply(OK_DELEGATE)
+                        .serve(request(method, path, VALID_API_KEY, TEST_TENANT))
+                        .map(HttpResponse::getCode)))
+                        .doesNotThrowAnyException();
+            }
+        }
+
+        @Test
+        @DisplayName("missing metadata fails closed in production-like profile")
+        void missingMetadataFailsClosedInProductionProfile() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .deploymentProfile("production")
+                    .build();
+
+            HttpResponse response = runPromise(() -> filter.apply(OK_DELEGATE)
+                    .serve(request("GET", "/api/v1/unregistered/route", VALID_API_KEY, TEST_TENANT)));
+
+            assertThat(response.getCode()).isEqualTo(500);
+        }
+
+        private static Stream<Arguments> requiresPolicyMatrix() {
+            return Stream.of(
+                    Arguments.of("/api/v1/action/autonomy/feedback-policy", "POST", true),
+                    Arguments.of("/api/v1/action/learning/trigger", "POST", false),
+                    // Compatibility alias route should still honor requiresPolicy metadata.
+                    Arguments.of("/api/v1/executions/exec-1/cancel", "POST", true),
+                    Arguments.of("/api/v1/executions/exec-1/checkpoint", "POST", false)
+            );
+        }
+
+        private static Stream<Arguments> requiresBlockingAuditMatrix() {
+            return Stream.of(
+                    Arguments.of("/api/v1/action/autonomy/feedback-policy", "POST", true),
+                    Arguments.of("/api/v1/action/learning/trigger", "POST", false),
+                    // Compatibility alias route should still honor blocking-audit metadata.
+                    Arguments.of("/api/v1/executions/exec-1/cancel", "POST", true),
+                    Arguments.of("/api/v1/executions/exec-1/checkpoint", "POST", false)
+            );
         }
     }
 

@@ -643,7 +643,7 @@ export class ProductLifecycleExecutor {
   }
 
   /**
-   * Execute steps sequentially, skipping any whose dependencies have failed or been skipped.
+   * Execute steps sequentially, skipping steps whose dependencies have failed or been skipped.
    */
   private async executeSequential(
     steps: ProductLifecycleStep[],
@@ -786,12 +786,16 @@ export class ProductLifecycleExecutor {
 
       if (toRun.length === 0) continue;
 
-      // Run eligible steps concurrently
-      const batchResults = await Promise.all(
-        toRun.map((step) =>
-          this.runOrDryRun(step, productId, runId, options, logger, plan),
-        ),
-      );
+      const batchResults: ProductLifecycleStepResult[] = [];
+      for (const batch of this.createParallelSafetyBatches(toRun)) {
+        batchResults.push(
+          ...(await Promise.all(
+            batch.map((step) =>
+              this.runOrDryRun(step, productId, runId, options, logger, plan),
+            ),
+          )),
+        );
+      }
 
       for (const result of batchResults) {
         this.recordStepResult(result);
@@ -802,6 +806,26 @@ export class ProductLifecycleExecutor {
         );
       }
     }
+  }
+
+  private createParallelSafetyBatches(steps: readonly ProductLifecycleStep[]): ProductLifecycleStep[][] {
+    const batches: ProductLifecycleStep[][] = [];
+    for (const step of steps) {
+      const safetyKey = this.parallelSafetyKey(step);
+      const existingBatch = batches.find(
+        (batch) => !batch.some((candidate) => this.parallelSafetyKey(candidate) === safetyKey),
+      );
+      if (existingBatch === undefined) {
+        batches.push([step]);
+      } else {
+        existingBatch.push(step);
+      }
+    }
+    return batches;
+  }
+
+  private parallelSafetyKey(step: ProductLifecycleStep): string {
+    return `adapter:${step.adapter}`;
   }
 
   private async runOrDryRun(

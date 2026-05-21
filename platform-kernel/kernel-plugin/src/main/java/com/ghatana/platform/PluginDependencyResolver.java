@@ -5,6 +5,7 @@
 package com.ghatana.platform.plugin;
 
 import com.ghatana.kernel.plugin.PluginManifest;
+import com.ghatana.kernel.descriptor.KernelDependency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +33,13 @@ public class PluginDependencyResolver {
      */
     public void resolveDependencies(PluginManifest manifest) throws PluginDependencyException {
         log.debug("Resolving dependencies for plugin: {}", manifest.getPluginId());
-
-        // For now, just log the dependency resolution
-        // In a full implementation, this would:
-        // 1. Check if all dependencies are available
-        // 2. Resolve version conflicts
-        // 3. Detect circular dependencies
-        // 4. Create dependency graph
+        for (KernelDependency dependency : manifest.getDependencies()) {
+            if (dependency.getType() == KernelDependency.DependencyType.PLUGIN
+                    && dependency.getDependencyId().equals(manifest.getPluginId())) {
+                throw new PluginDependencyException(
+                        "Plugin '" + manifest.getPluginId() + "' cannot depend on itself");
+            }
+        }
 
         log.debug("Dependencies resolved for plugin: {}", manifest.getPluginId());
     }
@@ -54,40 +55,78 @@ public class PluginDependencyResolver {
 
         log.debug("Checking for circular dependencies in {} plugins", plugins.size());
 
-        // Simple circular dependency detection using DFS
         Set<String> visited = new HashSet<>();
-        Set<String> recursionStack = new HashSet<>();
+        Deque<String> path = new ArrayDeque<>();
+        Set<String> active = new HashSet<>();
 
-        for (String pluginId : plugins.keySet()) {
+        for (String pluginId : new TreeSet<>(plugins.keySet())) {
             if (!visited.contains(pluginId)) {
-                if (hasCircularDependency(pluginId, plugins, visited, recursionStack)) {
-                    throw new PluginDependencyException(
-                        "Circular dependency detected involving plugin: " + pluginId);
-                }
+                checkPluginGraph(pluginId, plugins, visited, active, path);
             }
         }
 
         log.debug("No circular dependencies found");
     }
 
-    /**
-     * DFS helper to detect circular dependencies.
-     */
-    private boolean hasCircularDependency(String pluginId,
-                                        Map<String, PluginManifest> plugins,
-                                        Set<String> visited,
-                                        Set<String> recursionStack) {
-
+    private void checkPluginGraph(
+            String pluginId,
+            Map<String, PluginManifest> plugins,
+            Set<String> visited,
+            Set<String> active,
+            Deque<String> path) {
         visited.add(pluginId);
-        recursionStack.add(pluginId);
+        active.add(pluginId);
+        path.addLast(pluginId);
 
         PluginManifest manifest = plugins.get(pluginId);
         if (manifest != null) {
-            // Check dependencies (baseline implementation)
-            // In a full implementation, this would check actual dependencies
+            resolveDependencies(manifest);
+            for (KernelDependency dependency : manifest.getDependencies()) {
+                if (dependency.getType() != KernelDependency.DependencyType.PLUGIN) {
+                    continue;
+                }
+
+                String dependencyId = dependency.getDependencyId();
+                PluginManifest dependencyManifest = plugins.get(dependencyId);
+                if (dependencyManifest == null) {
+                    if (!dependency.isOptional()) {
+                        throw new PluginDependencyException(
+                                "Plugin '" + pluginId + "' requires missing plugin dependency '" + dependencyId + "'");
+                    }
+                    continue;
+                }
+                if (!dependency.isVersionSatisfied(dependencyManifest.getVersion())) {
+                    throw new PluginDependencyException(
+                            "Plugin '" + pluginId + "' requires plugin dependency '" + dependencyId
+                                    + "' version '" + dependency.getVersionConstraint()
+                                    + "' but found '" + dependencyManifest.getVersion() + "'");
+                }
+                if (active.contains(dependencyId)) {
+                    throw new PluginDependencyException("Circular dependency detected: "
+                            + renderCycle(path, dependencyId));
+                }
+                if (!visited.contains(dependencyId)) {
+                    checkPluginGraph(dependencyId, plugins, visited, active, path);
+                }
+            }
         }
 
-        recursionStack.remove(pluginId);
-        return false;
+        active.remove(pluginId);
+        path.removeLast();
+    }
+
+    private String renderCycle(Deque<String> path, String repeatedPluginId) {
+        List<String> cycle = new ArrayList<>();
+        boolean inCycle = false;
+        for (String pluginId : path) {
+            if (pluginId.equals(repeatedPluginId)) {
+                inCycle = true;
+            }
+            if (inCycle) {
+                cycle.add(pluginId);
+            }
+        }
+        cycle.add(repeatedPluginId);
+        return String.join(" -> ", cycle);
     }
 }

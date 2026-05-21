@@ -234,6 +234,79 @@ describe("ProductUnit", () => {
       );
     });
 
+    it("accepts language and build-system aware polyglot surfaces", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "polyglot-service",
+        name: "Polyglot Service",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "rust-api",
+            type: "backend-api",
+            implementationStatus: "implemented",
+            language: "rust",
+            runtime: "native",
+            buildSystem: "cargo",
+            cratePath: "products/polyglot/rust-api",
+            cargoToml: "products/polyglot/rust-api/Cargo.toml",
+            adapterHint: "cargo-rust",
+          },
+          {
+            id: "python-worker",
+            type: "worker",
+            implementationStatus: "implemented",
+            language: "python",
+            runtime: "python3.12",
+            buildSystem: "pyproject",
+            pyprojectPath: "products/polyglot/python-worker/pyproject.toml",
+            adapterHint: "python-pyproject",
+          },
+          {
+            id: "node-api",
+            type: "backend-api",
+            implementationStatus: "implemented",
+            language: "typescript",
+            runtime: "nodejs22",
+            buildSystem: "pnpm",
+            packagePath: "products/polyglot/node-api/package.json",
+            adapterHint: "pnpm-node-api",
+          },
+        ],
+      };
+
+      expect(validateProductUnit(productUnit).valid).toBe(true);
+    });
+
+    it("rejects unsupported language and build-system values", () => {
+      const productUnit = {
+        schemaVersion: "1.0.0",
+        id: "test",
+        name: "Test",
+        kind: "business-product",
+        registryProviderRef: { providerId: "registry" },
+        sourceProviderRef: { providerId: "source" },
+        surfaces: [
+          {
+            id: "test-api",
+            type: "backend-api",
+            implementationStatus: "implemented",
+            language: "ruby",
+            buildSystem: "rake",
+          },
+        ],
+      };
+
+      expect(validateProductUnit(productUnit).errors).toEqual(
+        expect.arrayContaining([
+          "surfaces[0].language is not a known surface language",
+          "surfaces[0].buildSystem is not a known surface build system",
+        ])
+      );
+    });
+
     it("rejects enabled lifecycle without lifecycle profile", () => {
       const productUnit = {
         schemaVersion: "1.0.0",

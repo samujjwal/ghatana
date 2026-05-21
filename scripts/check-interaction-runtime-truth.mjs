@@ -45,19 +45,26 @@ function explainPlan(root, productId, phase) {
 
 export function checkInteractionRuntimeTruth(options = {}) {
   const root = options.repoRoot ?? repoRoot;
-  const registryDocument = readJson(options.registryPath ?? registryPath);
+  const registryDocument = options.registryDocument ?? readJson(options.registryPath ?? registryPath);
   const registry = registryDocument.registry ?? registryDocument;
   const errors = [];
   let requiredEvidenceRefs = 0;
   let consumedContracts = 0;
+  let eventContracts = 0;
 
   for (const [productId, registryProduct] of Object.entries(registry)) {
-    const config = loadKernelProduct(root, productId, registryProduct);
+    const config = options.loadKernelProduct?.(productId, registryProduct) ?? loadKernelProduct(root, productId, registryProduct);
     if (config?.interactions === undefined) {
       continue;
     }
     for (const bucket of ['publishes', 'consumes', 'provides']) {
       for (const contract of asArray(config.interactions[bucket])) {
+        if (contract?.mode === 'event-publish' || contract?.mode === 'event-subscribe') {
+          eventContracts += 1;
+          if (typeof contract.topic !== 'string' || contract.topic.trim().length === 0) {
+            errors.push(`${productId}.interactions.${bucket}.${contract.contractId} event contract must declare topic`);
+          }
+        }
         if (contract?.evidence?.required === true) {
           const refs = asArray(contract.evidence.evidenceRefs);
           if (refs.length === 0) {
@@ -100,7 +107,104 @@ export function checkInteractionRuntimeTruth(options = {}) {
     errors.push('Data Cloud product interaction evidence provider is missing');
   }
 
-  return { errors, consumedContracts, requiredEvidenceRefs };
+  const crossServiceBuildFile = path.join(
+    root,
+    'integration-tests/cross-service-workflow/build.gradle.kts',
+  );
+  if (!existsSync(crossServiceBuildFile)) {
+    errors.push('cross-service-workflow build file is missing');
+  } else {
+    const buildSource = readFileSync(crossServiceBuildFile, 'utf8');
+    if (!buildSource.includes('val productInteractionTest by sourceSets.creating')) {
+      errors.push('cross-service-workflow is missing productInteractionTest source set');
+    }
+    if (!buildSource.includes('val runtimeInteractionTest by sourceSets.creating')) {
+      errors.push('cross-service-workflow is missing runtimeInteractionTest source set');
+    }
+    if (!buildSource.includes('tasks.register<Test>("productInteractionTest")')) {
+      errors.push('cross-service-workflow is missing productInteractionTest task registration');
+    }
+    if (!buildSource.includes('tasks.register<Test>("runtimeInteractionTest")')) {
+      errors.push('cross-service-workflow is missing runtimeInteractionTest task registration');
+    }
+  }
+
+  const runtimeTestPath = path.join(
+    root,
+    'integration-tests/cross-service-workflow/src/runtimeInteractionTest/java/com/ghatana/integration/crossservice/CrossProductInteractionRuntimeTest.java',
+  );
+  if (!existsSync(runtimeTestPath)) {
+    errors.push('runtime interaction executable test is missing: CrossProductInteractionRuntimeTest');
+  } else {
+    const runtimeTestSource = readFileSync(runtimeTestPath, 'utf8');
+    const requiredRuntimeReasonCodes = [
+      'product_interaction.tenant_required',
+      'product_interaction.contract_version_unsupported',
+      'product_interaction.workspace_required',
+      'product_interaction.policy_denied',
+      'product_interaction.handler_unavailable',
+      'product_interaction.timeout',
+    ];
+    for (const reasonCode of requiredRuntimeReasonCodes) {
+      if (!runtimeTestSource.includes(reasonCode)) {
+        errors.push(`runtime interaction test missing required negative assertion: ${reasonCode}`);
+      }
+    }
+  }
+
+  const productInteractionTestPath = path.join(
+    root,
+    'integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java',
+  );
+  if (!existsSync(productInteractionTestPath)) {
+    errors.push('product interaction executable test is missing: PhrDmosProductInteractionContractTest');
+  } else {
+    const productTestSource = readFileSync(productInteractionTestPath, 'utf8');
+    const requiredProductAssertions = [
+      'product_interaction.tenant_required',
+      'product_interaction.workspace_required',
+      'product_interaction.contract_version_unsupported',
+      'product_interaction.policy_denied',
+      'product_interaction.timeout',
+      'FileProductInteractionEvidenceWriter',
+      'correlationId',
+      'workspaceId',
+      'tenantId',
+    ];
+    for (const assertionToken of requiredProductAssertions) {
+      if (!productTestSource.includes(assertionToken)) {
+        errors.push(`product interaction test missing required runtime proof token: ${assertionToken}`);
+      }
+    }
+  }
+
+  if (options.validateEventBroker !== false) {
+    const eventBrokerFiles = [
+      'ProductInteractionEventBroker.java',
+      'ProductInteractionEventEnvelope.java',
+      'ProductInteractionEventHandler.java',
+      'ProductInteractionEventOutcome.java',
+      'ProductInteractionEventEvidenceWriter.java',
+      'FileProductInteractionEventEvidenceWriter.java',
+      'ProductInteractionEventPolicyEvaluator.java',
+      'ProductInteractionEventBrokerMetrics.java',
+    ];
+    for (const fileName of eventBrokerFiles) {
+      const filePath = path.join(root, 'platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction', fileName);
+      if (!existsSync(filePath)) {
+        errors.push(`product interaction event broker runtime file is missing: ${fileName}`);
+      }
+    }
+    const eventBrokerTestPath = path.join(
+      root,
+      'platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionEventBrokerTest.java',
+    );
+    if (!existsSync(eventBrokerTestPath)) {
+      errors.push('product interaction event broker test is missing: ProductInteractionEventBrokerTest');
+    }
+  }
+
+  return { errors, consumedContracts, requiredEvidenceRefs, eventContracts };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -113,6 +217,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exit(1);
   }
   console.log(
-    `Interaction runtime truth check passed for ${result.consumedContracts} consumed contract(s) and ${result.requiredEvidenceRefs} evidence ref(s).`,
+    `Interaction runtime truth check passed for ${result.consumedContracts} consumed contract(s), ${result.eventContracts} event contract(s), and ${result.requiredEvidenceRefs} evidence ref(s).`,
   );
 }

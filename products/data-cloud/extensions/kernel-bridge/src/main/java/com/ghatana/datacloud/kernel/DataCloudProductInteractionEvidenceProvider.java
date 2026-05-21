@@ -60,19 +60,62 @@ public final class DataCloudProductInteractionEvidenceProvider extends DataCloud
 
     public Promise<InteractionEvidencePersistResponse> persistInteractionEvidenceTyped(
             InteractionEvidencePersistRequest request) {
+        DataCloudProviderException validationError = validateInteractionEvidence(request);
+        if (validationError != null) {
+            return Promise.ofException(validationError);
+        }
+
+        String persistedAt = Instant.now().toString();
         Map<String, Object> evidenceRecord = new HashMap<>();
         evidenceRecord.put("evidenceId", request.evidenceId());
         evidenceRecord.put("contractId", request.contractId());
         evidenceRecord.put("providerProductId", request.providerProductId());
         evidenceRecord.put("consumerProductId", request.consumerProductId());
-        evidenceRecord.put("evidence", request.evidence());
+        evidenceRecord.put("evidence", request.evidence() != null ? request.evidence() : Map.of());
         evidenceRecord.put("capturedAt", request.capturedAt().toString());
         evidenceRecord.put("tenantId", context().getTenantId());
         evidenceRecord.put("workspaceId", context().getWorkspaceId());
         evidenceRecord.put("projectId", context().getProjectId());
         evidenceRecord.put("correlationId", request.correlationId());
-        evidenceRecord.put("persistedAt", Instant.now().toString());
+        evidenceRecord.put("persistedAt", persistedAt);
         return persistRecord(request.evidenceId(), evidenceRecord)
-                .map($ -> new InteractionEvidencePersistResponse(true, request.evidenceId(), Instant.now().toString()));
+                .map($ -> new InteractionEvidencePersistResponse(true, request.evidenceId(), persistedAt));
+    }
+
+    private DataCloudProviderException validateInteractionEvidence(InteractionEvidencePersistRequest request) {
+        if (request == null) {
+            return invalidInteractionEvidence("request is required");
+        }
+        if (isBlank(request.evidenceId())) {
+            return invalidInteractionEvidence("evidenceId is required");
+        }
+        if (isBlank(request.contractId())) {
+            return invalidInteractionEvidence("contractId is required");
+        }
+        if (isBlank(request.providerProductId())) {
+            return invalidInteractionEvidence("providerProductId is required");
+        }
+        if (isBlank(request.consumerProductId())) {
+            return invalidInteractionEvidence("consumerProductId is required");
+        }
+        if (request.capturedAt() == null) {
+            return invalidInteractionEvidence("capturedAt is required");
+        }
+        if (isBlank(request.correlationId())) {
+            return invalidInteractionEvidence("correlationId is required");
+        }
+        return null;
+    }
+
+    private DataCloudProviderException invalidInteractionEvidence(String message) {
+        return new DataCloudProviderException(
+                "interaction-evidence",
+                "persist-interaction-evidence",
+                message,
+                DataCloudProviderException.ReasonCode.SCHEMA);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

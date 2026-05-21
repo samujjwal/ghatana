@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import * as path from 'node:path';
 import { ProductLifecyclePlan } from '../domain/ProductLifecyclePhase.js';
 
 /**
@@ -9,8 +10,7 @@ export class PlanWriter {
    * Write lifecycle plan to file
    */
   async writePlan(plan: ProductLifecyclePlan, outputPath: string): Promise<void> {
-    const dir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
 
     const content = JSON.stringify(plan, null, 2);
     await fs.writeFile(outputPath, content, 'utf-8');
@@ -29,15 +29,14 @@ export class PlanWriter {
    */
   async writeSummary(plan: ProductLifecyclePlan, outputPath: string): Promise<void> {
     const summary = this.generateSummary(plan);
-    const dir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
     await fs.writeFile(outputPath, summary, 'utf-8');
   }
 
   /**
    * Generate human-readable summary
    */
-  private generateSummary(plan: ProductLifecyclePlan): string {
+  generateSummary(plan: ProductLifecyclePlan): string {
     const lines: string[] = [];
 
     lines.push('# Lifecycle Plan Summary');
@@ -67,7 +66,28 @@ export class PlanWriter {
     lines.push(`## Steps (${plan.steps.length})`);
     lines.push('');
     for (const step of plan.steps) {
-      lines.push(`- ${step.id}: ${step.description}`);
+      const dependencyText = step.dependsOn.length > 0 ? `, depends on ${step.dependsOn.join(', ')}` : '';
+      lines.push(`- ${step.id}: ${step.description} [${step.adapter}${dependencyText}]`);
+    }
+    if (plan.interactionPreflights !== undefined && plan.interactionPreflights.length > 0) {
+      lines.push('');
+      lines.push(`## Interaction Preflights (${plan.interactionPreflights.length})`);
+      lines.push('');
+      for (const preflight of plan.interactionPreflights) {
+        const requiredText = preflight.required ? 'required' : 'optional';
+        const reasonText = preflight.reasonCode !== undefined ? `, reason: ${preflight.reasonCode}` : '';
+        lines.push(`- ${preflight.contractId}: ${preflight.status} (${requiredText}${reasonText})`);
+      }
+    }
+    if (plan.interactionRollbackImpact !== undefined && plan.interactionRollbackImpact.length > 0) {
+      lines.push('');
+      lines.push(`## Interaction Rollback Impact (${plan.interactionRollbackImpact.length})`);
+      lines.push('');
+      for (const impact of plan.interactionRollbackImpact) {
+        const requiredText = impact.required ? 'required' : 'optional';
+        const reasonText = impact.reasonCode !== undefined ? `, reason: ${impact.reasonCode}` : '';
+        lines.push(`- ${impact.contractId}: ${impact.impactLevel} (${requiredText}${reasonText})`);
+      }
     }
     lines.push('');
     lines.push(`## Expected Artifacts (${plan.expectedArtifacts.length})`);
@@ -78,6 +98,22 @@ export class PlanWriter {
     lines.push('');
     lines.push(`Output Directory: ${plan.outputDirectory}`);
     lines.push(`Estimated Duration: ${Math.round(plan.estimatedDurationMs / 1000)}s`);
+    if (plan.blockingReasons.length > 0) {
+      lines.push('');
+      lines.push('## Blocking Reasons');
+      lines.push('');
+      for (const reason of plan.blockingReasons) {
+        lines.push(`- ${reason}`);
+      }
+    }
+    if (plan.warnings.length > 0) {
+      lines.push('');
+      lines.push('## Warnings');
+      lines.push('');
+      for (const warning of plan.warnings) {
+        lines.push(`- ${warning}`);
+      }
+    }
 
     return lines.join('\n');
   }

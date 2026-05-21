@@ -4233,6 +4233,28 @@ paths:
             Retry-After:
               description: Seconds before retrying after capability enablement.
               schema: { type: integer, minimum: 1 }
+    post:
+      summary: Create an asynchronous export job for a collection
+      operationId: apiV1EntitiesCollectionExportPost
+      tags: [entities]
+      x-capability-required: entity-export
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200": { description: Export job accepted. }
+        "503":
+          description: Export service not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/anomalies:
     post:
@@ -6361,6 +6383,39 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Connector details. }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      summary: Update connector configuration
+      operationId: apiV1ConnectorsConnectionIdPut
+      tags: [connectors]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionRegistrationRequest"
+      responses:
+        "200": { description: Connector updated. }
+        "400": { description: Invalid payload. }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      summary: Delete a connector
+      operationId: apiV1ConnectorsConnectionIdDelete
+      tags: [connectors]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector deleted. }
         "404": { $ref: "#/components/responses/NotFound" }
   /api/v1/connectors/{connectionId}/test:
     post:

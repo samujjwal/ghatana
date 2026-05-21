@@ -99,6 +99,28 @@ export const ProductInteractionPreflightSchema = z
   })
   .passthrough();
 
+export const ProductInteractionRollbackImpactSchema = z
+  .object({
+    contractId: z.string().trim().min(1),
+    providerProductId: z.string().trim().min(1),
+    consumerProductId: z.string().trim().min(1),
+    affectedProductIds: z.array(z.string().trim().min(1)),
+    mode: z.enum([
+      'request-response',
+      'event-publish',
+      'event-subscribe',
+      'shared-evidence',
+      'provider-capability',
+    ]),
+    required: z.boolean(),
+    impactLevel: z.enum(['none', 'review', 'blocking']),
+    status: z.enum(['provider-enabled', 'provider-not-enabled']),
+    reasonCode: z.string().trim().min(1).optional(),
+    evidenceRequired: z.boolean(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .passthrough();
+
 export const LifecyclePlanSchema = z
   .object({
     runId: z.string().trim().min(1),
@@ -109,6 +131,7 @@ export const LifecyclePlanSchema = z
     createdAt: z.string().datetime({ offset: true }).optional(),
     steps: z.array(z.unknown()).optional(),
     interactionPreflights: z.array(ProductInteractionPreflightSchema).optional(),
+    interactionRollbackImpact: z.array(ProductInteractionRollbackImpactSchema).optional(),
     blockingReasons: z.array(z.string().trim().min(1)).optional(),
   })
   .passthrough();
@@ -522,6 +545,7 @@ function normalizeKernelLifecycleReasonCode(reasonCode: string): string {
 
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;
 export type ProductInteractionPreflight = z.infer<typeof ProductInteractionPreflightSchema>;
+export type ProductInteractionRollbackImpact = z.infer<typeof ProductInteractionRollbackImpactSchema>;
 export type LifecycleRun = z.infer<typeof LifecycleRunSchema>;
 export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;
 export type VerifyHealthReport = z.infer<typeof VerifyHealthReportSchema>;
@@ -803,7 +827,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
     // Fetch run record first; this is the single source of truth for the run.
     const run = await this.getLifecycleRun(productUnitId, runId);
 
-    // Attempt to fetch gate result manifest if a ref is available.
+    // Fetch gate result manifest when a ref is available.
     let gates: LifecycleGateSummary[] | undefined;
     if (run.manifestRefs?.['gateResultManifest'] !== undefined) {
       try {
@@ -818,7 +842,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
       }
     }
 
-    // Attempt to fetch artifact manifest if a ref is available.
+    // Fetch artifact manifest when a ref is available.
     let artifacts: LifecycleArtifactSummary[] | undefined;
     if (run.manifestRefs?.['artifactManifest'] !== undefined) {
       try {
@@ -836,7 +860,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
       }
     }
 
-    // Attempt to fetch deployment summary if a ref is available.
+    // Fetch deployment summary when a ref is available.
     let deployment: LifecycleDeploymentSummary | undefined;
     if (run.manifestRefs?.['deploymentManifest'] !== undefined) {
       try {
@@ -852,7 +876,7 @@ class DefaultKernelLifecycleClient implements KernelLifecycleClient {
       }
     }
 
-    // Attempt to fetch health summary from the verify health report.
+    // Fetch health summary from the verify health report.
     let health: LifecycleHealthSummary | undefined;
     if (run.healthSnapshotRef !== undefined || run.manifestRefs?.['verifyHealthReport'] !== undefined) {
       try {

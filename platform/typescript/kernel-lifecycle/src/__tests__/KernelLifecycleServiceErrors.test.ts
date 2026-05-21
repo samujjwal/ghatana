@@ -83,6 +83,70 @@ describe('KernelLifecycleService — hardened error paths', () => {
         expect.objectContaining({ reasonCode: 'lifecycle-run-index-unavailable' }),
       );
     });
+
+    it('filters lifecycle run summaries by status, profile, environment, and source ref', async () => {
+      const localRunDir = path.join(outputRoot(), 'products', 'digital-marketing', 'deploy', 'run-local');
+      const prodRunDir = path.join(outputRoot(), 'products', 'digital-marketing', 'deploy', 'run-prod');
+      await fs.mkdir(localRunDir, { recursive: true });
+      await fs.mkdir(prodRunDir, { recursive: true });
+      await fs.writeFile(
+        path.join(localRunDir, 'lifecycle-result.json'),
+        JSON.stringify({
+          schemaVersion: '1.0.0',
+          runId: 'run-local',
+          correlationId: 'corr-local',
+          productId: 'digital-marketing',
+          phase: 'deploy',
+          lifecycleProfile: 'polyglot-service-product',
+          environment: 'local',
+          sourceRef: 'abc123',
+          status: 'succeeded',
+          startedAt: '2026-05-21T00:00:00.000Z',
+          completedAt: '2026-05-21T00:00:01.000Z',
+          steps: [],
+          gates: [],
+          artifacts: [],
+          outputDirectory: '.kernel/out/run-local',
+        }),
+      );
+      await fs.writeFile(
+        path.join(prodRunDir, 'lifecycle-result.json'),
+        JSON.stringify({
+          schemaVersion: '1.0.0',
+          runId: 'run-prod',
+          correlationId: 'corr-prod',
+          productId: 'digital-marketing',
+          phase: 'deploy',
+          lifecycleProfile: 'java-service-product',
+          environment: 'prod',
+          sourceRef: 'def456',
+          status: 'failed',
+          startedAt: '2026-05-21T00:00:00.000Z',
+          completedAt: '2026-05-21T00:00:01.000Z',
+          steps: [],
+          gates: [],
+          artifacts: [],
+          outputDirectory: '.kernel/out/run-prod',
+        }),
+      );
+
+      const service = createService();
+      const runs = await service.listLifecycleRuns('digital-marketing', {
+        phase: 'deploy',
+        status: 'succeeded',
+        lifecycleProfile: 'polyglot-service-product',
+        environment: 'local',
+        sourceRef: 'abc123',
+      });
+
+      expect(runs).toHaveLength(1);
+      expect(runs[0]).toMatchObject({
+        runId: 'run-local',
+        lifecycleProfile: 'polyglot-service-product',
+        environment: 'local',
+        sourceRef: 'abc123',
+      });
+    });
   });
 
   describe('getLifecycleRun — corrupt JSON', () => {

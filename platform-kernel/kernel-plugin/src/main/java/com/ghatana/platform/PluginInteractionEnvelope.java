@@ -25,8 +25,37 @@ public record PluginInteractionEnvelope<Req>(
         @Nullable String tenantId,
         @Nullable String workspaceId,
         @Nullable String runId,
+        @Nullable String lifecyclePhase,
         @NotNull String correlationId,
         @NotNull Instant requestedAt,
         @NotNull Req payload
 ) {
+    public PluginInteractionEnvelope(
+            @NotNull String schemaVersion,
+            @NotNull String interactionId,
+            @NotNull String contractId,
+            @NotNull String callerPluginId,
+            @Nullable String targetPluginId,
+            @Nullable String productUnitId,
+            @Nullable String tenantId,
+            @Nullable String workspaceId,
+            @Nullable String runId,
+            @NotNull String correlationId,
+            @NotNull Instant requestedAt,
+            @NotNull Req payload) {
+        this(
+                schemaVersion,
+                interactionId,
+                contractId,
+                callerPluginId,
+                targetPluginId,
+                productUnitId,
+                tenantId,
+                workspaceId,
+                runId,
+                null,
+                correlationId,
+                requestedAt,
+                payload);
+    }
 }

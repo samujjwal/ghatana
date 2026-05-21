@@ -23,6 +23,7 @@ import {
   ProductLifecycleApprovalRequirementConfig,
   ProductLifecycleHealthCheck,
   ProductInteractionPreflight,
+  ProductInteractionRollbackImpact,
 } from '../domain/ProductLifecyclePhase.js';
 import type {
   KernelLifecycleProviderContext,
@@ -67,6 +68,7 @@ export interface ProductLifecyclePlanOptions {
   readonly shapeOnly?: boolean;
   readonly allowBootstrapFallback?: boolean;
   readonly semanticArtifactRefs?: readonly string[];
+  readonly changedFiles?: readonly string[];
 }
 
 export interface ProductLifecyclePlannerLogger {
@@ -355,6 +357,7 @@ export class ProductLifecyclePlanner {
         profile,
         toolchains,
         options.surfaceSelector,
+        options.changedFiles,
         options.shapeOnly ?? false,
       ));
     } else if (SURFACE_PHASES.has(phase)) {
@@ -365,6 +368,7 @@ export class ProductLifecyclePlanner {
         profile,
         toolchains,
         options.surfaceSelector,
+        options.changedFiles,
         options.shapeOnly ?? false,
       ));
     } else {
@@ -380,9 +384,18 @@ export class ProductLifecyclePlanner {
     const requiredPlugins = this.resolveRequiredPlugins(config);
     const approvalRequirements = this.resolveApprovalRequirements(phase, config, options.environment);
     const interactionPreflights = await this.resolveInteractionPreflights(productId, phase, config);
+    const interactionRollbackImpact = await this.resolveInteractionRollbackImpact(productId, phase, config);
     steps = this.prependInteractionPreflightSteps(phase, steps, interactionPreflights);
     const adapterIds = [...new Set(steps.map((s) => s.adapter).filter(Boolean))];
     const healthChecks = this.resolveHealthChecks(selectedSurfaces);
+    const blockingReasons = [
+      ...interactionPreflights
+        .filter((preflight) => preflight.status === 'blocked')
+        .map((preflight) => `${preflight.reasonCode ?? 'product_interaction.policy_denied'}:${preflight.contractId}`),
+      ...interactionRollbackImpact
+        .filter((impact) => impact.impactLevel === 'blocking')
+        .map((impact) => `${impact.reasonCode ?? 'product_interaction.rollback_impact_blocking'}:${impact.contractId}`),
+    ];
 
     return {
       schemaVersion: '1.0.0',
@@ -408,13 +421,12 @@ export class ProductLifecyclePlanner {
       requiredPlugins,
       approvalRequirements,
       interactionPreflights,
+      ...(interactionRollbackImpact.length > 0 ? { interactionRollbackImpact } : {}),
       healthChecks,
       outputDirectory,
       estimatedDurationMs: this.estimateDuration(steps),
       warnings: [],
-      blockingReasons: interactionPreflights
-        .filter((preflight) => preflight.status === 'blocked')
-        .map((preflight) => `${preflight.reasonCode ?? 'product_interaction.policy_denied'}:${preflight.contractId}`),
+      blockingReasons,
     };
   }
 
@@ -851,10 +863,11 @@ export class ProductLifecyclePlanner {
     profile: Record<string, unknown>,
     toolchains: ToolchainRegistry,
     surfaceSelector?: string[],
+    changedFiles?: readonly string[],
     shapeOnly: boolean = false,
   ): { steps: ProductLifecycleStep[]; selectedSurfaces: ProductSurfaceSelection[]; phaseMode: ProductLifecyclePlan['phaseMode'] } {
     const phaseConfig = this.resolvePhaseConfig(phase, config, profile);
-    const surfaces = surfaceSelector ?? phaseConfig.defaultSurfaces;
+    const surfaces = this.resolveRequestedSurfaces(config, phaseConfig.defaultSurfaces, surfaceSelector, changedFiles);
     const phaseMode = this.mapMode(phaseConfig.mode);
 
     const selectedSurfaces: ProductSurfaceSelection[] = [];
@@ -871,13 +884,23 @@ export class ProductLifecyclePlanner {
       }
 
       const surfaceType = this.resolveSurfaceType(surfaceName, surfaceConfig);
-      this.validateSurfaceAdapter(surfaceName, surfaceConfig, surfaceType, phase, toolchains, config, shapeOnly);
+      const adapterSelection = this.resolveSurfaceAdapter(surfaceName, surfaceConfig, surfaceType, profile);
+      this.validateSurfaceAdapter(
+        surfaceName,
+        adapterSelection.adapterId,
+        surfaceType,
+        phase,
+        toolchains,
+        config,
+        shapeOnly,
+      );
+      const resolvedSurfaceConfig = { ...surfaceConfig, adapter: adapterSelection.adapterId };
 
       selectedSurfaces.push({
         surface: surfaceName,
         type: surfaceType,
-        adapter: surfaceConfig.adapter,
-        config: { ...surfaceConfig } as Record<string, unknown>,
+        adapter: adapterSelection.adapterId,
+        config: resolvedSurfaceConfig as Record<string, unknown>,
       });
 
       const stepId = `${phase}-${surfaceName}-${stepIndex++}`;
@@ -886,19 +909,16 @@ export class ProductLifecyclePlanner {
         stepKind: 'surface',
         phase,
         surface: surfaceName,
-        adapter: String(surfaceConfig.adapter),
-        adapterSelectionSource:
-          String(surfaceConfig.adapter) === this.resolveProfileAdapter(profile, surfaceName)
-            ? 'profile-default'
-            : 'product-config-override',
-        description: `${phase} ${surfaceName} via ${String(surfaceConfig.adapter)}`,
+        adapter: adapterSelection.adapterId,
+        adapterSelectionSource: adapterSelection.source,
+        description: `${phase} ${surfaceName} via ${adapterSelection.adapterId}`,
         dependsOn:
           phaseMode === 'sequential' && steps.length > 0
             ? [steps[steps.length - 1].id]
             : [],
         estimatedDurationMs: 30_000,
         adapterContext: {
-          surfaceConfig: { ...surfaceConfig } as Record<string, unknown>,
+          surfaceConfig: resolvedSurfaceConfig as Record<string, unknown>,
           ...(config.artifacts?.[phase]?.[surfaceName] !== undefined
             ? { artifactConfig: config.artifacts[phase][surfaceName] as unknown as Record<string, unknown> }
             : {}),
@@ -921,6 +941,7 @@ export class ProductLifecyclePlanner {
     profile: Record<string, unknown>,
     toolchains: ToolchainRegistry,
     surfaceSelector?: string[],
+    changedFiles?: readonly string[],
     shapeOnly: boolean = false,
   ): Promise<{
     steps: ProductLifecycleStep[];
@@ -936,8 +957,8 @@ export class ProductLifecyclePlanner {
     }
 
     const phaseConfig = config.phases['package'];
-    const surfaces =
-      surfaceSelector ?? (phaseConfig?.defaultSurfaces ?? Object.keys(packageConfig));
+    const defaultSurfaces = phaseConfig?.defaultSurfaces ?? Object.keys(packageConfig);
+    const surfaces = this.resolveRequestedSurfaces(config, defaultSurfaces, surfaceSelector, changedFiles);
     const phaseMode = this.mapMode(phaseConfig?.mode ?? 'sequential');
 
     const selectedSurfaces: ProductSurfaceSelection[] = [];
@@ -1217,6 +1238,7 @@ export class ProductLifecyclePlanner {
           provider?.lifecycleStatus === 'enabled' || provider?.lifecycle?.enabled === true;
         const required = contract.required ?? true;
         const blocked = required && !providerEnabled;
+        const skipped = !required && !providerEnabled;
 
         return {
           contractId: contract.contractId,
@@ -1224,14 +1246,60 @@ export class ProductLifecyclePlanner {
           consumerProductId: productId,
           mode: contract.mode,
           required,
-          status: blocked ? 'blocked' : 'pending',
-          ...(blocked ? { reasonCode: 'product_interaction.provider_not_enabled' } : {}),
+          status: blocked ? 'blocked' : skipped ? 'skipped' : 'pending',
+          ...(blocked || skipped ? { reasonCode: 'product_interaction.provider_not_enabled' } : {}),
           evidenceRequired: contract.evidence.required,
           ...(contract.evidence.evidenceRefs !== undefined
             ? { evidenceRefs: contract.evidence.evidenceRefs }
             : {}),
         };
       });
+  }
+
+  private async resolveInteractionRollbackImpact(
+    productId: string,
+    phase: ProductLifecyclePhase,
+    config: KernelProductConfiguration,
+  ): Promise<ProductInteractionRollbackImpact[]> {
+    if (phase !== 'rollback') {
+      return [];
+    }
+
+    const contracts = [
+      ...(config.interactions?.consumes ?? []),
+      ...(config.interactions?.publishes ?? []),
+      ...(config.interactions?.provides ?? []),
+    ].filter((contract) => this.interactionAppliesToPhase(contract, phase));
+    if (contracts.length === 0) {
+      return [];
+    }
+
+    const registry = await this.loadRegistry();
+    return contracts.map((contract) => {
+      const provider = registry[contract.providerProductId] as
+        | { lifecycleStatus?: unknown; lifecycle?: { enabled?: unknown } }
+        | undefined;
+      const providerEnabled =
+        provider?.lifecycleStatus === 'enabled' || provider?.lifecycle?.enabled === true;
+      const required = contract.required ?? true;
+      const impactLevel = providerEnabled ? 'none' : required ? 'blocking' : 'review';
+
+      return {
+        contractId: contract.contractId,
+        providerProductId: contract.providerProductId,
+        consumerProductId: productId,
+        affectedProductIds: contract.consumerProductIds,
+        mode: contract.mode,
+        required,
+        impactLevel,
+        status: providerEnabled ? 'provider-enabled' : 'provider-not-enabled',
+        ...(!providerEnabled ? { reasonCode: 'product_interaction.rollback_provider_not_enabled' } : {}),
+        evidenceRequired: contract.evidence.required,
+        ...(contract.evidence.evidenceRefs !== undefined
+          ? { evidenceRefs: contract.evidence.evidenceRefs }
+          : {}),
+      };
+    });
   }
 
   private interactionAppliesToPhase(
@@ -1243,11 +1311,46 @@ export class ProductLifecyclePlanner {
   }
 
   private prependInteractionPreflightSteps(
-    _phase: ProductLifecyclePhase,
+    phase: ProductLifecyclePhase,
     steps: ProductLifecycleStep[],
-    _preflights: readonly ProductInteractionPreflight[],
+    preflights: readonly ProductInteractionPreflight[],
   ): ProductLifecycleStep[] {
-    return steps;
+    if (preflights.length === 0) {
+      return steps;
+    }
+
+    const preflightSteps = preflights.map((preflight, index): ProductLifecycleStep => ({
+      id: `interaction-preflight-${index}`,
+      stepKind: 'interaction-preflight',
+      phase,
+      surface: `interaction:${preflight.contractId}`,
+      adapter: 'kernel-product-interaction-broker',
+      adapterSelectionSource: 'product-config-override',
+      description: `preflight ${preflight.mode} interaction ${preflight.contractId}`,
+      dependsOn: [],
+      estimatedDurationMs: 5_000,
+      adapterContext: {
+        interactionPreflight: { ...preflight },
+      },
+    }));
+    const requiredPreflightStepIds = preflightSteps
+      .filter((step) => {
+        const status = step.adapterContext?.interactionPreflight?.status;
+        return status !== 'skipped';
+      })
+      .map((step) => step.id);
+
+    if (requiredPreflightStepIds.length === 0) {
+      return [...preflightSteps, ...steps];
+    }
+
+    return [
+      ...preflightSteps,
+      ...steps.map((step) => ({
+        ...step,
+        dependsOn: Array.from(new Set([...requiredPreflightStepIds, ...step.dependsOn])),
+      })),
+    ];
   }
 
   private normalizeApprovalRequirement(
@@ -1414,18 +1517,13 @@ export class ProductLifecyclePlanner {
 
   private validateSurfaceAdapter(
     surfaceName: string,
-    surfaceConfig: ProductSurface,
+    adapterId: string,
     surfaceType: ProductSurface['type'],
     phase: ProductLifecyclePhase,
     toolchains: ToolchainRegistry,
     config: KernelProductConfiguration,
     shapeOnly: boolean,
   ): void {
-    const adapterId = String(surfaceConfig.adapter ?? '');
-    if (!adapterId) {
-      throw new Error(`Surface "${surfaceName}" does not declare an adapter in kernel-product.yaml.`);
-    }
-
     const adapter = this.validateAdapterForPhase(adapterId, phase, toolchains, config, shapeOnly, surfaceName);
     const supportedSurfaceTypes = (adapter.supportedSurfaceTypes ?? []) as string[];
 
@@ -1662,6 +1760,176 @@ export class ProductLifecyclePlanner {
     return 'backend-api';
   }
 
+  private resolveSurfaceAdapter(
+    surfaceName: string,
+    surfaceConfig: ProductSurface,
+    surfaceType: ProductSurface['type'],
+    profile: Record<string, unknown>,
+  ): { adapterId: string; source: NonNullable<ProductLifecycleStep['adapterSelectionSource']> } {
+    const configuredAdapter = this.readConfiguredSurfaceAdapter(surfaceConfig);
+    if (configuredAdapter !== undefined) {
+      return { adapterId: configuredAdapter, source: 'product-config-override' };
+    }
+
+    const defaultAdapter = this.resolveProfileDefaultSurfaceAdapter(profile, surfaceName, surfaceType, surfaceConfig);
+    if (defaultAdapter !== undefined) {
+      return { adapterId: defaultAdapter, source: 'profile-default' };
+    }
+
+    const hints = this.describeSurfaceAdapterHints(surfaceName, surfaceType, surfaceConfig);
+    throw new Error(
+      `Surface "${surfaceName}" does not declare an adapter and lifecycle profile defaults do not include ${hints}.`,
+    );
+  }
+
+  private readConfiguredSurfaceAdapter(surfaceConfig: ProductSurface): string | undefined {
+    if (typeof surfaceConfig.adapter === 'string' && surfaceConfig.adapter.trim().length > 0) {
+      return surfaceConfig.adapter.trim();
+    }
+    if (typeof surfaceConfig.adapterHint === 'string' && surfaceConfig.adapterHint.trim().length > 0) {
+      return surfaceConfig.adapterHint.trim();
+    }
+    return undefined;
+  }
+
+  private resolveProfileDefaultSurfaceAdapter(
+    profile: Record<string, unknown>,
+    surfaceName: string,
+    surfaceType: ProductSurface['type'],
+    surfaceConfig: ProductSurface,
+  ): string | undefined {
+    for (const adapterKey of this.resolveSurfaceAdapterDefaultKeys(surfaceName, surfaceType, surfaceConfig)) {
+      const adapterId = this.resolveProfileAdapter(profile, adapterKey);
+      if (adapterId !== undefined) {
+        return adapterId;
+      }
+    }
+    return undefined;
+  }
+
+  private resolveSurfaceAdapterDefaultKeys(
+    surfaceName: string,
+    surfaceType: ProductSurface['type'],
+    surfaceConfig: ProductSurface,
+  ): string[] {
+    const language = this.normalizeSurfaceLanguage(surfaceConfig);
+    const buildSystem = this.normalizeSurfaceBuildSystem(surfaceConfig);
+    const keys = new Set<string>();
+
+    if (buildSystem !== undefined) {
+      keys.add(`${surfaceType}.${buildSystem}`);
+    }
+    if (language !== undefined) {
+      keys.add(`${surfaceType}.${language}`);
+    }
+    keys.add(surfaceName);
+    keys.add(surfaceType);
+
+    return Array.from(keys);
+  }
+
+  private describeSurfaceAdapterHints(
+    surfaceName: string,
+    surfaceType: ProductSurface['type'],
+    surfaceConfig: ProductSurface,
+  ): string {
+    return this.resolveSurfaceAdapterDefaultKeys(surfaceName, surfaceType, surfaceConfig)
+      .map((key) => `defaultAdapters.${key}`)
+      .join(', ');
+  }
+
+  private normalizeSurfaceLanguage(surfaceConfig: ProductSurface): string | undefined {
+    if (typeof surfaceConfig.language === 'string' && surfaceConfig.language.trim().length > 0) {
+      return surfaceConfig.language.trim();
+    }
+
+    const buildSystem = this.normalizeSurfaceBuildSystem(surfaceConfig);
+    if (buildSystem === 'cargo') {
+      return 'rust';
+    }
+    if (buildSystem === 'pyproject') {
+      return 'python';
+    }
+    if (buildSystem === 'pnpm') {
+      return 'node';
+    }
+
+    return undefined;
+  }
+
+  private normalizeSurfaceBuildSystem(surfaceConfig: ProductSurface): string | undefined {
+    if (typeof surfaceConfig.buildSystem === 'string' && surfaceConfig.buildSystem.trim().length > 0) {
+      return surfaceConfig.buildSystem.trim();
+    }
+    return undefined;
+  }
+
+  private resolveRequestedSurfaces(
+    config: KernelProductConfiguration,
+    defaultSurfaces: readonly string[],
+    surfaceSelector?: readonly string[],
+    changedFiles?: readonly string[],
+  ): string[] {
+    if (surfaceSelector !== undefined) {
+      return Array.from(surfaceSelector);
+    }
+    if (changedFiles === undefined) {
+      return Array.from(defaultSurfaces);
+    }
+
+    const normalizedChangedFiles = changedFiles.map((changedFile) => this.normalizeRepoPath(changedFile));
+    if (normalizedChangedFiles.some((changedFile) => this.isLifecycleWideChange(config.productId, changedFile))) {
+      return Array.from(defaultSurfaces);
+    }
+
+    return defaultSurfaces.filter((surfaceName) => {
+      const surfaceConfig = config.surfaces[surfaceName];
+      if (surfaceConfig === undefined) {
+        return false;
+      }
+      return normalizedChangedFiles.some((changedFile) =>
+        this.surfaceOwnsChangedPath(config.productId, surfaceName, surfaceConfig, changedFile),
+      );
+    });
+  }
+
+  private surfaceOwnsChangedPath(
+    productId: string,
+    surfaceName: string,
+    surfaceConfig: ProductSurface,
+    changedFile: string,
+  ): boolean {
+    return this.surfacePathPrefixes(productId, surfaceName, surfaceConfig).some((surfacePath) =>
+      changedFile === surfacePath || changedFile.startsWith(`${surfacePath}/`),
+    );
+  }
+
+  private surfacePathPrefixes(productId: string, surfaceName: string, surfaceConfig: ProductSurface): string[] {
+    const configuredPaths = [
+      surfaceConfig.path,
+      surfaceConfig.packagePath,
+      surfaceConfig.cratePath,
+      surfaceConfig.cargoToml,
+      surfaceConfig.pyprojectPath,
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    const normalized = configuredPaths.map((surfacePath) => this.normalizeRepoPath(surfacePath));
+    normalized.push(`products/${productId}/${surfaceName}`);
+    return Array.from(new Set(normalized));
+  }
+
+  private isLifecycleWideChange(productId: string, changedFile: string): boolean {
+    return (
+      changedFile === 'config/canonical-product-registry.json' ||
+      changedFile === 'config/product-lifecycle-profiles.json' ||
+      changedFile === 'config/toolchain-adapter-registry.json' ||
+      changedFile === `products/${productId}/kernel-product.yaml`
+    );
+  }
+
+  private normalizeRepoPath(value: string): string {
+    return value.replace(/\\/g, '/').replace(/^\.?\//, '').replace(/\/$/, '');
+  }
+
   private parseYamlObject(content: string, filePath: string): Record<string, unknown> {
     try {
       const parsed = yaml.parse(content) as unknown;
@@ -1888,8 +2156,57 @@ export class ProductLifecyclePlanner {
 
       const surfaceConfig = surfaceValue as Record<string, unknown>;
       this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'adapter', `surfaces.${surfaceName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'adapterHint',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
       this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'path', `surfaces.${surfaceName}`, configPath, productId);
       this.assertOptionalNonEmptyStringProperty(surfaceConfig, 'type', `surfaces.${surfaceName}`, configPath, productId);
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'language',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'runtime',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'buildSystem',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'cratePath',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'cargoToml',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
+      this.assertOptionalNonEmptyStringProperty(
+        surfaceConfig,
+        'pyprojectPath',
+        `surfaces.${surfaceName}`,
+        configPath,
+        productId,
+      );
       this.assertOptionalNonEmptyStringProperty(
         surfaceConfig,
         'implementationStatus',

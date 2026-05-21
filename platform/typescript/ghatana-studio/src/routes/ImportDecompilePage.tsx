@@ -63,6 +63,7 @@ export default function ImportDecompilePage(): ReactElement {
   const [completedResult, setCompletedResult] = useState<DecompileJobResult | null>(null);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [providerKind, setProviderKind] = useState<'upload' | 'paste' | 'github-repository' | 'gitlab-repository' | 'archive'>('upload');
+  const [productionStatusVisible, setProductionStatusVisible] = useState(false);
   const [pastedPath, setPastedPath] = useState('src/App.tsx');
   const [pastedContent, setPastedContent] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
@@ -74,10 +75,18 @@ export default function ImportDecompilePage(): ReactElement {
   const navigate = useNavigate();
   const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
-  const providerRegistry = useMemo(() => {
+  const { providerRegistry, isProductionAcquisitionEnabled } = useMemo(() => {
     const env = (import.meta as ImportMeta & { readonly env?: Record<string, string | undefined> }).env;
-    return resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry;
+    const isEnabled = env?.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
+    return {
+      providerRegistry: resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry,
+      isProductionAcquisitionEnabled: isEnabled,
+    };
   }, []);
+
+  // Determine which provider options are available based on production profile
+  const isRepositoryProviderAvailable = isProductionAcquisitionEnabled;
+  const isArchiveProviderAvailable = isProductionAcquisitionEnabled;
 
   const runAcquisition = useCallback(
     async (input: unknown) => {
@@ -288,6 +297,50 @@ export default function ImportDecompilePage(): ReactElement {
         </p>
       </div>
 
+      {/* Production acquisition mode indicator */}
+      <div
+        className={`rounded-md border p-3 text-sm ${
+          isProductionAcquisitionEnabled
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-amber-200 bg-amber-50 text-amber-800'
+        }`}
+        role="status"
+        aria-live="polite"
+        data-testid="production-acquisition-indicator"
+      >
+        <div className="flex items-center justify-between">
+          <span className="font-medium">
+            {isProductionAcquisitionEnabled
+              ? 'Production acquisition mode enabled'
+              : 'Production acquisition mode disabled'}
+          </span>
+          <button
+            type="button"
+            onClick={() => { setProductionStatusVisible(!productionStatusVisible); }}
+            className="text-xs underline hover:no-underline"
+            aria-expanded={productionStatusVisible}
+            aria-controls="production-status-details"
+          >
+            {productionStatusVisible ? 'Hide details' : 'Show details'}
+          </button>
+        </div>
+        {productionStatusVisible && (
+          <div id="production-status-details" className="mt-2 text-xs space-y-1">
+            <p>
+              {isProductionAcquisitionEnabled
+                ? 'Repository and archive acquisition are active. GitHub/GitLab APIs and archive extraction will be processed directly in the browser runtime.'
+                : 'Repository and archive acquisition require backend support. Only browser upload and pasted source are available in this configuration.'}
+            </p>
+            {!isProductionAcquisitionEnabled && (
+              <p className="font-medium">
+                To enable production acquisition, set VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+                in your environment configuration.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-6">
         <label htmlFor="source-provider-select" className="block text-sm font-medium text-gray-700">
           Source provider
@@ -301,9 +354,13 @@ export default function ImportDecompilePage(): ReactElement {
         >
           <option value="upload">Browser upload</option>
           <option value="paste">Pasted source</option>
-          <option value="github-repository">GitHub repository</option>
-          <option value="gitlab-repository">GitLab repository</option>
-          <option value="archive">Archive upload</option>
+          {isRepositoryProviderAvailable && (
+            <>
+              <option value="github-repository">GitHub repository</option>
+              <option value="gitlab-repository">GitLab repository</option>
+            </>
+          )}
+          {isArchiveProviderAvailable && <option value="archive">Archive upload</option>}
         </select>
 
         {providerKind === 'upload' && (
@@ -364,55 +421,91 @@ export default function ImportDecompilePage(): ReactElement {
         )}
 
         {(providerKind === 'github-repository' || providerKind === 'gitlab-repository') && (
-          <form className="space-y-3 rounded-lg border border-gray-200 bg-white p-4" onSubmit={handleRepositorySubmit}>
-            <label htmlFor="repository-url" className="block text-sm font-medium text-gray-700">
-              Repository URL
-            </label>
-            <input
-              id="repository-url"
-              data-testid="repository-url"
-              type="url"
-              value={repositoryUrl}
-              onChange={(event) => { setRepositoryUrl(event.target.value); }}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-            <label htmlFor="repository-ref" className="block text-sm font-medium text-gray-700">
-              Ref
-            </label>
-            <input
-              id="repository-ref"
-              data-testid="repository-ref"
-              type="text"
-              value={repositoryRef}
-              onChange={(event) => { setRepositoryRef(event.target.value); }}
-              className="block w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              data-testid="start-repository-acquisition-button"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-            >
-              Start repository acquisition
-            </button>
-          </form>
+          <>
+            {!isRepositoryProviderAvailable ? (
+              <div
+                className="rounded-lg border border-red-200 bg-red-50 p-4"
+                role="alert"
+                data-testid="repository-unavailable-notice"
+              >
+                <p className="text-sm font-semibold text-red-700">
+                  Repository acquisition unavailable
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  GitHub/GitLab repository acquisition requires production acquisition mode.
+                  Please select a different provider or enable production acquisition in your environment.
+                </p>
+              </div>
+            ) : (
+              <form className="space-y-3 rounded-lg border border-gray-200 bg-white p-4" onSubmit={handleRepositorySubmit}>
+                <label htmlFor="repository-url" className="block text-sm font-medium text-gray-700">
+                  Repository URL
+                </label>
+                <input
+                  id="repository-url"
+                  data-testid="repository-url"
+                  type="url"
+                  value={repositoryUrl}
+                  onChange={(event) => { setRepositoryUrl(event.target.value); }}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+                <label htmlFor="repository-ref" className="block text-sm font-medium text-gray-700">
+                  Ref
+                </label>
+                <input
+                  id="repository-ref"
+                  data-testid="repository-ref"
+                  type="text"
+                  value={repositoryRef}
+                  onChange={(event) => { setRepositoryRef(event.target.value); }}
+                  className="block w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+                <button
+                  type="submit"
+                  data-testid="start-repository-acquisition-button"
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+                >
+                  Start repository acquisition
+                </button>
+              </form>
+            )}
+          </>
         )}
 
         {providerKind === 'archive' && (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
-            <label htmlFor="archive-file-input" className="block text-sm font-medium text-gray-700 mb-2">
-              Select source archive
-            </label>
-            <input
-              id="archive-file-input"
-              data-testid="archive-file-input"
-              type="file"
-              accept=".zip,.tar,.tgz,.tar.gz"
-              onChange={handleArchiveSelected}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0 file:text-sm file:font-semibold
-                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-          </div>
+          <>
+            {!isArchiveProviderAvailable ? (
+              <div
+                className="rounded-lg border border-red-200 bg-red-50 p-4"
+                role="alert"
+                data-testid="archive-unavailable-notice"
+              >
+                <p className="text-sm font-semibold text-red-700">
+                  Archive acquisition unavailable
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  Archive upload and extraction requires production acquisition mode.
+                  Please select a different provider or enable production acquisition in your environment.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4">
+                <label htmlFor="archive-file-input" className="block text-sm font-medium text-gray-700 mb-2">
+                  Select source archive
+                </label>
+                <input
+                  id="archive-file-input"
+                  data-testid="archive-file-input"
+                  type="file"
+                  accept=".zip,.tar,.tgz,.tar.gz"
+                  onChange={handleArchiveSelected}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0 file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 

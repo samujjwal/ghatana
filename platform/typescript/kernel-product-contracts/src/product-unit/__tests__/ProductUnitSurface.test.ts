@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   isImplementationStatus,
+  isProductSurfaceBuildSystem,
+  isProductSurfaceLanguage,
   isProductUnitSurfaceType,
+  type ProductSurfaceBuildSystem,
+  type ProductSurfaceLanguage,
   type ProductUnitSurfaceType,
 } from "../ProductUnitSurface";
 
@@ -40,5 +44,44 @@ describe("ProductUnitSurface", () => {
     expect(isImplementationStatus("backend-only")).toBe(true);
     expect(isImplementationStatus("experimental")).toBe(true);
     expect(isImplementationStatus("unknown")).toBe(false);
+  });
+
+  it("accepts canonical implementation languages and rejects unknown values", () => {
+    const languages: readonly ProductSurfaceLanguage[] = [
+      "java",
+      "typescript",
+      "javascript",
+      "rust",
+      "python",
+      "swift",
+      "kotlin",
+      "go",
+      "other",
+    ];
+
+    for (const language of languages) {
+      expect(isProductSurfaceLanguage(language)).toBe(true);
+    }
+    expect(isProductSurfaceLanguage("ruby")).toBe(false);
+  });
+
+  it("accepts canonical build systems and rejects unknown values", () => {
+    const buildSystems: readonly ProductSurfaceBuildSystem[] = [
+      "gradle",
+      "pnpm",
+      "cargo",
+      "pyproject",
+      "xcode",
+      "maven",
+      "docker",
+      "compose",
+      "none",
+      "other",
+    ];
+
+    for (const buildSystem of buildSystems) {
+      expect(isProductSurfaceBuildSystem(buildSystem)).toBe(true);
+    }
+    expect(isProductSurfaceBuildSystem("make-it-so")).toBe(false);
   });
 });

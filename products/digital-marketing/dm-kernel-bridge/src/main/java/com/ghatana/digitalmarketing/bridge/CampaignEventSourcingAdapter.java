@@ -131,7 +131,7 @@ public final class CampaignEventSourcingAdapter {
     /**
      * P0-009: Replays all recorded events for a campaign aggregate using aggregate stream query.
      *
-     * <p>Fixed to use offset-based read instead of unsafe time range filtering.
+     * <p>Uses offset-based read instead of lossy time range filtering.
      * This ensures complete, ordered, paginated replay without the 10k event cap
      * that could omit history for large tenants.
      *

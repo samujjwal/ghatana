@@ -168,14 +168,15 @@ function buildAstSemanticSignature(content: string): string | null {
         jsxNodeKinds.push(node.openingElement.tagName.getText(sourceFile));
         node.openingElement.attributes.properties.forEach((attribute) => {
           if (ts.isJsxAttribute(attribute)) {
-            jsxAttributeNames.push(attribute.name.text);
-            if (/^on[A-Z]/.test(attribute.name.text)) {
-              jsxEventHandlerNames.push(attribute.name.text);
+            const attributeName = jsxAttributeNameText(attribute.name, sourceFile);
+            jsxAttributeNames.push(attributeName);
+            if (/^on[A-Z]/.test(attributeName)) {
+              jsxEventHandlerNames.push(attributeName);
             }
             if (attribute.initializer && ts.isJsxExpression(attribute.initializer) && attribute.initializer.expression) {
-              jsxBindingExpressions.push(`${attribute.name.text}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
+              jsxBindingExpressions.push(`${attributeName}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
             }
-            if (attribute.name.text === 'className' || attribute.name.text === 'style') {
+            if (attributeName === 'className' || attributeName === 'style') {
               styleReferences.push(attribute.getText(sourceFile));
             }
           }
@@ -186,14 +187,15 @@ function buildAstSemanticSignature(content: string): string | null {
         jsxNodeKinds.push(node.tagName.getText(sourceFile));
         node.attributes.properties.forEach((attribute) => {
           if (ts.isJsxAttribute(attribute)) {
-            jsxAttributeNames.push(attribute.name.text);
-            if (/^on[A-Z]/.test(attribute.name.text)) {
-              jsxEventHandlerNames.push(attribute.name.text);
+            const attributeName = jsxAttributeNameText(attribute.name, sourceFile);
+            jsxAttributeNames.push(attributeName);
+            if (/^on[A-Z]/.test(attributeName)) {
+              jsxEventHandlerNames.push(attributeName);
             }
             if (attribute.initializer && ts.isJsxExpression(attribute.initializer) && attribute.initializer.expression) {
-              jsxBindingExpressions.push(`${attribute.name.text}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
+              jsxBindingExpressions.push(`${attributeName}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
             }
-            if (attribute.name.text === 'className' || attribute.name.text === 'style') {
+            if (attributeName === 'className' || attributeName === 'style') {
               styleReferences.push(attribute.getText(sourceFile));
             }
           }
@@ -327,6 +329,10 @@ function normalizeRecord(record: Record<string, string> | undefined): Record<str
   if (record === undefined) return {};
   const entries = Object.entries(record).sort(([left], [right]) => left.localeCompare(right));
   return Object.fromEntries(entries);
+}
+
+function jsxAttributeNameText(name: ts.JsxAttributeName, sourceFile: ts.SourceFile): string {
+  return ts.isIdentifier(name) ? name.text : name.getText(sourceFile);
 }
 
 function normalizeSourceImportShape(sourceImports: LogicalArtifactModel["nodes"][string]["sourceImports"]): readonly string[] {

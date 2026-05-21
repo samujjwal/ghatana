@@ -146,7 +146,11 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
         doAnswer(inv -> {
             @SuppressWarnings("unchecked")
             TransactionManager.TransactionalOperation<HttpResponse> op = inv.getArgument(1);
-            return op.execute(null);
+            try {
+                return op.execute(null);
+            } catch (RuntimeException e) {
+                return Promise.ofException(e);
+            }
         }).when(transactionManager).executeInTransactionWithContext(anyString(), any());
         when(client.save(anyString(), anyString(), any()))
             .thenReturn(Promise.of(DataCloudClient.Entity.of(
@@ -568,4 +572,5 @@ class EntityCrudHandlerDurabilityTest extends EventloopTestBase {
         // Save was attempted but failed — outbox must NOT be populated
         verify(outboxProcessor, never()).addPending(any());
     }
+
 }

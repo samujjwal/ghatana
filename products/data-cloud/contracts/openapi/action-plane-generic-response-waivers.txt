@@ -1,0 +1,3 @@
+# Explicit waivers for Action Plane operations that currently expose generic response schemas.
+# Format: METHOD /api/path
+# Remove entries as typed response schemas are introduced.

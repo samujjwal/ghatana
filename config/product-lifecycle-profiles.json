@@ -649,6 +649,184 @@
         }
       }
     },
+    "polyglot-service-product": {
+      "status": "experimental",
+      "description": "A product with independently owned Java, TypeScript, Rust, and Python backend or worker surfaces",
+      "defaultSurfaces": {
+        "dev": [
+          "backend-api",
+          "worker"
+        ],
+        "validate": [
+          "backend-api",
+          "worker",
+          "sdk"
+        ],
+        "test": [
+          "backend-api",
+          "worker",
+          "sdk"
+        ],
+        "build": [
+          "backend-api",
+          "worker",
+          "sdk"
+        ],
+        "package": [
+          "backend-api",
+          "worker",
+          "sdk"
+        ],
+        "deploy": [
+          "backend-api",
+          "worker"
+        ]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "toolchain-preflight"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "unit-test",
+          "conformance"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "interaction-preflight",
+          "rollback-plan",
+          "approval"
+        ]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "backend-api.node": "pnpm-node-api",
+        "backend-api.rust": "cargo-rust",
+        "backend-api.python": "python-pyproject",
+        "worker": "gradle-java-service",
+        "worker.node": "pnpm-node-api",
+        "worker.rust": "cargo-rust",
+        "worker.python": "python-pyproject",
+        "sdk.rust": "cargo-rust",
+        "sdk.python": "python-pyproject",
+        "package.backend-api": "docker-buildx",
+        "package.worker": "docker-buildx",
+        "deploy.local": "compose-local",
+        "verify.local": "compose-local"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": [
+            "jvm-service",
+            "node-bundle",
+            "rust-binary",
+            "python-service"
+          ],
+          "worker": [
+            "jvm-service",
+            "node-bundle",
+            "rust-binary",
+            "python-service"
+          ],
+          "sdk": [
+            "rust-library",
+            "python-package"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image",
+            "rust-binary",
+            "python-package"
+          ],
+          "worker": [
+            "container-image",
+            "rust-binary",
+            "python-package"
+          ],
+          "sdk": [
+            "rust-library",
+            "python-package"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service",
+            "node-bundle",
+            "rust-binary",
+            "python-service"
+          ],
+          "worker": [
+            "jvm-service",
+            "node-bundle",
+            "rust-binary",
+            "python-service"
+          ],
+          "sdk": [
+            "rust-library",
+            "python-package"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image",
+            "rust-binary",
+            "python-package"
+          ],
+          "worker": [
+            "container-image",
+            "rust-binary",
+            "python-package"
+          ],
+          "sdk": [
+            "rust-library",
+            "python-package"
+          ]
+        },
+        "deploy": {
+          "backend-api": [
+            "deployment-manifest"
+          ],
+          "worker": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "backend-api": [
+            "health-check-report"
+          ],
+          "worker": [
+            "health-check-report"
+          ]
+        }
+      }
+    },
     "shared-service-product": {
       "status": "experimental",
       "description": "A shared service product used by multiple other products",

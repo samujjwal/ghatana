@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
  */
 public final class RouteSecurityRegistry {
 
+    // GENERATED_ROUTER_CHECKSUM: 74666983f8d76e032b50896a5de911eea1819cc93ccc7afe14b18d4e83a6ed8e
+
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
     private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
 

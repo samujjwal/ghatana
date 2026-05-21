@@ -881,3 +881,429 @@ Recommended parallel workstreams:
 5. Source acquisition and backend/Java scanner boundary.
 6. DS generator semantic golden and contrast gates.
 ```
+# Deep Snapshot Audit — Artifact Authoring Stack
+
+**Repo:** `samujjwal/ghatana`
+**Target commit:** `f53ba36eb9987a75d14cf50e904106771c4435df`
+**Commit verified:** `build fix 5-21-1` 
+
+I audited the current snapshot for the scoped artifact authoring areas: Ghatana Studio, Canvas, UI Builder, DS Generator, and artifact compiler/decompiler. I did not run the repo locally; findings are grounded in repository files, scripts, and tests visible at this commit.
+
+---
+
+## A. Executive Summary
+
+### Overall readiness rating
+
+**Partial, stronger than `f629d27...`, but still not production-grade.**
+
+This commit mainly adds cross-product interaction checks and tests, but the artifact-authoring stack also carries forward important improvements from the previous commit:
+
+* `check:artifact-roundtrip`, `check:studio-artifact-workflow-e2e`, `check:canvas-history`, `check:builder-canonical-document`, `check:builder-canvas-adapter`, and `check:ds-generator-golden` remain wired in root scripts. The broader phase-8 gate now also includes new kernel/product interaction checks. 
+* `ImportDecompilePage` no longer uses only `defaultProviderRegistry`; it resolves a provider registry through `resolveProviderRegistryForEnv(env)`, with fallback to `defaultProviderRegistry`. 
+* `source-acquisition.ts` now has a production acquisition client capable of GitHub/GitLab archive download, ZIP deflate support, TAR parsing, and TAR.GZ decompression using `DecompressionStream`.  
+* Workflow persistence now supports a `KernelWorkflowPersistenceAdapter` with workflow-state and evidence-pack persistence via kernel API endpoints when enabled by environment configuration. 
+* Playwright E2E selectors were stabilized using `data-testid`, and repository/archive tests now explicitly validate backend-boundary behavior when backend acquisition is unavailable. 
+* Round-trip diff now includes AST semantic signatures, imports, exports, JSX nodes/attributes, calls, event handlers, bindings, style references, and import graph parity. 
+
+### Final verdict
+
+**Partial. Closer to production, not world-class production-ready yet.**
+
+The previous top blockers are no longer in the same state:
+
+* The Playwright `Branch/Ref` mismatch is fixed by using `data-testid="repository-ref"`.
+* The default-vs-production provider issue is partially addressed by `resolveProviderRegistryForEnv`.
+* TAR/TAR.GZ support is no longer just a placeholder.
+* Workflow persistence has a kernel-backed option, not only localStorage.
+* Round-trip diff is much deeper than before.
+
+Remaining production blockers:
+
+1. **Production acquisition is env-gated and browser-runtime constrained.** `resolveProviderRegistryForEnv()` only uses the production registry when `VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true'`; otherwise repository/archive providers still return pending-job boundaries. 
+
+2. **Repository acquisition uses browser `fetch` to GitHub/GitLab archive APIs.** This may be useful for public repositories, but production-grade private repo access, auth, rate limits, large repository handling, and durable backend job execution remain unproven. 
+
+3. **Archive unpacking is improved but still browser-bound.** It relies on `DecompressionStream`, manual ZIP/TAR parsing, and throws when ZIP data descriptors are present. Many real-world ZIP files use data descriptors, central directory structures, symlinks, or path normalization concerns that need hardening. 
+
+4. **Kernel persistence is implemented as a client adapter, but backend endpoint existence is not proven in this audit.** The adapter calls `/api/v1/studio/workflow-state` and `/api/v1/studio/workflow-evidence`, but this audit did not find/verify the server handlers. 
+
+5. **Round-trip diff is improved but still not complete source-intent preservation.** AST signatures are useful, but a signature-based check can still miss source-level intent such as exact control-flow semantics, complex expressions, comments outside protected regions, generated import ordering requirements, formatter stability, and route/config object equivalence. 
+
+---
+
+## B. Validated Learnings
+
+### Learning: Studio route was not using production source acquisition
+
+**Status:** Partially fixed.
+
+**Evidence:** `ImportDecompilePage` now builds `providerRegistry` using `resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry`.  `resolveProviderRegistryForEnv()` enables production acquisition only when `VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION` is set to `true`; otherwise it returns the default registry. 
+
+**Impact:** The architecture is now configurable, but production acquisition is not guaranteed unless runtime environment is correct.
+
+**Required action:** Add a deployment/profile gate proving production Studio builds have `VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true` or use a server-backed acquisition API by default.
+
+**Priority:** P0.
+
+---
+
+### Learning: Archive support was incomplete
+
+**Status:** Partially fixed.
+
+**Evidence:** Archive handling now detects ZIP, TAR.GZ, and TAR; ZIP deflate is supported through `DecompressionStream('deflate-raw')`; TAR.GZ uses gzip decompression and TAR parsing. 
+
+**Remaining issue:** ZIP data descriptors are explicitly unsupported, and `DecompressionStream` availability is required for gzip/deflate. 
+
+**Priority:** P1.
+
+---
+
+### Learning: Playwright E2E was brittle/mismatched
+
+**Status:** Mostly fixed.
+
+**Evidence:** The E2E now uses stable `data-testid` selectors for provider, pasted path/content, repository URL/ref, acquisition button, archive input, and acquisition status. It also separates local pasted-source flow from repository/archive backend-boundary tests. 
+
+**Remaining issue:** The main route E2E no longer verifies actual canvas node dragging or builder prop editing; it navigates through Canvas/Builder/Preview/Fidelity and verifies key visibility, preview sandbox, and re-import. That makes it more stable, but less complete as a full interaction E2E. 
+
+**Priority:** P1.
+
+---
+
+### Learning: Workflow persistence was localStorage only
+
+**Status:** Partially fixed.
+
+**Evidence:** `KernelWorkflowPersistenceAdapter` persists workflow state to `/api/v1/studio/workflow-state`, loads/deletes the same endpoint, and can persist evidence packs to `/api/v1/studio/workflow-evidence`. It is selected by `resolvePersistenceAdapterForEnv()` when kernel persistence is enabled and required runtime identity is present. 
+
+**Remaining issue:** It falls back to localStorage when identity/env is incomplete. Server endpoint existence and contract validation are not proven here. 
+
+**Priority:** P0/P1.
+
+---
+
+### Learning: Round-trip diff was shallow
+
+**Status:** Improved.
+
+**Evidence:** `roundtrip-diff.ts` now imports TypeScript, normalizes ASTs, builds semantic signatures for imports, exports, JSX nodes/attributes, call expressions, event handlers, bindings, and style references, and checks import graph parity. 
+
+**Remaining issue:** This is still a semantic signature, not full AST diff or executable equivalence. It is a strong improvement, not a complete fidelity proof.
+
+**Priority:** P1.
+
+---
+
+## C. Package-by-Package Current State
+
+## `@ghatana/canvas`
+
+### Current rating: **80 / 100**
+
+No regression found in this pass. Canvas history and multi-canvas checks remain part of root gates. 
+
+### Remaining gaps
+
+* Runtime canvas document schema/migration not proven.
+* Full canvas document serialization/deserialization not proven.
+* Current Playwright artifact workflow no longer verifies canvas drag/edit behavior deeply. 
+
+---
+
+## `@ghatana/ui-builder`
+
+### Current rating: **78 / 100**
+
+The safe NodeId conversion work from prior commits remains valid. No regression found in the inspected current files.
+
+### Remaining gaps
+
+* Need static enforcement that only UI Builder brands `NodeId`.
+* Need stronger source provenance mapping into BuilderDocument nodes.
+* Need production persistence/restore semantics for Builder documents beyond workflow state.
+
+---
+
+## `@ghatana/ds-generator`
+
+### Current rating: **78 / 100**
+
+No new DS-specific changes found in this pass. DS golden gate remains wired. 
+
+### Remaining gaps
+
+* WCAG contrast should be a hard generator gate.
+* Semantic token alias and component-state golden tests need depth.
+* DS document migrations need explicit proof.
+
+---
+
+## `@ghatana/ghatana-studio`
+
+### Current rating: **79 / 100**
+
+Studio improved most in this area:
+
+* Environment-resolved source acquisition registry.
+* Stable E2E selectors.
+* Acquisition status surface.
+* Kernel-backed workflow persistence adapter.
+* Evidence pack persistence path.
+* Fidelity Report with diff summary from prior work.
+
+### Remaining gaps
+
+* Production acquisition is opt-in by env.
+* Backend kernel persistence endpoints are not verified in this audit.
+* Browser E2E is stable but no longer deep on actual canvas/builder editing interactions.
+* Repository and archive acquisition remain browser-runtime constrained if using `ProductionSourceAcquisitionBackendClient` from Studio.
+
+---
+
+## Artifact Compiler/Decompiler
+
+### Current rating: **73 / 100**
+
+The compiler/decompiler stack is improving steadily:
+
+* Source-set repository scan remains.
+* Round-trip diff now uses AST semantic signatures and import graph parity.
+* Evidence pack and workflow reporting are integrated through Studio.
+* Archive/source acquisition has a real client path.
+
+### Remaining gaps
+
+* Still not a backend repository intelligence service.
+* No TypeScript Program-level full project module graph verified here.
+* No full route config object / API graph / design token graph parity guarantee in this audit.
+* No executable/generated artifact build verification in the round-trip path.
+
+---
+
+## D. Capability Matrix
+
+| Capability           |         Current Status | Evidence                           | Remaining Gap                                 | Priority |
+| -------------------- | ---------------------: | ---------------------------------- | --------------------------------------------- | -------- |
+| Browser upload       |            Implemented | Route + providers                  | Large folder/perf                             | P2       |
+| Pasted source        |            Implemented | E2E uses it                        | Good local path                               | P2       |
+| GitHub acquisition   | Partial implementation | Production client fetches zipball  | Env-gated, auth/rate-limit/backend not proven | P0       |
+| GitLab acquisition   | Partial implementation | Production client fetches archive  | Env-gated, auth/rate-limit/backend not proven | P0       |
+| Archive ZIP          |               Partial+ | Stored/deflate support             | Data descriptors unsupported                  | P1       |
+| TAR/TAR.GZ           |               Partial+ | TAR parser + gzip decompression    | Browser API/runtime constraints               | P1       |
+| Workflow persistence |               Partial+ | Kernel adapter exists              | Endpoint/server contract unverified           | P0/P1    |
+| Evidence persistence |                Partial | Kernel adapter forwards evidence   | Backend durability unverified                 | P1       |
+| Playwright workflow  |               Partial+ | Stable data-testid E2E             | Shallow canvas/builder interaction depth      | P1       |
+| Round-trip diff      |               Partial+ | AST signatures/import graph parity | Not full AST/source/executable parity         | P1       |
+| Repo scanner         |                Partial | Source-set scanner                 | No full repo indexer                          | P0/P1    |
+
+---
+
+## E. Critical Findings
+
+### P0 — Production acquisition is still deployment-config dependent
+
+`ImportDecompilePage` uses `resolveProviderRegistryForEnv`, but production behavior depends on `VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true`. If the env is missing, repository/archive flows still use the pending-boundary default registry.  
+
+**Required fix:** Add a CI/deployment gate that proves production Studio profiles enable production acquisition or route repository/archive acquisition to a server API.
+
+---
+
+### P0/P1 — Kernel workflow persistence adapter exists, but server side is not proven
+
+The adapter calls `/api/v1/studio/workflow-state` and `/api/v1/studio/workflow-evidence`, but this audit only verified the client adapter, not backend handlers, authorization, tenant/workspace/project scoping, idempotency, or evidence immutability. 
+
+**Required fix:** Add backend contracts and tests for these endpoints.
+
+---
+
+### P1 — Archive handling is better but still not industrial strength
+
+ZIP data descriptors are unsupported, and decompression depends on `DecompressionStream`. 
+
+**Required fix:** Use a proven archive library or move archive extraction to backend/Java service.
+
+---
+
+### P1 — E2E is stable but less deep
+
+The E2E no longer performs real canvas drag or builder property editing; it navigates and checks workflow surfaces, preview sandbox, fidelity report, and re-import. 
+
+**Required fix:** Add a second deeper interaction E2E for canvas movement and builder prop updates with stable test contracts.
+
+---
+
+### P1 — Round-trip diff still cannot prove complete source intent preservation
+
+AST semantic signatures are useful, but not sufficient for complex source equivalence, protected comments, formatting, route config parity, data-binding semantics, or executable output parity. 
+
+**Required fix:** Add structured AST diff + generated project build/typecheck/test validation.
+
+---
+
+## F. File-by-File TODOs
+
+### `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx`
+
+* [ ] Add visible production-acquisition mode indicator.
+
+  * Why: The route can silently use pending default registry when env is absent.
+  * Priority: P1.
+
+* [ ] Fail closed or disable GitHub/GitLab/archive options in production when production acquisition is not enabled.
+
+  * Why: Avoid user-facing dead-end pending jobs.
+  * Priority: P0.
+
+### `platform/typescript/ghatana-studio/src/providers/source-acquisition.ts`
+
+* [ ] Replace browser archive extraction with backend extraction for production profiles.
+
+  * Why: Browser archive parsing has unsupported ZIP cases and runtime limitations.
+  * Priority: P1.
+
+* [ ] Add tests for ZIP data-descriptor rejection, deflated ZIP success, TAR success, TAR.GZ success, path traversal prevention, symlink handling, hidden file filtering, and max size enforcement.
+
+  * Priority: P1.
+
+* [ ] Add auth/token support for GitHub/GitLab APIs.
+
+  * Priority: P0/P1.
+
+### `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts`
+
+* [ ] Add contract tests for `/api/v1/studio/workflow-state`.
+
+  * Priority: P0.
+
+* [ ] Add contract tests for `/api/v1/studio/workflow-evidence`.
+
+  * Priority: P0/P1.
+
+* [ ] Verify tenant/workspace/project scoping and authorization.
+
+  * Priority: P0.
+
+### `platform/typescript/ghatana-studio/e2e/artifact-workflow.spec.ts`
+
+* [ ] Keep current stable smoke flow.
+
+  * Priority: Done.
+
+* [ ] Add a second deep interaction test for canvas move and builder prop edit.
+
+  * Priority: P1.
+
+### `platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts`
+
+* [ ] Add structured AST diff output, not only semantic signature equality.
+
+  * Priority: P1.
+
+* [ ] Add route graph, component graph, import graph, and DS token parity sections in diff report.
+
+  * Priority: P1.
+
+### `platform/typescript/artifact-compiler-ts/src/scan/repository-scan.ts`
+
+* [ ] Add TypeScript Program-based module resolution.
+
+  * Priority: P0/P1.
+
+* [ ] Add generated project build/typecheck validation stage.
+
+  * Priority: P1.
+
+---
+
+## G. Recommended Next Implementation Phases
+
+### Phase 1 — Production profile enforcement
+
+Ensure production Studio cannot expose repository/archive acquisition unless production acquisition is actually enabled and verified.
+
+### Phase 2 — Backend acquisition service
+
+Move GitHub/GitLab/archive acquisition to backend/Java or a server-side provider with auth, retries, rate-limit handling, streaming, and durable jobs.
+
+### Phase 3 — Workflow persistence backend
+
+Implement and test kernel API endpoints for workflow state and workflow evidence, including authorization and tenant/workspace/project scope.
+
+### Phase 4 — Deep E2E interaction coverage
+
+Add stable test contracts for actual canvas node movement and builder property mutation.
+
+### Phase 5 — AST/graph/build round-trip validation
+
+Add structured AST diff, graph parity, import preservation, and generated source typecheck/build validation.
+
+---
+
+## H. Commands to Validate
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+
+pnpm check:artifact-roundtrip
+pnpm check:studio-artifact-workflow-e2e
+pnpm check:canvas-history
+pnpm check:builder-canonical-document
+pnpm check:builder-canvas-adapter
+pnpm check:ds-generator-golden
+pnpm check:phase8
+pnpm check:world-class-platform-readiness
+```
+
+Focused commands:
+
+```bash
+pnpm --dir platform/typescript/ghatana-studio exec playwright test e2e/artifact-workflow.spec.ts
+
+pnpm --dir platform/typescript/ghatana-studio exec vitest run \
+  src/providers/__tests__/source-acquisition.test.ts \
+  src/state/__tests__/artifactWorkflowStore.test.ts \
+  src/routes/__tests__/ImportDecompilePage.test.tsx \
+  src/routes/__tests__/FidelityReportPage.test.tsx
+
+pnpm --dir platform/typescript/artifact-compiler-ts exec vitest run \
+  src/__tests__/repository-scan.test.ts \
+  src/__tests__/roundtrip-diff.test.ts \
+  src/__tests__/roundtrip.test.ts
+```
+
+---
+
+## Final Verdict
+
+```markdown
+Final Verdict: Partial
+
+Are these areas feature-complete and correctly implemented for a production-grade, world-class Ghatana product-development platform?
+
+No, but commit f53ba36eb9987a75d14cf50e904106771c4435df is a meaningful hardening step.
+
+Reason:
+The commit carries forward artifact workflow gates, fixes E2E selector stability, adds environment-resolved production acquisition wiring, improves archive support, introduces kernel workflow/evidence persistence adapters, and deepens round-trip diff with AST semantic signatures and import graph parity. However, production acquisition remains env-gated, server-side acquisition and persistence endpoints are not proven in this audit, browser archive extraction remains limited, E2E is now more stable but less interaction-deep, and round-trip fidelity still lacks full AST/graph/build parity.
+
+Required minimum work before production:
+Add production profile enforcement, implement backend acquisition and persistence contracts, harden archive handling, add deep canvas/builder interaction E2E, and validate generated artifacts through AST/graph/build/typecheck gates.
+
+Recommended next milestone:
+Production Acquisition, Persistence, and Fidelity Enforcement v1.
+
+Recommended first implementation PR:
+Add production profile enforcement for source acquisition: in production, repository/archive providers must use a backend-backed registry or be disabled with a clear unavailable state.
+
+Recommended parallel workstreams:
+1. Backend repository/archive acquisition service.
+2. Kernel workflow/evidence persistence API and tests.
+3. Deep Studio interaction E2E for Canvas and Builder.
+4. Structured AST/graph diff and generated build validation.
+5. Archive extraction hardening and security validation.
+```

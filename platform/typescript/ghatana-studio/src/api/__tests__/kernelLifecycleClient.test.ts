@@ -315,6 +315,42 @@ describe('kernelLifecycleClient', () => {
     });
   });
 
+  it('accepts rollback interaction impact in lifecycle plan responses', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        ...lifecyclePlan,
+        phase: 'rollback',
+        interactionRollbackImpact: [
+          {
+            contractId: 'kernel://interactions/phr.consent-status.v1',
+            providerProductId: 'phr',
+            consumerProductId: 'digital-marketing',
+            affectedProductIds: ['digital-marketing'],
+            mode: 'request-response',
+            required: true,
+            impactLevel: 'blocking',
+            status: 'provider-not-enabled',
+            reasonCode: 'product_interaction.rollback_provider_not_enabled',
+            evidenceRequired: true,
+            evidenceRefs: ['evidence://phr/consent-status'],
+          },
+        ],
+      }),
+    );
+    const client = createKernelLifecycleClient({
+      baseUrl: 'https://studio.test',
+      correlationIdFactory: () => 'corr-rollback',
+    });
+
+    const plan = await client.createLifecyclePlan('digital-marketing', 'rollback');
+
+    expect(plan.interactionRollbackImpact?.[0]).toMatchObject({
+      contractId: 'kernel://interactions/phr.consent-status.v1',
+      impactLevel: 'blocking',
+      status: 'provider-not-enabled',
+    });
+  });
+
   it('executes lifecycle phases without retrying mutation semantics in the client layer', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse(lifecycleRun));
     const client = createKernelLifecycleClient({

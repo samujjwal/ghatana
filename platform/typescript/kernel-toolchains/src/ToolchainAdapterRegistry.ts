@@ -7,6 +7,9 @@ import { SpawnCommandRunner } from './execution/SpawnCommandRunner.js';
 import type { CommandRunner } from './execution/CommandRunner.js';
 import { GradleJavaServiceAdapter } from './adapters/GradleJavaServiceAdapter.js';
 import { PnpmViteReactAdapter } from './adapters/PnpmViteReactAdapter.js';
+import { PnpmNodeApiAdapter } from './adapters/PnpmNodeApiAdapter.js';
+import { CargoRustAdapter } from './adapters/CargoRustAdapter.js';
+import { PythonPyprojectAdapter } from './adapters/PythonPyprojectAdapter.js';
 import { DockerBuildxAdapter } from './adapters/DockerBuildxAdapter.js';
 import { ComposeLocalAdapter } from './adapters/ComposeLocalAdapter.js';
 
@@ -279,6 +282,9 @@ export function createDefaultToolchainAdapterRegistry(
   const registry = new ToolchainAdapterRegistry();
   registry.register(new GradleJavaServiceAdapter(adapterOptions));
   registry.register(new PnpmViteReactAdapter(adapterOptions));
+  registry.register(new PnpmNodeApiAdapter(adapterOptions));
+  registry.register(new CargoRustAdapter(adapterOptions));
+  registry.register(new PythonPyprojectAdapter(adapterOptions));
   registry.register(new DockerBuildxAdapter(adapterOptions));
   registry.register(new ComposeLocalAdapter(adapterOptions));
 

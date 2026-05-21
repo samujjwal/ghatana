@@ -63,32 +63,56 @@ const adaptersDir = "platform/typescript/ghatana-studio/src/adapters";
 const adapterFiles = readdirSync(resolve(root, adaptersDir))
   .filter(f => f.endsWith('.ts') && f.toLowerCase().includes('canvas') && f.toLowerCase().includes('adapter'));
 
+// Canonical pattern: BuilderCanvasAdapter.ts (entry point) + BuilderCanvasProjectionAdapter.ts (implementation)
+const CANONICAL_ENTRY = "BuilderCanvasAdapter.ts";
+const IMPLEMENTATION = "BuilderCanvasProjectionAdapter.ts";
+const isValidPattern = 
+  (adapterFiles.length === 1 && adapterFiles.includes(IMPLEMENTATION)) ||
+  (adapterFiles.length === 2 && adapterFiles.includes(CANONICAL_ENTRY) && adapterFiles.includes(IMPLEMENTATION));
+
 check(
-  adapterFiles.length === 1,
-  `Exactly one canvas adapter exists: ${adapterFiles.join(', ')}`,
-  `Duplicate canvas adapters found: ${adapterFiles.join(', ')} — consolidate to prevent ownership conflicts`
+  isValidPattern,
+  `Canonical adapter pattern verified: ${adapterFiles.join(', ')}`,
+  `Invalid adapter files: ${adapterFiles.join(', ')} — expected ${CANONICAL_ENTRY} (entry) + ${IMPLEMENTATION} (impl), or just ${IMPLEMENTATION}`
 );
 
 check(
-  adapterFiles.includes("BuilderCanvasProjectionAdapter.ts"),
-  "Canonical adapter is BuilderCanvasProjectionAdapter.ts",
-  "Canonical adapter must be BuilderCanvasProjectionAdapter.ts"
+  adapterFiles.includes(IMPLEMENTATION),
+  "Implementation adapter exists: BuilderCanvasProjectionAdapter.ts",
+  "Missing implementation: BuilderCanvasProjectionAdapter.ts"
 );
 
 // ── Adapter file existence ────────────────────────────────────────────────────
-console.log("\n2. BuilderCanvasProjectionAdapter.ts");
+console.log("\n2. Canonical BuilderCanvasAdapter.ts (entry point)");
 
-const adapterPath = "platform/typescript/ghatana-studio/src/adapters/BuilderCanvasProjectionAdapter.ts";
+const canonicalAdapterPath = "platform/typescript/ghatana-studio/src/adapters/BuilderCanvasAdapter.ts";
 check(
-  existsSync(resolve(root, adapterPath)),
-  `exists: ${adapterPath}`,
-  `Missing adapter: ${adapterPath}`
+  existsSync(resolve(root, canonicalAdapterPath)),
+  `exists: ${canonicalAdapterPath}`,
+  `Missing canonical adapter: ${canonicalAdapterPath}`
 );
 
-const adapterSrc = readSource(adapterPath);
+const canonicalAdapterSrc = readSource(canonicalAdapterPath);
+
+check(
+  canonicalAdapterSrc.includes("from './BuilderCanvasProjectionAdapter.js'"),
+  "Canonical adapter re-exports from BuilderCanvasProjectionAdapter",
+  "Canonical adapter must re-export from BuilderCanvasProjectionAdapter"
+);
+
+console.log("\n3. BuilderCanvasProjectionAdapter.ts (implementation)");
+
+const implAdapterPath = "platform/typescript/ghatana-studio/src/adapters/BuilderCanvasProjectionAdapter.ts";
+check(
+  existsSync(resolve(root, implAdapterPath)),
+  `exists: ${implAdapterPath}`,
+  `Missing implementation adapter: ${implAdapterPath}`
+);
+
+const adapterSrc = readSource(implAdapterPath);
 
 // ── Required exports ──────────────────────────────────────────────────────────
-console.log("\n3. Required exports");
+console.log("\n4. Required exports from implementation");
 
 check(
   adapterSrc.includes("builderToCanvas"),
@@ -112,7 +136,7 @@ check(
 );
 
 // ── Type safety ───────────────────────────────────────────────────────────────
-console.log("\n4. Type safety");
+console.log("\n5. Type safety");
 
 // Ensure no unsafe NodeId[] boundary casts
 // We allow `as NodeId[]` only after explicit validation against document knownIds
@@ -158,7 +182,7 @@ check(
 );
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
-console.log("\n5. Adapter tests");
+console.log("\n6. Adapter tests");
 
 const canvasPageTestPath = "platform/typescript/ghatana-studio/src/routes/__tests__/CanvasPage.test.tsx";
 check(
@@ -180,7 +204,7 @@ check(
 );
 
 // ── No legacy unsafe imports ──────────────────────────────────────────────────
-console.log("\n6. No legacy pattern imports in studio routes");
+console.log("\n7. No legacy pattern imports in studio routes");
 
 const routeFiles = [
   "platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx",
@@ -200,7 +224,7 @@ for (const routeFile of routeFiles) {
 }
 
 // ── No duplicate adapter imports ───────────────────────────────────────────────
-console.log("\n7. No duplicate adapter imports");
+console.log("\n8. No duplicate adapter imports");
 
 const studioSourceFiles = [
   "platform/typescript/ghatana-studio/src/routes/CanvasPage.tsx",

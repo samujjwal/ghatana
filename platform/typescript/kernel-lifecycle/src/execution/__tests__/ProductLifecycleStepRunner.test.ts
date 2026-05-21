@@ -33,6 +33,20 @@ function makeStep(overrides: Partial<ProductLifecycleStep> & { id: string }): Pr
   };
 }
 
+function makeInteractionPreflightStep(
+  overrides: Partial<ProductLifecycleStep> & { id: string },
+): ProductLifecycleStep {
+  return makeStep({
+    stepKind: 'interaction-preflight',
+    phase: 'deploy',
+    surface: 'interaction:phr-dmos-profile-read',
+    adapter: 'kernel-product-interaction-broker',
+    description: 'Preflight product interaction contract',
+    estimatedDurationMs: 5000,
+    ...overrides,
+  });
+}
+
 function makeContext(overrides: Partial<StepContext> = {}): StepContext {
   return {
     productId: 'digital-marketing',
@@ -124,6 +138,14 @@ function makeRegistry(adapters: Record<string, Adapter>): AdapterRegistry {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
+function makeFailingRegistry(): AdapterRegistry {
+  return {
+    getAdapter(adapterId: string): Adapter {
+      throw new Error(`Unexpected adapter lookup for ${adapterId}`);
+    },
+  };
+}
+
 describe('ProductLifecycleStepRunner', () => {
   describe('run() — successful execution', () => {
     it('returns succeeded when adapter returns succeeded', async () => {
@@ -139,6 +161,8 @@ describe('ProductLifecycleStepRunner', () => {
       expect(result.status).toBe('succeeded');
       expect(result.stepId).toBe('build-step');
       expect(result.exitCode).toBe(0);
+      expect(result.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(result.completedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(result.durationMs).toBe(12);
       expect(result.stdout).toBe('adapter stdout');
       expect(result.warnings).toEqual(['adapter warning']);
@@ -182,6 +206,8 @@ describe('ProductLifecycleStepRunner', () => {
       expect(result.status).toBe('failed');
       expect(result.stepId).toBe('step-fail');
       expect(result.exitCode).toBe(1);
+      expect(result.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(result.completedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(result.stderr).toBe('adapter stderr');
       expect(result.errors).toEqual(['adapter failed', 'exit 1']);
     });
@@ -247,6 +273,134 @@ describe('ProductLifecycleStepRunner', () => {
 
       expect(result.status).toBe('skipped');
       expect(result.exitCode).toBe(0);
+    });
+  });
+
+  describe('run() — interaction preflight execution', () => {
+    it('succeeds pending interaction preflights without resolving a toolchain adapter', async () => {
+      const runner = new ProductLifecycleStepRunner(makeFailingRegistry());
+      const logger = makeLogger();
+
+      const result = await runner.run(
+        makeInteractionPreflightStep({
+          id: 'interaction-preflight-0',
+          adapterContext: {
+            interactionPreflight: {
+              contractId: 'phr-dmos-profile-read',
+              status: 'pending',
+              evidenceRefs: ['evidence://interaction/ready'],
+            },
+          },
+        }),
+        makeContext({ logger }),
+      );
+
+      expect(result.status).toBe('succeeded');
+      expect(result.exitCode).toBe(0);
+      expect(result.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(result.completedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      expect(result.stdout).toBe('Interaction preflight ready: phr-dmos-profile-read');
+      expect(result.evidenceRefs).toEqual(['evidence://interaction/ready']);
+      expect(logger.info).toHaveBeenCalledWith(
+        'Interaction preflight ready: phr-dmos-profile-read',
+        expect.objectContaining({
+          adapter: 'kernel-product-interaction-broker',
+          status: 'succeeded',
+          contractId: 'phr-dmos-profile-read',
+        }),
+      );
+    });
+
+    it('fails blocked required interaction preflights and preserves reason evidence', async () => {
+      const runner = new ProductLifecycleStepRunner(makeFailingRegistry());
+      const logger = makeLogger();
+
+      const result = await runner.run(
+        makeInteractionPreflightStep({
+          id: 'interaction-preflight-blocked',
+          adapterContext: {
+            interactionPreflight: {
+              contractId: 'phr-dmos-profile-read',
+              status: 'blocked',
+              reasonCode: 'product_interaction.provider_not_enabled',
+              evidenceRefs: ['evidence://interaction/blocked'],
+            },
+          },
+        }),
+        makeContext({ logger }),
+      );
+
+      expect(result.status).toBe('failed');
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toBe(
+        'Interaction preflight blocked: phr-dmos-profile-read (product_interaction.provider_not_enabled)',
+      );
+      expect(result.errors).toEqual([
+        'product_interaction.provider_not_enabled',
+        'Interaction preflight blocked: phr-dmos-profile-read (product_interaction.provider_not_enabled)',
+      ]);
+      expect(result.evidenceRefs).toEqual(['evidence://interaction/blocked']);
+      expect(logger.error).toHaveBeenCalledWith(
+        'Interaction preflight blocked: phr-dmos-profile-read (product_interaction.provider_not_enabled)',
+        expect.objectContaining({ status: 'failed' }),
+      );
+    });
+
+    it('skips optional interaction preflights when the provider is disabled', async () => {
+      const runner = new ProductLifecycleStepRunner(makeFailingRegistry());
+      const logger = makeLogger();
+
+      const result = await runner.run(
+        makeInteractionPreflightStep({
+          id: 'interaction-preflight-skipped',
+          adapterContext: {
+            interactionPreflight: {
+              contractId: 'phr-dmos-profile-read',
+              status: 'skipped',
+              reasonCode: 'product_interaction.provider_not_enabled',
+            },
+          },
+        }),
+        makeContext({ logger }),
+      );
+
+      expect(result.status).toBe('skipped');
+      expect(result.exitCode).toBe(0);
+      expect(result.warnings).toEqual([
+        'product_interaction.provider_not_enabled',
+        'Interaction preflight skipped: phr-dmos-profile-read (product_interaction.provider_not_enabled)',
+      ]);
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Interaction preflight skipped: phr-dmos-profile-read (product_interaction.provider_not_enabled)',
+        expect.objectContaining({ status: 'skipped' }),
+      );
+    });
+
+    it('fails closed when interaction preflight metadata is malformed', async () => {
+      const runner = new ProductLifecycleStepRunner(makeFailingRegistry());
+      const logger = makeLogger();
+
+      const result = await runner.run(
+        makeInteractionPreflightStep({
+          id: 'interaction-preflight-invalid',
+          adapterContext: { interactionPreflight: { status: 'unknown' } },
+        }),
+        makeContext({ logger }),
+      );
+
+      expect(result.status).toBe('failed');
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toBe(
+        'Interaction preflight step interaction-preflight-invalid is missing a valid preflight status',
+      );
+      expect(result.errors).toEqual([
+        'product_interaction.preflight_context_invalid',
+        'Interaction preflight step interaction-preflight-invalid is missing a valid preflight status',
+      ]);
+      expect(logger.error).toHaveBeenCalledWith(
+        'Interaction preflight step interaction-preflight-invalid is missing a valid preflight status',
+        expect.objectContaining({ adapter: 'kernel-product-interaction-broker' }),
+      );
     });
   });
 

@@ -104,34 +104,27 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("production profile requires persistent settings - in-memory should fail")
-    void productionProfileRequiresPersistentSettings() {
-        // This test verifies that when DATACLOUD_DB_* environment variables are not set
-        // in a production profile (strict tenant resolution), the launcher should reject
-        // in-memory settings store configuration
-        
-        Map<String, String> productionEnv = Map.of(
-            "DATACLOUD_PROFILE", "production",
-            "DATACLOUD_TENANT_RESOLUTION", "strict"
-        );
+    @DisplayName("production profile resolves as non-embedded mode")
+    void productionProfileResolvesAsNonEmbeddedMode() {
+        DataCloud.DataCloudConfig.DataCloudProfile profile =
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of("DATACLOUD_PROFILE", "production"));
 
-        // When no DATACLOUD_DB_* variables are set, validation should fail
-        boolean hasDbConfig = productionEnv.keySet().stream()
-            .anyMatch(key -> key.startsWith("DATACLOUD_DB_"));
-        
-        assertThat(hasDbConfig).isFalse();
+        assertThat(profile).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.PRODUCTION);
+        assertThat(DataCloudLauncherSettings.isEmbeddedProfile(profile)).isFalse();
     }
 
     @Test
-    @DisplayName("embedded profile allows in-memory settings")
-    void embeddedProfileAllowsInMemorySettings() {
-        // In embedded/local profiles, in-memory settings should be allowed
-        Map<String, String> embeddedEnv = Map.of(
-            "DATACLOUD_PROFILE", "embedded",
-            "DATACLOUD_TENANT_RESOLUTION", "lenient"
-        );
+    @DisplayName("local profile resolves as embedded mode")
+    void localProfileResolvesAsEmbeddedMode() {
+        DataCloud.DataCloudConfig.DataCloudProfile profile =
+            DataCloudLauncherSettings.resolveProfile(
+                new String[0],
+                Map.of("DATACLOUD_PROFILE", "local"));
 
-        assertThat(embeddedEnv.get("DATACLOUD_PROFILE")).isEqualTo("embedded");
+        assertThat(profile).isEqualTo(DataCloud.DataCloudConfig.DataCloudProfile.LOCAL);
+        assertThat(DataCloudLauncherSettings.isEmbeddedProfile(profile)).isTrue();
     }
 
     @Test

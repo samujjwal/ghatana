@@ -96,6 +96,50 @@ describe("RunStore", () => {
       expect(result.totalCount).toBe(1);
     });
 
+    it("should query runs by metadata filters", async () => {
+      await runStore.createRun({
+        schemaVersion: "1.0.0",
+        productId: "product-a",
+        runId: "run-local",
+        phase: "deploy" as ProductLifecyclePhase,
+        status: "succeeded",
+        startedAt: "2024-01-01T00:00:00.000Z",
+        metadata: {
+          lifecycleProfile: "polyglot-service-product",
+          providerMode: "bootstrap",
+          environment: "local",
+          sourceRef: "abc123",
+        },
+        updatedAt: "2024-01-01T01:00:00.000Z",
+      });
+      await runStore.createRun({
+        schemaVersion: "1.0.0",
+        productId: "product-a",
+        runId: "run-prod",
+        phase: "deploy" as ProductLifecyclePhase,
+        status: "failed",
+        startedAt: "2024-01-02T00:00:00.000Z",
+        metadata: {
+          lifecycleProfile: "java-service-product",
+          providerMode: "platform",
+          environment: "prod",
+          sourceRef: "def456",
+        },
+        updatedAt: "2024-01-02T01:00:00.000Z",
+      });
+
+      const result = await runStore.queryRuns({
+        productId: "product-a",
+        lifecycleProfile: "polyglot-service-product",
+        providerMode: "bootstrap",
+        environment: "local",
+        sourceRef: "abc123",
+      });
+
+      expect(result.totalCount).toBe(1);
+      expect(result.runs[0].runId).toBe("run-local");
+    });
+
     it("should get latest run for product and phase", async () => {
       const record1: RunRecord = {
         schemaVersion: "1.0.0",
@@ -221,7 +265,7 @@ describe("RunStore", () => {
       expect(newRun).toBeDefined();
     });
 
-    it("should clear all records", () => {
+    it("should clear all records", async () => {
       const record: RunRecord = {
         schemaVersion: "1.0.0",
         productId: "test-product",
@@ -233,12 +277,13 @@ describe("RunStore", () => {
         updatedAt: "2024-01-01T00:00:00.000Z",
       };
 
-      runStore.createRun(record);
+      await runStore.createRun(record);
       runStore.clear();
 
-      const retrieved = runStore.getRun("test-run-1");
-      // Note: InMemoryRunStore.getRun is async
-      // For testing purposes, we can check if it's empty by querying
+      const retrieved = await runStore.getRun("test-run-1");
+      const result = await runStore.queryRuns({});
+      expect(retrieved).toBeNull();
+      expect(result.totalCount).toBe(0);
     });
   });
 });

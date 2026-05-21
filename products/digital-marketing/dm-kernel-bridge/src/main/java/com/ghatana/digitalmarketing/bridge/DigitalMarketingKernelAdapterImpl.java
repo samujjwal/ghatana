@@ -296,7 +296,7 @@ public final class DigitalMarketingKernelAdapterImpl implements DigitalMarketing
      * P1-018: Evaluate risk with fail-closed behavior in production.
      *
      * <p>If risk cannot be properly evaluated in production, returns maximum risk
-     * score (1.0) to prevent potentially unsafe operations from proceeding.</p>
+     * score (1.0) to prevent unapproved operations from proceeding.</p>
      */
     @Override
     public Promise<Double> evaluateRisk(

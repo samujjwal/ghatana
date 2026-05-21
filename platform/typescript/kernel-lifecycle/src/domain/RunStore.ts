@@ -158,6 +158,26 @@ export interface RunQueryFilter {
   readonly correlationId?: string;
 
   /**
+   * Lifecycle profile to filter by.
+   */
+  readonly lifecycleProfile?: string;
+
+  /**
+   * Provider mode to filter by.
+   */
+  readonly providerMode?: RunMetadata["providerMode"];
+
+  /**
+   * Environment to filter by.
+   */
+  readonly environment?: string;
+
+  /**
+   * Source reference to filter by.
+   */
+  readonly sourceRef?: string;
+
+  /**
    * Limit the number of results.
    */
   readonly limit?: number;
@@ -270,6 +290,18 @@ export class InMemoryRunStore implements RunStore {
     }
     if (filter.correlationId) {
       matches = matches.filter((r) => r.correlationId === filter.correlationId);
+    }
+    if (filter.lifecycleProfile) {
+      matches = matches.filter((r) => r.metadata.lifecycleProfile === filter.lifecycleProfile);
+    }
+    if (filter.providerMode) {
+      matches = matches.filter((r) => r.metadata.providerMode === filter.providerMode);
+    }
+    if (filter.environment) {
+      matches = matches.filter((r) => r.metadata.environment === filter.environment);
+    }
+    if (filter.sourceRef) {
+      matches = matches.filter((r) => r.metadata.sourceRef === filter.sourceRef);
     }
 
     // Sort by startedAt descending (most recent first)

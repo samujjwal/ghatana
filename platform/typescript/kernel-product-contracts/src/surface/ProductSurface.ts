@@ -13,6 +13,8 @@ export interface ProductSurface {
   readonly adapter: string;
   readonly path: string;
   readonly implementationStatus?: 'implemented' | 'planned' | 'backend-only';
+  readonly language?: string;
+  readonly buildSystem?: string;
   readonly packagePath?: string;
   readonly [key: string]: unknown;
 }

@@ -177,21 +177,154 @@
         "typecheck-report"
       ],
       "implementation": "platform/typescript/kernel-toolchains/src/adapters/PnpmNodeApiAdapter.ts",
-      "status": "planned",
-      "safeForDefault": false,
-      "tests": [],
-      "planningImplemented": false,
-      "executionImplemented": false,
-      "outputValidationImplemented": false,
-      "readiness": "declared-only",
+      "status": "implemented",
+      "safeForDefault": true,
+      "tests": [
+        "platform/typescript/kernel-toolchains/src/__tests__/PnpmNodeApiAdapter.test.ts"
+      ],
+      "planningImplemented": true,
+      "executionImplemented": true,
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
       "requiresApprovalForProduction": false,
-      "supportsBootstrapMode": false,
+      "supportsBootstrapMode": true,
       "supportsPlatformMode": false,
-      "lifecycleEnabled": false,
-      "timeout": null,
-      "retryPolicy": null,
-      "environmentPolicy": null,
-      "outputValidation": null
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 300000,
+        "defaultMs": 300000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": ["production"],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["node-bundle", "test-report", "typecheck-report"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
+    },
+    "cargo-rust": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "worker",
+        "sdk"
+      ],
+      "supportedPhases": [
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "cratePath"
+      ],
+      "outputs": [
+        "rust-binary",
+        "rust-library",
+        "test-report"
+      ],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/CargoRustAdapter.ts",
+      "status": "implemented",
+      "safeForDefault": true,
+      "tests": [
+        "platform/typescript/kernel-toolchains/src/__tests__/CargoRustAdapter.test.ts"
+      ],
+      "planningImplemented": true,
+      "executionImplemented": true,
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": true,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 1200000,
+        "defaultMs": 900000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": ["production"],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["rust-binary"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
+    },
+    "python-pyproject": {
+      "kind": "build-tool",
+      "supportedSurfaceTypes": [
+        "backend-api",
+        "worker",
+        "sdk"
+      ],
+      "supportedPhases": [
+        "validate",
+        "test",
+        "build",
+        "package"
+      ],
+      "requires": [
+        "pyprojectPath"
+      ],
+      "outputs": [
+        "python-package",
+        "python-service",
+        "test-report"
+      ],
+      "implementation": "platform/typescript/kernel-toolchains/src/adapters/PythonPyprojectAdapter.ts",
+      "status": "implemented",
+      "safeForDefault": true,
+      "tests": [
+        "platform/typescript/kernel-toolchains/src/__tests__/PythonPyprojectAdapter.test.ts"
+      ],
+      "planningImplemented": true,
+      "executionImplemented": true,
+      "outputValidationImplemented": true,
+      "readiness": "execution-ready",
+      "requiresApprovalForProduction": false,
+      "supportsBootstrapMode": true,
+      "supportsPlatformMode": false,
+      "lifecycleEnabled": true,
+      "timeout": {
+        "planMs": 5000,
+        "executeMs": 1200000,
+        "defaultMs": 900000
+      },
+      "retryPolicy": {
+        "maxAttempts": 1,
+        "retryable": false,
+        "retryOnExitCodes": []
+      },
+      "environmentPolicy": {
+        "allowedEnvironments": ["local", "ci"],
+        "blockedEnvironments": ["production"],
+        "requiresEnvironmentApproval": false
+      },
+      "outputValidation": {
+        "validateAfterExecute": true,
+        "requiredArtifactTypes": ["python-package"],
+        "failOnMissingArtifacts": true,
+        "failOnUnexpectedArtifacts": false
+      }
     },
     "vitest": {
       "kind": "test-tool",

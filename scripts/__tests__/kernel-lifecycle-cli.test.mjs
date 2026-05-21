@@ -89,6 +89,25 @@ test('kernel-product propagates correlation id and writes latest manifest pointe
   assert.equal(latestPointers.providerMode, 'bootstrap');
 });
 
+test('kernel-product recover returns actionable recovery payload', () => {
+  const result = runNodeScript([
+    join(repoRoot, 'scripts', 'kernel-product.mjs'),
+    'product',
+    'recover',
+    'digital-marketing',
+    '--json',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.plan.productId, 'digital-marketing');
+  assert.equal(payload.plan.phase, 'verify');
+  assert.equal(payload.recover.productId, 'digital-marketing');
+  assert.equal(payload.recover.phase, 'verify');
+  assert.match(payload.recover.verifyCommand, /kernel-product\.mjs product plan digital-marketing verify/);
+  assert.ok(Array.isArray(payload.recover.actions));
+});
+
 test('kernel-product fails closed for platform mode until Data Cloud provider bridge exists', () => {
   const result = runNodeScript([
     join(repoRoot, 'scripts', 'kernel-product.mjs'),
