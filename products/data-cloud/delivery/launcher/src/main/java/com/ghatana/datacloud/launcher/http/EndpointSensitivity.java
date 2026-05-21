@@ -1,5 +1,7 @@
 package com.ghatana.datacloud.launcher.http;
 
+import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
+
 import java.util.Set;
 
 /**
@@ -206,8 +208,13 @@ public enum EndpointSensitivity {
             return metadata.get().sensitivity();
         }
 
-        // DC-P0-01: Temporary fallback to legacy prefix-based classification
-        // This will be removed once all routes are registered in RouteSecurityRegistry.
+        if (RuntimeProfile.resolve().isProduction()) {
+            throw new IllegalStateException(
+                    "No route security metadata for " + method.toUpperCase() + " " + path
+                            + "; production-like profiles fail closed");
+        }
+
+        // Local/test compatibility for callers outside the runtime router.
         return classifyLegacy(method, path);
     }
 

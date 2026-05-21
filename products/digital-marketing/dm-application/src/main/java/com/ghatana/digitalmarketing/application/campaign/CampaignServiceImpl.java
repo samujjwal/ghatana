@@ -12,6 +12,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
+import com.ghatana.digitalmarketing.domain.campaign.CampaignTransitionService;
 import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
@@ -63,6 +64,7 @@ public final class CampaignServiceImpl implements CampaignService {
     private final DmCommandService commandService;
     private final ObjectMapper objectMapper;
     private final CampaignEventSourcingAdapter eventSourcingAdapter;
+    private final CampaignTransitionService transitionService;
 
     /**
      * Constructs the campaign service.
@@ -76,6 +78,7 @@ public final class CampaignServiceImpl implements CampaignService {
      * @param commandService         command service for issuing outbox commands (P1-023)
      * @param objectMapper           JSON mapper for command payload serialization
      * @param eventSourcingAdapter   event sourcing adapter for publishing campaign lifecycle events (P1-006)
+     * @param transitionService      campaign transition service for state machine validation
      */
     public CampaignServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
@@ -86,7 +89,8 @@ public final class CampaignServiceImpl implements CampaignService {
             DmKillSwitchService killSwitchService,
             DmCommandService commandService,
             ObjectMapper objectMapper,
-            CampaignEventSourcingAdapter eventSourcingAdapter) {
+            CampaignEventSourcingAdapter eventSourcingAdapter,
+            CampaignTransitionService transitionService) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.compliancePlugin = Objects.requireNonNull(compliancePlugin, "compliancePlugin must not be null");
@@ -99,6 +103,7 @@ public final class CampaignServiceImpl implements CampaignService {
         this.commandService = Objects.requireNonNull(commandService, "commandService must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.eventSourcingAdapter = Objects.requireNonNull(eventSourcingAdapter, "eventSourcingAdapter must not be null");
+        this.transitionService = Objects.requireNonNull(transitionService, "transitionService must not be null");
     }
 
     // -----------------------------------------------------------------------
@@ -695,6 +700,56 @@ public final class CampaignServiceImpl implements CampaignService {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    // -----------------------------------------------------------------------
+    // Transition
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Promise<Campaign> transitionCampaign(DmOperationContext ctx, String campaignId, String toStatus, String actor, String reason) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
+        Objects.requireNonNull(campaignId, "campaignId must not be null");
+        Objects.requireNonNull(toStatus, "toStatus must not be null");
+
+        return kernelAdapter.isAuthorized(ctx, "campaigns/" + campaignId, "write")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException(
+                        "Not authorized to transition campaign " + campaignId
+                    ));
+                }
+                return repository.findById(ctx.getTenantId(), ctx.getWorkspaceId(), campaignId);
+            })
+            .then(optCampaign -> Promise.of(optCampaign.orElseThrow(
+                () -> new NoSuchElementException("Campaign not found: " + campaignId)
+            )))
+            .then(campaign -> {
+                try {
+                    CampaignStatus targetStatus = CampaignStatus.valueOf(toStatus);
+                    CampaignTransitionService.TransitionContext transitionContext =
+                        new CampaignTransitionService.TransitionContext(actor, reason, targetStatus == CampaignStatus.APPROVED);
+                    
+                    var result = transitionService.transition(campaign, targetStatus, transitionContext);
+                    if (!result.isSuccess()) {
+                        return Promise.ofException(new IllegalStateException(result.getError()));
+                    }
+                    return repository.save(ctx.getTenantId(), campaign)
+                        .then(saved -> kernelAdapter.recordAudit(
+                            ctx,
+                            saved.getId(),
+                            "transition",
+                            Map.of(
+                                "previousStatus", campaign.getStatus().name(),
+                                "newStatus", saved.getStatus().name(),
+                                "actor", actor,
+                                "reason", reason != null ? reason : ""
+                            )
+                        ).map(auditId -> saved));
+                } catch (IllegalArgumentException e) {
+                    return Promise.ofException(new IllegalArgumentException("Invalid campaign status: " + toStatus));
+                }
+            });
     }
 
     private record LaunchCommandState(LaunchCommandOutcome outcome, String commandId, String reason) {

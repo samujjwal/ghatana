@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import io.activej.http.HttpRequest;
@@ -273,7 +274,7 @@ public class SettingsHandler {
                 Map<String, Object> response = new LinkedHashMap<>(key);
                 response.remove("secret");
                 return Promise.of(http.jsonResponse(response));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Malformed JSON body: " + e.getMessage()));
             }
         });

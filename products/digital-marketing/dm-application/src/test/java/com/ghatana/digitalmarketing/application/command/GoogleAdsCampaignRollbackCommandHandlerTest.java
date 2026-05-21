@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.application.command;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
+import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
 import com.ghatana.platform.observability.Metrics;
 import com.ghatana.platform.observability.TracingManager;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
@@ -260,6 +261,11 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
             lastAccessToken = accessToken;
             lastExternalCampaignId = externalCampaignId;
             return Promise.of(externalCampaignId);
+        }
+
+        @Override
+        public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+            return Promise.of(GoogleAdsConnectorReadinessState.READY);
         }
     }
 

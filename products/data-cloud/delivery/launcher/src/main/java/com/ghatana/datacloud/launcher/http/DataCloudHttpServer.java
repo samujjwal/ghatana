@@ -108,7 +108,9 @@ import com.ghatana.datacloud.launcher.http.handlers.SurfaceRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CollectionContextHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ComplianceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
+import com.ghatana.datacloud.launcher.http.handlers.ContextStore;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
+import com.ghatana.datacloud.launcher.http.handlers.InMemoryContextStore;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ProviderConformanceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
@@ -417,6 +419,7 @@ public class DataCloudHttpServer {
     private DataCloudRuntimePluginManager runtimePluginManager;
     private SurfaceRegistryHandler surfaceRegistryHandler; // P2.7: runtime surface registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
+    private ContextStore contextStore = new InMemoryContextStore();
     private CollectionContextHandler collectionContextHandler; // P3.1: unified collection context API
     private McpToolsHandler mcpToolsHandler; // P3.1.2: MCP tool registry and invocation
     private DataProductHandler dataProductHandler; // P4.4.1: data products publish/discover/subscribe
@@ -471,7 +474,7 @@ public class DataCloudHttpServer {
     public DataCloudHttpServer(DataCloudClient client, int port, DataCloudBrain brain,
                                DataCloudLearningBridge learningBridge,
                                AnalyticsQueryEngine analyticsEngine) {
-        this.client          = client;
+        this.client          = requireNonNull(client, "client must not be null");
         this.port            = port;
         this.brain           = brain;
         this.learningBridge  = learningBridge;
@@ -1075,6 +1078,17 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Injects the Context Plane backing store.
+     *
+     * <p>Production-like deployment modes must provide a durable implementation.
+     * The default in-memory store is reserved for local and test use.
+     */
+    public DataCloudHttpServer withContextStore(ContextStore store) {
+        this.contextStore = requireNonNull(store, "store");
+        return this;
+    }
+
+    /**
      * Overrides the default rate-limit thresholds used by the platform rate limiter.
      *
      * <p>Call this method before {@link #start()} to apply env-configurable limits.
@@ -1301,6 +1315,13 @@ public class DataCloudHttpServer {
         }
     }
 
+    static void validateContextStoreConfiguration(String deploymentMode, ContextStore configuredStore) {
+        if (isProductionMode(deploymentMode) && configuredStore instanceof InMemoryContextStore) {
+            throw new IllegalStateException(
+                "Context Plane requires a durable ContextStore in deployment mode '" + deploymentMode + "'");
+        }
+    }
+
     /**
      * P0.1: Production/strict profiles must not run settings APIs on in-memory storage.
      */
@@ -1364,8 +1385,8 @@ public class DataCloudHttpServer {
     public void start() throws Exception {
         boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
         boolean tenantResolverAvailable = authConfigured;
-        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
-        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+        boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
+        boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
 
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
         enforceLoopbackInInsecureMode(authConfigured, strictTenantResolution, listenHost, log);
@@ -1522,7 +1543,7 @@ public class DataCloudHttpServer {
             blockingExecutor,
             new AiRecommendationMetrics(metricsCollector));
         if (tenantQuotaService != null) aiAssistHandler.withTenantQuotaService(tenantQuotaService);
-        if (client != null) aiAssistHandler.withClient(client);
+        aiAssistHandler.withClient(client);
         // DC-P0-007: Disable heuristic fallback when running in production/staging/sovereign profile
         aiAssistHandler.withProductionMode(isProductionMode(deploymentMode));
 
@@ -1585,24 +1606,19 @@ public class DataCloudHttpServer {
             objectMapper,
             this::buildTypedSurfaceSnapshot);
 
-        // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
-        contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin);
-        if (client != null) {
-            collectionContextHandler = new CollectionContextHandler(
-                client,
-                httpSupport,
-                objectMapper,
-                lineagePlugin,
-                knowledgeGraphPlugin);
-            mcpToolsHandler = new McpToolsHandler(
-                client,
-                httpSupport,
-                objectMapper,
-                collectionContextHandler::getCollectionContextDocument);
-        } else {
-            collectionContextHandler = null;
-            mcpToolsHandler = null;
-        }
+        validateContextStoreConfiguration(deploymentMode, contextStore);
+        contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin, contextStore);
+        collectionContextHandler = new CollectionContextHandler(
+            client,
+            httpSupport,
+            objectMapper,
+            lineagePlugin,
+            knowledgeGraphPlugin);
+        mcpToolsHandler = new McpToolsHandler(
+            client,
+            httpSupport,
+            objectMapper,
+            collectionContextHandler::getCollectionContextDocument);
 
         // P3.9.1: Entity lineage tracking and visualization
         lineageHandler = new LineageHandler(httpSupport, objectMapper, lineagePlugin);
@@ -1644,37 +1660,17 @@ public class DataCloudHttpServer {
         userActivityHandler = new UserActivityHandler(httpSupport);
 
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
-        DataSourceRegistryHandler dataSourceRegistryHandler;
-        if (client != null) {
-            dataSourceRegistryHandler = new DataSourceRegistryHandler(
-                client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService);
-        } else {
-            dataSourceRegistryHandler = null;
-        }
+        DataSourceRegistryHandler dataSourceRegistryHandler = new DataSourceRegistryHandler(
+            client, httpSupport, null /* no DataFabricConnector implementation yet */, auditService);
 
         // P3.6: Compliance handler for legal holds and evidence packages
-        ComplianceHandler complianceHandler;
-        if (client != null) {
-            complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
-        } else {
-            complianceHandler = null;
-        }
+        ComplianceHandler complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
 
         // P3.3: Sovereign profile handler for air-gapped, model routing, and policy enforcement
-        SovereignProfileHandler sovereignProfileHandler;
-        if (client != null) {
-            sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
-        } else {
-            sovereignProfileHandler = null;
-        }
+        SovereignProfileHandler sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
 
         // P3.1: Provider conformance suite handler for EntityStore and EventLogStore validation
-        ProviderConformanceHandler conformanceHandler;
-        if (client != null) {
-            conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
-        } else {
-            conformanceHandler = null;
-        }
+        ProviderConformanceHandler conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
 
         log.info("[DC-SURFACE] Runtime surface summary {}", buildSurfaceSummaryLog());
 
@@ -1728,7 +1724,7 @@ public class DataCloudHttpServer {
             .authConfigured(apiKeyResolver != null || jwtProvider != null)
             .auditConfigured(auditService != null)
             .policyEngineConfigured(policyEngine != null)
-            .durableEntityStore(isDurableStoreBacking(client != null ? client.entityStore() : null))
+            .durableEntityStore(isDurableStoreBacking(client.entityStore()))
             .durableEventStore(eventLogStore != null)
             .durableIdempotencyStore(entityWriteIdempotencyStore != null)
             .transactionManagerConfigured(transactionManager != null)
@@ -1830,10 +1826,6 @@ public class DataCloudHttpServer {
     }
 
     private MasteryController buildMasteryController() {
-        if (client == null) {
-            return null;
-        }
-
         DataCloudEntityRepositoryAdapter entityRepository = new DataCloudEntityRepositoryAdapter(client.entityStore());
         MasteryTransitionPolicy transitionPolicy = new DefaultMasteryTransitionPolicy();
         MasteryTransitionRepository transitionRepository = new DataCloudMasteryTransitionRepository(entityRepository);
@@ -1895,8 +1887,8 @@ public class DataCloudHttpServer {
         boolean settingsDurable = settingsStorageMode != null
             && !settingsStorageMode.isBlank()
             && !"in-memory".equalsIgnoreCase(settingsStorageMode.trim());
-        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
-        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+        boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
+        boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
 
         // DC-P0-001: Publish the canonical validator posture so /api/v1/surfaces is an authoritative truth.
         RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
@@ -1918,8 +1910,10 @@ public class DataCloudHttpServer {
         runtimePosture.put("settingsStorageMode", settingsStorageMode);
         runtimePosture.put("settingsDurable", settingsDurable);
         runtimePosture.put("eventStoreWired", eventLogStore != null);
-        runtimePosture.put("eventTail", buildEventTailPosture(client != null ? client.eventLogStore() : null));
+        runtimePosture.put("eventTail", buildEventTailPosture(client.eventLogStore()));
         runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
+        runtimePosture.put("contextStoreMode", contextStore.getClass().getSimpleName());
+        runtimePosture.put("contextStoreDurable", !(contextStore instanceof InMemoryContextStore));
 
         surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
@@ -2042,8 +2036,8 @@ public class DataCloudHttpServer {
     }
 
     private java.util.List<SurfaceRecord> buildTypedSurfaceSnapshot() {
-        boolean entityStoreDurable = isDurableStoreBacking(client != null ? client.entityStore() : null);
-        boolean coreEventStoreDurable = isDurableStoreBacking(client != null ? client.eventLogStore() : null);
+        boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
+        boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
 
         java.util.List<SurfaceRecord> records = new java.util.ArrayList<>();
 

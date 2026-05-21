@@ -35,6 +35,15 @@ public interface DashboardSummaryService {
     Promise<DashboardSummary> computeSummary(DmOperationContext ctx);
 
     /**
+     * Computes detailed KPI metrics for reporting.
+     *
+     * @param ctx the operation context
+     * @param period the reporting period
+     * @return the KPI metrics report
+     */
+    Promise<KpiMetricsReport> computeKpiMetrics(DmOperationContext ctx, ReportPeriod period);
+
+    /**
      * Dashboard summary with freshness and confidence indicators.
      */
     record DashboardSummary(
@@ -95,5 +104,62 @@ public interface DashboardSummaryService {
         HIGH,   // All data sources fresh and complete
         MEDIUM, // Some data sources stale or partial
         LOW     // Critical data sources stale or missing
+    }
+
+    /**
+     * KPI metrics report for detailed analytics and reporting.
+     */
+    record KpiMetricsReport(
+        String workspaceId,
+        ReportPeriod period,
+        java.time.Instant reportGeneratedAt,
+        CampaignKpiMetrics campaignKpi,
+        BudgetKpiMetrics budgetKpi,
+        LeadKpiMetrics leadKpi,
+        ConversionKpiMetrics conversionKpi,
+        RoiKpiMetrics roiKpi
+    ) {}
+
+    record CampaignKpiMetrics(
+        int totalCampaigns,
+        int activeCampaigns,
+        double averageCampaignDurationDays,
+        double campaignSuccessRate
+    ) {}
+
+    record BudgetKpiMetrics(
+        long totalBudget,
+        long spentBudget,
+        long remainingBudget,
+        double budgetUtilizationPercentage,
+        double costPerLead
+    ) {}
+
+    record LeadKpiMetrics(
+        long totalLeads,
+        long qualifiedLeads,
+        double leadGrowthRate,
+        double leadQualityScore
+    ) {}
+
+    record ConversionKpiMetrics(
+        double overallConversionRate,
+        double funnelConversionRate,
+        double timeToConversionDays
+    ) {}
+
+    record RoiKpiMetrics(
+        double totalRevenue,
+        double totalCost,
+        double roiPercentage,
+        double roas
+    ) {}
+
+    enum ReportPeriod {
+        DAILY,
+        WEEKLY,
+        MONTHLY,
+        QUARTERLY,
+        YEARLY
     }
 }

@@ -252,6 +252,82 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
         assertThat(server.getRequestCount()).isEqualTo(2);
     }
 
+    @Test
+    @DisplayName("checkReadiness returns READY when API is accessible and credentials are valid")
+    void shouldReturnReadyWhenApiAccessible() {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{}"));
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("valid-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.READY);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns AUTH_FAILED when access token is blank")
+    void shouldReturnAuthFailedWhenTokenBlank() {
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness(""));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.AUTH_FAILED);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns AUTH_FAILED on HTTP 401")
+    void shouldReturnAuthFailedOn401() {
+        server.enqueue(new MockResponse().setResponseCode(401).setBody("{\"error\":\"unauthorized\"}"));
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("invalid-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.AUTH_FAILED);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns AUTH_FAILED on HTTP 403")
+    void shouldReturnAuthFailedOn403() {
+        server.enqueue(new MockResponse().setResponseCode(403).setBody("{\"error\":\"forbidden\"}"));
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("forbidden-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.AUTH_FAILED);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns RATE_LIMITED on HTTP 429")
+    void shouldReturnRateLimitedOn429() {
+        server.enqueue(new MockResponse().setResponseCode(429).setBody("{\"error\":\"rate_limited\"}"));
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("rate-limited-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.RATE_LIMITED);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns NOT_READY on HTTP 5xx")
+    void shouldReturnNotReadyOn5xx() {
+        server.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":\"service_unavailable\"}"));
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("valid-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.NOT_READY);
+    }
+
+    @Test
+    @DisplayName("checkReadiness returns NOT_READY on IOException")
+    void shouldReturnNotReadyOnIOException() {
+        // Stop the server to cause an IOException
+        try {
+            server.shutdown();
+        } catch (IOException e) {
+            // Ignore
+        }
+
+        GoogleAdsConnectorReadinessState state = runPromise(() -> adapter.checkReadiness("valid-token"));
+
+        assertThat(state).isEqualTo(GoogleAdsConnectorReadinessState.NOT_READY);
+    }
+
     private static CreateGoogleSearchCampaignRequest validRequest() {
         return new CreateGoogleSearchCampaignRequest(
             "My Campaign",

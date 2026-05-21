@@ -128,7 +128,6 @@ public final class RuntimeProfileValidator {
         List<String> violations = new ArrayList<>();
 
         boolean isLocalProfile = isLocal(deploymentProfile);
-        boolean isSovereignProfile = isSovereign(deploymentProfile);
         boolean isProductionLike = isProductionLike(deploymentProfile);
 
         if (isLocalProfile && !strictTenantResolution) {

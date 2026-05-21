@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 /**
- * DC-P1-07: Generate route/security/runtime-truth metadata from OpenAPI contracts.
+ * DC-P1-07: Generate route/security capability metadata from OpenAPI contracts.
  *
- * This script extracts route sensitivity, access level requirements, and runtime-truth
- * posture metadata from OpenAPI contract files and generates TypeScript/Java artifacts
- * for use in the Data Cloud launcher and UI.
+ * This script extracts route sensitivity and access level requirements from OpenAPI
+ * contract files and generates UI capability/legacy mapping artifacts.
+ *
+ * Runtime truth posture is generated from DataCloudRouterBuilder + RouteSecurityRegistry
+ * by generate-route-manifest.mjs.
  *
  * Usage:
  *   node scripts/generate-route-security-metadata.mjs [--check]
  *
  * @doc.type script
- * @doc.purpose Generate route/security/runtime-truth metadata from contracts
+ * @doc.purpose Generate route/security capability metadata from contracts
  * @doc.layer product
  * @doc.pattern Generator
  */
@@ -523,7 +525,7 @@ function generateLegacyCompatibilityMetadata(legacyRoutes) {
  * Main execution
  */
 function main() {
-  console.log('[DC-P1-07] Generating route/security/runtime-truth metadata from contracts...');
+  console.log('[DC-P1-07] Generating route/security capability metadata from contracts...');
   
   // DC-P1-07: Parse compatibility registry first
   const { canonicalRoutes, legacyRoutes } = parseCompatibilityRegistry();
@@ -580,44 +582,6 @@ function main() {
     console.log(`[DC-P1-07] Generated TypeScript registry: ${tsOutputPath}`);
   }
   
-  // Generate Java registry snippet
-  const javaRegistry = generateJavaRegistry(allRoutes, 'data-cloud.yaml + action-plane.yaml');
-  const javaOutputPath = path.join(PROJECT_ROOT, 'delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteActionAccessRegistry.generated.java');
-  
-  if (CHECK_MODE) {
-    if (fs.existsSync(javaOutputPath)) {
-      const existing = fs.readFileSync(javaOutputPath, 'utf-8');
-      if (existing !== javaRegistry) {
-        console.error('[ERROR] Generated Java registry does not match existing file');
-        console.error('[ERROR] Run without --check to regenerate: node scripts/generate-route-security-metadata.mjs');
-        process.exit(1);
-      }
-    }
-  } else {
-    fs.mkdirSync(path.dirname(javaOutputPath), { recursive: true });
-    fs.writeFileSync(javaOutputPath, javaRegistry);
-    console.log(`[DC-P1-07] Generated Java registry snippet: ${javaOutputPath}`);
-  }
-  
-  // Generate runtime-truth posture metadata
-  const postureMetadata = generateRuntimeTruthPosture(allRoutes);
-  const postureOutputPath = path.join(OUTPUT_DIR, 'RuntimeTruthPosture.generated.ts');
-  
-  if (CHECK_MODE) {
-    if (fs.existsSync(postureOutputPath)) {
-      const existing = fs.readFileSync(postureOutputPath, 'utf-8');
-      if (existing !== postureMetadata) {
-        console.error('[ERROR] Generated runtime-truth posture does not match existing file');
-        console.error('[ERROR] Run without --check to regenerate: node scripts/generate-route-security-metadata.mjs');
-        process.exit(1);
-      }
-    }
-  } else {
-    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-    fs.writeFileSync(postureOutputPath, postureMetadata);
-    console.log(`[DC-P1-07] Generated runtime-truth posture: ${postureOutputPath}`);
-  }
-  
   // DC-P1-07: Generate legacy route compatibility metadata
   if (legacyRoutes.length > 0) {
     const legacyMetadata = generateLegacyCompatibilityMetadata(legacyRoutes);
@@ -639,7 +603,7 @@ function main() {
     }
   }
   
-  console.log('[DC-P1-07] Route/security/runtime-truth metadata generation completed successfully');
+  console.log('[DC-P1-07] Route/security capability metadata generation completed successfully');
 }
 
 /**

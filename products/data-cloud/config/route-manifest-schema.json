@@ -57,6 +57,22 @@
             "default": false,
             "description": "Whether route requires policy evaluation"
           },
+          "requiresBlockingAudit": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether audit persistence failure must block the request"
+          },
+          "requiredAccess": {
+            "type": "string",
+            "enum": ["NONE", "VIEWER", "AUDITOR", "OPERATOR", "ADMIN"],
+            "description": "Minimum access level required by the security filter"
+          },
+          "legacyStatus": {
+            "type": "string",
+            "enum": ["active", "deprecated", "compatibility-only"],
+            "default": "active",
+            "description": "Whether the route is canonical or compatibility-only"
+          },
           "idempotent": {
             "type": "boolean",
             "default": false,

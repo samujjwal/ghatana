@@ -8,6 +8,7 @@ group = "com.ghatana.digitalmarketing"
 description = "DMOS Google Ads HTTP connector adapters — production-grade OkHttp + Jackson implementations"
 
 dependencies {
+    api(project(":products:digital-marketing:dm-core-contracts"))
     api(project(":products:digital-marketing:dm-application"))
 
     implementation(libs.activej.promise)

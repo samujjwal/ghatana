@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -249,7 +250,7 @@ class EventEnvelopeGoldenTest extends EventloopTestBase {
                 assertThat(parsed.get("policyId")).isEqualTo("policy-001");
                 assertThat(parsed.get("ruleId")).isEqualTo("rule-002");
                 assertThat(parsed.get("decision")).isEqualTo("allow");
-            } catch (Exception e) {
+            } catch (JsonProcessingException e) {
                 return false;
             }
             

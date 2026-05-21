@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
+import com.ghatana.digitalmarketing.domain.campaign.CampaignTransitionService;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.domain.eventstore.TenantContext;
@@ -52,6 +53,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private TestEventLogStore eventStore;
     private CampaignEventSourcingAdapter eventSourcingAdapter;
+    private CampaignTransitionService transitionService;
 
     @BeforeEach
     void setUp() {
@@ -63,6 +65,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
         objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         eventStore = new TestEventLogStore();
         eventSourcingAdapter = new CampaignEventSourcingAdapter(eventStore);
+        transitionService = new CampaignTransitionService();
         service = new CampaignServiceImpl(
             kernelAdapter,
             repository,
@@ -78,7 +81,8 @@ class CampaignServiceImplTest extends EventloopTestBase {
             killSwitchService,
             commandService,
             objectMapper,
-            eventSourcingAdapter
+            eventSourcingAdapter,
+            transitionService
         );
 
         ctx = DmOperationContext.builder()
@@ -101,15 +105,15 @@ class CampaignServiceImplTest extends EventloopTestBase {
         );
 
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper, eventSourcingAdapter))
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService))
             .withMessageContaining("metrics");
     }
 

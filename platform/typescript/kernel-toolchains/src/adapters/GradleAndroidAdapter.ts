@@ -8,6 +8,8 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
 } from '../ToolchainAdapter.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
@@ -18,6 +20,10 @@ import {
   truncateToolchainOutput,
   TOOLCHAIN_OUTPUT_LIMIT_BYTES,
 } from '../execution/ToolchainExecutionResultFactory.js';
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
+} from '../ToolchainAdapter.js';
 
 const APK_PATTERN = /(?:apk|output).*?(\S+\.apk)/gi;
 const AAB_PATTERN = /(?:aab|bundle).*?(\S+\.aab)/gi;
@@ -190,6 +196,14 @@ export class GradleAndroidAdapter implements ToolchainAdapter {
       missingArtifacts: missing,
       unexpectedArtifacts: [],
     };
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    return createDefaultPreflightResult();
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   private extractArtifactPaths(stdout: string, workingDirectory: string): string[] {

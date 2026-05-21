@@ -9,6 +9,8 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
 } from "../ToolchainAdapter.js";
 import { SpawnCommandRunner } from "../execution/SpawnCommandRunner.js";
 import type { CommandRunner } from "../execution/CommandRunner.js";
@@ -18,6 +20,10 @@ import {
   createToolchainExecutionResult,
   truncateToolchainOutput,
 } from "../execution/ToolchainExecutionResultFactory.js";
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
+} from "../ToolchainAdapter.js";
 
 const NO_UNEXPECTED_ARTIFACTS: readonly string[] = Object.freeze([]);
 const NO_COMPOSE_VALIDATION_ERRORS: readonly { path: string; message: string }[] = Object.freeze([]);
@@ -270,6 +276,14 @@ export class ComposeLocalAdapter implements ToolchainAdapter {
       context,
       this.parseComposePs(psResult.stdout),
     );
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    return createDefaultPreflightResult();
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

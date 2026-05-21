@@ -4,13109 +4,11943 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Composite health check */
-        get: operations["healthGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Detailed per-subsystem health breakdown
-         * @description Returns an individual status for every registered health contributor
-         *     (storage, warm-tier DB, cache, index, message broker, etc.). Intended for
-         *     operations dashboards and circuit-breaker monitoring.
-         */
-        get: operations["healthDetailGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health/deep": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Deep dependency-aware health breakdown */
-        get: operations["healthDeepGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Readiness probe (Kubernetes) */
-        get: operations["readyGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/live": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Liveness probe (Kubernetes) */
-        get: operations["liveGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Service metadata */
-        get: operations["infoGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Prometheus-format JVM / service metrics */
-        get: operations["metricsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Query entities in a collection */
-        get: operations["apiV1EntitiesCollectionGet"];
-        put?: never;
-        /** Create (save) an entity */
-        post: operations["apiV1EntitiesCollectionPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a single entity by ID */
-        get: operations["apiV1EntitiesCollectionIdGet"];
-        put?: never;
-        post?: never;
-        /** Delete an entity */
-        delete: operations["apiV1EntitiesCollectionIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Query the event log */
-        get: operations["apiV1EventsGet"];
-        put?: never;
-        /** Append an event to the event log */
-        post: operations["apiV1EventsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List pipeline definitions */
-        get: operations["apiV1PipelinesGet"];
-        put?: never;
-        /** Save a pipeline definition */
-        post: operations["apiV1PipelinesPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get pipeline by ID */
-        get: operations["apiV1PipelinesPipelineIdGet"];
-        /** Update a pipeline definition */
-        put: operations["apiV1PipelinesPipelineIdPut"];
-        post?: never;
-        /** Delete a pipeline definition */
-        delete: operations["apiV1PipelinesPipelineIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/execute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Execute a pipeline through the runtime workflow plugin */
-        post: operations["apiV1PipelinesPipelineIdExecutePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/executions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List executions for a pipeline */
-        get: operations["apiV1PipelinesPipelineIdExecutionsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/executions/{executionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get workflow-scoped execution summary */
-        get: operations["apiV1PipelinesPipelineIdExecutionsExecutionIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/executions/{executionId}/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get log entries for a pipeline-scoped execution */
-        get: operations["apiV1PipelinesPipelineIdExecutionsExecutionIdLogsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/executions/{executionId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel a pipeline execution */
-        post: operations["apiV1PipelinesPipelineIdExecutionsExecutionIdCancelPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List operational alerts */
-        get: operations["apiV1AlertsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{alertId}/acknowledge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Acknowledge an alert */
-        post: operations["apiV1AlertsAlertIdAcknowledgePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{alertId}/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resolve an alert */
-        post: operations["apiV1AlertsAlertIdResolvePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{id}/escalate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Escalate an alert to an incident */
-        post: operations["apiV1AlertsIdEscalatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{id}/auto-remediate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Attempt auto-remediation of an alert (P2.4) */
-        post: operations["apiV1AlertsIdAutoRemediatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{id}/remediate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Apply a remediation action to an alert (P2.4) */
-        post: operations["apiV1AlertsIdRemediatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{id}/remediate/rollback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Rollback a remediation action (P2.4) */
-        post: operations["apiV1AlertsIdRemediateRollbackPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/{id}/remediations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List remediation actions for an alert (P2.4) */
-        get: operations["apiV1AlertsIdRemediationsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/groups": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List AI-correlated alert groups */
-        get: operations["apiV1AlertsGroupsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/groups/{groupId}/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resolve every alert in a correlated group */
-        post: operations["apiV1AlertsGroupsGroupIdResolvePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List AI-generated alert resolution suggestions */
-        get: operations["apiV1AlertsSuggestionsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/suggestions/{suggestionId}/apply": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Apply an AI-generated alert resolution suggestion */
-        post: operations["apiV1AlertsSuggestionsSuggestionIdApplyPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List alert rules */
-        get: operations["apiV1AlertsRulesGet"];
-        put?: never;
-        /** Create an alert rule */
-        post: operations["apiV1AlertsRulesPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/rules/{ruleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update an alert rule */
-        put: operations["apiV1AlertsRulesRuleIdPut"];
-        post?: never;
-        /** Delete an alert rule */
-        delete: operations["apiV1AlertsRulesRuleIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/alerts/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stream live alert updates via server-sent events */
-        get: operations["apiV1AlertsStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/compliance/legal-holds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List active legal holds for a tenant (P3.6) */
-        get: operations["apiV1ComplianceLegalHoldsGet"];
-        put?: never;
-        /** Apply a legal hold to freeze data from deletion (P3.6) */
-        post: operations["apiV1ComplianceLegalHoldsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/compliance/legal-holds/{id}/extend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Extend an existing legal hold (P3.6) */
-        post: operations["apiV1ComplianceLegalHoldsIdExtendPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/compliance/legal-holds/{id}/release": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Release an active legal hold (P3.6) */
-        post: operations["apiV1ComplianceLegalHoldsIdReleasePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/compliance/evidence-package": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate a compliance evidence package for audit or certification (P3.6) */
-        post: operations["apiV1ComplianceEvidencePackagePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/compliance/posture": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Evidence-first compliance posture dashboard (P3.6) */
-        get: operations["apiV1CompliancePostureGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get tenant sovereign profile */
-        get: operations["apiV1SovereignProfileGet"];
-        /** Update tenant sovereign profile */
-        put: operations["apiV1SovereignProfilePut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get tenant model policy (allowed/forbidden models) */
-        get: operations["apiV1SovereignModelsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/audit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Sovereign policy audit events (P3.3) */
-        get: operations["apiV1SovereignAuditGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/backup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Offline backup status (P3.3) */
-        get: operations["apiV1SovereignBackupGet"];
-        put?: never;
-        /** Trigger offline backup (P3.3) */
-        post: operations["apiV1SovereignBackupPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Restore from offline backup (P3.3) */
-        post: operations["apiV1SovereignRestorePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/data-subject-controls": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Data-subject controls (P3.3) */
-        get: operations["apiV1SovereignDataSubjectControlsGet"];
-        /** Update data-subject controls (P3.3) */
-        put: operations["apiV1SovereignDataSubjectControlsPut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/conformance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Sovereign conformance tests (P3.3) */
-        get: operations["apiV1SovereignConformanceGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/checkpoints": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List agent checkpoints */
-        get: operations["apiV1CheckpointsGet"];
-        put?: never;
-        /** Save a checkpoint */
-        post: operations["apiV1CheckpointsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/checkpoints/{checkpointId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get checkpoint by ID */
-        get: operations["apiV1CheckpointsCheckpointIdGet"];
-        put?: never;
-        post?: never;
-        /** Delete a checkpoint */
-        delete: operations["apiV1CheckpointsCheckpointIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/marketplace": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Plugin marketplace catalog (P3.4) */
-        get: operations["apiV1PluginsMarketplaceGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/sandbox": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Plugin sandbox status (P3.4) */
-        get: operations["apiV1PluginsIdSandboxGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate plugin schema version contract (P3.4) */
-        post: operations["apiV1PluginsIdValidatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/conformance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Plugin conformance test (P3.1) */
-        post: operations["apiV1PluginsIdConformancePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/conformance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Full provider conformance suite (P3.1) */
-        get: operations["apiV1ConformanceGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/conformance/entity-store": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** EntityStore conformance tests (P3.1) */
-        get: operations["apiV1ConformanceEntityStoreGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/conformance/event-log-store": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** EventLogStore conformance tests (P3.1) */
-        get: operations["apiV1ConformanceEventLogStoreGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/data-residency": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Data residency audit (P3.2) */
-        get: operations["apiV1SovereignDataResidencyGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/validate-transfer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate cross-border transfer (P3.2) */
-        post: operations["apiV1SovereignValidateTransferPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/sovereign/region-policy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Region policy enforcement config (P3.2) */
-        get: operations["apiV1SovereignRegionPolicyGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory/{agentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all memory entries for an agent */
-        get: operations["apiV1MemoryAgentIdGet"];
-        put?: never;
-        /** Store a new memory entry for an agent */
-        post: operations["apiV1MemoryAgentIdPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List memory entries across agents for a tenant */
-        get: operations["apiV1MemoryGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory/{agentId}/{tier}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get memory entries for a specific tier */
-        get: operations["apiV1MemoryAgentIdTierGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory/{agentId}/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Semantic search over agent memory */
-        post: operations["apiV1MemoryAgentIdSearchPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory/{agentId}/{memoryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a memory entry */
-        delete: operations["apiV1MemoryAgentIdMemoryIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/memory/{agentId}/{memoryId}/retain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Mark a memory entry for retention (prevent auto-expiry) */
-        put: operations["apiV1MemoryAgentIdMemoryIdRetainPut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Brain subsystem health */
-        get: operations["apiV1BrainHealthGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Brain configuration */
-        get: operations["apiV1BrainConfigGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Brain runtime statistics */
-        get: operations["apiV1BrainStatsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/workspace": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get global workspace spotlight items */
-        get: operations["apiV1BrainWorkspaceGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/workspace/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SSE stream of workspace spotlight updates */
-        get: operations["apiV1BrainWorkspaceStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/attention/elevate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Directly elevate a data record to the workspace */
-        post: operations["apiV1BrainAttentionElevatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/attention/thresholds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get attention score thresholds */
-        get: operations["apiV1BrainAttentionThresholdsGet"];
-        /** Update attention score thresholds */
-        put: operations["apiV1BrainAttentionThresholdsPut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/patterns": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List learned attention patterns */
-        get: operations["apiV1BrainPatternsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/patterns/match": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Test a payload against learned patterns */
-        post: operations["apiV1BrainPatternsMatchPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/salience/{itemId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get salience score for a specific item */
-        get: operations["apiV1BrainSalienceItemIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/trigger": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger a learning cycle (batch reflection) */
-        post: operations["apiV1LearningTriggerPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get learning subsystem status */
-        get: operations["apiV1LearningStatusGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the human-review queue of low-confidence policies */
-        get: operations["apiV1LearningReviewGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/review/{reviewId}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve a policy from the review queue */
-        post: operations["apiV1LearningReviewReviewIdApprovePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/review/{reviewId}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject a policy from the review queue */
-        post: operations["apiV1LearningReviewReviewIdRejectPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/learning/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SSE stream of learning status updates */
-        get: operations["apiV1LearningStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mastery/preview/decision": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Preview the governed mastery decision for an agent and skill */
-        get: operations["apiV1MasteryPreviewDecisionGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mastery/preview/retrieval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Preview mastery-backed retrieval candidates */
-        get: operations["apiV1MasteryPreviewRetrievalGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mastery/learning-deltas/{deltaId}/dry-run-promotion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Dry-run a learning delta promotion without mutating mastery state */
-        post: operations["apiV1MasteryLearningDeltaDryRunPromotionPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mastery/obsolescence-events/process": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Process an obsolescence event through the governed mastery transition flow */
-        post: operations["apiV1MasteryObsolescenceEventsProcessPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/query": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit an analytics query */
-        post: operations["apiV1AnalyticsQueryPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/queries/{queryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Cancel a running analytics query (UNSUPPORTED) */
-        delete: operations["apiV1AnalyticsQueriesQueryIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/aggregation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Run an aggregation query */
-        post: operations["apiV1AnalyticsAggregationPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/query/{queryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get analytics query result */
-        get: operations["apiV1AnalyticsQueryQueryIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/query/{queryId}/plan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get analytics query execution plan */
-        get: operations["apiV1AnalyticsQueryQueryIdPlanGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/explain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Explain a query — return its execution plan without running it */
-        post: operations["apiV1AnalyticsExplainPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Server-Sent Events stream — event log */
-        get: operations["eventsStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Server-Sent Events stream — notifications (legacy path) */
-        get: operations["eventsNotificationsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/events/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Server-Sent Events stream — notifications */
-        get: operations["apiV1EventsNotificationsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Full-text entity search via OpenSearch */
-        get: operations["apiV1EntitiesCollectionSearchGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Bulk export entities as CSV or NDJSON */
-        get: operations["apiV1EntitiesCollectionExportGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/anomalies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Detect statistical anomalies in a collection */
-        post: operations["apiV1EntitiesCollectionAnomaliesPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/anomalies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Query persisted anomaly detection events */
-        get: operations["apiV1AnomaliesGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/similar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Find entities similar to a reference entity */
-        get: operations["apiV1EntitiesCollectionSimilarGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Validate a single entity payload against the collection schema
-         * @description Checks the supplied payload against registered validation rules for the collection.
-         *     Returns a list of violations when the payload is invalid. Does not persist the entity.
-         */
-        post: operations["apiV1EntitiesCollectionValidatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/validate/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Validate multiple entity payloads in a single request
-         * @description Validates each payload in the `entities` array against the collection schema.
-         *     Returns per-entity results and a top-level `allValid` flag. Does not persist entities.
-         */
-        post: operations["apiV1EntitiesCollectionValidateBatchPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upsert multiple entities in a single request */
-        post: operations["apiV1EntitiesCollectionBatchPost"];
-        /** Delete multiple entities by ID */
-        delete: operations["apiV1EntitiesCollectionBatchDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SSE CDC stream for entity changes */
-        get: operations["apiV1EntitiesCollectionStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/query/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** SSE streaming query snapshot + tail */
-        get: operations["apiV1EntitiesCollectionQueryStreamGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/suggest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted entity schema suggestions (DC-E3) */
-        post: operations["apiV1EntitiesCollectionSuggestPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/infer-schema": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted schema inference for entity ingestion (P2.5) */
-        post: operations["apiV1EntitiesCollectionInferSchemaPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/suggest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted analytics query suggestions (DC-E3) */
-        post: operations["apiV1AnalyticsSuggestPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/analytics/automate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted analytics automation with intent clarification and policy-aware recommendations (DC-E3) */
-        post: operations["apiV1AnalyticsAutomatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/query/nlq": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Natural-language query (P2.5) */
-        post: operations["apiV1QueryNlqPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List cached reports */
-        get: operations["apiV1ReportsGet"];
-        put?: never;
-        /** Generate a report */
-        post: operations["apiV1ReportsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/reports/{reportId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Retrieve a cached report */
-        get: operations["apiV1ReportsReportIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get execution detail */
-        get: operations["apiV1ExecutionsExecutionIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get execution log entries */
-        get: operations["apiV1ExecutionsExecutionIdLogsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel an execution by id */
-        post: operations["apiV1ExecutionsExecutionIdCancelPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/retry": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retry a failed execution by id */
-        post: operations["apiV1ExecutionsExecutionIdRetryPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/rollback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Compensating rollback for a workflow execution (P2.2) */
-        post: operations["apiV1ExecutionsExecutionIdRollbackPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/checkpoint": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Save a checkpoint for durable workflow execution (P2.2) */
-        post: operations["apiV1ExecutionsExecutionIdCheckpointPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/checkpoints": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List checkpoints for a workflow execution (P2.2) */
-        get: operations["apiV1ExecutionsExecutionIdCheckpointsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/executions/{executionId}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Restore workflow execution from the latest checkpoint (P2.2) */
-        post: operations["apiV1ExecutionsExecutionIdRestorePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted workflow draft generation (DC-E3) */
-        post: operations["apiV1PipelinesDraftPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/workflows/analyze-risk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Analyze workflow execution risk and propose remediations (P2.2) */
-        post: operations["apiV1WorkflowsAnalyzeRiskPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/workflows/validate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate a workflow/pipeline DAG (P2.2) */
-        post: operations["apiV1WorkflowsValidatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/pipelines/{pipelineId}/optimise-hint": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted pipeline optimisation hints (DC-E3) */
-        post: operations["apiV1PipelinesPipelineIdOptimiseHintPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/recommend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted governance policy recommendation (P2.5) */
-        post: operations["apiV1GovernanceRecommendPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/brain/explain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted brain status explanation (DC-E3) */
-        post: operations["apiV1BrainExplainPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/context/rank": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retrieval ranking and stale-context detection (P2.5) */
-        post: operations["apiV1AiContextRankPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/quality/drift-detect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Contract drift detection — breaking vs non-breaking changes (P2.5 Testing) */
-        post: operations["apiV1AiQualityDriftDetectPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/operations/anomaly-group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Group anomalies by pattern similarity (P2.5 Operations) */
-        post: operations["apiV1OperationsAnomalyGroupPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/operations/forecast": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Capacity forecasting based on utilization metrics (P2.5 Operations) */
-        post: operations["apiV1OperationsForecastPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/next-action": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Next-best-action surface for operators (P2.5 UI) */
-        post: operations["apiV1AiNextActionPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/suggest-mapping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI-assisted connector field mapping suggestion (P2.5 Connectors) */
-        post: operations["apiV1ConnectorsSuggestMappingPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectorId}/sync-health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Diagnose connector sync health and source reliability (P2.5 Connectors) */
-        post: operations["apiV1ConnectorsConnectorIdSyncHealthPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/quality-summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Process-local AI quality and fallback telemetry summary */
-        get: operations["apiV1AiQualitySummaryGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** AI operation suggestions for a cross-surface context */
-        post: operations["apiV1AiSuggestionsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/suggestions/{id}/apply": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Apply an AI suggestion */
-        post: operations["apiV1AiSuggestionsIdApplyPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/correlations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Cross-surface AI correlations */
-        get: operations["apiV1AiCorrelationsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/actions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List AI action audit records */
-        get: operations["apiV1AiActionsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/suggestions/{id}/feedback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit feedback on an AI suggestion (P2.6) */
-        post: operations["apiV1AiSuggestionsIdFeedbackPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/feedback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List AI suggestion feedback (P2.6) */
-        get: operations["apiV1AiFeedbackGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/advisories/workflows/{workflowId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** AI advisory for a workflow */
-        get: operations["apiV1AiAdvisoriesWorkflowsWorkflowIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/advisories/quality/{collectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** AI quality advisory for a collection */
-        get: operations["apiV1AiAdvisoriesQualityCollectionIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/advisories/fabric/{collectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** AI fabric tier placement advisory for a collection */
-        get: operations["apiV1AiAdvisoriesFabricCollectionIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List registered AI models */
-        get: operations["apiV1ModelsGet"];
-        put?: never;
-        /** Register an AI model */
-        post: operations["apiV1ModelsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/models/{modelName}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get an AI model by name */
-        get: operations["apiV1ModelsModelNameGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/models/{modelName}/promote": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Promote a model version to production */
-        post: operations["apiV1ModelsModelNamePromotePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/features": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Ingest a feature vector */
-        post: operations["apiV1FeaturesPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/features/{entityId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get features for an entity */
-        get: operations["apiV1FeaturesEntityIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/voice/intent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resolve and execute a voice intent */
-        post: operations["apiV1VoiceIntentPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/voice/intents": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all registered voice intents */
-        get: operations["apiV1VoiceIntentsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/voice/intent/classify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Classify an utterance without executing the intent */
-        post: operations["apiV1VoiceIntentClassifyPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/retention/classify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Assign a retention tier to a collection */
-        post: operations["apiV1GovernanceRetentionClassifyPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/retention/policy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the retention policy for a collection */
-        get: operations["apiV1GovernanceRetentionPolicyGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/retention/purge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger a data purge for expired entities (CRITICAL) */
-        post: operations["apiV1GovernanceRetentionPurgePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/privacy/redact": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Redact PII fields from an entity */
-        post: operations["apiV1GovernancePrivacyRedactPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/privacy/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verify privacy redaction posture */
-        get: operations["apiV1GovernancePrivacyVerifyGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/privacy/pii-fields": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List registered PII field mappings */
-        get: operations["apiV1GovernancePrivacyPiiFieldsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/compliance/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Tenant compliance posture summary */
-        get: operations["apiV1GovernanceComplianceSummaryGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/inventory": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Detailed governance inventory for the tenant */
-        get: operations["apiV1GovernanceInventoryGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/policies": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all governance policies (DC-P1-009) */
-        get: operations["apiV1GovernancePoliciesGet"];
-        put?: never;
-        /** Create a new governance policy (DC-P1-009) */
-        post: operations["apiV1GovernancePoliciesPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/policies/simulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Simulate governance policy impact without mutation (DC-P3-004) */
-        post: operations["apiV1GovernancePoliciesSimulatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/policies/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a specific governance policy by ID (DC-P1-009) */
-        get: operations["apiV1GovernancePoliciesIdGet"];
-        /** Update a governance policy (DC-P1-009) */
-        put: operations["apiV1GovernancePoliciesIdPut"];
-        post?: never;
-        /** Delete a governance policy (DC-P1-009) */
-        delete: operations["apiV1GovernancePoliciesIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/governance/policies/{id}/toggle": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Toggle a governance policy active/inactive (DC-P1-009) */
-        post: operations["apiV1GovernancePoliciesIdTogglePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/surfaces": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the canonical runtime surface registry snapshot */
-        get: operations["apiV1SurfacesGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/surfaces/schema": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the canonical runtime surface registry schema */
-        get: operations["apiV1SurfacesSchemaGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get general admin settings */
-        get: operations["apiV1SettingsGet"];
-        put?: never;
-        /** Update general admin settings */
-        post: operations["apiV1SettingsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/security": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get admin security settings */
-        get: operations["apiV1SettingsSecurityGet"];
-        put?: never;
-        /** Update admin security settings */
-        post: operations["apiV1SettingsSecurityPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List API keys */
-        get: operations["apiV1SettingsKeysGet"];
-        put?: never;
-        /** Create API key */
-        post: operations["apiV1SettingsKeysPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/keys/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a single API key by ID */
-        get: operations["apiV1SettingsKeysIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/keys/{id}/rotate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Rotate API key secret */
-        post: operations["apiV1SettingsKeysIdRotatePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/keys/{id}/revoke": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Revoke API key */
-        delete: operations["apiV1SettingsKeysIdRevokeDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get profile settings */
-        get: operations["apiV1SettingsProfileGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update profile settings */
-        patch: operations["apiV1SettingsProfilePatch"];
-        trace?: never;
-    };
-    "/api/v1/settings/preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get user preferences */
-        get: operations["apiV1SettingsPreferencesGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update user preferences */
-        patch: operations["apiV1SettingsPreferencesPatch"];
-        trace?: never;
-    };
-    "/api/v1/settings/notifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get notification preferences */
-        get: operations["apiV1SettingsNotificationsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update notification preferences */
-        patch: operations["apiV1SettingsNotificationsPatch"];
-        trace?: never;
-    };
-    "/api/v1/settings/approval-request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Propose a sensitive settings change requiring admin approval (P3.5) */
-        post: operations["apiV1SettingsApprovalRequestPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/approvals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List pending admin approval requests (P3.5) */
-        get: operations["apiV1SettingsApprovalsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/approvals/{id}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Approve a pending settings change (P3.5) */
-        post: operations["apiV1SettingsApprovalsIdApprovePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/approvals/{id}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject a pending settings change (P3.5) */
-        post: operations["apiV1SettingsApprovalsIdRejectPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all tenant context entries */
-        get: operations["apiV1ContextGet"];
-        /** Upsert tenant context entries */
-        put: operations["apiV1ContextPut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/keys/{key}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a tenant context entry by key */
-        delete: operations["apiV1ContextKeysKeyDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/snapshot": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a versioned snapshot of all tenant context entries */
-        get: operations["apiV1ContextSnapshotGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/{collection}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a unified live context document for a collection */
-        get: operations["apiV1ContextCollectionGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/{collection}/lineage/trust": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Surface lineage for Trust Center UI with governance tags and PII classification (P1.5) */
-        get: operations["apiV1ContextCollectionLineageTrustGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/{collection}/rag-policy-check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enforce tenant, PII, retention, and sovereignty policies before RAG retrieval (P1.6) */
-        post: operations["apiV1ContextCollectionRagPolicyCheckPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/rag-feedback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Capture user corrections for RAG/semantic search results to update confidence scores (P1.6) */
-        post: operations["apiV1AiRagFeedbackPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/ai/memory/retention": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Configure agent memory retention policies with TTL and archive rules (P1.6) */
-        post: operations["apiV1AiMemoryRetentionPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mcp/v1/tools": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List MCP tools exposed by Data Cloud */
-        get: operations["mcpV1ToolsGet"];
-        put?: never;
-        /** Invoke a Data Cloud MCP tool using JSON-RPC 2.0 */
-        post: operations["mcpV1ToolsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/context/{collection}/rag": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Generate a grounded answer from collection-specific vector context */
-        post: operations["apiV1ContextCollectionRagPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-products": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List published data products for the tenant */
-        get: operations["apiV1DataProductsGet"];
-        put?: never;
-        /** Publish a collection as a reusable data product */
-        post: operations["apiV1DataProductsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-products/{productId}/subscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Subscribe a consumer to a published data product */
-        post: operations["apiV1DataProductsProductIdSubscribePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-products/{productId}/sla-monitor": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Monitor SLA health for a data product and emit alerts on degradation (P1.3) */
-        post: operations["apiV1DataProductsProductIdSlaMonitorPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-products/{productId}/contract-check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Validate schema and SLA contract compatibility on changes (P1.3) */
-        post: operations["apiV1DataProductsProductIdContractCheckPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/level": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the current global autonomy level override */
-        get: operations["apiV1AutonomyLevelGet"];
-        /** Set the current global autonomy level override */
-        put: operations["apiV1AutonomyLevelPut"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/domains": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List autonomy domain states */
-        get: operations["apiV1AutonomyDomainsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/domains/{domain}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get autonomy state for a specific domain */
-        get: operations["apiV1AutonomyDomainsDomainGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the autonomy audit log */
-        get: operations["apiV1AutonomyLogsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/plan/{actionType}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get automation plan for an action type (P2.3) */
-        get: operations["apiV1AutonomyPlanActionTypeGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/autonomy/feedback-policy": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Update autonomy policies from operator feedback patterns (P2.6) */
-        post: operations["apiV1AutonomyFeedbackPolicyPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List registered data source connectors */
-        get: operations["apiV1ConnectorsGet"];
-        put?: never;
-        /** Register a new data source connector */
-        post: operations["apiV1ConnectorsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a connector by ID */
-        get: operations["apiV1ConnectorsConnectionIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Test a connector connection */
-        post: operations["apiV1ConnectorsConnectionIdTestPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable a connector */
-        post: operations["apiV1ConnectorsConnectionIdEnablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Disable a connector */
-        post: operations["apiV1ConnectorsConnectionIdDisablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/rotate-credentials": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Rotate connector credentials */
-        post: operations["apiV1ConnectorsConnectionIdRotateCredentialsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get connector health status */
-        get: operations["apiV1ConnectorsConnectionIdHealthGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/schema": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get inferred schema for a connector */
-        get: operations["apiV1ConnectorsConnectionIdSchemaGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger a connector sync */
-        post: operations["apiV1ConnectorsConnectionIdSyncPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/connectors/{connectionId}/sync/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get sync status for a connector */
-        get: operations["apiV1ConnectorsConnectionIdSyncStatusGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List registered data source connectors (frontend alias) */
-        get: operations["dataFabricConnectorsGet"];
-        put?: never;
-        /** Register a new data source connector (frontend alias) */
-        post: operations["dataFabricConnectorsPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a connector by ID (frontend alias) */
-        get: operations["dataFabricConnectorsConnectionIdGet"];
-        /** Update a connector (frontend alias) */
-        put: operations["dataFabricConnectorsConnectionIdPut"];
-        post?: never;
-        /** Delete a connector (frontend alias) */
-        delete: operations["dataFabricConnectorsConnectionIdDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Test a connector connection (frontend alias) */
-        post: operations["dataFabricConnectorsConnectionIdTestPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Disable a connector (frontend alias) */
-        post: operations["dataFabricConnectorsConnectionIdDisablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable a connector (frontend alias) */
-        post: operations["dataFabricConnectorsConnectionIdEnablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}/statistics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get connector statistics (frontend alias) */
-        get: operations["dataFabricConnectorsConnectionIdStatisticsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/connectors/{connectionId}/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger a connector sync (frontend alias) */
-        post: operations["dataFabricConnectorsConnectionIdSyncPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/data-fabric/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get data fabric metrics (frontend alias) */
-        get: operations["dataFabricMetricsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user-activity/recent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get recent user activity */
-        get: operations["apiV1UserActivityRecentGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/user-activity/log": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Log a user activity event */
-        post: operations["apiV1UserActivityLogPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/catalog": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List the agent catalog exposed by Data Cloud */
-        get: operations["apiV1AgentsCatalogGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/agents/catalog/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a single agent catalog entry */
-        get: operations["apiV1AgentsCatalogIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List bundled plugins and their runtime status */
-        get: operations["apiV1PluginsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a single bundled plugin by id */
-        get: operations["apiV1PluginsIdGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable a bundled plugin */
-        post: operations["apiV1PluginsIdEnablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Disable a bundled plugin */
-        post: operations["apiV1PluginsIdDisablePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/plugins/{id}/upgrade": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Hot-swap a runtime feature plugin or reload a storage plugin */
-        post: operations["apiV1PluginsIdUpgradePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/entities/{collection}/{id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a point-in-time entity snapshot */
-        get: operations["apiV1EntitiesCollectionIdHistoryGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/events/{offset}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a single event by event-log offset */
-        get: operations["apiV1EventsOffsetGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/queries/estimate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Estimate the storage and execution cost of a query */
-        get: operations["apiV1QueriesEstimateGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/queries/federated": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Execute a federated Trino query across storage tiers */
-        post: operations["apiV1QueriesFederatedPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/queries/explain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Explain a workflow execution query */
-        post: operations["apiV1QueriesExplainPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/lineage/{collection}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get lineage graph for a collection */
-        get: operations["apiV1LineageCollectionGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/lineage/{collection}/impact": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get downstream impact analysis for a collection */
-        get: operations["apiV1LineageCollectionImpactGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/data-quality/trust-scores": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Canonical Data Plane quality and trust scores per collection (DC-P3-003) */
-        get: operations["apiV1DataQualityTrustScoresGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/collections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List available data collections */
-        get: operations["apiV1CollectionsGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/collections/{collection}/metadata": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upsert collection metadata in the registry */
-        post: operations["apiV1CollectionsCollectionMetadataPost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/collections/{id}/cost-report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a storage cost report for a collection */
-        get: operations["apiV1CollectionsIdCostReportGet"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/collections/{id}/migrate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trigger a manual storage-tier migration for a collection */
-        post: operations["apiV1CollectionsIdMigratePost"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Composite health check */
+    get: operations["healthGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/health/detail": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Detailed per-subsystem health breakdown
+     * @description Returns an individual status for every registered health contributor
+     *     (storage, warm-tier DB, cache, index, message broker, etc.). Intended for
+     *     operations dashboards and circuit-breaker monitoring.
+     */
+    get: operations["healthDetailGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/health/deep": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Deep dependency-aware health breakdown */
+    get: operations["healthDeepGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ready": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Readiness probe (Kubernetes) */
+    get: operations["readyGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/live": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Liveness probe (Kubernetes) */
+    get: operations["liveGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/info": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Service metadata */
+    get: operations["infoGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Prometheus-format JVM / service metrics */
+    get: operations["metricsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Query entities in a collection */
+    get: operations["apiV1EntitiesCollectionGet"];
+    put?: never;
+    /** Create (save) an entity */
+    post: operations["apiV1EntitiesCollectionPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single entity by ID */
+    get: operations["apiV1EntitiesCollectionIdGet"];
+    put?: never;
+    post?: never;
+    /** Delete an entity */
+    delete: operations["apiV1EntitiesCollectionIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Query the event log */
+    get: operations["apiV1EventsGet"];
+    put?: never;
+    /** Append an event to the event log */
+    post: operations["apiV1EventsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List operational alerts */
+    get: operations["apiV1AlertsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{alertId}/acknowledge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Acknowledge an alert */
+    post: operations["apiV1AlertsAlertIdAcknowledgePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{alertId}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve an alert */
+    post: operations["apiV1AlertsAlertIdResolvePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{id}/escalate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Escalate an alert to an incident */
+    post: operations["apiV1AlertsIdEscalatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{id}/auto-remediate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Attempt auto-remediation of an alert (P2.4) */
+    post: operations["apiV1AlertsIdAutoRemediatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{id}/remediate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply a remediation action to an alert (P2.4) */
+    post: operations["apiV1AlertsIdRemediatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{id}/remediate/rollback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rollback a remediation action (P2.4) */
+    post: operations["apiV1AlertsIdRemediateRollbackPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/{id}/remediations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List remediation actions for an alert (P2.4) */
+    get: operations["apiV1AlertsIdRemediationsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/groups": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List AI-correlated alert groups */
+    get: operations["apiV1AlertsGroupsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/groups/{groupId}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve every alert in a correlated group */
+    post: operations["apiV1AlertsGroupsGroupIdResolvePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/suggestions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List AI-generated alert resolution suggestions */
+    get: operations["apiV1AlertsSuggestionsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/suggestions/{suggestionId}/apply": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply an AI-generated alert resolution suggestion */
+    post: operations["apiV1AlertsSuggestionsSuggestionIdApplyPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/rules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List alert rules */
+    get: operations["apiV1AlertsRulesGet"];
+    put?: never;
+    /** Create an alert rule */
+    post: operations["apiV1AlertsRulesPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/rules/{ruleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update an alert rule */
+    put: operations["apiV1AlertsRulesRuleIdPut"];
+    post?: never;
+    /** Delete an alert rule */
+    delete: operations["apiV1AlertsRulesRuleIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stream live alert updates via server-sent events */
+    get: operations["apiV1AlertsStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/compliance/legal-holds": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active legal holds for a tenant (P3.6) */
+    get: operations["apiV1ComplianceLegalHoldsGet"];
+    put?: never;
+    /** Apply a legal hold to freeze data from deletion (P3.6) */
+    post: operations["apiV1ComplianceLegalHoldsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/compliance/legal-holds/{id}/extend": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Extend an existing legal hold (P3.6) */
+    post: operations["apiV1ComplianceLegalHoldsIdExtendPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/compliance/legal-holds/{id}/release": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Release an active legal hold (P3.6) */
+    post: operations["apiV1ComplianceLegalHoldsIdReleasePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/compliance/evidence-package": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a compliance evidence package for audit or certification (P3.6) */
+    post: operations["apiV1ComplianceEvidencePackagePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/compliance/posture": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Evidence-first compliance posture dashboard (P3.6) */
+    get: operations["apiV1CompliancePostureGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get tenant sovereign profile */
+    get: operations["apiV1SovereignProfileGet"];
+    /** Update tenant sovereign profile */
+    put: operations["apiV1SovereignProfilePut"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/models": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get tenant model policy (allowed/forbidden models) */
+    get: operations["apiV1SovereignModelsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/audit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Sovereign policy audit events (P3.3) */
+    get: operations["apiV1SovereignAuditGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/backup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Offline backup status (P3.3) */
+    get: operations["apiV1SovereignBackupGet"];
+    put?: never;
+    /** Trigger offline backup (P3.3) */
+    post: operations["apiV1SovereignBackupPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/restore": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore from offline backup (P3.3) */
+    post: operations["apiV1SovereignRestorePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/data-subject-controls": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Data-subject controls (P3.3) */
+    get: operations["apiV1SovereignDataSubjectControlsGet"];
+    /** Update data-subject controls (P3.3) */
+    put: operations["apiV1SovereignDataSubjectControlsPut"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/conformance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Sovereign conformance tests (P3.3) */
+    get: operations["apiV1SovereignConformanceGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/checkpoints": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List agent checkpoints */
+    get: operations["apiV1CheckpointsGet"];
+    put?: never;
+    /** Save a checkpoint */
+    post: operations["apiV1CheckpointsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/checkpoints/{checkpointId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get checkpoint by ID */
+    get: operations["apiV1CheckpointsCheckpointIdGet"];
+    put?: never;
+    post?: never;
+    /** Delete a checkpoint */
+    delete: operations["apiV1CheckpointsCheckpointIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/conformance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Full provider conformance suite (P3.1) */
+    get: operations["apiV1ConformanceGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/conformance/entity-store": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** EntityStore conformance tests (P3.1) */
+    get: operations["apiV1ConformanceEntityStoreGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/conformance/event-log-store": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** EventLogStore conformance tests (P3.1) */
+    get: operations["apiV1ConformanceEventLogStoreGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/data-residency": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Data residency audit (P3.2) */
+    get: operations["apiV1SovereignDataResidencyGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/validate-transfer": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Validate cross-border transfer (P3.2) */
+    post: operations["apiV1SovereignValidateTransferPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sovereign/region-policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Region policy enforcement config (P3.2) */
+    get: operations["apiV1SovereignRegionPolicyGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Brain subsystem health */
+    get: operations["apiV1BrainHealthGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Brain configuration */
+    get: operations["apiV1BrainConfigGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Brain runtime statistics */
+    get: operations["apiV1BrainStatsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/workspace": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get global workspace spotlight items */
+    get: operations["apiV1BrainWorkspaceGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/workspace/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** SSE stream of workspace spotlight updates */
+    get: operations["apiV1BrainWorkspaceStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/attention/elevate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Directly elevate a data record to the workspace */
+    post: operations["apiV1BrainAttentionElevatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/attention/thresholds": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get attention score thresholds */
+    get: operations["apiV1BrainAttentionThresholdsGet"];
+    /** Update attention score thresholds */
+    put: operations["apiV1BrainAttentionThresholdsPut"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/patterns": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List learned attention patterns */
+    get: operations["apiV1BrainPatternsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/patterns/match": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Test a payload against learned patterns */
+    post: operations["apiV1BrainPatternsMatchPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/salience/{itemId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get salience score for a specific item */
+    get: operations["apiV1BrainSalienceItemIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/learning/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** SSE stream of learning status updates */
+    get: operations["apiV1LearningStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/mastery/preview/decision": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Preview the governed mastery decision for an agent and skill */
+    get: operations["apiV1MasteryPreviewDecisionGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/mastery/preview/retrieval": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Preview mastery-backed retrieval candidates */
+    get: operations["apiV1MasteryPreviewRetrievalGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/mastery/learning-deltas/{deltaId}/dry-run-promotion": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Dry-run a learning delta promotion without mutating mastery state */
+    post: operations["apiV1MasteryLearningDeltaDryRunPromotionPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/mastery/obsolescence-events/process": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Process an obsolescence event through the governed mastery transition flow */
+    post: operations["apiV1MasteryObsolescenceEventsProcessPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/query": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Submit an analytics query */
+    post: operations["apiV1AnalyticsQueryPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/queries/{queryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Cancel a running analytics query (UNSUPPORTED) */
+    delete: operations["apiV1AnalyticsQueriesQueryIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/aggregation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run an aggregation query */
+    post: operations["apiV1AnalyticsAggregationPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/query/{queryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get analytics query result */
+    get: operations["apiV1AnalyticsQueryQueryIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/query/{queryId}/plan": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get analytics query execution plan */
+    get: operations["apiV1AnalyticsQueryQueryIdPlanGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/explain": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Explain a query — return its execution plan without running it */
+    post: operations["apiV1AnalyticsExplainPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Server-Sent Events stream — event log */
+    get: operations["eventsStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Server-Sent Events stream — notifications (legacy path) */
+    get: operations["eventsNotificationsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/events/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Server-Sent Events stream — notifications */
+    get: operations["apiV1EventsNotificationsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Full-text entity search via OpenSearch */
+    get: operations["apiV1EntitiesCollectionSearchGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Bulk export entities as CSV or NDJSON */
+    get: operations["apiV1EntitiesCollectionExportGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/anomalies": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Detect statistical anomalies in a collection */
+    post: operations["apiV1EntitiesCollectionAnomaliesPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/anomalies": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Query persisted anomaly detection events */
+    get: operations["apiV1AnomaliesGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/similar": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Find entities similar to a reference entity */
+    get: operations["apiV1EntitiesCollectionSimilarGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/validate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Validate a single entity payload against the collection schema
+     * @description Checks the supplied payload against registered validation rules for the collection.
+     *     Returns a list of violations when the payload is invalid. Does not persist the entity.
+     */
+    post: operations["apiV1EntitiesCollectionValidatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/validate/batch": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Validate multiple entity payloads in a single request
+     * @description Validates each payload in the `entities` array against the collection schema.
+     *     Returns per-entity results and a top-level `allValid` flag. Does not persist entities.
+     */
+    post: operations["apiV1EntitiesCollectionValidateBatchPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/batch": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Upsert multiple entities in a single request */
+    post: operations["apiV1EntitiesCollectionBatchPost"];
+    /** Delete multiple entities by ID */
+    delete: operations["apiV1EntitiesCollectionBatchDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** SSE CDC stream for entity changes */
+    get: operations["apiV1EntitiesCollectionStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/query/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** SSE streaming query snapshot + tail */
+    get: operations["apiV1EntitiesCollectionQueryStreamGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/suggest": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted entity schema suggestions (DC-E3) */
+    post: operations["apiV1EntitiesCollectionSuggestPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/infer-schema": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted schema inference for entity ingestion (P2.5) */
+    post: operations["apiV1EntitiesCollectionInferSchemaPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/suggest": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted analytics query suggestions (DC-E3) */
+    post: operations["apiV1AnalyticsSuggestPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analytics/automate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted analytics automation with intent clarification and policy-aware recommendations (DC-E3) */
+    post: operations["apiV1AnalyticsAutomatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/query/nlq": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Natural-language query (P2.5) */
+    post: operations["apiV1QueryNlqPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List cached reports */
+    get: operations["apiV1ReportsGet"];
+    put?: never;
+    /** Generate a report */
+    post: operations["apiV1ReportsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reports/{reportId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Retrieve a cached report */
+    get: operations["apiV1ReportsReportIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workflows/analyze-risk": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Analyze workflow execution risk and propose remediations (P2.2) */
+    post: operations["apiV1WorkflowsAnalyzeRiskPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/workflows/validate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Validate a workflow/pipeline DAG (P2.2) */
+    post: operations["apiV1WorkflowsValidatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/recommend": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted governance policy recommendation (P2.5) */
+    post: operations["apiV1GovernanceRecommendPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/brain/explain": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted brain status explanation (DC-E3) */
+    post: operations["apiV1BrainExplainPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/context/rank": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Retrieval ranking and stale-context detection (P2.5) */
+    post: operations["apiV1AiContextRankPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/quality/drift-detect": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Contract drift detection — breaking vs non-breaking changes (P2.5 Testing) */
+    post: operations["apiV1AiQualityDriftDetectPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/operations/anomaly-group": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Group anomalies by pattern similarity (P2.5 Operations) */
+    post: operations["apiV1OperationsAnomalyGroupPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/operations/forecast": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Capacity forecasting based on utilization metrics (P2.5 Operations) */
+    post: operations["apiV1OperationsForecastPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/next-action": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Next-best-action surface for operators (P2.5 UI) */
+    post: operations["apiV1AiNextActionPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/suggest-mapping": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI-assisted connector field mapping suggestion (P2.5 Connectors) */
+    post: operations["apiV1ConnectorsSuggestMappingPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectorId}/sync-health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Diagnose connector sync health and source reliability (P2.5 Connectors) */
+    post: operations["apiV1ConnectorsConnectorIdSyncHealthPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/quality-summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Process-local AI quality and fallback telemetry summary */
+    get: operations["apiV1AiQualitySummaryGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/suggestions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** AI operation suggestions for a cross-surface context */
+    post: operations["apiV1AiSuggestionsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/suggestions/{id}/apply": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply an AI suggestion */
+    post: operations["apiV1AiSuggestionsIdApplyPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/correlations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Cross-surface AI correlations */
+    get: operations["apiV1AiCorrelationsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/actions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List AI action audit records */
+    get: operations["apiV1AiActionsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/suggestions/{id}/feedback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Submit feedback on an AI suggestion (P2.6) */
+    post: operations["apiV1AiSuggestionsIdFeedbackPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/feedback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List AI suggestion feedback (P2.6) */
+    get: operations["apiV1AiFeedbackGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/advisories/workflows/{workflowId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** AI advisory for a workflow */
+    get: operations["apiV1AiAdvisoriesWorkflowsWorkflowIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/advisories/quality/{collectionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** AI quality advisory for a collection */
+    get: operations["apiV1AiAdvisoriesQualityCollectionIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/advisories/fabric/{collectionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** AI fabric tier placement advisory for a collection */
+    get: operations["apiV1AiAdvisoriesFabricCollectionIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/models": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List registered AI models */
+    get: operations["apiV1ModelsGet"];
+    put?: never;
+    /** Register an AI model */
+    post: operations["apiV1ModelsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/models/{modelName}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get an AI model by name */
+    get: operations["apiV1ModelsModelNameGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/models/{modelName}/promote": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Promote a model version to production */
+    post: operations["apiV1ModelsModelNamePromotePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/features": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Ingest a feature vector */
+    post: operations["apiV1FeaturesPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/features/{entityId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get features for an entity */
+    get: operations["apiV1FeaturesEntityIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/voice/intent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve and execute a voice intent */
+    post: operations["apiV1VoiceIntentPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/voice/intents": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all registered voice intents */
+    get: operations["apiV1VoiceIntentsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/voice/intent/classify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Classify an utterance without executing the intent */
+    post: operations["apiV1VoiceIntentClassifyPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/retention/classify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Assign a retention tier to a collection */
+    post: operations["apiV1GovernanceRetentionClassifyPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/retention/policy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the retention policy for a collection */
+    get: operations["apiV1GovernanceRetentionPolicyGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/retention/purge": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger a data purge for expired entities (CRITICAL) */
+    post: operations["apiV1GovernanceRetentionPurgePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/privacy/redact": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Redact PII fields from an entity */
+    post: operations["apiV1GovernancePrivacyRedactPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/privacy/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Verify privacy redaction posture */
+    get: operations["apiV1GovernancePrivacyVerifyGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/privacy/pii-fields": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List registered PII field mappings */
+    get: operations["apiV1GovernancePrivacyPiiFieldsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/compliance/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Tenant compliance posture summary */
+    get: operations["apiV1GovernanceComplianceSummaryGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/inventory": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Detailed governance inventory for the tenant */
+    get: operations["apiV1GovernanceInventoryGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/policies": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all governance policies (DC-P1-009) */
+    get: operations["apiV1GovernancePoliciesGet"];
+    put?: never;
+    /** Create a new governance policy (DC-P1-009) */
+    post: operations["apiV1GovernancePoliciesPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/policies/simulate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Simulate governance policy impact without mutation (DC-P3-004) */
+    post: operations["apiV1GovernancePoliciesSimulatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/policies/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a specific governance policy by ID (DC-P1-009) */
+    get: operations["apiV1GovernancePoliciesIdGet"];
+    /** Update a governance policy (DC-P1-009) */
+    put: operations["apiV1GovernancePoliciesIdPut"];
+    post?: never;
+    /** Delete a governance policy (DC-P1-009) */
+    delete: operations["apiV1GovernancePoliciesIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/governance/policies/{id}/toggle": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Toggle a governance policy active/inactive (DC-P1-009) */
+    post: operations["apiV1GovernancePoliciesIdTogglePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/surfaces": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the canonical runtime surface registry snapshot */
+    get: operations["apiV1SurfacesGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/surfaces/schema": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get the canonical runtime surface registry schema */
+    get: operations["apiV1SurfacesSchemaGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get general admin settings */
+    get: operations["apiV1SettingsGet"];
+    put?: never;
+    /** Update general admin settings */
+    post: operations["apiV1SettingsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/security": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get admin security settings */
+    get: operations["apiV1SettingsSecurityGet"];
+    put?: never;
+    /** Update admin security settings */
+    post: operations["apiV1SettingsSecurityPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/keys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List API keys */
+    get: operations["apiV1SettingsKeysGet"];
+    put?: never;
+    /** Create API key */
+    post: operations["apiV1SettingsKeysPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/keys/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single API key by ID */
+    get: operations["apiV1SettingsKeysIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/keys/{id}/rotate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rotate API key secret */
+    post: operations["apiV1SettingsKeysIdRotatePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/keys/{id}/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke API key */
+    delete: operations["apiV1SettingsKeysIdRevokeDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get profile settings */
+    get: operations["apiV1SettingsProfileGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update profile settings */
+    patch: operations["apiV1SettingsProfilePatch"];
+    trace?: never;
+  };
+  "/api/v1/settings/preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get user preferences */
+    get: operations["apiV1SettingsPreferencesGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update user preferences */
+    patch: operations["apiV1SettingsPreferencesPatch"];
+    trace?: never;
+  };
+  "/api/v1/settings/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get notification preferences */
+    get: operations["apiV1SettingsNotificationsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update notification preferences */
+    patch: operations["apiV1SettingsNotificationsPatch"];
+    trace?: never;
+  };
+  "/api/v1/settings/approval-request": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Propose a sensitive settings change requiring admin approval (P3.5) */
+    post: operations["apiV1SettingsApprovalRequestPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/approvals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List pending admin approval requests (P3.5) */
+    get: operations["apiV1SettingsApprovalsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/approvals/{id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Approve a pending settings change (P3.5) */
+    post: operations["apiV1SettingsApprovalsIdApprovePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/settings/approvals/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reject a pending settings change (P3.5) */
+    post: operations["apiV1SettingsApprovalsIdRejectPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all tenant context entries */
+    get: operations["apiV1ContextGet"];
+    /** Upsert tenant context entries */
+    put: operations["apiV1ContextPut"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/keys/{key}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete a tenant context entry by key */
+    delete: operations["apiV1ContextKeysKeyDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/snapshot": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a versioned snapshot of all tenant context entries */
+    get: operations["apiV1ContextSnapshotGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/{collection}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a unified live context document for a collection */
+    get: operations["apiV1ContextCollectionGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/{collection}/lineage/trust": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Surface lineage for Trust Center UI with governance tags and PII classification (P1.5) */
+    get: operations["apiV1ContextCollectionLineageTrustGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/{collection}/rag-policy-check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enforce tenant, PII, retention, and sovereignty policies before RAG retrieval (P1.6) */
+    post: operations["apiV1ContextCollectionRagPolicyCheckPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/rag-feedback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Capture user corrections for RAG/semantic search results to update confidence scores (P1.6) */
+    post: operations["apiV1AiRagFeedbackPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/memory/retention": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Configure agent memory retention policies with TTL and archive rules (P1.6) */
+    post: operations["apiV1AiMemoryRetentionPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/mcp/v1/tools": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List MCP tools exposed by Data Cloud */
+    get: operations["mcpV1ToolsGet"];
+    put?: never;
+    /** Invoke a Data Cloud MCP tool using JSON-RPC 2.0 */
+    post: operations["mcpV1ToolsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/context/{collection}/rag": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a grounded answer from collection-specific vector context */
+    post: operations["apiV1ContextCollectionRagPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-products": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List published data products for the tenant */
+    get: operations["apiV1DataProductsGet"];
+    put?: never;
+    /** Publish a collection as a reusable data product */
+    post: operations["apiV1DataProductsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-products/{productId}/subscribe": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Subscribe a consumer to a published data product */
+    post: operations["apiV1DataProductsProductIdSubscribePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-products/{productId}/sla-monitor": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Monitor SLA health for a data product and emit alerts on degradation (P1.3) */
+    post: operations["apiV1DataProductsProductIdSlaMonitorPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-products/{productId}/contract-check": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Validate schema and SLA contract compatibility on changes (P1.3) */
+    post: operations["apiV1DataProductsProductIdContractCheckPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List registered data source connectors */
+    get: operations["apiV1ConnectorsGet"];
+    put?: never;
+    /** Register a new data source connector */
+    post: operations["apiV1ConnectorsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a connector by ID */
+    get: operations["apiV1ConnectorsConnectionIdGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/test": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Test a connector connection */
+    post: operations["apiV1ConnectorsConnectionIdTestPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enable a connector */
+    post: operations["apiV1ConnectorsConnectionIdEnablePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Disable a connector */
+    post: operations["apiV1ConnectorsConnectionIdDisablePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/rotate-credentials": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rotate connector credentials */
+    post: operations["apiV1ConnectorsConnectionIdRotateCredentialsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get connector health status */
+    get: operations["apiV1ConnectorsConnectionIdHealthGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/schema": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get inferred schema for a connector */
+    get: operations["apiV1ConnectorsConnectionIdSchemaGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger a connector sync */
+    post: operations["apiV1ConnectorsConnectionIdSyncPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/connectors/{connectionId}/sync/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get sync status for a connector */
+    get: operations["apiV1ConnectorsConnectionIdSyncStatusGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List registered data source connectors (frontend alias) */
+    get: operations["dataFabricConnectorsGet"];
+    put?: never;
+    /** Register a new data source connector (frontend alias) */
+    post: operations["dataFabricConnectorsPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a connector by ID (frontend alias) */
+    get: operations["dataFabricConnectorsConnectionIdGet"];
+    /** Update a connector (frontend alias) */
+    put: operations["dataFabricConnectorsConnectionIdPut"];
+    post?: never;
+    /** Delete a connector (frontend alias) */
+    delete: operations["dataFabricConnectorsConnectionIdDelete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}/test": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Test a connector connection (frontend alias) */
+    post: operations["dataFabricConnectorsConnectionIdTestPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Disable a connector (frontend alias) */
+    post: operations["dataFabricConnectorsConnectionIdDisablePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enable a connector (frontend alias) */
+    post: operations["dataFabricConnectorsConnectionIdEnablePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get connector statistics (frontend alias) */
+    get: operations["dataFabricConnectorsConnectionIdStatisticsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/connectors/{connectionId}/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger a connector sync (frontend alias) */
+    post: operations["dataFabricConnectorsConnectionIdSyncPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/data-fabric/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get data fabric metrics (frontend alias) */
+    get: operations["dataFabricMetricsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/user-activity/recent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get recent user activity */
+    get: operations["apiV1UserActivityRecentGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/user-activity/log": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Log a user activity event */
+    post: operations["apiV1UserActivityLogPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/entities/{collection}/{id}/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a point-in-time entity snapshot */
+    get: operations["apiV1EntitiesCollectionIdHistoryGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/events/{offset}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a single event by event-log offset */
+    get: operations["apiV1EventsOffsetGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/queries/estimate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Estimate the storage and execution cost of a query */
+    get: operations["apiV1QueriesEstimateGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/queries/federated": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Execute a federated Trino query across storage tiers */
+    post: operations["apiV1QueriesFederatedPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/queries/explain": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Explain a workflow execution query */
+    post: operations["apiV1QueriesExplainPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/lineage/{collection}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get lineage graph for a collection */
+    get: operations["apiV1LineageCollectionGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/lineage/{collection}/impact": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get downstream impact analysis for a collection */
+    get: operations["apiV1LineageCollectionImpactGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/data-quality/trust-scores": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Canonical Data Plane quality and trust scores per collection (DC-P3-003) */
+    get: operations["apiV1DataQualityTrustScoresGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/collections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List available data collections */
+    get: operations["apiV1CollectionsGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/collections/{collection}/metadata": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Upsert collection metadata in the registry */
+    post: operations["apiV1CollectionsCollectionMetadataPost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/collections/{id}/cost-report": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a storage cost report for a collection */
+    get: operations["apiV1CollectionsIdCostReportGet"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/collections/{id}/migrate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger a manual storage-tier migration for a collection */
+    post: operations["apiV1CollectionsIdMigratePost"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** @description Arbitrary JSON object. */
-        FreeformObject: {
-            [key: string]: unknown;
-        };
-        /** @description Typed surface record with dependency-probe evidence (DC-P1-5). */
-        SurfaceRecord: {
-            /** @description Surface identifier. */
-            surfaceId?: string;
-            /** @description Current surface state (JSON value). */
-            state?: string;
-            /** @description Legacy status value. */
-            status?: string;
-            /** @description Owning plane (unknown if null). */
-            ownerPlane?: string;
-            /** @description List of required dependency names. */
-            requiredDependencies?: string[];
-            /** @description Per-dependency probe results. */
-            dependencyProbes?: components["schemas"]["FreeformObject"][];
-            /** @description Tenant scope (global or tenant-specific). */
-            tenantScope?: string;
-            /** @description Runtime profile (local, dev, staging, production). */
-            runtimeProfile?: string;
-            /**
-             * Format: date-time
-             * @description Last check timestamp.
-             */
-            lastCheckedAt?: string;
-            /** @description Evidence map. */
-            evidence?: {
-                [key: string]: unknown;
-            };
-            /** @description Known limitations. */
-            limitations?: string;
-            /** @description Allowed actions for this surface. */
-            actionsAllowed?: string[];
-        };
-        VoiceIntentRequest: {
-            utterance: string;
-            parameters?: components["schemas"]["FreeformObject"];
-            confirm?: boolean;
-        };
-        VoiceIntentClassificationRequest: {
-            utterance: string;
-        };
-        ConnectionRegistrationRequest: {
-            /** @description Optional connection ID (auto-generated if omitted) */
-            id?: string;
-            name: string;
-            /** @enum {string} */
-            type: "POSTGRESQL" | "MYSQL" | "MONGODB" | "S3" | "REST_API" | "KAFKA" | "SNOWFLAKE" | "BIGQUERY" | "CUSTOM";
-            /** @description Connector-specific credential blob (never returned in GET) */
-            credentials?: Record<string, never>;
-            /** @description Connector-specific configuration properties */
-            properties?: Record<string, never>;
-            /** @description Data residency constraint for this connector (e.g., eu-west, us-east) */
-            residencyPolicy?: string;
-            /** @description Sync schedule expression (e.g., cron or 'once') */
-            schedule?: string;
-            /** @description Destination collection for synced data */
-            targetCollection?: string;
-            /**
-             * @description Desired initial state
-             * @enum {string}
-             */
-            state?: "ACTIVE" | "INACTIVE" | "TESTING" | "ERROR" | "SYNCING";
-        };
-        AiActionRecord: {
-            /** @description Unique identifier for this AI action */
-            actionId: string;
-            /** @description Tenant scope */
-            tenantId: string;
-            /** @description AI operation domain (entity-suggest, pipeline-draft, brain-explain, etc.) */
-            domain: string;
-            /** @description Summarised intent or input context */
-            intent?: string;
-            /** @description Model identifier or "static-heuristic" for fallback paths */
-            model?: string;
-            /**
-             * Format: double
-             * @description Confidence score 0.0–1.0
-             */
-            confidence?: number;
-            /** @description Whether this action used a heuristic fallback instead of an LLM */
-            fallback?: boolean;
-            /** @description End-to-end latency of the AI operation */
-            latencyMs?: number;
-            /** @description Correlates to the originating HTTP request */
-            requestId?: string;
-            /**
-             * Format: date-time
-             * @description ISO-8601 timestamp when the action was recorded
-             */
-            timestamp: string;
-        };
-        RetentionClassificationRequest: {
-            collection: string;
-            /** @enum {string} */
-            tier: "transient" | "short-term" | "standard" | "compliance" | "permanent";
-            reason?: string;
-        };
-        RetentionPurgeRequest: {
-            collection: string;
-            confirmationToken: string;
-            dryRun?: boolean;
-        };
-        PrivacyRedactionRequest: {
-            collection: string;
-            entityId: string;
-            fields?: string[];
-            reason?: string;
-        };
-        Entity: {
-            /** Format: uuid */
-            readonly id?: string;
-            tenantId: string;
-            collectionName: string;
-            /**
-             * @default ENTITY
-             * @enum {string}
-             */
-            recordType: "ENTITY" | "EVENT" | "TIMESERIES" | "DOCUMENT" | "GRAPH";
-            /** @description Arbitrary JSON payload stored as JSONB. */
-            data: {
-                [key: string]: unknown;
-            };
-            metadata?: {
-                [key: string]: unknown;
-            };
-            readonly version?: number;
-            readonly active?: boolean;
-            /** Format: date-time */
-            readonly createdAt?: string;
-            /** Format: date-time */
-            readonly updatedAt?: string;
-        };
-        EntityList: {
-            entities?: components["schemas"]["Entity"][];
-            /** Format: int64 */
-            total?: number;
-            limit?: number;
-            offset?: number;
-        };
-        Event: {
-            /** Format: uuid */
-            readonly id?: string;
-            tenantId?: string;
-            /** Format: int64 */
-            readonly offset: number;
-            type: string;
-            payload: {
-                [key: string]: unknown;
-            };
-            headers?: {
-                [key: string]: string;
-            };
-            source?: string;
-            correlationId?: string;
-            schemaVersion?: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AppendEventRequest: {
-            type: string;
-            payload: {
-                [key: string]: unknown;
-            };
-            headers?: {
-                [key: string]: string;
-            };
-            source?: string;
-            correlationId?: string;
-            schemaVersion?: string;
-        };
-        AppendEventResponse: {
-            /** Format: int64 */
-            offset: number;
-            type: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        EventQueryResponse: {
-            events: components["schemas"]["Event"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: int64 */
-            fromOffset: number;
-            /** Format: int64 */
-            nextOffset: number;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        Pipeline: {
-            id: string;
-            tenantId: string;
-            name?: string;
-            description?: string;
-            status?: string;
-            nodes?: {
-                [key: string]: unknown;
-            }[];
-            edges?: {
-                [key: string]: unknown;
-            }[];
-            schedule?: string;
-            tags?: string[];
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: date-time */
-            updatedAt?: string;
-            createdBy?: string;
-            /** Format: date-time */
-            lastExecutedAt?: string;
-        } & {
-            [key: string]: unknown;
-        };
-        PipelineListResponse: {
-            tenantId: string;
-            pipelines: components["schemas"]["Pipeline"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        PipelineMutationRequest: {
-            [key: string]: unknown;
-        };
-        /**
-         * @description Canonical execution status aligned with OperatorState lifecycle:
-         *     - CREATED: Execution instance created, not yet initialized
-         *     - INITIALIZED: Execution initialized (resources allocated, config validated)
-         *     - RUNNING: Execution actively processing
-         *     - STOPPED: Execution stopped gracefully
-         *     - FAILED: Execution failed (initialization error, runtime error, resource exhaustion)
-         * @enum {string}
-         */
-        ExecutionStatus: "CREATED" | "INITIALIZED" | "RUNNING" | "STOPPED" | "FAILED";
-        WorkflowExecutionLaunchResponse: {
-            executionId: string;
-            workflowId: string;
-            status: components["schemas"]["ExecutionStatus"];
-            /** Format: date-time */
-            startedAt: string;
-        };
-        WorkflowExecutionSummary: {
-            id: string;
-            workflowId: string;
-            status: components["schemas"]["ExecutionStatus"];
-            /** Format: date-time */
-            startedAt: string;
-            /** Format: date-time */
-            completedAt?: string;
-            duration?: number;
-            output?: {
-                [key: string]: unknown;
-            };
-            error?: string;
-        };
-        WorkflowExecutionListResponse: {
-            items: components["schemas"]["WorkflowExecutionSummary"][];
-            total: number;
-            page: number;
-            pageSize: number;
-            hasMore: boolean;
-        };
-        WorkflowExecutionNode: {
-            id: string;
-            name: string;
-            status: components["schemas"]["ExecutionStatus"];
-            /** Format: date-time */
-            startTime?: string;
-            /** Format: date-time */
-            endTime?: string;
-            duration: number;
-            error: string;
-        };
-        WorkflowExecutionDetail: {
-            id: string;
-            pipelineId: string;
-            pipelineName: string;
-            status: components["schemas"]["ExecutionStatus"];
-            /** Format: date-time */
-            startTime: string;
-            /** Format: date-time */
-            endTime?: string;
-            completedNodes: number;
-            totalNodes: number;
-            nodes: components["schemas"]["WorkflowExecutionNode"][];
-            error?: string;
-        };
-        WorkflowExecutionLogEntry: {
-            /** Format: date-time */
-            timestamp: string;
-            level: string;
-            message: string;
-            nodeId?: string;
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        Checkpoint: {
-            id: string;
-            data: {
-                [key: string]: unknown;
-            };
-            tenantId: string;
-        };
-        CheckpointListResponse: {
-            tenantId: string;
-            checkpoints: components["schemas"]["Checkpoint"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        CheckpointSaveResponse: {
-            id: string;
-            tenantId: string;
-            /** Format: date-time */
-            savedAt: string;
-        };
-        MemoryItem: {
-            id: string;
-            tenantId: string;
-            agentId: string;
-            /** @enum {string} */
-            type: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE";
-            content: string;
-            tags: string[];
-            salience: number;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            expiresAt?: string;
-            metadata: {
-                [key: string]: unknown;
-            };
-        };
-        MemoryStoreRequest: {
-            /** @enum {string} */
-            type: "episodic" | "semantic" | "procedural" | "preference";
-            content: string;
-            ttlSeconds?: number;
-            tags?: string[];
-            salience?: number;
-            metadata?: {
-                [key: string]: unknown;
-            };
-        };
-        MemoryRootListResponse: {
-            items: components["schemas"]["MemoryItem"][];
-            /** Format: int64 */
-            total: number;
-            tenantId: string;
-            agentId: string;
-            type: string;
-            query: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AgentMemorySummaryResponse: {
-            agentId: string;
-            tenantId: string;
-            /** Format: int64 */
-            total: number;
-            items: components["schemas"]["MemoryItem"][];
-            /** Format: int64 */
-            contextWindowSize: number;
-            byType: {
-                /** Format: int64 */
-                episodic?: number;
-                /** Format: int64 */
-                semantic?: number;
-                /** Format: int64 */
-                procedural?: number;
-                /** Format: int64 */
-                preference?: number;
-                /** Format: int64 */
-                other?: number;
-            };
-            /** Format: date-time */
-            timestamp: string;
-        };
-        MemoryTierResponse: {
-            agentId: string;
-            tenantId: string;
-            tier: string;
-            items: components["schemas"]["MemoryItem"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: int64 */
-            offset: number;
-            /** Format: int64 */
-            limit: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        MemorySearchRequest: {
-            query?: string;
-            /** @enum {string} */
-            type?: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE" | "episodic" | "semantic" | "procedural" | "preference";
-            /** @default 100 */
-            limit: number;
-        };
-        MemorySearchResponse: {
-            agentId: string;
-            tenantId: string;
-            query: string;
-            results: components["schemas"]["MemoryItem"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        MemoryDeleteResponse: {
-            deleted: boolean;
-            memoryId: string;
-            agentId: string;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        MemoryRetainRequest: {
-            /** Format: int64 */
-            retainUntilEpoch?: number;
-            reason?: string;
-        };
-        MemoryRetainResponse: {
-            retained: boolean;
-            memoryId: string;
-            agentId: string;
-            tenantId: string;
-            reason: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainRuntimeStats: {
-            /** Format: int64 */
-            totalRecordsProcessed: number;
-            /** Format: int64 */
-            activePatterns: number;
-            /** Format: int64 */
-            activeRules: number;
-            /** Format: int64 */
-            hotTierRecords: number;
-            /** Format: int64 */
-            warmTierRecords: number;
-            avgProcessingTimeMs: number;
-            /** Format: int64 */
-            uptimeSeconds: number;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainWorkspaceStatus: {
-            status: string;
-            brainId: string;
-            note: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainAttentionThresholds: {
-            elevationThreshold: number;
-            emergencyThreshold: number;
-            salienceThreshold: number;
-            /** Format: int64 */
-            totalProcessed?: number;
-            /** Format: int64 */
-            elevatedCount?: number;
-            /** Format: int64 */
-            emergencyCount?: number;
-            elevationRate?: number;
-            source?: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainAttentionThresholdUpdateResponse: {
-            acknowledged: boolean;
-            note: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainElevationResult: {
-            elevated: boolean;
-            emergency: boolean;
-            action: string;
-            recordId: string;
-            reason: string;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainPattern: {
-            id: string;
-            name: string;
-            type: string;
-            description: string;
-            confidence: number;
-            /** Format: int64 */
-            observations: number;
-            /** Format: date-time */
-            discoveredAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        BrainPatternListResponse: {
-            patterns: components["schemas"]["BrainPattern"][];
-            /** Format: int64 */
-            count: number;
-            /** Format: int64 */
-            limit: number;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainPatternMatch: {
-            patternId?: string;
-            patternName?: string;
-            score: number;
-            confidence: number;
-            explanation: string;
-        };
-        BrainPatternMatchResponse: {
-            recordId: string;
-            matches: components["schemas"]["BrainPatternMatch"][];
-            /** Format: int64 */
-            count: number;
-            tenantId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        BrainSalienceResponse: {
-            itemId: string;
-            salienceScore: number;
-            isHigh: boolean;
-            isEmergency: boolean;
-            /** Format: int64 */
-            priority: number;
-            summary: string;
-            tenantId: string;
-            /** Format: date-time */
-            spotlightedAt: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        LearningLastResult: {
-            status: string;
-            tenantId?: string;
-            manual?: boolean;
-            durationMs?: number;
-            /** Format: int64 */
-            patternsDiscovered?: number;
-            /** Format: int64 */
-            patternsUpdated?: number;
-            /** Format: int64 */
-            recordsAnalyzed?: number;
-            /** Format: date-time */
-            ranAt?: string;
-        };
-        LearningStatusResponse: {
-            running: boolean;
-            lastRunTime: string;
-            nextScheduledRun: string;
-            /** Format: int64 */
-            intervalMinutes: number;
-            /** Format: int64 */
-            pendingReviews: number;
-            lastResult?: components["schemas"]["LearningLastResult"];
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AnalyticsSqlQueryRequest: {
-            /** @description SQL or DSL query string. */
-            query: string;
-            /** @description Optional named query parameters. */
-            parameters?: {
-                [key: string]: unknown;
-            };
-        };
-        AnalyticsSqlQueryResponse: {
-            queryId: string;
-            queryType: string;
-            /** Format: int64 */
-            rowCount: number;
-            /** Format: int64 */
-            columnCount: number;
-            rows: {
-                [key: string]: unknown;
-            }[];
-            executionTimeMs: number;
-            optimized: boolean;
-            /** Format: date-time */
-            timestamp: string;
-            warning?: string;
-        };
-        AnalyticsSuggestQuery: {
-            name: string;
-            template: string;
-            explanation: string;
-        };
-        AnalyticsSuggestResponse: {
-            data: {
-                queries: components["schemas"]["AnalyticsSuggestQuery"][];
-            };
-            ai?: {
-                confidence?: number;
-                fallback?: boolean;
-            };
-        };
-        WorkflowDraftStep: {
-            id: string;
-            /** @enum {string} */
-            type: "source" | "transform" | "destination" | "condition";
-            name: string;
-            description: string;
-            confidence: number;
-            config: components["schemas"]["FreeformObject"];
-        };
-        WorkflowDraftProvenance: {
-            /** Format: date-time */
-            generatedAt: string;
-            strategy: string;
-            promptSummary: string;
-        };
-        WorkflowDraftResponse: {
-            data: {
-                workflowId: string;
-                name: string;
-                description: string;
-                reviewRequired: boolean;
-                provenance: components["schemas"]["WorkflowDraftProvenance"];
-                steps: components["schemas"]["WorkflowDraftStep"][];
-            };
-            ai?: {
-                confidence?: number;
-                model?: string;
-                fallback?: boolean;
-            };
-        };
-        Alert: {
-            id: string;
-            tenantId: string;
-            title: string;
-            description: string;
-            /** @enum {string} */
-            severity: "critical" | "warning" | "info";
-            /** @enum {string} */
-            status: "active" | "acknowledged" | "resolved";
-            source: string;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            acknowledgedAt?: string;
-            /** Format: date-time */
-            resolvedAt?: string;
-            /**
-             * Format: int64
-             * @description SLA threshold in minutes based on severity (critical=60, warning=240, info=1440).
-             */
-            slaMinutes?: number;
-            /** @description Whether the alert has exceeded its SLA threshold based on createdAt. */
-            slaBreached?: boolean;
-        };
-        AlertListResponse: {
-            tenantId: string;
-            alerts: components["schemas"]["Alert"][];
-            /** Format: int32 */
-            count: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AlertGroup: {
-            id: string;
-            title: string;
-            rootCause: string;
-            alertIds: string[];
-            aiConfidence: number;
-            suggestedAction: string;
-            /** @enum {string} */
-            suggestedActionType: "auto" | "manual";
-        };
-        AlertGroupListResponse: {
-            tenantId: string;
-            groups: components["schemas"]["AlertGroup"][];
-            /** Format: int32 */
-            count: number;
-            /**
-             * Format: int32
-             * @description Total number of alerts included in the grouped view.
-             */
-            total: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AlertResolutionSuggestion: {
-            id: string;
-            alertId: string;
-            suggestion: string;
-            confidence: number;
-            canAutoResolve: boolean;
-            steps?: string[];
-        };
-        AlertResolutionSuggestionListResponse: {
-            tenantId: string;
-            suggestions: components["schemas"]["AlertResolutionSuggestion"][];
-            /** Format: int32 */
-            count: number;
-            /** Format: int32 */
-            total: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AlertRule: {
-            id: string;
-            tenantId: string;
-            name: string;
-            description?: string;
-            enabled: boolean;
-            /** @enum {string} */
-            severity: "critical" | "warning" | "info";
-            /** @enum {string} */
-            conditionType: "threshold" | "anomaly" | "pattern" | "absence";
-            metric: string;
-            /** @enum {string} */
-            operator: "gt" | "lt" | "eq" | "gte" | "lte";
-            threshold: number;
-            /** Format: int32 */
-            duration: number;
-            channels: ("email" | "slack" | "webhook" | "pagerduty")[];
-            recipients?: string[];
-            webhookUrl?: string;
-        };
-        AlertRuleListResponse: {
-            tenantId: string;
-            rules: components["schemas"]["AlertRule"][];
-            /** Format: int32 */
-            count: number;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        AlertGroupResolveResponse: {
-            groupId: string;
-            tenantId: string;
-            resolvedAlertIds: string[];
-            /** Format: date-time */
-            resolvedAt: string;
-        };
-        AlertSuggestionApplyResponse: {
-            suggestionId: string;
-            tenantId: string;
-            resolvedAlertIds: string[];
-            /** Format: date-time */
-            appliedAt: string;
-        };
-        SimilarEntityMatch: {
-            id: string;
-            collection: string;
-            score: number;
-            data: components["schemas"]["FreeformObject"];
-        };
-        SimilarEntitiesResponse: {
-            collection: string;
-            entityId: string;
-            matches: components["schemas"]["SimilarEntityMatch"][];
-            /** Format: int64 */
-            count: number;
-            requestId: string;
-        };
-        CollectionRagRequest: {
-            question: string;
-            /**
-             * Format: int32
-             * @default 5
-             */
-            k: number;
-        };
-        CollectionRagContextItem: {
-            id: string;
-            score: number;
-            data: components["schemas"]["FreeformObject"];
-            excerpt: string;
-        };
-        CollectionRagResponse: {
-            collection: string;
-            question: string;
-            answer: string;
-            context: components["schemas"]["CollectionRagContextItem"][];
-            requestId: string;
-        };
-        CollectionContextField: {
-            name: string;
-            type: string;
-            required?: boolean;
-        } & {
-            [key: string]: unknown;
-        };
-        CollectionContextSchema: {
-            fields: components["schemas"]["CollectionContextField"][];
-            constraints?: components["schemas"]["FreeformObject"];
-        } & {
-            [key: string]: unknown;
-        };
-        CollectionContextLineage: {
-            upstream: string[];
-            downstream: string[];
-        };
-        CollectionContextGovernance: {
-            retentionTier: string;
-            complianceStatus: string;
-            piiFields: string[];
-            policyReason?: string;
-        };
-        CollectionContextFreshness: {
-            /** Format: date-time */
-            sampledAt: string;
-            /** Format: date-time */
-            lastEntityUpdatedAt?: string;
-            /** Format: date-time */
-            lastEntityCreatedAt?: string;
-        };
-        CollectionContextTopValue: {
-            value: string;
-            /** Format: int64 */
-            count: number;
-        };
-        CollectionContextStatisticalProfile: {
-            /** Format: int64 */
-            entityCount: number;
-            /** Format: int32 */
-            sampleSize: number;
-            nullRates: {
-                [key: string]: number;
-            };
-            topValues: {
-                [key: string]: components["schemas"]["CollectionContextTopValue"][];
-            };
-        };
-        CollectionContextRelationship: {
-            id: string;
-            source: string;
-            target: string;
-            type: string;
-            /** Format: int32 */
-            depth?: number;
-            properties?: components["schemas"]["FreeformObject"];
-        };
-        CollectionContextResponse: {
-            collection: string;
-            tenantId: string;
-            requestId: string;
-            /** Format: date-time */
-            generatedAt: string;
-            /** Format: int64 */
-            generationTimeMs: number;
-            schema: components["schemas"]["CollectionContextSchema"];
-            lineage: components["schemas"]["CollectionContextLineage"];
-            governance: components["schemas"]["CollectionContextGovernance"];
-            freshness: components["schemas"]["CollectionContextFreshness"];
-            statisticalProfile: components["schemas"]["CollectionContextStatisticalProfile"];
-            /** Format: int32 */
-            relationshipDepth?: number;
-            relationships?: components["schemas"]["CollectionContextRelationship"][];
-        };
-        McpToolDefinition: {
-            name: string;
-            description: string;
-            inputSchema: components["schemas"]["FreeformObject"];
-        };
-        McpToolRegistryResponse: {
-            tools: components["schemas"]["McpToolDefinition"][];
-            requestId: string;
-            tenantId: string;
-            /** Format: date-time */
-            generatedAt: string;
-        };
-        McpToolCallRequest: {
-            /** @enum {string} */
-            jsonrpc: "2.0";
-            id: string;
-            /** @enum {string} */
-            method: "tools/call";
-            params: {
-                name: string;
-                arguments: components["schemas"]["FreeformObject"];
-            };
-        };
-        McpToolCallResponse: {
-            /** @enum {string} */
-            jsonrpc: "2.0";
-            id: string;
-            result?: {
-                content?: {
-                    type?: string;
-                    text?: string;
-                }[];
-            };
-            error?: {
-                code?: number;
-                message?: string;
-            };
-        };
-        AnomalyQueryItem: {
-            eventId: string;
-            eventType: string;
-            /** Format: date-time */
-            timestamp: string;
-            collection: string;
-            tenantId: string;
-            anomalyPayload: string;
-        };
-        AnomalyQueryResponse: {
-            tenantId: string;
-            collection?: string;
-            /** Format: date-time */
-            since: string;
-            /** Format: int64 */
-            count: number;
-            anomalies: components["schemas"]["AnomalyQueryItem"][];
-        };
-        DataProductSchemaField: {
-            name: string;
-            types: string[];
-        };
-        DataProductSchemaInfo: {
-            fields: components["schemas"]["DataProductSchemaField"][];
-            /** Format: int64 */
-            sampleCount: number;
-        };
-        DataProductAccess: {
-            visibility?: string;
-            allowedSubscribers?: string[];
-        };
-        DataProductSla: {
-            freshnessSeconds?: number;
-            completenessTarget?: number;
-            accuracyTarget?: number;
-        };
-        DataProductQuality: {
-            completeness: number;
-            /** Format: int64 */
-            freshnessLagSeconds: number;
-            /** Format: int64 */
-            sampleSize: number;
-            /** Format: date-time */
-            measuredAt: string;
-        };
-        DataProductLineageSummary: {
-            upstream: string[];
-            downstream: string[];
-            impactLevel: string;
-        };
-        DataProductDescriptor: {
-            id: string;
-            tenantId: string;
-            name: string;
-            collection: string;
-            description: string;
-            /** Format: date-time */
-            publishedAt: string;
-            schema: components["schemas"]["DataProductSchemaInfo"];
-            governance: components["schemas"]["FreeformObject"];
-            access: components["schemas"]["DataProductAccess"];
-            sla: components["schemas"]["DataProductSla"];
-            quality: components["schemas"]["DataProductQuality"];
-            qualityStatus: string;
-            lineage: components["schemas"]["DataProductLineageSummary"];
-        };
-        PublishDataProductRequest: {
-            productId?: string;
-            collection: string;
-            name: string;
-            description?: string;
-            governance?: components["schemas"]["FreeformObject"];
-            access?: components["schemas"]["DataProductAccess"];
-            sla?: components["schemas"]["DataProductSla"];
-        };
-        PublishDataProductResponse: {
-            productId: string;
-            collection: string;
-            name: string;
-            descriptor: components["schemas"]["DataProductDescriptor"];
-            requestId: string;
-            /** Format: date-time */
-            publishedAt: string;
-        };
-        DataProductListResponse: {
-            items: components["schemas"]["DataProductDescriptor"][];
-            /** Format: int64 */
-            count: number;
-            requestId: string;
-            /** Format: date-time */
-            timestamp: string;
-        };
-        DataProductSubscriptionRequest: {
-            consumerId?: string;
-        };
-        DataProductSubscriptionResponse: {
-            subscriptionId: string;
-            productId: string;
-            consumerId: string;
-            status: string;
-            requestId: string;
-        };
-        LineageDagNode: {
-            id: string;
-            type: string;
-            name: string;
-            role: string;
-            metadata: {
-                [key: string]: unknown;
-            };
-        };
-        LineageDagEdge: {
-            source: string;
-            target: string;
-            type: string;
-        };
-        LineageDagResponse: {
-            collection: string;
-            tenantId: string;
-            direction: string;
-            /** Format: date-time */
-            timestamp: string;
-            dag: {
-                nodes: components["schemas"]["LineageDagNode"][];
-                edges: components["schemas"]["LineageDagEdge"][];
-            };
-            /** Format: int64 */
-            upstreamCount: number;
-            /** Format: int64 */
-            downstreamCount: number;
-        };
-        LineageImpactResponse: {
-            collection: string;
-            tenantId: string;
-            impactLevel: string;
-            /** Format: int64 */
-            affectedCount: number;
-            affectedCollections: string[];
-            /** Format: date-time */
-            timestamp: string;
-        };
-        ErrorResponse: {
-            error?: string;
-            code?: number;
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        HealthResponse: {
-            /** @enum {string} */
-            status?: "UP" | "DOWN" | "READY" | "LIVE";
-            /** Format: date-time */
-            timestamp?: string;
-            service?: string;
-        };
-        /**
-         * @description Storage tier for event data
-         * @enum {string}
-         */
-        EventTier: "HOT" | "WARM" | "COOL" | "COLD";
-        /**
-         * @description Severity level for alerts
-         * @enum {string}
-         */
-        AlertSeverity: "critical" | "warning" | "info";
-        /**
-         * @description Status of an alert
-         * @enum {string}
-         */
-        AlertStatus: "active" | "acknowledged" | "resolved";
-        /**
-         * @description Status of a plugin
-         * @enum {string}
-         */
-        PluginStatus: "active" | "inactive" | "error" | "installing" | "uninstalling";
-        /**
-         * @description Category of a plugin
-         * @enum {string}
-         */
-        PluginCategory: "connector" | "transformer" | "quality" | "governance" | "visualization" | "integration" | "ai";
-        /**
-         * @description Type of memory in the memory plane
-         * @enum {string}
-         */
-        MemoryType: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE";
-        /**
-         * @description Target tier for data migration
-         * @enum {string}
-         */
-        MigrationTargetTier: "WARM" | "COLD";
-        /**
-         * @description Retention tier for data lifecycle
-         * @enum {string}
-         */
-        RetentionTier: "transient" | "short-term" | "standard" | "compliance" | "permanent";
+  schemas: {
+    /** @description Arbitrary JSON object. */
+    FreeformObject: {
+      [key: string]: unknown;
     };
-    responses: {
-        /** @description Resource not found. */
-        NotFound: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Invalid request parameters or body. */
-        BadRequest: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Internal server error. */
-        InternalError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Internal server error. */
-        ServerError: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Missing or invalid authentication credentials. */
-        Unauthorized: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Rate limit exceeded. */
-        TooManyRequests: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Request is understood but not authorized. */
-        Forbidden: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
-        /** @description Service is temporarily unavailable or misconfigured. */
-        ServiceUnavailable: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
+    /** @description Typed surface record with dependency-probe evidence (DC-P1-5). */
+    SurfaceRecord: {
+      /** @description Surface identifier. */
+      surfaceId?: string;
+      /** @description Current surface state (JSON value). */
+      state?: string;
+      /** @description Legacy status value. */
+      status?: string;
+      /** @description Owning plane (unknown if null). */
+      ownerPlane?: string;
+      /** @description List of required dependency names. */
+      requiredDependencies?: string[];
+      /** @description Per-dependency probe results. */
+      dependencyProbes?: components["schemas"]["FreeformObject"][];
+      /** @description Tenant scope (global or tenant-specific). */
+      tenantScope?: string;
+      /** @description Runtime profile (local, dev, staging, production). */
+      runtimeProfile?: string;
+      /**
+       * Format: date-time
+       * @description Last check timestamp.
+       */
+      lastCheckedAt?: string;
+      /** @description Evidence map. */
+      evidence?: {
+        [key: string]: unknown;
+      };
+      /** @description Known limitations. */
+      limitations?: string;
+      /** @description Allowed actions for this surface. */
+      actionsAllowed?: string[];
     };
-    parameters: {
-        /**
-         * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-         *     May alternatively be supplied as the `X-Tenant-ID` request header.
-         */
-        tenantIdQuery: string;
-        /** @description Collection (table) name within the tenant's data space. */
-        collectionPath: string;
-        /** @description Entity UUID. */
-        entityIdPath: string;
-        agentIdPath: string;
-        pipelineIdPath: string;
-        checkpointIdPath: string;
-        /** @description Plugin identifier. */
-        pluginId: string;
-        /** @description Tenant identifier supplied as a request header. */
-        tenantIdHeader: string;
-        limitQuery: number;
-        offsetQuery: number;
+    VoiceIntentRequest: {
+      utterance: string;
+      parameters?: components["schemas"]["FreeformObject"];
+      confirm?: boolean;
     };
-    requestBodies: never;
-    headers: {
-        /** @description Alternative to the `tenantId` query parameter. */
-        "X-Tenant-ID": string;
+    VoiceIntentClassificationRequest: {
+      utterance: string;
     };
-    pathItems: never;
+    ConnectionRegistrationRequest: {
+      /** @description Optional connection ID (auto-generated if omitted) */
+      id?: string;
+      name: string;
+      /** @enum {string} */
+      type:
+        | "POSTGRESQL"
+        | "MYSQL"
+        | "MONGODB"
+        | "S3"
+        | "REST_API"
+        | "KAFKA"
+        | "SNOWFLAKE"
+        | "BIGQUERY"
+        | "CUSTOM";
+      /** @description Connector-specific credential blob (never returned in GET) */
+      credentials?: Record<string, never>;
+      /** @description Connector-specific configuration properties */
+      properties?: Record<string, never>;
+      /** @description Data residency constraint for this connector (e.g., eu-west, us-east) */
+      residencyPolicy?: string;
+      /** @description Sync schedule expression (e.g., cron or 'once') */
+      schedule?: string;
+      /** @description Destination collection for synced data */
+      targetCollection?: string;
+      /**
+       * @description Desired initial state
+       * @enum {string}
+       */
+      state?: "ACTIVE" | "INACTIVE" | "TESTING" | "ERROR" | "SYNCING";
+    };
+    AiActionRecord: {
+      /** @description Unique identifier for this AI action */
+      actionId: string;
+      /** @description Tenant scope */
+      tenantId: string;
+      /** @description AI operation domain (entity-suggest, pipeline-draft, brain-explain, etc.) */
+      domain: string;
+      /** @description Summarised intent or input context */
+      intent?: string;
+      /** @description Model identifier or "static-heuristic" for fallback paths */
+      model?: string;
+      /**
+       * Format: double
+       * @description Confidence score 0.0–1.0
+       */
+      confidence?: number;
+      /** @description Whether this action used a heuristic fallback instead of an LLM */
+      fallback?: boolean;
+      /** @description End-to-end latency of the AI operation */
+      latencyMs?: number;
+      /** @description Correlates to the originating HTTP request */
+      requestId?: string;
+      /**
+       * Format: date-time
+       * @description ISO-8601 timestamp when the action was recorded
+       */
+      timestamp: string;
+    };
+    RetentionClassificationRequest: {
+      collection: string;
+      /** @enum {string} */
+      tier:
+        | "transient"
+        | "short-term"
+        | "standard"
+        | "compliance"
+        | "permanent";
+      reason?: string;
+    };
+    RetentionPurgeRequest: {
+      collection: string;
+      confirmationToken: string;
+      dryRun?: boolean;
+    };
+    PrivacyRedactionRequest: {
+      collection: string;
+      entityId: string;
+      fields?: string[];
+      reason?: string;
+    };
+    Entity: {
+      /** Format: uuid */
+      readonly id?: string;
+      tenantId: string;
+      collectionName: string;
+      /**
+       * @default ENTITY
+       * @enum {string}
+       */
+      recordType: "ENTITY" | "EVENT" | "TIMESERIES" | "DOCUMENT" | "GRAPH";
+      /** @description Arbitrary JSON payload stored as JSONB. */
+      data: {
+        [key: string]: unknown;
+      };
+      metadata?: {
+        [key: string]: unknown;
+      };
+      readonly version?: number;
+      readonly active?: boolean;
+      /** Format: date-time */
+      readonly createdAt?: string;
+      /** Format: date-time */
+      readonly updatedAt?: string;
+    };
+    EntityList: {
+      entities?: components["schemas"]["Entity"][];
+      /** Format: int64 */
+      total?: number;
+      limit?: number;
+      offset?: number;
+    };
+    Event: {
+      /** Format: uuid */
+      readonly id?: string;
+      tenantId?: string;
+      /** Format: int64 */
+      readonly offset: number;
+      type: string;
+      payload: {
+        [key: string]: unknown;
+      };
+      headers?: {
+        [key: string]: string;
+      };
+      source?: string;
+      correlationId?: string;
+      schemaVersion?: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AppendEventRequest: {
+      type: string;
+      payload: {
+        [key: string]: unknown;
+      };
+      headers?: {
+        [key: string]: string;
+      };
+      source?: string;
+      correlationId?: string;
+      schemaVersion?: string;
+    };
+    AppendEventResponse: {
+      /** Format: int64 */
+      offset: number;
+      type: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    EventQueryResponse: {
+      events: components["schemas"]["Event"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: int64 */
+      fromOffset: number;
+      /** Format: int64 */
+      nextOffset: number;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    Pipeline: {
+      id: string;
+      tenantId: string;
+      name?: string;
+      description?: string;
+      status?: string;
+      nodes?: {
+        [key: string]: unknown;
+      }[];
+      edges?: {
+        [key: string]: unknown;
+      }[];
+      schedule?: string;
+      tags?: string[];
+      /** Format: date-time */
+      createdAt?: string;
+      /** Format: date-time */
+      updatedAt?: string;
+      createdBy?: string;
+      /** Format: date-time */
+      lastExecutedAt?: string;
+    } & {
+      [key: string]: unknown;
+    };
+    PipelineListResponse: {
+      tenantId: string;
+      pipelines: components["schemas"]["Pipeline"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    PipelineMutationRequest: {
+      [key: string]: unknown;
+    };
+    /**
+     * @description Canonical execution status aligned with OperatorState lifecycle:
+     *     - CREATED: Execution instance created, not yet initialized
+     *     - INITIALIZED: Execution initialized (resources allocated, config validated)
+     *     - RUNNING: Execution actively processing
+     *     - STOPPED: Execution stopped gracefully
+     *     - FAILED: Execution failed (initialization error, runtime error, resource exhaustion)
+     * @enum {string}
+     */
+    ExecutionStatus:
+      | "CREATED"
+      | "INITIALIZED"
+      | "RUNNING"
+      | "STOPPED"
+      | "FAILED";
+    WorkflowExecutionLaunchResponse: {
+      executionId: string;
+      workflowId: string;
+      status: components["schemas"]["ExecutionStatus"];
+      /** Format: date-time */
+      startedAt: string;
+    };
+    WorkflowExecutionSummary: {
+      id: string;
+      workflowId: string;
+      status: components["schemas"]["ExecutionStatus"];
+      /** Format: date-time */
+      startedAt: string;
+      /** Format: date-time */
+      completedAt?: string;
+      duration?: number;
+      output?: {
+        [key: string]: unknown;
+      };
+      error?: string;
+    };
+    WorkflowExecutionListResponse: {
+      items: components["schemas"]["WorkflowExecutionSummary"][];
+      total: number;
+      page: number;
+      pageSize: number;
+      hasMore: boolean;
+    };
+    WorkflowExecutionNode: {
+      id: string;
+      name: string;
+      status: components["schemas"]["ExecutionStatus"];
+      /** Format: date-time */
+      startTime?: string;
+      /** Format: date-time */
+      endTime?: string;
+      duration: number;
+      error: string;
+    };
+    WorkflowExecutionDetail: {
+      id: string;
+      pipelineId: string;
+      pipelineName: string;
+      status: components["schemas"]["ExecutionStatus"];
+      /** Format: date-time */
+      startTime: string;
+      /** Format: date-time */
+      endTime?: string;
+      completedNodes: number;
+      totalNodes: number;
+      nodes: components["schemas"]["WorkflowExecutionNode"][];
+      error?: string;
+    };
+    WorkflowExecutionLogEntry: {
+      /** Format: date-time */
+      timestamp: string;
+      level: string;
+      message: string;
+      nodeId?: string;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    Checkpoint: {
+      id: string;
+      data: {
+        [key: string]: unknown;
+      };
+      tenantId: string;
+    };
+    CheckpointListResponse: {
+      tenantId: string;
+      checkpoints: components["schemas"]["Checkpoint"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    CheckpointSaveResponse: {
+      id: string;
+      tenantId: string;
+      /** Format: date-time */
+      savedAt: string;
+    };
+    MemoryItem: {
+      id: string;
+      tenantId: string;
+      agentId: string;
+      /** @enum {string} */
+      type: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE";
+      content: string;
+      tags: string[];
+      salience: number;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      expiresAt?: string;
+      metadata: {
+        [key: string]: unknown;
+      };
+    };
+    MemoryStoreRequest: {
+      /** @enum {string} */
+      type: "episodic" | "semantic" | "procedural" | "preference";
+      content: string;
+      ttlSeconds?: number;
+      tags?: string[];
+      salience?: number;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    MemoryRootListResponse: {
+      items: components["schemas"]["MemoryItem"][];
+      /** Format: int64 */
+      total: number;
+      tenantId: string;
+      agentId: string;
+      type: string;
+      query: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AgentMemorySummaryResponse: {
+      agentId: string;
+      tenantId: string;
+      /** Format: int64 */
+      total: number;
+      items: components["schemas"]["MemoryItem"][];
+      /** Format: int64 */
+      contextWindowSize: number;
+      byType: {
+        /** Format: int64 */
+        episodic?: number;
+        /** Format: int64 */
+        semantic?: number;
+        /** Format: int64 */
+        procedural?: number;
+        /** Format: int64 */
+        preference?: number;
+        /** Format: int64 */
+        other?: number;
+      };
+      /** Format: date-time */
+      timestamp: string;
+    };
+    MemoryTierResponse: {
+      agentId: string;
+      tenantId: string;
+      tier: string;
+      items: components["schemas"]["MemoryItem"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: int64 */
+      offset: number;
+      /** Format: int64 */
+      limit: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    MemorySearchRequest: {
+      query?: string;
+      /** @enum {string} */
+      type?:
+        | "EPISODIC"
+        | "SEMANTIC"
+        | "PROCEDURAL"
+        | "PREFERENCE"
+        | "episodic"
+        | "semantic"
+        | "procedural"
+        | "preference";
+      /** @default 100 */
+      limit: number;
+    };
+    MemorySearchResponse: {
+      agentId: string;
+      tenantId: string;
+      query: string;
+      results: components["schemas"]["MemoryItem"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    MemoryDeleteResponse: {
+      deleted: boolean;
+      memoryId: string;
+      agentId: string;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    MemoryRetainRequest: {
+      /** Format: int64 */
+      retainUntilEpoch?: number;
+      reason?: string;
+    };
+    MemoryRetainResponse: {
+      retained: boolean;
+      memoryId: string;
+      agentId: string;
+      tenantId: string;
+      reason: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainRuntimeStats: {
+      /** Format: int64 */
+      totalRecordsProcessed: number;
+      /** Format: int64 */
+      activePatterns: number;
+      /** Format: int64 */
+      activeRules: number;
+      /** Format: int64 */
+      hotTierRecords: number;
+      /** Format: int64 */
+      warmTierRecords: number;
+      avgProcessingTimeMs: number;
+      /** Format: int64 */
+      uptimeSeconds: number;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainWorkspaceStatus: {
+      status: string;
+      brainId: string;
+      note: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainAttentionThresholds: {
+      elevationThreshold: number;
+      emergencyThreshold: number;
+      salienceThreshold: number;
+      /** Format: int64 */
+      totalProcessed?: number;
+      /** Format: int64 */
+      elevatedCount?: number;
+      /** Format: int64 */
+      emergencyCount?: number;
+      elevationRate?: number;
+      source?: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainAttentionThresholdUpdateResponse: {
+      acknowledged: boolean;
+      note: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainElevationResult: {
+      elevated: boolean;
+      emergency: boolean;
+      action: string;
+      recordId: string;
+      reason: string;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainPattern: {
+      id: string;
+      name: string;
+      type: string;
+      description: string;
+      confidence: number;
+      /** Format: int64 */
+      observations: number;
+      /** Format: date-time */
+      discoveredAt: string;
+      /** Format: date-time */
+      updatedAt: string;
+    };
+    BrainPatternListResponse: {
+      patterns: components["schemas"]["BrainPattern"][];
+      /** Format: int64 */
+      count: number;
+      /** Format: int64 */
+      limit: number;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainPatternMatch: {
+      patternId?: string;
+      patternName?: string;
+      score: number;
+      confidence: number;
+      explanation: string;
+    };
+    BrainPatternMatchResponse: {
+      recordId: string;
+      matches: components["schemas"]["BrainPatternMatch"][];
+      /** Format: int64 */
+      count: number;
+      tenantId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    BrainSalienceResponse: {
+      itemId: string;
+      salienceScore: number;
+      isHigh: boolean;
+      isEmergency: boolean;
+      /** Format: int64 */
+      priority: number;
+      summary: string;
+      tenantId: string;
+      /** Format: date-time */
+      spotlightedAt: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    LearningLastResult: {
+      status: string;
+      tenantId?: string;
+      manual?: boolean;
+      durationMs?: number;
+      /** Format: int64 */
+      patternsDiscovered?: number;
+      /** Format: int64 */
+      patternsUpdated?: number;
+      /** Format: int64 */
+      recordsAnalyzed?: number;
+      /** Format: date-time */
+      ranAt?: string;
+    };
+    LearningStatusResponse: {
+      running: boolean;
+      lastRunTime: string;
+      nextScheduledRun: string;
+      /** Format: int64 */
+      intervalMinutes: number;
+      /** Format: int64 */
+      pendingReviews: number;
+      lastResult?: components["schemas"]["LearningLastResult"];
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AnalyticsSqlQueryRequest: {
+      /** @description SQL or DSL query string. */
+      query: string;
+      /** @description Optional named query parameters. */
+      parameters?: {
+        [key: string]: unknown;
+      };
+    };
+    AnalyticsSqlQueryResponse: {
+      queryId: string;
+      queryType: string;
+      /** Format: int64 */
+      rowCount: number;
+      /** Format: int64 */
+      columnCount: number;
+      rows: {
+        [key: string]: unknown;
+      }[];
+      executionTimeMs: number;
+      optimized: boolean;
+      /** Format: date-time */
+      timestamp: string;
+      warning?: string;
+    };
+    AnalyticsSuggestQuery: {
+      name: string;
+      template: string;
+      explanation: string;
+    };
+    AnalyticsSuggestResponse: {
+      data: {
+        queries: components["schemas"]["AnalyticsSuggestQuery"][];
+      };
+      ai?: {
+        confidence?: number;
+        fallback?: boolean;
+      };
+    };
+    WorkflowDraftStep: {
+      id: string;
+      /** @enum {string} */
+      type: "source" | "transform" | "destination" | "condition";
+      name: string;
+      description: string;
+      confidence: number;
+      config: components["schemas"]["FreeformObject"];
+    };
+    WorkflowDraftProvenance: {
+      /** Format: date-time */
+      generatedAt: string;
+      strategy: string;
+      promptSummary: string;
+    };
+    WorkflowDraftResponse: {
+      data: {
+        workflowId: string;
+        name: string;
+        description: string;
+        reviewRequired: boolean;
+        provenance: components["schemas"]["WorkflowDraftProvenance"];
+        steps: components["schemas"]["WorkflowDraftStep"][];
+      };
+      ai?: {
+        confidence?: number;
+        model?: string;
+        fallback?: boolean;
+      };
+    };
+    Alert: {
+      id: string;
+      tenantId: string;
+      title: string;
+      description: string;
+      /** @enum {string} */
+      severity: "critical" | "warning" | "info";
+      /** @enum {string} */
+      status: "active" | "acknowledged" | "resolved";
+      source: string;
+      /** Format: date-time */
+      createdAt: string;
+      /** Format: date-time */
+      acknowledgedAt?: string;
+      /** Format: date-time */
+      resolvedAt?: string;
+      /**
+       * Format: int64
+       * @description SLA threshold in minutes based on severity (critical=60, warning=240, info=1440).
+       */
+      slaMinutes?: number;
+      /** @description Whether the alert has exceeded its SLA threshold based on createdAt. */
+      slaBreached?: boolean;
+    };
+    AlertListResponse: {
+      tenantId: string;
+      alerts: components["schemas"]["Alert"][];
+      /** Format: int32 */
+      count: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AlertGroup: {
+      id: string;
+      title: string;
+      rootCause: string;
+      alertIds: string[];
+      aiConfidence: number;
+      suggestedAction: string;
+      /** @enum {string} */
+      suggestedActionType: "auto" | "manual";
+    };
+    AlertGroupListResponse: {
+      tenantId: string;
+      groups: components["schemas"]["AlertGroup"][];
+      /** Format: int32 */
+      count: number;
+      /**
+       * Format: int32
+       * @description Total number of alerts included in the grouped view.
+       */
+      total: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AlertResolutionSuggestion: {
+      id: string;
+      alertId: string;
+      suggestion: string;
+      confidence: number;
+      canAutoResolve: boolean;
+      steps?: string[];
+    };
+    AlertResolutionSuggestionListResponse: {
+      tenantId: string;
+      suggestions: components["schemas"]["AlertResolutionSuggestion"][];
+      /** Format: int32 */
+      count: number;
+      /** Format: int32 */
+      total: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AlertRule: {
+      id: string;
+      tenantId: string;
+      name: string;
+      description?: string;
+      enabled: boolean;
+      /** @enum {string} */
+      severity: "critical" | "warning" | "info";
+      /** @enum {string} */
+      conditionType: "threshold" | "anomaly" | "pattern" | "absence";
+      metric: string;
+      /** @enum {string} */
+      operator: "gt" | "lt" | "eq" | "gte" | "lte";
+      threshold: number;
+      /** Format: int32 */
+      duration: number;
+      channels: ("email" | "slack" | "webhook" | "pagerduty")[];
+      recipients?: string[];
+      webhookUrl?: string;
+    };
+    AlertRuleListResponse: {
+      tenantId: string;
+      rules: components["schemas"]["AlertRule"][];
+      /** Format: int32 */
+      count: number;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    AlertGroupResolveResponse: {
+      groupId: string;
+      tenantId: string;
+      resolvedAlertIds: string[];
+      /** Format: date-time */
+      resolvedAt: string;
+    };
+    AlertSuggestionApplyResponse: {
+      suggestionId: string;
+      tenantId: string;
+      resolvedAlertIds: string[];
+      /** Format: date-time */
+      appliedAt: string;
+    };
+    SimilarEntityMatch: {
+      id: string;
+      collection: string;
+      score: number;
+      data: components["schemas"]["FreeformObject"];
+    };
+    SimilarEntitiesResponse: {
+      collection: string;
+      entityId: string;
+      matches: components["schemas"]["SimilarEntityMatch"][];
+      /** Format: int64 */
+      count: number;
+      requestId: string;
+    };
+    CollectionRagRequest: {
+      question: string;
+      /**
+       * Format: int32
+       * @default 5
+       */
+      k: number;
+    };
+    CollectionRagContextItem: {
+      id: string;
+      score: number;
+      data: components["schemas"]["FreeformObject"];
+      excerpt: string;
+    };
+    CollectionRagResponse: {
+      collection: string;
+      question: string;
+      answer: string;
+      context: components["schemas"]["CollectionRagContextItem"][];
+      requestId: string;
+    };
+    CollectionContextField: {
+      name: string;
+      type: string;
+      required?: boolean;
+    } & {
+      [key: string]: unknown;
+    };
+    CollectionContextSchema: {
+      fields: components["schemas"]["CollectionContextField"][];
+      constraints?: components["schemas"]["FreeformObject"];
+    } & {
+      [key: string]: unknown;
+    };
+    CollectionContextLineage: {
+      upstream: string[];
+      downstream: string[];
+    };
+    CollectionContextGovernance: {
+      retentionTier: string;
+      complianceStatus: string;
+      piiFields: string[];
+      policyReason?: string;
+    };
+    CollectionContextFreshness: {
+      /** Format: date-time */
+      sampledAt: string;
+      /** Format: date-time */
+      lastEntityUpdatedAt?: string;
+      /** Format: date-time */
+      lastEntityCreatedAt?: string;
+    };
+    CollectionContextTopValue: {
+      value: string;
+      /** Format: int64 */
+      count: number;
+    };
+    CollectionContextStatisticalProfile: {
+      /** Format: int64 */
+      entityCount: number;
+      /** Format: int32 */
+      sampleSize: number;
+      nullRates: {
+        [key: string]: number;
+      };
+      topValues: {
+        [key: string]: components["schemas"]["CollectionContextTopValue"][];
+      };
+    };
+    CollectionContextRelationship: {
+      id: string;
+      source: string;
+      target: string;
+      type: string;
+      /** Format: int32 */
+      depth?: number;
+      properties?: components["schemas"]["FreeformObject"];
+    };
+    CollectionContextResponse: {
+      collection: string;
+      tenantId: string;
+      requestId: string;
+      /** Format: date-time */
+      generatedAt: string;
+      /** Format: int64 */
+      generationTimeMs: number;
+      schema: components["schemas"]["CollectionContextSchema"];
+      lineage: components["schemas"]["CollectionContextLineage"];
+      governance: components["schemas"]["CollectionContextGovernance"];
+      freshness: components["schemas"]["CollectionContextFreshness"];
+      statisticalProfile: components["schemas"]["CollectionContextStatisticalProfile"];
+      /** Format: int32 */
+      relationshipDepth?: number;
+      relationships?: components["schemas"]["CollectionContextRelationship"][];
+    };
+    McpToolDefinition: {
+      name: string;
+      description: string;
+      inputSchema: components["schemas"]["FreeformObject"];
+    };
+    McpToolRegistryResponse: {
+      tools: components["schemas"]["McpToolDefinition"][];
+      requestId: string;
+      tenantId: string;
+      /** Format: date-time */
+      generatedAt: string;
+    };
+    McpToolCallRequest: {
+      /** @enum {string} */
+      jsonrpc: "2.0";
+      id: string;
+      /** @enum {string} */
+      method: "tools/call";
+      params: {
+        name: string;
+        arguments: components["schemas"]["FreeformObject"];
+      };
+    };
+    McpToolCallResponse: {
+      /** @enum {string} */
+      jsonrpc: "2.0";
+      id: string;
+      result?: {
+        content?: {
+          type?: string;
+          text?: string;
+        }[];
+      };
+      error?: {
+        code?: number;
+        message?: string;
+      };
+    };
+    AnomalyQueryItem: {
+      eventId: string;
+      eventType: string;
+      /** Format: date-time */
+      timestamp: string;
+      collection: string;
+      tenantId: string;
+      anomalyPayload: string;
+    };
+    AnomalyQueryResponse: {
+      tenantId: string;
+      collection?: string;
+      /** Format: date-time */
+      since: string;
+      /** Format: int64 */
+      count: number;
+      anomalies: components["schemas"]["AnomalyQueryItem"][];
+    };
+    DataProductSchemaField: {
+      name: string;
+      types: string[];
+    };
+    DataProductSchemaInfo: {
+      fields: components["schemas"]["DataProductSchemaField"][];
+      /** Format: int64 */
+      sampleCount: number;
+    };
+    DataProductAccess: {
+      visibility?: string;
+      allowedSubscribers?: string[];
+    };
+    DataProductSla: {
+      freshnessSeconds?: number;
+      completenessTarget?: number;
+      accuracyTarget?: number;
+    };
+    DataProductQuality: {
+      completeness: number;
+      /** Format: int64 */
+      freshnessLagSeconds: number;
+      /** Format: int64 */
+      sampleSize: number;
+      /** Format: date-time */
+      measuredAt: string;
+    };
+    DataProductLineageSummary: {
+      upstream: string[];
+      downstream: string[];
+      impactLevel: string;
+    };
+    DataProductDescriptor: {
+      id: string;
+      tenantId: string;
+      name: string;
+      collection: string;
+      description: string;
+      /** Format: date-time */
+      publishedAt: string;
+      schema: components["schemas"]["DataProductSchemaInfo"];
+      governance: components["schemas"]["FreeformObject"];
+      access: components["schemas"]["DataProductAccess"];
+      sla: components["schemas"]["DataProductSla"];
+      quality: components["schemas"]["DataProductQuality"];
+      qualityStatus: string;
+      lineage: components["schemas"]["DataProductLineageSummary"];
+    };
+    PublishDataProductRequest: {
+      productId?: string;
+      collection: string;
+      name: string;
+      description?: string;
+      governance?: components["schemas"]["FreeformObject"];
+      access?: components["schemas"]["DataProductAccess"];
+      sla?: components["schemas"]["DataProductSla"];
+    };
+    PublishDataProductResponse: {
+      productId: string;
+      collection: string;
+      name: string;
+      descriptor: components["schemas"]["DataProductDescriptor"];
+      requestId: string;
+      /** Format: date-time */
+      publishedAt: string;
+    };
+    DataProductListResponse: {
+      items: components["schemas"]["DataProductDescriptor"][];
+      /** Format: int64 */
+      count: number;
+      requestId: string;
+      /** Format: date-time */
+      timestamp: string;
+    };
+    DataProductSubscriptionRequest: {
+      consumerId?: string;
+    };
+    DataProductSubscriptionResponse: {
+      subscriptionId: string;
+      productId: string;
+      consumerId: string;
+      status: string;
+      requestId: string;
+    };
+    LineageDagNode: {
+      id: string;
+      type: string;
+      name: string;
+      role: string;
+      metadata: {
+        [key: string]: unknown;
+      };
+    };
+    LineageDagEdge: {
+      source: string;
+      target: string;
+      type: string;
+    };
+    LineageDagResponse: {
+      collection: string;
+      tenantId: string;
+      direction: string;
+      /** Format: date-time */
+      timestamp: string;
+      dag: {
+        nodes: components["schemas"]["LineageDagNode"][];
+        edges: components["schemas"]["LineageDagEdge"][];
+      };
+      /** Format: int64 */
+      upstreamCount: number;
+      /** Format: int64 */
+      downstreamCount: number;
+    };
+    LineageImpactResponse: {
+      collection: string;
+      tenantId: string;
+      impactLevel: string;
+      /** Format: int64 */
+      affectedCount: number;
+      affectedCollections: string[];
+      /** Format: date-time */
+      timestamp: string;
+    };
+    ErrorResponse: {
+      error?: string;
+      code?: number;
+      /** Format: date-time */
+      timestamp?: string;
+    };
+    HealthResponse: {
+      /** @enum {string} */
+      status?: "UP" | "DOWN" | "READY" | "LIVE";
+      /** Format: date-time */
+      timestamp?: string;
+      service?: string;
+    };
+    /**
+     * @description Storage tier for event data
+     * @enum {string}
+     */
+    EventTier: "HOT" | "WARM" | "COOL" | "COLD";
+    /**
+     * @description Severity level for alerts
+     * @enum {string}
+     */
+    AlertSeverity: "critical" | "warning" | "info";
+    /**
+     * @description Status of an alert
+     * @enum {string}
+     */
+    AlertStatus: "active" | "acknowledged" | "resolved";
+    /**
+     * @description Status of a plugin
+     * @enum {string}
+     */
+    PluginStatus:
+      | "active"
+      | "inactive"
+      | "error"
+      | "installing"
+      | "uninstalling";
+    /**
+     * @description Category of a plugin
+     * @enum {string}
+     */
+    PluginCategory:
+      | "connector"
+      | "transformer"
+      | "quality"
+      | "governance"
+      | "visualization"
+      | "integration"
+      | "ai";
+    /**
+     * @description Type of memory in the memory plane
+     * @enum {string}
+     */
+    MemoryType: "EPISODIC" | "SEMANTIC" | "PROCEDURAL" | "PREFERENCE";
+    /**
+     * @description Target tier for data migration
+     * @enum {string}
+     */
+    MigrationTargetTier: "WARM" | "COLD";
+    /**
+     * @description Retention tier for data lifecycle
+     * @enum {string}
+     */
+    RetentionTier:
+      | "transient"
+      | "short-term"
+      | "standard"
+      | "compliance"
+      | "permanent";
+  };
+  responses: {
+    /** @description Resource not found. */
+    NotFound: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Invalid request parameters or body. */
+    BadRequest: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Internal server error. */
+    InternalError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Internal server error. */
+    ServerError: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Missing or invalid authentication credentials. */
+    Unauthorized: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Rate limit exceeded. */
+    TooManyRequests: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Request is understood but not authorized. */
+    Forbidden: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Service is temporarily unavailable or misconfigured. */
+    ServiceUnavailable: {
+      headers: {
+        [name: string]: unknown;
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+  };
+  parameters: {
+    /**
+     * @deprecated
+     * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+     *
+     *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+     *     If provided, this value must match the authenticated tenant or the request is rejected.
+     *     In local/test/embedded profiles, this may be used for convenience when authentication
+     *     does not include tenant claims.
+     */
+    tenantIdQuery: string;
+    /**
+     * @deprecated
+     * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+     *
+     *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+     *     If provided, this value must match the authenticated tenant or the request is rejected.
+     *     In local/test/embedded profiles, this may be used for convenience when authentication
+     *     does not include tenant claims.
+     */
+    tenantIdHeader: string;
+    /** @description Collection (table) name within the tenant's data space. */
+    collectionPath: string;
+    /** @description Entity UUID. */
+    entityIdPath: string;
+    agentIdPath: string;
+    pipelineIdPath: string;
+    checkpointIdPath: string;
+    /** @description Plugin identifier. */
+    pluginId: string;
+    limitQuery: number;
+    offsetQuery: number;
+  };
+  requestBodies: never;
+  headers: {
+    /** @description Alternative to the `tenantId` query parameter. */
+    "X-Tenant-ID": string;
+  };
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    healthGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Service is healthy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    healthDetailGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Per-subsystem health report. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status?: "UP" | "DEGRADED" | "DOWN";
-                        subsystems?: {
-                            [key: string]: {
-                                /** @enum {string} */
-                                status?: "UP" | "DOWN" | "UNKNOWN";
-                                /** Format: int64 */
-                                latencyMs?: number;
-                                message?: string;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-    healthDeepGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deep health status across runtime dependencies. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    readyGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Service is ready to accept traffic. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    liveGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Service process is alive. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    infoGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Service name, version, description. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        service?: string;
-                        version?: string;
-                        description?: string;
-                        /** Format: date-time */
-                        timestamp?: string;
-                    };
-                };
-            };
-        };
-    };
-    metricsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description JSON map of runtime metrics. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    apiV1EntitiesCollectionGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-                offset?: components["parameters"]["offsetQuery"];
-                /** @description Optional filter expression (backend-specific syntax). */
-                filter?: string;
-                /** @description Sort field, optionally prefixed with `-` for descending. */
-                sort?: string;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated entity list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EntityList"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1EntitiesCollectionPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Entity saved successfully. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Entity"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1EntitiesCollectionIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-                /** @description Entity UUID. */
-                id: components["parameters"]["entityIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Entity found. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Entity"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1EntitiesCollectionIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-                /** @description Entity UUID. */
-                id: components["parameters"]["entityIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Entity deleted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        deleted?: boolean;
-                        /** Format: uuid */
-                        id?: string;
-                    };
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1EventsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-                from?: number;
-                type?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of events. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventQueryResponse"];
-                };
-            };
-        };
-    };
-    apiV1EventsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AppendEventRequest"];
-            };
-        };
-        responses: {
-            /** @description Event appended. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AppendEventResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1PipelinesGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-                offset?: components["parameters"]["offsetQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Paginated pipeline list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PipelineListResponse"];
-                };
-            };
-        };
-    };
-    apiV1PipelinesPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PipelineMutationRequest"];
-            };
-        };
-        responses: {
-            /** @description Pipeline saved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Pipeline"];
-                };
-            };
-        };
-    };
-    apiV1PipelinesPipelineIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pipeline definition. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Pipeline"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PipelinesPipelineIdPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PipelineMutationRequest"];
-            };
-        };
-        responses: {
-            /** @description Pipeline updated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Pipeline"];
-                };
-            };
-        };
-    };
-    apiV1PipelinesPipelineIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pipeline deleted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1PipelinesPipelineIdExecutePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Pipeline execution started. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionLaunchResponse"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PipelinesPipelineIdExecutionsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Execution summaries for the requested pipeline. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionListResponse"];
-                };
-            };
-        };
-    };
-    apiV1PipelinesPipelineIdExecutionsExecutionIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Execution summary. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionSummary"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PipelinesPipelineIdExecutionsExecutionIdLogsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Execution log entries. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionLogEntry"][];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PipelinesPipelineIdExecutionsExecutionIdCancelPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: components["parameters"]["pipelineIdPath"];
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated execution summary. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionSummary"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-                offset?: components["parameters"]["offsetQuery"];
-                severity?: "critical" | "warning" | "info";
-                status?: "active" | "acknowledged" | "resolved";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertListResponse"];
-                };
-            };
-        };
-    };
-    apiV1AlertsAlertIdAcknowledgePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                alertId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert acknowledged. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Alert"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsAlertIdResolvePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                alertId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert resolved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Alert"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsIdEscalatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert escalated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Alert"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsIdAutoRemediatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Auto-remediation result (success, blocked, or suggestion). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsIdRemediatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    actionId?: string;
-                    actionType?: string;
-                    actor?: string;
-                    reason?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Remediation action applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsIdRemediateRollbackPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    actionId?: string;
-                    reason?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Remediation rolled back. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsIdRemediationsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Remediation action list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsGroupsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Correlated alert groups. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertGroupListResponse"];
-                };
-            };
-        };
-    };
-    apiV1AlertsGroupsGroupIdResolvePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                groupId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Group resolved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertGroupResolveResponse"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AlertsSuggestionsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Resolution suggestions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertResolutionSuggestionListResponse"];
-                };
-            };
-        };
-    };
-    apiV1AlertsSuggestionsSuggestionIdApplyPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                suggestionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Suggestion applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertSuggestionApplyResponse"];
-                };
-            };
-        };
-    };
-    apiV1AlertsRulesGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert rules. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertRuleListResponse"];
-                };
-            };
-        };
-    };
-    apiV1AlertsRulesPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AlertRule"];
-            };
-        };
-        responses: {
-            /** @description Alert rule created. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertRule"];
-                };
-            };
-        };
-    };
-    apiV1AlertsRulesRuleIdPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                ruleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AlertRule"];
-            };
-        };
-        responses: {
-            /** @description Alert rule updated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AlertRule"];
-                };
-            };
-        };
-    };
-    apiV1AlertsRulesRuleIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                ruleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Alert rule deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AlertsStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Server-sent event stream of alert activity. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1ComplianceLegalHoldsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of legal holds. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ComplianceLegalHoldsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    reason?: string;
-                    /** @default tenant-wide */
-                    scope?: string;
-                    collections?: string[];
-                    /** Format: date-time */
-                    expiresAt?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Legal hold applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ComplianceLegalHoldsIdExtendPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: date-time */
-                    expiresAt?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Legal hold extended. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ComplianceLegalHoldsIdReleasePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Legal hold released. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ComplianceEvidencePackagePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    include?: ("inventory" | "policies" | "audit" | "lineage" | "retention")[];
-                    /** Format: date-time */
-                    fromDate?: string;
-                    /** Format: date-time */
-                    toDate?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Evidence package generated and stored. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1CompliancePostureGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Compliance posture derived from actual evidence packages, legal holds, and audit events. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SovereignProfileGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sovereign profile including air-gapped flag, data residency, model policy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SovereignProfilePut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Profile updated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SovereignModelsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Allowed and forbidden model lists, air-gapped status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SovereignAuditGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Audit events for sovereign policy changes, blocked calls, and backups. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            500: components["responses"]["ServerError"];
-        };
-    };
-    apiV1SovereignBackupGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Returns offline backup status with integrity hash, restore points, and encrypted transport flag. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignBackupPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Triggers a backup snapshot with integrity hash and encrypted transport. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignRestorePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                /** @description Snapshot ID to restore from (defaults to latest) */
-                snapshotId?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Validates and restores from backup snapshot with integrity hash and schema version checks. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignDataSubjectControlsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Returns data-subject control settings including local-only processing, federated learning opt-in, data export, and retention days. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignDataSubjectControlsPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updates data-subject controls and returns the updated settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SovereignConformanceGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Runs conformance tests (no-network boot, offline query, audit-only event logging, encryption at rest) and returns PASS/FAIL. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1CheckpointsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-                offset?: components["parameters"]["offsetQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Checkpoint list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CheckpointListResponse"];
-                };
-            };
-        };
-    };
-    apiV1CheckpointsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Checkpoint saved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CheckpointSaveResponse"];
-                };
-            };
-        };
-    };
-    apiV1CheckpointsCheckpointIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                checkpointId: components["parameters"]["checkpointIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Checkpoint data. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Checkpoint"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1CheckpointsCheckpointIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                checkpointId: components["parameters"]["checkpointIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Checkpoint deleted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        deleted: boolean;
-                        checkpointId: string;
-                        tenantId: string;
-                        /** Format: date-time */
-                        timestamp: string;
-                    };
-                };
-            };
-        };
-    };
-    apiV1PluginsMarketplaceGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Enriched plugin catalog with trust scores, vendor, capabilities, installed/enabled status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PluginsIdSandboxGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Plugin identifier. */
-                id: components["parameters"]["pluginId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sandbox status with resource quotas, tenant isolation, and audit log. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1PluginsIdValidatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Plugin identifier. */
-                id: components["parameters"]["pluginId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Schema compatibility result with compatible flag and contractValid. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1PluginsIdConformancePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Plugin identifier. */
-                id: components["parameters"]["pluginId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Conformance test results including lifecycle init/shutdown, capability contract, audit log, tenant isolation, schema version. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1ConformanceGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Full conformance summary including EntityStore and EventLogStore results. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ConformanceEntityStoreGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description EntityStore conformance test results (save/get, batch, query, delete, tenant isolation). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ConformanceEventLogStoreGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description EventLogStore conformance test results (append/read, batch, by type, by time range, tenant isolation). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignDataResidencyGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Returns data store regions and compliance against tenant policy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SovereignValidateTransferPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Transfer validation result with allowed flag and reason. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SovereignRegionPolicyGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Returns allowed/blocked regions, geo-fencing, and multi-region replication status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Memory entries (all tiers). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AgentMemorySummaryResponse"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemoryStoreRequest"];
-            };
-        };
-        responses: {
-            /** @description Stored memory entry. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemoryItem"];
-                };
-            };
-        };
-    };
-    apiV1MemoryGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                agentId?: string;
-                type?: string;
-                query?: string;
-                limit?: components["parameters"]["limitQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Memory entries filtered across the tenant memory plane. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemoryRootListResponse"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdTierGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-                tier: "episodic" | "semantic" | "procedural" | "preference";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Memory entries for the specified tier. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemoryTierResponse"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdSearchPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemorySearchRequest"];
-            };
-        };
-        responses: {
-            /** @description Matching memory entries. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemorySearchResponse"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdMemoryIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-                memoryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Memory entry deleted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemoryDeleteResponse"];
-                };
-            };
-        };
-    };
-    apiV1MemoryAgentIdMemoryIdRetainPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                agentId: components["parameters"]["agentIdPath"];
-                memoryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["MemoryRetainRequest"];
-            };
-        };
-        responses: {
-            /** @description Retention policy applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemoryRetainResponse"];
-                };
-            };
-        };
-    };
-    apiV1BrainHealthGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Brain is healthy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Brain not wired. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1BrainConfigGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current brain config. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1BrainStatsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Brain stats. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainRuntimeStats"];
-                };
-            };
-        };
-    };
-    apiV1BrainWorkspaceGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Workspace status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainWorkspaceStatus"];
-                };
-            };
-        };
-    };
-    apiV1BrainWorkspaceStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE stream. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1BrainAttentionElevatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    id?: string;
-                    content?: string;
-                    reason?: string;
-                    /** @default false */
-                    emergency?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Elevation result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainElevationResult"];
-                };
-            };
-            /** @description Brain not wired. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1BrainAttentionThresholdsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Threshold configuration. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainAttentionThresholds"];
-                };
-            };
-        };
-    };
-    apiV1BrainAttentionThresholdsPut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: number;
-                };
-            };
-        };
-        responses: {
-            /** @description Thresholds updated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainAttentionThresholdUpdateResponse"];
-                };
-            };
-        };
-    };
-    apiV1BrainPatternsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pattern list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainPatternListResponse"];
-                };
-            };
-        };
-    };
-    apiV1BrainPatternsMatchPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Pattern match result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainPatternMatchResponse"];
-                };
-            };
-        };
-    };
-    apiV1BrainSalienceItemIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                itemId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Salience score details. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BrainSalienceResponse"];
-                };
-            };
-        };
-    };
-    apiV1LearningTriggerPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Learning triggered. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Learning bridge not wired. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LearningStatusGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Learning status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LearningStatusResponse"];
-                };
-            };
-        };
-    };
-    apiV1LearningReviewGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: components["parameters"]["limitQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Review queue items. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LearningReviewReviewIdApprovePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                reviewId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy approved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LearningReviewReviewIdRejectPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                reviewId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy rejected. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LearningStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE stream. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1MasteryPreviewDecisionGet: {
-        parameters: {
-            query: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                agentId: string;
-                skillId: string;
-                versionContext?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Mastery decision preview. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1MasteryPreviewRetrievalGet: {
-        parameters: {
-            query: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                agentId: string;
-                skillId: string;
-                limit?: components["parameters"]["limitQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Retrieval preview. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1MasteryLearningDeltaDryRunPromotionPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                deltaId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Promotion diagnostics. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1MasteryObsolescenceEventsProcessPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Obsolescence transition result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AnalyticsQueryPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyticsSqlQueryRequest"];
-            };
-        };
-        responses: {
-            /** @description Query result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    apiV1AnalyticsQueriesQueryIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                queryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Analytics query cancellation is not supported. */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        error?: {
-                            /** @example NOT_IMPLEMENTED */
-                            code?: string;
-                            /** @example Analytics query cancellation is not supported in this deployment. */
-                            message?: string;
-                        };
-                    };
-                };
-            };
-        };
-    };
-    apiV1AnalyticsAggregationPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    collection?: string;
-                    pipeline?: {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-        };
-        responses: {
-            /** @description Aggregation result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    apiV1AnalyticsQueryQueryIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                queryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Query result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    apiV1AnalyticsQueryQueryIdPlanGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                queryId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Query execution plan. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        queryId?: string;
-                        plan?: {
-                            [key: string]: unknown;
-                        };
-                    };
-                };
-            };
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    apiV1AnalyticsExplainPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description SQL or DSL query to plan. */
-                    query: string;
-                    /** @description Optional bind parameters. */
-                    parameters?: {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Estimated query plan. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        queryId?: string;
-                        queryType?: string;
-                        dataSources?: string[];
-                        estimatedCost?: number;
-                        optimized?: boolean;
-                        explain?: boolean;
-                        /** Format: date-time */
-                        timestamp?: string;
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    eventsStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                /** @description Start streaming from this event log offset. */
-                fromOffset?: number;
-                /** @description Comma-separated list of event types to filter (empty = all). */
-                eventType?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE stream. Each event is a JSON payload with `type` and `data` fields. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    eventsNotificationsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE stream of notifications. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1EventsNotificationsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE stream of notifications. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1EntitiesCollectionSearchGet: {
-        parameters: {
-            query: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                q: string;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of matching entities */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description OpenSearch connector not configured */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionExportGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                format?: "csv" | "ndjson";
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Exported entity file */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Export service not configured for this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionAnomaliesPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Anomaly detection results */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Anomaly detector is not configured for this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AnomaliesGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                collection?: string;
-                since?: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Persisted anomalies matching the supplied filter. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnomalyQueryResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            /** @description Anomaly event store is not configured for this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionSimilarGet: {
-        parameters: {
-            query: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                id: string;
-                k?: number;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Semantic similarity matches for the requested entity. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimilarEntitiesResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1EntitiesCollectionValidatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Validation outcome. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        valid?: boolean;
-                        violations?: {
-                            field?: string;
-                            message?: string;
-                            code?: string;
-                        }[];
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            /** @description Schema validation capability is not configured for this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionValidateBatchPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    entities: {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-        };
-        responses: {
-            /** @description Per-entity validation results. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        allValid?: boolean;
-                        results?: {
-                            index?: number;
-                            valid?: boolean;
-                            violations?: {
-                                field?: string;
-                                message?: string;
-                                code?: string;
-                            }[];
-                        }[];
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            /** @description Schema validation capability is not configured for this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionBatchPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Batch upsert results */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionBatchDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Batch delete results */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE CDC stream */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-        };
-    };
-    apiV1EntitiesCollectionQueryStreamGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                q?: string;
-                follow?: boolean;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SSE streaming query results */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-            /** @description Streaming query is disabled because OpenSearch connector is not configured. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionSuggestPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Schema suggestions with AI metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionInferSchemaPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Sample entity payload to infer types from */
-                    sample?: Record<string, never>;
-                };
-            };
-        };
-        responses: {
-            /** @description Inferred schema with type detection, PII flags, and dedupe suggestions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AnalyticsSuggestPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Suggested analytics queries with AI metadata. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsSuggestResponse"];
-                };
-            };
-        };
-    };
-    apiV1AnalyticsAutomatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Automation result with recommendations and rewritten query. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Analytics automation is not yet implemented. */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1QueryNlqPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    question: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Parsed query plan with intent, SQL draft, source selection, and cost warnings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        question?: string;
-                        intent?: string;
-                        sqlDraft?: string;
-                        suggestedCollections?: string[];
-                        timeFilter?: string;
-                        costWarning?: string;
-                        costLevel?: string;
-                        /** Format: double */
-                        confidence?: number;
-                        fallback?: boolean;
-                        explain?: string;
-                    };
-                };
-            };
-        };
-    };
-    apiV1ReportsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of reports */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ReportsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Generated report or report ID */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ReportsReportIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                reportId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Report document */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ExecutionsExecutionIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Execution detail with node-level state. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionDetail"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ExecutionsExecutionIdLogsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Execution log entries. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionLogEntry"][];
-                };
-            };
-        };
-    };
-    apiV1ExecutionsExecutionIdCancelPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Updated execution summary. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionSummary"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ExecutionsExecutionIdRetryPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Retried execution summary. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowExecutionSummary"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ExecutionsExecutionIdRollbackPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    targetSteps?: string[];
-                    /** @default false */
-                    dryRun?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Rollback plan with per-step compensation actions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ExecutionsExecutionIdCheckpointPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    stepId?: string;
-                    stepIndex?: number;
-                    state?: Record<string, never>;
-                };
-            };
-        };
-        responses: {
-            /** @description Checkpoint saved. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ExecutionsExecutionIdCheckpointsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of checkpoints ordered by step index. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ExecutionsExecutionIdRestorePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                executionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Restored checkpoint state with resume instructions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PipelinesDraftPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Reviewable workflow draft with ordered steps and provenance metadata. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WorkflowDraftResponse"];
-                };
-            };
-        };
-    };
-    apiV1WorkflowsAnalyzeRiskPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    executionId?: string;
-                    steps?: {
-                        id?: string;
-                        type?: string;
-                        dependsOn?: string;
-                    }[];
-                };
-            };
-        };
-        responses: {
-            /** @description Risk analysis with proposed remediations. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1WorkflowsValidatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    steps: {
-                        id?: string;
-                        type?: string;
-                    }[];
-                    edges?: {
-                        from?: string;
-                        to?: string;
-                    }[];
-                };
-            };
-        };
-        responses: {
-            /** @description Validation results with cycle detection, dependency checks, risk/cost estimation. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        valid?: boolean;
-                        errors?: string[];
-                        warnings?: string[];
-                        stepCount?: number;
-                        edgeCount?: number;
-                        cycleCount?: number;
-                        /** Format: double */
-                        estimatedRisk?: number;
-                        riskBand?: string;
-                        estimatedCost?: number;
-                        approvalRequired?: boolean;
-                    };
-                };
-            };
-        };
-    };
-    apiV1PipelinesPipelineIdOptimiseHintPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                pipelineId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Optimisation hints with AI metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1GovernanceRecommendPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    collection?: string;
-                    schema?: {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Governance recommendations with field classifications and compliance frameworks. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1BrainExplainPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Human-readable explanation with remediation steps */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AiContextRankPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    query?: string;
-                    contexts?: Record<string, never>[];
-                };
-            };
-        };
-        responses: {
-            /** @description Context entries ranked by relevance and freshness with stale flag. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiQualityDriftDetectPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    oldContract?: {
-                        [key: string]: string;
-                    };
-                    newContract?: {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Drift report with breaking and non-breaking changes. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1OperationsAnomalyGroupPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    anomalies?: Record<string, never>[];
-                };
-            };
-        };
-        responses: {
-            /** @description Anomaly clusters with suggested root causes. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1OperationsForecastPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    currentMetrics?: Record<string, never>;
-                    history?: Record<string, never>[];
-                };
-            };
-        };
-        responses: {
-            /** @description Forecasted capacity needs and bottleneck projections. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiNextActionPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    pendingAlerts?: Record<string, never>[];
-                    pendingTasks?: Record<string, never>[];
-                    recentFailures?: Record<string, never>[];
-                };
-            };
-        };
-        responses: {
-            /** @description Suggested next action with urgency and rationale. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ConnectorsSuggestMappingPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    sourceSchema?: {
-                        [key: string]: string;
-                    };
-                    targetSchema?: {
-                        [key: string]: string;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Field mapping suggestions with confidence scores. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ConnectorsConnectorIdSyncHealthPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectorId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    syncHistory?: Record<string, never>[];
-                };
-            };
-        };
-        responses: {
-            /** @description Sync health diagnosis with reliability score and issue breakdown. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiQualitySummaryGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Aggregated AI recommendation quality, fallback, and confidence telemetry. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiSuggestionsPost: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description List of AI-generated operation suggestions. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Capability not enabled for this tenant. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AiSuggestionsIdApplyPost: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Suggestion accepted and queued for manual execution. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Capability not enabled for this tenant. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Suggestion not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AiCorrelationsGet: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Cross-surface AI correlation list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiActionsGet: {
-        parameters: {
-            query?: {
-                domain?: string;
-                limit?: number;
-            };
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description AI action records. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiSuggestionsIdFeedbackPost: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    accepted?: boolean;
-                    /** @enum {string} */
-                    sentiment?: "positive" | "negative" | "neutral";
-                    comment?: string;
-                    actionType?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Feedback recorded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1AiFeedbackGet: {
-        parameters: {
-            query?: {
-                sentiment?: string;
-                limit?: number;
-            };
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description AI feedback records. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiAdvisoriesWorkflowsWorkflowIdGet: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path: {
-                workflowId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Workflow AI advisory. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Workflow not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AiAdvisoriesQualityCollectionIdGet: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path: {
-                collectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Quality AI advisory. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiAdvisoriesFabricCollectionIdGet: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Tenant identifier supplied as a request header. */
-                "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
-            };
-            path: {
-                collectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description AI fabric tier placement advisory for the collection. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Capability not enabled for this tenant. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Collection not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ModelsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of models */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ModelsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Registered model */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ModelsModelNameGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                modelName: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Model details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ModelsModelNamePromotePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                modelName: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Model promoted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1FeaturesPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Feature ingested */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1FeaturesEntityIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                entityId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Feature vector for the entity */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1VoiceIntentPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VoiceIntentRequest"];
-            };
-        };
-        responses: {
-            /** @description Intent resolution and execution result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            429: components["responses"]["TooManyRequests"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1VoiceIntentsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Complete voice intent catalog */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1VoiceIntentClassifyPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VoiceIntentClassificationRequest"];
-            };
-        };
-        responses: {
-            /** @description Classification result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernanceRetentionClassifyPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RetentionClassificationRequest"];
-            };
-        };
-        responses: {
-            /** @description Classification result with retention days and expiry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernanceRetentionPolicyGet: {
-        parameters: {
-            query: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                collection: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Retention policy details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernanceRetentionPurgePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RetentionPurgeRequest"];
-            };
-        };
-        responses: {
-            /** @description Purge scheduled or dry-run estimation */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            403: components["responses"]["Forbidden"];
-            500: components["responses"]["InternalError"];
-            503: components["responses"]["ServiceUnavailable"];
-        };
-    };
-    apiV1GovernancePrivacyRedactPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PrivacyRedactionRequest"];
-            };
-        };
-        responses: {
-            /** @description Redaction result with list of redacted fields */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePrivacyVerifyGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Verification status for redaction and privacy controls. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePrivacyPiiFieldsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Global and tenant-specific PII field registry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernanceComplianceSummaryGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Compliance dashboard summary */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernanceInventoryGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Governance inventory with collections, policies, holds, audit events. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of policies */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Policy created successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesSimulatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Dry-run policy impact simulation result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy details */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesIdPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Policy updated successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy deleted successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1GovernancePoliciesIdTogglePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy toggled successfully */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1SurfacesGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Runtime surface registry snapshot with runtime posture metadata. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data?: {
-                            surfaces?: {
-                                [key: string]: unknown;
-                            };
-                            generatedAt?: string;
-                        };
-                        meta?: {
-                            requestId?: string;
-                            tenantId?: string;
-                            apiVersion?: string;
-                        };
-                    } & {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-    };
-    apiV1SurfacesSchemaGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Runtime surface registry schema. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current general settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updated general settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsSecurityGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current security settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsSecurityPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updated security settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsKeysGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description API keys list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsKeysPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description API key created. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsKeysIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description API key metadata (secret excluded). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SettingsKeysIdRotatePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Rotated API key with one-time secret reveal. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SettingsKeysIdRevokeDelete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description API key revoked. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SettingsProfileGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current profile settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsProfilePatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updated profile settings. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsPreferencesGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current user preferences. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsPreferencesPatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updated user preferences. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsNotificationsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current notification preferences. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsNotificationsPatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Updated notification preferences. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsApprovalRequestPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    changeType?: string;
-                    payload?: Record<string, never>;
-                    requestedBy?: string;
-                    reason?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Approval request submitted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1SettingsApprovalsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Pending approvals list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1SettingsApprovalsIdApprovePost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Settings change approved and applied. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1SettingsApprovalsIdRejectPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Settings change rejected. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ContextGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All current context entries for the tenant. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    apiV1ContextPut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": Record<string, never>;
-            };
-        };
-        responses: {
-            /** @description Context upserted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid request body. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ContextKeysKeyDelete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                key: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Key removed. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Key not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ContextSnapshotGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Versioned context snapshot with tenantId, version, createdAt, snapshotAt, entries. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    apiV1ContextCollectionGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                /** @description Relationship traversal depth for graph-connected context. Values above 3 are clamped. */
-                depth?: number;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Unified collection context with schema, lineage, governance, freshness, and statistical profile. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CollectionContextResponse"];
-                };
-            };
-            /** @description Collection not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ContextCollectionLineageTrustGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Trust-formatted lineage with upstream/downstream nodes, governance tags, and compliance posture. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1ContextCollectionRagPolicyCheckPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Policy verdict including PII detection, redaction requirements, and sovereignty check. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiRagFeedbackPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    queryId?: string;
-                    resultId?: string;
-                    relevant?: boolean;
-                    correctedAnswer?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Saved feedback record with confidence adjustment. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    apiV1AiMemoryRetentionPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @default 90 */
-                    ttlDays?: number;
-                    /** @default false */
-                    archiveBeforeDelete?: boolean;
-                    exemptCollections?: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description Saved retention policy. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-        };
-    };
-    mcpV1ToolsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description MCP tool registry for agent discovery. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["McpToolRegistryResponse"];
-                };
-            };
-        };
-    };
-    mcpV1ToolsPost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["McpToolCallRequest"];
-            };
-        };
-        responses: {
-            /** @description JSON-RPC response containing tool execution output. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["McpToolCallResponse"];
-                };
-            };
-        };
-    };
-    apiV1ContextCollectionRagPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CollectionRagRequest"];
-            };
-        };
-        responses: {
-            /** @description Grounded answer and supporting semantic context. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CollectionRagResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1DataProductsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Published data products enriched with current quality status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductListResponse"];
-                };
-            };
-        };
-    };
-    apiV1DataProductsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PublishDataProductRequest"];
-            };
-        };
-        responses: {
-            /** @description Data product published successfully. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublishDataProductResponse"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1DataProductsProductIdSubscribePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["DataProductSubscriptionRequest"];
-            };
-        };
-        responses: {
-            /** @description Subscription created successfully. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DataProductSubscriptionResponse"];
-                };
-            };
-            /** @description Consumer is not allowed to subscribe to this data product */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1DataProductsProductIdSlaMonitorPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description SLA status with quality snapshot and breach detection. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1DataProductsProductIdContractCheckPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                productId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    proposedSchema?: {
-                        [key: string]: string;
-                    };
-                    proposedSla?: {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Compatibility report with breaking and non-breaking issues. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1AutonomyLevelGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Global autonomy level. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AutonomyLevelPut: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Updated autonomy level. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AutonomyDomainsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Autonomy domain state list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AutonomyDomainsDomainGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                domain: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Domain autonomy state. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AutonomyLogsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Autonomy audit log. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AutonomyPlanActionTypeGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                traceId?: string;
-            };
-            header?: never;
-            path: {
-                actionType: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Autonomy plan with impact, confidence, risk, and cost estimates. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1AutonomyFeedbackPolicyPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    domain?: string;
-                    feedbackSummary?: {
-                        accepted?: number;
-                        rejected?: number;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Updated autonomy policy with new confidence threshold and recommended level. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-        };
-    };
-    apiV1ConnectorsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ConnectionRegistrationRequest"];
-            };
-        };
-        responses: {
-            /** @description Connector registered. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid payload. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector details. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1ConnectorsConnectionIdTestPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Test result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdEnablePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector enabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdDisablePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector disabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdRotateCredentialsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Credentials rotated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdHealthGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Health status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdSchemaGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Schema. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdSyncPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sync status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1ConnectorsConnectionIdSyncStatusGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sync status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ConnectionRegistrationRequest"];
-            };
-        };
-        responses: {
-            /** @description Connector registered. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid payload. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector details. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    dataFabricConnectorsConnectionIdPut: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ConnectionRegistrationRequest"];
-            };
-        };
-        responses: {
-            /** @description Connector updated. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdDelete: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-            /** @description Connector deletion is temporarily unavailable. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdTestPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Test result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdDisablePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector disabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdEnablePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector enabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdStatisticsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Connector statistics. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricConnectorsConnectionIdSyncPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                connectionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sync status. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    dataFabricMetricsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Data fabric metrics including connector health and sync statistics. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            /** @description Connector registry not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1UserActivityRecentGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Recent activity list. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
-                };
-            };
-        };
-    };
-    apiV1UserActivityLogPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Activity logged successfully. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AgentsCatalogGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Agent catalog entries. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1AgentsCatalogIdGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Agent catalog entry. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PluginsGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Bundled plugins. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1PluginsIdGet: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Plugin details. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1PluginsIdEnablePost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Plugin enabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1PluginsIdDisablePost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Plugin disabled. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1PluginsIdUpgradePost: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Plugin hot-swapped or reloaded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            404: components["responses"]["NotFound"];
-            /** @description Plugin upgrade capability is disabled on this deployment. */
-            503: {
-                headers: {
-                    /** @description Seconds before retrying after capability enablement. */
-                    "Retry-After"?: number;
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EntitiesCollectionIdHistoryGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                asOf?: string;
-            };
-            header?: never;
-            path: {
-                /** @description Collection (table) name within the tenant's data space. */
-                collection: components["parameters"]["collectionPath"];
-                /** @description Entity UUID. */
-                id: components["parameters"]["entityIdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Point-in-time entity snapshot. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1EventsOffsetGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                offset: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Event at the requested offset. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Event"];
-                };
-            };
-            404: components["responses"]["NotFound"];
-        };
-    };
-    apiV1QueriesEstimateGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                query?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Query cost estimate. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Analytics engine not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1QueriesFederatedPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    sql: string;
-                    parameters?: {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Federated query result. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
-                };
-            };
-            /** @description Analytics engine not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1QueriesExplainPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description Query to explain */
-                    query: string;
-                    parameters?: {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Query explanation */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        queryId?: string;
-                        explanation?: {
-                            [key: string]: unknown;
-                        };
-                    };
-                };
-            };
-            /** @description Invalid query. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Analytics engine not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LineageCollectionGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                direction?: "UPSTREAM" | "DOWNSTREAM" | "BOTH";
-            };
-            header?: never;
-            path: {
-                collection: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lineage graph. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LineageDagResponse"];
-                };
-            };
-            /** @description Lineage plugin not configured. */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1LineageCollectionImpactGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                collection: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lineage impact analysis. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LineageImpactResponse"];
-                };
-            };
-            /** @description Lineage plugin not configured. */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    apiV1DataQualityTrustScoresGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Collection-level trust score snapshot. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            500: components["responses"]["InternalError"];
-        };
-    };
-    apiV1CollectionsGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of collections. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Unauthorized"];
-        };
-    };
-    apiV1CollectionsCollectionMetadataPost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                /** @description Collection name. */
-                collection: string;
-            };
-            cookie?: never;
-        };
+  healthGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Service is healthy. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+    };
+  };
+  healthDetailGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Per-subsystem health report. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            status?: "UP" | "DEGRADED" | "DOWN";
+            subsystems?: {
+              [key: string]: {
+                /** @enum {string} */
+                status?: "UP" | "DOWN" | "UNKNOWN";
+                /** Format: int64 */
+                latencyMs?: number;
+                message?: string;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+  healthDeepGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deep health status across runtime dependencies. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+    };
+  };
+  readyGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Service is ready to accept traffic. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+    };
+  };
+  liveGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Service process is alive. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+    };
+  };
+  infoGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Service name, version, description. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            service?: string;
+            version?: string;
+            description?: string;
+            /** Format: date-time */
+            timestamp?: string;
+          };
+        };
+      };
+    };
+  };
+  metricsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description JSON map of runtime metrics. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+  };
+  apiV1EntitiesCollectionGet: {
+    parameters: {
+      query?: {
         /**
-         * @description Collection metadata payload. Allowed fields include `lifecycleStatus`, `qualityScore`,
-         *     `qualityMetrics`, `retentionPolicy`, `lineage`, `operationalStatus`, `label`,
-         *     `description`, `active`, `validationSchema`, `storageProfile`, `physicalMapping`,
-         *     `schemaVersion`. `lifecycleStatus` must be one of DRAFT, PUBLISHED, DEPRECATED, ARCHIVED.
-         *     `operationalStatus` must be one of healthy, degraded, unavailable, maintenance.
-         *     `qualityScore` must be a number between 0.0 and 1.0.
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
          */
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FreeformObject"];
-            };
-        };
-        responses: {
-            /** @description Metadata upserted. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FreeformObject"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            422: components["responses"]["BadRequest"];
-        };
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: components["parameters"]["limitQuery"];
+        offset?: components["parameters"]["offsetQuery"];
+        /** @description Optional filter expression (backend-specific syntax). */
+        filter?: string;
+        /** @description Sort field, optionally prefixed with `-` for descending. */
+        sort?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
     };
-    apiV1CollectionsIdCostReportGet: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Paginated entity list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Collection storage cost report. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Analytics engine not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["EntityList"];
         };
+      };
+      400: components["responses"]["BadRequest"];
     };
-    apiV1CollectionsIdMigratePost: {
-        parameters: {
-            query?: {
-                /**
-                 * @description Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
-                 *     May alternatively be supplied as the `X-Tenant-ID` request header.
-                 */
-                tenantId?: components["parameters"]["tenantIdQuery"];
-                targetTier?: "WARM" | "COLD";
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Migration scheduled or completed. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Tier migration scheduler not configured. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  apiV1EntitiesCollectionPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
     };
+    requestBody: {
+      content: {
+        "application/json": {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Entity saved successfully. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Entity"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1EntitiesCollectionIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+        /** @description Entity UUID. */
+        id: components["parameters"]["entityIdPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Entity found. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Entity"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1EntitiesCollectionIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+        /** @description Entity UUID. */
+        id: components["parameters"]["entityIdPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Entity deleted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            deleted?: boolean;
+            /** Format: uuid */
+            id?: string;
+          };
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1EventsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: components["parameters"]["limitQuery"];
+        from?: number;
+        type?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of events. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventQueryResponse"];
+        };
+      };
+    };
+  };
+  apiV1EventsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AppendEventRequest"];
+      };
+    };
+    responses: {
+      /** @description Event appended. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AppendEventResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1AlertsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: components["parameters"]["limitQuery"];
+        offset?: components["parameters"]["offsetQuery"];
+        severity?: "critical" | "warning" | "info";
+        status?: "active" | "acknowledged" | "resolved";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertListResponse"];
+        };
+      };
+    };
+  };
+  apiV1AlertsAlertIdAcknowledgePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        alertId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert acknowledged. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Alert"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsAlertIdResolvePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        alertId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert resolved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Alert"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsIdEscalatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert escalated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Alert"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsIdAutoRemediatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Auto-remediation result (success, blocked, or suggestion). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsIdRemediatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          actionId?: string;
+          actionType?: string;
+          actor?: string;
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Remediation action applied. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsIdRemediateRollbackPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          actionId?: string;
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Remediation rolled back. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsIdRemediationsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Remediation action list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsGroupsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Correlated alert groups. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertGroupListResponse"];
+        };
+      };
+    };
+  };
+  apiV1AlertsGroupsGroupIdResolvePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        groupId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Group resolved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertGroupResolveResponse"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1AlertsSuggestionsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Resolution suggestions. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertResolutionSuggestionListResponse"];
+        };
+      };
+    };
+  };
+  apiV1AlertsSuggestionsSuggestionIdApplyPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        suggestionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Suggestion applied. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertSuggestionApplyResponse"];
+        };
+      };
+    };
+  };
+  apiV1AlertsRulesGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert rules. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertRuleListResponse"];
+        };
+      };
+    };
+  };
+  apiV1AlertsRulesPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertRule"];
+      };
+    };
+    responses: {
+      /** @description Alert rule created. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertRule"];
+        };
+      };
+    };
+  };
+  apiV1AlertsRulesRuleIdPut: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        ruleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AlertRule"];
+      };
+    };
+    responses: {
+      /** @description Alert rule updated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertRule"];
+        };
+      };
+    };
+  };
+  apiV1AlertsRulesRuleIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        ruleId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Alert rule deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AlertsStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Server-sent event stream of alert activity. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1ComplianceLegalHoldsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of legal holds. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ComplianceLegalHoldsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          reason?: string;
+          /** @default tenant-wide */
+          scope?: string;
+          collections?: string[];
+          /** Format: date-time */
+          expiresAt?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Legal hold applied. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ComplianceLegalHoldsIdExtendPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: date-time */
+          expiresAt?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Legal hold extended. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ComplianceLegalHoldsIdReleasePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Legal hold released. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ComplianceEvidencePackagePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          include?: (
+            | "inventory"
+            | "policies"
+            | "audit"
+            | "lineage"
+            | "retention"
+          )[];
+          /** Format: date-time */
+          fromDate?: string;
+          /** Format: date-time */
+          toDate?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Evidence package generated and stored. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1CompliancePostureGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Compliance posture derived from actual evidence packages, legal holds, and audit events. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SovereignProfileGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sovereign profile including air-gapped flag, data residency, model policy. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SovereignProfilePut: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Profile updated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SovereignModelsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Allowed and forbidden model lists, air-gapped status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SovereignAuditGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: components["parameters"]["limitQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Audit events for sovereign policy changes, blocked calls, and backups. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      500: components["responses"]["ServerError"];
+    };
+  };
+  apiV1SovereignBackupGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns offline backup status with integrity hash, restore points, and encrypted transport flag. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignBackupPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Triggers a backup snapshot with integrity hash and encrypted transport. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignRestorePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        /** @description Snapshot ID to restore from (defaults to latest) */
+        snapshotId?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Validates and restores from backup snapshot with integrity hash and schema version checks. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignDataSubjectControlsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns data-subject control settings including local-only processing, federated learning opt-in, data export, and retention days. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignDataSubjectControlsPut: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updates data-subject controls and returns the updated settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SovereignConformanceGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Runs conformance tests (no-network boot, offline query, audit-only event logging, encryption at rest) and returns PASS/FAIL. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1CheckpointsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: components["parameters"]["limitQuery"];
+        offset?: components["parameters"]["offsetQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Checkpoint list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckpointListResponse"];
+        };
+      };
+    };
+  };
+  apiV1CheckpointsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Checkpoint saved. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckpointSaveResponse"];
+        };
+      };
+    };
+  };
+  apiV1CheckpointsCheckpointIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        checkpointId: components["parameters"]["checkpointIdPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Checkpoint data. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Checkpoint"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1CheckpointsCheckpointIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        checkpointId: components["parameters"]["checkpointIdPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Checkpoint deleted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            deleted: boolean;
+            checkpointId: string;
+            tenantId: string;
+            /** Format: date-time */
+            timestamp: string;
+          };
+        };
+      };
+    };
+  };
+  apiV1ConformanceGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Full conformance summary including EntityStore and EventLogStore results. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ConformanceEntityStoreGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description EntityStore conformance test results (save/get, batch, query, delete, tenant isolation). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ConformanceEventLogStoreGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description EventLogStore conformance test results (append/read, batch, by type, by time range, tenant isolation). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignDataResidencyGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns data store regions and compliance against tenant policy. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SovereignValidateTransferPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Transfer validation result with allowed flag and reason. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SovereignRegionPolicyGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns allowed/blocked regions, geo-fencing, and multi-region replication status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1BrainHealthGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Brain is healthy. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Brain not wired. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1BrainConfigGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current brain config. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1BrainStatsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Brain stats. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainRuntimeStats"];
+        };
+      };
+    };
+  };
+  apiV1BrainWorkspaceGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Workspace status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainWorkspaceStatus"];
+        };
+      };
+    };
+  };
+  apiV1BrainWorkspaceStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE stream. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1BrainAttentionElevatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          id?: string;
+          content?: string;
+          reason?: string;
+          /** @default false */
+          emergency?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Elevation result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainElevationResult"];
+        };
+      };
+      /** @description Brain not wired. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1BrainAttentionThresholdsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Threshold configuration. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainAttentionThresholds"];
+        };
+      };
+    };
+  };
+  apiV1BrainAttentionThresholdsPut: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          [key: string]: number;
+        };
+      };
+    };
+    responses: {
+      /** @description Thresholds updated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainAttentionThresholdUpdateResponse"];
+        };
+      };
+    };
+  };
+  apiV1BrainPatternsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Pattern list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainPatternListResponse"];
+        };
+      };
+    };
+  };
+  apiV1BrainPatternsMatchPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Pattern match result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainPatternMatchResponse"];
+        };
+      };
+    };
+  };
+  apiV1BrainSalienceItemIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        itemId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Salience score details. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrainSalienceResponse"];
+        };
+      };
+    };
+  };
+  apiV1LearningStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE stream. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1MasteryPreviewDecisionGet: {
+    parameters: {
+      query: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        agentId: string;
+        skillId: string;
+        versionContext?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Mastery decision preview. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1MasteryPreviewRetrievalGet: {
+    parameters: {
+      query: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        agentId: string;
+        skillId: string;
+        limit?: components["parameters"]["limitQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Retrieval preview. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1MasteryLearningDeltaDryRunPromotionPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        deltaId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Promotion diagnostics. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1MasteryObsolescenceEventsProcessPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Obsolescence transition result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AnalyticsQueryPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AnalyticsSqlQueryRequest"];
+      };
+    };
+    responses: {
+      /** @description Query result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  apiV1AnalyticsQueriesQueryIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        queryId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Analytics query cancellation is not supported. */
+      501: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            error?: {
+              /** @example NOT_IMPLEMENTED */
+              code?: string;
+              /** @example Analytics query cancellation is not supported in this deployment. */
+              message?: string;
+            };
+          };
+        };
+      };
+    };
+  };
+  apiV1AnalyticsAggregationPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          collection?: string;
+          pipeline?: {
+            [key: string]: unknown;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Aggregation result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  apiV1AnalyticsQueryQueryIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        queryId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Query result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  apiV1AnalyticsQueryQueryIdPlanGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        queryId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Query execution plan. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            queryId?: string;
+            plan?: {
+              [key: string]: unknown;
+            };
+          };
+        };
+      };
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  apiV1AnalyticsExplainPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description SQL or DSL query to plan. */
+          query: string;
+          /** @description Optional bind parameters. */
+          parameters?: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Estimated query plan. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            queryId?: string;
+            queryType?: string;
+            dataSources?: string[];
+            estimatedCost?: number;
+            optimized?: boolean;
+            explain?: boolean;
+            /** Format: date-time */
+            timestamp?: string;
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  eventsStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        /** @description Start streaming from this event log offset. */
+        fromOffset?: number;
+        /** @description Comma-separated list of event types to filter (empty = all). */
+        eventType?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE stream. Each event is a JSON payload with `type` and `data` fields. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  eventsNotificationsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE stream of notifications. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1EventsNotificationsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE stream of notifications. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1EntitiesCollectionSearchGet: {
+    parameters: {
+      query: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        q: string;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of matching entities */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description OpenSearch connector not configured */
+      501: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionExportGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        format?: "csv" | "ndjson";
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Exported entity file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Export service not configured for this deployment. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionAnomaliesPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Anomaly detection results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Anomaly detector is not configured for this deployment. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AnomaliesGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        collection?: string;
+        since?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Persisted anomalies matching the supplied filter. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AnomalyQueryResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      /** @description Anomaly event store is not configured for this deployment. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionSimilarGet: {
+    parameters: {
+      query: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        id: string;
+        k?: number;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Semantic similarity matches for the requested entity. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SimilarEntitiesResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1EntitiesCollectionValidatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Validation outcome. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            valid?: boolean;
+            violations?: {
+              field?: string;
+              message?: string;
+              code?: string;
+            }[];
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      /** @description Schema validation capability is not configured for this deployment. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionValidateBatchPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          entities: {
+            [key: string]: unknown;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Per-entity validation results. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            allValid?: boolean;
+            results?: {
+              index?: number;
+              valid?: boolean;
+              violations?: {
+                field?: string;
+                message?: string;
+                code?: string;
+              }[];
+            }[];
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      /** @description Schema validation capability is not configured for this deployment. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionBatchPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Batch upsert results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionBatchDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Batch delete results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE CDC stream */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+    };
+  };
+  apiV1EntitiesCollectionQueryStreamGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        q?: string;
+        follow?: boolean;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SSE streaming query results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": string;
+        };
+      };
+      /** @description Streaming query is disabled because OpenSearch connector is not configured. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionSuggestPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Schema suggestions with AI metadata */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionInferSchemaPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Sample entity payload to infer types from */
+          sample?: Record<string, never>;
+        };
+      };
+    };
+    responses: {
+      /** @description Inferred schema with type detection, PII flags, and dedupe suggestions. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AnalyticsSuggestPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Suggested analytics queries with AI metadata. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AnalyticsSuggestResponse"];
+        };
+      };
+    };
+  };
+  apiV1AnalyticsAutomatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Automation result with recommendations and rewritten query. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Analytics automation is not yet implemented. */
+      501: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1QueryNlqPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          question: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Parsed query plan with intent, SQL draft, source selection, and cost warnings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            question?: string;
+            intent?: string;
+            sqlDraft?: string;
+            suggestedCollections?: string[];
+            timeFilter?: string;
+            costWarning?: string;
+            costLevel?: string;
+            /** Format: double */
+            confidence?: number;
+            fallback?: boolean;
+            explain?: string;
+          };
+        };
+      };
+    };
+  };
+  apiV1ReportsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ReportsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Generated report or report ID */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ReportsReportIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        reportId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report document */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1WorkflowsAnalyzeRiskPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          executionId?: string;
+          steps?: {
+            id?: string;
+            type?: string;
+            dependsOn?: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Risk analysis with proposed remediations. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1WorkflowsValidatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          steps: {
+            id?: string;
+            type?: string;
+          }[];
+          edges?: {
+            from?: string;
+            to?: string;
+          }[];
+        };
+      };
+    };
+    responses: {
+      /** @description Validation results with cycle detection, dependency checks, risk/cost estimation. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            valid?: boolean;
+            errors?: string[];
+            warnings?: string[];
+            stepCount?: number;
+            edgeCount?: number;
+            cycleCount?: number;
+            /** Format: double */
+            estimatedRisk?: number;
+            riskBand?: string;
+            estimatedCost?: number;
+            approvalRequired?: boolean;
+          };
+        };
+      };
+    };
+  };
+  apiV1GovernanceRecommendPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          collection?: string;
+          schema?: {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Governance recommendations with field classifications and compliance frameworks. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1BrainExplainPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Human-readable explanation with remediation steps */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AiContextRankPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          query?: string;
+          contexts?: Record<string, never>[];
+        };
+      };
+    };
+    responses: {
+      /** @description Context entries ranked by relevance and freshness with stale flag. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiQualityDriftDetectPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          oldContract?: {
+            [key: string]: string;
+          };
+          newContract?: {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Drift report with breaking and non-breaking changes. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1OperationsAnomalyGroupPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          anomalies?: Record<string, never>[];
+        };
+      };
+    };
+    responses: {
+      /** @description Anomaly clusters with suggested root causes. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1OperationsForecastPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          currentMetrics?: Record<string, never>;
+          history?: Record<string, never>[];
+        };
+      };
+    };
+    responses: {
+      /** @description Forecasted capacity needs and bottleneck projections. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiNextActionPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          pendingAlerts?: Record<string, never>[];
+          pendingTasks?: Record<string, never>[];
+          recentFailures?: Record<string, never>[];
+        };
+      };
+    };
+    responses: {
+      /** @description Suggested next action with urgency and rationale. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ConnectorsSuggestMappingPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          sourceSchema?: {
+            [key: string]: string;
+          };
+          targetSchema?: {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Field mapping suggestions with confidence scores. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ConnectorsConnectorIdSyncHealthPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectorId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          syncHistory?: Record<string, never>[];
+        };
+      };
+    };
+    responses: {
+      /** @description Sync health diagnosis with reliability score and issue breakdown. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiQualitySummaryGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Aggregated AI recommendation quality, fallback, and confidence telemetry. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiSuggestionsPost: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description List of AI-generated operation suggestions. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Capability not enabled for this tenant. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AiSuggestionsIdApplyPost: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Suggestion accepted and queued for manual execution. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Capability not enabled for this tenant. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Suggestion not found. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AiCorrelationsGet: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cross-surface AI correlation list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiActionsGet: {
+    parameters: {
+      query?: {
+        domain?: string;
+        limit?: number;
+      };
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AI action records. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiSuggestionsIdFeedbackPost: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          accepted?: boolean;
+          /** @enum {string} */
+          sentiment?: "positive" | "negative" | "neutral";
+          comment?: string;
+          actionType?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Feedback recorded. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1AiFeedbackGet: {
+    parameters: {
+      query?: {
+        sentiment?: string;
+        limit?: number;
+      };
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AI feedback records. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiAdvisoriesWorkflowsWorkflowIdGet: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path: {
+        workflowId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Workflow AI advisory. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Workflow not found. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1AiAdvisoriesQualityCollectionIdGet: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path: {
+        collectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quality AI advisory. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiAdvisoriesFabricCollectionIdGet: {
+    parameters: {
+      query?: never;
+      header?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        "X-Tenant-ID"?: components["parameters"]["tenantIdHeader"];
+      };
+      path: {
+        collectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AI fabric tier placement advisory for the collection. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Capability not enabled for this tenant. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Collection not found. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ModelsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of models */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ModelsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Registered model */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ModelsModelNameGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        modelName: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Model details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ModelsModelNamePromotePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        modelName: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Model promoted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1FeaturesPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Feature ingested */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1FeaturesEntityIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        entityId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Feature vector for the entity */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1VoiceIntentPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VoiceIntentRequest"];
+      };
+    };
+    responses: {
+      /** @description Intent resolution and execution result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      429: components["responses"]["TooManyRequests"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1VoiceIntentsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Complete voice intent catalog */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1VoiceIntentClassifyPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VoiceIntentClassificationRequest"];
+      };
+    };
+    responses: {
+      /** @description Classification result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernanceRetentionClassifyPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RetentionClassificationRequest"];
+      };
+    };
+    responses: {
+      /** @description Classification result with retention days and expiry */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernanceRetentionPolicyGet: {
+    parameters: {
+      query: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        collection: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Retention policy details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernanceRetentionPurgePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RetentionPurgeRequest"];
+      };
+    };
+    responses: {
+      /** @description Purge scheduled or dry-run estimation */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      403: components["responses"]["Forbidden"];
+      500: components["responses"]["InternalError"];
+      503: components["responses"]["ServiceUnavailable"];
+    };
+  };
+  apiV1GovernancePrivacyRedactPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PrivacyRedactionRequest"];
+      };
+    };
+    responses: {
+      /** @description Redaction result with list of redacted fields */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePrivacyVerifyGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Verification status for redaction and privacy controls. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePrivacyPiiFieldsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Global and tenant-specific PII field registry */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernanceComplianceSummaryGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Compliance dashboard summary */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernanceInventoryGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Governance inventory with collections, policies, holds, audit events. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of policies */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Policy created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesSimulatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Dry-run policy impact simulation result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Policy details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesIdPut: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Policy updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Policy deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1GovernancePoliciesIdTogglePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Policy toggled successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1SurfacesGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Runtime surface registry snapshot with runtime posture metadata. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: {
+              surfaces?: {
+                [key: string]: unknown;
+              };
+              generatedAt?: string;
+            };
+            meta?: {
+              requestId?: string;
+              tenantId?: string;
+              apiVersion?: string;
+            };
+          } & {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+  };
+  apiV1SurfacesSchemaGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Runtime surface registry schema. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current general settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updated general settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsSecurityGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current security settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsSecurityPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updated security settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsKeysGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description API keys list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsKeysPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description API key created. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsKeysIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description API key metadata (secret excluded). */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SettingsKeysIdRotatePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Rotated API key with one-time secret reveal. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SettingsKeysIdRevokeDelete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description API key revoked. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SettingsProfileGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current profile settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsProfilePatch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updated profile settings. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsPreferencesGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current user preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsPreferencesPatch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updated user preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsNotificationsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current notification preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsNotificationsPatch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Updated notification preferences. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsApprovalRequestPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          changeType?: string;
+          payload?: Record<string, never>;
+          requestedBy?: string;
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Approval request submitted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1SettingsApprovalsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Pending approvals list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1SettingsApprovalsIdApprovePost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Settings change approved and applied. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1SettingsApprovalsIdRejectPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Settings change rejected. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ContextGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All current context entries for the tenant. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+    };
+  };
+  apiV1ContextPut: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description Context upserted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid request body. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ContextKeysKeyDelete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Key removed. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Key not found. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ContextSnapshotGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Versioned context snapshot with tenantId, version, createdAt, snapshotAt, entries. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+    };
+  };
+  apiV1ContextCollectionGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        /** @description Relationship traversal depth for graph-connected context. Values above 3 are clamped. */
+        depth?: number;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Unified collection context with schema, lineage, governance, freshness, and statistical profile. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CollectionContextResponse"];
+        };
+      };
+      /** @description Collection not found. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ContextCollectionLineageTrustGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Trust-formatted lineage with upstream/downstream nodes, governance tags, and compliance posture. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1ContextCollectionRagPolicyCheckPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Policy verdict including PII detection, redaction requirements, and sovereignty check. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiRagFeedbackPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          queryId?: string;
+          resultId?: string;
+          relevant?: boolean;
+          correctedAnswer?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Saved feedback record with confidence adjustment. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  apiV1AiMemoryRetentionPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @default 90 */
+          ttlDays?: number;
+          /** @default false */
+          archiveBeforeDelete?: boolean;
+          exemptCollections?: string[];
+        };
+      };
+    };
+    responses: {
+      /** @description Saved retention policy. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+    };
+  };
+  mcpV1ToolsGet: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description MCP tool registry for agent discovery. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["McpToolRegistryResponse"];
+        };
+      };
+    };
+  };
+  mcpV1ToolsPost: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["McpToolCallRequest"];
+      };
+    };
+    responses: {
+      /** @description JSON-RPC response containing tool execution output. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["McpToolCallResponse"];
+        };
+      };
+    };
+  };
+  apiV1ContextCollectionRagPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CollectionRagRequest"];
+      };
+    };
+    responses: {
+      /** @description Grounded answer and supporting semantic context. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CollectionRagResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1DataProductsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Published data products enriched with current quality status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DataProductListResponse"];
+        };
+      };
+    };
+  };
+  apiV1DataProductsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PublishDataProductRequest"];
+      };
+    };
+    responses: {
+      /** @description Data product published successfully. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PublishDataProductResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1DataProductsProductIdSubscribePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["DataProductSubscriptionRequest"];
+      };
+    };
+    responses: {
+      /** @description Subscription created successfully. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DataProductSubscriptionResponse"];
+        };
+      };
+      /** @description Consumer is not allowed to subscribe to this data product */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1DataProductsProductIdSlaMonitorPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SLA status with quality snapshot and breach detection. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1DataProductsProductIdContractCheckPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        productId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          proposedSchema?: {
+            [key: string]: string;
+          };
+          proposedSla?: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Compatibility report with breaking and non-breaking issues. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ConnectorsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ConnectionRegistrationRequest"];
+      };
+    };
+    responses: {
+      /** @description Connector registered. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid payload. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector details. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1ConnectorsConnectionIdTestPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Test result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdEnablePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector enabled. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdDisablePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector disabled. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdRotateCredentialsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Credentials rotated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdHealthGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Health status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdSchemaGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Schema. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdSyncPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1ConnectorsConnectionIdSyncStatusGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ConnectionRegistrationRequest"];
+      };
+    };
+    responses: {
+      /** @description Connector registered. */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid payload. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector details. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  dataFabricConnectorsConnectionIdPut: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["ConnectionRegistrationRequest"];
+      };
+    };
+    responses: {
+      /** @description Connector updated. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdDelete: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector deleted. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      404: components["responses"]["NotFound"];
+      /** @description Connector deletion is temporarily unavailable. */
+      503: {
+        headers: {
+          /** @description Seconds before retrying after capability enablement. */
+          "Retry-After"?: number;
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdTestPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Test result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdDisablePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector disabled. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdEnablePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector enabled. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdStatisticsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Connector statistics. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricConnectorsConnectionIdSyncPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        connectionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync status. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  dataFabricMetricsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Data fabric metrics including connector health and sync statistics. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      /** @description Connector registry not available. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1UserActivityRecentGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent activity list. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          }[];
+        };
+      };
+    };
+  };
+  apiV1UserActivityLogPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Activity logged successfully. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EntitiesCollectionIdHistoryGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        asOf?: string;
+      };
+      header?: never;
+      path: {
+        /** @description Collection (table) name within the tenant's data space. */
+        collection: components["parameters"]["collectionPath"];
+        /** @description Entity UUID. */
+        id: components["parameters"]["entityIdPath"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Point-in-time entity snapshot. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1EventsOffsetGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        offset: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Event at the requested offset. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Event"];
+        };
+      };
+      404: components["responses"]["NotFound"];
+    };
+  };
+  apiV1QueriesEstimateGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        query?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Query cost estimate. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Analytics engine not available. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1QueriesFederatedPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          sql: string;
+          parameters?: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Federated query result. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AnalyticsSqlQueryResponse"];
+        };
+      };
+      /** @description Analytics engine not available. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1QueriesExplainPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Query to explain */
+          query: string;
+          parameters?: {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Query explanation */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            queryId?: string;
+            explanation?: {
+              [key: string]: unknown;
+            };
+          };
+        };
+      };
+      /** @description Invalid query. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Analytics engine not available. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1LineageCollectionGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        direction?: "UPSTREAM" | "DOWNSTREAM" | "BOTH";
+      };
+      header?: never;
+      path: {
+        collection: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lineage graph. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LineageDagResponse"];
+        };
+      };
+      /** @description Lineage plugin not configured. */
+      501: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1LineageCollectionImpactGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        collection: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Lineage impact analysis. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LineageImpactResponse"];
+        };
+      };
+      /** @description Lineage plugin not configured. */
+      501: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1DataQualityTrustScoresGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Collection-level trust score snapshot. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      500: components["responses"]["InternalError"];
+    };
+  };
+  apiV1CollectionsGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of collections. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
+    };
+  };
+  apiV1CollectionsCollectionMetadataPost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        /** @description Collection name. */
+        collection: string;
+      };
+      cookie?: never;
+    };
+    /**
+     * @description Collection metadata payload. Allowed fields include `lifecycleStatus`, `qualityScore`,
+     *     `qualityMetrics`, `retentionPolicy`, `lineage`, `operationalStatus`, `label`,
+     *     `description`, `active`, `validationSchema`, `storageProfile`, `physicalMapping`,
+     *     `schemaVersion`. `lifecycleStatus` must be one of DRAFT, PUBLISHED, DEPRECATED, ARCHIVED.
+     *     `operationalStatus` must be one of healthy, degraded, unavailable, maintenance.
+     *     `qualityScore` must be a number between 0.0 and 1.0.
+     */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FreeformObject"];
+      };
+    };
+    responses: {
+      /** @description Metadata upserted. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FreeformObject"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      422: components["responses"]["BadRequest"];
+    };
+  };
+  apiV1CollectionsIdCostReportGet: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Collection storage cost report. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Analytics engine not available. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  apiV1CollectionsIdMigratePost: {
+    parameters: {
+      query?: {
+        /**
+         * @deprecated
+         * @description **DEPRECATED as authoritative tenant source** — Compatibility hint only.
+         *
+         *     In production/staging/sovereign profiles, tenant is derived from authenticated identity.
+         *     If provided, this value must match the authenticated tenant or the request is rejected.
+         *     In local/test/embedded profiles, this may be used for convenience when authentication
+         *     does not include tenant claims.
+         */
+        tenantId?: components["parameters"]["tenantIdQuery"];
+        targetTier?: "WARM" | "COLD";
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          [key: string]: unknown;
+        };
+      };
+    };
+    responses: {
+      /** @description Migration scheduled or completed. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Tier migration scheduler not configured. */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }

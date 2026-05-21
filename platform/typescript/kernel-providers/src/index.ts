@@ -84,3 +84,13 @@ export {
   DataCloudRuntimeTruthProvider,
   type DataCloudRuntimeTruthProviderOptions,
 } from "./runtime-truth/DataCloudRuntimeTruthProvider.js";
+export {
+  KernelProviderHealthMatrixProvider,
+  type KernelProviderHealthMatrixProviderOptions,
+} from "./health/KernelProviderHealthMatrixProvider.js";
+export {
+  ProviderModeEnforcer,
+  DEFAULT_PROVIDER_MODE_ENFORCEMENT_CONFIG,
+  type ProviderModeEnforcementConfig,
+  type ProviderModeEnforcementResult,
+} from "./health/ProviderModeEnforcer.js";

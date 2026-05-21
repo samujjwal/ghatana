@@ -9,6 +9,18 @@ import {
   ProductLifecycleApprovalRef,
   ProductLifecycleApprovalRequirement,
 } from "../domain/ProductLifecyclePhase.js";
+import type {
+  RunStore,
+  RunRecord,
+  RunMetadata,
+} from "../domain/RunStore.js";
+import type {
+  ResumePolicy,
+} from "../domain/ResumePolicy.js";
+import type {
+  PhaseGraph,
+  PhaseGraphNode,
+} from "../domain/PhaseGraph.js";
 import {
   ProductLifecycleStepRunner,
   StepContext,
@@ -33,10 +45,14 @@ export interface ProductLifecycleExecutionOptions {
   eventEmitter?: KernelLifecycleEventEmitter;
   healthAggregator?: LifecycleHealthAggregator;
   providerContext?: KernelLifecycleProviderContext;
+  runStore?: RunStore;
+  resumePolicy?: ResumePolicy;
+  resumeFromRunId?: string;
 }
 
 /**
  * Product lifecycle executor - supports sequential and parallel (DAG) execution modes.
+ * Now with phase graph tracking, run store persistence, and resume policy support.
  */
 export class ProductLifecycleExecutor {
   private readonly stepRunner: ProductLifecycleStepRunner;
@@ -69,6 +85,18 @@ export class ProductLifecycleExecutor {
 
     const phaseMode = plan?.phaseMode ?? "sequential";
     const runId = plan?.runId ?? this.generateRunId();
+
+    // Check if we can resume from a previous run
+    const canResume = await this.checkCanResume(options);
+    if (options.resumeFromRunId && !canResume) {
+      // Cannot resume - will proceed with fresh execution
+    }
+
+    // Create phase graph
+    const phaseGraph = this.createPhaseGraph(productId, runId, steps, plan);
+
+    // Persist initial run record
+    await this.persistRunRecord(productId, runId, phase, "running", undefined, phaseGraph, options);
 
     // Emit lifecycle phase start event
     if (options.eventEmitter) {
@@ -234,6 +262,9 @@ export class ProductLifecycleExecutor {
         : {}),
     });
     result = manifestWrite.result;
+
+    // Persist final run record with result
+    await this.persistRunRecord(productId, runId, phase, result.status as "succeeded" | "failed" | "skipped", result, phaseGraph, options);
 
     return result;
   }
@@ -459,6 +490,137 @@ export class ProductLifecycleExecutor {
         ...(failure.cause !== undefined ? { cause: failure.cause } : {}),
       },
     };
+  }
+
+  /**
+   * Create a phase graph from the plan and steps.
+   */
+  private createPhaseGraph(
+    productId: string,
+    runId: string,
+    steps: ProductLifecycleStep[],
+    plan?: ProductLifecyclePlan,
+  ): PhaseGraph {
+    const nodes: PhaseGraphNode[] = steps.map((step) => ({
+      nodeId: step.id,
+      phase: step.phase,
+      dependsOn: step.dependsOn,
+      state: "pending" as const,
+    }));
+
+    const metadata: PhaseGraph["metadata"] | undefined = 
+      (plan?.lifecycleProfile !== undefined ||
+       plan?.providerMode !== undefined ||
+       plan?.environment !== undefined ||
+       plan?.sourceRef !== undefined ||
+       plan?.productUnitRef !== undefined)
+        ? {
+            ...(plan?.lifecycleProfile !== undefined ? { lifecycleProfile: plan.lifecycleProfile } : {}),
+            ...(plan?.providerMode !== undefined ? { providerMode: plan.providerMode } : {}),
+            ...(plan?.environment !== undefined ? { environment: plan.environment } : {}),
+            ...(plan?.sourceRef !== undefined ? { sourceRef: plan.sourceRef } : {}),
+            ...(plan?.productUnitRef !== undefined ? { productUnitRef: plan.productUnitRef } : {}),
+          }
+        : undefined;
+
+    return {
+      schemaVersion: "1.0.0",
+      productId,
+      runId,
+      ...(plan?.correlationId !== undefined ? { correlationId: plan.correlationId } : {}),
+      nodes,
+      state: "pending",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...(metadata !== undefined ? { metadata } : {}),
+    };
+  }
+
+  /**
+   * Persist a run record to the run store.
+   */
+  private async persistRunRecord(
+    productId: string,
+    runId: string,
+    phase: ProductLifecyclePhase,
+    status: "running" | "succeeded" | "failed" | "skipped" | "blocked",
+    result?: ProductLifecycleResult,
+    phaseGraph?: PhaseGraph,
+    options?: ProductLifecycleExecutionOptions,
+  ): Promise<void> {
+    const runStore = options?.runStore;
+    if (!runStore) {
+      return;
+    }
+
+    const metadata: RunMetadata = {
+      ...(options?.environment !== undefined ? { environment: options.environment } : {}),
+      ...(options?.sourceRef !== undefined ? { sourceRef: options.sourceRef } : {}),
+    };
+
+    const existingRecord = await runStore.getRun(runId);
+    const now = new Date().toISOString();
+
+    if (existingRecord) {
+      const updates: Partial<RunRecord> = {
+        status,
+        updatedAt: now,
+        ...(phaseGraph !== undefined ? { phaseGraph } : {}),
+        ...(status !== "running" && result !== undefined ? {
+          completedAt: now,
+          durationMs: Date.now() - new Date(existingRecord.startedAt).getTime(),
+          result,
+        } : {}),
+      };
+
+      await runStore.updateRun(runId, updates);
+    } else {
+      const baseRecord: Omit<RunRecord, "completedAt" | "durationMs" | "result"> = {
+        schemaVersion: "1.0.0",
+        productId,
+        runId,
+        phase,
+        status,
+        startedAt: now,
+        metadata,
+        updatedAt: now,
+        ...(phaseGraph !== undefined ? { phaseGraph } : {}),
+      };
+
+      if (status !== "running" && result !== undefined) {
+        const record: RunRecord = {
+          ...baseRecord,
+          completedAt: now,
+          durationMs: 0,
+          result,
+        };
+        await runStore.createRun(record);
+      } else {
+        await runStore.createRun(baseRecord as RunRecord);
+      }
+    }
+  }
+
+  /**
+   * Check if a run can be resumed using the resume policy.
+   */
+  private async checkCanResume(
+    options: ProductLifecycleExecutionOptions,
+  ): Promise<boolean> {
+    const runStore = options?.runStore;
+    const resumePolicy = options?.resumePolicy;
+
+    if (!runStore || !resumePolicy || !options.resumeFromRunId) {
+      return false;
+    }
+
+    const previousRun = await runStore.getRun(options.resumeFromRunId);
+    if (!previousRun || !previousRun.phaseGraph) {
+      return false;
+    }
+
+    const decision = await resumePolicy.getResumeDecision(previousRun, previousRun.phaseGraph);
+    return decision.canResume;
   }
 
   private failClosedWhenRequiredGateFailed(

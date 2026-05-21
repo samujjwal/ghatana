@@ -107,6 +107,7 @@ class SseStreamingBackpressureTest extends EventloopTestBase {
 
             HttpResponse response = runPromise(() -> handler.handleEntityCdcStream(request));
 
+            assertThat(response).isNotNull();
             verify(http).errorResponse(eq(429), anyString());
             // Must not attempt to open a real subscription when quota is exceeded
             verify(client, never()).eventLogStore();

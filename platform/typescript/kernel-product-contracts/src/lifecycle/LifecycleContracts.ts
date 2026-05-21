@@ -71,6 +71,412 @@ export type LifecycleRunStatus = (typeof LIFECYCLE_RUN_STATUSES)[number];
 export const LifecycleRunStatusSchema = z.enum(LIFECYCLE_RUN_STATUSES);
 
 // ---------------------------------------------------------------------------
+// LifecycleFailureClassifier — enhanced failure classification
+// ---------------------------------------------------------------------------
+
+/**
+ * Failure category for classification and routing.
+ */
+export const FAILURE_CATEGORIES = [
+  "config",
+  "adapter",
+  "command",
+  "gate",
+  "artifact",
+  "dependency",
+  "environment",
+  "approval",
+  "policy",
+  "security",
+  "provider",
+  "infrastructure",
+  "unknown",
+] as const;
+
+export type FailureCategory = (typeof FAILURE_CATEGORIES)[number];
+
+/**
+ * Failure severity for prioritization and alerting.
+ */
+export const FAILURE_SEVERITIES = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "info",
+] as const;
+
+export type FailureSeverity = (typeof FAILURE_SEVERITIES)[number];
+
+/**
+ * LifecycleFailureClassifier provides detailed failure classification.
+ */
+export const LifecycleFailureClassifierSchema = z.object({
+  /**
+   * High-level failure category.
+   */
+  category: z.enum(FAILURE_CATEGORIES),
+
+  /**
+   * Failure severity for prioritization.
+   */
+  severity: z.enum(FAILURE_SEVERITIES),
+
+  /**
+   * Whether the failure is retryable with the same input.
+   */
+  retryable: z.boolean(),
+
+  /**
+   * Whether the failure requires human intervention.
+   */
+  requiresHumanIntervention: z.boolean(),
+
+  /**
+   * Suggested remediation steps.
+   */
+  remediationSteps: z.array(z.string()).optional(),
+
+  /**
+   * Related failure codes for grouping.
+   */
+  relatedFailureCodes: z.array(z.string()).optional(),
+
+  /**
+   * Component or subsystem that failed.
+   */
+  component: z.string().optional(),
+
+  /**
+   * Whether this failure is a known issue with a workaround.
+   */
+  knownWorkaround: z
+    .object({
+      description: z.string(),
+      workaroundSteps: z.array(z.string()),
+    })
+    .optional(),
+});
+
+export type LifecycleFailureClassifier = z.infer<
+  typeof LifecycleFailureClassifierSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Dependency Graph
+// ---------------------------------------------------------------------------
+
+/**
+ * Node in the dependency graph.
+ */
+export const DependencyGraphNodeSchema = z.object({
+  stepId: z.string().min(1),
+  phase: z.string().min(1),
+  surface: z.string().min(1),
+  adapter: z.string().min(1),
+  status: z.enum(["pending", "running", "succeeded", "failed", "skipped"]),
+  estimatedDurationMs: z.number().int().nonnegative(),
+  actualDurationMs: z.number().int().nonnegative().optional(),
+  dependencies: z.array(z.string().min(1)),
+  dependents: z.array(z.string().min(1)),
+});
+
+export type DependencyGraphNode = z.infer<typeof DependencyGraphNodeSchema>;
+
+/**
+ * Dependency graph for plan explain output.
+ */
+export const DependencyGraphSchema = z.object({
+  nodes: z.array(DependencyGraphNodeSchema),
+  edges: z.array(
+    z.object({
+      from: z.string().min(1),
+      to: z.string().min(1),
+      type: z.enum(["depends-on", "runs-before", "provides-artifact"]),
+    }),
+  ),
+  criticalPath: z.array(z.string().min(1)).optional(),
+});
+
+export type DependencyGraph = z.infer<typeof DependencyGraphSchema>;
+
+// ---------------------------------------------------------------------------
+// Provider Checks
+// ---------------------------------------------------------------------------
+
+/**
+ * Individual provider health check result.
+ */
+export const ProviderCheckSchema = z.object({
+  providerId: z.string().min(1),
+  providerKind: z.string().min(1),
+  status: z.enum(["healthy", "degraded", "unhealthy", "unknown"]),
+  message: z.string(),
+  latencyMs: z.number().int().nonnegative().optional(),
+  checkedAt: z.string().datetime(),
+  capabilities: z.array(
+    z.object({
+      name: z.string().min(1),
+      available: z.boolean(),
+      required: z.boolean(),
+    }),
+  ),
+});
+
+export type ProviderCheck = z.infer<typeof ProviderCheckSchema>;
+
+/**
+ * Aggregate provider checks for plan explain output.
+ */
+export const ProviderChecksSchema = z.object({
+  overallStatus: z.enum(["healthy", "degraded", "unhealthy", "unknown"]),
+  totalProviders: z.number().int().nonnegative(),
+  healthyProviders: z.number().int().nonnegative(),
+  degradedProviders: z.number().int().nonnegative(),
+  unhealthyProviders: z.number().int().nonnegative(),
+  checks: z.array(ProviderCheckSchema),
+  missingCapabilities: z.array(z.string().min(1)),
+});
+
+export type ProviderChecks = z.infer<typeof ProviderChecksSchema>;
+
+// ---------------------------------------------------------------------------
+// Gate Checks
+// ---------------------------------------------------------------------------
+
+/**
+ * Individual gate check result.
+ */
+export const GateCheckSchema = z.object({
+  gateId: z.string().min(1),
+  gateKind: z.string().min(1),
+  phase: z.string().min(1),
+  status: z.enum(["pending", "passed", "failed", "skipped", "blocked"]),
+  message: z.string(),
+  evaluatedAt: z.string().datetime(),
+  policyPack: z.string().optional(),
+  required: z.boolean(),
+});
+
+export type GateCheck = z.infer<typeof GateCheckSchema>;
+
+/**
+ * Aggregate gate checks for plan explain output.
+ */
+export const GateChecksSchema = z.object({
+  overallStatus: z.enum(["passed", "failed", "blocked", "pending"]),
+  totalGates: z.number().int().nonnegative(),
+  passedGates: z.number().int().nonnegative(),
+  failedGates: z.number().int().nonnegative(),
+  blockedGates: z.number().int().nonnegative(),
+  pendingGates: z.number().int().nonnegative(),
+  checks: z.array(GateCheckSchema),
+  blockingGates: z.array(z.string().min(1)),
+});
+
+export type GateChecks = z.infer<typeof GateChecksSchema>;
+
+// ---------------------------------------------------------------------------
+// Artifact Expectations
+// ---------------------------------------------------------------------------
+
+/**
+ * Artifact expectation with validation.
+ */
+export const ArtifactExpectationSchema = z.object({
+  artifactId: z.string().min(1),
+  artifactKind: z.string().min(1),
+  required: z.boolean(),
+  expectedPath: z.string().optional(),
+  expectedFingerprint: z.string().optional(),
+  status: z.enum(["pending", "available", "missing", "invalid"]),
+  actualPath: z.string().optional(),
+  actualFingerprint: z.string().optional(),
+  validatedAt: z.string().datetime().optional(),
+  validationMessage: z.string().optional(),
+});
+
+export type ArtifactExpectation = z.infer<typeof ArtifactExpectationSchema>;
+
+/**
+ * Aggregate artifact expectations for plan explain output.
+ */
+export const ArtifactExpectationsSchema = z.object({
+  totalArtifacts: z.number().int().nonnegative(),
+  availableArtifacts: z.number().int().nonnegative(),
+  missingArtifacts: z.number().int().nonnegative(),
+  invalidArtifacts: z.number().int().nonnegative(),
+  expectations: z.array(ArtifactExpectationSchema),
+  missingRequired: z.array(z.string().min(1)),
+});
+
+export type ArtifactExpectations = z.infer<typeof ArtifactExpectationsSchema>;
+
+// ---------------------------------------------------------------------------
+// Approval Policy
+// ---------------------------------------------------------------------------
+
+/**
+ * Approval policy configuration.
+ */
+export const ApprovalPolicySchema = z.object({
+  policyId: z.string().min(1),
+  policyKind: z.enum(["manual", "automatic", "hybrid"]),
+  requiresApproval: z.boolean(),
+  approvers: z.array(z.string()).optional(),
+  approvalGroups: z.array(z.string()).optional(),
+  quorum: z.number().int().min(1).optional(),
+  timeoutMs: z.number().int().nonnegative().optional(),
+  escalationPolicy: z.string().optional(),
+});
+
+export type ApprovalPolicy = z.infer<typeof ApprovalPolicySchema>;
+
+/**
+ * Approval status for plan explain output.
+ */
+export const ApprovalStatusSchema = z.object({
+  policy: ApprovalPolicySchema,
+  status: z.enum(["pending", "approved", "rejected", "expired"]),
+  requestedAt: z.string().datetime(),
+  approvedBy: z.array(z.string()).optional(),
+  rejectedBy: z.array(z.string()).optional(),
+  rejectionReason: z.string().optional(),
+  expiresAt: z.string().datetime().optional(),
+});
+
+export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>;
+
+// ---------------------------------------------------------------------------
+// Environment Preflight
+// ---------------------------------------------------------------------------
+
+/**
+ * Environment preflight check result.
+ */
+export const EnvironmentPreflightCheckSchema = z.object({
+  checkId: z.string().min(1),
+  checkKind: z.string().min(1),
+  status: z.enum(["passed", "failed", "warning", "skipped"]),
+  message: z.string(),
+  checkedAt: z.string().datetime(),
+  severity: z.enum(["critical", "high", "medium", "low"]).optional(),
+  remediation: z.string().optional(),
+});
+
+export type EnvironmentPreflightCheck = z.infer<
+  typeof EnvironmentPreflightCheckSchema
+>;
+
+/**
+ * Aggregate environment preflight for plan explain output.
+ */
+export const EnvironmentPreflightSchema = z.object({
+  environmentName: z.string().min(1),
+  environmentTarget: z.string().min(1),
+  overallStatus: z.enum(["ready", "not-ready", "degraded", "unknown"]),
+  totalChecks: z.number().int().nonnegative(),
+  passedChecks: z.number().int().nonnegative(),
+  failedChecks: z.number().int().nonnegative(),
+  warningChecks: z.number().int().nonnegative(),
+  checks: z.array(EnvironmentPreflightCheckSchema),
+  blockingIssues: z.array(z.string().min(1)),
+  variables: z.record(z.string(), z.string()).optional(),
+});
+
+export type EnvironmentPreflight = z.infer<typeof EnvironmentPreflightSchema>;
+
+// ---------------------------------------------------------------------------
+// PlanExplain — enhanced plan explain output
+// ---------------------------------------------------------------------------
+
+/**
+ * PlanExplain provides detailed explanation of a lifecycle plan including
+ * dependency graph, provider health, gate status, artifact expectations,
+ * approval policy, and environment preflight.
+ */
+export const PlanExplainSchema = z.object({
+  schemaVersion: z.literal("1.0.0"),
+  runId: z.string().min(1),
+  correlationId: z.string().min(1),
+  productUnitId: z.string().min(1),
+  phase: z.string().min(1),
+  environment: z.string().optional(),
+  lifecycleProfile: z.string().min(1),
+  generatedAt: z.string().datetime(),
+
+  /**
+   * Dependency graph showing step relationships.
+   */
+  dependencyGraph: DependencyGraphSchema,
+
+  /**
+   * Provider health checks.
+   */
+  providerChecks: ProviderChecksSchema,
+
+  /**
+   * Gate evaluation results.
+   */
+  gateChecks: GateChecksSchema,
+
+  /**
+   * Artifact expectations and validation.
+   */
+  artifactExpectations: ArtifactExpectationsSchema,
+
+  /**
+   * Approval policy and status.
+   */
+  approvalPolicy: ApprovalPolicySchema.optional(),
+
+  /**
+   * Approval status if approval is required.
+   */
+  approvalStatus: ApprovalStatusSchema.optional(),
+
+  /**
+   * Environment preflight checks.
+   */
+  environmentPreflight: EnvironmentPreflightSchema.optional(),
+
+  /**
+   * Overall execution readiness.
+   */
+  overallReadiness: z.enum(["ready", "not-ready", "degraded", "unknown"]),
+
+  /**
+   * Blocking reasons if not ready.
+   */
+  blockingReasons: z.array(z.string()).optional(),
+
+  /**
+   * Estimated total duration.
+   */
+  estimatedTotalDurationMs: z.number().int().nonnegative(),
+
+  /**
+   * Warnings that don't block execution.
+   */
+  warnings: z.array(z.string()).optional(),
+});
+
+export type PlanExplain = z.infer<typeof PlanExplainSchema>;
+
+export function parsePlanExplain(input: unknown): PlanExplain {
+  return PlanExplainSchema.parse(input);
+}
+
+export function isPlanExplain(value: unknown): value is PlanExplain {
+  try {
+    PlanExplainSchema.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // LifecycleProfile
 // ---------------------------------------------------------------------------
 

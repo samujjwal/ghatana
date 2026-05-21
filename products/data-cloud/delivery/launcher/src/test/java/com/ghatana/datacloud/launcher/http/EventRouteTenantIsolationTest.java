@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * DC-SEC-001: Tenant isolation tests for event routes.
  *
@@ -43,7 +45,7 @@ class EventRouteTenantIsolationTest extends TenantIsolationTestBase {
                 return HttpRequest.post("http://localhost" + p)
                     .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                     .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                    .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes())
+                    .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes(StandardCharsets.UTF_8))
                     .build();
             };
 
@@ -59,7 +61,7 @@ class EventRouteTenantIsolationTest extends TenantIsolationTestBase {
                 return HttpRequest.post("http://localhost" + p)
                     .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                     .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                    .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes())
+                    .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes(StandardCharsets.UTF_8))
                     .build();
             };
 
@@ -76,7 +78,7 @@ class EventRouteTenantIsolationTest extends TenantIsolationTestBase {
                 public HttpRequest build(TestTenantContext context, String p) {
                     return HttpRequest.post("http://localhost" + p)
                         .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
-                        .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes())
+                        .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes(StandardCharsets.UTF_8))
                         .build();
                 }
 
@@ -84,7 +86,7 @@ class EventRouteTenantIsolationTest extends TenantIsolationTestBase {
                 public HttpRequest buildWithoutTenant(String p) {
                     return HttpRequest.post("http://localhost" + p)
                         .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + VALID_TOKEN_A)
-                        .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes())
+                        .withBody("{\"type\":\"test\",\"data\":\"{\\\"key\\\":\\\"value\\\"}\"}".getBytes(StandardCharsets.UTF_8))
                         .build();
                 }
             };

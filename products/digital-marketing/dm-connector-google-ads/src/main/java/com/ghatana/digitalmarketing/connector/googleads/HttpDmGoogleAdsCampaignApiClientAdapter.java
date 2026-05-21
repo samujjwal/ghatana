@@ -1,10 +1,11 @@
 package com.ghatana.digitalmarketing.connector.googleads;
 
+import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
+import io.activej.promise.Promise;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
-import io.activej.promise.Promise;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -117,6 +118,54 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
         return Promise.ofBlocking(blockingExecutor, () -> doPauseCampaign(accessToken, externalCampaignId));
     }
 
+    @Override
+    public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+        return Promise.ofBlocking(blockingExecutor, () -> doCheckReadiness(accessToken));
+    }
+
+    private GoogleAdsConnectorReadinessState doCheckReadiness(String accessToken) {
+        // Check if required configuration is present
+        if (developerToken == null || developerToken.isBlank()) {
+            return GoogleAdsConnectorReadinessState.NOT_READY;
+        }
+        if (customerId == null || customerId.isBlank()) {
+            return GoogleAdsConnectorReadinessState.NOT_READY;
+        }
+        if (accessToken == null || accessToken.isBlank()) {
+            return GoogleAdsConnectorReadinessState.AUTH_FAILED;
+        }
+
+        // Check if API URL is accessible
+        try {
+            String url = apiBaseUrl + "/" + API_VERSION + "/customers/" + customerId;
+            Request httpRequest = new Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer " + accessToken)
+                .addHeader("developer-token", developerToken)
+                .get()
+                .build();
+
+            try (Response response = httpClient.newCall(httpRequest).execute()) {
+                int status = response.code();
+                if (status == 401 || status == 403) {
+                    return GoogleAdsConnectorReadinessState.AUTH_FAILED;
+                }
+                if (status == 429) {
+                    return GoogleAdsConnectorReadinessState.RATE_LIMITED;
+                }
+                if (status >= 500) {
+                    return GoogleAdsConnectorReadinessState.NOT_READY;
+                }
+                if (status == 200) {
+                    return GoogleAdsConnectorReadinessState.READY;
+                }
+                return GoogleAdsConnectorReadinessState.NOT_READY;
+            }
+        } catch (IOException e) {
+            return GoogleAdsConnectorReadinessState.NOT_READY;
+        }
+    }
+
     private String doPauseCampaign(String accessToken, String externalCampaignId) throws Exception {
         GoogleAdsPauseRequestJson payload = new GoogleAdsPauseRequestJson(externalCampaignId);
         byte[] bodyBytes = objectMapper.writeValueAsBytes(payload);
@@ -176,6 +225,10 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
                 throw new GoogleAdsConnectorException("Campaign creation returned empty resourceName");
             }
             return json.resourceName();
+        } catch (GoogleAdsConnectorException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GoogleAdsConnectorException("Campaign creation failed: " + e.getMessage(), e);
         }
     }
 

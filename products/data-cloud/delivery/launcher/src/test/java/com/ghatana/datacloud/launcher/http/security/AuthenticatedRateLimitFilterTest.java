@@ -6,8 +6,6 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -96,7 +94,7 @@ class AuthenticatedRateLimitFilterTest {
         // Note: Full tenant-based rate limiting is tested in integration tests
         // with proper security filter integration. This test validates
         // the filter is configured correctly.
-        assertTrue(filter != null);
+        assertNotNull(servlet);
     }
 
     @Test
@@ -169,6 +167,7 @@ class AuthenticatedRateLimitFilterTest {
 
         // Then response has JSON content type
         String contentType = blocked.getHeader(HttpHeaders.CONTENT_TYPE);
+        assertNotNull(contentType);
         assertTrue(contentType.contains("json"), "Response should be JSON");
     }
 
@@ -176,7 +175,6 @@ class AuthenticatedRateLimitFilterTest {
     @DisplayName("Extracts client IP from X-Forwarded-For header")
     void extractsIpFromXForwardedFor() throws Exception {
         // Given filter
-        AtomicInteger capturedIp = new AtomicInteger(0);
         AuthenticatedRateLimitFilter filter = AuthenticatedRateLimitFilter.builder()
             .withIpRateLimit(1, 60_000)
             .build();

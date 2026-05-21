@@ -428,6 +428,7 @@ class ConnectorLifecycleTest extends EventloopTestBase {
 
             HttpResponse response = runPromise(() -> handler.handleEnableConnection(request));
 
+            assertThat(response).isNotNull();
             // Response structure changed - skip assertions for now
             // assertThat(response.getCode()).isEqualTo(200);
             // Map<String, Object> body = parseBody(response);

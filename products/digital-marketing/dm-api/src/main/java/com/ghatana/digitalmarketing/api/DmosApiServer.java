@@ -21,6 +21,7 @@ import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
+import com.ghatana.digitalmarketing.domain.campaign.CampaignTransitionService;
 import com.ghatana.digitalmarketing.api.security.DmosJwtIdentityProvider;
 import com.ghatana.digitalmarketing.bridge.CampaignEventSourcingAdapter;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
@@ -52,6 +53,7 @@ import com.ghatana.platform.types.identity.Offset;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
 import com.ghatana.digitalmarketing.bridge.DmosRiskEvaluatorRegistrar;
+import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
 import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
 import com.ghatana.digitalmarketing.connector.googleads.InMemoryDmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.infra.ProductionProfileGuard;
@@ -634,6 +636,11 @@ public final class DmosApiServer extends Launcher {
                 public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
                     return Promise.ofException(new IllegalStateException("Google Ads connector is disabled in production"));
                 }
+
+                @Override
+                public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+                    return Promise.of(GoogleAdsConnectorReadinessState.ENVIRONMENT_BLOCKED);
+                }
             };
         } else {
             // Dev/test uses an in-memory connector until credentials are configured.
@@ -938,6 +945,8 @@ public final class DmosApiServer extends Launcher {
 
         CampaignEventSourcingAdapter eventSourcingAdapter = new CampaignEventSourcingAdapter(eventLogStore);
 
+        CampaignTransitionService transitionService = new CampaignTransitionService();
+
         CampaignService campaignService = new CampaignServiceImpl(
             kernelAdapter,
             campaignRepo,
@@ -947,7 +956,8 @@ public final class DmosApiServer extends Launcher {
             killSwitchService,
             commandService,
             new ObjectMapper(),
-            eventSourcingAdapter
+            eventSourcingAdapter,
+            transitionService
         );
         register(CampaignService.class, campaignService);
 

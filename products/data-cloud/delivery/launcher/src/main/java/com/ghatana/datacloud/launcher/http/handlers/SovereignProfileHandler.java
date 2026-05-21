@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.record.DataRecord;
@@ -151,7 +152,7 @@ public class SovereignProfileHandler {
                     "updatedAt", profile.get("updatedAt"),
                     "requestId", requestId
                 ), requestId));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
         });
@@ -206,7 +207,6 @@ public class SovereignProfileHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
         String requestId = http.resolveCorrelationId(request);
-        int limit = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 50);
 
         if (client == null) {
             return Promise.of(http.jsonResponse(Map.of(
@@ -400,7 +400,7 @@ public class SovereignProfileHandler {
                 controls.put("requestId", requestId);
 
                 return Promise.of(http.jsonResponse(controls, requestId));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
         });
@@ -524,7 +524,7 @@ public class SovereignProfileHandler {
                 result.put("requestId", requestId);
 
                 return Promise.of(http.jsonResponse(result, requestId));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
         });

@@ -7,6 +7,8 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
 } from '../ToolchainAdapter.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
@@ -17,6 +19,10 @@ import {
   truncateToolchainOutput,
   TOOLCHAIN_OUTPUT_LIMIT_BYTES,
 } from '../execution/ToolchainExecutionResultFactory.js';
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
+} from '../ToolchainAdapter.js';
 
 const XCODE_APP_PATTERN = /BUILD_DIR\s*=\s*(.+)/;
 const XCODE_ARCHIVE_PATTERN = /Archive\s+Succeeded\s+\((.+\.xcarchive)\)/;
@@ -192,6 +198,14 @@ export class XcodeIosAdapter implements ToolchainAdapter {
       missingArtifacts: missing,
       unexpectedArtifacts: [],
     };
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    return createDefaultPreflightResult();
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   private extractArtifactPaths(stdout: string): string[] {

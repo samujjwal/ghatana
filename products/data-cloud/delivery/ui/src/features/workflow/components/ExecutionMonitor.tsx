@@ -96,7 +96,7 @@ function getTenantId(): string {
 }
 
 async function fetchExecutionState(executionId: string): Promise<ExecutionState> {
-  const response = await fetch(`/api/v1/executions/${executionId}`, {
+  const response = await fetch(`/api/v1/action/executions/${executionId}`, {
     headers: { 'X-Tenant-ID': getTenantId() },
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -104,7 +104,7 @@ async function fetchExecutionState(executionId: string): Promise<ExecutionState>
 }
 
 async function fetchExecutionLogs(executionId: string): Promise<LogEntry[]> {
-  const response = await fetch(`/api/v1/executions/${executionId}/logs`, {
+  const response = await fetch(`/api/v1/action/executions/${executionId}/logs`, {
     headers: { 'X-Tenant-ID': getTenantId() },
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);

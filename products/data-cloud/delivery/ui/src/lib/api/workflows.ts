@@ -1,7 +1,7 @@
 /**
  * Pipelines API
  *
- * Routes backed by /api/v1/pipelines (Option A,
+ * Routes backed by /api/v1/action/pipelines.
  * DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 2).
  * The backend pipeline registry is the source of truth for workflow/pipeline
  * definitions.  Raw responses are transformed to the Workflow UI type via
@@ -194,14 +194,14 @@ export interface WorkflowQueryParams {
 /**
  * Pipelines API
  *
- * All CRUD routes delegate to /api/v1/pipelines (the real backend pipeline
+ * All CRUD routes delegate to /api/v1/action/pipelines (the real backend pipeline
  * registry). Execution and reporting now flow through Data Cloud runtime
  * plugins exposed by the launcher API.
  */
 export const workflowsApi = {
   /**
    * List all workflows (pipelines).
-   * GET /api/v1/pipelines
+   * GET /api/v1/action/pipelines
    */
   list: async (
     params?: WorkflowQueryParams,
@@ -209,7 +209,7 @@ export const workflowsApi = {
     const limit = params?.pageSize ?? 50;
     // DC-UX-018: Pass all supported filter/sort params to the backend instead of silently dropping them
     const rawResponse = await apiClient.get<BackendPipelineListResponse>(
-      "/pipelines",
+      "/action/pipelines",
       {
         params: {
           limit,
@@ -235,11 +235,11 @@ export const workflowsApi = {
 
   /**
    * Get workflow (pipeline) by ID.
-   * GET /api/v1/pipelines/:pipelineId
+   * GET /api/v1/action/pipelines/:pipelineId
    */
   get: async (id: string): Promise<Workflow> => {
     const rawResponse = await apiClient.get<BackendPipeline>(
-      `/pipelines/${id}`,
+      `/action/pipelines/${id}`,
     );
     const raw = PipelineSchema.parse(rawResponse);
     return pipelineToWorkflow(raw);
@@ -247,7 +247,7 @@ export const workflowsApi = {
 
   /**
    * Create new pipeline.
-   * POST /api/v1/pipelines
+   * POST /api/v1/action/pipelines
    */
   create: async (data: CreateWorkflowDto): Promise<Workflow> => {
     const request = PipelineMutationRequestSchema.parse(
@@ -256,14 +256,14 @@ export const workflowsApi = {
     const rawResponse = await apiClient.post<
       BackendPipeline,
       PipelineMutationRequest
-    >("/pipelines", request);
+    >("/action/pipelines", request);
     const raw = PipelineSchema.parse(rawResponse);
     return pipelineToWorkflow(raw);
   },
 
   /**
    * Update workflow (pipeline).
-   * PUT /api/v1/pipelines/:pipelineId
+   * PUT /api/v1/action/pipelines/:pipelineId
    */
   update: async (id: string, data: UpdateWorkflowDto): Promise<Workflow> => {
     const request = PipelineMutationRequestSchema.parse(
@@ -272,22 +272,22 @@ export const workflowsApi = {
     const rawResponse = await apiClient.put<
       BackendPipeline,
       PipelineMutationRequest
-    >(`/pipelines/${id}`, request);
+    >(`/action/pipelines/${id}`, request);
     const raw = PipelineSchema.parse(rawResponse);
     return pipelineToWorkflow(raw);
   },
 
   /**
    * Delete workflow (pipeline).
-   * DELETE /api/v1/pipelines/:pipelineId
+   * DELETE /api/v1/action/pipelines/:pipelineId
    */
   delete: async (id: string): Promise<void> => {
-    return apiClient.delete(`/pipelines/${id}`);
+    return apiClient.delete(`/action/pipelines/${id}`);
   },
 
   /**
    * Execute workflow.
-   * POST /api/v1/pipelines/:pipelineId/execute
+   * POST /api/v1/action/pipelines/:pipelineId/execute
    */
   execute: async (
     id: string,
@@ -296,7 +296,7 @@ export const workflowsApi = {
     const rawResponse = await apiClient.post<
       BackendExecution,
       Record<string, unknown>
-    >(`/pipelines/${id}/execute`, params ?? {});
+    >(`/action/pipelines/${id}/execute`, params ?? {});
     const raw = ExecutionSchema.parse({
       ...rawResponse,
       id:
@@ -310,7 +310,7 @@ export const workflowsApi = {
 
   /**
    * Get workflow executions.
-   * GET /api/v1/pipelines/:pipelineId/executions
+   * GET /api/v1/action/pipelines/:pipelineId/executions
    */
   getExecutions: async (
     _id: string,
@@ -322,7 +322,7 @@ export const workflowsApi = {
   ): Promise<PaginatedResponse<WorkflowExecution>> => {
     const rawResponse = await apiClient.get<
       PaginatedResponse<BackendExecution>
-    >(`/pipelines/${_id}/executions`, {
+    >(`/action/pipelines/${_id}/executions`, {
       params: _params,
     });
     return {
@@ -338,28 +338,28 @@ export const workflowsApi = {
 
   /**
    * Get execution by ID.
-   * GET /api/v1/pipelines/:pipelineId/executions/:executionId
+   * GET /api/v1/action/pipelines/:pipelineId/executions/:executionId
    */
   getExecution: async (
     _workflowId: string,
     _executionId: string,
   ): Promise<WorkflowExecution> => {
     const rawResponse = await apiClient.get<BackendExecution>(
-      `/pipelines/${_workflowId}/executions/${_executionId}`,
+      `/action/pipelines/${_workflowId}/executions/${_executionId}`,
     );
     return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
   },
 
   /**
    * Cancel execution.
-   * POST /api/v1/pipelines/:pipelineId/executions/:executionId/cancel
+   * POST /api/v1/action/pipelines/:pipelineId/executions/:executionId/cancel
    */
   cancelExecution: async (
     _workflowId: string,
     _executionId: string,
   ): Promise<WorkflowExecution> => {
     const rawResponse = await apiClient.post<BackendExecution>(
-      `/pipelines/${_workflowId}/executions/${_executionId}/cancel`,
+      `/action/pipelines/${_workflowId}/executions/${_executionId}/cancel`,
       {},
     );
     return executionToWorkflowExecution(ExecutionSchema.parse(rawResponse));
@@ -367,25 +367,25 @@ export const workflowsApi = {
 
   /**
    * Activate workflow — updates pipeline status to 'active'.
-   * PUT /api/v1/pipelines/:pipelineId
+   * PUT /api/v1/action/pipelines/:pipelineId
    */
   activate: async (id: string): Promise<Workflow> => {
     const raw = await apiClient.put<
       BackendPipeline,
       Partial<UpdateWorkflowDto>
-    >(`/pipelines/${id}`, { status: "active" });
+    >(`/action/pipelines/${id}`, { status: "active" });
     return pipelineToWorkflow(raw);
   },
 
   /**
    * Deactivate workflow — updates pipeline status to 'paused'.
-   * PUT /api/v1/pipelines/:pipelineId
+   * PUT /api/v1/action/pipelines/:pipelineId
    */
   deactivate: async (id: string): Promise<Workflow> => {
     const raw = await apiClient.put<
       BackendPipeline,
       Partial<UpdateWorkflowDto>
-    >(`/pipelines/${id}`, { status: "paused" });
+    >(`/action/pipelines/${id}`, { status: "paused" });
     return pipelineToWorkflow(raw);
   },
 };

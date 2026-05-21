@@ -22,4 +22,10 @@ public final class InMemoryDmGoogleAdsCampaignApiClient implements DmGoogleAdsCa
     public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
         return Promise.of("PAUSED:" + externalCampaignId);
     }
+
+    @Override
+    public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+        // In-memory implementation always returns NOT_READY since it doesn't have real credentials
+        return Promise.of(GoogleAdsConnectorReadinessState.NOT_READY);
+    }
 }

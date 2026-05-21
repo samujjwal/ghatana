@@ -97,6 +97,7 @@ export * from "./molecules/UsageStatsCard";
 export * from "./molecules/PolicyCard";
 export * from "./molecules/PermissionBanner";
 export * from "./molecules/ReviewRequiredBanner";
+export * from "./molecules/StatusBadge";
 export { ResponsiveTable } from "./molecules/ResponsiveTable/ResponsiveTable";
 export type { ResponsiveTableProps } from "./molecules/ResponsiveTable/ResponsiveTable";
 export * from "./atoms/ResponsiveImage/ResponsiveImage";

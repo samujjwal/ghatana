@@ -18,6 +18,7 @@ import type {
   RuntimeStatus,
   ConsoleLog,
   ThemeConfig,
+  PreviewExecutionMode,
 } from './preview-protocol.js';
 
 /**
@@ -396,9 +397,17 @@ export class InMemoryPreviewRuntime implements PreviewRuntime {
       const sourceFile = parsePreviewSource(request.source);
       assertPreviewPolicy(sourceFile);
 
+      const executionMode: PreviewExecutionMode = request.executionMode ?? 'safe-static';
       const html = renderStaticPreviewHtml(sourceFile, request);
       this.consoleCapture.stop();
-      const logs = collectStaticConsoleLogs(sourceFile);
+      const logs = [
+        ...collectStaticConsoleLogs(sourceFile),
+        {
+          level: 'info' as const,
+          message: `preview execution mode: ${executionMode}`,
+          timestamp: Date.now(),
+        },
+      ];
       const duration = Math.max(1, Date.now() - startTime);
 
       return {
@@ -437,13 +446,14 @@ export class InMemoryPreviewRuntime implements PreviewRuntime {
    */
   private wrapInDocumentShell(html: string, request: PreviewRequest): string {
     const themeMode = request.theme?.mode ?? 'light';
+    const executionMode: PreviewExecutionMode = request.executionMode ?? 'safe-static';
     const themeStyles = this.generateThemeStyles(request.theme);
 
     const sandbox = this.generateSandboxAttribute(request);
     const csp = request.securityPolicy?.contentSecurityPolicy;
 
     return `<!DOCTYPE html>
-<html lang="en" data-theme="${themeMode}">
+<html lang="en" data-theme="${themeMode}" data-preview-mode="${executionMode}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />

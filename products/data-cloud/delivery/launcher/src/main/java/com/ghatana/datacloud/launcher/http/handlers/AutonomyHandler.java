@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
 import com.ghatana.platform.security.annotation.RequiresRole;
@@ -384,7 +385,7 @@ public final class AutonomyHandler {
                     domain, tenantId, newLevel, newConfidenceThreshold, newApprovalRequired);
 
                 return Promise.of(http.jsonResponse(update));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid feedback policy payload: " + e.getMessage()));
             }
         });

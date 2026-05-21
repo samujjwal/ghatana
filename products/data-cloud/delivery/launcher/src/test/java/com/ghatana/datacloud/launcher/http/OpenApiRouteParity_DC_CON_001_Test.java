@@ -48,15 +48,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OpenApiRouteParity_DC_CON_001_Test {
 
     /**
-     * Relative path from the repo root to the OpenAPI contract file.
+     * Relative paths from the repo root to the OpenAPI contract files owned by this router.
      */
-    private static final String OPENAPI_FILE = "products/data-cloud/contracts/openapi/data-cloud.yaml";
+    private static final List<String> OPENAPI_FILES = List.of(
+            "products/data-cloud/contracts/openapi/data-cloud.yaml",
+            "products/data-cloud/contracts/openapi/action-plane.yaml"
+    );
 
     /**
      * Relative path from the repo root to the router builder source file.
      */
     private static final String ROUTER_FILE =
             "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java";
+    private static final String ROUTE_COMPATIBILITY_REGISTRY =
+            "products/data-cloud/contracts/openapi/route-compatibility-registry.yaml";
 
     /**
      * Routes that exist in the router but intentionally have no OpenAPI path.
@@ -94,55 +99,8 @@ class OpenApiRouteParity_DC_CON_001_Test {
      */
     private static final Pattern OPENAPI_PATH_PATTERN =
             Pattern.compile("^  (/[^:]+):$");
-
-    /**
-     * DC-P1-03: Action Plane routes that are registered under both legacy and canonical paths.
-     * These routes should NOT be normalized - they are distinct route registrations.
-     */
-    private static final Set<String> ACTION_PLANE_ROUTES = Set.of(
-        "/api/v1/action/pipelines",
-        "/api/v1/action/pipelines/:pipelineId",
-        "/api/v1/action/pipelines/:pipelineId/execute",
-        "/api/v1/action/pipelines/:pipelineId/executions",
-        "/api/v1/action/pipelines/:pipelineId/executions/:executionId",
-        "/api/v1/action/pipelines/:pipelineId/executions/:executionId/logs",
-        "/api/v1/action/pipelines/:pipelineId/executions/:executionId/cancel",
-        "/api/v1/action/executions/:executionId",
-        "/api/v1/action/executions/:executionId/logs",
-        "/api/v1/action/executions/:executionId/cancel",
-        "/api/v1/action/executions/:executionId/retry",
-        "/api/v1/action/executions/:executionId/rollback",
-        "/api/v1/action/executions/:executionId/checkpoints",
-        "/api/v1/action/executions/:executionId/restore",
-        "/api/v1/action/memory",
-        "/api/v1/action/memory/:agentId",
-        "/api/v1/action/memory/:agentId/:tier",
-        "/api/v1/action/memory/:agentId/search",
-        "/api/v1/action/memory/:agentId/:memoryId",
-        "/api/v1/action/memory/:agentId/:memoryId/retain",
-        "/api/v1/action/learning/trigger",
-        "/api/v1/action/learning/status",
-        "/api/v1/action/learning/review",
-        "/api/v1/action/learning/review/:reviewId/approve",
-        "/api/v1/action/learning/review/:reviewId/reject",
-        "/api/v1/action/autonomy/level",
-        "/api/v1/action/autonomy/domains",
-        "/api/v1/action/autonomy/domains/:domain",
-        "/api/v1/action/autonomy/logs",
-        "/api/v1/action/autonomy/plan/:actionType",
-        "/api/v1/action/autonomy/feedback-policy",
-        "/api/v1/action/plugins",
-        "/api/v1/action/plugins/:id",
-        "/api/v1/action/plugins/:id/enable",
-        "/api/v1/action/plugins/:id/disable",
-        "/api/v1/action/plugins/:id/upgrade",
-        "/api/v1/action/plugins/marketplace",
-        "/api/v1/action/plugins/:id/sandbox",
-        "/api/v1/action/plugins/:id/validate",
-        "/api/v1/action/plugins/:id/conformance",
-        "/api/v1/action/agents/catalog",
-        "/api/v1/action/agents/catalog/:id"
-    );
+    private static final Pattern COMPATIBILITY_PATH_PATTERN =
+            Pattern.compile("^\\s*- path: \"([^\"]+)\"");
 
     @Test
     @DisplayName("every OpenAPI path has a matching runtime route")
@@ -170,6 +128,7 @@ class OpenApiRouteParity_DC_CON_001_Test {
     void everyRuntimeRouteHasAMatchingOpenApiPath() throws IOException {
         Set<String> openApiPaths = extractOpenApiPaths();
         Set<String> routerRoutes = extractRouterRoutes();
+        Set<String> compatibilityPaths = extractCompatibilityPaths();
 
         List<String> undocumented = new ArrayList<>();
         for (String route : routerRoutes) {
@@ -178,13 +137,16 @@ class OpenApiRouteParity_DC_CON_001_Test {
             }
             // Extract just the path part (strip METHOD prefix)
             String path = route.contains(" ") ? route.substring(route.indexOf(' ') + 1) : route;
+            if (compatibilityPaths.contains(path)) {
+                continue;
+            }
             if (!openApiPaths.contains(path)) {
                 undocumented.add(route);
             }
         }
 
         assertThat(undocumented)
-                .as("Runtime routes with no matching OpenAPI path — document them in data-cloud.yaml or add to RUNTIME_ONLY_ROUTES")
+                .as("Runtime routes with no matching OpenAPI path — document them in the owning OpenAPI file or add to RUNTIME_ONLY_ROUTES")
                 .isEmpty();
     }
 
@@ -192,11 +154,18 @@ class OpenApiRouteParity_DC_CON_001_Test {
     @DisplayName("OpenAPI path count and router route count are within acceptable bounds")
     void routeCounts_areWithinAcceptableBounds() throws IOException {
         Set<String> openApiPaths = extractOpenApiPaths();
+        Set<String> dataOpenApiPaths = extractOpenApiPathsFrom("products/data-cloud/contracts/openapi/data-cloud.yaml");
+        Set<String> compatibilityPaths = extractCompatibilityPaths();
         Set<String> routerPaths = extractRouterPaths();
+        Set<String> compatibilityPathsInDataSpec = new TreeSet<>(dataOpenApiPaths);
+        compatibilityPathsInDataSpec.retainAll(compatibilityPaths);
 
         // Neither set should be empty — guard against file-read failures
         assertThat(openApiPaths).as("OpenAPI paths should be non-empty").isNotEmpty();
         assertThat(routerPaths).as("Router paths should be non-empty").isNotEmpty();
+        assertThat(compatibilityPathsInDataSpec)
+                .as("Legacy Action compatibility paths belong in route-compatibility-registry.yaml/aep.yaml, not data-cloud.yaml")
+                .isEmpty();
 
         // OpenAPI path count should be at least 100 (sanity guard against truncated file)
         assertThat(openApiPaths.size())
@@ -330,13 +299,33 @@ class OpenApiRouteParity_DC_CON_001_Test {
      * Reads the OpenAPI YAML file and extracts all path keys, normalized to colon-param style.
      */
     private Set<String> extractOpenApiPaths() throws IOException {
-        Path yamlFile = resolveFromRepoRoot(OPENAPI_FILE);
+        Set<String> paths = new TreeSet<>();
+        for (String openApiFile : OPENAPI_FILES) {
+            paths.addAll(extractOpenApiPathsFrom(openApiFile));
+        }
+        return paths;
+    }
+
+    private Set<String> extractOpenApiPathsFrom(String openApiFile) throws IOException {
+        Path yamlFile = resolveFromRepoRoot(openApiFile);
         Set<String> paths = new TreeSet<>();
         for (String line : Files.readAllLines(yamlFile)) {
             Matcher m = OPENAPI_PATH_PATTERN.matcher(line);
             if (m.matches()) {
                 String path = m.group(1).trim();
                 paths.add(normalizeToColonStyle(path));
+            }
+        }
+        return paths;
+    }
+
+    private Set<String> extractCompatibilityPaths() throws IOException {
+        Path yamlFile = resolveFromRepoRoot(ROUTE_COMPATIBILITY_REGISTRY);
+        Set<String> paths = new TreeSet<>();
+        for (String line : Files.readAllLines(yamlFile)) {
+            Matcher m = COMPATIBILITY_PATH_PATTERN.matcher(line);
+            if (m.find()) {
+                paths.add(normalizeToColonStyle(m.group(1).trim()));
             }
         }
         return paths;
@@ -372,11 +361,9 @@ class OpenApiRouteParity_DC_CON_001_Test {
 
     /**
      * Converts OpenAPI-style path parameters ({paramName}) to ActiveJ colon style (:paramName).
-     * Action Plane aliases are normalized to legacy paths so parity compares functional coverage.
      */
     private String normalizeToColonStyle(String path) {
-        String normalized = path.replaceFirst("^/api/v1/action/", "/api/v1/");
-        return normalized.replaceAll("\\{([^}]+)}", ":$1");
+        return path.replaceAll("\\{([^}]+)}", ":$1");
     }
 
     /**
@@ -442,82 +429,46 @@ class OpenApiRouteParity_DC_CON_001_Test {
      * DC-P1-08: Checks if a route has security schemes defined in OpenAPI.
      */
     private boolean hasSecurityScheme(String path) throws IOException {
-        Path yamlFile = resolveFromRepoRoot(OPENAPI_FILE);
-        List<String> lines = Files.readAllLines(yamlFile);
-        
-        // Find the path section in the YAML
-        int pathIndex = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            String normalizedPath = lines.get(i).trim();
-            if (normalizedPath.equals(path + ":") || 
-                normalizedPath.equals(path.replace(":", "{") + ":")) {
-                pathIndex = i;
-                break;
+        for (String openApiFile : OPENAPI_FILES) {
+            List<String> lines = Files.readAllLines(resolveFromRepoRoot(openApiFile));
+            int pathIndex = findPathIndex(lines, path);
+            if (pathIndex == -1) {
+                continue;
             }
-        }
-        
-        if (pathIndex == -1) {
-            return path.startsWith("/api/v1/") || path.startsWith("/governance/");
-        }
-        
-        // Look for security schemes in the next 20 lines
-        for (int i = pathIndex; i < Math.min(pathIndex + 20, lines.size()); i++) {
-            String line = lines.get(i).trim();
-            if (line.startsWith("security:") || line.contains("securitySchemes")) {
-                return true;
+            // Look for security schemes in the next 20 lines
+            for (int i = pathIndex; i < Math.min(pathIndex + 20, lines.size()); i++) {
+                String line = lines.get(i).trim();
+                if (line.startsWith("security:") || line.contains("securitySchemes")) {
+                    return true;
+                }
             }
-        }
 
-        // Route inherits top-level security defaults.
-        return true;
+            // Route inherits top-level security defaults.
+            return true;
+        }
+        return path.startsWith("/api/v1/") || path.startsWith("/governance/");
     }
 
     /**
      * DC-P1-08: Checks if a route has a specific OpenAPI extension.
      */
     private boolean hasExtension(String path, String extension) throws IOException {
-        Path yamlFile = resolveFromRepoRoot(OPENAPI_FILE);
-        List<String> lines = Files.readAllLines(yamlFile);
-        
-        // Find the path section in the YAML
-        int pathIndex = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            String normalizedPath = lines.get(i).trim();
-            if (normalizedPath.equals(path + ":") || 
-                normalizedPath.equals(path.replace(":", "{") + ":")) {
-                pathIndex = i;
-                break;
+        for (String openApiFile : OPENAPI_FILES) {
+            List<String> lines = Files.readAllLines(resolveFromRepoRoot(openApiFile));
+            int pathIndex = findPathIndex(lines, path);
+            if (pathIndex == -1) {
+                continue;
             }
-        }
-        
-        if (pathIndex == -1) {
-            if ("x-runtime-truth".equals(extension)) {
-                return path.startsWith("/api/v1/")
-                    || path.startsWith("/admin/")
-                    || path.startsWith("/mcp/")
-                    || path.startsWith("/events/")
-                    || path.startsWith("/info")
-                    || path.startsWith("/governance/")
-                    || path.startsWith("/data-fabric/");
+
+            // Look for the extension in the next 30 lines
+            for (int i = pathIndex; i < Math.min(pathIndex + 30, lines.size()); i++) {
+                String line = lines.get(i).trim();
+                if (line.startsWith(extension + ":")) {
+                    return true;
+                }
             }
-            if ("x-audit".equals(extension)) {
-                return path.startsWith("/api/v1/") || path.startsWith("/events/");
-            }
-            if ("x-policy".equals(extension)) {
-                return path.contains("/governance/");
-            }
-            if ("x-surface".equals(extension)) {
-                return path.startsWith("/api/v1/") || path.startsWith("/events/");
-            }
-            return false;
-        }
-        
-        // Look for the extension in the next 30 lines
-        for (int i = pathIndex; i < Math.min(pathIndex + 30, lines.size()); i++) {
-            String line = lines.get(i).trim();
-            if (line.startsWith(extension + ":")) {
-                return true;
-            }
+
+            break;
         }
 
         // Runtime metadata defaults are enforced centrally by security/policy layers even
@@ -543,6 +494,16 @@ class OpenApiRouteParity_DC_CON_001_Test {
         }
         
         return false;
+    }
+
+    private int findPathIndex(List<String> lines, String path) {
+        String openApiStyle = path.replaceAll(":([A-Za-z_][A-Za-z0-9_]*)", "{$1}");
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).trim().equals(openApiStyle + ":")) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

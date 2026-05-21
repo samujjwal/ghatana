@@ -113,10 +113,144 @@ class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
   }
 }
 
+class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
+  constructor(
+    private readonly config: {
+      readonly baseUrl: string;
+      readonly tenantId: string;
+      readonly workspaceId: string;
+      readonly projectId: string;
+      readonly authToken: string;
+      readonly enableEvidencePersistence: boolean;
+    },
+  ) {}
+
+  async persist(state: ArtifactWorkflowState, audit: WorkflowAuditMetadata): Promise<void> {
+    const payload: PersistedWorkflowState = { state, audit };
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
+        method: 'PUT',
+        headers: this.headers,
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error(`Persist failed (${response.status})`);
+      }
+
+      if (this.config.enableEvidencePersistence && state.evidencePack !== null) {
+        await this.persistEvidencePack(state.evidencePack);
+      }
+    } catch (err) {
+      studioLogger.error('Failed to persist workflow state via kernel API', { error: err });
+      throw err;
+    }
+  }
+
+  async load(): Promise<PersistedWorkflowState | null> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
+        method: 'GET',
+        headers: this.headers,
+      });
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Load failed (${response.status})`);
+      }
+
+      return (await response.json()) as PersistedWorkflowState;
+    } catch (err) {
+      studioLogger.error('Failed to load workflow state via kernel API', { error: err });
+      return null;
+    }
+  }
+
+  async clear(): Promise<void> {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
+        method: 'DELETE',
+        headers: this.headers,
+      });
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`Clear failed (${response.status})`);
+      }
+    } catch (err) {
+      studioLogger.error('Failed to clear workflow state via kernel API', { error: err });
+    }
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.config.authToken}`,
+      'x-tenant-id': this.config.tenantId,
+      'x-workspace-id': this.config.workspaceId,
+      'x-project-id': this.config.projectId,
+    };
+  }
+
+  private async persistEvidencePack(evidencePack: EvidencePack): Promise<void> {
+    const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-evidence`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(evidencePack),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Evidence persist failed (${response.status})`);
+    }
+  }
+}
+
+export function resolvePersistenceAdapterForEnv(
+  env?: Record<string, string | undefined>,
+): WorkflowPersistenceAdapter {
+  const enableKernelPersistence = env?.VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE === 'true';
+
+  if (!enableKernelPersistence) {
+    return new LocalStoragePersistenceAdapter();
+  }
+
+  const baseUrl = env?.VITE_GHATANA_KERNEL_API_BASE_URL?.trim();
+  const tenantId = env?.VITE_STUDIO_TENANT_ID?.trim();
+  const workspaceId = env?.VITE_STUDIO_WORKSPACE_ID?.trim();
+  const projectId = env?.VITE_STUDIO_PROJECT_ID?.trim();
+  const authToken = env?.VITE_STUDIO_AUTH_TOKEN?.trim();
+  const enableEvidencePersistence = env?.VITE_STUDIO_ENABLE_KERNEL_EVIDENCE_PERSISTENCE !== 'false';
+
+  if (!baseUrl || !tenantId || !workspaceId || !projectId || !authToken) {
+    studioLogger.error('Kernel workflow persistence is enabled but runtime identity is incomplete; using local storage fallback.', {
+      hasBaseUrl: Boolean(baseUrl),
+      hasTenantId: Boolean(tenantId),
+      hasWorkspaceId: Boolean(workspaceId),
+      hasProjectId: Boolean(projectId),
+      hasAuthToken: Boolean(authToken),
+    });
+    return new LocalStoragePersistenceAdapter();
+  }
+
+  return new KernelWorkflowPersistenceAdapter({
+    baseUrl,
+    tenantId,
+    workspaceId,
+    projectId,
+    authToken,
+    enableEvidencePersistence,
+  });
+}
+
+function resolvePersistenceAdapter(): WorkflowPersistenceAdapter {
+  const env = (import.meta as ImportMeta & { readonly env?: Record<string, string | undefined> }).env;
+  return resolvePersistenceAdapterForEnv(env);
+}
+
 /**
  * Default persistence adapter using localStorage.
  */
-export const defaultPersistenceAdapter: WorkflowPersistenceAdapter = new LocalStoragePersistenceAdapter();
+export const defaultPersistenceAdapter: WorkflowPersistenceAdapter = resolvePersistenceAdapter();
 
 // ============================================================================
 // STATE SHAPE

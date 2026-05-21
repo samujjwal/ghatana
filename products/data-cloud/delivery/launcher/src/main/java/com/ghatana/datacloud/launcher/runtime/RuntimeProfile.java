@@ -174,7 +174,7 @@ public enum RuntimeProfile {
      * <p>Resolution order:
      * 1. System property: {@code -Ddc.runtime.profile=LOCAL}
      * 2. Environment variable: {@code DC_RUNTIME_PROFILE=LOCAL}
-     * 3. Application config (not implemented here)
+    * 3. Application config supplied by launcher/bootstrap wiring
      * 4. Default: {@code LOCAL} (safe for development)
      *
      * @return the resolved runtime profile

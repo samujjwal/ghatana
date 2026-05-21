@@ -138,6 +138,21 @@ public interface CampaignService {
     Promise<Campaign> getCampaign(DmOperationContext ctx, String campaignId);
 
     /**
+     * Transitions a campaign to a new status with business rule validation.
+     *
+     * <p>This method uses the CampaignTransitionService to enforce state machine
+     * transitions and business rules for campaign lifecycle management.</p>
+     *
+     * @param ctx        the operation context; must have an idempotency key for write
+     * @param campaignId the ID of the campaign to transition
+     * @param toStatus   the target status as a string
+     * @param actor      the actor performing the transition
+     * @param reason     the reason for the transition
+     * @return promise resolving to the transitioned campaign
+     */
+    Promise<Campaign> transitionCampaign(DmOperationContext ctx, String campaignId, String toStatus, String actor, String reason);
+
+    /**
      * Command object for campaign creation.
      *
      * @param name the campaign name; must not be blank

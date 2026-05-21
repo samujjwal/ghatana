@@ -20,6 +20,7 @@ import {
   defaultPreviewRuntime,
 } from '../preview/in-memory-preview-runtime.js';
 import type {
+  PreviewExecutionMode,
   PreviewRequest,
   PreviewResult,
 } from '../preview/preview-protocol.js';
@@ -57,6 +58,7 @@ export default function PreviewPage(): ReactElement {
   const [status, setStatus] = useState<PreviewStatus>(rawSource ? 'loading' : 'idle');
   const [previewResult, setPreviewResult] = useState<PreviewResult | null>(null);
   const [sessionId] = useState(() => crypto.randomUUID());
+  const [executionMode, setExecutionMode] = useState<PreviewExecutionMode>('safe-static');
 
   // Update iframe srcdoc when preview result changes
   useEffect(() => {
@@ -79,6 +81,7 @@ export default function PreviewPage(): ReactElement {
       sessionId,
       source: rawSource,
       filePath: 'preview.tsx',
+      executionMode,
       designSystem: {
         packageName: '@ghatana/design-system',
         version: '1.0.0',
@@ -113,7 +116,7 @@ export default function PreviewPage(): ReactElement {
     return () => {
       defaultPreviewRuntime.cleanup(sessionId);
     };
-  }, [rawSource, sessionId]);
+  }, [executionMode, rawSource, sessionId]);
 
   const handleRefresh = useCallback(() => {
     if (rawSource) {
@@ -122,6 +125,7 @@ export default function PreviewPage(): ReactElement {
         sessionId: crypto.randomUUID(),
         source: rawSource,
         filePath: 'preview.tsx',
+        executionMode,
         designSystem: {
           packageName: '@ghatana/design-system',
           version: '1.0.0',
@@ -153,7 +157,7 @@ export default function PreviewPage(): ReactElement {
           setStatus('error');
         });
     }
-  }, [rawSource]);
+  }, [executionMode, rawSource]);
 
   return (
     <section className="flex flex-col h-full space-y-0" aria-labelledby="preview-title">
@@ -174,6 +178,21 @@ export default function PreviewPage(): ReactElement {
         </div>
 
         <div className="flex items-center gap-2">
+          <label htmlFor="preview-execution-mode" className="text-xs text-gray-600">
+            Mode
+          </label>
+          <select
+            id="preview-execution-mode"
+            value={executionMode}
+            onChange={(event) => {
+              setExecutionMode(event.target.value as PreviewExecutionMode);
+            }}
+            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700"
+            aria-label="Preview execution mode"
+          >
+            <option value="safe-static">Safe static</option>
+            <option value="isolated-runtime">Isolated runtime</option>
+          </select>
           {/* Status badge */}
           {status === 'loading' && (
             <span className="text-xs text-gray-500" role="status" aria-live="polite">

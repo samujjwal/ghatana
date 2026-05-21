@@ -255,11 +255,11 @@ fi
 echo ""
 echo "── [6] Pipeline operations ───────────────────────────────────────────"
 
-code=$(dc_curl GET "/api/v1/pipelines")
+code=$(dc_curl GET "/api/v1/action/pipelines")
 if [[ "$code" == "200" ]]; then
-  emit PASS "pipeline:list" "GET /pipelines → HTTP 200"
+  emit PASS "pipeline:list" "GET /action/pipelines → HTTP 200"
 else
-  emit FAIL "pipeline:list" "GET /pipelines → HTTP $code (expected 200)"
+  emit FAIL "pipeline:list" "GET /action/pipelines → HTTP $code (expected 200)"
 fi
 
 # ─── 7. Checkpoint list ───────────────────────────────────────────────────────

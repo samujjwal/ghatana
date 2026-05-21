@@ -145,10 +145,19 @@ public final class DataCloudSecurityFilter {
             String path   = request.getPath();
             String method = request.getMethod().name();
 
-            EndpointSensitivity sensitivity = EndpointSensitivity.classify(method, path);
+            var routeMetadata = RouteSecurityRegistry.lookupRuntimePath(method, path);
+            if (routeMetadata.isEmpty() && RouteSecurityRegistry.isProductionLikeProfile(deploymentProfile)) {
+                String requestId = ensureRequestId(request, null);
+                log.error("[DC-SEC] Missing route security metadata for {} {} requestId={} profile={} — rejecting request",
+                        method, path, requestId, deploymentProfile);
+                return Promise.of(routeMetadataRequiredResponse(requestId));
+            }
+            EndpointSensitivity sensitivity = routeMetadata
+                    .map(RouteSecurityMetadata::sensitivity)
+                    .orElseGet(() -> EndpointSensitivity.classify(method, path));
 
             // (1) Public probes — skip auth and policy entirely.
-            if (sensitivity == EndpointSensitivity.PUBLIC) {
+            if (routeMetadata.map(metadata -> !metadata.requiresAuth()).orElse(sensitivity == EndpointSensitivity.PUBLIC)) {
                 return delegate.serve(request);
             }
 
@@ -184,6 +193,7 @@ public final class DataCloudSecurityFilter {
                             path,
                             method,
                             sensitivity,
+                            routeMetadata.orElse(null),
                             tenantId,
                             principalName);
                 });
@@ -318,7 +328,8 @@ public final class DataCloudSecurityFilter {
             }
         }
 
-        AccessLevel requiredAccess = requiredAccess(method, path, sensitivity);
+        RouteSecurityMetadata metadata = RouteSecurityRegistry.lookupRuntimePath(method, path).orElse(null);
+        AccessLevel requiredAccess = requiredAccess(method, path, sensitivity, metadata);
         if (!hasRequiredAccess(principal, requiredAccess)) {
             log.warn("Forbidden request: principal={} method={} path={} requiredAccess={}",
                     principal.getName(), method, path, requiredAccess.name());
@@ -330,7 +341,7 @@ public final class DataCloudSecurityFilter {
         TenantContext.Scope scope = TenantContext.scope(principal);
         RequestContext principalScope = RequestContext.bindPrincipal(principal.getName());
         try {
-            return evaluatePolicyBeforeServing(request, tenantWrapped, principal, sensitivity, requestId)
+            return evaluatePolicyBeforeServing(request, tenantWrapped, principal, sensitivity, metadata, requestId)
                 .whenComplete((response, error) -> {
                     principalScope.close();
                     scope.close();
@@ -352,6 +363,7 @@ public final class DataCloudSecurityFilter {
             String path,
             String method,
             EndpointSensitivity sensitivity,
+            RouteSecurityMetadata metadata,
             String tenantId,
             String principalName) {
 
@@ -365,7 +377,7 @@ public final class DataCloudSecurityFilter {
         }
 
         // DC-P1-06: For CRITICAL routes in production-like profiles, use blocking audit
-        if (isAuditBlocking(sensitivity)) {
+        if (isAuditBlocking(sensitivity, metadata)) {
             boolean success = statusCode < 400;
             return emitAuditBlocking(
                     request,
@@ -405,12 +417,14 @@ public final class DataCloudSecurityFilter {
             AsyncServlet tenantWrapped,
             Principal principal,
             EndpointSensitivity sensitivity,
+            RouteSecurityMetadata metadata,
             String requestId) {
         String path = request.getPath();
         String method = request.getMethod().name();
         String tenantId = principal.getTenantId();
 
-        if (sensitivity != EndpointSensitivity.CRITICAL) {
+        boolean requiresPolicy = metadata != null ? metadata.requiresPolicy() : sensitivity == EndpointSensitivity.CRITICAL;
+        if (!requiresPolicy) {
             return serveDelegate(tenantWrapped, request);
         }
 
@@ -470,10 +484,13 @@ public final class DataCloudSecurityFilter {
 
     /**
      * DC-P1-06: Determines if audit emission should be blocking for the given sensitivity and profile.
-     * CRITICAL routes in production-like profiles require synchronous audit with blocking on failure.
+     * Routes marked requiresBlockingAudit in production-like profiles require synchronous audit.
      */
-    private boolean isAuditBlocking(EndpointSensitivity sensitivity) {
-        return sensitivity == EndpointSensitivity.CRITICAL && isProductionLikeProfile(deploymentProfile);
+    private boolean isAuditBlocking(EndpointSensitivity sensitivity, RouteSecurityMetadata metadata) {
+        boolean routeRequiresBlockingAudit = metadata != null
+                ? metadata.requiresBlockingAudit()
+                : sensitivity == EndpointSensitivity.CRITICAL;
+        return routeRequiresBlockingAudit && isProductionLikeProfile(deploymentProfile);
     }
 
     /**
@@ -931,6 +948,17 @@ public final class DataCloudSecurityFilter {
             .build();
     }
 
+    private HttpResponse routeMetadataRequiredResponse(String requestId) {
+        String body = "{\"error\":{\"code\":\"ROUTE_METADATA_REQUIRED\","
+            + "\"message\":\"Route security metadata is required for this profile.\","
+            + "\"requestId\":\"" + requestId + "\"}}";
+        return HttpResponse.ofCode(500)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withHeader(HttpHeaders.of("X-Request-ID"), io.activej.http.HttpHeaderValue.of(requestId))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
     private boolean isBreakGlassAllowed(io.activej.http.HttpRequest request,
                                         Principal principal,
                                         String tenantId,
@@ -962,7 +990,10 @@ public final class DataCloudSecurityFilter {
         return true;
     }
 
-    private AccessLevel requiredAccess(String method, String path, EndpointSensitivity sensitivity) {
+    private AccessLevel requiredAccess(String method, String path, EndpointSensitivity sensitivity, RouteSecurityMetadata metadata) {
+        if (metadata != null) {
+            return metadata.requiredAccess();
+        }
         if (path.startsWith("/api/v1/governance/")) {
             return "GET".equalsIgnoreCase(method) ? AccessLevel.AUDITOR : AccessLevel.ADMIN;
         }

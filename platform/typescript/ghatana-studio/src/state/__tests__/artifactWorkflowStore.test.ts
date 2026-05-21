@@ -10,7 +10,7 @@
  * All tests operate against the real atoms without mocking Jotai internals.
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'jotai';
 import {
   artifactWorkflowAtom,
@@ -24,6 +24,7 @@ import {
   setArtifactWorkflowAtom,
   clearArtifactWorkflowAtom,
   reloadWorkflowStateAtom,
+  resolvePersistenceAdapterForEnv,
 } from '../artifactWorkflowStore.js';
 import { createPerfectFidelityReport } from '@ghatana/artifact-contracts';
 import { createLogicalArtifactModel } from '@ghatana/artifact-contracts';
@@ -36,6 +37,10 @@ import { createLogicalArtifactModel } from '@ghatana/artifact-contracts';
 function makeStore() {
   return createStore();
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // ============================================================================
 // Initial state
@@ -305,5 +310,133 @@ describe('reloadWorkflowStateAtom', () => {
     expect(state.roundTripDiffReport).toBeDefined();
     expect(state.lastDecompileAt).toBe('2024-01-01T00:00:00.000Z');
     expect(newStore.get(hasArtifactWorkflowResultAtom)).toBe(true);
+  });
+});
+
+describe('resolvePersistenceAdapterForEnv', () => {
+  it('uses local persistence when kernel profile is disabled', async () => {
+    const adapter = resolvePersistenceAdapterForEnv({
+      VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'false',
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    await adapter.persist(
+      {
+        jobResult: null,
+        model: null,
+        projectedBuilderDocument: null,
+        previewSource: null,
+        fidelityReport: null,
+        evidencePack: null,
+        roundTripDiffReport: null,
+        lastDecompileAt: null,
+      },
+      {
+        persistedAt: '2026-01-01T00:00:00.000Z',
+        lastModifiedAt: '2026-01-01T00:00:00.000Z',
+        persistenceVersion: 1,
+      },
+    );
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses local fallback when kernel profile is enabled but identity is incomplete', async () => {
+    const adapter = resolvePersistenceAdapterForEnv({
+      VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'true',
+      VITE_GHATANA_KERNEL_API_BASE_URL: 'https://kernel.local',
+      VITE_STUDIO_TENANT_ID: 'tenant-a',
+      VITE_STUDIO_WORKSPACE_ID: 'workspace-a',
+      VITE_STUDIO_PROJECT_ID: 'project-a',
+      // Missing auth token on purpose.
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    await adapter.persist(
+      {
+        jobResult: null,
+        model: null,
+        projectedBuilderDocument: null,
+        previewSource: null,
+        fidelityReport: null,
+        evidencePack: null,
+        roundTripDiffReport: null,
+        lastDecompileAt: null,
+      },
+      {
+        persistedAt: '2026-01-01T00:00:00.000Z',
+        lastModifiedAt: '2026-01-01T00:00:00.000Z',
+        persistenceVersion: 1,
+      },
+    );
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('persists workflow state and evidence through kernel endpoints when profile is fully enabled', async () => {
+    const adapter = resolvePersistenceAdapterForEnv({
+      VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'true',
+      VITE_GHATANA_KERNEL_API_BASE_URL: 'https://kernel.local',
+      VITE_STUDIO_TENANT_ID: 'tenant-a',
+      VITE_STUDIO_WORKSPACE_ID: 'workspace-a',
+      VITE_STUDIO_PROJECT_ID: 'project-a',
+      VITE_STUDIO_AUTH_TOKEN: 'token-a',
+      VITE_STUDIO_ENABLE_KERNEL_EVIDENCE_PERSISTENCE: 'true',
+    });
+
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ ok: true, status: 200 } as Response);
+
+    await adapter.persist(
+      {
+        jobResult: null,
+        model: null,
+        projectedBuilderDocument: null,
+        previewSource: null,
+        fidelityReport: null,
+        evidencePack: {
+          evidenceId: 'ev-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          modelId: 'model-1',
+          label: 'Evidence',
+          stage: 'round-trip',
+          fidelity: createPerfectFidelityReport('model-1'),
+          residuals: { islands: [], totalCount: 0, blockingCount: 0 },
+          decompileResult: {
+            success: true,
+            modelId: 'model-1',
+            nodeCount: 0,
+            edgeCount: 0,
+            fidelity: createPerfectFidelityReport('model-1'),
+            residuals: { islands: [], totalCount: 0, blockingCount: 0 },
+            errors: [],
+            decompiledAt: '2026-01-01T00:00:00.000Z',
+          },
+          reviewStatus: 'pending',
+        },
+        roundTripDiffReport: null,
+        lastDecompileAt: null,
+      },
+      {
+        persistedAt: '2026-01-01T00:00:00.000Z',
+        lastModifiedAt: '2026-01-01T00:00:00.000Z',
+        persistenceVersion: 1,
+      },
+    );
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenNthCalledWith(
+      1,
+      'https://kernel.local/api/v1/studio/workflow-state',
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(fetchSpy).toHaveBeenNthCalledWith(
+      2,
+      'https://kernel.local/api/v1/studio/workflow-evidence',
+      expect.objectContaining({ method: 'PUT' }),
+    );
   });
 });

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * DC-SEC-001: Tenant isolation tests for governance routes.
  *
@@ -35,7 +37,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\"}".getBytes())
+                .withBody("{\"collection\":\"orders\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertCrossTenantDenial(path, HttpMethod.POST, requestBuilder);
@@ -49,7 +51,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\"}".getBytes())
+                .withBody("{\"collection\":\"orders\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertSameTenantAccess(path, HttpMethod.POST, requestBuilder);
@@ -68,7 +70,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\"}".getBytes())
+                .withBody("{\"collection\":\"orders\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertCrossTenantDenial(path, HttpMethod.POST, requestBuilder);
@@ -82,7 +84,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\"}".getBytes())
+                .withBody("{\"collection\":\"orders\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertSameTenantAccess(path, HttpMethod.POST, requestBuilder);
@@ -101,7 +103,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\",\"fields\":[\"email\",\"ssn\"]}".getBytes())
+                .withBody("{\"collection\":\"orders\",\"fields\":[\"email\",\"ssn\"]}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertCrossTenantDenial(path, HttpMethod.POST, requestBuilder);
@@ -115,7 +117,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\",\"fields\":[\"email\",\"ssn\"]}".getBytes())
+                .withBody("{\"collection\":\"orders\",\"fields\":[\"email\",\"ssn\"]}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertSameTenantAccess(path, HttpMethod.POST, requestBuilder);
@@ -134,7 +136,7 @@ class GovernanceRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"collection\":\"orders\"}".getBytes())
+                .withBody("{\"collection\":\"orders\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertNoCrossTenantDataLeak(path, requestBuilder);

@@ -177,24 +177,24 @@ function mapPluginView(plugin: BackendPluginView): Plugin {
 
 export class PluginService {
   async getInstalledPlugins(): Promise<Plugin[]> {
-    const rawResponse = await apiClient.get<BackendPluginListResponse>('/plugins');
+    const rawResponse = await apiClient.get<BackendPluginListResponse>('/action/plugins');
     const response = PluginListResponseSchema.parse(rawResponse);
     return response.plugins.map(mapPluginView);
   }
 
   async getPlugin(pluginId: string): Promise<Plugin> {
-    const rawResponse = await apiClient.get<BackendPluginView>(`/plugins/${pluginId}`);
+    const rawResponse = await apiClient.get<BackendPluginView>(`/action/plugins/${pluginId}`);
     const response = PluginViewSchema.parse(rawResponse);
     return mapPluginView(response);
   }
 
   async enablePlugin(pluginId: string): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>>(`/plugins/${pluginId}/enable`);
+    await apiClient.post<Record<string, unknown>>(`/action/plugins/${pluginId}/enable`);
     return this.getPlugin(pluginId);
   }
 
   async disablePlugin(pluginId: string): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>>(`/plugins/${pluginId}/disable`);
+    await apiClient.post<Record<string, unknown>>(`/action/plugins/${pluginId}/disable`);
     return this.getPlugin(pluginId);
   }
 
@@ -240,7 +240,7 @@ export class PluginService {
     pluginId: string,
     request: PluginUpdateRequest
   ): Promise<Plugin> {
-    await apiClient.post<Record<string, unknown>, PluginUpdateRequest>(`/plugins/${pluginId}/upgrade`, request);
+    await apiClient.post<Record<string, unknown>, PluginUpdateRequest>(`/action/plugins/${pluginId}/upgrade`, request);
     return this.getPlugin(pluginId);
   }
 

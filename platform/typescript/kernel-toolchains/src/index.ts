@@ -1,6 +1,7 @@
 export * from './ToolchainAdapter.js';
 export * from './ToolchainAdapterRegistry.js';
 export * from './ToolchainOutputValidator.js';
+export * from './ToolchainFailureClassifier.js';
 export * from './execution/CommandResult.js';
 export * from './execution/CommandRunner.js';
 export * from './execution/SpawnCommandRunner.js';

@@ -24,10 +24,22 @@ import { PRODUCT_SHAPES } from "./ProductShape.js";
 import type { ProductUnitSourceRef } from "./ProductUnitSourceRef.js";
 import { ProductUnitSourceRefSchema } from "./ProductUnitSourceRef.js";
 import type { ProviderRef } from "../provider/ProviderRef";
+import type { ProductEnvironment } from "../environment/ProductEnvironment";
+import type { KernelPluginBinding } from "../plugin/KernelPluginBinding";
+import type { RequiredGateReference } from "../gate/GateContracts";
+import type { ProductArtifact } from "../artifact/ProductArtifact";
+import type { ProductDeployment } from "../deployment/ProductDeployment";
+import type { AgentLifecycleActionEvidence } from "../agentic/AgentLifecycleActionEvidence";
 
 // Re-export ProductUnitSurface for convenience
 export type { ProductUnitSurface };
 export type { ProviderRef };
+export type { ProductEnvironment };
+export type { KernelPluginBinding };
+export type { RequiredGateReference };
+export type { ProductArtifact };
+export type { ProductDeployment };
+export type { AgentLifecycleActionEvidence };
 
 /**
  * Lifecycle status of a ProductUnit.
@@ -40,6 +52,16 @@ const LIFECYCLE_STATUSES = [
   "partial",
   "enabled",
 ] as const satisfies readonly LifecycleStatus[];
+
+/**
+ * Provider mode for lifecycle execution.
+ */
+export type ProviderMode = "bootstrap" | "platform";
+
+const PROVIDER_MODES = [
+  "bootstrap",
+  "platform",
+] as const satisfies readonly ProviderMode[];
 
 const SECRET_KEY_PATTERN = /(secret|password|token|api[-_]?key|credential)/i;
 
@@ -190,6 +212,56 @@ export interface ProductUnit {
    * Semantic artifact evidence references shared by contract with Studio/YAPPC.
    */
   readonly semanticArtifactRefs?: readonly string[] | undefined;
+
+  /**
+   * Provider mode for lifecycle execution (bootstrap or platform).
+   */
+  readonly providerMode?: ProviderMode | undefined;
+
+  /**
+   * Environment configurations for this ProductUnit.
+   */
+  readonly environments?: readonly ProductEnvironment[] | undefined;
+
+  /**
+   * Plugin bindings for this ProductUnit.
+   */
+  readonly pluginBindings?: readonly KernelPluginBinding[] | undefined;
+
+  /**
+   * Required gate references for this ProductUnit.
+   */
+  readonly gateBindings?: readonly RequiredGateReference[] | undefined;
+
+  /**
+   * Policy pack references for this ProductUnit.
+   */
+  readonly policyPacks?: readonly string[] | undefined;
+
+  /**
+   * Artifact configurations for this ProductUnit.
+   */
+  readonly artifacts?: readonly ProductArtifact[] | undefined;
+
+  /**
+   * Deployment configurations for this ProductUnit.
+   */
+  readonly deployments?: readonly ProductDeployment[] | undefined;
+
+  /**
+   * Release configuration for this ProductUnit.
+   */
+  readonly releaseConfig?: Record<string, unknown> | undefined;
+
+  /**
+   * Health configuration for this ProductUnit.
+   */
+  readonly healthConfig?: Record<string, unknown> | undefined;
+
+  /**
+   * Agentic action evidence references for this ProductUnit.
+   */
+  readonly agenticActionEvidence?: readonly AgentLifecycleActionEvidence[] | undefined;
 
   /**
    * Conformance requirements for this ProductUnit.
@@ -347,6 +419,16 @@ export const ProductUnitSchema = z
     lifecycleProfile: z.string().trim().min(1).optional(),
     lifecycleStatus: z.enum(LIFECYCLE_STATUSES).optional(),
     semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
+    providerMode: z.enum(PROVIDER_MODES).optional(),
+    environments: z.array(z.object({ name: z.string(), target: z.string().optional(), variables: z.record(z.string(), z.string()).optional() })).optional(),
+    pluginBindings: z.array(z.object({ id: z.string(), pluginRef: z.object({ pluginId: z.string() }), productUnitId: z.string(), enabled: z.boolean(), lifecycleHooks: z.array(z.string()), priority: z.number() })).optional(),
+    gateBindings: z.array(z.object({ gateId: z.string(), phase: z.string(), required: z.boolean(), providerId: z.string().optional() })).optional(),
+    policyPacks: z.array(z.string().trim().min(1)).optional(),
+    artifacts: z.array(z.object({ type: z.string(), packaging: z.string().optional(), required: z.boolean().optional(), paths: z.array(z.string()).optional() })).optional(),
+    deployments: z.array(z.object({ target: z.string(), environment: z.string() })).optional(),
+    releaseConfig: RecordSchema.optional(),
+    healthConfig: RecordSchema.optional(),
+    agenticActionEvidence: z.array(z.object({ evidenceId: z.string(), kind: z.string(), ref: z.string(), capturedAt: z.string(), redacted: z.boolean(), providedByAgentId: z.string().optional(), description: z.string().optional() })).optional(),
     conformance: z
       .object({
         requiredChecks: z.array(z.string().trim().min(1)),
@@ -684,5 +766,89 @@ export function createExecutableProductUnit(
   if (!result.valid) {
     throw new Error(`Invalid executable ProductUnit: ${result.errors.join("; ")}`);
   }
+  return productUnit;
+}
+
+/**
+ * Projection input from canonical product registry and kernel-product.yaml.
+ */
+export interface ProductUnitProjectionInput {
+  readonly productId: string;
+  readonly productName: string;
+  readonly productKind: ProductUnitKind;
+  readonly lifecycleStatus: LifecycleStatus;
+  readonly lifecycleExecutionAllowed: boolean;
+  readonly lifecycleConfigPath: string;
+  readonly surfaces: readonly ProductUnitSurface[];
+  readonly productShape?: ProductShape;
+  readonly sourceRefs?: readonly ProductUnitSourceRef[];
+  readonly lifecycleProfile?: string;
+  readonly owner?: string;
+  readonly scope?: ProductUnitScope;
+  readonly providerMode?: ProviderMode;
+  readonly environments?: readonly ProductEnvironment[];
+  readonly pluginBindings?: readonly KernelPluginBinding[];
+  readonly gateBindings?: readonly RequiredGateReference[];
+  readonly policyPacks?: readonly string[];
+  readonly artifacts?: readonly ProductArtifact[];
+  readonly deployments?: readonly ProductDeployment[];
+  readonly releaseConfig?: Record<string, unknown>;
+  readonly healthConfig?: Record<string, unknown>;
+  readonly agenticActionEvidence?: readonly AgentLifecycleActionEvidence[];
+  readonly conformance?: ProductUnitConformance;
+  readonly governance?: ProductUnitGovernance;
+  readonly semanticArtifactRefs?: readonly string[];
+  readonly metadata?: Record<string, unknown>;
+}
+
+/**
+ * Projects a ProductUnit from canonical product registry and kernel-product.yaml data.
+ * This is the single validated projection that combines all ProductUnit dimensions.
+ */
+export function projectProductUnit(input: ProductUnitProjectionInput): ProductUnit {
+  const productUnit: ProductUnit = {
+    schemaVersion: "1.0.0",
+    id: input.productId,
+    name: input.productName,
+    kind: input.productKind,
+    lifecycleStatus: input.lifecycleStatus,
+    registryProviderRef: {
+      providerId: "ghatana-file-registry",
+    },
+    sourceProviderRef: {
+      providerId: "ghatana-file-registry",
+      config: {
+        lifecycleConfigPath: input.lifecycleConfigPath,
+      },
+    },
+    surfaces: input.surfaces,
+    ...(input.scope === undefined ? {} : { scope: input.scope }),
+    ...(input.owner === undefined ? {} : { owner: input.owner }),
+    ...(input.productShape === undefined ? {} : { productShape: input.productShape }),
+    ...(input.sourceRefs === undefined ? {} : { sourceRefs: input.sourceRefs }),
+    ...(input.lifecycleProfile === undefined ? {} : { lifecycleProfile: input.lifecycleProfile }),
+    ...(input.providerMode === undefined ? {} : { providerMode: input.providerMode }),
+    ...(input.environments === undefined ? {} : { environments: input.environments }),
+    ...(input.pluginBindings === undefined ? {} : { pluginBindings: input.pluginBindings }),
+    ...(input.gateBindings === undefined ? {} : { gateBindings: input.gateBindings }),
+    ...(input.policyPacks === undefined ? {} : { policyPacks: input.policyPacks }),
+    ...(input.artifacts === undefined ? {} : { artifacts: input.artifacts }),
+    ...(input.deployments === undefined ? {} : { deployments: input.deployments }),
+    ...(input.releaseConfig === undefined ? {} : { releaseConfig: input.releaseConfig }),
+    ...(input.healthConfig === undefined ? {} : { healthConfig: input.healthConfig }),
+    ...(input.agenticActionEvidence === undefined ? {} : { agenticActionEvidence: input.agenticActionEvidence }),
+    ...(input.conformance === undefined ? {} : { conformance: input.conformance }),
+    ...(input.governance === undefined ? {} : { governance: input.governance }),
+    ...(input.semanticArtifactRefs === undefined ? {} : { semanticArtifactRefs: input.semanticArtifactRefs }),
+    ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+  };
+
+  const result = validateProductUnit(productUnit);
+  if (!result.valid) {
+    throw new Error(
+      `Invalid ProductUnit projection for "${input.productId}": ${result.errors.join("; ")}`
+    );
+  }
+
   return productUnit;
 }

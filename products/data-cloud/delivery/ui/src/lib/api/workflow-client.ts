@@ -182,7 +182,7 @@ export class WorkflowApiClient {
     page: number = 0,
     pageSize: number = 50
   ): Promise<WorkflowListResponse> {
-    const rawResponse = await apiClient.get<PipelineListResponse>('/pipelines', {
+    const rawResponse = await apiClient.get<PipelineListResponse>('/action/pipelines', {
       params: { collectionId, limit: pageSize },
       headers: this.getHeaders(),
     });
@@ -202,7 +202,7 @@ export class WorkflowApiClient {
    * @returns the workflow definition
    */
   async getWorkflow(workflowId: string): Promise<WorkflowDefinition> {
-    const rawResponse = await apiClient.get<Pipeline>(`/pipelines/${workflowId}`, {
+    const rawResponse = await apiClient.get<Pipeline>(`/action/pipelines/${workflowId}`, {
       headers: this.getHeaders(),
     });
     const response = PipelineSchema.parse(rawResponse);
@@ -216,7 +216,7 @@ export class WorkflowApiClient {
    * @returns the created workflow
    */
   async createWorkflow(request: CreateWorkflowRequest): Promise<WorkflowDefinition> {
-    const rawResponse = await apiClient.post<Pipeline>('/pipelines', request, {
+    const rawResponse = await apiClient.post<Pipeline>('/action/pipelines', request, {
       headers: this.getHeaders(),
     });
     const response = PipelineSchema.parse(rawResponse);
@@ -235,7 +235,7 @@ export class WorkflowApiClient {
     request: UpdateWorkflowRequest
   ): Promise<WorkflowDefinition> {
     const rawResponse = await apiClient.put<Pipeline>(
-      `/pipelines/${workflowId}`,
+      `/action/pipelines/${workflowId}`,
       request,
       { headers: this.getHeaders() }
     );
@@ -249,7 +249,7 @@ export class WorkflowApiClient {
    * @param workflowId the workflow ID
    */
   async deleteWorkflow(workflowId: string): Promise<void> {
-    await apiClient.delete(`/pipelines/${workflowId}`, {
+    await apiClient.delete(`/action/pipelines/${workflowId}`, {
       headers: this.getHeaders(),
     });
   }
@@ -266,7 +266,7 @@ export class WorkflowApiClient {
     request: ExecuteWorkflowRequest = {}
   ): Promise<ExecutionCreatedResponse> {
     return apiClient.post<ExecutionCreatedResponse, ExecuteWorkflowRequest>(
-      `/pipelines/${workflowId}/execute`,
+      `/action/pipelines/${workflowId}/execute`,
       request,
       { headers: this.getHeaders() },
     );
@@ -279,7 +279,7 @@ export class WorkflowApiClient {
    * @returns the execution status
    */
   async getExecutionStatus(executionId: string): Promise<WorkflowExecution> {
-    const response = await apiClient.get<Record<string, unknown>>(`/executions/${executionId}`, {
+    const response = await apiClient.get<Record<string, unknown>>(`/action/executions/${executionId}`, {
       headers: this.getHeaders(),
     });
     const nodes = Array.isArray(response.nodes) ? response.nodes : [];
@@ -318,7 +318,7 @@ export class WorkflowApiClient {
    * @param executionId the execution ID
    */
   async cancelExecution(executionId: string): Promise<void> {
-    await apiClient.post(`/executions/${executionId}/cancel`, {}, {
+    await apiClient.post(`/action/executions/${executionId}/cancel`, {}, {
       headers: this.getHeaders(),
     });
   }

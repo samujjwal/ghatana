@@ -67,6 +67,7 @@ public final class DmosDashboardServlet {
         return DmosApiRateLimiter.wrap(
             RoutingServlet.builder(eventloop)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/dashboard", this::handleGetDashboardSummary)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/dashboard/kpi", this::handleGetKpiMetrics)
                 .build()
         );
     }
@@ -91,6 +92,35 @@ public final class DmosDashboardServlet {
             return Promise.of(DmosApiErrorResponses.error(403, "Access denied", resolveCorrelationId(request), Map.of()));
         } catch (Exception e) {
             LOG.error("[DMOS] Unexpected dashboard summary error", e);
+            return Promise.of(DmosApiErrorResponses.error(500, "Internal error", resolveCorrelationId(request), Map.of()));
+        }
+    }
+
+    private Promise<HttpResponse> handleGetKpiMetrics(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            String periodParam = request.getQueryParameter("period");
+            DashboardSummaryService.ReportPeriod period = periodParam != null
+                ? DashboardSummaryService.ReportPeriod.valueOf(periodParam.toUpperCase())
+                : DashboardSummaryService.ReportPeriod.MONTHLY;
+
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
+
+            return dashboardSummaryService.computeKpiMetrics(ctx, period)
+                .map(report -> jsonResponse(200, KpiMetricsReportResponse.from(report)))
+                .then(r -> Promise.of(r), e -> {
+                    if (e instanceof SecurityException) {
+                        return Promise.of(DmosApiErrorResponses.error(403, "Access denied", resolveCorrelationId(request), Map.of()));
+                    }
+                    LOG.error("[DMOS] Failed to compute KPI metrics", e);
+                    return Promise.of(DmosApiErrorResponses.error(500, "Internal error", resolveCorrelationId(request), Map.of()));
+                });
+        } catch (IllegalArgumentException e) {
+            return Promise.of(DmosApiErrorResponses.error(400, e.getMessage(), resolveCorrelationId(request), Map.of("request", e.getMessage())));
+        } catch (SecurityException e) {
+            return Promise.of(DmosApiErrorResponses.error(403, "Access denied", resolveCorrelationId(request), Map.of()));
+        } catch (Exception e) {
+            LOG.error("[DMOS] Unexpected KPI metrics error", e);
             return Promise.of(DmosApiErrorResponses.error(500, "Internal error", resolveCorrelationId(request), Map.of()));
         }
     }
@@ -155,6 +185,30 @@ public final class DmosDashboardServlet {
                 freshness.lastUpdated().toString(),
                 freshness.staleness().toSeconds(),
                 freshness.status()
+            );
+        }
+    }
+
+    record KpiMetricsReportResponse(
+        String workspaceId,
+        String period,
+        String reportGeneratedAt,
+        DashboardSummaryService.CampaignKpiMetrics campaignKpi,
+        DashboardSummaryService.BudgetKpiMetrics budgetKpi,
+        DashboardSummaryService.LeadKpiMetrics leadKpi,
+        DashboardSummaryService.ConversionKpiMetrics conversionKpi,
+        DashboardSummaryService.RoiKpiMetrics roiKpi
+    ) {
+        static KpiMetricsReportResponse from(DashboardSummaryService.KpiMetricsReport report) {
+            return new KpiMetricsReportResponse(
+                report.workspaceId(),
+                report.period().name(),
+                report.reportGeneratedAt().toString(),
+                report.campaignKpi(),
+                report.budgetKpi(),
+                report.leadKpi(),
+                report.conversionKpi(),
+                report.roiKpi()
             );
         }
     }

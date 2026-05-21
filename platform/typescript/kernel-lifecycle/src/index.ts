@@ -1,4 +1,7 @@
 export * from "./domain/ProductLifecyclePhase.js";
+export * from "./domain/PhaseGraph.js";
+export * from "./domain/RunStore.js";
+export * from "./domain/ResumePolicy.js";
 
 export { ProductLifecyclePlanner } from "./planning/ProductLifecyclePlanner.js";
 export { SurfaceSelector } from "./planning/SurfaceSelector.js";

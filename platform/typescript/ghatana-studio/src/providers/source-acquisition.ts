@@ -334,17 +334,20 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
 
     const arrayBuffer = await file.arrayBuffer();
 
-    // Detect archive type by magic bytes
-    const header = new Uint8Array(arrayBuffer.slice(0, 4));
+    // Detect archive type by magic bytes/header signatures.
+    const header = new Uint8Array(arrayBuffer);
     const isZip = header[0] === 0x50 && header[1] === 0x4b; // PK signature
     const isTarGz = header[0] === 0x1f && header[1] === 0x8b; // GZIP signature
+    const isTar = this.isTarArchive(header);
 
     if (isZip) {
       return this.unpackZipBuffer(arrayBuffer, options);
     } else if (isTarGz) {
       return this.unpackTarGzBuffer(arrayBuffer, options);
+    } else if (isTar) {
+      return this.unpackTarBuffer(arrayBuffer, options);
     } else {
-      throw new Error('Unsupported archive format (only ZIP and TAR.GZ are supported)');
+      throw new Error('Unsupported archive format (supported: ZIP, TAR, TAR.GZ)');
     }
   }
 
@@ -352,14 +355,11 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     buffer: ArrayBuffer,
     options: SourceAcquisitionOptions,
   ): Promise<readonly SourceFileEntry[]> {
-    // Simple ZIP unpacker implementation
-    // In production, use a library like jszip or fflate
     const sources: SourceFileEntry[] = [];
     const view = new DataView(buffer);
 
     // ZIP format: local file header signature 0x04034b50
     let offset = 0;
-    let totalSize = 0;
 
     while (offset < view.byteLength - 4) {
       const signature = view.getUint32(offset, true);
@@ -368,11 +368,17 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
         break;
       }
 
+      const flags = view.getUint16(offset + 6, true);
       const compressionMethod = view.getUint16(offset + 8, true);
       const compressedSize = view.getUint32(offset + 18, true);
       const uncompressedSize = view.getUint32(offset + 22, true);
       const fileNameLength = view.getUint16(offset + 26, true);
       const extraFieldLength = view.getUint16(offset + 28, true);
+      const hasDataDescriptor = (flags & 0x0008) !== 0;
+
+      if (hasDataDescriptor) {
+        throw new Error('ZIP archives with data descriptors are not supported by the browser unpacker');
+      }
 
       const fileNameStart = offset + 30;
       const fileNameBytes = new Uint8Array(buffer, fileNameStart, fileNameLength);
@@ -386,13 +392,11 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
 
       const fileDataStart = offset + 30 + fileNameLength + extraFieldLength;
 
-      // For now, only support store (no compression) for simplicity
-      // In production, implement full deflate decompression
-      if (compressionMethod === 0 && uncompressedSize > 0) {
-        const fileData = new Uint8Array(buffer, fileDataStart, uncompressedSize);
+      if (uncompressedSize > 0) {
+        const compressedData = new Uint8Array(buffer, fileDataStart, compressedSize);
+        const fileData = await this.decodeZipEntry(compressionMethod, compressedData, uncompressedSize);
         const content = new TextDecoder().decode(fileData);
 
-        // Check file extension and size limits
         const hasAllowedExtension = options.allowedExtensions?.some((ext) => fileName.endsWith(ext)) ?? true;
         const includeFile = options.includeHidden || !fileName.split('/').some((part) => part.startsWith('.'));
 
@@ -405,7 +409,6 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
               contentType: inferContentTypeFromPath(fileName),
             },
           });
-          totalSize += uncompressedSize;
         }
       }
 
@@ -416,12 +419,124 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
   }
 
   private async unpackTarGzBuffer(
-    _buffer: ArrayBuffer,
-    _options: SourceAcquisitionOptions,
+    buffer: ArrayBuffer,
+    options: SourceAcquisitionOptions,
   ): Promise<readonly SourceFileEntry[]> {
-    // For TAR.GZ, we would need a GZIP decompressor followed by TAR parser
-    // This is a placeholder - in production use a library like tar-js or pako
-    throw new Error('TAR.GZ unpacking not yet implemented - use ZIP format');
+    const decompressedTar = await this.decompressBuffer(buffer, 'gzip');
+    return this.unpackTarBuffer(decompressedTar, options);
+  }
+
+  private async decodeZipEntry(
+    compressionMethod: number,
+    compressedData: Uint8Array,
+    expectedSize: number,
+  ): Promise<Uint8Array> {
+    if (compressionMethod === 0) {
+      return compressedData;
+    }
+
+    if (compressionMethod === 8) {
+      const inflated = await this.decompressBuffer(compressedData.buffer.slice(
+        compressedData.byteOffset,
+        compressedData.byteOffset + compressedData.byteLength,
+      ), 'deflate-raw');
+      const inflatedBytes = new Uint8Array(inflated);
+      if (expectedSize > 0 && inflatedBytes.byteLength !== expectedSize) {
+        throw new Error(`ZIP entry size mismatch: expected ${expectedSize}, got ${inflatedBytes.byteLength}`);
+      }
+      return inflatedBytes;
+    }
+
+    throw new Error(`Unsupported ZIP compression method: ${compressionMethod}`);
+  }
+
+  private async decompressBuffer(
+    buffer: ArrayBuffer,
+    format: 'gzip' | 'deflate-raw',
+  ): Promise<ArrayBuffer> {
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error(`DecompressionStream is unavailable; cannot process ${format} data in this runtime`);
+    }
+
+    const decompressionStream = new DecompressionStream(format);
+    const stream = new Blob([buffer]).stream().pipeThrough(decompressionStream);
+    return new Response(stream).arrayBuffer();
+  }
+
+  private isTarArchive(header: Uint8Array): boolean {
+    if (header.byteLength < 512) {
+      return false;
+    }
+
+    const signature = new TextDecoder().decode(header.slice(257, 262));
+    return signature === 'ustar';
+  }
+
+  private unpackTarBuffer(
+    buffer: ArrayBuffer,
+    options: SourceAcquisitionOptions,
+  ): readonly SourceFileEntry[] {
+    const sources: SourceFileEntry[] = [];
+    const bytes = new Uint8Array(buffer);
+    let offset = 0;
+
+    while (offset + 512 <= bytes.byteLength) {
+      const header = bytes.slice(offset, offset + 512);
+      if (this.isZeroTarBlock(header)) {
+        break;
+      }
+
+      const name = this.readTarString(header, 0, 100);
+      const prefix = this.readTarString(header, 345, 155);
+      const typeFlag = this.readTarString(header, 156, 1);
+      const sizeOctal = this.readTarString(header, 124, 12);
+      const fileSize = parseInt(sizeOctal.trim() || '0', 8);
+      const relativePath = prefix.length > 0 ? `${prefix}/${name}` : name;
+
+      const dataStart = offset + 512;
+      const dataEnd = dataStart + fileSize;
+      if (dataEnd > bytes.byteLength) {
+        throw new Error('Invalid TAR archive: entry exceeds archive size');
+      }
+
+      const isRegularFile = typeFlag === '' || typeFlag === '0';
+      if (isRegularFile && fileSize > 0 && !relativePath.endsWith('/')) {
+        const hasAllowedExtension = options.allowedExtensions?.some((ext) => relativePath.endsWith(ext)) ?? true;
+        const includeFile = options.includeHidden || !relativePath.split('/').some((part) => part.startsWith('.'));
+
+        if (hasAllowedExtension && includeFile) {
+          const content = new TextDecoder().decode(bytes.slice(dataStart, dataEnd));
+          sources.push({
+            relativePath,
+            content,
+            metadata: {
+              size: fileSize,
+              contentType: inferContentTypeFromPath(relativePath),
+            },
+          });
+        }
+      }
+
+      const paddedSize = Math.ceil(fileSize / 512) * 512;
+      offset = dataStart + paddedSize;
+    }
+
+    return sources;
+  }
+
+  private isZeroTarBlock(block: Uint8Array): boolean {
+    for (const byte of block) {
+      if (byte !== 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private readTarString(bytes: Uint8Array, start: number, length: number): string {
+    const slice = bytes.slice(start, start + length);
+    const raw = new TextDecoder().decode(slice);
+    return raw.replace(/\0.*$/, '').trim();
   }
 }
 
@@ -913,4 +1028,23 @@ export function createProductionProviderRegistry(
   registry.register(new ArchiveUploadProvider(backendClient));
 
   return registry;
+}
+
+/**
+ * Resolve the source acquisition provider registry from runtime environment.
+ *
+ * Uses boundary-safe defaults unless production acquisition is explicitly enabled.
+ */
+export function resolveProviderRegistryForEnv(
+  env?: Record<string, string | undefined>,
+): SourceAcquisitionProviderRegistry {
+  const enableProductionAcquisition = env?.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
+  if (!enableProductionAcquisition) {
+    return defaultProviderRegistry;
+  }
+
+  return createProductionProviderRegistry({
+    githubApiUrl: env?.VITE_STUDIO_GITHUB_API_URL,
+    gitlabApiUrl: env?.VITE_STUDIO_GITLAB_API_URL,
+  });
 }

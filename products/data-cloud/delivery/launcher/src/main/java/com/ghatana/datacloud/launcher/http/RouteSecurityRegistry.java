@@ -4,482 +4,424 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
+import com.ghatana.datacloud.launcher.runtime.RuntimeProfile;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
- * Authoritative registry of all Data Cloud HTTP routes and their security metadata.
+ * Authoritative registry of Data Cloud runtime routes and security metadata.
  *
- * <p>Auto-generated from OpenAPI contracts via {@code scripts/generate-route-security-metadata.mjs}.
- * This is the single source of truth for route security requirements, replacing prefix-based inference.
- *
- * <p>Fixes DC-P0-01 and DC-P0-03: Makes route metadata explicit, verifiable, and generated from contracts.
- *
- * <p>Key properties:
- * <ul>
- *   <li>Routes indexed by <code>METHOD path</code> (e.g., "GET /api/v1/entities/{id}")</li>
- *   <li>Paths are canonical (IDs normalized to {id}, {collectionId}, etc.)</li>
- *   <li>Every canonical /api/v1/action/* route has explicit metadata</li>
- *   <li>Generated file fails CI if stale</li>
- *   <li>Regenerate with: <code>node scripts/generate-route-security-metadata.mjs</code></li>
- * </ul>
+ * <p>The registry is generated from {@link DataCloudRouterBuilder} route registrations and
+ * checked by {@code scripts/generate-route-manifest.mjs}. Every live runtime route must be
+ * represented here; production-like profiles fail closed when metadata is missing.
  *
  * @doc.type class
- * @doc.purpose Authoritative registry of Data Cloud HTTP route security metadata
+ * @doc.purpose Runtime registry for route-level security metadata and policy posture
  * @doc.layer product
  * @doc.pattern Registry
  */
 public final class RouteSecurityRegistry {
 
     private static final Map<String, RouteSecurityMetadata> METADATA_BY_ROUTE;
+    private static final Map<String, Pattern> MATCHERS_BY_ROUTE;
 
     static {
-        // DC-P0-01: Auto-generated route security metadata.
-        // DO NOT EDIT MANUALLY. Regenerate with:
-        //   node scripts/generate-route-security-metadata.mjs
         Map<String, RouteSecurityMetadata> map = new HashMap<>();
-
-        // ─────────────────────────────────────────────────────────────────────────
-        // PUBLIC routes (no authentication required)
-        // ─────────────────────────────────────────────────────────────────────────
-        map.put(
-                "GET /health",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/health")
-                        .sensitivity(EndpointSensitivity.PUBLIC)
-                        .requiresAuth(false)
-                        .requiresTenant(false)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("none")
-                        .legacyStatus("active")
-                        .description("Health check endpoint")
-                        .build());
-
-        map.put(
-                "GET /ready",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/ready")
-                        .sensitivity(EndpointSensitivity.PUBLIC)
-                        .requiresAuth(false)
-                        .requiresTenant(false)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("none")
-                        .legacyStatus("active")
-                        .description("Readiness probe")
-                        .build());
-
-        map.put(
-                "GET /live",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/live")
-                        .sensitivity(EndpointSensitivity.PUBLIC)
-                        .requiresAuth(false)
-                        .requiresTenant(false)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("none")
-                        .legacyStatus("active")
-                        .description("Liveness probe")
-                        .build());
-
-        // ─────────────────────────────────────────────────────────────────────────
-        // ACTION PLANE ROUTES (canonical /api/v1/action/*)
-        // ─────────────────────────────────────────────────────────────────────────
-
-        // Agents
-        map.put(
-                "GET /api/v1/action/agents/catalog",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/agents/catalog")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("List available agents in catalog")
-                        .build());
-
-        map.put(
-                "GET /api/v1/action/agents/catalog/{id}",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/agents/catalog/{id}")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Get agent catalog entry by ID")
-                        .build());
-
-        // Pipelines
-        map.put(
-                "GET /api/v1/action/pipelines",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/pipelines")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("List pipelines")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/pipelines",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/pipelines")
-                        .sensitivity(EndpointSensitivity.SENSITIVE)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(false)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Create pipeline")
-                        .build());
-
-        map.put(
-                "GET /api/v1/action/pipelines/{id}",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/pipelines/{id}")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Get pipeline by ID")
-                        .build());
-
-        map.put(
-                "DELETE /api/v1/action/pipelines/{id}",
-                RouteSecurityMetadata.builder()
-                        .method("DELETE")
-                        .canonicalPath("/api/v1/action/pipelines/{id}")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(false)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Delete pipeline (high-impact)")
-                        .build());
-
-        // Memory
-        map.put(
-                "GET /api/v1/action/memory",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/memory")
-                        .sensitivity(EndpointSensitivity.SENSITIVE)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Access agent memory (personal data)")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/memory/search",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/memory/search")
-                        .sensitivity(EndpointSensitivity.SENSITIVE)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Search agent memory")
-                        .build());
-
-        map.put(
-                "DELETE /api/v1/action/memory/{agentId}/{memoryId}",
-                RouteSecurityMetadata.builder()
-                        .method("DELETE")
-                        .canonicalPath("/api/v1/action/memory/{agentId}/{memoryId}")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(false)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Delete memory entry (data lifecycle)")
-                        .build());
-
-        // Learning
-        map.put(
-                "GET /api/v1/action/learning/review",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/learning/review")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("List learning review items")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/learning/review/{id}/approve",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/learning/review/{id}/approve")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Approve learning review (model training)")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/learning/review/{id}/reject",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/learning/review/{id}/reject")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Reject learning review")
-                        .build());
-
-        // Autonomy
-        map.put(
-                "GET /api/v1/action/autonomy/level",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/autonomy/level")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Get autonomy level")
-                        .build());
-
-        map.put(
-                "PUT /api/v1/action/autonomy/level",
-                RouteSecurityMetadata.builder()
-                        .method("PUT")
-                        .canonicalPath("/api/v1/action/autonomy/level")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Set autonomy level (governance)")
-                        .build());
-
-        // Plugins
-        map.put(
-                "GET /api/v1/action/plugins",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/plugins")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("List plugins")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/plugins/{id}/enable",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/plugins/{id}/enable")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(false)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Enable plugin (system configuration)")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/plugins/{id}/disable",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/plugins/{id}/disable")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(false)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Disable plugin")
-                        .build());
-
-        // Executions
-        map.put(
-                "GET /api/v1/action/executions/{id}",
-                RouteSecurityMetadata.builder()
-                        .method("GET")
-                        .canonicalPath("/api/v1/action/executions/{id}")
-                        .sensitivity(EndpointSensitivity.INTERNAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(false)
-                        .requiresBlockingAudit(false)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Get execution details")
-                        .build());
-
-        map.put(
-                "POST /api/v1/action/executions/{id}/cancel",
-                RouteSecurityMetadata.builder()
-                        .method("POST")
-                        .canonicalPath("/api/v1/action/executions/{id}/cancel")
-                        .sensitivity(EndpointSensitivity.CRITICAL)
-                        .requiresAuth(true)
-                        .requiresTenant(true)
-                        .requiresPolicy(true)
-                        .requiresBlockingAudit(true)
-                        .idempotent(true)
-                        .runtimeTruthSurface("action_plane")
-                        .legacyStatus("active")
-                        .description("Cancel execution (high-impact operation)")
-                        .build());
-
+        route(map, "GET", "/api/v1/action/agents/catalog", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/agents/catalog");
+        route(map, "GET", "/api/v1/action/agents/catalog/{id}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/agents/catalog/{id}");
+        route(map, "GET", "/api/v1/action/autonomy/domains", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/autonomy/domains");
+        route(map, "GET", "/api/v1/action/autonomy/domains/{domain}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/autonomy/domains/{domain}");
+        route(map, "POST", "/api/v1/action/autonomy/feedback-policy", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/autonomy/feedback-policy");
+        route(map, "GET", "/api/v1/action/autonomy/level", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/autonomy/level");
+        route(map, "PUT", "/api/v1/action/autonomy/level", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "PUT /api/v1/action/autonomy/level");
+        route(map, "GET", "/api/v1/action/autonomy/logs", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/autonomy/logs");
+        route(map, "GET", "/api/v1/action/autonomy/plan/{actionType}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/autonomy/plan/{actionType}");
+        route(map, "GET", "/api/v1/action/executions/{executionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/executions/{executionId}");
+        route(map, "POST", "/api/v1/action/executions/{executionId}/cancel", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/executions/{executionId}/cancel");
+        route(map, "POST", "/api/v1/action/executions/{executionId}/checkpoint", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/executions/{executionId}/checkpoint");
+        route(map, "GET", "/api/v1/action/executions/{executionId}/checkpoints", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/executions/{executionId}/checkpoints");
+        route(map, "GET", "/api/v1/action/executions/{executionId}/logs", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/executions/{executionId}/logs");
+        route(map, "POST", "/api/v1/action/executions/{executionId}/restore", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/executions/{executionId}/restore");
+        route(map, "POST", "/api/v1/action/executions/{executionId}/retry", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/executions/{executionId}/retry");
+        route(map, "POST", "/api/v1/action/executions/{executionId}/rollback", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/executions/{executionId}/rollback");
+        route(map, "GET", "/api/v1/action/learning/review", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/learning/review");
+        route(map, "POST", "/api/v1/action/learning/review/{reviewId}/approve", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/learning/review/{reviewId}/approve");
+        route(map, "POST", "/api/v1/action/learning/review/{reviewId}/reject", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/learning/review/{reviewId}/reject");
+        route(map, "GET", "/api/v1/action/learning/status", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/learning/status");
+        route(map, "POST", "/api/v1/action/learning/trigger", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/learning/trigger");
+        route(map, "GET", "/api/v1/action/memory", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "GET /api/v1/action/memory");
+        route(map, "GET", "/api/v1/action/memory/{agentId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "GET /api/v1/action/memory/{agentId}");
+        route(map, "POST", "/api/v1/action/memory/{agentId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/memory/{agentId}");
+        route(map, "DELETE", "/api/v1/action/memory/{agentId}/{memoryId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "DELETE /api/v1/action/memory/{agentId}/{memoryId}");
+        route(map, "PUT", "/api/v1/action/memory/{agentId}/{memoryId}/retain", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "PUT /api/v1/action/memory/{agentId}/{memoryId}/retain");
+        route(map, "GET", "/api/v1/action/memory/{agentId}/{tier}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "GET /api/v1/action/memory/{agentId}/{tier}");
+        route(map, "POST", "/api/v1/action/memory/{agentId}/search", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/memory/{agentId}/search");
+        route(map, "GET", "/api/v1/action/pipelines", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines");
+        route(map, "POST", "/api/v1/action/pipelines", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines");
+        route(map, "POST", "/api/v1/action/pipelines/draft", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/draft");
+        route(map, "DELETE", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "DELETE /api/v1/action/pipelines/{pipelineId}");
+        route(map, "GET", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}");
+        route(map, "PUT", "/api/v1/action/pipelines/{pipelineId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "action_plane", "active", "PUT /api/v1/action/pipelines/{pipelineId}");
+        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/execute", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/execute");
+        route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions");
+        route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId}");
+        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel");
+        route(map, "GET", "/api/v1/action/pipelines/{pipelineId}/executions/{executionId}/logs", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "action_plane", "active", "GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/logs");
+        route(map, "POST", "/api/v1/action/pipelines/{pipelineId}/optimise-hint", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "action_plane", "active", "POST /api/v1/action/pipelines/{pipelineId}/optimise-hint");
+        route(map, "GET", "/api/v1/action/plugins", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/plugins");
+        route(map, "GET", "/api/v1/action/plugins/{id}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/plugins/{id}");
+        route(map, "POST", "/api/v1/action/plugins/{id}/conformance", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/plugins/{id}/conformance");
+        route(map, "POST", "/api/v1/action/plugins/{id}/disable", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/plugins/{id}/disable");
+        route(map, "POST", "/api/v1/action/plugins/{id}/enable", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/plugins/{id}/enable");
+        route(map, "GET", "/api/v1/action/plugins/{id}/sandbox", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/plugins/{id}/sandbox");
+        route(map, "POST", "/api/v1/action/plugins/{id}/upgrade", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/plugins/{id}/upgrade");
+        route(map, "POST", "/api/v1/action/plugins/{id}/validate", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "action_plane", "active", "POST /api/v1/action/plugins/{id}/validate");
+        route(map, "GET", "/api/v1/action/plugins/marketplace", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "action_plane", "active", "GET /api/v1/action/plugins/marketplace");
+        route(map, "GET", "/api/v1/agents/catalog", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/agents/catalog");
+        route(map, "GET", "/api/v1/agents/catalog/{id}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/agents/catalog/{id}");
+        route(map, "GET", "/api/v1/ai/actions", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/actions");
+        route(map, "GET", "/api/v1/ai/advisories/fabric/{collectionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/advisories/fabric/{collectionId}");
+        route(map, "GET", "/api/v1/ai/advisories/quality/{collectionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/advisories/quality/{collectionId}");
+        route(map, "GET", "/api/v1/ai/advisories/workflows/{workflowId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/advisories/workflows/{workflowId}");
+        route(map, "POST", "/api/v1/ai/context/rank", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/context/rank");
+        route(map, "GET", "/api/v1/ai/correlations", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/correlations");
+        route(map, "GET", "/api/v1/ai/feedback", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/feedback");
+        route(map, "POST", "/api/v1/ai/memory/retention", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/memory/retention");
+        route(map, "POST", "/api/v1/ai/next-action", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/next-action");
+        route(map, "GET", "/api/v1/ai/quality-summary", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/ai/quality-summary");
+        route(map, "POST", "/api/v1/ai/quality/drift-detect", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/quality/drift-detect");
+        route(map, "POST", "/api/v1/ai/rag-feedback", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/rag-feedback");
+        route(map, "POST", "/api/v1/ai/suggestions", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/suggestions");
+        route(map, "POST", "/api/v1/ai/suggestions/{id}/apply", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/suggestions/{id}/apply");
+        route(map, "POST", "/api/v1/ai/suggestions/{id}/feedback", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/ai/suggestions/{id}/feedback");
+        route(map, "GET", "/api/v1/alerts", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts");
+        route(map, "POST", "/api/v1/alerts/{alertId}/acknowledge", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/{alertId}/acknowledge");
+        route(map, "POST", "/api/v1/alerts/{alertId}/resolve", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/{alertId}/resolve");
+        route(map, "POST", "/api/v1/alerts/{id}/auto-remediate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/{id}/auto-remediate");
+        route(map, "POST", "/api/v1/alerts/{id}/escalate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/{id}/escalate");
+        route(map, "POST", "/api/v1/alerts/{id}/remediate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/{id}/remediate");
+        route(map, "POST", "/api/v1/alerts/{id}/remediate/rollback", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/alerts/{id}/remediate/rollback");
+        route(map, "GET", "/api/v1/alerts/{id}/remediations", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts/{id}/remediations");
+        route(map, "GET", "/api/v1/alerts/groups", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts/groups");
+        route(map, "POST", "/api/v1/alerts/groups/{groupId}/resolve", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/groups/{groupId}/resolve");
+        route(map, "GET", "/api/v1/alerts/rules", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts/rules");
+        route(map, "POST", "/api/v1/alerts/rules", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/rules");
+        route(map, "DELETE", "/api/v1/alerts/rules/{ruleId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/alerts/rules/{ruleId}");
+        route(map, "PUT", "/api/v1/alerts/rules/{ruleId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "active", "PUT /api/v1/alerts/rules/{ruleId}");
+        route(map, "GET", "/api/v1/alerts/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts/stream");
+        route(map, "GET", "/api/v1/alerts/suggestions", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/alerts/suggestions");
+        route(map, "POST", "/api/v1/alerts/suggestions/{suggestionId}/apply", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/alerts/suggestions/{suggestionId}/apply");
+        route(map, "POST", "/api/v1/analytics/aggregation", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/analytics/aggregation");
+        route(map, "POST", "/api/v1/analytics/automate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/analytics/automate");
+        route(map, "POST", "/api/v1/analytics/explain", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/analytics/explain");
+        route(map, "DELETE", "/api/v1/analytics/queries/{queryId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/analytics/queries/{queryId}");
+        route(map, "POST", "/api/v1/analytics/query", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/analytics/query");
+        route(map, "GET", "/api/v1/analytics/query/{queryId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/analytics/query/{queryId}");
+        route(map, "GET", "/api/v1/analytics/query/{queryId}/plan", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/analytics/query/{queryId}/plan");
+        route(map, "POST", "/api/v1/analytics/suggest", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/analytics/suggest");
+        route(map, "GET", "/api/v1/anomalies", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/anomalies");
+        route(map, "GET", "/api/v1/autonomy/domains", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/autonomy/domains");
+        route(map, "GET", "/api/v1/autonomy/domains/{domain}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/autonomy/domains/{domain}");
+        route(map, "POST", "/api/v1/autonomy/feedback-policy", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/autonomy/feedback-policy");
+        route(map, "GET", "/api/v1/autonomy/level", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/autonomy/level");
+        route(map, "PUT", "/api/v1/autonomy/level", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "compatibility-only", "PUT /api/v1/autonomy/level");
+        route(map, "GET", "/api/v1/autonomy/logs", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/autonomy/logs");
+        route(map, "GET", "/api/v1/autonomy/plan/{actionType}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/autonomy/plan/{actionType}");
+        route(map, "POST", "/api/v1/brain/attention/elevate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/brain/attention/elevate");
+        route(map, "GET", "/api/v1/brain/attention/thresholds", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/attention/thresholds");
+        route(map, "PUT", "/api/v1/brain/attention/thresholds", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "active", "PUT /api/v1/brain/attention/thresholds");
+        route(map, "GET", "/api/v1/brain/config", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/config");
+        route(map, "POST", "/api/v1/brain/explain", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/brain/explain");
+        route(map, "GET", "/api/v1/brain/health", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/health");
+        route(map, "GET", "/api/v1/brain/patterns", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/patterns");
+        route(map, "POST", "/api/v1/brain/patterns/match", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/brain/patterns/match");
+        route(map, "GET", "/api/v1/brain/salience/{itemId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/salience/{itemId}");
+        route(map, "GET", "/api/v1/brain/stats", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/stats");
+        route(map, "GET", "/api/v1/brain/workspace", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/workspace");
+        route(map, "GET", "/api/v1/brain/workspace/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/brain/workspace/stream");
+        route(map, "GET", "/api/v1/checkpoints", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/checkpoints");
+        route(map, "POST", "/api/v1/checkpoints", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/checkpoints");
+        route(map, "DELETE", "/api/v1/checkpoints/{checkpointId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/checkpoints/{checkpointId}");
+        route(map, "GET", "/api/v1/checkpoints/{checkpointId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/checkpoints/{checkpointId}");
+        route(map, "GET", "/api/v1/collections", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/collections");
+        route(map, "POST", "/api/v1/collections/{collection}/metadata", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/collections/{collection}/metadata");
+        route(map, "GET", "/api/v1/collections/{id}/cost-report", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/collections/{id}/cost-report");
+        route(map, "POST", "/api/v1/collections/{id}/migrate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/collections/{id}/migrate");
+        route(map, "POST", "/api/v1/compliance/evidence-package", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/evidence-package");
+        route(map, "GET", "/api/v1/compliance/legal-holds", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/compliance/legal-holds");
+        route(map, "POST", "/api/v1/compliance/legal-holds", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/legal-holds");
+        route(map, "POST", "/api/v1/compliance/legal-holds/{id}/extend", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/legal-holds/{id}/extend");
+        route(map, "POST", "/api/v1/compliance/legal-holds/{id}/release", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/compliance/legal-holds/{id}/release");
+        route(map, "GET", "/api/v1/compliance/posture", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/compliance/posture");
+        route(map, "GET", "/api/v1/conformance", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/conformance");
+        route(map, "GET", "/api/v1/conformance/entity-store", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/conformance/entity-store");
+        route(map, "GET", "/api/v1/conformance/event-log-store", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/conformance/event-log-store");
+        route(map, "GET", "/api/v1/connectors", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/connectors");
+        route(map, "POST", "/api/v1/connectors", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors");
+        route(map, "DELETE", "/api/v1/connectors/{connectionId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/connectors/{connectionId}");
+        route(map, "GET", "/api/v1/connectors/{connectionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/connectors/{connectionId}");
+        route(map, "PUT", "/api/v1/connectors/{connectionId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "active", "PUT /api/v1/connectors/{connectionId}");
+        route(map, "POST", "/api/v1/connectors/{connectionId}/disable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/{connectionId}/disable");
+        route(map, "POST", "/api/v1/connectors/{connectionId}/enable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/{connectionId}/enable");
+        route(map, "GET", "/api/v1/connectors/{connectionId}/health", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/connectors/{connectionId}/health");
+        route(map, "POST", "/api/v1/connectors/{connectionId}/rotate-credentials", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/connectors/{connectionId}/rotate-credentials");
+        route(map, "GET", "/api/v1/connectors/{connectionId}/schema", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/connectors/{connectionId}/schema");
+        route(map, "POST", "/api/v1/connectors/{connectionId}/sync", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/{connectionId}/sync");
+        route(map, "GET", "/api/v1/connectors/{connectionId}/sync/status", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/connectors/{connectionId}/sync/status");
+        route(map, "POST", "/api/v1/connectors/{connectionId}/test", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/{connectionId}/test");
+        route(map, "POST", "/api/v1/connectors/{connectorId}/sync-health", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/{connectorId}/sync-health");
+        route(map, "POST", "/api/v1/connectors/suggest-mapping", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/connectors/suggest-mapping");
+        route(map, "GET", "/api/v1/context", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "context_plane", "active", "GET /api/v1/context");
+        route(map, "PUT", "/api/v1/context", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "context_plane", "active", "PUT /api/v1/context");
+        route(map, "GET", "/api/v1/context/{collection}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "context_plane", "active", "GET /api/v1/context/{collection}");
+        route(map, "GET", "/api/v1/context/{collection}/lineage/trust", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "context_plane", "active", "GET /api/v1/context/{collection}/lineage/trust");
+        route(map, "POST", "/api/v1/context/{collection}/rag", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "context_plane", "active", "POST /api/v1/context/{collection}/rag");
+        route(map, "POST", "/api/v1/context/{collection}/rag-policy-check", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "context_plane", "active", "POST /api/v1/context/{collection}/rag-policy-check");
+        route(map, "DELETE", "/api/v1/context/keys/{key}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "context_plane", "active", "DELETE /api/v1/context/keys/{key}");
+        route(map, "GET", "/api/v1/context/snapshot", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "context_plane", "active", "GET /api/v1/context/snapshot");
+        route(map, "GET", "/api/v1/data-products", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/data-products");
+        route(map, "POST", "/api/v1/data-products", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/data-products");
+        route(map, "POST", "/api/v1/data-products/{productId}/contract-check", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/data-products/{productId}/contract-check");
+        route(map, "POST", "/api/v1/data-products/{productId}/sla-monitor", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/data-products/{productId}/sla-monitor");
+        route(map, "POST", "/api/v1/data-products/{productId}/subscribe", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/data-products/{productId}/subscribe");
+        route(map, "GET", "/api/v1/data-quality/trust-scores", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/data-quality/trust-scores");
+        route(map, "GET", "/api/v1/entities/{collection}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}");
+        route(map, "POST", "/api/v1/entities/{collection}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}");
+        route(map, "DELETE", "/api/v1/entities/{collection}/{id}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/entities/{collection}/{id}");
+        route(map, "GET", "/api/v1/entities/{collection}/{id}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/{id}");
+        route(map, "GET", "/api/v1/entities/{collection}/{id}/history", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/{id}/history");
+        route(map, "POST", "/api/v1/entities/{collection}/anomalies", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/anomalies");
+        route(map, "DELETE", "/api/v1/entities/{collection}/batch", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/entities/{collection}/batch");
+        route(map, "POST", "/api/v1/entities/{collection}/batch", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/batch");
+        route(map, "GET", "/api/v1/entities/{collection}/export", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/export");
+        route(map, "POST", "/api/v1/entities/{collection}/export", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/export");
+        route(map, "POST", "/api/v1/entities/{collection}/infer-schema", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/infer-schema");
+        route(map, "GET", "/api/v1/entities/{collection}/query/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/query/stream");
+        route(map, "GET", "/api/v1/entities/{collection}/search", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/search");
+        route(map, "GET", "/api/v1/entities/{collection}/similar", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/similar");
+        route(map, "GET", "/api/v1/entities/{collection}/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/entities/{collection}/stream");
+        route(map, "POST", "/api/v1/entities/{collection}/suggest", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/suggest");
+        route(map, "POST", "/api/v1/entities/{collection}/validate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/validate");
+        route(map, "POST", "/api/v1/entities/{collection}/validate/batch", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/entities/{collection}/validate/batch");
+        route(map, "GET", "/api/v1/events", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "event_store", "active", "GET /api/v1/events");
+        route(map, "POST", "/api/v1/events", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "event_store", "active", "POST /api/v1/events");
+        route(map, "GET", "/api/v1/events/{offset}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "event_store", "active", "GET /api/v1/events/{offset}");
+        route(map, "GET", "/api/v1/events/notifications", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "event_store", "active", "GET /api/v1/events/notifications");
+        route(map, "GET", "/api/v1/executions/{executionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/executions/{executionId}");
+        route(map, "POST", "/api/v1/executions/{executionId}/cancel", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "compatibility-only", "POST /api/v1/executions/{executionId}/cancel");
+        route(map, "POST", "/api/v1/executions/{executionId}/checkpoint", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/executions/{executionId}/checkpoint");
+        route(map, "GET", "/api/v1/executions/{executionId}/checkpoints", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/executions/{executionId}/checkpoints");
+        route(map, "GET", "/api/v1/executions/{executionId}/logs", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/executions/{executionId}/logs");
+        route(map, "POST", "/api/v1/executions/{executionId}/restore", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "compatibility-only", "POST /api/v1/executions/{executionId}/restore");
+        route(map, "POST", "/api/v1/executions/{executionId}/retry", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/executions/{executionId}/retry");
+        route(map, "POST", "/api/v1/executions/{executionId}/rollback", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "compatibility-only", "POST /api/v1/executions/{executionId}/rollback");
+        route(map, "POST", "/api/v1/features", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/features");
+        route(map, "GET", "/api/v1/features/{entityId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/features/{entityId}");
+        route(map, "GET", "/api/v1/governance/compliance/summary", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/governance/compliance/summary");
+        route(map, "GET", "/api/v1/governance/inventory", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/governance/inventory");
+        route(map, "GET", "/api/v1/governance/policies", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/governance/policies");
+        route(map, "POST", "/api/v1/governance/policies", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/policies");
+        route(map, "DELETE", "/api/v1/governance/policies/{id}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/governance/policies/{id}");
+        route(map, "GET", "/api/v1/governance/policies/{id}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/governance/policies/{id}");
+        route(map, "PUT", "/api/v1/governance/policies/{id}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "PUT /api/v1/governance/policies/{id}");
+        route(map, "POST", "/api/v1/governance/policies/{id}/toggle", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/policies/{id}/toggle");
+        route(map, "POST", "/api/v1/governance/policies/simulate", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/policies/simulate");
+        route(map, "GET", "/api/v1/governance/privacy/pii-fields", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/governance/privacy/pii-fields");
+        route(map, "POST", "/api/v1/governance/privacy/redact", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/privacy/redact");
+        route(map, "GET", "/api/v1/governance/privacy/verify", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/governance/privacy/verify");
+        route(map, "POST", "/api/v1/governance/recommend", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/recommend");
+        route(map, "POST", "/api/v1/governance/retention/classify", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/retention/classify");
+        route(map, "GET", "/api/v1/governance/retention/policy", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/governance/retention/policy");
+        route(map, "POST", "/api/v1/governance/retention/purge", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/governance/retention/purge");
+        route(map, "GET", "/api/v1/learning/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/learning/stream");
+        route(map, "GET", "/api/v1/lineage/{collection}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/lineage/{collection}");
+        route(map, "GET", "/api/v1/lineage/{collection}/impact", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/lineage/{collection}/impact");
+        route(map, "POST", "/api/v1/mastery/learning-deltas/{deltaId}/dry-run-promotion", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/mastery/learning-deltas/{deltaId}/dry-run-promotion");
+        route(map, "POST", "/api/v1/mastery/obsolescence-events/process", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/mastery/obsolescence-events/process");
+        route(map, "GET", "/api/v1/mastery/preview/decision", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/decision");
+        route(map, "GET", "/api/v1/mastery/preview/retrieval", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/mastery/preview/retrieval");
+        route(map, "GET", "/api/v1/models", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models");
+        route(map, "POST", "/api/v1/models", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/models");
+        route(map, "GET", "/api/v1/models/{modelName}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/models/{modelName}");
+        route(map, "POST", "/api/v1/models/{modelName}/promote", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/models/{modelName}/promote");
+        route(map, "POST", "/api/v1/operations/anomaly-group", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/operations/anomaly-group");
+        route(map, "POST", "/api/v1/operations/forecast", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/operations/forecast");
+        route(map, "POST", "/api/v1/pipelines/{pipelineId}/optimise-hint", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/pipelines/{pipelineId}/optimise-hint");
+        route(map, "POST", "/api/v1/pipelines/draft", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/pipelines/draft");
+        route(map, "GET", "/api/v1/plugins", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins");
+        route(map, "GET", "/api/v1/plugins/{id}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/{id}");
+        route(map, "POST", "/api/v1/plugins/{id}/conformance", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/conformance");
+        route(map, "POST", "/api/v1/plugins/{id}/disable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/disable");
+        route(map, "POST", "/api/v1/plugins/{id}/enable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/enable");
+        route(map, "GET", "/api/v1/plugins/{id}/sandbox", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/{id}/sandbox");
+        route(map, "POST", "/api/v1/plugins/{id}/upgrade", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/upgrade");
+        route(map, "POST", "/api/v1/plugins/{id}/validate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/plugins/{id}/validate");
+        route(map, "GET", "/api/v1/plugins/marketplace", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /api/v1/plugins/marketplace");
+        route(map, "GET", "/api/v1/queries/estimate", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/queries/estimate");
+        route(map, "POST", "/api/v1/queries/explain", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "compatibility-only", "POST /api/v1/queries/explain");
+        route(map, "POST", "/api/v1/queries/federated", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/queries/federated");
+        route(map, "POST", "/api/v1/query/nlq", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/query/nlq");
+        route(map, "GET", "/api/v1/reports", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/reports");
+        route(map, "POST", "/api/v1/reports", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/reports");
+        route(map, "GET", "/api/v1/reports/{reportId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/reports/{reportId}");
+        route(map, "GET", "/api/v1/settings", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings");
+        route(map, "POST", "/api/v1/settings", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings");
+        route(map, "POST", "/api/v1/settings/approval-request", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/approval-request");
+        route(map, "GET", "/api/v1/settings/approvals", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings/approvals");
+        route(map, "POST", "/api/v1/settings/approvals/{id}/approve", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/approvals/{id}/approve");
+        route(map, "POST", "/api/v1/settings/approvals/{id}/reject", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/approvals/{id}/reject");
+        route(map, "GET", "/api/v1/settings/keys", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/settings/keys");
+        route(map, "POST", "/api/v1/settings/keys", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/keys");
+        route(map, "GET", "/api/v1/settings/keys/{id}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/settings/keys/{id}");
+        route(map, "DELETE", "/api/v1/settings/keys/{id}/revoke", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "DELETE /api/v1/settings/keys/{id}/revoke");
+        route(map, "POST", "/api/v1/settings/keys/{id}/rotate", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/keys/{id}/rotate");
+        route(map, "GET", "/api/v1/settings/notifications", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings/notifications");
+        route(map, "PATCH", "/api/v1/settings/notifications", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "PATCH /api/v1/settings/notifications");
+        route(map, "GET", "/api/v1/settings/preferences", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings/preferences");
+        route(map, "PATCH", "/api/v1/settings/preferences", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "PATCH /api/v1/settings/preferences");
+        route(map, "GET", "/api/v1/settings/profile", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/settings/profile");
+        route(map, "PATCH", "/api/v1/settings/profile", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "PATCH /api/v1/settings/profile");
+        route(map, "GET", "/api/v1/settings/security", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "GET /api/v1/settings/security");
+        route(map, "POST", "/api/v1/settings/security", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/settings/security");
+        route(map, "GET", "/api/v1/sovereign/audit", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/audit");
+        route(map, "GET", "/api/v1/sovereign/backup", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/backup");
+        route(map, "POST", "/api/v1/sovereign/backup", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/sovereign/backup");
+        route(map, "GET", "/api/v1/sovereign/conformance", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/conformance");
+        route(map, "GET", "/api/v1/sovereign/data-residency", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/data-residency");
+        route(map, "GET", "/api/v1/sovereign/data-subject-controls", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/data-subject-controls");
+        route(map, "PUT", "/api/v1/sovereign/data-subject-controls", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "PUT /api/v1/sovereign/data-subject-controls");
+        route(map, "GET", "/api/v1/sovereign/models", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/models");
+        route(map, "GET", "/api/v1/sovereign/profile", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/profile");
+        route(map, "PUT", "/api/v1/sovereign/profile", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "data_cloud", "active", "PUT /api/v1/sovereign/profile");
+        route(map, "GET", "/api/v1/sovereign/region-policy", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.AUDITOR, true, "data_cloud", "active", "GET /api/v1/sovereign/region-policy");
+        route(map, "POST", "/api/v1/sovereign/restore", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/sovereign/restore");
+        route(map, "POST", "/api/v1/sovereign/validate-transfer", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, false, "data_cloud", "active", "POST /api/v1/sovereign/validate-transfer");
+        route(map, "GET", "/api/v1/surfaces", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/surfaces");
+        route(map, "GET", "/api/v1/surfaces/schema", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/surfaces/schema");
+        route(map, "POST", "/api/v1/user-activity/log", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/user-activity/log");
+        route(map, "GET", "/api/v1/user-activity/recent", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/user-activity/recent");
+        route(map, "POST", "/api/v1/voice/intent", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/voice/intent");
+        route(map, "POST", "/api/v1/voice/intent/classify", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/voice/intent/classify");
+        route(map, "GET", "/api/v1/voice/intents", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "active", "GET /api/v1/voice/intents");
+        route(map, "POST", "/api/v1/workflows/analyze-risk", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/workflows/analyze-risk");
+        route(map, "POST", "/api/v1/workflows/validate", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "data_cloud", "active", "POST /api/v1/workflows/validate");
+        route(map, "GET", "/data-fabric/connectors", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "compatibility", "compatibility-only", "GET /data-fabric/connectors");
+        route(map, "POST", "/data-fabric/connectors", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "compatibility", "compatibility-only", "POST /data-fabric/connectors");
+        route(map, "DELETE", "/data-fabric/connectors/{connectionId}", EndpointSensitivity.CRITICAL, true, true, true, true, DataCloudSecurityFilter.AccessLevel.ADMIN, true, "compatibility", "compatibility-only", "DELETE /data-fabric/connectors/{connectionId}");
+        route(map, "GET", "/data-fabric/connectors/{connectionId}", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "compatibility", "compatibility-only", "GET /data-fabric/connectors/{connectionId}");
+        route(map, "PUT", "/data-fabric/connectors/{connectionId}", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, true, "compatibility", "compatibility-only", "PUT /data-fabric/connectors/{connectionId}");
+        route(map, "POST", "/data-fabric/connectors/{connectionId}/disable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "compatibility", "compatibility-only", "POST /data-fabric/connectors/{connectionId}/disable");
+        route(map, "POST", "/data-fabric/connectors/{connectionId}/enable", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "compatibility", "compatibility-only", "POST /data-fabric/connectors/{connectionId}/enable");
+        route(map, "GET", "/data-fabric/connectors/{connectionId}/statistics", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "compatibility", "compatibility-only", "GET /data-fabric/connectors/{connectionId}/statistics");
+        route(map, "POST", "/data-fabric/connectors/{connectionId}/sync", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "compatibility", "compatibility-only", "POST /data-fabric/connectors/{connectionId}/sync");
+        route(map, "POST", "/data-fabric/connectors/{connectionId}/test", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.OPERATOR, false, "compatibility", "compatibility-only", "POST /data-fabric/connectors/{connectionId}/test");
+        route(map, "GET", "/data-fabric/metrics", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "compatibility", "compatibility-only", "GET /data-fabric/metrics");
+        route(map, "GET", "/events/notifications", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /events/notifications");
+        route(map, "GET", "/events/stream", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "data_cloud", "compatibility-only", "GET /events/stream");
+        route(map, "GET", "/health", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /health");
+        route(map, "GET", "/health/deep", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /health/deep");
+        route(map, "GET", "/health/detail", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /health/detail");
+        route(map, "GET", "/info", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /info");
+        route(map, "GET", "/live", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /live");
+        route(map, "GET", "/mcp/v1/tools", EndpointSensitivity.INTERNAL, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, true, "mcp", "active", "GET /mcp/v1/tools");
+        route(map, "POST", "/mcp/v1/tools", EndpointSensitivity.SENSITIVE, true, true, false, false, DataCloudSecurityFilter.AccessLevel.VIEWER, false, "mcp", "active", "POST /mcp/v1/tools");
+        route(map, "GET", "/metrics", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /metrics");
+        route(map, "GET", "/ready", EndpointSensitivity.PUBLIC, false, false, false, false, DataCloudSecurityFilter.AccessLevel.NONE, true, "none", "active", "GET /ready");
         METADATA_BY_ROUTE = Collections.unmodifiableMap(map);
+
+        Map<String, Pattern> matchers = new HashMap<>();
+        for (String key : METADATA_BY_ROUTE.keySet()) {
+            int separator = key.indexOf(' ');
+            String method = key.substring(0, separator);
+            String routePath = key.substring(separator + 1);
+            String regex = routePath.replaceAll("\\{[^}]+}", "[^/]+");
+            matchers.put(key, Pattern.compile("^" + Pattern.quote(method) + " " + regex + "$"));
+        }
+        MATCHERS_BY_ROUTE = Collections.unmodifiableMap(matchers);
     }
 
-    /**
-     * Looks up security metadata for a route.
-     *
-     * @param method HTTP method (GET, POST, PUT, DELETE, PATCH)
-     * @param canonicalPath Normalized path (e.g., /api/v1/entities/{id})
-     * @return Optional containing metadata if found
-     */
+    private RouteSecurityRegistry() {
+    }
+
+    private static void route(
+            Map<String, RouteSecurityMetadata> map,
+            String method,
+            String canonicalPath,
+            EndpointSensitivity sensitivity,
+            boolean requiresAuth,
+            boolean requiresTenant,
+            boolean requiresPolicy,
+            boolean requiresBlockingAudit,
+            DataCloudSecurityFilter.AccessLevel requiredAccess,
+            boolean idempotent,
+            String runtimeTruthSurface,
+            String legacyStatus,
+            String description) {
+        map.put(
+                method + " " + canonicalPath,
+                RouteSecurityMetadata.builder()
+                        .method(method)
+                        .canonicalPath(canonicalPath)
+                        .sensitivity(sensitivity)
+                        .requiresAuth(requiresAuth)
+                        .requiresTenant(requiresTenant)
+                        .requiresPolicy(requiresPolicy)
+                        .requiresBlockingAudit(requiresBlockingAudit)
+                        .requiredAccess(requiredAccess)
+                        .idempotent(idempotent)
+                        .runtimeTruthSurface(runtimeTruthSurface)
+                        .legacyStatus(legacyStatus)
+                        .description(description)
+                        .build());
+    }
+
     public static Optional<RouteSecurityMetadata> lookup(String method, String canonicalPath) {
         String key = method.toUpperCase() + " " + canonicalPath;
         return Optional.ofNullable(METADATA_BY_ROUTE.get(key));
     }
 
-    /**
-     * Looks up security metadata for a route, with fallback to legacy prefix matching.
-     *
-     * <p>Used during transition period while all routes are being migrated to explicit metadata.
-     *
-     * @param method HTTP method
-     * @param path Actual request path
-     * @return Metadata if found, or empty if no explicit metadata and path doesn't match known prefixes
-     */
     public static Optional<RouteSecurityMetadata> lookupWithFallback(String method, String path) {
-        String canonicalPath = normalizePathForLookup(path);
-        return lookup(method, canonicalPath);
+        return lookup(method, path).or(() -> lookupRuntimePath(method, path));
     }
 
-    /**
-     * Normalizes a path for metadata lookup.
-     *
-     * <p>Converts dynamic path segments to placeholders:
-     * <ul>
-     *   <li>/entities/users/123 → /entities/{id}</li>
-     *   <li>/pipelines/abc-def-ghi → /pipelines/{id}</li>
-     * </ul>
-     *
-     * @param path the actual request path
-     * @return normalized path suitable for registry lookup
-     */
-    private static String normalizePathForLookup(String path) {
-        String normalized = path.replaceAll("/[0-9a-fA-F\\-]{8,}", "/{id}");
-        normalized = normalized.replaceAll("/learning/review/[^/]+/approve$", "/learning/review/{id}/approve");
-        normalized = normalized.replaceAll("/learning/review/[^/]+/reject$", "/learning/review/{id}/reject");
-        normalized = normalized.replaceAll("/pipelines/[^/]+/enable$", "/pipelines/{id}/enable");
-        normalized = normalized.replaceAll("/pipelines/[^/]+/disable$", "/pipelines/{id}/disable");
-        normalized = normalized.replaceAll(
-                "/plugins/[^/]+/enable$", "/plugins/{id}/enable");
-        normalized = normalized.replaceAll(
-                "/plugins/[^/]+/disable$", "/plugins/{id}/disable");
-        normalized = normalized.replaceAll(
-                "/executions/[^/]+/cancel$", "/executions/{id}/cancel");
-        normalized = normalized.replaceAll(
-                "/memory/[^/]+/[^/]+$", "/memory/{agentId}/{memoryId}");
-        return normalized;
+    public static Optional<RouteSecurityMetadata> lookupRuntimePath(String method, String path) {
+        String requestKey = method.toUpperCase() + " " + stripQuery(path);
+        for (Map.Entry<String, Pattern> entry : MATCHERS_BY_ROUTE.entrySet()) {
+            if (entry.getValue().matcher(requestKey).matches()) {
+                return Optional.of(METADATA_BY_ROUTE.get(entry.getKey()));
+            }
+        }
+        return Optional.empty();
     }
 
-    /**
-     * Returns all registered routes.
-     *
-     * @return immutable map of all route metadata
-     */
+    public static RouteSecurityMetadata requireForRequest(String method, String path, String profile) {
+        return lookupRuntimePath(method, path)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No route security metadata for " + method.toUpperCase() + " " + path + " in " + profile + " profile"));
+    }
+
+    public static boolean isProductionLikeProfile(String profile) {
+        if (profile == null || profile.isBlank()) {
+            return RuntimeProfile.resolve().isProduction();
+        }
+        String normalized = profile.trim().toLowerCase(java.util.Locale.ROOT);
+        return normalized.equals("production") || normalized.equals("staging") || normalized.equals("sovereign");
+    }
+
     public static Map<String, RouteSecurityMetadata> allRoutes() {
         return METADATA_BY_ROUTE;
     }
 
-    /**
-     * Gets count of registered routes.
-     *
-     * @return number of routes in the registry
-     */
     public static int size() {
         return METADATA_BY_ROUTE.size();
+    }
+
+    private static String stripQuery(String path) {
+        int queryStart = path.indexOf('?');
+        return queryStart >= 0 ? path.substring(0, queryStart) : path;
     }
 }

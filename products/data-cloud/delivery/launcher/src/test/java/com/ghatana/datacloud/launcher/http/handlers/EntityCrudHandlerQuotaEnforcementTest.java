@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,7 +48,7 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.post("http://localhost/entities/test-collection")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
-            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes())
+            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes(StandardCharsets.UTF_8))
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
@@ -66,13 +67,13 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
 
         HttpRequest request = HttpRequest.post("http://localhost/entities/test-collection")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
-            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes())
+            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes(StandardCharsets.UTF_8))
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
 
         assertThat(response.getCode()).isEqualTo(429);
-        String body = new String(response.getBody().asArray());
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
         assertThat(body).contains("Quota exceeded");
         assertThat(body).contains("storage quota exceeded");
         assertThat(store.saved).isEmpty();
@@ -84,7 +85,7 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
         // No quota service configured
         HttpRequest request = HttpRequest.post("http://localhost/entities/test-collection")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
-            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes())
+            .withBody("{\"id\":\"e1\",\"name\":\"Alpha\"}".getBytes(StandardCharsets.UTF_8))
             .build();
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));

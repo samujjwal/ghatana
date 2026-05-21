@@ -22,6 +22,7 @@ import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorConfig;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorStatus;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorType;
+import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCampaignLink;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCredential;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -452,6 +453,11 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         @Override
         public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
             return Promise.of(externalCampaignId);
+        }
+
+        @Override
+        public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+            return Promise.of(GoogleAdsConnectorReadinessState.READY);
         }
     }
 

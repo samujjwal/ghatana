@@ -23,35 +23,63 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OpenApiRouteAlignmentTest {
 
     private static final Pattern CODE_ROUTE_PATTERN =
-        Pattern.compile("\\.with\\(HttpMethod\\.[A-Z]+,\\s*\"([^\"]+)\""); 
+        Pattern.compile("\\.with\\(HttpMethod\\.[A-Z]+,\\s*\"([^\"]+)\"");
     private static final Pattern PATH_PARAMETER_PATTERN =
         Pattern.compile(":([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern SPEC_PATH_PATTERN =
         Pattern.compile("^\\s{2}(/[^:]+):\\s*$");
+    private static final Pattern COMPATIBILITY_PATH_PATTERN =
+        Pattern.compile("^\\s*- path: \"([^\"]+)\"");
 
     @Test
-    @DisplayName("canonical OpenAPI spec covers every registered HTTP route")
-    void shouldKeepSpecAndRegisteredRoutesInSync() throws IOException { 
-        Path repoRoot = resolveRepoRoot(); 
-        Path serverFile = repoRoot.resolve( 
+    @DisplayName("canonical OpenAPI specs cover every registered HTTP route by owner")
+    void shouldKeepSpecAndRegisteredRoutesInSync() throws IOException {
+        Path repoRoot = resolveRepoRoot();
+        Path serverFile = repoRoot.resolve(
             "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java");
-        Path specFile = repoRoot.resolve("products/data-cloud/contracts/openapi/data-cloud.yaml");
+        Path dataSpecFile = repoRoot.resolve("products/data-cloud/contracts/openapi/data-cloud.yaml");
+        Path actionSpecFile = repoRoot.resolve("products/data-cloud/contracts/openapi/action-plane.yaml");
+        Path compatibilityFile = repoRoot.resolve("products/data-cloud/contracts/openapi/route-compatibility-registry.yaml");
 
-        Set<String> codeRoutes = readCodeRoutes(serverFile); 
-        Set<String> specPaths = readSpecPaths(specFile); 
+        Set<String> codeRoutes = readCodeRoutes(serverFile);
+        Set<String> compatibilityRoutes = readCompatibilityPaths(compatibilityFile);
+        Set<String> dataCodeRoutes = new TreeSet<>(codeRoutes.stream()
+            .filter(route -> !route.startsWith("/api/v1/action/"))
+            .filter(route -> !compatibilityRoutes.contains(route))
+            .toList());
+        Set<String> actionCodeRoutes = new TreeSet<>(codeRoutes.stream()
+            .filter(route -> route.startsWith("/api/v1/action/"))
+            .toList());
+        Set<String> dataSpecPaths = readSpecPaths(dataSpecFile);
+        Set<String> actionSpecPaths = readSpecPaths(actionSpecFile);
+        Set<String> compatibilitySpecPathsInData = new TreeSet<>(dataSpecPaths);
+        compatibilitySpecPathsInData.retainAll(compatibilityRoutes);
 
-        Set<String> codeOnly = new TreeSet<>(codeRoutes); 
-        codeOnly.removeAll(specPaths); 
+        Set<String> dataCodeOnly = new TreeSet<>(dataCodeRoutes);
+        dataCodeOnly.removeAll(dataSpecPaths);
+        Set<String> dataSpecOnly = new TreeSet<>(dataSpecPaths);
+        dataSpecOnly.removeAll(dataCodeRoutes);
 
-        Set<String> specOnly = new TreeSet<>(specPaths); 
-        specOnly.removeAll(codeRoutes); 
+        Set<String> actionCodeOnly = new TreeSet<>(actionCodeRoutes);
+        actionCodeOnly.removeAll(actionSpecPaths);
+        Set<String> actionSpecOnly = new TreeSet<>(actionSpecPaths);
+        actionSpecOnly.removeAll(actionCodeRoutes);
 
-        assertThat(codeOnly) 
+        assertThat(dataCodeOnly)
             .as("routes registered in DataCloudHttpServer but missing from contracts/openapi/data-cloud.yaml")
-            .isEmpty(); 
-        assertThat(specOnly) 
+            .isEmpty();
+        assertThat(dataSpecOnly)
             .as("paths documented in contracts/openapi/data-cloud.yaml but not registered in DataCloudHttpServer")
-            .isEmpty(); 
+            .isEmpty();
+        assertThat(actionCodeOnly)
+            .as("Action Plane routes registered in DataCloudHttpServer but missing from contracts/openapi/action-plane.yaml")
+            .isEmpty();
+        assertThat(actionSpecOnly)
+            .as("paths documented in contracts/openapi/action-plane.yaml but not registered as Action Plane routes")
+            .isEmpty();
+        assertThat(compatibilitySpecPathsInData)
+            .as("legacy Action compatibility paths must not be documented in canonical data-cloud.yaml")
+            .isEmpty();
     }
 
     @Test
@@ -66,45 +94,55 @@ class OpenApiRouteAlignmentTest {
             .contains("AEP still owns broader agentic orchestration");
     }
 
-    private static Set<String> readCodeRoutes(Path serverFile) throws IOException { 
-        Set<String> routes = new TreeSet<>(); 
-        for (String line : Files.readAllLines(serverFile)) { 
-            Matcher matcher = CODE_ROUTE_PATTERN.matcher(line); 
-            if (!matcher.find()) { 
+    private static Set<String> readCodeRoutes(Path serverFile) throws IOException {
+        Set<String> routes = new TreeSet<>();
+        for (String line : Files.readAllLines(serverFile)) {
+            Matcher matcher = CODE_ROUTE_PATTERN.matcher(line);
+            if (!matcher.find()) {
                 continue;
             }
 
-            String route = normalizeRoutePath(matcher.group(1)); 
-            if (!"/ws".equals(route)) { 
-                routes.add(route); 
+            String route = normalizeRoutePath(matcher.group(1));
+            if (!"/ws".equals(route)) {
+                routes.add(route);
             }
         }
         return routes;
     }
 
-    private static Set<String> readSpecPaths(Path specFile) throws IOException { 
-        Set<String> paths = new TreeSet<>(); 
-        for (String line : Files.readAllLines(specFile)) { 
-            Matcher matcher = SPEC_PATH_PATTERN.matcher(line); 
-            if (matcher.find()) { 
-                paths.add(matcher.group(1)); 
+    private static Set<String> readSpecPaths(Path specFile) throws IOException {
+        Set<String> paths = new TreeSet<>();
+        for (String line : Files.readAllLines(specFile)) {
+            Matcher matcher = SPEC_PATH_PATTERN.matcher(line);
+            if (matcher.find()) {
+                paths.add(matcher.group(1));
             }
         }
         return paths;
     }
 
-    private static String normalizeRoutePath(String route) { 
-        String normalized = route.replaceFirst("^/api/v1/action/", "/api/v1/");
-        return PATH_PARAMETER_PATTERN.matcher(normalized).replaceAll("{$1}");
+    private static Set<String> readCompatibilityPaths(Path specFile) throws IOException {
+        Set<String> paths = new TreeSet<>();
+        for (String line : Files.readAllLines(specFile)) {
+            Matcher matcher = COMPATIBILITY_PATH_PATTERN.matcher(line);
+            if (matcher.find()) {
+                paths.add(normalizeRoutePath(matcher.group(1)));
+            }
+        }
+        return paths;
     }
 
-    private static Path resolveRepoRoot() { 
+    private static String normalizeRoutePath(String route) {
+        return PATH_PARAMETER_PATTERN.matcher(route).replaceAll("{$1}");
+    }
+
+    private static Path resolveRepoRoot() {
         Path current = Path.of("").toAbsolutePath();
-        while (current != null) { 
+        while (current != null) {
             if (Files.exists(current.resolve("products/data-cloud/contracts/openapi/data-cloud.yaml"))) {
                 return current;
             }
-            current = current.getParent(); 
+            current = current.getParent();
         }
         throw new IllegalStateException("Unable to locate repository root for OpenAPI route alignment test");
     }

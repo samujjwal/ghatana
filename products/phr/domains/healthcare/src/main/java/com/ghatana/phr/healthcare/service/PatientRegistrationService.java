@@ -2,6 +2,7 @@ package com.ghatana.phr.healthcare.service;
 
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
+import com.ghatana.phr.healthcare.validation.FhirValidator;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import io.activej.promise.Promise;
@@ -36,6 +37,7 @@ public class PatientRegistrationService {
     private final Executor executor;
     private final AuditService auditService;
     private final Counter registeredCounter;
+    private final FhirValidator fhirValidator;
 
     public record RegistrationRequest(
         String tenantId,
@@ -63,6 +65,7 @@ public class PatientRegistrationService {
         this.patientStore = Objects.requireNonNull(patientStore);
         this.executor = Objects.requireNonNull(executor);
         this.auditService = Objects.requireNonNull(auditService);
+        this.fhirValidator = new FhirValidator();
         this.registeredCounter = Counter.builder("healthcare.patients.registered_total")
             .description("Total number of patients registered")
             .register(registry);
@@ -73,6 +76,7 @@ public class PatientRegistrationService {
      * Returns the newly created patient.
      *
      * @throws IllegalStateException if the NHS ID is already registered within the tenant
+     * @throws IllegalArgumentException if the patient data fails FHIR R4 validation
      */
     public Promise<Patient> register(RegistrationRequest request) {
         return Promise.ofBlocking(executor, () -> {
@@ -91,6 +95,15 @@ public class PatientRegistrationService {
                 request.dateOfBirth(), request.gender(),
                 request.registeredBy()
             );
+            
+            // PHR-001: FHIR R4 schema-backed validation - reject invalid FHIR data
+            FhirValidator.FhirValidationResult validationResult = fhirValidator.validatePatient(patient);
+            if (!validationResult.valid()) {
+                throw new IllegalArgumentException(
+                    "Patient data fails FHIR R4 validation: " + validationResult.getErrorMessage()
+                );
+            }
+            
             // Enrich with optional fields (province, phone, email)
             Patient enriched = new Patient(
                 patient.patientId(), patient.tenantId(), patient.nhsId(),

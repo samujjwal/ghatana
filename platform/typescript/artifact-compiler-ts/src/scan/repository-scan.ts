@@ -38,6 +38,12 @@ export interface RepositoryScanOutput {
   readonly model: LogicalArtifactModel;
 }
 
+interface PackageManifestIntelligence {
+  readonly workspacePackageCount: number;
+  readonly workspaceDependencyCount: number;
+  readonly workspaceScriptCount: number;
+}
+
 const SUPPORTED_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 
 export function scanRepositorySources(
@@ -49,8 +55,18 @@ export function scanRepositorySources(
   const decompileFiles: DecompileSourceFile[] = [];
   const parsedFiles: ParsedSourceFile[] = [];
   const importStatements: ImportStatement[] = [];
+  const intelligenceRecords: RepositoryIntelligenceRecord[] = [];
+  let packageManifestIntelligence: PackageManifestIntelligence = {
+    workspacePackageCount: 0,
+    workspaceDependencyCount: 0,
+    workspaceScriptCount: 0,
+  };
 
   for (const source of sources) {
+    packageManifestIntelligence = mergePackageManifestIntelligence(
+      packageManifestIntelligence,
+      collectPackageManifestIntelligence(source),
+    );
     const sourceFile = toSourceFile(source);
     const parseStartedAt = Date.now();
     const isSupported = isSupportedSourcePath(source.relativePath);
@@ -103,6 +119,7 @@ export function scanRepositorySources(
       sourceFile: parsed,
     });
     importStatements.push(...collectImportStatements(source.relativePath, parsed));
+    intelligenceRecords.push(collectRepositoryIntelligence(parsed));
   }
 
   const decompiled = decompileFiles.length > 0
@@ -126,6 +143,7 @@ export function scanRepositorySources(
     sources,
     imports: importStatements,
   });
+  const intelligence = aggregateRepositoryIntelligence(intelligenceRecords);
 
   const modelWithGraph: LogicalArtifactModel = {
     ...decompiled.model,
@@ -135,6 +153,15 @@ export function scanRepositorySources(
       repositoryGraph: {
         resolvedImportCount: graph.resolvedImportCount,
         unresolvedImportCount: graph.unresolvedImportCount,
+        routeDeclarationCount: intelligence.routeDeclarationCount,
+        componentUsageCount: intelligence.componentUsageCount,
+        apiCallCount: intelligence.apiCallCount,
+        designTokenReferenceCount: intelligence.designTokenReferenceCount,
+        routeConfigObjectCount: intelligence.routeConfigObjectCount,
+        routeConfigMaxDepth: intelligence.routeConfigMaxDepth,
+        workspacePackageCount: packageManifestIntelligence.workspacePackageCount,
+        workspaceDependencyCount: packageManifestIntelligence.workspaceDependencyCount,
+        workspaceScriptCount: packageManifestIntelligence.workspaceScriptCount,
       },
     },
   };
@@ -161,6 +188,15 @@ interface ImportStatement {
   readonly isTypeOnly: boolean;
 }
 
+interface RepositoryIntelligenceRecord {
+  readonly routeDeclarationCount: number;
+  readonly componentUsageCount: number;
+  readonly apiCallCount: number;
+  readonly designTokenReferenceCount: number;
+  readonly routeConfigObjectCount: number;
+  readonly routeConfigMaxDepth: number;
+}
+
 function collectImportStatements(relativePath: string, sourceFile: ts.SourceFile): ImportStatement[] {
   const imports: ImportStatement[] = [];
   for (const statement of sourceFile.statements) {
@@ -174,6 +210,179 @@ function collectImportStatements(relativePath: string, sourceFile: ts.SourceFile
     });
   }
   return imports;
+}
+
+function collectRepositoryIntelligence(sourceFile: ts.SourceFile): RepositoryIntelligenceRecord {
+  let routeDeclarationCount = 0;
+  let componentUsageCount = 0;
+  let apiCallCount = 0;
+  let designTokenReferenceCount = 0;
+  let routeConfigObjectCount = 0;
+  let routeConfigMaxDepth = 0;
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isJsxOpeningLikeElement(node)) {
+      const tag = node.tagName.getText(sourceFile);
+      if (tag === 'Route') {
+        routeDeclarationCount += 1;
+      }
+      if (/^[A-Z]/.test(tag)) {
+        componentUsageCount += 1;
+      }
+    }
+
+    if (ts.isVariableDeclaration(node) && isRouteConfigIdentifier(node.name.getText(sourceFile))) {
+      const initializer = node.initializer;
+      if (initializer && (ts.isArrayLiteralExpression(initializer) || ts.isObjectLiteralExpression(initializer))) {
+        routeConfigObjectCount += 1;
+        routeConfigMaxDepth = Math.max(routeConfigMaxDepth, objectGraphDepth(initializer));
+      }
+    }
+
+    if (ts.isCallExpression(node)) {
+      if (ts.isIdentifier(node.expression) && node.expression.text === 'fetch') {
+        apiCallCount += 1;
+      }
+
+      if (ts.isIdentifier(node.expression) && isRouteConfigFactory(node.expression.text)) {
+        const firstArgument = node.arguments[0];
+        if (firstArgument && (ts.isArrayLiteralExpression(firstArgument) || ts.isObjectLiteralExpression(firstArgument))) {
+          routeConfigObjectCount += 1;
+          routeConfigMaxDepth = Math.max(routeConfigMaxDepth, objectGraphDepth(firstArgument));
+        }
+      }
+
+      if (ts.isPropertyAccessExpression(node.expression)) {
+        const objectText = node.expression.expression.getText(sourceFile);
+        const methodText = node.expression.name.getText(sourceFile);
+        if (objectText === 'axios' || objectText.endsWith('Client') || objectText.endsWith('Api')) {
+          if (['get', 'post', 'put', 'patch', 'delete', 'request'].includes(methodText)) {
+            apiCallCount += 1;
+          }
+        }
+      }
+    }
+
+    if (ts.isStringLiteralLike(node)) {
+      const text = node.text;
+      if (/\btoken\b/i.test(text) || /var\(--/i.test(text) || /theme\./i.test(text)) {
+        designTokenReferenceCount += 1;
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  ts.forEachChild(sourceFile, visit);
+
+  return {
+    routeDeclarationCount,
+    componentUsageCount,
+    apiCallCount,
+    designTokenReferenceCount,
+    routeConfigObjectCount,
+    routeConfigMaxDepth,
+  };
+}
+
+function aggregateRepositoryIntelligence(records: readonly RepositoryIntelligenceRecord[]): RepositoryIntelligenceRecord {
+  return records.reduce<RepositoryIntelligenceRecord>(
+    (acc, record) => ({
+      routeDeclarationCount: acc.routeDeclarationCount + record.routeDeclarationCount,
+      componentUsageCount: acc.componentUsageCount + record.componentUsageCount,
+      apiCallCount: acc.apiCallCount + record.apiCallCount,
+      designTokenReferenceCount: acc.designTokenReferenceCount + record.designTokenReferenceCount,
+      routeConfigObjectCount: acc.routeConfigObjectCount + record.routeConfigObjectCount,
+      routeConfigMaxDepth: Math.max(acc.routeConfigMaxDepth, record.routeConfigMaxDepth),
+    }),
+    {
+      routeDeclarationCount: 0,
+      componentUsageCount: 0,
+      apiCallCount: 0,
+      designTokenReferenceCount: 0,
+      routeConfigObjectCount: 0,
+      routeConfigMaxDepth: 0,
+    },
+  );
+}
+
+function isRouteConfigFactory(identifier: string): boolean {
+  return identifier === 'createBrowserRouter' || identifier === 'createHashRouter' || identifier === 'createMemoryRouter';
+}
+
+function isRouteConfigIdentifier(identifier: string): boolean {
+  return /route/i.test(identifier);
+}
+
+function objectGraphDepth(node: ts.ObjectLiteralExpression | ts.ArrayLiteralExpression): number {
+  const depth = (current: ts.Node): number => {
+    if (ts.isObjectLiteralExpression(current)) {
+      const childDepths = current.properties.flatMap((property) => {
+        if (!ts.isPropertyAssignment(property)) return [1];
+        return [1 + depth(property.initializer)];
+      });
+      return childDepths.length > 0 ? Math.max(...childDepths) : 1;
+    }
+
+    if (ts.isArrayLiteralExpression(current)) {
+      const childDepths = current.elements.map((element) => 1 + depth(element));
+      return childDepths.length > 0 ? Math.max(...childDepths) : 1;
+    }
+
+    return 0;
+  };
+
+  return depth(node);
+}
+
+function collectPackageManifestIntelligence(source: RepositoryScanSourceEntry): PackageManifestIntelligence {
+  const normalized = normalizeRelativePath(source.relativePath).toLowerCase();
+  if (!normalized.endsWith('/package.json') && normalized !== 'package.json') {
+    return {
+      workspacePackageCount: 0,
+      workspaceDependencyCount: 0,
+      workspaceScriptCount: 0,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(source.content) as {
+      readonly dependencies?: Record<string, string>;
+      readonly devDependencies?: Record<string, string>;
+      readonly peerDependencies?: Record<string, string>;
+      readonly optionalDependencies?: Record<string, string>;
+      readonly scripts?: Record<string, string>;
+    };
+
+    const dependencyCount =
+      Object.keys(parsed.dependencies ?? {}).length +
+      Object.keys(parsed.devDependencies ?? {}).length +
+      Object.keys(parsed.peerDependencies ?? {}).length +
+      Object.keys(parsed.optionalDependencies ?? {}).length;
+
+    return {
+      workspacePackageCount: 1,
+      workspaceDependencyCount: dependencyCount,
+      workspaceScriptCount: Object.keys(parsed.scripts ?? {}).length,
+    };
+  } catch {
+    return {
+      workspacePackageCount: 0,
+      workspaceDependencyCount: 0,
+      workspaceScriptCount: 0,
+    };
+  }
+}
+
+function mergePackageManifestIntelligence(
+  left: PackageManifestIntelligence,
+  right: PackageManifestIntelligence,
+): PackageManifestIntelligence {
+  return {
+    workspacePackageCount: left.workspacePackageCount + right.workspacePackageCount,
+    workspaceDependencyCount: left.workspaceDependencyCount + right.workspaceDependencyCount,
+    workspaceScriptCount: left.workspaceScriptCount + right.workspaceScriptCount,
+  };
 }
 
 function buildRepositoryImportGraph(options: {

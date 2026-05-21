@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.googleads;
 
+import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
 import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
@@ -25,6 +26,18 @@ public interface DmGoogleAdsCampaignApiClient {
      * @return Promise of the paused campaign resource name
      */
     Promise<String> pauseCampaign(String accessToken, String externalCampaignId);
+
+    /**
+     * Checks the readiness state of the Google Ads connector.
+     *
+     * <p>This method performs a health check on the connector to determine if it's
+     * ready to accept requests. It never returns fake success; it returns the actual
+     * readiness state.</p>
+     *
+     * @param accessToken valid OAuth2 access token for the Google Ads API
+     * @return Promise of the connector readiness state
+     */
+    Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken);
 
     /**
      * Payload used to create a Google Search campaign.

@@ -184,44 +184,61 @@ class DataCloudContractTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Pipeline Endpoints")
-    class PipelineEndpoints {
+    @DisplayName("Workflow Endpoints")
+    class WorkflowEndpoints {
 
         @Test
-        @DisplayName("GET /api/v1/pipelines must exist for pipeline listing")
-        void listPipelinesMustExist() {
-            JsonNode ep = spec.at("/paths/~1api~1v1~1pipelines/get");
+        @DisplayName("POST /api/v1/workflows/validate must exist for DAG validation")
+        void validateWorkflowMustExist() {
+            JsonNode ep = spec.at("/paths/~1api~1v1~1workflows~1validate/post");
             assertThat(ep.isMissingNode()).isFalse();
         }
 
         @Test
-        @DisplayName("POST /api/v1/pipelines must exist for pipeline creation")
-        void createPipelineMustExist() {
-            JsonNode ep = spec.at("/paths/~1api~1v1~1pipelines/post");
+        @DisplayName("POST /api/v1/workflows/analyze-risk must exist for orchestration risk analysis")
+        void analyzeRiskMustExist() {
+            JsonNode ep = spec.at("/paths/~1api~1v1~1workflows~1analyze-risk/post");
             assertThat(ep.isMissingNode()).isFalse();
         }
 
         @Test
-        @DisplayName("GET /api/v1/pipelines/{pipelineId} must exist")
-        void getPipelineByIdMustExist() {
-            JsonNode ep = spec.at("/paths/~1api~1v1~1pipelines~1{pipelineId}/get");
+        @DisplayName("POST /api/v1/workflows/validate must declare a success response")
+        void validateWorkflowMustDeclareSuccessResponse() {
+            JsonNode ep = spec.at("/paths/~1api~1v1~1workflows~1validate/post/responses/200");
             assertThat(ep.isMissingNode()).isFalse();
         }
 
         @Test
-        @DisplayName("POST /api/v1/pipelines/{pipelineId}/execute must exist")
-        void executePipelineMustExist() {
-            JsonNode ep = spec.at("/paths/~1api~1v1~1pipelines~1{pipelineId}~1execute/post");
+        @DisplayName("POST /api/v1/workflows/analyze-risk must declare a success response")
+        void analyzeRiskMustDeclareSuccessResponse() {
+            JsonNode ep = spec.at("/paths/~1api~1v1~1workflows~1analyze-risk/post/responses/200");
             assertThat(ep.isMissingNode())
-                    .as("POST /api/v1/pipelines/{pipelineId}/execute is required by orchestration consumers")
+                    .as("POST /api/v1/workflows/analyze-risk is required by orchestration consumers")
                     .isFalse();
         }
 
         @Test
-        @DisplayName("GET /api/v1/pipelines/{pipelineId}/executions must exist")
-        void listPipelineExecutionsMustExist() {
-            JsonNode ep = spec.at("/paths/~1api~1v1~1pipelines~1{pipelineId}~1executions/get");
-            assertThat(ep.isMissingNode()).isFalse();
+        @DisplayName("Workflow endpoints must be tenant-scoped")
+        void workflowEndpointsMustDeclareTenantScope() {
+            JsonNode validateParams = spec.at("/paths/~1api~1v1~1workflows~1validate/post/parameters");
+            JsonNode analyzeParams = spec.at("/paths/~1api~1v1~1workflows~1analyze-risk/post/parameters");
+
+            assertThat(validateParams.isArray()).isTrue();
+            assertThat(analyzeParams.isArray()).isTrue();
+
+            Set<String> validateParamNames = StreamSupport.stream(validateParams.spliterator(), false)
+                    .map(DataCloudContractTest::parameterName)
+                    .collect(Collectors.toSet());
+            Set<String> analyzeParamNames = StreamSupport.stream(analyzeParams.spliterator(), false)
+                    .map(DataCloudContractTest::parameterName)
+                    .collect(Collectors.toSet());
+
+            assertThat(validateParamNames)
+                    .as("POST /api/v1/workflows/validate must accept tenantId parameter")
+                    .contains("tenantId");
+            assertThat(analyzeParamNames)
+                    .as("POST /api/v1/workflows/analyze-risk must accept tenantId parameter")
+                    .contains("tenantId");
         }
     }
 

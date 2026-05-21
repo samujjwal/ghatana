@@ -397,13 +397,13 @@ export async function findRelatedEntities(
 
 /**
  * Fetch AI optimisation hints for a specific pipeline / workflow.
- * Calls POST /api/v1/pipelines/:pipelineId/optimise-hint
+ * Calls POST /api/v1/action/pipelines/:pipelineId/optimise-hint
  */
 export async function getPipelineOptimisationHints(
   pipelineId: string,
 ): Promise<ApiResponse<PipelineOptimisationHintsResponse>> {
   const rawResponse = await apiClient.post<PipelineOptimisationHintsResponse>(
-    `/pipelines/${pipelineId}/optimise-hint`,
+    `/action/pipelines/${pipelineId}/optimise-hint`,
     {},
   );
   const data = PipelineOptimisationHintsResponseSchema.parse(rawResponse);
@@ -418,7 +418,7 @@ export async function generateWorkflowDraft(
   prompt: string,
 ): Promise<ApiResponse<WorkflowDraftGenerationResult>> {
   const rawResponse = await apiClient.post<unknown>(
-    "/pipelines/draft",
+    "/action/pipelines/draft",
     { prompt },
     { headers: { "X-Tenant-ID": tenantId } },
   );

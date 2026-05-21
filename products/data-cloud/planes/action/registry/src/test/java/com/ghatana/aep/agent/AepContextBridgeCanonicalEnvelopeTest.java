@@ -4,6 +4,8 @@
  */
 package com.ghatana.aep.agent;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.agent.framework.memory.MemoryStore;
@@ -16,10 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -58,6 +63,7 @@ class AepContextBridgeCanonicalEnvelopeTest extends EventloopTestBase {
     @Mock private EventCloud eventCloud;
 
     private AepContextBridge bridge;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
@@ -86,7 +92,7 @@ class AepContextBridgeCanonicalEnvelopeTest extends EventloopTestBase {
               "traceContext": "trace-abc123",
               "correlationId": "corr-def456",
               "causationId": "cause-ghi789",
-              "policyContext": "{\"policyId\":\"policy-001\",\"decision\":\"allow\"}",
+              "policyContext": {"policyId":"policy-001","decision":"allow"},
               "tenantId": "tenant-123",
               "workspaceId": "workspace-456",
               "payload": {"name": "Test Product"}
@@ -102,7 +108,7 @@ class AepContextBridgeCanonicalEnvelopeTest extends EventloopTestBase {
 
     @Test
     @DisplayName("DC-P0-02: Canonical envelope fields are preserved in shared context")
-    void canonicalEnvelopeFieldsArePreservedInSharedContext() {
+    void canonicalEnvelopeFieldsArePreservedInSharedContext() throws Exception {
         runPromise(() -> bridge.activate());
 
         String canonicalContext = """
@@ -113,7 +119,7 @@ class AepContextBridgeCanonicalEnvelopeTest extends EventloopTestBase {
               "traceContext": "trace-abc123",
               "correlationId": "corr-def456",
               "causationId": "cause-ghi789",
-              "policyContext": "{\"policyId\":\"policy-001\",\"decision\":\"allow\"}",
+              "policyContext": {"policyId":"policy-001","decision":"allow"},
               "tenantId": "tenant-123",
               "workspaceId": "workspace-456",
               "classification": "sensitive",
@@ -129,7 +135,25 @@ class AepContextBridgeCanonicalEnvelopeTest extends EventloopTestBase {
 
         runPromise(() -> bridge.shareToAep("tenant-123", canonicalContext));
 
-        verify(eventCloud).append(eq("tenant-123"), eq(AepContextBridge.CONTEXT_EVENT_TYPE), any(byte[].class));
+        var payloadCaptor = forClass(byte[].class);
+        verify(eventCloud).append(eq("tenant-123"), eq(AepContextBridge.CONTEXT_EVENT_TYPE), payloadCaptor.capture());
+
+        JsonNode forwarded = objectMapper.readTree(new String(payloadCaptor.getValue(), StandardCharsets.UTF_8));
+        assertThat(forwarded.get("eventId").asText()).isEqualTo("evt-12345678-1234-1234-1234-123456789abc");
+        assertThat(forwarded.get("type").asText()).isEqualTo("entity.created");
+        assertThat(forwarded.get("tenantId").asText()).isEqualTo("tenant-123");
+        assertThat(forwarded.get("workspaceId").asText()).isEqualTo("workspace-456");
+        assertThat(forwarded.get("actor").asText()).isEqualTo("user-alice");
+        assertThat(forwarded.get("traceContext").asText()).isEqualTo("trace-abc123");
+        assertThat(forwarded.get("correlationId").asText()).isEqualTo("corr-def456");
+        assertThat(forwarded.get("causationId").asText()).isEqualTo("cause-ghi789");
+        assertThat(forwarded.get("policyContext").get("policyId").asText()).isEqualTo("policy-001");
+        assertThat(forwarded.get("classification").asText()).isEqualTo("sensitive");
+        assertThat(forwarded.get("provenance").asText()).isEqualTo("datacloud.launcher.event-handler");
+        assertThat(forwarded.get("subjectType").asText()).isEqualTo("Product");
+        assertThat(forwarded.get("subjectId").asText()).isEqualTo("entity-789");
+        assertThat(forwarded.get("timestamp").asText()).isEqualTo("2026-05-20T12:00:00Z");
+        assertThat(forwarded.get("payload").get("name").asText()).isEqualTo("Test Product");
 
         // Verify the context can be retrieved
         String retrievedContext = runPromise(() -> bridge.getFromAep("tenant-123"));

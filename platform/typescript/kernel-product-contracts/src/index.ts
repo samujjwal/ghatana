@@ -161,7 +161,18 @@ export {
   validateKernelLifecycleProviderContext,
 } from "./provider/index.js";
 
-// New event contracts
+// KernelProviderHealthMatrix contracts
+export {
+  KernelProviderHealthMatrix,
+  ProviderCapability,
+  ProviderCapabilityDeclaration,
+  ProviderHealthEntry,
+  ProviderHealthStatus,
+  parseKernelProviderHealthMatrix,
+  isKernelProviderHealthMatrix,
+} from "./provider/KernelProviderHealthMatrix.js";
+
+// New lifecycle contracts
 export {
   KernelEventMetadata,
   KernelLifecycleEvent,
@@ -187,6 +198,42 @@ export {
   KernelPreviewSecurityEvent,
   PreviewSecurityEventPayload,
 } from "./events/index.js";
+
+// Enhanced lifecycle failure model
+export {
+  LifecycleFailureClassifier,
+  LifecycleFailureClassifierSchema,
+  FAILURE_CATEGORIES,
+  FAILURE_SEVERITIES,
+  DependencyGraph,
+  DependencyGraphSchema,
+  DependencyGraphNode,
+  DependencyGraphNodeSchema,
+  ProviderCheck,
+  ProviderCheckSchema,
+  ProviderChecks,
+  ProviderChecksSchema,
+  GateCheck,
+  GateCheckSchema,
+  GateChecks,
+  GateChecksSchema,
+  ArtifactExpectation,
+  ArtifactExpectationSchema,
+  ArtifactExpectations,
+  ArtifactExpectationsSchema,
+  ApprovalPolicy,
+  ApprovalPolicySchema,
+  ApprovalStatus,
+  ApprovalStatusSchema,
+  EnvironmentPreflight,
+  EnvironmentPreflightSchema,
+  EnvironmentPreflightCheck,
+  EnvironmentPreflightCheckSchema,
+  PlanExplain,
+  PlanExplainSchema,
+  parsePlanExplain,
+  isPlanExplain,
+} from "./lifecycle/LifecycleContracts.js";
 
 // New health snapshot contracts
 export {

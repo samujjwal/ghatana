@@ -8,6 +8,8 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
 } from "../ToolchainAdapter.js";
 import { SpawnCommandRunner } from "../execution/SpawnCommandRunner.js";
 import type { CommandRunner } from "../execution/CommandRunner.js";
@@ -17,6 +19,10 @@ import {
   createToolchainExecutionResult,
   truncateToolchainOutput,
 } from "../execution/ToolchainExecutionResultFactory.js";
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
+} from "../ToolchainAdapter.js";
 
 /** Container image artifact produced by a successful Docker build. */
 export interface ContainerImageArtifact {
@@ -282,6 +288,14 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
       missingArtifacts: [],
       unexpectedArtifacts: [],
     };
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    return createDefaultPreflightResult();
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

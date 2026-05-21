@@ -15,6 +15,7 @@
  */
 
 import type { ReactElement } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 import type { FidelityReport, LossPoint } from '@ghatana/artifact-contracts';
@@ -49,6 +50,7 @@ export default function FidelityReportPage(): ReactElement {
   const storeReport = useAtomValue(artifactFidelityReportAtom);
   const diffReport = useAtomValue(artifactRoundTripDiffReportAtom);
   const report = storeReport ?? state.report ?? null;
+  const [triageByDiffId, setTriageByDiffId] = useState<Record<string, 'pending' | 'accepted' | 'escalated'>>({});
 
   if (report === null) {
     return (
@@ -189,19 +191,71 @@ export default function FidelityReportPage(): ReactElement {
           </dl>
           {diffReport.diffs.length > 0 && (
             <ul className="mt-3 space-y-2">
-              {diffReport.diffs.slice(0, 5).map((diff) => (
-                <li key={diff.diffId} className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-gray-700">{diff.generatedPath}</span>
-                    <span className={diff.semanticallyEquivalent ? 'text-green-700' : 'text-red-700'}>
-                      {diff.semanticallyEquivalent ? 'Semantic match' : 'Review required'}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    +{diff.addedLines} / -{diff.removedLines} / ={diff.unchangedLines}
-                  </p>
-                </li>
-              ))}
+              {diffReport.diffs.map((diff) => {
+                const triageStatus = triageByDiffId[diff.diffId] ?? 'pending';
+                return (
+                  <li key={diff.diffId} className="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-xs text-gray-700">{diff.generatedPath}</span>
+                      <span className={diff.semanticallyEquivalent ? 'text-green-700' : 'text-red-700'}>
+                        {diff.semanticallyEquivalent ? 'Semantic match' : 'Review required'}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      +{diff.addedLines} / -{diff.removedLines} / ={diff.unchangedLines}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTriageByDiffId((prev) => ({ ...prev, [diff.diffId]: 'accepted' }));
+                        }}
+                        className="rounded border border-green-200 bg-green-50 px-2 py-1 text-xs font-medium text-green-700"
+                      >
+                        Accept diff
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTriageByDiffId((prev) => ({ ...prev, [diff.diffId]: 'escalated' }));
+                        }}
+                        className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+                      >
+                        Escalate residual
+                      </button>
+                      <span className="text-xs text-gray-500">
+                        Triage: {triageStatus}
+                      </span>
+                    </div>
+                    {diff.hunks.length > 0 && (
+                      <details className="mt-3 rounded border border-gray-200 bg-white p-2">
+                        <summary className="cursor-pointer text-xs font-medium text-gray-700">
+                          View diff hunks ({diff.hunks.length})
+                        </summary>
+                        <ul className="mt-2 space-y-2">
+                          {diff.hunks.map((hunk, index) => (
+                            <li key={`${diff.diffId}-hunk-${index}`} className="rounded border border-gray-100 bg-gray-50 p-2">
+                              <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                                {hunk.kind} · lines {hunk.lineCount}
+                              </p>
+                              {hunk.originalSnippet && (
+                                <pre className="mt-1 overflow-x-auto rounded bg-red-50 p-2 text-[11px] text-red-900">
+{hunk.originalSnippet}
+                                </pre>
+                              )}
+                              {hunk.generatedSnippet && (
+                                <pre className="mt-1 overflow-x-auto rounded bg-green-50 p-2 text-[11px] text-green-900">
+{hunk.generatedSnippet}
+                                </pre>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -29,6 +29,7 @@ public final class RouteSecurityMetadata {
     private final boolean requiresTenant;
     private final boolean requiresPolicy;
     private final boolean requiresBlockingAudit;
+    private final DataCloudSecurityFilter.AccessLevel requiredAccess;
     private final boolean idempotent;
     private final String runtimeTruthSurface;
     private final String legacyStatus; // "active" | "deprecated" | "compatibility-only"
@@ -44,6 +45,7 @@ public final class RouteSecurityMetadata {
      * @param requiresTenant Whether tenant context is required
      * @param requiresPolicy Whether policy engine must be invoked
      * @param requiresBlockingAudit Whether audit failure should block the request
+     * @param requiredAccess Required role/access posture for the route
      * @param idempotent Whether the route is idempotent
      * @param runtimeTruthSurface Which UI surface this route exposes (e.g., "action_plane")
      * @param legacyStatus Legacy status ("active", "deprecated", "compatibility-only")
@@ -57,6 +59,7 @@ public final class RouteSecurityMetadata {
             boolean requiresTenant,
             boolean requiresPolicy,
             boolean requiresBlockingAudit,
+            DataCloudSecurityFilter.AccessLevel requiredAccess,
             boolean idempotent,
             String runtimeTruthSurface,
             String legacyStatus,
@@ -68,6 +71,7 @@ public final class RouteSecurityMetadata {
         this.requiresTenant = requiresTenant;
         this.requiresPolicy = requiresPolicy;
         this.requiresBlockingAudit = requiresBlockingAudit;
+        this.requiredAccess = requiredAccess != null ? requiredAccess : DataCloudSecurityFilter.AccessLevel.VIEWER;
         this.idempotent = idempotent;
         this.runtimeTruthSurface = runtimeTruthSurface;
         this.legacyStatus = legacyStatus != null ? legacyStatus : "active";
@@ -100,6 +104,10 @@ public final class RouteSecurityMetadata {
 
     public boolean requiresBlockingAudit() {
         return requiresBlockingAudit;
+    }
+
+    public DataCloudSecurityFilter.AccessLevel requiredAccess() {
+        return requiredAccess;
     }
 
     public boolean isIdempotent() {
@@ -138,6 +146,7 @@ public final class RouteSecurityMetadata {
                 && Objects.equals(method, that.method)
                 && Objects.equals(canonicalPath, that.canonicalPath)
                 && sensitivity == that.sensitivity
+                && requiredAccess == that.requiredAccess
                 && Objects.equals(runtimeTruthSurface, that.runtimeTruthSurface)
                 && Objects.equals(legacyStatus, that.legacyStatus)
                 && Objects.equals(description, that.description);
@@ -153,6 +162,7 @@ public final class RouteSecurityMetadata {
                 requiresTenant,
                 requiresPolicy,
                 requiresBlockingAudit,
+                requiredAccess,
                 idempotent,
                 runtimeTruthSurface,
                 legacyStatus,
@@ -175,6 +185,8 @@ public final class RouteSecurityMetadata {
                 + requiresPolicy
                 + ", requiresBlockingAudit="
                 + requiresBlockingAudit
+                + ", requiredAccess="
+                + requiredAccess
                 + ", idempotent="
                 + idempotent
                 + ", runtimeTruthSurface='"
@@ -204,6 +216,7 @@ public final class RouteSecurityMetadata {
         private boolean requiresTenant = true;
         private boolean requiresPolicy = false;
         private boolean requiresBlockingAudit = false;
+        private DataCloudSecurityFilter.AccessLevel requiredAccess = DataCloudSecurityFilter.AccessLevel.VIEWER;
         private boolean idempotent = false;
         private String runtimeTruthSurface;
         private String legacyStatus = "active";
@@ -244,6 +257,11 @@ public final class RouteSecurityMetadata {
             return this;
         }
 
+        public Builder requiredAccess(DataCloudSecurityFilter.AccessLevel requiredAccess) {
+            this.requiredAccess = requiredAccess;
+            return this;
+        }
+
         public Builder idempotent(boolean idempotent) {
             this.idempotent = idempotent;
             return this;
@@ -273,6 +291,7 @@ public final class RouteSecurityMetadata {
                     requiresTenant,
                     requiresPolicy,
                     requiresBlockingAudit,
+                    requiredAccess,
                     idempotent,
                     runtimeTruthSurface,
                     legacyStatus,

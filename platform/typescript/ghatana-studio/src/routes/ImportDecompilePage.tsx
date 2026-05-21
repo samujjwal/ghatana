@@ -14,7 +14,7 @@
  * @doc.layer studio
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { ReactElement, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
@@ -33,6 +33,7 @@ import type {
 import { setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
 import {
   defaultProviderRegistry,
+  resolveProviderRegistryForEnv,
   type ArchiveUploadInput,
   type PastedSourceInput,
   type RepositorySourceInput,
@@ -66,15 +67,41 @@ export default function ImportDecompilePage(): ReactElement {
   const [pastedContent, setPastedContent] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [repositoryRef, setRepositoryRef] = useState('');
+  const [acquisitionStatus, setAcquisitionStatus] = useState<{
+    readonly tone: 'info' | 'success' | 'warning' | 'error';
+    readonly message: string;
+  } | null>(null);
   const navigate = useNavigate();
   const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
+  const providerRegistry = useMemo(() => {
+    const env = (import.meta as ImportMeta & { readonly env?: Record<string, string | undefined> }).env;
+    return resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry;
+  }, []);
+
   const runAcquisition = useCallback(
     async (input: unknown) => {
-      const acquisitionResult = await defaultProviderRegistry.acquire(input);
+      setAcquisitionStatus({ tone: 'info', message: 'Acquiring source input…' });
+      const acquisitionResult = await providerRegistry.acquire(input);
       setFileErrors([...acquisitionResult.errors]);
 
-      if (acquisitionResult.sources.length === 0) return;
+      if (acquisitionResult.acquisitionJob !== undefined && acquisitionResult.sources.length === 0) {
+        const message = acquisitionResult.acquisitionJob.status === 'failed'
+          ? `Acquisition job failed: ${acquisitionResult.acquisitionJob.errorMessage ?? 'Unknown error.'}`
+          : `Acquisition job ${acquisitionResult.acquisitionJob.jobId} is pending backend execution.`;
+        setAcquisitionStatus({
+          tone: acquisitionResult.acquisitionJob.status === 'failed' ? 'error' : 'warning',
+          message,
+        });
+        return;
+      }
+
+      if (acquisitionResult.sources.length === 0) {
+        setAcquisitionStatus({ tone: 'error', message: 'No source files were acquired.' });
+        return;
+      }
+
+      setAcquisitionStatus({ tone: 'success', message: `Acquired ${acquisitionResult.sources.length} source file(s).` });
 
       const sources: SourceEntry[] = acquisitionResult.sources.map(sourceEntryFromProvider);
       const jobId = crypto.randomUUID();
@@ -184,7 +211,7 @@ export default function ImportDecompilePage(): ReactElement {
         setCompletedResult(jobResult);
       }
     },
-    [],
+    [providerRegistry, setWorkflow],
   );
 
   const handleFilesSelected = useCallback(
@@ -267,6 +294,7 @@ export default function ImportDecompilePage(): ReactElement {
         </label>
         <select
           id="source-provider-select"
+          data-testid="source-provider-select"
           value={providerKind}
           onChange={(event) => { setProviderKind(event.target.value as typeof providerKind); }}
           className="block w-full max-w-sm rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm"
@@ -288,6 +316,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <input
               id="source-file-input"
+              data-testid="source-file-input"
               type="file"
               multiple
               accept=".ts,.tsx"
@@ -307,6 +336,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <input
               id="pasted-source-path"
+              data-testid="pasted-source-path"
               type="text"
               value={pastedPath}
               onChange={(event) => { setPastedPath(event.target.value); }}
@@ -317,6 +347,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <textarea
               id="pasted-source-content"
+              data-testid="pasted-source-content"
               value={pastedContent}
               onChange={(event) => { setPastedContent(event.target.value); }}
               rows={8}
@@ -324,6 +355,7 @@ export default function ImportDecompilePage(): ReactElement {
             />
             <button
               type="submit"
+              data-testid="decompile-pasted-source-button"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
             >
               Decompile pasted source
@@ -338,6 +370,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <input
               id="repository-url"
+              data-testid="repository-url"
               type="url"
               value={repositoryUrl}
               onChange={(event) => { setRepositoryUrl(event.target.value); }}
@@ -348,6 +381,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <input
               id="repository-ref"
+              data-testid="repository-ref"
               type="text"
               value={repositoryRef}
               onChange={(event) => { setRepositoryRef(event.target.value); }}
@@ -355,6 +389,7 @@ export default function ImportDecompilePage(): ReactElement {
             />
             <button
               type="submit"
+              data-testid="start-repository-acquisition-button"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
             >
               Start repository acquisition
@@ -369,6 +404,7 @@ export default function ImportDecompilePage(): ReactElement {
             </label>
             <input
               id="archive-file-input"
+              data-testid="archive-file-input"
               type="file"
               accept=".zip,.tar,.tgz,.tar.gz"
               onChange={handleArchiveSelected}
@@ -381,6 +417,24 @@ export default function ImportDecompilePage(): ReactElement {
       </div>
 
       {/* File validation errors */}
+      {acquisitionStatus !== null && (
+        <div
+          data-testid="acquisition-status"
+          role="status"
+          className={`rounded-md border p-3 text-sm ${
+            acquisitionStatus.tone === 'success'
+              ? 'border-green-200 bg-green-50 text-green-800'
+              : acquisitionStatus.tone === 'warning'
+              ? 'border-yellow-200 bg-yellow-50 text-yellow-800'
+              : acquisitionStatus.tone === 'error'
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : 'border-blue-200 bg-blue-50 text-blue-800'
+          }`}
+        >
+          {acquisitionStatus.message}
+        </div>
+      )}
+
       {fileErrors.length > 0 && (
         <ul
           id="file-errors"

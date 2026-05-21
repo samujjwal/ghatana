@@ -68,4 +68,94 @@ describe("buildRoundTripDiffReport", () => {
 
     expect(report.diffs[0]?.semanticallyEquivalent).toBe(false);
   });
+
+  it('marks import-shape changes as not semantically equivalent', () => {
+    const decompiled = decompileTsx({
+      label: 'diff-test-import-shape',
+      modelId: 'diff-model-import-shape',
+      files: [{ relativePath: 'src/Button.tsx', content: SOURCE }],
+    });
+
+    const generated = `
+import { ReactElement } from "react";
+
+export interface ButtonProps {
+  readonly label: string;
+}
+
+export function Button(props: ButtonProps): ReactElement {
+  return <button>{props.label}</button>;
+}
+`.trim();
+
+    const report = buildRoundTripDiffReport({
+      reportId: 'diff-report-import-shape',
+      model: decompiled.model,
+      originalSources: [{ relativePath: 'src/Button.tsx', content: SOURCE }],
+      generatedSources: [{ relativePath: 'src/Button.tsx', content: generated }],
+    });
+
+    expect(report.diffs[0]?.semanticallyEquivalent).toBe(false);
+  });
+
+  it('marks JSX event-handler changes as not semantically equivalent', () => {
+    const original = `
+      export function Clickable(props: { readonly onPress: () => void }) {
+        return <button onClick={props.onPress}>Go</button>;
+      }
+    `;
+    const decompiled = decompileTsx({
+      label: 'diff-test-event-shape',
+      modelId: 'diff-model-event-shape',
+      files: [
+        {
+          relativePath: 'src/Clickable.tsx',
+          content: original,
+        },
+      ],
+    });
+
+    const generated = `
+      export function Clickable(props: { readonly onPress: () => void }) {
+        return <button onMouseEnter={props.onPress}>Go</button>;
+      }
+    `;
+
+    const report = buildRoundTripDiffReport({
+      reportId: 'diff-report-event-shape',
+      model: decompiled.model,
+      originalSources: [{ relativePath: 'src/Clickable.tsx', content: original }],
+      generatedSources: [{ relativePath: 'src/Clickable.tsx', content: generated }],
+    });
+
+    expect(report.diffs[0]?.semanticallyEquivalent).toBe(false);
+  });
+
+  it('marks style token and data-binding changes as not semantically equivalent', () => {
+    const original = `
+      export function Card(props: { readonly title: string; readonly detail: string }) {
+        return <section className="card token-primary">{props.title}:{props.detail}</section>;
+      }
+    `;
+    const decompiled = decompileTsx({
+      label: 'diff-test-style-shape',
+      modelId: 'diff-model-style-shape',
+      files: [{ relativePath: 'src/Card.tsx', content: original }],
+    });
+
+    const generated = `
+      export function Card(props: { readonly title: string; readonly detail: string }) {
+        return <section className="card token-secondary">{props.title}</section>;
+      }
+    `;
+
+    const report = buildRoundTripDiffReport({
+      reportId: 'diff-report-style-shape',
+      model: decompiled.model,
+      originalSources: [{ relativePath: 'src/Card.tsx', content: original }],
+      generatedSources: [{ relativePath: 'src/Card.tsx', content: generated }],
+    });
+
+    expect(report.diffs[0]?.semanticallyEquivalent).toBe(false);
+  });
 });

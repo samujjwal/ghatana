@@ -133,6 +133,12 @@ public final class DmosCampaignServlet {
                     this::handleCreateCampaign)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/campaigns/:id",
                     this::handleGetCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/transition",
+                    this::handleTransitionCampaign)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/request-approval",
+                    this::handleRequestApproval)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/approve",
+                    this::handleApproveCampaign)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/launch",
                     this::handleLaunchCampaign)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/pause",
@@ -824,11 +830,200 @@ public final class DmosCampaignServlet {
         }
     }
 
+    private Promise<HttpResponse> handleTransitionCampaign(HttpRequest request) {
+        return request.loadBody().then(__ -> {
+            try {
+                String workspaceId = request.getPathParameter("workspaceId");
+                String campaignId = request.getPathParameter("id");
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.CAMPAIGNS,
+                    "transition-campaign"
+                );
+
+                return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                    .then(errorResponse -> {
+                        if (errorResponse != null) {
+                            return Promise.of(errorResponse);
+                        }
+
+                        TransitionRequest body = MAPPER.readValue(
+                            request.getBody().getString(StandardCharsets.UTF_8),
+                            TransitionRequest.class);
+
+                        io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/transition", ctx).startSpan();
+                        try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                            telemetry.setCampaignId(campaignId);
+                            return campaignService.transitionCampaign(ctx, campaignId, body.toStatus(), body.actor(), body.reason())
+                                .map(campaign -> {
+                                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                    span.end();
+                                    return jsonResponse(200, CampaignResponse.from(campaign));
+                                })
+                                .then(r -> Promise.of(r), e -> {
+                                    telemetry.recordException(span, e);
+                                    span.end();
+                                    if (e instanceof SecurityException) {
+                                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof java.util.NoSuchElementException) {
+                                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof IllegalStateException) {
+                                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    LOG.error("[DMOS] Failed to transition campaign", e);
+                                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                                });
+                        }
+                    });
+            } catch (IllegalArgumentException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+            } catch (SecurityException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(403, "Access denied", correlationId));
+            } catch (Exception e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                LOG.error("[DMOS] Failed to transition campaign", e);
+                return Promise.of(errorResponse(500, "Internal error", correlationId));
+            }
+        });
+    }
+
+    private Promise<HttpResponse> handleRequestApproval(HttpRequest request) {
+        try {
+            String workspaceId = request.getPathParameter("workspaceId");
+            String campaignId = request.getPathParameter("id");
+            DmOperationContext ctx = httpContextFactory.buildContext(
+                request,
+                workspaceId,
+                true,
+                DmosCapabilityRegistry.CAMPAIGNS,
+                "request-approval"
+            );
+
+            return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                .then(errorResponse -> {
+                    if (errorResponse != null) {
+                        return Promise.of(errorResponse);
+                    }
+
+                    io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/request-approval", ctx).startSpan();
+                    try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                        telemetry.setCampaignId(campaignId);
+                        return campaignService.transitionCampaign(ctx, campaignId, "PENDING_APPROVAL", ctx.getActor().getPrincipalId(), "Requesting approval")
+                            .map(campaign -> {
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return jsonResponse(200, CampaignResponse.from(campaign));
+                            })
+                            .then(r -> Promise.of(r), e -> {
+                                telemetry.recordException(span, e);
+                                span.end();
+                                if (e instanceof SecurityException) {
+                                    return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                }
+                                if (e instanceof java.util.NoSuchElementException) {
+                                    return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                }
+                                if (e instanceof IllegalStateException) {
+                                    return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                }
+                                LOG.error("[DMOS] Failed to request approval", e);
+                                return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                            });
+                    }
+                });
+        } catch (IllegalArgumentException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+        } catch (SecurityException e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            return Promise.of(errorResponse(403, "Access denied", correlationId));
+        } catch (Exception e) {
+            String correlationId = DmCorrelationId.generate().getValue();
+            LOG.error("[DMOS] Failed to request approval", e);
+            return Promise.of(errorResponse(500, "Internal error", correlationId));
+        }
+    }
+
+    private Promise<HttpResponse> handleApproveCampaign(HttpRequest request) {
+        return request.loadBody().then(__ -> {
+            try {
+                String workspaceId = request.getPathParameter("workspaceId");
+                String campaignId = request.getPathParameter("id");
+                DmOperationContext ctx = httpContextFactory.buildContext(
+                    request,
+                    workspaceId,
+                    true,
+                    DmosCapabilityRegistry.CAMPAIGNS,
+                    "approve-campaign"
+                );
+
+                return checkCapability(ctx, DmosCapabilityRegistry.CAMPAIGNS)
+                    .then(errorResponse -> {
+                        if (errorResponse != null) {
+                            return Promise.of(errorResponse);
+                        }
+
+                        ApproveRequest body = MAPPER.readValue(
+                            request.getBody().getString(StandardCharsets.UTF_8),
+                            ApproveRequest.class);
+
+                        io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /campaigns/:id/approve", ctx).startSpan();
+                        try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                            telemetry.setCampaignId(campaignId);
+                            return campaignService.transitionCampaign(ctx, campaignId, "APPROVED", body.actor(), body.reason())
+                                .map(campaign -> {
+                                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                    span.end();
+                                    return jsonResponse(200, CampaignResponse.from(campaign));
+                                })
+                                .then(r -> Promise.of(r), e -> {
+                                    telemetry.recordException(span, e);
+                                    span.end();
+                                    if (e instanceof SecurityException) {
+                                        return Promise.of(errorResponse(403, "Access denied", ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof java.util.NoSuchElementException) {
+                                        return Promise.of(errorResponse(404, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    if (e instanceof IllegalStateException) {
+                                        return Promise.of(errorResponse(409, e.getMessage(), ctx.getCorrelationId().getValue()));
+                                    }
+                                    LOG.error("[DMOS] Failed to approve campaign", e);
+                                    return Promise.of(errorResponse(500, "Internal error", ctx.getCorrelationId().getValue()));
+                                });
+                        }
+                    });
+            } catch (IllegalArgumentException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(400, e.getMessage(), correlationId));
+            } catch (SecurityException e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                return Promise.of(errorResponse(403, "Access denied", correlationId));
+            } catch (Exception e) {
+                String correlationId = DmCorrelationId.generate().getValue();
+                LOG.error("[DMOS] Failed to approve campaign", e);
+                return Promise.of(errorResponse(500, "Internal error", correlationId));
+            }
+        });
+    }
+
     /** API response for paginated campaign list. */
     record CampaignListResponse(
         List<CampaignResponse> items,
         long count,
         int offset
     ) { }
+
+    /** Request body for campaign transition. */
+    record TransitionRequest(String toStatus, String actor, String reason) { }
+
+    /** Request body for campaign approval. */
+    record ApproveRequest(String actor, String reason) { }
 
 }

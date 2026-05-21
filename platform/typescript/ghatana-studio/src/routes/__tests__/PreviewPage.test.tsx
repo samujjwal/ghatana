@@ -16,6 +16,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai';
 import { setArtifactWorkflowAtom } from '../../state/artifactWorkflowStore.js';
@@ -85,11 +86,12 @@ describe('PreviewPage', () => {
       expect(iframe.tagName).toBe('IFRAME');
     });
 
-    it('renders the preview title heading', () => {
+    it('renders the preview title heading', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       renderWithStore(store);
 
+      await screen.findByTitle(/Preview/i);
       expect(screen.getByRole('heading', { name: /Preview/i })).toBeInTheDocument();
     });
 
@@ -103,6 +105,28 @@ describe('PreviewPage', () => {
       expect(sandbox).toContain('allow-scripts');
       expect(sandbox).not.toContain('allow-same-origin');
       expect(sandbox).not.toContain('allow-top-navigation');
+    });
+
+    it('renders a preview execution mode selector', async () => {
+      const store = createStore();
+      store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
+      renderWithStore(store);
+
+      await screen.findByTitle(/Preview/i);
+      expect(screen.getByLabelText(/Preview execution mode/i)).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Safe static' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Isolated runtime' })).toBeInTheDocument();
+    });
+
+    it('supports switching from safe-static to isolated-runtime mode', async () => {
+      const store = createStore();
+      store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
+      renderWithStore(store);
+
+      const selector = screen.getByLabelText(/Preview execution mode/i);
+      await userEvent.selectOptions(selector, 'isolated-runtime');
+
+      expect((selector as HTMLSelectElement).value).toBe('isolated-runtime');
     });
   });
 
@@ -127,11 +151,12 @@ describe('PreviewPage', () => {
   });
 
   describe('back navigation', () => {
-    it('calls navigate(-1) when the Back button is clicked', () => {
+    it('calls navigate(-1) when the Back button is clicked', async () => {
       const store = createStore();
       store.set(setArtifactWorkflowAtom, { previewSource: SAMPLE_HTML });
       renderWithStore(store);
 
+      await screen.findByTitle(/Preview/i);
       fireEvent.click(screen.getByRole('button', { name: /Go back/i }));
       expect(navigateMock).toHaveBeenCalledWith(-1);
     });

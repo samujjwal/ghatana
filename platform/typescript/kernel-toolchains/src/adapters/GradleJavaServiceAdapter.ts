@@ -8,6 +8,8 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
 } from '../ToolchainAdapter.js';
 import { SpawnCommandRunner } from '../execution/SpawnCommandRunner.js';
 import type { CommandRunner } from '../execution/CommandRunner.js';
@@ -17,6 +19,10 @@ import {
   createToolchainExecutionResult,
   truncateToolchainOutput,
 } from '../execution/ToolchainExecutionResultFactory.js';
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
+} from '../ToolchainAdapter.js';
 import type { ToolchainCoverageResults, ToolchainTestResults } from '../ToolchainAdapter.js';
 
 /**
@@ -33,6 +39,11 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
   constructor(options: { repoRoot?: string; commandRunner?: CommandRunner } = {}) {
     this.repoRoot = options.repoRoot ?? process.cwd();
     this.commandRunner = options.commandRunner ?? new SpawnCommandRunner();
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    // Default preflight - can be enhanced with Gradle-specific checks
+    return createDefaultPreflightResult();
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
@@ -202,6 +213,10 @@ export class GradleJavaServiceAdapter implements ToolchainAdapter {
       missingArtifacts,
       unexpectedArtifacts: [],
     };
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   /** Write a processes.json to outputDir for the dev phase. */

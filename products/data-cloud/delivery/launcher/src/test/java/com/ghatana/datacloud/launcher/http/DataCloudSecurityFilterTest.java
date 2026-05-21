@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. 
+ * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  *   <li>Authenticated INTERNAL paths pass through; no audit.</li>
  *   <li>Authenticated SENSITIVE paths pass through; audit emitted.</li>
  *   <li>CRITICAL paths go through policy engine; allow emits audit, deny returns 403.</li>
- *   <li>Audit-only (non-enforcing) mode logs but never blocks.</li> 
+ *   <li>Audit-only (non-enforcing) mode logs but never blocks.</li>
  * </ol>
  *
  * @doc.type class
@@ -63,11 +63,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
     // Public probes
     private static final String PUBLIC_PATH    = "/health";
-    // Authenticated read path (INTERNAL) 
+    // Authenticated read path (INTERNAL)
     private static final String INTERNAL_PATH  = "/api/v1/collections/test";
-    // AI inference path (SENSITIVE) 
+    // AI inference path (SENSITIVE)
     private static final String SENSITIVE_PATH = "/api/v1/voice/intent";
-    // Governance path (always CRITICAL) 
+    // Governance path (always CRITICAL)
     private static final String CRITICAL_PATH  = "/api/v1/governance/policies/test";
 
     // ── Collaborator mocks ────────────────────────────────────────────────────
@@ -77,82 +77,90 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
     // Stub delegate that always returns 200 OK
     private static final AsyncServlet OK_DELEGATE =
-            request -> Promise.of(HttpResponse.ok200().build()); 
+            request -> Promise.of(HttpResponse.ok200().build());
 
     @BeforeEach
-    void setUpMocks() { 
-        apiKeyResolver = mock(ApiKeyResolver.class); 
-        policyEngine   = mock(PolicyEngine.class); 
-        auditService   = mock(AuditService.class); 
+    void setUpMocks() {
+        apiKeyResolver = mock(ApiKeyResolver.class);
+        policyEngine   = mock(PolicyEngine.class);
+        auditService   = mock(AuditService.class);
 
         // Default: valid key → authenticated principal
         Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
-        when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal)); 
-        when(apiKeyResolver.resolve(INVALID_API_KEY)).thenReturn(Optional.empty()); 
+        when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal));
+        when(apiKeyResolver.resolve(INVALID_API_KEY)).thenReturn(Optional.empty());
 
         // Default AuditService: fire-and-forget, complete successfully
-        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of((Void) null)); 
+        when(auditService.record(any(AuditEvent.class))).thenReturn(Promise.of((Void) null));
 
-        // Default PolicyEngine: allow everything (individual tests override) 
-        when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); 
+        // Default PolicyEngine: allow everything (individual tests override)
+        when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private DataCloudSecurityFilter enforcing() { 
-        return DataCloudSecurityFilter.builder() 
-                .apiKeyResolver(apiKeyResolver) 
-                .policyEngine(policyEngine) 
-                .auditService(auditService) 
-                .enforcing(true) 
-                .build(); 
+    private DataCloudSecurityFilter enforcing() {
+        return DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(true)
+                .build();
     }
 
-    private DataCloudSecurityFilter auditOnly() { 
-        return DataCloudSecurityFilter.builder() 
-                .apiKeyResolver(apiKeyResolver) 
-                .policyEngine(policyEngine) 
-                .auditService(auditService) 
-                .enforcing(false) 
-                .build(); 
+    private DataCloudSecurityFilter auditOnly() {
+        return DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .policyEngine(policyEngine)
+                .auditService(auditService)
+                .enforcing(false)
+                .build();
     }
 
-    private static HttpRequest get(String path) { 
-        return HttpRequest.get("http://localhost" + path) 
+    private static HttpRequest get(String path) {
+        return HttpRequest.get("http://localhost" + path)
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
     }
 
-    private static HttpRequest getWithKey(String path, String apiKey) { 
-        return getWithTenant(path, apiKey, TEST_TENANT); 
+    private static HttpRequest getWithKey(String path, String apiKey) {
+        return getWithTenant(path, apiKey, TEST_TENANT);
     }
 
-    private static HttpRequest getWithTenant(String path, String apiKey, String tenantId) { 
-        return HttpRequest.get("http://localhost" + path) 
+    private static HttpRequest getWithTenant(String path, String apiKey, String tenantId) {
+        return HttpRequest.get("http://localhost" + path)
                 .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
     }
 
-    private static HttpRequest getNoKey(String path) { 
-        return HttpRequest.get("http://localhost" + path) 
+    private static HttpRequest getNoKey(String path) {
+        return HttpRequest.get("http://localhost" + path)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
     }
 
-    private static HttpRequest getWithRequestId(String path, String requestId) { 
-        return HttpRequest.get("http://localhost" + path) 
+    private static HttpRequest getWithRequestId(String path, String requestId) {
+        return HttpRequest.get("http://localhost" + path)
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.of(DataCloudSecurityFilter.HEADER_REQUEST_ID), requestId) 
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.of(DataCloudSecurityFilter.HEADER_REQUEST_ID), requestId)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+    }
+
+    private static HttpRequest criticalRequest() {
+        return HttpRequest.put("http://localhost" + CRITICAL_PATH)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -165,53 +173,53 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("GET /health returns 200 without API key")
-        void health_returnsOkWithoutApiKey() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+        void health_returnsOkWithoutApiKey() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.get("http://localhost/health")
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build();  // NO X-API-Key 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();  // NO X-API-Key
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("GET /health does not invoke ApiKeyResolver")
-        void health_doesNotInvokeApiKeyResolver() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+        void health_doesNotInvokeApiKeyResolver() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.get("http://localhost/health")
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(apiKeyResolver, never()).resolve(anyString()); 
+            verify(apiKeyResolver, never()).resolve(anyString());
         }
 
         @Test
         @DisplayName("GET /health does not emit audit")
-        void health_doesNotEmitAudit() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+        void health_doesNotEmitAudit() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.get("http://localhost/health")
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(auditService, never()).record(any()); 
+            verify(auditService, never()).record(any());
         }
 
         @Test
         @DisplayName("/ready, /live, /metrics, /info are PUBLIC")
-        void otherPublicProbes_returnOkWithoutKey() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            for (String probePath : new String[]{"/ready", "/live", "/metrics", "/info"}) { 
-                HttpRequest req = HttpRequest.get("http://localhost" + probePath) 
-                        .withHeader(HttpHeaders.HOST, "localhost") 
-                        .build(); 
-                int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
-                assertThat(status).as("status for %s without auth", probePath).isEqualTo(200); 
+        void otherPublicProbes_returnOkWithoutKey() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            for (String probePath : new String[]{"/ready", "/live", "/metrics", "/info"}) {
+                HttpRequest req = HttpRequest.get("http://localhost" + probePath)
+                        .withHeader(HttpHeaders.HOST, "localhost")
+                        .build();
+                int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+                assertThat(status).as("status for %s without auth", probePath).isEqualTo(200);
             }
         }
     }
@@ -226,53 +234,53 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("missing API key header returns 401")
-        void missingApiKey_returns401() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = getNoKey(INTERNAL_PATH); 
+        void missingApiKey_returns401() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = getNoKey(INTERNAL_PATH);
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(401); 
+            assertThat(status).isEqualTo(401);
         }
 
         @Test
         @DisplayName("invalid API key returns 401")
-        void invalidApiKey_returns401() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY); 
+        void invalidApiKey_returns401() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY);
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(401); 
+            assertThat(status).isEqualTo(401);
         }
 
         @Test
         @DisplayName("auth failure emits audit (fail-record)")
-        void invalidApiKey_emitsAudit() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY); 
+        void invalidApiKey_emitsAudit() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY);
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            ArgumentCaptor<AuditEvent> eventCaptor = ArgumentCaptor.forClass(AuditEvent.class); 
-            verify(auditService).record(eventCaptor.capture()); 
+            ArgumentCaptor<AuditEvent> eventCaptor = ArgumentCaptor.forClass(AuditEvent.class);
+            verify(auditService).record(eventCaptor.capture());
             assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_FAILURE");
         }
 
         @Test
         @DisplayName("delegate is never invoked on auth failure")
-        void invalidApiKey_doesNotInvokeDelegate() { 
+        void invalidApiKey_doesNotInvokeDelegate() {
             int[] calls = {0};
             AsyncServlet countingDelegate = request -> {
                 calls[0]++;
-                return Promise.of(HttpResponse.ok200().build()); 
+                return Promise.of(HttpResponse.ok200().build());
             };
-            AsyncServlet secured = enforcing().apply(countingDelegate); 
-            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY); 
+            AsyncServlet secured = enforcing().apply(countingDelegate);
+            HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY);
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(calls[0]).isZero(); 
+            assertThat(calls[0]).isZero();
         }
     }
 
@@ -286,35 +294,35 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("valid key on INTERNAL path returns delegate status")
-        void internalPath_validKey_passes() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(INTERNAL_PATH); 
+        void internalPath_validKey_passes() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = get(INTERNAL_PATH);
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("INTERNAL path does not invoke PolicyEngine")
-        void internalPath_doesNotInvokePolicy() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(INTERNAL_PATH); 
+        void internalPath_doesNotInvokePolicy() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = get(INTERNAL_PATH);
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("INTERNAL path does not emit audit")
-        void internalPath_doesNotEmitAudit() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(INTERNAL_PATH); 
+        void internalPath_doesNotEmitAudit() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = get(INTERNAL_PATH);
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(auditService, never()).record(any()); 
+            verify(auditService, never()).record(any());
         }
     }
 
@@ -324,139 +332,139 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("viewer can read INTERNAL route")
-        void viewerCanReadInternalRoute() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void viewerCanReadInternalRoute() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
 
-            int status = runPromise(() -> secured.serve(get(INTERNAL_PATH)).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(get(INTERNAL_PATH)).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("viewer cannot mutate SENSITIVE route")
-        void viewerCannotMutateSensitiveRoute() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void viewerCannotMutateSensitiveRoute() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("auditor can read governance summary")
-        void auditorCanReadGovernanceSummary() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void auditorCanReadGovernanceSummary() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
 
             int status = runPromise(() -> secured.serve(get("/api/v1/governance/compliance/summary")).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("operator cannot execute governance mutation")
-        void operatorCannotExecuteGovernanceMutation() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void operatorCannotExecuteGovernanceMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("operator-user", List.of("operator"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("auditor cannot execute governance mutation")
-        void auditorCannotExecuteGovernanceMutation() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void auditorCannotExecuteGovernanceMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("auditor cannot execute governance retention classify mutation")
-        void auditorCannotExecuteGovernanceRetentionClassifyMutation() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void auditorCannotExecuteGovernanceRetentionClassifyMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/classify")
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("admin can execute governance mutation")
-        void adminCanExecuteGovernanceMutation() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void adminCanExecuteGovernanceMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
-            verify(policyEngine).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(200);
+            verify(policyEngine).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("admin can execute governance privacy redact mutation")
-        void adminCanExecuteGovernancePrivacyRedactMutation() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void adminCanExecuteGovernancePrivacyRedactMutation() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/privacy/redact")
                 .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                .withHeader(HttpHeaders.HOST, "localhost") 
-                .build(); 
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
-            verify(policyEngine).evaluate(anyString(), any()); 
+            assertThat(status).isEqualTo(200);
+            verify(policyEngine).evaluate(anyString(), any());
         }
 
         @Test
         @DisplayName("mismatched tenant header is denied for API-key principal in enforcing mode")
-        void mismatchedTenantHeaderIsDeniedWhenEnforcing() { 
+        void mismatchedTenantHeaderIsDeniedWhenEnforcing() {
             when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE);
@@ -471,7 +479,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("mismatched tenant header is audit-only warning when enforcing is disabled")
-        void mismatchedTenantHeaderPassesWhenAuditOnly() { 
+        void mismatchedTenantHeaderPassesWhenAuditOnly() {
             when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
@@ -494,47 +502,47 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("valid key on SENSITIVE path returns 200")
-        void sensitivePath_validKey_passes() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+        void sensitivePath_validKey_passes() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("SENSITIVE path emits audit on success")
-        void sensitivePath_emitsAudit() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+        void sensitivePath_emitsAudit() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(auditService).record(any(AuditEvent.class)); 
+            verify(auditService).record(any(AuditEvent.class));
         }
 
         @Test
         @DisplayName("SENSITIVE path does not invoke PolicyEngine")
-        void sensitivePath_doesNotInvokePolicy() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+        void sensitivePath_doesNotInvokePolicy() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
     }
 
@@ -548,158 +556,158 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("policy ALLOWS → returns 200 and emits audit")
-        void criticalPath_policyAllows_passes() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyAllows_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
-            verify(auditService).record(any(AuditEvent.class)); 
+            assertThat(status).isEqualTo(200);
+            verify(auditService).record(any(AuditEvent.class));
         }
 
         @Test
         @DisplayName("policy DENIES with enforcing=true → returns 403 with POLICY_DENY body")
-        void criticalPath_policyDenies_enforcing_returns403() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyDenies_enforcing_returns403() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
         @DisplayName("policy DENIES enforcing=true → 403 response body contains POLICY_DENY code")
-        void criticalPath_policyDenies_enforcing_responseBodyContainsPolicyDenyCode() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyDenies_enforcing_responseBodyContainsPolicyDenyCode() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            String body = runPromise(() -> secured.serve(req) 
-                    .then(r -> r.loadBody()) 
-                    .map(bodyBuf -> bodyBuf.asString(java.nio.charset.StandardCharsets.UTF_8))); 
+            String body = runPromise(() -> secured.serve(req)
+                    .then(r -> r.loadBody())
+                    .map(bodyBuf -> bodyBuf.asString(java.nio.charset.StandardCharsets.UTF_8)));
 
             assertThat(body).contains("POLICY_DENY");
         }
 
         @Test
         @DisplayName("policy DENIES enforcing=true → audit emitted with success=false")
-        void criticalPath_policyDenies_emitsFailureAudit() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyDenies_emitsFailureAudit() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(auditService).record(any(AuditEvent.class)); 
+            verify(auditService).record(any(AuditEvent.class));
         }
 
         @Test
         @DisplayName("policy DENIES with enforcing=false (audit-only) → passes through with 200")
-        void criticalPath_policyDenies_auditOnly_passes() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyDenies_auditOnly_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            AsyncServlet secured = auditOnly().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("policy engine exception → fail-closed, returns 403 in enforcing mode")
-        void criticalPath_policyThrows_failsClosed_returns403() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyThrows_failsClosed_returns403() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
             .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())) 
+            when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
         @DisplayName("policy engine exception in audit-only mode → passes through")
-        void criticalPath_policyThrows_auditOnly_passes() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_policyThrows_auditOnly_passes() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
             .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())) 
+            when(policyEngine.evaluate(anyString(), any()))
                     .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
-            AsyncServlet secured = auditOnly().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("CRITICAL path policy evaluation uses datacloud.sensitive-route-access policy name")
-        void criticalPath_evaluatesCorrectPolicyName() { 
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+        void criticalPath_evaluatesCorrectPolicyName() {
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            verify(policyEngine).evaluate( 
+            verify(policyEngine).evaluate(
                     Mockito.eq("datacloud.sensitive-route-access"), any());
         }
 
             @Test
             @DisplayName("CRITICAL path policy evaluation uses authenticated tenant context")
-            void criticalPath_policyContextUsesAuthenticatedTenant() { 
-                when(apiKeyResolver.resolve(VALID_API_KEY)) 
+            void criticalPath_policyContextUsesAuthenticatedTenant() {
+                when(apiKeyResolver.resolve(VALID_API_KEY))
                     .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-                when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); 
-                AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-                HttpRequest req = get(CRITICAL_PATH); 
+                when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+                AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+                HttpRequest req = criticalRequest();
 
-                runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+                runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
                 @SuppressWarnings("unchecked")
-                ArgumentCaptor<Map<String, Object>> contextCaptor = ArgumentCaptor.forClass(Map.class); 
-                verify(policyEngine).evaluate( 
+                ArgumentCaptor<Map<String, Object>> contextCaptor = ArgumentCaptor.forClass(Map.class);
+                verify(policyEngine).evaluate(
                     Mockito.eq("datacloud.sensitive-route-access"), contextCaptor.capture());
-                assertThat(contextCaptor.getValue()).containsEntry("tenantId", TEST_TENANT); 
+                assertThat(contextCaptor.getValue()).containsEntry("tenantId", TEST_TENANT);
             }
 
         @Test
         @DisplayName("breakGlassTenants requires explicit break-glass reason header")
         void criticalPath_breakGlassTenant_requiresReasonHeader() {
-            when(apiKeyResolver.resolve(VALID_API_KEY)) 
+            when(apiKeyResolver.resolve(VALID_API_KEY))
                 .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(policyEngine) 
-                    .auditService(auditService) 
-                    .enforcing(true) 
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(auditService)
+                    .enforcing(true)
                     .breakGlassTenants(Set.of(TEST_TENANT))
-                    .build(); 
+                    .build();
 
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
             assertThat(status).isEqualTo(403);
             verify(policyEngine, never()).evaluate(anyString(), any());
@@ -720,7 +728,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
             AsyncServlet secured = filter.apply(OK_DELEGATE);
-            HttpRequest req = HttpRequest.get("http://localhost" + CRITICAL_PATH)
+            HttpRequest req = HttpRequest.put("http://localhost" + CRITICAL_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.of(DataCloudSecurityFilter.HEADER_BREAK_GLASS_REASON), "Emergency restore")
@@ -730,7 +738,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
             assertThat(status).isEqualTo(200);
-            verify(policyEngine, never()).evaluate(anyString(), any()); 
+            verify(policyEngine, never()).evaluate(anyString(), any());
         }
     }
 
@@ -744,26 +752,26 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("missing X-Request-ID header does not block request")
-        void missingRequestId_doesNotBlockRequest() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
+        void missingRequestId_doesNotBlockRequest() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
             // req has no X-Request-ID header
-            HttpRequest req = get(SENSITIVE_PATH); 
+            HttpRequest req = get(SENSITIVE_PATH);
 
             // Should succeed — a UUID will be generated internally
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("present X-Request-ID is respected (no NPE, no override)")
-        void presentRequestId_doesNotFailRequest() { 
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = getWithRequestId(INTERNAL_PATH, "trace-abc-123"); 
+        void presentRequestId_doesNotFailRequest() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = getWithRequestId(INTERNAL_PATH, "trace-abc-123");
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
     }
 
@@ -777,76 +785,76 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null PolicyEngine fails-closed on CRITICAL path when enforcing")
-        void nullPolicyEngine_criticalPath_failsClosed() { 
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(null)    // no policy engine 
-                    .auditService(auditService) 
-                    .enforcing(true) 
-                    .build(); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+        void nullPolicyEngine_criticalPath_failsClosed() {
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(null)    // no policy engine
+                    .auditService(auditService)
+                    .enforcing(true)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
         @DisplayName("null PolicyEngine allows CRITICAL path in audit-only mode")
-        void nullPolicyEngine_criticalPath_auditOnly_passesThrough() { 
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(null)    // no policy engine 
-                    .auditService(auditService) 
-                    .enforcing(false) // audit-only 
-                    .build(); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+        void nullPolicyEngine_criticalPath_auditOnly_passesThrough() {
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(null)    // no policy engine
+                    .auditService(auditService)
+                    .enforcing(false) // audit-only
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("null AuditService means no audit emission (no NPE)")
-        void nullAuditService_sensitivePath_noNPE() { 
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(policyEngine) 
-                    .auditService(null)    // no audit service 
-                    .enforcing(true) 
-                    .build(); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+        void nullAuditService_sensitivePath_noNPE() {
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .auditService(null)    // no audit service
+                    .enforcing(true)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
             // Must not throw NPE
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
         @DisplayName("audit service throwing does not propagate to caller")
-        void auditServiceThrows_doesNotPropagateToResponse() { 
-            when(auditService.record(any(AuditEvent.class))) 
+        void auditServiceThrows_doesNotPropagateToResponse() {
+            when(auditService.record(any(AuditEvent.class)))
                     .thenReturn(Promise.ofException(new RuntimeException("Audit store down")));
-            AsyncServlet secured = enforcing().apply(OK_DELEGATE); 
-            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) 
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH)
                     .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
-                    .withHeader(HttpHeaders.HOST, "localhost") 
-                    .build(); 
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
             // Audit failure must never block the response
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(200); 
+            assertThat(status).isEqualTo(200);
         }
     }
 
@@ -917,47 +925,47 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null apiKeyResolver throws NullPointerException at build time")
-        void nullApiKeyResolver_throwsNPE() { 
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
-                DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(null) 
-                    .build() 
-            ).isInstanceOf(NullPointerException.class); 
+        void nullApiKeyResolver_throwsNPE() {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(null)
+                    .build()
+            ).isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("default enforcing=true when not set")
-        void defaultEnforcing_isTrue() { 
+        void defaultEnforcing_isTrue() {
             // Verify that policy denial blocks when enforcing not explicitly set
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(policyEngine) 
-                    .build(); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
         @DisplayName("breakGlassTenants defaults to empty set")
         void defaultBreakGlassTenants_isEmpty() {
             // With no excluded tenants override and policy denying, should get 403
-            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); 
-            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() 
-                    .apiKeyResolver(apiKeyResolver) 
-                    .policyEngine(policyEngine) 
-                    .enforcing(true) 
-                    .build(); 
-            AsyncServlet secured = filter.apply(OK_DELEGATE); 
-            HttpRequest req = get(CRITICAL_PATH); 
+            when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(apiKeyResolver)
+                    .policyEngine(policyEngine)
+                    .enforcing(true)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = criticalRequest();
 
-            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); 
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
 
-            assertThat(status).isEqualTo(403); 
+            assertThat(status).isEqualTo(403);
         }
     }
 
@@ -982,7 +990,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .build();
 
             // validateProductionRequirements should throw IllegalStateException
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 filter.validateProductionRequirements("production")
             ).isInstanceOf(IllegalStateException.class)
              .hasMessageContaining("strictTenantResolution must be true");
@@ -1078,7 +1086,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .strictTenantResolution(true)
                     .build();
 
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 filter.validateProductionRequirements("production")
             ).isInstanceOf(IllegalStateException.class)
              .hasMessageContaining("AuditService");
@@ -1096,7 +1104,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .strictTenantResolution(true)
                     .build();
 
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 filter.validateProductionRequirements("production")
             ).isInstanceOf(IllegalStateException.class)
              .hasMessageContaining("PolicyEngine");
@@ -1193,7 +1201,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .build();
 
             // Staging should also require strict tenant resolution
-            org.assertj.core.api.Assertions.assertThatCode(() -> 
+            org.assertj.core.api.Assertions.assertThatCode(() ->
                 filter.validateProductionRequirements("staging")
             ).doesNotThrowAnyException();
         }
@@ -1214,7 +1222,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .build();
 
             // Sovereign should also require strict tenant resolution
-            org.assertj.core.api.Assertions.assertThatCode(() -> 
+            org.assertj.core.api.Assertions.assertThatCode(() ->
                 filter.validateProductionRequirements("sovereign")
             ).doesNotThrowAnyException();
         }

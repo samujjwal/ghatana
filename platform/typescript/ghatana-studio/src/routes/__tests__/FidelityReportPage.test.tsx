@@ -175,6 +175,55 @@ describe('FidelityReportPage', () => {
       expect(screen.getByText('Semantic match')).toBeInTheDocument();
       expect(screen.getByText('src/App.tsx')).toBeInTheDocument();
     });
+
+    it('supports diff triage actions and hunk expansion', () => {
+      const store = createStore();
+      const report = createPerfectFidelityReport('diff-scope');
+      store.set(setArtifactWorkflowAtom, {
+        fidelityReport: report,
+        roundTripDiffReport: {
+          reportId: 'triage-report',
+          modelId: 'model-2',
+          diffs: [{
+            diffId: 'src/Button.tsx->src/Button.tsx',
+            originalPath: 'src/Button.tsx',
+            generatedPath: 'src/Button.tsx',
+            semanticallyEquivalent: false,
+            hunks: [{
+              kind: 'changed',
+              originalStart: 3,
+              generatedStart: 3,
+              lineCount: 2,
+              originalSnippet: 'return <button>{label}</button>;',
+              generatedSnippet: 'return <button type="button">{label}</button>;',
+            }],
+            addedLines: 1,
+            removedLines: 1,
+            unchangedLines: 5,
+            diffedAt: '2024-01-01T00:00:00.000Z',
+          }],
+          fidelity: report,
+          residuals: {
+            totalCount: 0,
+            blockingCount: 0,
+            islands: [],
+            canCompileWithResiduals: true,
+          },
+          isLossless: false,
+          generatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      });
+
+      renderWithStore(store);
+
+      expect(screen.getByText('Review required')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Accept diff' }));
+      expect(screen.getByText('Triage: accepted')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('View diff hunks (1)'));
+      expect(screen.getByText('return <button>{label}</button>;')).toBeInTheDocument();
+      expect(screen.getByText('return <button type="button">{label}</button>;')).toBeInTheDocument();
+    });
   });
 
   describe('router-state fallback (legacy path)', () => {

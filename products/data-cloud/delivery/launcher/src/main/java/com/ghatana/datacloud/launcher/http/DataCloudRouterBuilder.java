@@ -401,6 +401,7 @@ public class DataCloudRouterBuilder {
         builder
             .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest", aiAssistHandler::handleEntitySuggest)
             .with(HttpMethod.POST, "/api/v1/analytics/suggest", aiAssistHandler::handleAnalyticsSuggest)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/draft", aiAssistHandler::handlePipelineDraft)
             .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/infer-schema", aiAssistHandler::handleInferSchema)
             .with(HttpMethod.POST, "/api/v1/analytics/automate", aiAssistHandler::handleAnalyticsAutomate)
@@ -414,6 +415,7 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/connectors/:connectorId/sync-health", aiAssistHandler::handleConnectorSyncHealth)
             .with(HttpMethod.GET, "/api/v1/ai/quality-summary", aiAssistHandler::handleAiQualitySummary)
             .with(HttpMethod.POST, "/api/v1/query/nlq", aiAssistHandler::handleNaturalLanguageQuery)
+            .with(HttpMethod.POST, "/api/v1/action/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
             .with(HttpMethod.POST, "/api/v1/governance/recommend", aiAssistHandler::handleGovernanceRecommend)
             // DC-AUD-008: Cross-surface AI operation routes expected by the UI client

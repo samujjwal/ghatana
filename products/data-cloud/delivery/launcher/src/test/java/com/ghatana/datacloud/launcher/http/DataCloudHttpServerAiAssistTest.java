@@ -9,6 +9,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.application.observability.TraceExportService;
+import com.ghatana.datacloud.launcher.http.handlers.JdbcContextStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import com.ghatana.datacloud.spi.EntityWriteOutboxProcessor;
 import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
@@ -20,6 +21,7 @@ import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -190,6 +192,7 @@ class DataCloudHttpServerAiAssistTest {
                 .withGenericIdempotencyStore(mockGenericIdempotencyStore)
                 .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)
+                .withContextStore(durableContextStore())
                 .withMetricsCollector(mockMetricsCollector)
                 .withTraceExportService(mockTraceExportService);
             server.start();
@@ -241,6 +244,7 @@ class DataCloudHttpServerAiAssistTest {
                 .withGenericIdempotencyStore(mockGenericIdempotencyStore)
                 .withTransactionManager(mockTransactionManager)
                 .withEventLogStore(mockEventLogStore)
+                .withContextStore(durableContextStore())
                 .withMetricsCollector(mockMetricsCollector)
                 .withTraceExportService(mockTraceExportService);
             server.start();
@@ -389,14 +393,22 @@ class DataCloudHttpServerAiAssistTest {
     // ──────────────────── Helpers ────────────────────
 
     private HttpResponse<String> post(String path, String jsonBody) throws Exception { 
-        HttpRequest req = HttpRequest.newBuilder() 
+        HttpRequest req = HttpRequest.newBuilder()
             .POST(HttpRequest.BodyPublishers.ofString(jsonBody)) 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
             .header("Content-Type", "application/json") 
             .header("X-Tenant-ID", "tenant-a") 
             .header("X-API-Key", "valid-api-key")
             .build(); 
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private static JdbcContextStore durableContextStore() {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:ai-assist-context-" + System.nanoTime() + ";DB_CLOSE_DELAY=-1");
+        dataSource.setUser("sa");
+        dataSource.setPassword("");
+        return new JdbcContextStore(dataSource);
     }
 
     private HttpResponse<String> get(String path) throws Exception { 

@@ -328,6 +328,11 @@ class CrossTenantIsolationTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<Campaign> transitionCampaign(DmOperationContext ctx, String campaignId, String toStatus, String actorId, String reason) {
+            return Promise.ofException(crossTenantException());
+        }
+
+        @Override
         public Promise<Campaign> duplicateCampaign(DmOperationContext ctx, String campaignId, String newName) {
             return Promise.ofException(crossTenantException());
         }

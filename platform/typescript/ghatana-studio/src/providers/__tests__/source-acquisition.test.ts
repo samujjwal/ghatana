@@ -9,6 +9,7 @@ import {
   LocalFolderDescriptorProvider,
   PastedSourceProvider,
   RepositorySourceProvider,
+  resolveProviderRegistryForEnv,
   SourceAcquisitionProviderRegistry,
 } from '../source-acquisition.js';
 
@@ -184,5 +185,54 @@ describe('source acquisition providers', () => {
     expect(result.sources.map((source) => source.relativePath)).toEqual(['unzipped/source.zip.tsx']);
     expect(result.descriptor?.kind).toBe('archive');
     expect(result.acquisitionJob).toBeUndefined();
+  });
+
+  it('uses boundary-safe pending acquisition when production acquisition profile is disabled', async () => {
+    const registry = resolveProviderRegistryForEnv({
+      VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION: 'false',
+    });
+
+    const result = await registry.acquire({
+      kind: 'github-repository',
+      repositoryUrl: 'https://github.com/example/repo',
+      ref: 'main',
+    });
+
+    expect(result.acquisitionJob?.status).toBe('pending');
+    expect(result.errors[0]).toContain('requires backend acquisition job');
+  });
+
+  it('uses production acquisition backend path when production profile is enabled', async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchStub = async (): Promise<Response> => {
+      throw new Error('network unavailable in test');
+    };
+
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      writable: true,
+      value: fetchStub,
+    });
+
+    try {
+      const registry = resolveProviderRegistryForEnv({
+        VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION: 'true',
+      });
+
+      const result = await registry.acquire({
+        kind: 'github-repository',
+        repositoryUrl: 'https://github.com/example/repo',
+        ref: 'main',
+      });
+
+      expect(result.acquisitionJob?.status).toBe('pending');
+      expect(result.errors[0]).toContain('Repository acquisition failed');
+    } finally {
+      Object.defineProperty(globalThis, 'fetch', {
+        configurable: true,
+        writable: true,
+        value: originalFetch,
+      });
+    }
   });
 });

@@ -4,7 +4,7 @@
 #
 # PURPOSE:
 #   Detects divergence between the HTTP routes registered in
-#   DataCloudRouterBuilder.java and the paths declared in contracts/openapi/data-cloud.yaml.
+#   DataCloudRouterBuilder.java and the paths declared in owned OpenAPI contracts.
 #   Fails CI when routes are added / removed in code without updating the spec.
 #
 # USAGE:
@@ -35,7 +35,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRODUCT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SERVER_FILE="${PRODUCT_DIR}/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"
-OPENAPI_FILE="${PRODUCT_DIR}/contracts/openapi/data-cloud.yaml"
+DATA_OPENAPI_FILE="${PRODUCT_DIR}/contracts/openapi/data-cloud.yaml"
+ACTION_OPENAPI_FILE="${PRODUCT_DIR}/contracts/openapi/action-plane.yaml"
+COMPATIBILITY_REGISTRY_FILE="${PRODUCT_DIR}/contracts/openapi/route-compatibility-registry.yaml"
 WARN_ONLY=false
 
 # ── Parse flags ─────────────────────────────────────────────────────────────
@@ -51,8 +53,16 @@ if [[ ! -f "${SERVER_FILE}" ]]; then
   echo "ERROR: Server file not found: ${SERVER_FILE}" >&2
   exit 2
 fi
-if [[ ! -f "${OPENAPI_FILE}" ]]; then
-  echo "ERROR: OpenAPI spec not found: ${OPENAPI_FILE}" >&2
+if [[ ! -f "${DATA_OPENAPI_FILE}" ]]; then
+  echo "ERROR: OpenAPI spec not found: ${DATA_OPENAPI_FILE}" >&2
+  exit 2
+fi
+if [[ ! -f "${ACTION_OPENAPI_FILE}" ]]; then
+  echo "ERROR: OpenAPI spec not found: ${ACTION_OPENAPI_FILE}" >&2
+  exit 2
+fi
+if [[ ! -f "${COMPATIBILITY_REGISTRY_FILE}" ]]; then
+  echo "ERROR: Route compatibility registry not found: ${COMPATIBILITY_REGISTRY_FILE}" >&2
   exit 2
 fi
 
@@ -63,7 +73,6 @@ CODE_ROUTES_RAW=$(grep -E '\.with\(HttpMethod\.[A-Z]+, *"' "${SERVER_FILE}" \
 
 # Normalise ActiveJ path params :param → {param}
 CODE_ROUTES=$(echo "${CODE_ROUTES_RAW}" \
-  | sed -E 's|^/api/v1/action/|/api/v1/|' \
   | sed -E 's|:([a-zA-Z_][a-zA-Z0-9_]*)|\{\1\}|g' \
   | sort -u)
 
@@ -72,47 +81,128 @@ CODE_ROUTES_FILTERED=$(echo "${CODE_ROUTES}" \
   | grep -Ev "^/ws$" \
   | sort -u)
 
-# ── Step 2: Extract paths from openapi.yaml ──────────────────────────────────
-SPEC_PATHS=$(grep -E "^  /" "${OPENAPI_FILE}" \
+ACTION_CODE_ROUTES=$(echo "${CODE_ROUTES_FILTERED}" | grep -E "^/api/v1/action/" || true)
+NON_ACTION_CODE_ROUTES=$(echo "${CODE_ROUTES_FILTERED}" | grep -Ev "^/api/v1/action/" || true)
+
+COMPATIBILITY_ROUTES=$(grep -E '^[[:space:]]*- path: "' "${COMPATIBILITY_REGISTRY_FILE}" \
+  | sed -E 's/.*path: "([^"]+)".*/\1/' \
+  | sed -E 's|:([a-zA-Z_][a-zA-Z0-9_]*)|\{\1\}|g' \
+  | sort -u)
+
+DATA_CODE_ROUTES=$(comm -23 \
+  <(echo "${NON_ACTION_CODE_ROUTES}" | sort -u) \
+  <(echo "${COMPATIBILITY_ROUTES}" | sort -u))
+
+COMPATIBILITY_CODE_ROUTES=$(comm -12 \
+  <(echo "${NON_ACTION_CODE_ROUTES}" | sort -u) \
+  <(echo "${COMPATIBILITY_ROUTES}" | sort -u))
+
+UNREGISTERED_NON_ACTION_COMPATIBILITY=$(comm -23 \
+  <(echo "${NON_ACTION_CODE_ROUTES}" \
+    | grep -E '^/api/v1/(agents|autonomy|executions|memory|pipelines|plugins)(/|$)' \
+    | sort -u || true) \
+  <(echo "${COMPATIBILITY_ROUTES}" | sort -u))
+
+# ── Step 2: Extract paths from OpenAPI ownership contracts ───────────────────
+DATA_SPEC_PATHS=$(grep -E "^  /" "${DATA_OPENAPI_FILE}" \
+  | sed -E 's/^  (\/[^:]+):.*/\1/' \
+  | sort -u)
+
+ACTION_SPEC_PATHS=$(grep -E "^  /" "${ACTION_OPENAPI_FILE}" \
   | sed -E 's/^  (\/[^:]+):.*/\1/' \
   | sort -u)
 
 # ── Step 3: Compute drift ────────────────────────────────────────────────────
-CODE_ONLY=$(comm -23 \
-  <(echo "${CODE_ROUTES_FILTERED}") \
-  <(echo "${SPEC_PATHS}"))
+DATA_CODE_ONLY=$(comm -23 \
+  <(echo "${DATA_CODE_ROUTES}") \
+  <(echo "${DATA_SPEC_PATHS}"))
 
-SPEC_ONLY=$(comm -13 \
-  <(echo "${CODE_ROUTES_FILTERED}") \
-  <(echo "${SPEC_PATHS}"))
+DATA_SPEC_ONLY=$(comm -13 \
+  <(echo "${DATA_CODE_ROUTES}") \
+  <(echo "${DATA_SPEC_PATHS}"))
+
+ACTION_CODE_ONLY=$(comm -23 \
+  <(echo "${ACTION_CODE_ROUTES}") \
+  <(echo "${ACTION_SPEC_PATHS}"))
+
+ACTION_SPEC_ONLY=$(comm -13 \
+  <(echo "${ACTION_CODE_ROUTES}") \
+  <(echo "${ACTION_SPEC_PATHS}"))
+
+COMPATIBILITY_SPEC_IN_DATA=$(comm -12 \
+  <(echo "${DATA_SPEC_PATHS}") \
+  <(echo "${COMPATIBILITY_ROUTES}"))
 
 # ── Step 4: Report ───────────────────────────────────────────────────────────
 DRIFT_FOUND=false
 
-if [[ -n "${CODE_ONLY}" ]]; then
+if [[ -n "${DATA_CODE_ONLY}" ]]; then
   DRIFT_FOUND=true
   echo ""
   echo "⚠️  ROUTES IN CODE BUT MISSING FROM contracts/openapi/data-cloud.yaml"
-  echo "   These routes are live but not documented:"
+  echo "   These non-Action Data Cloud routes are live but not documented:"
   while IFS= read -r route; do
     echo "   + ${route}"
-  done <<< "${CODE_ONLY}"
+  done <<< "${DATA_CODE_ONLY}"
 fi
 
-if [[ -n "${SPEC_ONLY}" ]]; then
+if [[ -n "${DATA_SPEC_ONLY}" ]]; then
   DRIFT_FOUND=true
   echo ""
   echo "⚠️  PATHS IN contracts/openapi/data-cloud.yaml BUT NOT IN CODE"
-  echo "   These paths are documented but have no registered handler:"
+   echo "   These paths are documented but have no registered handler:"
   while IFS= read -r path; do
     echo "   - ${path}"
-  done <<< "${SPEC_ONLY}"
+  done <<< "${DATA_SPEC_ONLY}"
+fi
+
+if [[ -n "${ACTION_CODE_ONLY}" ]]; then
+  DRIFT_FOUND=true
+  echo ""
+  echo "⚠️  ACTION ROUTES IN CODE BUT MISSING FROM contracts/openapi/action-plane.yaml"
+  echo "   These canonical Action Plane routes are live but not documented:"
+  while IFS= read -r route; do
+    echo "   + ${route}"
+  done <<< "${ACTION_CODE_ONLY}"
+fi
+
+if [[ -n "${ACTION_SPEC_ONLY}" ]]; then
+  DRIFT_FOUND=true
+  echo ""
+  echo "⚠️  PATHS IN contracts/openapi/action-plane.yaml BUT NOT IN CODE"
+  echo "   These Action Plane paths are documented but have no registered handler:"
+  while IFS= read -r path; do
+    echo "   - ${path}"
+  done <<< "${ACTION_SPEC_ONLY}"
+fi
+
+if [[ -n "${UNREGISTERED_NON_ACTION_COMPATIBILITY}" ]]; then
+  DRIFT_FOUND=true
+  echo ""
+  echo "⚠️  LEGACY ACTION-STYLE ROUTES IN CODE BUT MISSING FROM route-compatibility-registry.yaml"
+  echo "   These non-Action routes look like deprecated Action aliases and must be explicitly registered:"
+  while IFS= read -r route; do
+    echo "   + ${route}"
+  done <<< "${UNREGISTERED_NON_ACTION_COMPATIBILITY}"
+fi
+
+if [[ -n "${COMPATIBILITY_SPEC_IN_DATA}" ]]; then
+  DRIFT_FOUND=true
+  echo ""
+  echo "⚠️  COMPATIBILITY ROUTES PRESENT IN contracts/openapi/data-cloud.yaml"
+  echo "   Legacy Action aliases belong in route-compatibility-registry.yaml/aep.yaml, not the canonical Data contract:"
+  while IFS= read -r route; do
+    echo "   - ${route}"
+  done <<< "${COMPATIBILITY_SPEC_IN_DATA}"
 fi
 
 if [[ "${DRIFT_FOUND}" == "false" ]]; then
   echo "✅ No OpenAPI drift detected."
-  echo "   Code routes: $(echo "${CODE_ROUTES_FILTERED}" | wc -l | tr -d ' ')"
-  echo "   Spec paths:  $(echo "${SPEC_PATHS}" | wc -l | tr -d ' ')"
+  echo "   Data routes:   $(echo "${DATA_CODE_ROUTES}" | wc -l | tr -d ' ')"
+  echo "   Data spec:     $(echo "${DATA_SPEC_PATHS}" | wc -l | tr -d ' ')"
+  echo "   Action routes: $(echo "${ACTION_CODE_ROUTES}" | wc -l | tr -d ' ')"
+  echo "   Action spec:   $(echo "${ACTION_SPEC_PATHS}" | wc -l | tr -d ' ')"
+  echo "   Compatibility aliases: $(echo "${COMPATIBILITY_CODE_ROUTES}" | wc -l | tr -d ' ')"
   exit 0
 fi
 
@@ -121,7 +211,6 @@ if [[ "${WARN_ONLY}" == "true" ]]; then
   echo "⚠️  OpenAPI drift found (--warn-only: not failing build)."
   exit 0
 else
-  echo "❌ OpenAPI drift found. Update contracts/openapi/data-cloud.yaml to match code."
-  echo "   See contracts/openapi/data-cloud.yaml for the canonical spec."
+  echo "❌ OpenAPI drift found. Update data-cloud.yaml/action-plane.yaml according to route ownership."
   exit 1
 fi

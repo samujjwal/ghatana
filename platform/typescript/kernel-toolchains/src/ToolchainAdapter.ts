@@ -2,10 +2,11 @@ import type {
   ProductLifecyclePhase,
   ProductSurface,
   ProductSurfaceType,
+  LifecycleFailureClassifier,
 } from "@ghatana/kernel-product-contracts";
 import type { ProductLifecycleManifestRefs } from "@ghatana/kernel-lifecycle";
 
-export type { ProductLifecyclePhase, ProductSurface, ProductSurfaceType };
+export type { ProductLifecyclePhase, ProductSurface, ProductSurfaceType, LifecycleFailureClassifier };
 
 export const TOOLCHAIN_EXECUTION_RESULT_SCHEMA_VERSION = "1.0.0" as const;
 
@@ -33,6 +34,11 @@ export interface ToolchainAdapter {
   readonly supportedSurfaceTypes: ProductSurfaceType[];
 
   /**
+   * Run preflight checks to validate environment readiness before execution.
+   */
+  preflight(context: ToolchainAdapterContext): Promise<AdapterPreflightResult>;
+
+  /**
    * Generate an execution plan for the given context without executing.
    * This is used for dry-run and planning.
    */
@@ -49,6 +55,14 @@ export interface ToolchainAdapter {
   validateOutputs(
     context: ToolchainAdapterContext,
   ): Promise<ToolchainOutputValidationResult>;
+
+  /**
+   * Classify execution failures for observability and remediation.
+   */
+  classifyFailure(
+    error: Error,
+    context: ToolchainAdapterContext,
+  ): Promise<LifecycleFailureClassifier>;
 }
 
 /**
@@ -359,6 +373,217 @@ export interface ValidationError {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Phase 2.3 additions: AdapterPreflightResult, AdapterSafetyPolicy,
+//                     AdapterFailureClassification
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Default preflight result for adapters that haven't implemented custom preflight.
+ */
+export function createDefaultPreflightResult(): AdapterPreflightResult {
+  return {
+    status: "ready",
+    checks: [
+      {
+        checkId: "default-preflight",
+        checkName: "Default Preflight",
+        status: "skipped",
+        message: "Adapter does not implement custom preflight checks",
+        checkedAt: new Date().toISOString(),
+      },
+    ],
+    blockingIssues: [],
+    warnings: ["Adapter does not implement custom preflight checks"],
+  };
+}
+
+/**
+ * Default failure classifier for adapters that haven't implemented custom classification.
+ */
+export function createDefaultFailureClassifier(
+  error: Error,
+  adapterId: string,
+): LifecycleFailureClassifier {
+  const errorMessage = error.message.toLowerCase();
+  
+  // Determine category based on error message
+  let category: LifecycleFailureClassifier["category"] = "unknown";
+  if (errorMessage.includes("permission") || errorMessage.includes("access denied")) {
+    category = "security";
+  } else if (errorMessage.includes("network") || errorMessage.includes("connection")) {
+    category = "infrastructure";
+  } else if (errorMessage.includes("timeout")) {
+    category = "infrastructure";
+  } else if (errorMessage.includes("config") || errorMessage.includes("configuration")) {
+    category = "config";
+  } else if (errorMessage.includes("command") || errorMessage.includes("executable")) {
+    category = "adapter";
+  }
+  
+  // Determine severity
+  let severity: LifecycleFailureClassifier["severity"] = "medium";
+  if (category === "security" || category === "config") {
+    severity = "high";
+  } else if (category === "infrastructure") {
+    severity = "medium";
+  }
+  
+  return {
+    category,
+    severity,
+    retryable: category === "infrastructure",
+    requiresHumanIntervention: category === "security" || category === "config",
+    remediationSteps: [
+      "Check adapter configuration",
+      "Verify required dependencies are installed",
+      "Review error message for specific failure details",
+    ],
+    relatedFailureCodes: [`${adapterId}-failure`],
+    component: adapterId,
+  };
+}
+
+/**
+ * Result of adapter preflight checks before execution.
+ */
+export interface AdapterPreflightResult {
+  /**
+   * Overall preflight status.
+   */
+  status: "ready" | "not-ready" | "degraded" | "blocked";
+
+  /**
+   * Individual preflight checks performed.
+   */
+  checks: AdapterPreflightCheck[];
+
+  /**
+   * Blocking issues that prevent execution.
+   */
+  blockingIssues: string[];
+
+  /**
+   * Warnings that don't block execution but should be surfaced.
+   */
+  warnings: string[];
+}
+
+/**
+ * Individual preflight check result.
+ */
+export interface AdapterPreflightCheck {
+  /**
+   * Check identifier.
+   */
+  checkId: string;
+
+  /**
+   * Check name/description.
+   */
+  checkName: string;
+
+  /**
+   * Check status.
+   */
+  status: "passed" | "failed" | "warning" | "skipped";
+
+  /**
+   * Human-readable message.
+   */
+  message: string;
+
+  /**
+   * Check severity (for failed/warning checks).
+   */
+  severity?: "critical" | "high" | "medium" | "low";
+
+  /**
+   * Suggested remediation steps.
+   */
+  remediation?: string[];
+
+  /**
+   * When the check was performed.
+   */
+  checkedAt: string;
+}
+
+/**
+ * Safety policy for adapter execution.
+ */
+export interface AdapterSafetyPolicy {
+  /**
+   * Whether the adapter is allowed to execute in the current context.
+   */
+  allowed: boolean;
+
+  /**
+   * Safety level classification.
+   */
+  safetyLevel: ToolchainSafetyLevel;
+
+  /**
+   * Required approvals before execution.
+   */
+  requiredApprovals: readonly string[];
+
+  /**
+   * Safety constraints.
+   */
+  constraints: AdapterSafetyConstraint[];
+
+  /**
+   * Risk assessment for this execution.
+   */
+  riskAssessment: AdapterRiskAssessment;
+}
+
+/**
+ * Individual safety constraint.
+ */
+export interface AdapterSafetyConstraint {
+  /**
+   * Constraint type.
+   */
+  type: "environment" | "network" | "filesystem" | "resource" | "permission";
+
+  /**
+   * Constraint description.
+   */
+  description: string;
+
+  /**
+   * Whether this constraint is enforced (block) or advisory (warn).
+   */
+  enforced: boolean;
+
+  /**
+   * Constraint value or pattern.
+   */
+  value?: string;
+}
+
+/**
+ * Risk assessment for adapter execution.
+ */
+export interface AdapterRiskAssessment {
+  /**
+   * Overall risk level.
+   */
+  riskLevel: "low" | "medium" | "high" | "critical";
+
+  /**
+   * Risk factors identified.
+   */
+  riskFactors: readonly string[];
+
+  /**
+   * Mitigation strategies applied or recommended.
+   */
+  mitigations: readonly string[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // §2.5 additions: ToolchainSafetyLevel, ToolchainAdapterCapability,
 //                 ToolchainOutputContract, ToolchainExecutionRequest
 // ─────────────────────────────────────────────────────────────────────────────
@@ -523,4 +748,6 @@ export interface ToolchainAdapterRegistryEntry {
   readonly retryPolicy: ToolchainRetryPolicy | null;
   readonly environmentPolicy: ToolchainEnvironmentPolicy | null;
   readonly outputValidation: ToolchainOutputValidationPolicy | null;
+  readonly safetyPolicy: AdapterSafetyPolicy | null;
+  readonly preflightChecks: readonly string[] | null;
 }

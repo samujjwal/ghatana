@@ -135,6 +135,10 @@ const canonicalOpenApi = readFileSync(
   path.resolve(__dirname, '../../../../../contracts/openapi/data-cloud.yaml'),
   'utf8',
 );
+const actionPlaneOpenApi = readFileSync(
+  path.resolve(__dirname, '../../../../../contracts/openapi/action-plane.yaml'),
+  'utf8',
+);
 
 // ---------------------------------------------------------------------------
 // Test: Collections route with contract-validated data
@@ -1563,22 +1567,12 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/alerts/rules',
         '/api/v1/alerts/rules/{ruleId}',
         '/api/v1/alerts/stream',
-        '/api/v1/pipelines',
-        '/api/v1/pipelines/draft',
-        '/api/v1/pipelines/{pipelineId}',
-        '/api/v1/pipelines/{pipelineId}/optimise-hint',
         '/api/v1/analytics/query',
         '/api/v1/analytics/suggest',
         '/api/v1/queries/federated',
         '/api/v1/events',
         '/api/v1/lineage/{collection}',
         '/api/v1/lineage/{collection}/impact',
-        '/api/v1/agents/catalog',
-        '/api/v1/agents/catalog/{id}',
-        '/api/v1/autonomy/level',
-        '/api/v1/autonomy/domains',
-        '/api/v1/autonomy/domains/{domain}',
-        '/api/v1/autonomy/logs',
         '/api/v1/brain/explain',
         '/api/v1/brain/workspace',
         '/api/v1/brain/stats',
@@ -1587,22 +1581,14 @@ describe('Contract-Backed Route Tests', () => {
         '/api/v1/brain/patterns',
         '/api/v1/brain/patterns/match',
         '/api/v1/brain/salience/{itemId}',
-        '/api/v1/memory',
         '/api/v1/context',
         '/api/v1/context/{collection}',
         '/api/v1/context/{collection}/rag',
         '/api/v1/context/keys/{key}',
         '/api/v1/context/snapshot',
         '/mcp/v1/tools',
-        '/api/v1/learning/trigger',
-        '/api/v1/learning/status',
         '/api/v1/governance/privacy/pii-fields',
         '/api/v1/governance/compliance/summary',
-        '/api/v1/plugins',
-        '/api/v1/plugins/{id}',
-        '/api/v1/plugins/{id}/enable',
-        '/api/v1/plugins/{id}/disable',
-        '/api/v1/plugins/{id}/upgrade',
         '/api/v1/data-products',
         '/api/v1/data-products/{productId}/subscribe',
         '/api/v1/reports',
@@ -1625,6 +1611,30 @@ describe('Contract-Backed Route Tests', () => {
 
       expectedPaths.forEach((routePath) => {
         expect(canonicalOpenApi).toContain(routePath);
+      });
+    });
+
+    it('contains canonical Action Plane routes in action-plane.yaml only', () => {
+      const expectedActionPaths = [
+        '/api/v1/action/pipelines',
+        '/api/v1/action/pipelines/draft',
+        '/api/v1/action/pipelines/{pipelineId}',
+        '/api/v1/action/pipelines/{pipelineId}/optimise-hint',
+        '/api/v1/action/pipelines/{pipelineId}/execute',
+        '/api/v1/action/executions/{executionId}',
+        '/api/v1/action/executions/{executionId}/logs',
+        '/api/v1/action/learning/trigger',
+        '/api/v1/action/learning/status',
+        '/api/v1/action/plugins',
+        '/api/v1/action/plugins/{id}',
+        '/api/v1/action/plugins/{id}/enable',
+        '/api/v1/action/plugins/{id}/disable',
+        '/api/v1/action/plugins/{id}/upgrade',
+      ];
+
+      expectedActionPaths.forEach((routePath) => {
+        expect(actionPlaneOpenApi).toContain(routePath);
+        expect(canonicalOpenApi).not.toContain(`${routePath.replace('/action', '')}:`);
       });
     });
 
@@ -1673,33 +1683,24 @@ describe('Contract-Backed Route Tests', () => {
       expect(canonicalOpenApi).toContain('name: type');
     });
 
-    it('keeps the canonical pipeline contract aligned with the launcher response shape', () => {
-      expect(canonicalOpenApi).toContain('Pipeline:');
-      expect(canonicalOpenApi).toContain('PipelineListResponse:');
-      expect(canonicalOpenApi).toContain('PipelineMutationRequest:');
-      expect(canonicalOpenApi).toContain('required: [id, tenantId]');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/PipelineListResponse"');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/PipelineMutationRequest"');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/Pipeline"');
+    it('keeps canonical pipeline paths in the Action Plane contract', () => {
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/pipelines:');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/pipelines/{pipelineId}:');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/pipelines/{pipelineId}/execute:');
+      expect(actionPlaneOpenApi).toContain('x-ghatana-required-access: OPERATOR');
+      expect(canonicalOpenApi).not.toContain('/api/v1/pipelines:');
+      expect(canonicalOpenApi).not.toContain('/api/v1/pipelines/{pipelineId}:');
     });
 
-    it('keeps the canonical checkpoint and memory contracts aligned with the launcher response shape', () => {
+    it('keeps checkpoint in Data Cloud and memory in Action Plane ownership', () => {
       expect(canonicalOpenApi).toContain('Checkpoint:');
       expect(canonicalOpenApi).toContain('CheckpointListResponse:');
       expect(canonicalOpenApi).toContain('CheckpointSaveResponse:');
-      expect(canonicalOpenApi).toContain('MemoryItem:');
-      expect(canonicalOpenApi).toContain('MemoryRootListResponse:');
-      expect(canonicalOpenApi).toContain('AgentMemorySummaryResponse:');
-      expect(canonicalOpenApi).toContain('MemoryTierResponse:');
-      expect(canonicalOpenApi).toContain('MemorySearchRequest:');
-      expect(canonicalOpenApi).toContain('MemorySearchResponse:');
-      expect(canonicalOpenApi).toContain('MemoryDeleteResponse:');
-      expect(canonicalOpenApi).toContain('MemoryRetainRequest:');
-      expect(canonicalOpenApi).toContain('MemoryRetainResponse:');
-      expect(canonicalOpenApi).toContain('/api/v1/memory:');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/memory:');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/memory/{agentId}/search:');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/memory/{agentId}/{memoryId}/retain:');
+      expect(canonicalOpenApi).not.toContain('/api/v1/memory:');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/CheckpointListResponse"');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/MemorySearchResponse"');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/MemoryRetainResponse"');
     });
 
     it('keeps the canonical brain contracts aligned with the launcher response shape', () => {
@@ -1711,13 +1712,12 @@ describe('Contract-Backed Route Tests', () => {
       expect(canonicalOpenApi).toContain('BrainPatternListResponse:');
       expect(canonicalOpenApi).toContain('BrainPatternMatchResponse:');
       expect(canonicalOpenApi).toContain('BrainSalienceResponse:');
-      expect(canonicalOpenApi).toContain('LearningStatusResponse:');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainRuntimeStats"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainWorkspaceStatus"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainAttentionThresholds"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainPatternListResponse"');
       expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/BrainSalienceResponse"');
-      expect(canonicalOpenApi).toContain('$ref: "#/components/schemas/LearningStatusResponse"');
+      expect(actionPlaneOpenApi).toContain('/api/v1/action/learning/status:');
     });
 
     it('keeps the canonical analytics SQL and suggestion contracts aligned with the launcher response shape', () => {

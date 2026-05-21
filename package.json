@@ -13,7 +13,6 @@
     "build:platform": "pnpm -r --filter './platform/typescript/**' build",
     "dev": "pnpm -r --parallel --filter './products/*/ui' dev",
     "test": "pnpm -r --if-present --filter './platform/typescript/**' --filter './products/*/ui' test",
-    "check:full-repo-test": "pnpm test && ./gradlew check --no-daemon && pnpm check:digital-marketing-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/digital-marketing && pnpm check:phr-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/phr",
     "test:ui": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' test",
     "lint": "pnpm typecheck && pnpm check:architecture-boundaries",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",

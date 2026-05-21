@@ -280,6 +280,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
                         assertStatusCode(resp, TestConstants.HTTP_OK); // DC-AUD-014
                         Map<String, Object> body = parseJsonResponse(resp); 
+                        assertThat(body).isNotNull();
                         // assertThat(body.get("tenantId")).isEqualTo("default");
                 }
     }

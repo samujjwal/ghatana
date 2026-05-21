@@ -31,7 +31,11 @@ export interface PreviewRequest {
   readonly theme?: ThemeConfig;
   /** Security policy for the preview sandbox. */
   readonly securityPolicy?: SecurityPolicy;
+  /** Preview execution mode. */
+  readonly executionMode?: PreviewExecutionMode;
 }
+
+export type PreviewExecutionMode = 'safe-static' | 'isolated-runtime';
 
 /**
  * Design system configuration for preview.

@@ -168,4 +168,85 @@ test.describe('P1-044: Campaign Lifecycle E2E', () => {
     // Verify button shows pending state (text changes to "Launching…")
     await expect(campaignRow.locator('text=Launching…')).toBeVisible({ timeout: 5000 });
   });
+
+  test('DM-001: Request approval transition', async ({ page }) => {
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await page.waitForSelector('[data-testid="campaigns-page"]', { timeout: 5000 });
+
+    // Create a campaign
+    const campaignName = `Approval Test ${Date.now()}`;
+    await page.fill('[data-testid="campaign-name-input"]', campaignName);
+    await page.selectOption('[data-testid="campaign-type-select"]', 'EMAIL');
+    await page.click('[data-testid="create-campaign-btn"]');
+
+    // Wait for campaign to appear
+    await page.waitForSelector(`[data-testid="campaign-row-${campaignName}"]`, { timeout: 5000 });
+    const campaignRow = page.locator(`[data-testid="campaign-row-${campaignName}"]`);
+
+    // Click request approval button
+    const requestApprovalBtn = campaignRow.locator('text=Request Approval');
+    await requestApprovalBtn.click();
+
+    // Verify success message
+    await expect(page.locator('.toast')).toBeVisible({ timeout: 5000 });
+
+    // Verify status changes to PENDING_APPROVAL
+    await expect(campaignRow.locator('text=PENDING_APPROVAL')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('DM-001: Approve campaign transition', async ({ page }) => {
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await page.waitForSelector('[data-testid="campaigns-page"]', { timeout: 5000 });
+
+    // Create a campaign
+    const campaignName = `Approve Test ${Date.now()}`;
+    await page.fill('[data-testid="campaign-name-input"]', campaignName);
+    await page.selectOption('[data-testid="campaign-type-select"]', 'EMAIL');
+    await page.click('[data-testid="create-campaign-btn"]');
+
+    // Wait for campaign to appear
+    await page.waitForSelector(`[data-testid="campaign-row-${campaignName}"]`, { timeout: 5000 });
+    const campaignRow = page.locator(`[data-testid="campaign-row-${campaignName}"]`);
+
+    // Request approval first
+    const requestApprovalBtn = campaignRow.locator('text=Request Approval');
+    await requestApprovalBtn.click();
+    await expect(campaignRow.locator('text=PENDING_APPROVAL')).toBeVisible({ timeout: 10000 });
+
+    // Click approve button
+    const approveBtn = campaignRow.locator('text=Approve');
+    await approveBtn.click();
+
+    // Verify approval dialog appears
+    await expect(page.locator('[data-testid="approve-dialog"]')).toBeVisible({ timeout: 5000 });
+
+    // Fill reason and confirm
+    await page.fill('[data-testid="approve-reason-input"]', 'Approved for launch');
+    await page.click('[data-testid="confirm-approve-btn"]');
+
+    // Verify success message
+    await expect(page.locator('.toast')).toBeVisible({ timeout: 5000 });
+
+    // Verify status changes to APPROVED
+    await expect(campaignRow.locator('text=APPROVED')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('DM-001: Invalid transition is rejected', async ({ page }) => {
+    await page.goto(`/workspaces/${TEST_WORKSPACE}/campaigns`);
+    await page.waitForSelector('[data-testid="campaigns-page"]', { timeout: 5000 });
+
+    // Create a campaign
+    const campaignName = `Invalid Transition Test ${Date.now()}`;
+    await page.fill('[data-testid="campaign-name-input"]', campaignName);
+    await page.selectOption('[data-testid="campaign-type-select"]', 'EMAIL');
+    await page.click('[data-testid="create-campaign-btn"]');
+
+    // Wait for campaign to appear
+    await page.waitForSelector(`[data-testid="campaign-row-${campaignName}"]`, { timeout: 5000 });
+    const campaignRow = page.locator(`[data-testid="campaign-row-${campaignName}"]`);
+
+    // Try to directly approve without requesting approval first (should not be available)
+    const approveBtn = campaignRow.locator('text=Approve');
+    await expect(approveBtn).not.toBeVisible();
+  });
 });

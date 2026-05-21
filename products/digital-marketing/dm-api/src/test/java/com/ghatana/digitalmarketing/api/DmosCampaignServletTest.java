@@ -772,6 +772,12 @@ class DmosCampaignServletTest extends EventloopTestBase {
         }
 
         @Override
+        public Promise<Campaign> transitionCampaign(DmOperationContext ctx, String campaignId, String toStatus, String actorId, String reason) {
+            this.lastContext = ctx;
+            return Promise.of(buildCampaign(CampaignStatus.valueOf(toStatus)));
+        }
+
+        @Override
         public Promise<Campaign> duplicateCampaign(DmOperationContext ctx, String campaignId, String newName) {
             this.lastContext = ctx;
             return duplicateResult;

@@ -355,4 +355,238 @@ describe("ProductUnitIntent", () => {
     expect(errors).toContain("governanceHints.retentionPolicyId must be a non-empty string");
     expect(errors).toContain("governanceHints.retentionDays must be non-negative");
   });
+
+  describe("PHR conformance tests", () => {
+    it("accepts PHR intent with regulated healthcare governance", () => {
+      const phrIntent: ProductUnitIntent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "phr",
+          name: "Personal Health Records",
+          kind: "business-product",
+          productShape: "regulated-healthcare",
+        },
+        governanceHints: {
+          ...baseIntent.governanceHints,
+          privacyLevel: "restricted",
+          evidencePrivacyClassification: "restricted",
+          regulatedDomain: "healthcare",
+          requiresHumanApproval: true,
+          requiredPolicyPacks: [
+            "healthcare-hipaa-baseline",
+            "fhir-r4-validation",
+            "pii-classification",
+            "tenant-data-sovereignty",
+          ],
+          dataSensitivity: "regulated",
+          retentionPolicyId: "phr-healthcare-evidence-2555",
+          retentionDays: 2555,
+          evidenceRequired: true,
+        },
+      };
+
+      expect(isProductUnitIntent(phrIntent)).toBe(true);
+    });
+
+    it("accepts PHR intent with healthcare-specific policy packs", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "phr",
+          name: "Personal Health Records",
+          kind: "business-product",
+          productShape: "regulated-healthcare",
+        },
+        governanceHints: {
+          ...baseIntent.governanceHints,
+          requiredPolicyPacks: [
+            "healthcare-hipaa-baseline",
+            "fhir-r4-validation",
+            "consent-gate",
+            "pii-classification",
+            "audit-evidence",
+            "fhir-contract-validation",
+            "tenant-data-sovereignty",
+          ],
+        },
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+
+    it("accepts PHR intent with FHIR semantic artifact refs", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "phr",
+          name: "Personal Health Records",
+          kind: "business-product",
+          productShape: "regulated-healthcare",
+          semanticArtifactRefs: [
+            "artifact-evidence://fhir/r4-patient-schema",
+            "artifact-evidence://fhir/r4-observation-schema",
+          ],
+        },
+        semanticArtifactRefs: [
+          "artifact-evidence://fhir/r4-patient-schema",
+          "artifact-evidence://fhir/r4-observation-schema",
+        ],
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+
+    it("accepts PHR intent with consent gate references", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "phr",
+          name: "Personal Health Records",
+          kind: "business-product",
+          productShape: "regulated-healthcare",
+        },
+        governanceHints: {
+          ...baseIntent.governanceHints,
+          requiredPolicyPacks: [
+            "consent-gate",
+            "pii-classification",
+            "audit-evidence",
+            "fhir-contract-validation",
+            "tenant-data-sovereignty",
+          ],
+        },
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+  });
+
+  describe("Digital Marketing conformance tests", () => {
+    it("accepts Digital Marketing intent with marketing-ops governance", () => {
+      const dmIntent: ProductUnitIntent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "digital-marketing",
+          name: "Digital Marketing Operating System",
+          kind: "business-product",
+          productShape: "marketing-ops",
+        },
+        requestedLifecycle: {
+          profile: baseIntent.requestedLifecycle?.profile || "standard-web-product",
+          enableExecution: true,
+          phases: [
+            "dev",
+            "validate",
+            "test",
+            "build",
+            "package",
+            "deploy",
+            "promote",
+            "rollback",
+            "verify",
+          ],
+        },
+        governanceHints: {
+          ...baseIntent.governanceHints,
+          privacyLevel: "internal",
+          evidencePrivacyClassification: "confidential",
+          regulatedDomain: "marketing",
+          requiresHumanApproval: false,
+          requiredPolicyPacks: [
+            "web-api-security-baseline",
+            "container-image-integrity",
+            "non-regulated-customer-data-minimization",
+            "marketing-consent-boundary",
+          ],
+          dataSensitivity: "moderate",
+          retentionPolicyId: "digital-marketing-evidence-365",
+          retentionDays: 365,
+          evidenceRequired: true,
+        },
+      };
+
+      expect(isProductUnitIntent(dmIntent)).toBe(true);
+    });
+
+    it("accepts Digital Marketing intent with full lifecycle phases including promote and rollback", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "digital-marketing",
+          name: "Digital Marketing Operating System",
+          kind: "business-product",
+          productShape: "marketing-ops",
+        },
+        requestedLifecycle: {
+          ...baseIntent.requestedLifecycle,
+          phases: [
+            "dev",
+            "validate",
+            "test",
+            "build",
+            "package",
+            "deploy",
+            "promote",
+            "rollback",
+            "verify",
+          ],
+        },
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+
+    it("accepts Digital Marketing intent with marketing consent boundary policy pack", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "digital-marketing",
+          name: "Digital Marketing Operating System",
+          kind: "business-product",
+          productShape: "marketing-ops",
+        },
+        governanceHints: {
+          ...baseIntent.governanceHints,
+          requiredPolicyPacks: [
+            "web-api-security-baseline",
+            "container-image-integrity",
+            "non-regulated-customer-data-minimization",
+            "marketing-consent-boundary",
+          ],
+        },
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+
+    it("accepts Digital Marketing intent with Google Ads connector semantic artifact refs", () => {
+      const intent = {
+        ...baseIntent,
+        productUnit: {
+          ...baseIntent.productUnit,
+          id: "digital-marketing",
+          name: "Digital Marketing Operating System",
+          kind: "business-product",
+          productShape: "marketing-ops",
+          semanticArtifactRefs: [
+            "artifact-evidence://google-ads/connector-schema",
+            "artifact-evidence://google-ads/campaign-schema",
+          ],
+        },
+        semanticArtifactRefs: [
+          "artifact-evidence://google-ads/connector-schema",
+          "artifact-evidence://google-ads/campaign-schema",
+        ],
+      };
+
+      expect(isProductUnitIntent(intent)).toBe(true);
+    });
+  });
 });

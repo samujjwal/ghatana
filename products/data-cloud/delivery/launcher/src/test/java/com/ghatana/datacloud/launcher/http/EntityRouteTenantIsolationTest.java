@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -96,7 +97,7 @@ class EntityRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"name\":\"test\"}".getBytes())
+                .withBody("{\"name\":\"test\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertCrossTenantDenial(path, HttpMethod.POST, requestBuilder);
@@ -111,7 +112,7 @@ class EntityRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.post("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"name\":\"test\"}".getBytes())
+                .withBody("{\"name\":\"test\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertSameTenantAccess(path, HttpMethod.POST, requestBuilder);
@@ -132,7 +133,7 @@ class EntityRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.put("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"name\":\"updated\"}".getBytes())
+                .withBody("{\"name\":\"updated\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertCrossTenantDenial(path, HttpMethod.PUT, requestBuilder);
@@ -148,7 +149,7 @@ class EntityRouteTenantIsolationTest extends TenantIsolationTestBase {
             RequestBuilder requestBuilder = (context, p) -> HttpRequest.put("http://localhost" + p)
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer " + context.token)
                 .withHeader(HttpHeaders.of("X-Tenant-Id"), context.tenantId)
-                .withBody("{\"name\":\"updated\"}".getBytes())
+                .withBody("{\"name\":\"updated\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
             assertSameTenantAccess(path, HttpMethod.PUT, requestBuilder);

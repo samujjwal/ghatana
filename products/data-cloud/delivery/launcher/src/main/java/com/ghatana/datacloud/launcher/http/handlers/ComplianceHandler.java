@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.entity.EntityInterface;
@@ -82,7 +83,7 @@ public final class ComplianceHandler {
                     "appliedAt", hold.get("appliedAt"),
                     "requestId", requestId
                 ), requestId));
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 log.error("Failed to apply legal hold tenant={}", tenantId, e);
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
@@ -235,6 +236,10 @@ public final class ComplianceHandler {
                             "source", "dc_data_product_retention_policies",
                             "status", "queried-from-tenant-store"
                         ));
+                        default -> evidence.put("unsupportedType:" + type, Map.of(
+                            "status", "ignored",
+                            "reason", "unsupported evidence type"
+                        ));
                     }
                 }
 
@@ -251,7 +256,7 @@ public final class ComplianceHandler {
                         log.error("Failed to save evidence package tenant={}", tenantId, e);
                         return Promise.of(http.errorResponse(500, "Failed to persist evidence package: " + e.getMessage()));
                     });
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
         });

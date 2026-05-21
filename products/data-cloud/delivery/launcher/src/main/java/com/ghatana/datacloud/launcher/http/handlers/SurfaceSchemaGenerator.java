@@ -13,6 +13,7 @@ import com.ghatana.datacloud.spi.ai.PredictionCapability;
 import com.ghatana.datacloud.spi.ai.RecommendationCapability;
 import com.ghatana.datacloud.spi.SimilaritySearchCapability;
 import com.ghatana.datacloud.spi.TransactionCapability;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.activej.http.HttpResponse;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -422,6 +423,9 @@ public final class SurfaceSchemaGenerator {
 
     // ==================== Data Classes ====================
 
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
     public static class SurfaceSchema {
         public String version;
         public SchemaMetadata metadata;
@@ -432,12 +436,18 @@ public final class SurfaceSchemaGenerator {
         public Map<String, StatusDefinition> statusDefinitions;
     }
 
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
     public static class SchemaMetadata {
         public String description;
         public String lastUpdated;
         public List<String> generators;
     }
 
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
     public static class Capability {
         public String id;
         public String name;
@@ -464,6 +474,9 @@ public final class SurfaceSchemaGenerator {
         }
     }
 
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
     public static class FeatureGate {
         public String id;
         public String name;
@@ -484,6 +497,9 @@ public final class SurfaceSchemaGenerator {
         }
     }
 
+    @SuppressFBWarnings(
+        value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD",
+        justification = "Public fields are intentionally serialized by Jackson as the route surface schema contract.")
     public static class StatusDefinition {
         public String description;
         public String uiIndicator;

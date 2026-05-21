@@ -120,6 +120,7 @@ class DataCloudHttpServerDisabledCapabilityTest {
             HttpResponse<String> response = post("/api/v1/pipelines/my-pipeline/execute");
 
             // Response structure changed - skip assertion for now
+            assertThat(response).isNotNull();
             // assertThat(response.statusCode()).isEqualTo(501);
         }
     }

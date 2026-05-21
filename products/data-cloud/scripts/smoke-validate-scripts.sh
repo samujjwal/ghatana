@@ -31,8 +31,8 @@ NC='\033[0m'
 PASS=0
 FAIL=0
 
-pass() { echo -e "${GREEN}✓${NC} $1"; ((PASS++)); }
-fail() { echo -e "${RED}✗${NC} $1"; ((FAIL++)); }
+pass() { echo -e "${GREEN}✓${NC} $1"; ((PASS += 1)); }
+fail() { echo -e "${RED}✗${NC} $1"; ((FAIL += 1)); }
 info() { echo -e "${YELLOW}▸${NC} $1"; }
 
 # ── Helper: assert bash syntax is valid ───────────────────────────────────────

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Button, Card, CardContent, CardHeader, StatusBadge } from '@ghatana/design-system';
 import { fetchDashboardData } from '../api/phrApi';
 import type { ConsentGrant } from '../types';
 
@@ -30,7 +30,7 @@ export function ConsentPage(): React.ReactElement {
                 <p className="muted">{consent.purpose} · Expires {consent.expiresAt}</p>
               </div>
               <div className="row gap-sm">
-                <span className={`pill ${consent.status === 'expiring' ? 'warning' : ''}`}>{consent.status}</span>
+                <StatusBadge status={consent.status} />
                 <Button className="secondary-button">Update</Button>
               </div>
             </section>

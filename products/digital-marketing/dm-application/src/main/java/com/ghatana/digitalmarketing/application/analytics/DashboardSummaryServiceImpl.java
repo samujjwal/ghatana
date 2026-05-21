@@ -82,6 +82,31 @@ public final class DashboardSummaryServiceImpl implements DashboardSummaryServic
                 }));
     }
 
+    @Override
+    public Promise<KpiMetricsReport> computeKpiMetrics(DmOperationContext ctx, ReportPeriod period) {
+        LOG.info("[DMOS-ANALYTICS] Computing KPI metrics for workspace={} period={}", ctx.getWorkspaceId().getValue(), period);
+
+        return campaignRepository.listByWorkspace(ctx.getTenantId(), ctx.getWorkspaceId(), 1000, 0)
+            .then(campaigns -> {
+                CampaignKpiMetrics campaignKpi = computeCampaignKpiMetrics(campaigns);
+                BudgetKpiMetrics budgetKpi = computeBudgetKpiMetrics(java.util.List.of());
+                LeadKpiMetrics leadKpi = computeLeadKpiMetrics(java.util.List.of());
+                ConversionKpiMetrics conversionKpi = computeConversionKpiMetrics(java.util.List.of());
+                RoiKpiMetrics roiKpi = computeRoiKpiMetrics(java.util.List.of());
+
+                return Promise.of(new KpiMetricsReport(
+                    ctx.getWorkspaceId().getValue(),
+                    period,
+                    Instant.now(),
+                    campaignKpi,
+                    budgetKpi,
+                    leadKpi,
+                    conversionKpi,
+                    roiKpi
+                ));
+            });
+    }
+
     /**
      * P0-005: Compute campaign metrics from actual campaign data with source event tracking.
      */
@@ -245,5 +270,123 @@ public final class DashboardSummaryServiceImpl implements DashboardSummaryServic
         } else {
             return ConfidenceLevel.LOW;
         }
+    }
+
+    /**
+     * Compute campaign KPI metrics for reporting.
+     */
+    private CampaignKpiMetrics computeCampaignKpiMetrics(java.util.List<com.ghatana.digitalmarketing.domain.campaign.Campaign> campaigns) {
+        int totalCampaigns = campaigns.size();
+        int activeCampaigns = (int) campaigns.stream().filter(c -> c.getStatus() == CampaignStatus.LAUNCHED).count();
+        
+        // Calculate average campaign duration in days (for completed campaigns with end date)
+        double averageDurationDays = campaigns.stream()
+            .filter(c -> c.getStatus() == CampaignStatus.COMPLETED && c.getEndDate() != null)
+            .filter(c -> c.getStartDate() != null)
+            .mapToLong(c -> {
+                try {
+                    java.time.Instant start = java.time.Instant.parse(c.getStartDate());
+                    java.time.Instant end = java.time.Instant.parse(c.getEndDate());
+                    return java.time.Duration.between(start, end).toDays();
+                } catch (Exception e) {
+                    return 0L;
+                }
+            })
+            .average()
+            .orElse(0.0);
+        
+        // Calculate campaign success rate (completed / total)
+        double successRate = totalCampaigns > 0 
+            ? (double) campaigns.stream().filter(c -> c.getStatus() == CampaignStatus.COMPLETED).count() / totalCampaigns
+            : 0.0;
+
+        LOG.debug("[DMOS-ANALYTICS] Campaign KPI metrics: total={}, active={}, avgDuration={}, successRate={}",
+            totalCampaigns, activeCampaigns, averageDurationDays, successRate);
+
+        return new CampaignKpiMetrics(totalCampaigns, activeCampaigns, averageDurationDays, successRate);
+    }
+
+    /**
+     * Compute budget KPI metrics for reporting.
+     */
+    private BudgetKpiMetrics computeBudgetKpiMetrics(java.util.List<com.ghatana.digitalmarketing.domain.budget.BudgetRecommendation> budgets) {
+        long totalBudget = budgets.stream()
+            .mapToLong(b -> (long) b.getTotalMonthlyCap())
+            .sum();
+        long spentBudget = 0L;
+        long remainingBudget = totalBudget - spentBudget;
+        double utilizationPercentage = totalBudget > 0 ? (double) spentBudget / totalBudget : 0.0;
+        
+        // Cost per lead calculation (requires lead data)
+        double costPerLead = 0.0;
+
+        LOG.debug("[DMOS-ANALYTICS] Budget KPI metrics: total={}, spent={}, remaining={}, utilization={}, costPerLead={}",
+            totalBudget, spentBudget, remainingBudget, utilizationPercentage, costPerLead);
+
+        return new BudgetKpiMetrics(totalBudget, spentBudget, remainingBudget, utilizationPercentage, costPerLead);
+    }
+
+    /**
+     * Compute lead KPI metrics for reporting.
+     */
+    private LeadKpiMetrics computeLeadKpiMetrics(java.util.List<com.ghatana.digitalmarketing.domain.lead.Lead> leads) {
+        long totalLeads = leads.size();
+        long qualifiedLeads = leads.stream()
+            .filter(l -> l.getStatus() == com.ghatana.digitalmarketing.domain.lead.LeadStatus.QUALIFIED)
+            .count();
+        
+        // Lead growth rate (would require historical data)
+        double leadGrowthRate = 0.0;
+        
+        // Lead quality score (based on qualification rate)
+        double leadQualityScore = totalLeads > 0 ? (double) qualifiedLeads / totalLeads : 0.0;
+
+        LOG.debug("[DMOS-ANALYTICS] Lead KPI metrics: total={}, qualified={}, growthRate={}, qualityScore={}",
+            totalLeads, qualifiedLeads, leadGrowthRate, leadQualityScore);
+
+        return new LeadKpiMetrics(totalLeads, qualifiedLeads, leadGrowthRate, leadQualityScore);
+    }
+
+    /**
+     * Compute conversion KPI metrics for reporting.
+     */
+    private ConversionKpiMetrics computeConversionKpiMetrics(java.util.List<com.ghatana.digitalmarketing.domain.lead.Lead> leads) {
+        // Overall conversion rate (qualified / total)
+        double overallConversionRate = !leads.isEmpty()
+            ? (double) leads.stream().filter(l -> l.getStatus() == com.ghatana.digitalmarketing.domain.lead.LeadStatus.QUALIFIED).count() / leads.size()
+            : 0.0;
+        
+        // Funnel conversion rate (would require funnel stage data)
+        double funnelConversionRate = overallConversionRate;
+        
+        // Time to conversion in days
+        double timeToConversionDays = 0.0;
+
+        LOG.debug("[DMOS-ANALYTICS] Conversion KPI metrics: overall={}, funnel={}, timeToConversion={}",
+            overallConversionRate, funnelConversionRate, timeToConversionDays);
+
+        return new ConversionKpiMetrics(overallConversionRate, funnelConversionRate, timeToConversionDays);
+    }
+
+    /**
+     * Compute ROI KPI metrics for reporting.
+     */
+    private RoiKpiMetrics computeRoiKpiMetrics(java.util.List<com.ghatana.digitalmarketing.domain.lead.Lead> leads) {
+        // Revenue calculation (would require opportunity/deal data)
+        double totalRevenue = 0.0;
+        
+        // Cost calculation (from budget data)
+        double totalCost = 0.0;
+        
+        // ROI percentage
+        double roiPercentage = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : 0.0;
+        
+        // ROAS (Return on Ad Spend)
+        double roas = totalCost > 0 ? totalRevenue / totalCost : 0.0;
+
+        LOG.debug("[DMOS-ANALYTICS] ROI KPI metrics: revenue={}, cost={}, roi={}, roas={}",
+            totalRevenue, totalCost, roiPercentage, roas);
+
+        return new RoiKpiMetrics(totalRevenue, totalCost, roiPercentage, roas);
     }
 }

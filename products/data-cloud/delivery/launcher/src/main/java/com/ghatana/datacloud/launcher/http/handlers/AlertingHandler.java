@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
@@ -327,7 +328,7 @@ public final class AlertingHandler {
                         log.error("[P2.4] Remediation apply failed tenant={} alert={}: {}", tenantId, alertId, e.getMessage(), e);
                         return Promise.of(http.errorResponse(500, "Remediation failed: " + e.getMessage()));
                     });
-            } catch (Exception e) {
+            } catch (JsonProcessingException | RuntimeException e) {
                 return Promise.of(http.errorResponse(400, "Invalid remediation payload: " + e.getMessage()));
             }
         });
@@ -1186,10 +1187,6 @@ public final class AlertingHandler {
         }
         rule.put("updatedAt", Instant.now().toString());
         return Map.copyOf(rule);
-    }
-
-    private Map<String, Object> savedIdMap(Map<String, Object> data) {
-        return savedIdMap(data, String.valueOf(data.getOrDefault("id", "")));
     }
 
     private Map<String, Object> savedIdMap(Map<String, Object> data, String id) {

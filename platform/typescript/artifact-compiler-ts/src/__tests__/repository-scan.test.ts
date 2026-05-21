@@ -89,4 +89,140 @@ describe("scanRepositorySources", () => {
     expect(scan.result.residuals.blockingCount).toBeGreaterThan(0);
     expect(scan.result.residuals.islands[0]?.kind).toBe("runtime-dynamic");
   });
+
+  it('records resolved and unresolved import counts in repository graph metadata', () => {
+    const scan = scanRepositorySources(
+      [
+        {
+          relativePath: 'src/App.tsx',
+          content: `import { Button } from './components/Button'; import { Missing } from './missing'; export function App() { return <Button />; }`,
+        },
+        {
+          relativePath: 'src/components/Button.tsx',
+          content: 'export function Button() { return <button>Ok</button>; }',
+        },
+      ],
+      {
+        scanJobId: 'scan-4',
+        modelId: 'model-4',
+        label: 'Graph Repo',
+      },
+    );
+
+    expect(scan.model.metadata.repositoryGraph).toEqual({
+      resolvedImportCount: 1,
+      unresolvedImportCount: 1,
+      routeDeclarationCount: 0,
+      componentUsageCount: 1,
+      apiCallCount: 0,
+      designTokenReferenceCount: 0,
+      routeConfigObjectCount: 0,
+      routeConfigMaxDepth: 0,
+      workspacePackageCount: 0,
+      workspaceDependencyCount: 0,
+      workspaceScriptCount: 0,
+    });
+    expect(scan.model.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromId: 'src/App.tsx',
+          toId: 'src/components/Button.tsx',
+          kind: 'import',
+        }),
+      ]),
+    );
+  });
+
+  it('captures route, api, and design-token intelligence counters', () => {
+    const scan = scanRepositorySources(
+      [
+        {
+          relativePath: 'src/App.tsx',
+          content: `
+            export function App() {
+              fetch('/api/data');
+              const style = 'var(--color-primary-token)';
+              return (
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                </Routes>
+              );
+            }
+          `,
+        },
+      ],
+      {
+        scanJobId: 'scan-5',
+        modelId: 'model-5',
+        label: 'Intelligence Repo',
+      },
+    );
+
+    expect(scan.model.metadata.repositoryGraph).toEqual({
+      resolvedImportCount: 0,
+      unresolvedImportCount: 0,
+      routeDeclarationCount: 1,
+      componentUsageCount: 3,
+      apiCallCount: 1,
+      designTokenReferenceCount: 1,
+      routeConfigObjectCount: 0,
+      routeConfigMaxDepth: 0,
+      workspacePackageCount: 0,
+      workspaceDependencyCount: 0,
+      workspaceScriptCount: 0,
+    });
+  });
+
+  it('captures package-manifest and route-config graph intelligence counters', () => {
+    const scan = scanRepositorySources(
+      [
+        {
+          relativePath: 'package.json',
+          content: JSON.stringify({
+            name: 'fixture',
+            scripts: {
+              build: 'tsc -p tsconfig.json',
+              test: 'vitest run',
+            },
+            dependencies: {
+              react: '^19.0.0',
+            },
+            devDependencies: {
+              vitest: '^3.0.0',
+            },
+          }),
+        },
+        {
+          relativePath: 'src/router.tsx',
+          content: `
+            import { createBrowserRouter } from 'react-router-dom';
+            export const routesConfig = [{
+              path: '/',
+              children: [{ path: 'settings', children: [{ path: 'advanced' }] }],
+            }];
+            export const router = createBrowserRouter(routesConfig);
+          `,
+        },
+      ],
+      {
+        scanJobId: 'scan-6',
+        modelId: 'model-6',
+        label: 'Manifest + Route Graph Repo',
+      },
+    );
+
+    expect(scan.model.metadata.repositoryGraph).toEqual({
+      resolvedImportCount: 0,
+      unresolvedImportCount: 1,
+      routeDeclarationCount: 0,
+      componentUsageCount: 0,
+      apiCallCount: 0,
+      designTokenReferenceCount: 0,
+      routeConfigObjectCount: 1,
+      routeConfigMaxDepth: 6,
+      workspacePackageCount: 1,
+      workspaceDependencyCount: 2,
+      workspaceScriptCount: 2,
+    });
+  });
 });

@@ -504,9 +504,9 @@ public class DataLifecycleHandler {
                 tenantId,
                 "datacloud.http.governance.retention.policy",
                 traceSupport.requestSpanId(request),
-                collection == null || collection.isBlank() ? Map.of("request.id", requestId) : Map.of("request.id", requestId, "collection", collection));
+                collection.isBlank() ? Map.of("request.id", requestId) : Map.of("request.id", requestId, "collection", collection));
 
-        if (collection == null || collection.isBlank()) {
+        if (collection.isBlank()) {
             return Promise.of(http.errorEnvelopeResponse(
                 ApiResponse.error("MISSING_COLLECTION", "collection query parameter is required",
                     tenantId, requestId),
@@ -1909,12 +1909,9 @@ public class DataLifecycleHandler {
         } catch (Exception e) {
             log.error("[DC-P1-09] Critical audit write failed for operation {} on resource {}: {}",
                 eventType, resourceId, e.getMessage(), e);
-            // In fail-closed mode, rethrow to block the operation
-            if (eventLogAuditService != null) {
-                throw new IllegalStateException(
-                    "DC-P1-09: Failed to record critical audit event. Operation blocked due to audit sink failure: " +
-                    e.getMessage(), e);
-            }
+            throw new IllegalStateException(
+                "DC-P1-09: Failed to record critical audit event. Operation blocked due to audit sink failure: " +
+                e.getMessage(), e);
         }
     }
 

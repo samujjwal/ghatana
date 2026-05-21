@@ -118,7 +118,121 @@ function areAstEquivalent(originalContent: string, generatedContent: string): bo
   if (originalAst === null || generatedAst === null) {
     return normalizeSource(originalContent) === normalizeSource(generatedContent);
   }
+
+  const originalSignature = buildAstSemanticSignature(originalContent);
+  const generatedSignature = buildAstSemanticSignature(generatedContent);
+
+  if (originalSignature !== null && generatedSignature !== null) {
+    return originalSignature === generatedSignature;
+  }
+
   return originalAst === generatedAst;
+}
+
+function buildAstSemanticSignature(content: string): string | null {
+  try {
+    const sourceFile = ts.createSourceFile('signature.tsx', content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const diagnostics = (sourceFile as ts.SourceFile & { readonly parseDiagnostics?: readonly ts.Diagnostic[] }).parseDiagnostics;
+    if (diagnostics && diagnostics.length > 0) {
+      return null;
+    }
+
+    const importSignatures: string[] = [];
+    const exportSignatures: string[] = [];
+    const jsxNodeKinds: string[] = [];
+    const jsxAttributeNames: string[] = [];
+    const callExpressionNames: string[] = [];
+    const jsxEventHandlerNames: string[] = [];
+    const jsxBindingExpressions: string[] = [];
+    const styleReferences: string[] = [];
+
+    const visit = (node: ts.Node): void => {
+      if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+        const importClause = node.importClause;
+        const namedBindings = importClause?.namedBindings;
+        let bindingShape = '';
+        if (namedBindings && ts.isNamedImports(namedBindings)) {
+          bindingShape = namedBindings.elements
+            .map((element) => `${element.propertyName?.text ?? element.name.text}->${element.name.text}`)
+            .sort((left, right) => left.localeCompare(right))
+            .join(',');
+        }
+        importSignatures.push(`${importClause?.isTypeOnly === true ? 'type' : 'value'}:${node.moduleSpecifier.text}:${bindingShape}`);
+      }
+
+      if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isVariableStatement(node)) && node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
+        exportSignatures.push(node.kind.toString());
+      }
+
+      if (ts.isJsxElement(node)) {
+        jsxNodeKinds.push(node.openingElement.tagName.getText(sourceFile));
+        node.openingElement.attributes.properties.forEach((attribute) => {
+          if (ts.isJsxAttribute(attribute)) {
+            jsxAttributeNames.push(attribute.name.text);
+            if (/^on[A-Z]/.test(attribute.name.text)) {
+              jsxEventHandlerNames.push(attribute.name.text);
+            }
+            if (attribute.initializer && ts.isJsxExpression(attribute.initializer) && attribute.initializer.expression) {
+              jsxBindingExpressions.push(`${attribute.name.text}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
+            }
+            if (attribute.name.text === 'className' || attribute.name.text === 'style') {
+              styleReferences.push(attribute.getText(sourceFile));
+            }
+          }
+        });
+      }
+
+      if (ts.isJsxSelfClosingElement(node)) {
+        jsxNodeKinds.push(node.tagName.getText(sourceFile));
+        node.attributes.properties.forEach((attribute) => {
+          if (ts.isJsxAttribute(attribute)) {
+            jsxAttributeNames.push(attribute.name.text);
+            if (/^on[A-Z]/.test(attribute.name.text)) {
+              jsxEventHandlerNames.push(attribute.name.text);
+            }
+            if (attribute.initializer && ts.isJsxExpression(attribute.initializer) && attribute.initializer.expression) {
+              jsxBindingExpressions.push(`${attribute.name.text}:${normalizeSource(attribute.initializer.expression.getText(sourceFile))}`);
+            }
+            if (attribute.name.text === 'className' || attribute.name.text === 'style') {
+              styleReferences.push(attribute.getText(sourceFile));
+            }
+          }
+        });
+      }
+
+      if (ts.isJsxExpression(node) && node.expression) {
+        jsxBindingExpressions.push(normalizeSource(node.expression.getText(sourceFile)));
+      }
+
+      if (ts.isCallExpression(node)) {
+        callExpressionNames.push(node.expression.getText(sourceFile));
+      }
+
+      if (ts.isStringLiteralLike(node)) {
+        const text = node.text;
+        if (text.includes('var(--') || /\btoken\b/i.test(text) || /\bclass(Name)?\b/.test(text)) {
+          styleReferences.push(text);
+        }
+      }
+
+      ts.forEachChild(node, visit);
+    };
+
+    ts.forEachChild(sourceFile, visit);
+
+    return JSON.stringify({
+      imports: importSignatures.sort((left, right) => left.localeCompare(right)),
+      exports: exportSignatures.sort((left, right) => left.localeCompare(right)),
+      jsxNodes: jsxNodeKinds.sort((left, right) => left.localeCompare(right)),
+      jsxAttributes: jsxAttributeNames.sort((left, right) => left.localeCompare(right)),
+      calls: callExpressionNames.sort((left, right) => left.localeCompare(right)),
+      jsxEventHandlers: jsxEventHandlerNames.sort((left, right) => left.localeCompare(right)),
+      jsxBindings: jsxBindingExpressions.sort((left, right) => left.localeCompare(right)),
+      styleReferences: styleReferences.sort((left, right) => left.localeCompare(right)),
+    });
+  } catch {
+    return null;
+  }
 }
 
 function countUnchangedPrefix(originalLines: readonly string[], generatedLines: readonly string[]): number {

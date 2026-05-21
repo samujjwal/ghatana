@@ -7,6 +7,12 @@ import type {
   ToolchainOutputValidationResult,
   ProductLifecyclePhase,
   ProductSurfaceType,
+  AdapterPreflightResult,
+  LifecycleFailureClassifier,
+} from '../ToolchainAdapter.js';
+import {
+  createDefaultPreflightResult,
+  createDefaultFailureClassifier,
 } from '../ToolchainAdapter.js';
 
 const execAsync = promisify(require('node:child_process').exec);
@@ -130,6 +136,14 @@ export class TerraformDeploymentAdapter implements ToolchainAdapter {
       missingArtifacts: [],
       unexpectedArtifacts: [],
     };
+  }
+
+  async preflight(_context: ToolchainAdapterContext): Promise<AdapterPreflightResult> {
+    return createDefaultPreflightResult();
+  }
+
+  async classifyFailure(error: Error, _context: ToolchainAdapterContext): Promise<LifecycleFailureClassifier> {
+    return createDefaultFailureClassifier(error, this.id);
   }
 
   private mapPhaseToAction(phase: ProductLifecyclePhase): string {

@@ -1,6 +1,7 @@
 package com.ghatana.datacloud.launcher.http.plugins;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.entity.storage.FilterCriteria;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.health.HealthStatus;
@@ -396,7 +397,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         private boolean matchesFilters(Entity entity, List<Filter> filters) { 
             return filters.stream().allMatch(filter -> { 
                 Object value = "id".equals(filter.field()) ? entity.id() : entity.data().get(filter.field()); 
-                if (!"eq".equals(filter.operator())) { 
+                if (filter.operator() != FilterCriteria.Operator.EQ) {
                     return true;
                 }
                 return value != null && value.equals(filter.value()); 

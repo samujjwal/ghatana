@@ -845,7 +845,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         AuditService failingAuditService = new AuditService() {
             @Override
             public Promise<Void> record(AuditEvent event) {
-                return Promise.ofException(new RuntimeException("Audit write failed"));
+                return Promise.ofException(new RuntimeException("Audit persistence failed"));
             }
 
             @Override
@@ -890,10 +890,12 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
     void auditWriteFailureOnRetentionPurgeRouteBlocksRequestInProduction() {
         System.setProperty("DATACLOUD_PROFILE", "production");
 
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
         AuditService failingAuditService = new AuditService() {
             @Override
             public Promise<Void> record(AuditEvent event) {
-                return Promise.ofException(new RuntimeException("Audit write failed"));
+                return Promise.ofException(new RuntimeException("Audit persistence failed"));
             }
 
             @Override
@@ -913,7 +915,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
         };
 
         filter = DataCloudSecurityFilter.builder()
-            .apiKeyResolver(apiKeyResolver)
+            .apiKeyResolver(adminApiKeyResolver)
             .jwtProvider(jwtProvider)
             .policyEngine(policyEngine)
             .auditService(failingAuditService)
@@ -922,7 +924,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .deploymentProfile("production")
             .build();
 
-        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/data/lifecycle/retention/purge")
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/governance/retention/purge")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
             .build();
 
@@ -971,7 +973,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .deploymentProfile("production")
             .build();
 
-        HttpRequest request = HttpRequest.builder(HttpMethod.PUT, "http://localhost/api/v1/governance/policies")
+        HttpRequest request = HttpRequest.builder(HttpMethod.PUT, "http://localhost/api/v1/governance/policies/policy-1")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
             .build();
 

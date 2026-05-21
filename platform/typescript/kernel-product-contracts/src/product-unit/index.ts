@@ -9,9 +9,9 @@
  * @doc.pattern Module
  */
 
-export * from "./ProductUnitKind.js";
-export * from "./ProductUnitSurface.js";
-export * from "./ProductShape.js";
-export * from "./ProductUnitSourceRef.js";
 export * from "./ProductUnit.js";
 export * from "./ProductUnitIntent.js";
+export * from "./ProductUnitKind.js";
+export * from "./ProductUnitSurface.js";
+export * from "./ProductUnitSourceRef.js";
+export * from "./ProductShape.js";
