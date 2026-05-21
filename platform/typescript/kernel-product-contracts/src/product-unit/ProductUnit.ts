@@ -30,6 +30,8 @@ import type { RequiredGateReference } from "../gate/GateContracts";
 import type { ProductArtifact } from "../artifact/ProductArtifact";
 import type { ProductDeployment } from "../deployment/ProductDeployment";
 import type { AgentLifecycleActionEvidence } from "../agentic/AgentLifecycleActionEvidence";
+import type { ProductInteractionDeclaration } from "../product-interaction/ProductInteractionContract.js";
+import { ProductInteractionDeclarationSchema } from "../product-interaction/ProductInteractionContract.js";
 
 // Re-export ProductUnitSurface for convenience
 export type { ProductUnitSurface };
@@ -40,6 +42,7 @@ export type { RequiredGateReference };
 export type { ProductArtifact };
 export type { ProductDeployment };
 export type { AgentLifecycleActionEvidence };
+export type { ProductInteractionDeclaration };
 
 /**
  * Lifecycle status of a ProductUnit.
@@ -91,6 +94,7 @@ export interface ProductUnitDraft {
   readonly sourceRefs?: readonly ProductUnitSourceRef[] | undefined;
   readonly lifecycleProfile?: string | undefined;
   readonly semanticArtifactRefs?: readonly string[] | undefined;
+  readonly interactions?: ProductInteractionDeclaration | undefined;
   readonly metadata?: Record<string, unknown> | undefined;
 }
 
@@ -264,6 +268,11 @@ export interface ProductUnit {
   readonly agenticActionEvidence?: readonly AgentLifecycleActionEvidence[] | undefined;
 
   /**
+   * Declarative cross-product interaction contracts.
+   */
+  readonly interactions?: ProductInteractionDeclaration | undefined;
+
+  /**
    * Conformance requirements for this ProductUnit.
    */
   readonly conformance?: ProductUnitConformance | undefined;
@@ -399,6 +408,7 @@ export const ProductUnitDraftSchema = z
     sourceRefs: z.array(ProductUnitSourceRefSchema).optional(),
     lifecycleProfile: z.string().trim().min(1).optional(),
     semanticArtifactRefs: z.array(z.string().trim().min(1)).optional(),
+    interactions: ProductInteractionDeclarationSchema.optional(),
     metadata: RecordSchema.optional(),
   })
   .strict();
@@ -429,6 +439,7 @@ export const ProductUnitSchema = z
     releaseConfig: RecordSchema.optional(),
     healthConfig: RecordSchema.optional(),
     agenticActionEvidence: z.array(z.object({ evidenceId: z.string(), kind: z.string(), ref: z.string(), capturedAt: z.string(), redacted: z.boolean(), providedByAgentId: z.string().optional(), description: z.string().optional() })).optional(),
+    interactions: ProductInteractionDeclarationSchema.optional(),
     conformance: z
       .object({
         requiredChecks: z.array(z.string().trim().min(1)),

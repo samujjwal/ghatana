@@ -1,0 +1,9 @@
+schemaVersion: 1.0.0
+evidenceId: digital-marketing.notification-preference
+manifestType: interaction-evidence
+productUnitId: digital-marketing
+contractId: kernel://interactions/digital-marketing.notification-preference.v1
+status: declared
+summary: Notification preference lookups are provided to other products through a tenant-scoped Kernel interaction handler.
+evidenceRefs:
+  - products/digital-marketing/kernel-product.yaml

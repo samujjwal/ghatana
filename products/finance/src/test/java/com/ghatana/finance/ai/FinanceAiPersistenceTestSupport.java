@@ -2,6 +2,7 @@ package com.ghatana.finance.ai;
 
 import com.ghatana.products.finance.FinanceAiRuntimeConfig;
 import com.ghatana.products.finance.FinanceTransactionRuntimeConfig;
+import com.zaxxer.hikari.pool.HikariPool;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Assumptions;
@@ -43,7 +44,34 @@ public final class FinanceAiPersistenceTestSupport {
         config.setMinimumIdle(1);
         config.setAutoCommit(false);
         config.setPoolName(poolName);
-        return new HikariDataSource(config);
+        config.setInitializationFailTimeout(-1L);
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                return new HikariDataSource(config);
+            } catch (HikariPool.PoolInitializationException exception) {
+                if (attempt == 3 || !isClosedConnection(exception)) {
+                    throw exception;
+                }
+                try {
+                    Thread.sleep(250L * attempt);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while creating finance test datasource", interruptedException);
+                }
+            }
+        }
+        throw new IllegalStateException("Failed to create finance test datasource");
+    }
+
+    private static boolean isClosedConnection(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current.getMessage() != null && current.getMessage().contains("This connection has been closed")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     public static FinanceAiRuntimeConfig createRuntimeConfig(PostgreSQLContainer<?> postgres, String poolName) {

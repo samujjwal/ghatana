@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Set;
+import java.time.Duration;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -319,6 +321,155 @@ class PluginSecurityTest extends EventloopTestBase {
     }
 
     // -----------------------------------------------------------------------
+    // SEC-6: Brokered plugin interaction policy
+    // -----------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("SEC-6: Brokered interaction policy")
+    class BrokeredInteractionPolicyTests {
+
+        @Test
+        @DisplayName("SEC-6a: Policy evaluator denies callers outside contract allowlist")
+        void policyEvaluatorDeniesCallerOutsideAllowlist() {
+            PluginInteractionPolicyEvaluator evaluator = PluginInteractionPolicyEvaluator.defaultEvaluator();
+            PluginInteractionEnvelope<String> envelope = interactionEnvelope(
+                    "risk-plugin",
+                    "approval-plugin",
+                    "payload");
+            PluginInteractionPolicy policy = new PluginInteractionPolicy(
+                    false,
+                    false,
+                    Set.of("approval-ui-plugin"),
+                    Set.of());
+
+            PluginInteractionPolicyDecision decision = evaluator.evaluate(envelope, policy);
+
+            assertThat(decision.allowed()).isFalse();
+            assertThat(decision.reasonCode()).isEqualTo("plugin.policy_denied");
+        }
+
+        @Test
+        @DisplayName("SEC-6b: Envelope request denies before target dispatch when policy blocks caller")
+        void envelopeRequestDeniesBeforeTargetDispatchWhenPolicyBlocksCaller() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+            PluginContract<String, String> contract = stringContract(
+                    new PluginInteractionPolicy(false, false, Set.of("approval-ui-plugin"), Set.of()));
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            contract,
+                            Duration.ofSeconds(1))))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.policy_denied");
+        }
+
+        @Test
+        @DisplayName("SEC-6c: Envelope request returns handler_missing for registered target without handler")
+        void envelopeRequestReturnsHandlerMissingForRegisteredTargetWithoutHandler() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1))))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.handler_missing");
+        }
+
+        @Test
+        @DisplayName("SEC-6d: Successful envelope request emits broker audit evidence")
+        void successfulEnvelopeRequestEmitsBrokerAuditEvidence() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+            ctx.getInteractionBus().registerHandler("approval-plugin", (String request) -> Promise.of("approved:" + request));
+
+            String response = runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1)));
+
+            assertThat(response).isEqualTo("approved:payload");
+            assertThat(ctx.getInteractionBus().auditRecords())
+                    .extracting(PluginInteractionAuditRecord::reasonCode)
+                    .contains("plugin.dispatched", "plugin.succeeded");
+        }
+
+        @Test
+        @DisplayName("SEC-6e: Contract version mismatch fails before dispatch")
+        void contractVersionMismatchFailsBeforeDispatch() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+            PluginInteractionEnvelope<String> envelope = new PluginInteractionEnvelope<>(
+                    "2.0.0",
+                    "interaction-test-2",
+                    "kernel://plugins/test-string.v1",
+                    "risk-plugin",
+                    "approval-plugin",
+                    "product-unit-test",
+                    "tenant-test",
+                    "workspace-test",
+                    "run-test",
+                    "corr-test",
+                    Instant.parse("2026-05-21T00:00:00Z"),
+                    "payload");
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            envelope,
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ofSeconds(1))))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.contract_version_mismatch");
+            assertThat(ctx.getInteractionBus().auditRecords())
+                    .extracting(PluginInteractionAuditRecord::reasonCode)
+                    .contains("plugin.contract_version_mismatch");
+        }
+
+        @Test
+        @DisplayName("SEC-6f: Non-positive timeout fails closed")
+        void nonPositiveTimeoutFailsClosed() {
+            PluginRegistry registry = new PluginRegistry();
+            registry.register(new NamedPlugin("approval-plugin"));
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    ctx.getInteractionBus().request(
+                            interactionEnvelope("risk-plugin", "approval-plugin", "payload"),
+                            stringContract(PluginInteractionPolicy.allowAll()),
+                            Duration.ZERO)))
+                    .isInstanceOf(PluginCapabilityException.class)
+                    .hasMessageContaining("plugin.timeout");
+        }
+
+        @Test
+        @DisplayName("SEC-6g: Typed publish emits publication and delivery audit evidence")
+        void typedPublishEmitsAuditEvidence() {
+            PluginRegistry registry = new PluginRegistry();
+            DefaultPluginContext ctx = new DefaultPluginContext(registry, Map.of());
+            java.util.List<Object> received = new java.util.ArrayList<>();
+            ctx.getInteractionBus().subscribe("risk.approved", received::add);
+
+            ctx.getInteractionBus().publish(
+                    stringTopicContract(),
+                    interactionEnvelope("risk-plugin", null, "payload"));
+
+            assertThat(received).hasSize(1);
+            assertThat(ctx.getInteractionBus().auditRecords())
+                    .extracting(PluginInteractionAuditRecord::reasonCode)
+                    .contains("plugin.published", "plugin.delivered");
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Helper types used only in this test class
     // -----------------------------------------------------------------------
 
@@ -327,6 +478,68 @@ class PluginSecurityTest extends EventloopTestBase {
 
     /** Marker config type for tenant B — not visible to tenant A contexts. */
     private static final class TenantBConfig {}
+
+    private static PluginInteractionEnvelope<String> interactionEnvelope(
+            String callerPluginId,
+            String targetPluginId,
+            String payload) {
+        return new PluginInteractionEnvelope<>(
+                "1.0.0",
+                "interaction-test-1",
+                "kernel://plugins/test-string.v1",
+                callerPluginId,
+                targetPluginId,
+                "product-unit-test",
+                "tenant-test",
+                "workspace-test",
+                "run-test",
+                "corr-test",
+                Instant.parse("2026-05-21T00:00:00Z"),
+                payload);
+    }
+
+    private static PluginContract<String, String> stringContract(PluginInteractionPolicy policy) {
+        return new PluginContract<>() {
+            @Override
+            public @NotNull String contractId() {
+                return "kernel://plugins/test-string.v1";
+            }
+
+            @Override
+            public @NotNull Class<String> requestType() {
+                return String.class;
+            }
+
+            @Override
+            public @NotNull Class<String> responseType() {
+                return String.class;
+            }
+
+            @Override
+            public @NotNull PluginInteractionPolicy policy() {
+                return policy;
+            }
+        };
+    }
+
+    private static PluginTopicContract<String> stringTopicContract() {
+        return new PluginTopicContract<>() {
+            @Override
+            public @NotNull String topic() {
+                return "risk.approved";
+            }
+
+            @Override
+            public @NotNull String contractId() {
+                return "kernel://plugins/test-string.v1";
+            }
+
+            @Override
+            public @NotNull Class<String> eventType() {
+                return String.class;
+            }
+        };
+    }
 
     /**
      * Minimal plugin implementation used only in security tests.

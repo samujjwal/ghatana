@@ -247,7 +247,12 @@ describe('reloadWorkflowStateAtom', () => {
     const store = makeStore();
     const model = createLogicalArtifactModel('m1', 'test-model');
     const report = createPerfectFidelityReport('m1');
-    const residuals = { islands: [], totalCount: 0, blockingCount: 0 };
+    const residuals = {
+      islands: [],
+      totalCount: 0,
+      blockingCount: 0,
+      canCompileWithResiduals: true,
+    };
 
     // Set complete state with proper contract types
     store.set(setArtifactWorkflowAtom, {
@@ -404,14 +409,24 @@ describe('resolvePersistenceAdapterForEnv', () => {
           label: 'Evidence',
           stage: 'round-trip',
           fidelity: createPerfectFidelityReport('model-1'),
-          residuals: { islands: [], totalCount: 0, blockingCount: 0 },
+          residuals: {
+            islands: [],
+            totalCount: 0,
+            blockingCount: 0,
+            canCompileWithResiduals: true,
+          },
           decompileResult: {
             success: true,
             modelId: 'model-1',
             nodeCount: 0,
             edgeCount: 0,
             fidelity: createPerfectFidelityReport('model-1'),
-            residuals: { islands: [], totalCount: 0, blockingCount: 0 },
+            residuals: {
+              islands: [],
+              totalCount: 0,
+              blockingCount: 0,
+              canCompileWithResiduals: true,
+            },
             errors: [],
             decompiledAt: '2026-01-01T00:00:00.000Z',
           },

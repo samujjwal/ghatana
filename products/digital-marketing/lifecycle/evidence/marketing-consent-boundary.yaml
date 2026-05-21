@@ -1,0 +1,10 @@
+schemaVersion: 1.0.0
+evidenceId: digital-marketing.marketing-consent-boundary
+manifestType: interaction-evidence
+productUnitId: digital-marketing
+contractId: kernel://interactions/marketing.lead-captured.v1
+status: declared
+summary: Marketing lead-captured events require consent and customer-contact PII classification before publication.
+evidenceRefs:
+  - products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml
+  - products/digital-marketing/kernel-product.yaml

@@ -194,17 +194,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         Map<String, Object> listBody = mapper.readValue(listResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(((Number) listBody.get("count")).intValue()).isGreaterThan(0);
         
-        // Restart server
-        server.stop();
-        Thread.sleep(500); // Allow server to fully stop
-        
-        // Restart with same client (simulates restart with same storage)
-        server = new DataCloudHttpServer(client, port)
-            .withPluginManager(pluginManager)
-            .withDeploymentMode("local");
-        server.start();
-        waitForServerReady(port);
-        waitForWorkflowCapability();
+        // Restart with same client (simulates restart with same storage).
+        restartServer();
         
         // Verify checkpoint survives restart
         HttpResponse<String> listAfterRestartResp = get("/api/v1/action/executions/" + executionId + "/checkpoints");
@@ -233,16 +224,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         // Wait for persistence
         Thread.sleep(100);
         
-        // Restart server
-        server.stop();
-        Thread.sleep(500);
-        
-        server = new DataCloudHttpServer(client, port)
-            .withPluginManager(pluginManager)
-            .withDeploymentMode("local");
-        server.start();
-        waitForServerReady(port);
-        waitForWorkflowCapability();
+        // Restart with same client (simulates restart with same storage).
+        restartServer();
         
         // Verify snapshot survives restart
         HttpResponse<String> getResp = get("/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + executionId);
@@ -274,16 +257,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         List<Map<String, Object>> logsBefore = (List<Map<String, Object>>) logsBeforeBody.get("logs");
         int logCountBefore = logsBefore.size();
         
-        // Restart server
-        server.stop();
-        Thread.sleep(500);
-        
-        server = new DataCloudHttpServer(client, port)
-            .withPluginManager(pluginManager)
-            .withDeploymentMode("local");
-        server.start();
-        waitForServerReady(port);
-        waitForWorkflowCapability();
+        // Restart with same client (simulates restart with same storage).
+        restartServer();
         
         // Verify logs survive restart
         HttpResponse<String> logsAfterResp = get("/api/v1/action/pipelines/" + PIPELINE_ID + "/executions/" + executionId + "/logs");
@@ -499,6 +474,20 @@ class WorkflowExecutionRealProviderIntegrationTest {
         throw new IllegalStateException("Server did not start within 10 seconds on port " + port);
     }
 
+    private void restartServer() throws Exception {
+        if (server != null) {
+            server.stop();
+        }
+        Thread.sleep(500);
+        port = findFreePort();
+        server = new DataCloudHttpServer(client, port)
+            .withPluginManager(pluginManager)
+            .withDeploymentMode("local");
+        server.start();
+        waitForServerReady(port);
+        waitForWorkflowCapability();
+    }
+
     private void waitForWorkflowCapability() throws Exception {
         long deadline = System.currentTimeMillis() + 10_000;
         while (System.currentTimeMillis() < deadline) {
@@ -536,16 +525,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         Map<String, Object> statusBody = mapper.readValue(statusResp.body(), new TypeReference<Map<String, Object>>() {});
         assertThat(statusBody.get("status")).isIn("RUNNING", "COMPLETED");
 
-        // Stop server
-        server.stop();
-        
-        // Restart server with same durable storage
-        server = new DataCloudHttpServer(client, port)
-            .withPluginManager(pluginManager)
-            .withDeploymentMode("local");
-        server.start();
-        waitForServerReady(port);
-        waitForWorkflowCapability();
+        // Restart server with same durable storage.
+        restartServer();
 
         // Verify execution state persisted across restart
         HttpResponse<String> statusAfterRestart = get("/api/v1/action/executions/" + executionId);
@@ -581,13 +562,8 @@ class WorkflowExecutionRealProviderIntegrationTest {
         List<Map<String, Object>> checkpoints = (List<Map<String, Object>>) checkpointBody.get("checkpoints");
         int checkpointCountBefore = checkpoints != null ? checkpoints.size() : 0;
 
-        // Stop and restart server
-        server.stop();
-        server = new DataCloudHttpServer(client, port)
-            .withPluginManager(pluginManager)
-            .withDeploymentMode("local");
-        server.start();
-        waitForServerReady(port);
+        // Restart server while keeping durable in-memory client state.
+        restartServer();
 
         // Verify checkpoints persisted
         HttpResponse<String> checkpointAfterRestart = get("/api/v1/action/executions/" + executionId + "/checkpoints");

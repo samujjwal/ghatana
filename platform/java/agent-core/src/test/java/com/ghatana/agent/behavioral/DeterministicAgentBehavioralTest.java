@@ -655,8 +655,8 @@ class DeterministicAgentBehavioralTest {
 
             Duration latency = Duration.between(start, end); 
 
-            // Deterministic should be sub-millisecond
-            assertThat(latency).isLessThan(Duration.ofMillis(100)); 
+                        // Include eventloop startup overhead; keep this bounded without making it load-sensitive.
+                        assertThat(latency).isLessThan(Duration.ofMillis(250)); 
         }
     }
 

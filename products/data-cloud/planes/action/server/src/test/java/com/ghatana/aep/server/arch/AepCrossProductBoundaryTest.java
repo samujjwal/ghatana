@@ -55,6 +55,7 @@ class AepCrossProductBoundaryTest {
     static void importClasses() {
         AEP_SERVER_CLASSES = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_JARS)
                 .importPackages("com.ghatana.aep");
     }
 

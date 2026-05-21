@@ -70,6 +70,80 @@ telemetry:
   productUnitId: digital-marketing
   correlationScope: product-lifecycle
 
+interactions:
+  publishes:
+    - contractId: kernel://interactions/marketing.lead-captured.v1
+      schemaVersion: 1.0.0
+      providerProductId: digital-marketing
+      consumerProductIds: [phr]
+      mode: event-publish
+      topic: product.digital-marketing.lead.captured
+      eventSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/lead-captured.v1.json
+      policy:
+        requiresAuth: true
+        requiresTenant: true
+        requiresConsent: true
+        piiClassification: customer-contact
+        tenantScope: same-tenant
+        allowedCallerRoles: [marketing-operator, lifecycle-runner]
+        allowedLifecyclePhases: [validate, test, deploy, verify]
+      evidence:
+        required: true
+        manifestType: interaction-evidence
+        evidenceRefs:
+          - products/digital-marketing/lifecycle/evidence/marketing-consent-boundary.yaml
+        retentionPolicyId: marketing-consent-evidence
+  consumes:
+    - contractId: kernel://interactions/phr.consent-status.v1
+      schemaVersion: 1.0.0
+      providerProductId: phr
+      consumerProductIds: [digital-marketing]
+      mode: request-response
+      requestSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-request.v1.json
+      responseSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-response.v1.json
+      required: false
+      policy:
+        requiresAuth: true
+        requiresTenant: true
+        requiresConsent: true
+        piiClassification: healthcare-contact
+        tenantScope: same-tenant
+        allowedCallerRoles: [marketing-operator, lifecycle-runner]
+        allowedPurposes: [campaign-activation, consent-verification]
+        allowedLifecyclePhases: [validate, test, deploy, verify]
+        degradedModeAllowed: true
+      evidence:
+        required: true
+        manifestType: interaction-evidence
+        evidenceRefs:
+          - products/digital-marketing/lifecycle/evidence/phr-consent-status.yaml
+        retentionPolicyId: healthcare-consent-evidence
+  provides:
+    - contractId: kernel://interactions/digital-marketing.notification-preference.v1
+      schemaVersion: 1.0.0
+      providerProductId: digital-marketing
+      consumerProductIds: [phr]
+      mode: request-response
+      requestSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-request.v1.json
+      responseSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-response.v1.json
+      required: true
+      policy:
+        requiresAuth: true
+        requiresTenant: true
+        requiresConsent: true
+        piiClassification: customer-contact
+        tenantScope: same-tenant
+        allowedCallerRoles: [healthcare-operator, lifecycle-runner]
+        allowedPurposes: [care-plan-notification]
+        allowedLifecyclePhases: [validate, test, deploy, verify]
+        degradedModeAllowed: false
+      evidence:
+        required: true
+        manifestType: interaction-evidence
+        evidenceRefs:
+          - products/digital-marketing/lifecycle/evidence/notification-preference.yaml
+        retentionPolicyId: marketing-consent-evidence
+
 surfaces:
   backend-api:
     source: products/digital-marketing/dm-api

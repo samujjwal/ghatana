@@ -88,6 +88,7 @@ const dataCloudProviderPaths = [
   'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudProvenanceProvider.java',
   'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudMemoryProvider.java',
   'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudRuntimeTruthProvider.java',
+  'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudProductInteractionEvidenceProvider.java',
   'products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudPolicyEvidenceProvider.java',
 ];
 
@@ -122,6 +123,7 @@ requireIncludes(dataCloudExtensionPath, 'DataCloudHealthProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudProvenanceProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudMemoryProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudRuntimeTruthProvider');
+requireIncludes(dataCloudExtensionPath, 'DataCloudProductInteractionEvidenceProvider');
 requireIncludes(dataCloudExtensionPath, 'DataCloudPolicyEvidenceProvider');
 requireNotIncludes(dataCloudExtensionPath, 'TODO', 'Data Cloud kernel extension');
 requireNotIncludes(dataCloudExtensionPath, 'FIXME', 'Data Cloud kernel extension');

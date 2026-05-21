@@ -8,6 +8,31 @@ import { ProductLifecyclePlanner, ProductLifecycleExecutor, SchemaValidator } fr
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 
+const LIFECYCLE_ALIASES = new Map([
+  ['develop', { phase: 'dev' }],
+  ['ship-local', { phase: 'deploy', environment: 'local' }],
+  ['verify-local', { phase: 'verify', environment: 'local' }],
+]);
+
+function isLifecycleIntent(value) {
+  return [
+    'create',
+    'bootstrap',
+    'dev',
+    'validate',
+    'test',
+    'build',
+    'package',
+    'release',
+    'deploy',
+    'verify',
+    'promote',
+    'rollback',
+    'operate',
+    'retire',
+  ].includes(value) || LIFECYCLE_ALIASES.has(value);
+}
+
 /**
  * Verify kernel packages are built
  */
@@ -77,47 +102,72 @@ function parseInvocation(argv) {
       if (argv.length < 4) {
         printUsage(1);
       }
-      return {
+      return normalizeInvocation({
         mode: 'plan',
         phase: argv[3],
         productId: argv[2],
         options: parseOptions(argv.slice(4)),
-      };
+      });
     }
 
     if (argv.length < 3) {
       printUsage(1);
     }
 
-    return {
+    if (!isLifecycleIntent(argv[1]) && isLifecycleIntent(argv[2])) {
+      return normalizeInvocation({
+        mode: 'execute',
+        phase: argv[2],
+        productId: argv[1],
+        options: parseOptions(argv.slice(3)),
+      });
+    }
+
+    return normalizeInvocation({
       mode: 'execute',
       phase: argv[1],
       productId: argv[2],
       options: parseOptions(argv.slice(3)),
-    };
+    });
   }
 
   if (argv[0] === 'plan') {
     if (argv.length < 3) {
       printUsage(1);
     }
-    return {
+    return normalizeInvocation({
       mode: 'plan',
       productId: argv[1],
       phase: argv[2],
       options: parseOptions(argv.slice(3)),
-    };
+    });
   }
 
   if (argv.length < 2) {
     printUsage(1);
   }
 
-  return {
+  return normalizeInvocation({
     mode: 'execute',
     phase: argv[0],
     productId: argv[1],
     options: parseOptions(argv.slice(2)),
+  });
+}
+
+function normalizeInvocation(invocation) {
+  const alias = LIFECYCLE_ALIASES.get(invocation.phase);
+  if (!alias) {
+    return invocation;
+  }
+
+  return {
+    ...invocation,
+    phase: alias.phase,
+    options: {
+      ...invocation.options,
+      environment: invocation.options.environment ?? alias.environment,
+    },
   };
 }
 
@@ -131,6 +181,9 @@ function printUsage(exitCode = 1) {
   stream.write('  node scripts/kernel-product.mjs product validate-adapters\n');
   stream.write('  node scripts/kernel-product.mjs product plan <productId> <phase> [options]\n');
   stream.write('  node scripts/kernel-product.mjs product <phase> <productId> [options]\n');
+  stream.write('  node scripts/kernel-product.mjs product develop <productId> [options]\n');
+  stream.write('  node scripts/kernel-product.mjs product ship-local <productId> [options]\n');
+  stream.write('  node scripts/kernel-product.mjs product verify-local <productId> [options]\n');
   stream.write('  node scripts/kernel-product.mjs plan <productId> <phase> [options]\n');
   stream.write('  node scripts/kernel-product.mjs <phase> <productId> [options]\n');
   stream.write('\n');
@@ -212,8 +265,9 @@ async function main() {
       return;
     }
 
-    const executor = new ProductLifecycleExecutor(invocation.options.dryRun);
-    const result = await executor.execute(plan);
+    const result = invocation.options.dryRun
+      ? createDryRunResult(plan)
+      : await new ProductLifecycleExecutor().execute(plan);
 
     if (invocation.options.json) {
       console.log(JSON.stringify({ plan, result }, null, 2));
@@ -228,6 +282,43 @@ async function main() {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
+}
+
+function createDryRunResult(plan) {
+  const timestamp = new Date().toISOString();
+  return {
+    schemaVersion: '1.0.0',
+    runId: plan.runId,
+    correlationId: plan.correlationId,
+    providerMode: plan.providerMode,
+    productId: plan.productId,
+    phase: plan.phase,
+    lifecycleProfile: plan.lifecycleProfile,
+    environment: plan.environment,
+    requestedPhases: [plan.phase],
+    status: 'skipped',
+    startedAt: timestamp,
+    completedAt: timestamp,
+    steps: plan.steps.map((step) => ({
+      stepId: step.id,
+      phase: step.phase,
+      surface: step.surface,
+      adapter: step.adapter,
+      status: 'skipped',
+      startedAt: timestamp,
+      completedAt: timestamp,
+      exitCode: 0,
+      stdout: `[DRY-RUN] ${step.phase} phase for ${step.surface} via ${step.adapter}`,
+      durationMs: 0,
+      artifacts: [],
+      errors: [],
+      warnings: [],
+      correlationId: plan.correlationId,
+    })),
+    gates: [],
+    artifacts: [],
+    outputDirectory: plan.outputDirectory,
+  };
 }
 
 main().catch((error) => {

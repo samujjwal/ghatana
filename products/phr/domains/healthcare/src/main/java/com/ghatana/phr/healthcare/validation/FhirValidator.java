@@ -73,9 +73,9 @@ public final class FhirValidator {
      * Nepal NHS IDs follow a specific pattern.
      */
     private boolean isValidNhsId(String nhsId) {
-        // Simplified validation: check for alphanumeric with reasonable length
+        // Simplified validation: check for alphanumeric-with-hyphen with reasonable length
         // In production, this would validate against the official Nepal NHS ID format
-        return nhsId.matches("[A-Za-z0-9]{8,20}");
+        return nhsId.matches("[A-Za-z0-9][A-Za-z0-9-]{7,19}");
     }
     
     /**

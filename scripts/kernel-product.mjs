@@ -27,6 +27,19 @@ const VALID_PHASES = new Set([
   'retire',
 ]);
 
+const LIFECYCLE_ALIASES = new Map([
+  ['develop', { phase: 'dev' }],
+  ['ship-local', { phase: 'deploy', env: 'local' }],
+  ['verify-local', { phase: 'verify', env: 'local' }],
+]);
+
+function isLifecycleIntent(value) {
+  return VALID_PHASES.has(value) ||
+    LIFECYCLE_ALIASES.has(value) ||
+    value === 'status' ||
+    value === 'recover';
+}
+
 function parseArgs(argv) {
   const options = {
     surfaces: [],
@@ -124,8 +137,18 @@ function parseArgs(argv) {
     productId = positional[2];
     phase = positional[3];
   } else if (positional[0] === 'product') {
-    phase = positional[1];
-    productId = positional[2];
+    if (positional[2] === 'explain') {
+      productId = positional[1];
+      phase = positional[3];
+      options.explain = true;
+      mode = 'plan';
+    } else if (!isLifecycleIntent(positional[1]) && isLifecycleIntent(positional[2])) {
+      productId = positional[1];
+      phase = positional[2];
+    } else {
+      phase = positional[1];
+      productId = positional[2];
+    }
   } else if (positional[0] === 'plan') {
     mode = 'plan';
     productId = positional[1];
@@ -135,7 +158,19 @@ function parseArgs(argv) {
     productId = positional[1];
   }
 
+  const alias = LIFECYCLE_ALIASES.get(phase);
+  if (alias) {
+    phase = alias.phase;
+    options.env = options.env ?? alias.env;
+  }
+
   if (!productId || !phase || !VALID_PHASES.has(phase)) {
+    if (positional[0] === 'product' && (positional[1] === 'status' || positional[2] === 'status')) {
+      return { mode: 'plan', productId: positional[2] === 'status' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
+    }
+    if (positional[0] === 'product' && (positional[1] === 'recover' || positional[2] === 'recover')) {
+      return { mode: 'plan', productId: positional[2] === 'recover' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
+    }
     throw new Error('Usage: product plan <productId> <phase> [options]');
   }
 
@@ -317,6 +352,17 @@ function explainPlan(plan) {
       type: artifact.type,
       surface: artifact.surface,
       required: artifact.required,
+    })),
+    interactionPreflights: (plan.interactionPreflights ?? []).map((preflight) => ({
+      contractId: preflight.contractId,
+      providerProductId: preflight.providerProductId,
+      consumerProductId: preflight.consumerProductId,
+      mode: preflight.mode,
+      required: preflight.required,
+      status: preflight.status,
+      reasonCode: preflight.reasonCode,
+      evidenceRequired: preflight.evidenceRequired,
+      evidenceRefs: preflight.evidenceRefs ?? [],
     })),
     healthChecks: (plan.healthChecks ?? []).map((hc) => ({
       surface: hc.surface,

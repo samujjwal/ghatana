@@ -71,6 +71,7 @@ test('enabled lifecycle product with package deploy verify manifests passes', as
     {
       parseLifecycleConfig: async () => validLifecycleConfig(),
       runPlan: () => undefined,
+      validateInteractions: false,
     },
   );
 
@@ -89,6 +90,7 @@ test('enabled lifecycle product with package config but missing package manifest
     {
       parseLifecycleConfig: async () => config,
       runPlan: () => undefined,
+      validateInteractions: false,
     },
   );
 
@@ -111,6 +113,7 @@ test('enabled lifecycle product with deploy config but missing deployment manife
     {
       parseLifecycleConfig: async () => config,
       runPlan: () => undefined,
+      validateInteractions: false,
     },
   );
 
@@ -129,6 +132,7 @@ test('enabled lifecycle product with verify config but missing health report man
     {
       parseLifecycleConfig: async () => config,
       runPlan: () => undefined,
+      validateInteractions: false,
     },
   );
 

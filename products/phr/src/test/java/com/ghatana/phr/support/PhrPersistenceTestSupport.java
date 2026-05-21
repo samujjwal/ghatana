@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Shared PostgreSQL persistence test support for PHR repository tests.
@@ -42,8 +43,34 @@ public final class PhrPersistenceTestSupport {
             .withDatabaseName("phr_repository_test")
             .withUsername("ghatana")
             .withPassword("password");
-        postgres.start();
+        startWithRetry(postgres);
         return postgres;
+    }
+
+    private static void startWithRetry(PostgreSQLContainer<?> postgres) {
+        RuntimeException lastFailure = null;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                postgres.start();
+                return;
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
+                if (attempt == 3) {
+                    throw exception;
+                }
+
+                try {
+                    TimeUnit.MILLISECONDS.sleep(250L * attempt);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while starting PostgreSQL test container", interruptedException);
+                }
+            }
+        }
+
+        throw lastFailure == null
+            ? new IllegalStateException("Failed to start PostgreSQL test container")
+            : lastFailure;
     }
 
     public static ConnectionPool createConnectionPool(PostgreSQLContainer<?> postgres, String poolName) {

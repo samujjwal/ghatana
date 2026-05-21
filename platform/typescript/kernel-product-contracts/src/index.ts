@@ -82,6 +82,30 @@ export type {
   ProductUnitIntentValidationReasonCode,
 } from "./product-unit/index.js";
 
+export {
+  ProductInteractionContractSchema,
+  ProductInteractionDeclarationSchema,
+  ProductInteractionEvidenceSchema,
+  ProductInteractionEvidenceRecordSchema,
+  ProductInteractionFailureCodeSchema,
+  ProductInteractionModeSchema,
+  ProductInteractionOutcomeStatusSchema,
+  ProductInteractionPolicySchema,
+  isProductInteractionContract,
+  parseProductInteractionEvidenceRecord,
+  parseProductInteractionContract,
+} from "./product-interaction/index.js";
+export type {
+  ProductInteractionContract,
+  ProductInteractionDeclaration,
+  ProductInteractionEvidence,
+  ProductInteractionEvidenceRecord,
+  ProductInteractionFailureCode,
+  ProductInteractionMode,
+  ProductInteractionOutcomeStatus,
+  ProductInteractionPolicy,
+} from "./product-interaction/index.js";
+
 // New provider contracts
 export {
   ProviderRef,
@@ -521,11 +545,16 @@ export {
   LifecycleArtifactSummarySchema,
   LifecycleDeploymentSummarySchema,
   LifecycleHealthSummarySchema,
+  LifecycleRecoveryHintSchema,
   LifecycleRunSummarySchema,
+  LifecycleUserSummarySchema,
   parseLifecycleRunSummary,
+  parseLifecycleUserSummary,
   type LifecycleGateSummary,
   type LifecycleArtifactSummary,
   type LifecycleDeploymentSummary,
   type LifecycleHealthSummary,
+  type LifecycleRecoveryHint,
   type LifecycleRunSummary,
+  type LifecycleUserSummary,
 } from "./ui-summary/LifecycleSummaries.js";

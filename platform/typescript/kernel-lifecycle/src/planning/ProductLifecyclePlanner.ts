@@ -22,10 +22,12 @@ import {
   ProductLifecycleApprovalRequirement,
   ProductLifecycleApprovalRequirementConfig,
   ProductLifecycleHealthCheck,
+  ProductInteractionPreflight,
 } from '../domain/ProductLifecyclePhase.js';
 import type {
   KernelLifecycleProviderContext,
   KernelProviderMode,
+  ProductInteractionContract,
   ProductUnit,
   PlanExplain,
   DependencyGraph,
@@ -36,6 +38,7 @@ import type {
   ApprovalStatus,
   EnvironmentPreflight,
 } from '@ghatana/kernel-product-contracts';
+import { ProductInteractionContractSchema } from '@ghatana/kernel-product-contracts';
 
 /** Phases that are handled by the deployment target adapter, NOT surface adapters. */
 const DEPLOYMENT_PHASES = new Set<ProductLifecyclePhase>(['deploy', 'verify', 'rollback', 'promote']);
@@ -246,6 +249,10 @@ export class ProductLifecyclePlanner {
     const config = this.parseYamlObject(configContent, configPath);
     this.assertKernelProductConfigShape(config, productId, configPath);
 
+    const interactions = config.interactions !== undefined
+      ? this.parseInteractionConfig(config.interactions, configPath)
+      : undefined;
+
     return {
       productId: String(config.productId ?? productId),
       lifecycleProfile: String(config.lifecycleProfile ?? ''),
@@ -269,6 +276,7 @@ export class ProductLifecyclePlanner {
       ...(config.verify !== undefined ? { verify: config.verify as Record<string, VerifyEnvironmentConfig> } : {}),
       ...(config.gates !== undefined ? { gates: config.gates as Record<string, string[]> } : {}),
       ...(config.artifacts !== undefined ? { artifacts: config.artifacts as Record<string, Record<string, ArtifactConfig>> } : {}),
+      ...(interactions !== undefined ? { interactions } : {}),
     };
   }
 
@@ -371,6 +379,8 @@ export class ProductLifecyclePlanner {
     const requiredManifests = this.resolveRequiredManifests(phase, config);
     const requiredPlugins = this.resolveRequiredPlugins(config);
     const approvalRequirements = this.resolveApprovalRequirements(phase, config, options.environment);
+    const interactionPreflights = await this.resolveInteractionPreflights(productId, phase, config);
+    steps = this.prependInteractionPreflightSteps(phase, steps, interactionPreflights);
     const adapterIds = [...new Set(steps.map((s) => s.adapter).filter(Boolean))];
     const healthChecks = this.resolveHealthChecks(selectedSurfaces);
 
@@ -397,11 +407,14 @@ export class ProductLifecyclePlanner {
       requiredManifests,
       requiredPlugins,
       approvalRequirements,
+      interactionPreflights,
       healthChecks,
       outputDirectory,
       estimatedDurationMs: this.estimateDuration(steps),
       warnings: [],
-      blockingReasons: [],
+      blockingReasons: interactionPreflights
+        .filter((preflight) => preflight.status === 'blocked')
+        .map((preflight) => `${preflight.reasonCode ?? 'product_interaction.policy_denied'}:${preflight.contractId}`),
     };
   }
 
@@ -1143,6 +1156,98 @@ export class ProductLifecyclePlanner {
 
     const environmentApproval = this.resolveEnvironmentApprovalRequirement(phase, config, environment);
     return environmentApproval ? [...declared, environmentApproval] : declared;
+  }
+
+  private parseInteractionConfig(input: unknown, configPath: string): KernelProductConfiguration['interactions'] {
+    if (typeof input !== 'object' || input === null) {
+      throw new Error(`interactions in ${configPath} must be an object.`);
+    }
+
+    const record = input as Record<string, unknown>;
+    const parseList = (key: 'publishes' | 'consumes' | 'provides'): ProductInteractionContract[] | undefined => {
+      const value = record[key];
+      if (value === undefined) {
+        return undefined;
+      }
+      if (!Array.isArray(value)) {
+        throw new Error(`interactions.${key} in ${configPath} must be an array.`);
+      }
+      return value.map((contract, index) => {
+        const parsed = ProductInteractionContractSchema.safeParse(contract);
+        if (!parsed.success) {
+          const detail = parsed.error.issues
+            .map((issue) =>
+              `${issue.path.map((part) => String(part)).join('.') || 'contract'}: ${issue.message}`)
+            .join('; ');
+          throw new Error(`Invalid interactions.${key}[${index}] in ${configPath}: ${detail}`);
+        }
+        return parsed.data;
+      });
+    };
+
+    const publishes = parseList('publishes');
+    const consumes = parseList('consumes');
+    const provides = parseList('provides');
+
+    return {
+      ...(publishes !== undefined ? { publishes } : {}),
+      ...(consumes !== undefined ? { consumes } : {}),
+      ...(provides !== undefined ? { provides } : {}),
+    };
+  }
+
+  private async resolveInteractionPreflights(
+    productId: string,
+    phase: ProductLifecyclePhase,
+    config: KernelProductConfiguration,
+  ): Promise<ProductInteractionPreflight[]> {
+    const consumed = config.interactions?.consumes ?? [];
+    if (consumed.length === 0) {
+      return [];
+    }
+
+    const registry = await this.loadRegistry();
+    return consumed
+      .filter((contract) => this.interactionAppliesToPhase(contract, phase))
+      .map((contract) => {
+        const provider = registry[contract.providerProductId] as
+          | { lifecycleStatus?: unknown; lifecycle?: { enabled?: unknown } }
+          | undefined;
+        const providerEnabled =
+          provider?.lifecycleStatus === 'enabled' || provider?.lifecycle?.enabled === true;
+        const required = contract.required ?? true;
+        const blocked = required && !providerEnabled;
+
+        return {
+          contractId: contract.contractId,
+          providerProductId: contract.providerProductId,
+          consumerProductId: productId,
+          mode: contract.mode,
+          required,
+          status: blocked ? 'blocked' : 'pending',
+          ...(blocked ? { reasonCode: 'product_interaction.provider_not_enabled' } : {}),
+          evidenceRequired: contract.evidence.required,
+          ...(contract.evidence.evidenceRefs !== undefined
+            ? { evidenceRefs: contract.evidence.evidenceRefs }
+            : {}),
+        };
+      });
+  }
+
+  private interactionAppliesToPhase(
+    contract: ProductInteractionContract,
+    phase: ProductLifecyclePhase,
+  ): boolean {
+    const phases = contract.policy.allowedLifecyclePhases;
+    return phases === undefined || phases.length === 0 || phases.includes(phase);
+  }
+
+  private prependInteractionPreflightSteps(
+    _phase: ProductLifecyclePhase,
+    steps: ProductLifecycleStep[],
+    _preflights: readonly ProductInteractionPreflight[],
+  ): ProductLifecycleStep[] {
+    return steps;
   }
 
   private normalizeApprovalRequirement(

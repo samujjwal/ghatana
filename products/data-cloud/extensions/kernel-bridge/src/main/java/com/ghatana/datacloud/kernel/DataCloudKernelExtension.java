@@ -173,6 +173,9 @@ public final class DataCloudKernelExtension extends AbstractKernelExtension {
         context.registerService(DataCloudKnowledgeProvider.class, new DataCloudKnowledgeProvider(adapter, bridgeContext));
         context.registerService(DataCloudRuntimeTruthProvider.class, new DataCloudRuntimeTruthProvider(adapter, bridgeContext));
         context.registerService(
+            DataCloudProductInteractionEvidenceProvider.class,
+            new DataCloudProductInteractionEvidenceProvider(adapter, bridgeContext));
+        context.registerService(
             DataCloudPolicyEvidenceProvider.class,
             new DataCloudPolicyEvidenceProvider(adapter, bridgeContext));
         healthIndicator.reportHealthy(EXTENSION_ID + ":providers:" + bridgeContext.getTenantId());

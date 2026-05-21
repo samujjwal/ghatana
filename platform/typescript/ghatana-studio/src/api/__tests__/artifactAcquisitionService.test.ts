@@ -5,9 +5,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   ArtifactAcquisitionService,
-  AcquisitionJobStatus,
-  AcquisitionJobType,
-  AcquisitionJobPriority,
   type CreateAcquisitionJobRequest,
   type UpdateAcquisitionJobRequest,
   type ArtifactSourceLinkage,

@@ -51,8 +51,9 @@ class DataCloudProviderBoundaryTest {
     @BeforeAll
     static void importClasses() {
         DATACLOUD_CLASSES = new ClassFileImporter()
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-                .importPackages("com.ghatana.datacloud");
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+            .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_JARS)
+            .importPackages("com.ghatana.aep.server");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -67,7 +68,7 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must not import kernel provider internals")
         void noKernelProviderInternals() {
             ArchRule rule = noClasses()
-                    .that().resideInAPackage("com.ghatana.datacloud..")
+                    .that().resideInAPackage("com.ghatana.aep.server..")
                     .should().dependOnClassesThat()
                     .resideInAnyPackage(
                             "com.ghatana.kernel.providers.internal..",
@@ -83,7 +84,7 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must use provider health matrix for health checks")
         void mustUseProviderHealthMatrix() {
             ArchRule rule = noClasses()
-                .that().resideInAPackage("com.ghatana.datacloud..")
+                .that().resideInAPackage("com.ghatana.aep.server..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(
                     "com.ghatana.kernel.providers.health.internal..",
@@ -107,7 +108,7 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must not bypass provider mode checks")
         void mustNotBypassProviderModeChecks() {
             ArchRule rule = noClasses()
-                    .that().resideInAPackage("com.ghatana.datacloud..")
+                    .that().resideInAPackage("com.ghatana.aep.server..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(
                     "com.ghatana.kernel.providers.mode.internal..",
@@ -122,7 +123,7 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must respect provider readiness states")
         void mustRespectProviderReadinessStates() {
             ArchRule rule = noClasses()
-                    .that().resideInAPackage("com.ghatana.datacloud..")
+                    .that().resideInAPackage("com.ghatana.aep.server..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(
                     "com.ghatana.kernel.providers.readiness.internal..",
@@ -146,8 +147,8 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must use runtime-truth service for route validation")
         void mustUseRuntimeTruthServiceForRouteValidation() {
             ArchRule rule = noClasses()
-                .that().resideInAPackage("com.ghatana.datacloud..")
-                .and().haveSimpleNameContaining("Route")
+                .that().resideInAPackage("com.ghatana.aep.server..")
+                .and().haveSimpleNameContaining("Server")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage("com.ghatana.kernel.runtime.truth.internal..")
                     .because(
@@ -160,8 +161,8 @@ class DataCloudProviderBoundaryTest {
         @DisplayName("Data Cloud must not have direct route configuration without validation")
         void mustNotHaveDirectRouteConfigWithoutValidation() {
             ArchRule rule = noClasses()
-                    .that().resideInAPackage("com.ghatana.datacloud..routeconfig..")
-                .should().resideInAnyPackage("com.ghatana.datacloud..")
+                    .that().resideInAPackage("com.ghatana.aep.server..routeconfig..")
+                .should().resideInAnyPackage("com.ghatana.aep.server..")
                     .because(
                     "Direct route-config classes are forbidden in Data Cloud runtime code. "
                     + "Route state must be derived from canonical runtime-truth surfaces.")

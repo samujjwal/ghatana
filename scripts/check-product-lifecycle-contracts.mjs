@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkProductInteractionContracts } from './check-product-interaction-contracts.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
@@ -169,6 +170,16 @@ export async function checkProductLifecycleContracts(registry, lifecycleProfiles
       } else {
         warnings.push(`Product ${productId}: no lifecycleConfigPath declared while status is ${lifecycleStatus}`);
       }
+    }
+  }
+
+  if (options.validateInteractions !== false) {
+    const interactionResult = checkProductInteractionContracts(
+      registry,
+      options.interactionOptions,
+    );
+    if (interactionResult.errors.length > 0) {
+      errors.push(...interactionResult.errors.map((error) => `Interaction contract: ${error}`));
     }
   }
 

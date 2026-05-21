@@ -454,6 +454,53 @@ describe("LifecyclePage approval queue", () => {
     expect(lifecycleRunCard).toHaveFocus();
   });
 
+  it("renders ProductUnit interaction graph from declared contracts", () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        snapshot: {
+          ...createContextValue().snapshot,
+          productUnit: {
+            ...createContextValue().snapshot.productUnit!,
+            interactions: {
+              consumes: [
+                {
+                  contractId: "kernel://interactions/phr.consent-status.v1",
+                  schemaVersion: "1.0.0",
+                  providerProductId: "phr",
+                  consumerProductIds: ["digital-marketing"],
+                  mode: "request-response",
+                  requestSchemaRef: "schemas/request.json",
+                  responseSchemaRef: "schemas/response.json",
+                  required: false,
+                  policy: {
+                    requiresAuth: true,
+                    requiresTenant: true,
+                    requiresConsent: true,
+                    piiClassification: "healthcare-contact",
+                  },
+                  evidence: {
+                    required: true,
+                    manifestType: "interaction-evidence",
+                  },
+                },
+              ],
+            },
+          },
+        },
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    const graph = screen.getByLabelText("product-interaction-graph");
+    expect(graph).toBeInTheDocument();
+    expect(graph).toHaveTextContent("digital-marketing");
+    expect(graph).toHaveTextContent("phr");
+    expect(
+      screen.getByText("kernel://interactions/phr.consent-status.v1"),
+    ).toBeInTheDocument();
+  });
+
   it("shows blocked reason codes for unsupported phase/environment and platform provider mode", () => {
     useStudioLifecycleDataMock.mockReturnValue(
       createContextValue({
@@ -639,5 +686,42 @@ describe("LifecyclePage approval queue", () => {
     });
 
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("renders plugin interaction graph from ProductUnit plugin bindings", () => {
+    useStudioLifecycleDataMock.mockReturnValue(
+      createContextValue({
+        snapshot: {
+          ...createContextValue().snapshot,
+          productUnit: {
+            ...createContextValue().snapshot.productUnit!,
+            pluginBindings: [
+              {
+                id: "audit-binding",
+                pluginRef: {
+                  pluginId: "plugin-audit-trail",
+                  kind: "kernel-plugin",
+                  enabled: true,
+                  contractPath: "config/kernel-plugin-registry.json",
+                },
+                productUnitId: "digital-marketing",
+                enabled: true,
+                lifecycleHooks: ["validate", "verify"],
+                priority: 10,
+              },
+            ],
+          },
+        },
+      }),
+    );
+
+    render(<LifecyclePage />);
+
+    const graph = screen.getByLabelText("plugin-interaction-graph");
+    expect(graph).toBeInTheDocument();
+    expect(graph).toHaveTextContent("digital-marketing");
+    expect(graph).toHaveTextContent("plugin-audit-trail");
+    expect(graph).toHaveTextContent("validate");
+    expect(graph).toHaveTextContent("10");
   });
 });

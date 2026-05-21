@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Implementation of AuthenticationService.
@@ -79,47 +80,50 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         return Promise.of(AuthResult.failure("Invalid email or password"));
                     }
 
-                    if (!passwordHasher.verify(password, user.getPasswordHash().get())) {
-                        metrics.incrementCounter("auth.authentication.failure",
-                                "tenant", tenantId.value(), "reason", "invalid_password");
-                        metrics.recordTimer("auth.authentication.latency",
-                                System.currentTimeMillis() - start);
-                        return Promise.of(AuthResult.failure("Invalid email or password"));
-                    }
+                    return verifyPassword(password, user.getPasswordHash().get())
+                            .then(passwordMatches -> {
+                                if (!passwordMatches) {
+                                    metrics.incrementCounter("auth.authentication.failure",
+                                            "tenant", tenantId.value(), "reason", "invalid_password");
+                                    metrics.recordTimer("auth.authentication.latency",
+                                            System.currentTimeMillis() - start);
+                                    return Promise.of(AuthResult.failure("Invalid email or password"));
+                                }
 
-                    // Create session
-                    Instant now = Instant.now();
-                    Session session = Session.builder()
-                            .tenantId(tenantId)
-                            .userId(user.getUserId())
-                            .createdAt(now)
-                            .expiresAt(now.plus(SESSION_TTL))
-                            .lastAccessedAt(now)
-                            .ipAddress("0.0.0.0")
-                            .userAgent("unknown")
-                            .valid(true)
-                            .build();
+                                // Create session
+                                Instant now = Instant.now();
+                                Session session = Session.builder()
+                                        .tenantId(tenantId)
+                                        .userId(user.getUserId())
+                                        .createdAt(now)
+                                        .expiresAt(now.plus(SESSION_TTL))
+                                        .lastAccessedAt(now)
+                                        .ipAddress("0.0.0.0")
+                                        .userAgent("unknown")
+                                        .valid(true)
+                                        .build();
 
-                    // Create token
-                    Token token = Token.builder()
-                            .tenantId(tenantId)
-                            .tokenId(TokenId.random())
-                            .tokenType(TokenType.ACCESS_TOKEN)
-                            .userId(user.getUserId())
-                            .clientId(ClientId.of("default"))
-                            .issuedAt(now)
-                            .expiresAt(now.plus(TOKEN_TTL))
-                            .tokenValue(UUID.randomUUID().toString())
-                            .build();
+                                // Create token
+                                Token token = Token.builder()
+                                        .tenantId(tenantId)
+                                        .tokenId(TokenId.random())
+                                        .tokenType(TokenType.ACCESS_TOKEN)
+                                        .userId(user.getUserId())
+                                        .clientId(ClientId.of("default"))
+                                        .issuedAt(now)
+                                        .expiresAt(now.plus(TOKEN_TTL))
+                                        .tokenValue(UUID.randomUUID().toString())
+                                        .build();
 
-                    return sessionStore.store(session)
-                            .then($ -> tokenStore.store(token))
-                            .map($ -> {
-                                metrics.incrementCounter("auth.authentication.success",
-                                        "tenant", tenantId.value());
-                                metrics.recordTimer("auth.authentication.latency",
-                                        System.currentTimeMillis() - start);
-                                return AuthResult.success(session, token);
+                                return sessionStore.store(session)
+                                        .then($ -> tokenStore.store(token))
+                                        .map($ -> {
+                                            metrics.incrementCounter("auth.authentication.success",
+                                                    "tenant", tenantId.value());
+                                            metrics.recordTimer("auth.authentication.latency",
+                                                    System.currentTimeMillis() - start);
+                                            return AuthResult.success(session, token);
+                                        });
                             });
                 });
     }
@@ -137,27 +141,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                 new IllegalStateException("Email already registered"));
                     }
 
-                    String hash = passwordHasher.hash(password);
-                    User user = User.forInternalAuth()
-                            .tenantId(tenantId)
-                            .userId(UserId.random())
-                            .email(email)
-                            .displayName(displayName)
-                            .username(username)
-                            .passwordHash(hash)
-                            .active(true)
-                            .locked(false)
-                            .createdAt(Instant.now())
-                            .updatedAt(Instant.now())
-                            .build();
+                    return hashPassword(password)
+                            .then(hash -> {
+                                User user = User.forInternalAuth()
+                                        .tenantId(tenantId)
+                                        .userId(UserId.random())
+                                        .email(email)
+                                        .displayName(displayName)
+                                        .username(username)
+                                        .passwordHash(hash)
+                                        .active(true)
+                                        .locked(false)
+                                        .createdAt(Instant.now())
+                                        .updatedAt(Instant.now())
+                                        .build();
 
-                    return userRepository.save(user)
-                            .map(saved -> {
-                                metrics.incrementCounter("auth.registration.success",
-                                        "tenant", tenantId.value());
-                                metrics.recordTimer("auth.registration.latency",
-                                        System.currentTimeMillis() - start);
-                                return saved;
+                                return userRepository.save(user)
+                                        .map(saved -> {
+                                            metrics.incrementCounter("auth.registration.success",
+                                                    "tenant", tenantId.value());
+                                            metrics.recordTimer("auth.registration.latency",
+                                                    System.currentTimeMillis() - start);
+                                            return saved;
+                                        });
                             });
                 });
     }
@@ -241,32 +247,41 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                 new IllegalStateException("User not found"));
                     }
                     User user = maybeUser.get();
-                    if (user.getPasswordHash().isEmpty()
-                            || !passwordHasher.verify(currentPassword, user.getPasswordHash().get())) {
+                    if (user.getPasswordHash().isEmpty()) {
                         return Promise.ofException(
                                 new IllegalStateException("Current password is incorrect"));
                     }
 
-                    String newHash = passwordHasher.hash(newPassword);
-                    User updated = User.forInternalAuth()
-                            .tenantId(user.getTenantId())
-                            .userId(user.getUserId())
-                            .email(user.getEmail())
-                            .displayName(user.getDisplayName())
-                            .username(user.getUsername())
-                            .passwordHash(newHash)
-                            .active(user.isActive())
-                            .locked(user.isLocked())
-                            .createdAt(user.getCreatedAt())
-                            .updatedAt(Instant.now())
-                            .build();
+                    return verifyPassword(currentPassword, user.getPasswordHash().get())
+                            .then(currentPasswordMatches -> {
+                                if (!currentPasswordMatches) {
+                                    return Promise.ofException(
+                                            new IllegalStateException("Current password is incorrect"));
+                                }
 
-                    return userRepository.save(updated)
-                            .then($ -> sessionStore.invalidateAllForUser(tenantId, userId))
-                            .map($ -> {
-                                metrics.incrementCounter("auth.password.change",
-                                        "tenant", tenantId.value());
-                                return (Void) null;
+                                return hashPassword(newPassword)
+                                        .then(newHash -> {
+                                            User updated = User.forInternalAuth()
+                                                    .tenantId(user.getTenantId())
+                                                    .userId(user.getUserId())
+                                                    .email(user.getEmail())
+                                                    .displayName(user.getDisplayName())
+                                                    .username(user.getUsername())
+                                                    .passwordHash(newHash)
+                                                    .active(user.isActive())
+                                                    .locked(user.isLocked())
+                                                    .createdAt(user.getCreatedAt())
+                                                    .updatedAt(Instant.now())
+                                                    .build();
+
+                                            return userRepository.save(updated)
+                                                    .then($ -> sessionStore.invalidateAllForUser(tenantId, userId))
+                                                    .map($ -> {
+                                                        metrics.incrementCounter("auth.password.change",
+                                                                "tenant", tenantId.value());
+                                                        return (Void) null;
+                                                    });
+                                        });
                             });
                 });
     }
@@ -284,4 +299,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     return Optional.of(resetToken);
                 });
     }
+
+        private Promise<Boolean> verifyPassword(String rawPassword, String passwordHash) {
+                return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> passwordHasher.verify(rawPassword, passwordHash));
+        }
+
+        private Promise<String> hashPassword(String password) {
+                return Promise.ofBlocking(ForkJoinPool.commonPool(), () -> passwordHasher.hash(password));
+        }
 }

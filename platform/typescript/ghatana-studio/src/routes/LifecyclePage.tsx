@@ -40,6 +40,152 @@ type LifecycleBlockedReasonCode =
   | "provider-mode-unavailable"
   | "lifecycle-execution-not-allowed";
 
+interface ProductInteractionGraphEdge {
+  readonly edgeId: string;
+  readonly sourceProductId: string;
+  readonly targetProductId: string;
+  readonly contractId: string;
+  readonly mode: string;
+  readonly required: boolean;
+  readonly requiresConsent: boolean;
+  readonly evidenceRequired: boolean;
+}
+
+type ProductInteractionBucket = "publishes" | "consumes" | "provides";
+
+interface PluginInteractionGraphEdge {
+  readonly edgeId: string;
+  readonly productUnitId: string;
+  readonly pluginId: string;
+  readonly enabled: boolean;
+  readonly lifecycleHooks: readonly string[];
+  readonly priority: number;
+}
+
+function resolveProductInteractionGraph(
+  productUnit: unknown,
+): readonly ProductInteractionGraphEdge[] {
+  if (typeof productUnit !== "object" || productUnit === null) {
+    return [];
+  }
+  const product = productUnit as {
+    readonly id?: unknown;
+    readonly interactions?: Partial<
+      Record<ProductInteractionBucket, readonly unknown[]>
+    >;
+  };
+  const productUnitId =
+    typeof product.id === "string" && product.id.trim().length > 0
+      ? product.id
+      : "unknown";
+
+  const edges: ProductInteractionGraphEdge[] = [];
+  for (const bucket of ["publishes", "consumes", "provides"] as const) {
+    const contracts = product.interactions?.[bucket] ?? [];
+    for (const contract of contracts) {
+      if (typeof contract !== "object" || contract === null) {
+        continue;
+      }
+      const record = contract as {
+        readonly contractId?: unknown;
+        readonly providerProductId?: unknown;
+        readonly consumerProductIds?: unknown;
+        readonly mode?: unknown;
+        readonly required?: unknown;
+        readonly policy?: { readonly requiresConsent?: unknown };
+        readonly evidence?: { readonly required?: unknown };
+      };
+      const contractId =
+        typeof record.contractId === "string" && record.contractId.length > 0
+          ? record.contractId
+          : "unknown-contract";
+      const providerProductId =
+        typeof record.providerProductId === "string" &&
+        record.providerProductId.length > 0
+          ? record.providerProductId
+          : productUnitId;
+      const consumers = Array.isArray(record.consumerProductIds)
+        ? record.consumerProductIds.filter(
+            (consumer): consumer is string =>
+              typeof consumer === "string" && consumer.length > 0,
+          )
+        : [];
+      const targets =
+        bucket === "consumes"
+          ? [providerProductId]
+          : consumers.length > 0
+            ? consumers
+            : [productUnitId];
+
+      for (const targetProductId of targets) {
+        edges.push({
+          edgeId: `${bucket}:${contractId}:${targetProductId}`,
+          sourceProductId:
+            bucket === "consumes" ? productUnitId : providerProductId,
+          targetProductId,
+          contractId,
+          mode: typeof record.mode === "string" ? record.mode : "unknown",
+          required: record.required !== false,
+          requiresConsent: record.policy?.requiresConsent === true,
+          evidenceRequired: record.evidence?.required === true,
+        });
+      }
+    }
+  }
+  return edges;
+}
+
+function resolvePluginInteractionGraph(
+  productUnit: unknown,
+): readonly PluginInteractionGraphEdge[] {
+  if (typeof productUnit !== "object" || productUnit === null) {
+    return [];
+  }
+  const product = productUnit as {
+    readonly id?: unknown;
+    readonly pluginBindings?: readonly unknown[];
+  };
+  const productUnitId =
+    typeof product.id === "string" && product.id.trim().length > 0
+      ? product.id
+      : "unknown";
+  const bindings = Array.isArray(product.pluginBindings)
+    ? product.pluginBindings
+    : [];
+
+  return bindings.flatMap((binding, index): PluginInteractionGraphEdge[] => {
+    if (typeof binding !== "object" || binding === null) {
+      return [];
+    }
+    const record = binding as {
+      readonly id?: unknown;
+      readonly pluginRef?: { readonly pluginId?: unknown };
+      readonly enabled?: unknown;
+      readonly lifecycleHooks?: unknown;
+      readonly priority?: unknown;
+    };
+    const pluginId =
+      typeof record.pluginRef?.pluginId === "string" &&
+      record.pluginRef.pluginId.trim().length > 0
+        ? record.pluginRef.pluginId
+        : "unknown-plugin";
+    const bindingId =
+      typeof record.id === "string" && record.id.trim().length > 0
+        ? record.id
+        : `${pluginId}-${index}`;
+    return [
+      {
+        edgeId: `plugin:${bindingId}`,
+        productUnitId,
+        pluginId,
+        enabled: record.enabled === true,
+        lifecycleHooks: coerceStringArray(record.lifecycleHooks),
+        priority: typeof record.priority === "number" ? record.priority : 0,
+      },
+    ];
+  });
+}
+
 interface LifecycleReadinessState {
   readonly lifecycleStatus: string;
   readonly lifecycleExecutionAllowed: boolean;
@@ -309,6 +455,12 @@ export default function LifecyclePage(): ReactElement {
     : (environmentOptions[0] ?? DEFAULT_ENVIRONMENTS[0]);
   const environmentSupported = environmentOptions.includes(environment);
   const phaseSupported = supportedPhases.includes(selectedPhase);
+  const interactionGraph = resolveProductInteractionGraph(
+    lifecycleData.snapshot.productUnit,
+  );
+  const pluginInteractionGraph = resolvePluginInteractionGraph(
+    lifecycleData.snapshot.productUnit,
+  );
 
   // Platform mode is disabled unless Data Cloud provider context is ready
   const platformModeDisabled = !capabilityState.dataCloudEvidenceReady;
@@ -753,6 +905,132 @@ export default function LifecyclePage(): ReactElement {
         </h3>
         <RuntimeTruthPanel snapshot={lifecycleData.snapshot} />
       </article>
+
+      {interactionGraph.length > 0 && (
+        <article
+          className="space-y-3"
+          aria-label="product-interaction-graph"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-950">
+              {t("studio.route.lifecycle.productInteractionGraphTitle")}
+            </h3>
+            <Badge tone="info" variant="soft" className="text-xs">
+              {interactionGraph.length}
+            </Badge>
+          </div>
+          <div className="overflow-hidden rounded-md border border-gray-200">
+            <ul className="divide-y divide-gray-200">
+              {interactionGraph.map((edge) => (
+                <li
+                  key={edge.edgeId}
+                  className="grid gap-3 bg-white px-3 py-3 text-sm sm:grid-cols-[1fr_auto_1fr] sm:items-center"
+                >
+                  <div>
+                    <div className="text-xs font-medium uppercase text-gray-500">
+                      {t("studio.route.lifecycle.interactionSourceLabel")}
+                    </div>
+                    <div className="font-semibold text-gray-950">
+                      {edge.sourceProductId}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="neutral" variant="soft" className="text-xs">
+                      {edge.mode}
+                    </Badge>
+                    {edge.requiresConsent && (
+                      <Badge tone="warning" variant="soft" className="text-xs">
+                        {t("studio.route.lifecycle.interactionConsentLabel")}
+                      </Badge>
+                    )}
+                    {edge.evidenceRequired && (
+                      <Badge tone="info" variant="soft" className="text-xs">
+                        {t("studio.route.lifecycle.interactionEvidenceLabel")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium uppercase text-gray-500">
+                      {t("studio.route.lifecycle.interactionTargetLabel")}
+                    </div>
+                    <div className="font-semibold text-gray-950">
+                      {edge.targetProductId}
+                    </div>
+                    <div className="mt-1 break-all text-xs text-gray-500">
+                      {edge.contractId}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      )}
+
+      {pluginInteractionGraph.length > 0 && (
+        <article className="space-y-3" aria-label="plugin-interaction-graph">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-gray-950">
+              {t("studio.route.lifecycle.pluginInteractionGraphTitle")}
+            </h3>
+            <Badge tone="info" variant="soft" className="text-xs">
+              {pluginInteractionGraph.length}
+            </Badge>
+          </div>
+          <div className="overflow-hidden rounded-md border border-gray-200">
+            <ul className="divide-y divide-gray-200">
+              {pluginInteractionGraph.map((edge) => (
+                <li
+                  key={edge.edgeId}
+                  className="grid gap-3 bg-white px-3 py-3 text-sm sm:grid-cols-[1fr_auto_1fr] sm:items-center"
+                >
+                  <div>
+                    <div className="text-xs font-medium uppercase text-gray-500">
+                      {t("studio.route.lifecycle.interactionSourceLabel")}
+                    </div>
+                    <div className="font-semibold text-gray-950">
+                      {edge.productUnitId}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      tone={edge.enabled ? "success" : "neutral"}
+                      variant="soft"
+                      className="text-xs"
+                    >
+                      {edge.enabled
+                        ? t("studio.route.lifecycle.pluginEnabledLabel")
+                        : t("studio.route.lifecycle.pluginDisabledLabel")}
+                    </Badge>
+                    {edge.lifecycleHooks.map((hook) => (
+                      <Badge
+                        key={`${edge.edgeId}:${hook}`}
+                        tone="neutral"
+                        variant="soft"
+                        className="text-xs"
+                      >
+                        {hook}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium uppercase text-gray-500">
+                      {t("studio.route.lifecycle.pluginTargetLabel")}
+                    </div>
+                    <div className="font-semibold text-gray-950">
+                      {edge.pluginId}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {t("studio.route.lifecycle.pluginPriorityLabel")}:{" "}
+                      {edge.priority}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      )}
 
       {/* Manifest tabs */}
       <article

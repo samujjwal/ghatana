@@ -436,10 +436,9 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     }
 
     if (compressionMethod === 8) {
-      const inflated = await this.decompressBuffer(compressedData.buffer.slice(
-        compressedData.byteOffset,
-        compressedData.byteOffset + compressedData.byteLength,
-      ), 'deflate-raw');
+      const compressedEntry = new Uint8Array(compressedData.byteLength);
+      compressedEntry.set(compressedData);
+      const inflated = await this.decompressBuffer(compressedEntry.buffer, 'deflate-raw');
       const inflatedBytes = new Uint8Array(inflated);
       if (expectedSize > 0 && inflatedBytes.byteLength !== expectedSize) {
         throw new Error(`ZIP entry size mismatch: expected ${expectedSize}, got ${inflatedBytes.byteLength}`);

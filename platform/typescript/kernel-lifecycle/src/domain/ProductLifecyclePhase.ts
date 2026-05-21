@@ -2,6 +2,7 @@
  * Product lifecycle phases
  */
 import type { KernelProviderMode } from "@ghatana/kernel-product-contracts";
+import type { ProductInteractionContract } from "@ghatana/kernel-product-contracts";
 
 export type ProductLifecyclePhase =
   | "create"
@@ -78,6 +79,13 @@ export interface KernelProductConfiguration {
   verify?: Record<string, VerifyEnvironmentConfig>;
   gates?: Record<string, string[]>;
   artifacts?: Record<string, Record<string, ArtifactConfig>>;
+  interactions?: KernelProductInteractionConfig;
+}
+
+export interface KernelProductInteractionConfig {
+  publishes?: ProductInteractionContract[] | undefined;
+  consumes?: ProductInteractionContract[] | undefined;
+  provides?: ProductInteractionContract[] | undefined;
 }
 
 /**
@@ -164,6 +172,7 @@ export interface ArtifactConfig {
  */
 export type LifecycleStepKind =
   | "gate"
+  | "interaction-preflight"
   | "surface"
   | "package"
   | "deploy"
@@ -293,6 +302,7 @@ export interface ProductLifecyclePlan {
   requiredManifests: ProductLifecycleManifestType[];
   requiredPlugins: ProductLifecycleRequiredPlugin[];
   approvalRequirements: ProductLifecycleApprovalRequirement[];
+  interactionPreflights?: readonly ProductInteractionPreflight[];
   /** Health check probes derived from surface configurations. */
   healthChecks: readonly ProductLifecycleHealthCheck[];
   outputDirectory: string;
@@ -302,6 +312,18 @@ export interface ProductLifecyclePlan {
   warnings: readonly string[];
   /** Reasons this plan cannot be executed as-is. Empty for valid plans. */
   blockingReasons: readonly string[];
+}
+
+export interface ProductInteractionPreflight {
+  contractId: string;
+  providerProductId: string;
+  consumerProductId: string;
+  mode: ProductInteractionContract["mode"];
+  required: boolean;
+  status: "pending" | "blocked" | "skipped";
+  reasonCode?: string;
+  evidenceRequired: boolean;
+  evidenceRefs?: readonly string[];
 }
 
 export type ProductLifecycleManifestType =

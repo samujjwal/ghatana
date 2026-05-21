@@ -4,6 +4,8 @@ plugins {
 
 description = "Cross-product contract tests for AEP and YAPPC Data Cloud integrations"
 
+val productInteractionTest by sourceSets.creating
+
 dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:data-cloud:planes:action:orchestrator"))
@@ -18,6 +20,13 @@ dependencies {
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.archunit.junit5)
     testImplementation(libs.micrometer.core)
+
+    add("productInteractionTestImplementation", project(":platform-kernel:kernel-core"))
+    add("productInteractionTestImplementation", project(":platform-kernel:kernel-testing"))
+    add("productInteractionTestImplementation", project(":platform:java:testing"))
+    add("productInteractionTestImplementation", project(":products:digital-marketing:dm-kernel-bridge"))
+    add("productInteractionTestImplementation", project(":products:phr"))
+    add("productInteractionTestImplementation", libs.bundles.testing.core)
 }
 
 tasks.test {
@@ -30,4 +39,12 @@ tasks.test {
 // Ensure YAPPC services module is compiled before integration tests
 tasks.compileTestJava {
     dependsOn(":products:yappc:core:yappc-services:compileJava")
+}
+
+tasks.register<Test>("productInteractionTest") {
+    group = "verification"
+    description = "Runs focused PHR/DMOS product interaction contract tests"
+    testClassesDirs = productInteractionTest.output.classesDirs
+    classpath = productInteractionTest.runtimeClasspath
+    useJUnitPlatform()
 }

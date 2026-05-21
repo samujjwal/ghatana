@@ -344,6 +344,17 @@ export const STUDIO_TRANSLATIONS = {
   "studio.route.lifecycle.approval.requestedByLabel": "Requested by",
   "studio.route.lifecycle.approval.reasonLabel": "Reason",
   "studio.route.lifecycle.approval.approversLabel": "Approvers",
+  "studio.route.lifecycle.productInteractionGraphTitle":
+    "Product interactions",
+  "studio.route.lifecycle.pluginInteractionGraphTitle": "Plugin interactions",
+  "studio.route.lifecycle.interactionSourceLabel": "Source",
+  "studio.route.lifecycle.interactionTargetLabel": "Target",
+  "studio.route.lifecycle.interactionConsentLabel": "Consent",
+  "studio.route.lifecycle.interactionEvidenceLabel": "Evidence",
+  "studio.route.lifecycle.pluginTargetLabel": "Plugin",
+  "studio.route.lifecycle.pluginPriorityLabel": "Priority",
+  "studio.route.lifecycle.pluginEnabledLabel": "Enabled",
+  "studio.route.lifecycle.pluginDisabledLabel": "Disabled",
   "studio.route.lifecycle.validationCommandTitle": "Validation command",
   "studio.route.ideas.title": "Ideas",
   "studio.route.ideas.description":

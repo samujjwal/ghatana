@@ -21,6 +21,14 @@ public interface PluginContract<Req, Res> {
     String contractId();
 
     /**
+     * Schema version for this contract.
+     */
+    @NotNull
+    default String schemaVersion() {
+        return "1.0.0";
+    }
+
+    /**
      * Class of the request object.
      */
     @NotNull
@@ -31,4 +39,12 @@ public interface PluginContract<Req, Res> {
      */
     @NotNull
     Class<Res> responseType();
+
+    /**
+     * Policy applied before Kernel dispatches this interaction.
+     */
+    @NotNull
+    default PluginInteractionPolicy policy() {
+        return PluginInteractionPolicy.allowAll();
+    }
 }

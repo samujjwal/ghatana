@@ -79,6 +79,26 @@ const FAILURE_REASON_CODES = [
 
 const ProductUnitListSchema = z.array(ProductUnitSchema);
 
+export const ProductInteractionPreflightSchema = z
+  .object({
+    contractId: z.string().trim().min(1),
+    providerProductId: z.string().trim().min(1),
+    consumerProductId: z.string().trim().min(1),
+    mode: z.enum([
+      'request-response',
+      'event-publish',
+      'event-subscribe',
+      'shared-evidence',
+      'provider-capability',
+    ]),
+    required: z.boolean(),
+    status: z.enum(['pending', 'blocked', 'skipped']),
+    reasonCode: z.string().trim().min(1).optional(),
+    evidenceRequired: z.boolean(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .passthrough();
+
 export const LifecyclePlanSchema = z
   .object({
     runId: z.string().trim().min(1),
@@ -88,6 +108,8 @@ export const LifecyclePlanSchema = z
     status: z.enum(LIFECYCLE_RUN_STATUSES),
     createdAt: z.string().datetime({ offset: true }).optional(),
     steps: z.array(z.unknown()).optional(),
+    interactionPreflights: z.array(ProductInteractionPreflightSchema).optional(),
+    blockingReasons: z.array(z.string().trim().min(1)).optional(),
   })
   .passthrough();
 
@@ -499,6 +521,7 @@ function normalizeKernelLifecycleReasonCode(reasonCode: string): string {
 }
 
 export type LifecyclePlan = z.infer<typeof LifecyclePlanSchema>;
+export type ProductInteractionPreflight = z.infer<typeof ProductInteractionPreflightSchema>;
 export type LifecycleRun = z.infer<typeof LifecycleRunSchema>;
 export type GateResultManifest = z.infer<typeof GateResultManifestSchema>;
 export type VerifyHealthReport = z.infer<typeof VerifyHealthReportSchema>;

@@ -20,8 +20,12 @@ import java.util.regex.Pattern;
 public final class PiiClassifier {
 
     // PII patterns for classification
-    private static final Pattern NHS_ID_PATTERN = Pattern.compile("\\b[A-Za-z0-9]{8,20}\\b");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("\\b\\+?\\d{1,3}[-. ]?\\d{3}[-. ]?\\d{3}[-. ]?\\d{4}\\b");
+    private static final Pattern NHS_ID_PATTERN = Pattern.compile(
+        "\\b(?:NHS[-\\s:]*)?\\d{8}\\b"
+    );
+    private static final Pattern PHONE_PATTERN = Pattern.compile(
+        "\\b(?:\\+?\\d{1,3}[-. ]?)?(?:\\d{10}|\\d{3}[-. ]\\d{3}[-. ]\\d{4})\\b"
+    );
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b");
     private static final Pattern ADDRESS_PATTERN = Pattern.compile("\\b\\d+\\s+[A-Za-z]+(?:\\s+[A-Za-z]+)*\\b");
     private static final Pattern MEDICAL_RECORD_PATTERN = Pattern.compile("\\b(?:diagnosis|condition|medication|treatment|lab result)\\b", Pattern.CASE_INSENSITIVE);

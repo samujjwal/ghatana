@@ -171,6 +171,44 @@ export const LifecycleRunSummarySchema = z.object({
 
 export type LifecycleRunSummary = z.infer<typeof LifecycleRunSummarySchema>;
 
+// ─── LifecycleUserSummary ─────────────────────────────────────────────────
+
+export const LifecycleRecoveryHintSchema = z
+  .object({
+    reasonCode: z.string().trim().min(1),
+    title: z.string().trim().min(1),
+    detail: z.string().trim().min(1).optional(),
+    actionLabel: z.string().trim().min(1).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
+export type LifecycleRecoveryHint = z.infer<typeof LifecycleRecoveryHintSchema>;
+
+export const LifecycleUserSummarySchema = z
+  .object({
+    schemaVersion: z.literal("1.0.0"),
+    productUnitId: z.string().trim().min(1),
+    intent: z.string().trim().min(1),
+    phase: z.string().trim().min(1),
+    status: z.enum([
+      "ready",
+      "running",
+      "succeeded",
+      "blocked",
+      "failed",
+      "degraded",
+      "unknown",
+    ]),
+    headline: z.string().trim().min(1),
+    details: z.array(z.string().trim().min(1)).optional(),
+    recoveryHints: z.array(LifecycleRecoveryHintSchema).optional(),
+    evidenceRefs: z.array(z.string().trim().min(1)).optional(),
+  })
+  .strict();
+
+export type LifecycleUserSummary = z.infer<typeof LifecycleUserSummarySchema>;
+
 // ─── Parse helpers ────────────────────────────────────────────────────────
 
 /**
@@ -179,4 +217,8 @@ export type LifecycleRunSummary = z.infer<typeof LifecycleRunSummarySchema>;
  */
 export function parseLifecycleRunSummary(input: unknown): LifecycleRunSummary {
   return LifecycleRunSummarySchema.parse(input);
+}
+
+export function parseLifecycleUserSummary(input: unknown): LifecycleUserSummary {
+  return LifecycleUserSummarySchema.parse(input);
 }

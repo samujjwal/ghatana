@@ -50,6 +50,59 @@ rollbackReadiness:
     - products/phr/kernel-product.yaml
     - .kernel/evidence/phr/phr-lifecycle-evidence-pack.json
 
+interactions:
+  provides:
+    - contractId: kernel://interactions/phr.consent-status.v1
+      schemaVersion: 1.0.0
+      providerProductId: phr
+      consumerProductIds: [digital-marketing]
+      mode: request-response
+      requestSchemaRef: products/phr/schema-packs/contracts/consent-status-request.v1.json
+      responseSchemaRef: products/phr/schema-packs/contracts/consent-status-response.v1.json
+      required: true
+      policy:
+        requiresAuth: true
+        requiresTenant: true
+        requiresConsent: true
+        piiClassification: healthcare-contact
+        tenantScope: same-tenant
+        allowedCallerRoles: [healthcare-operator, lifecycle-runner]
+        allowedPurposes: [campaign-activation, consent-verification]
+        allowedLifecyclePhases: [validate, test, deploy, verify]
+        degradedModeAllowed: false
+      evidence:
+        required: true
+        manifestType: interaction-evidence
+        evidenceRefs:
+          - products/phr/lifecycle/gate-packs/consent.yaml
+          - products/phr/lifecycle/gate-packs/audit-evidence.yaml
+        retentionPolicyId: regulated-healthcare-consent
+  consumes:
+    - contractId: kernel://interactions/digital-marketing.notification-preference.v1
+      schemaVersion: 1.0.0
+      providerProductId: digital-marketing
+      consumerProductIds: [phr]
+      mode: request-response
+      requestSchemaRef: products/phr/schema-packs/contracts/notification-preference-request.v1.json
+      responseSchemaRef: products/phr/schema-packs/contracts/notification-preference-response.v1.json
+      required: false
+      policy:
+        requiresAuth: true
+        requiresTenant: true
+        requiresConsent: true
+        piiClassification: patient-contact
+        tenantScope: same-tenant
+        allowedCallerRoles: [healthcare-operator, lifecycle-runner]
+        allowedPurposes: [care-plan-notification]
+        allowedLifecyclePhases: [validate, test, deploy, verify]
+        degradedModeAllowed: true
+      evidence:
+        required: true
+        manifestType: interaction-evidence
+        evidenceRefs:
+          - products/phr/lifecycle/gate-packs/consent.yaml
+        retentionPolicyId: regulated-healthcare-consent
+
 surfaces:
   backend-api:
     source: products/phr

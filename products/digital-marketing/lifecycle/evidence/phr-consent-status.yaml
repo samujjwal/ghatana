@@ -1,0 +1,10 @@
+schemaVersion: 1.0.0
+evidenceId: digital-marketing.phr-consent-status
+manifestType: interaction-evidence
+productUnitId: digital-marketing
+contractId: kernel://interactions/phr.consent-status.v1
+status: declared
+summary: Campaign activation can request PHR consent status only through the Kernel interaction contract.
+evidenceRefs:
+  - products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml
+  - products/digital-marketing/kernel-product.yaml

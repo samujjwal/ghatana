@@ -117,7 +117,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
             }
 
             // Wait for circuit breaker to transition to half-open
-            Thread.sleep(100); 
+            Thread.sleep(1100); 
 
             // Clear failures
             chaos.clearFailures(); 
@@ -341,7 +341,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         private int cbFailureCount = 0;
         private long cbOpenedAtMs = 0;
         private static final int CB_THRESHOLD = 5;
-        private static final long CB_HALF_OPEN_DELAY_MS = 50;
+        private static final long CB_HALF_OPEN_DELAY_MS = 1000;
 
         ChaosTestHarness(DataCloudClient client, ChaosMonkey chaos) { 
             this.client = client;
