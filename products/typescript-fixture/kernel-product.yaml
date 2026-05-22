@@ -40,3 +40,10 @@ environments:
     target: local
     variables:
       NODE_ENV: development
+
+readiness:
+  requiredGates:
+    - security
+    - privacy
+    - i18n
+    - a11y

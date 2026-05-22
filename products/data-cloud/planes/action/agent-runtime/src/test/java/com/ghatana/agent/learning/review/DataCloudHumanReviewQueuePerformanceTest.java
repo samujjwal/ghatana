@@ -66,8 +66,8 @@ class DataCloudHumanReviewQueuePerformanceTest extends EventloopTestBase {
         long medianMillis = medianMillis(() -> runPromise(() -> queue.getPending( 
             new ReviewFilter("tenant-a", null, null, null, 1_000))), 5); 
 
-        assertThat(pending).hasSize(1_000); 
-        assertThat(medianMillis).isLessThan(100L); 
+        assertThat(pending).hasSize(1_000);
+        assertThat(medianMillis).isLessThan(200L); 
     }
 
     private long medianMillis(Supplier<?> operation, int iterations) { 

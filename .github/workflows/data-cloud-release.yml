@@ -10,16 +10,70 @@ on:
           - staging
           - production
         default: staging
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'data-cloud-v*'
+      - 'v*'
+
+env:
+  RELEASE_ENVIRONMENT: ${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
 
 concurrency:
-  group: data-cloud-release-${{ github.ref }}-${{ inputs.release_environment }}
+  group: data-cloud-release-${{ github.ref }}-${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
   cancel-in-progress: false
 
 jobs:
+  resolve-affected-products:
+    runs-on: ubuntu-latest
+    outputs:
+      affected-products: ${{ steps.resolve.outputs.affected-products }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve affected business products
+        id: resolve
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.event.release.target_commitish || github.event.before || 'HEAD~1' }}"
+          HEAD_REF="${{ github.sha }}"
+          node scripts/resolve-affected-products.mjs --json --business-products-only --base "$BASE_REF" --head "$HEAD_REF" > affected-products.json
+          AFFECTED_PRODUCTS="$(node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('affected-products.json','utf8'));process.stdout.write(r.affectedProducts.join(','));")"
+          echo "affected-products=${AFFECTED_PRODUCTS}" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Affected Product Scope"
+            echo ""
+            echo "- Release environment: ${{ env.RELEASE_ENVIRONMENT }}"
+            echo "- Affected products: ${AFFECTED_PRODUCTS:-none}"
+            echo ""
+            echo "This workflow certifies Data Cloud strict release posture; product-family release orchestration consumes affected-product evidence."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload affected product evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: affected-products-release-scope
+          path: affected-products.json
+          retention-days: 90
+
   validate-release-config:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.release_environment }}
+    needs: [resolve-affected-products]
+    environment: ${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
     steps:
+      - name: Document release environment approval policy
+        run: |
+          {
+            echo "## Release Environment Approval Policy"
+            echo ""
+            echo "- This workflow must run against a protected environment."
+            echo "- Staging and production environments should enforce required reviewers in GitHub environment settings."
+            echo "- Deployment promotion must be blocked unless this strict release gate succeeds."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Validate required release environment variables and secrets
         env:
           DC_RELEASE_BASE_URL: ${{ vars.DC_RELEASE_BASE_URL }}
@@ -161,12 +215,28 @@ jobs:
       - name: Run Data Cloud release runtime profile checks
         run: |
           pnpm check:data-cloud-release-runtime-profile
+          pnpm check:kernel-implementation-plan-coverage
           pnpm check:data-cloud-ui-a11y
+          pnpm check:product-a11y-route-matrix
+          pnpm check:i18n-conformance
+          pnpm check:ai-governance-conformance
+          pnpm check:openapi-release-quality
+
+      - name: Upload runtime profile evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-runtime-profile-evidence
+          path: |
+            .kernel/evidence/data-cloud-release-runtime-profile.json
+            .kernel/evidence/atomic-workflow-posture.json
+            .kernel/evidence/kernel-implementation-plan-progress.json
+            .kernel/evidence/product-a11y-route-matrix.json
+          retention-days: 90
 
   smoke-e2e-strict:
     runs-on: ubuntu-latest
     needs: [build-and-test]
-    environment: ${{ inputs.release_environment }}
+    environment: ${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -198,7 +268,7 @@ jobs:
   backup-drill-strict:
     runs-on: ubuntu-latest
     needs: [build-and-test]
-    environment: ${{ inputs.release_environment }}
+    environment: ${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -311,6 +381,7 @@ jobs:
   release-gate:
     runs-on: ubuntu-latest
     needs:
+      - resolve-affected-products
       - validate-release-config
       - build-and-test
       - release-runtime-profile
@@ -319,6 +390,8 @@ jobs:
       - security-scan-strict
       - quality-gates-strict
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download smoke evidence artifact
         uses: actions/download-artifact@v4
         with:
@@ -331,9 +404,37 @@ jobs:
           name: data-cloud-backup-evidence
           path: release-evidence/backup
 
+      - name: Download runtime profile evidence artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-cloud-runtime-profile-evidence
+          path: .kernel/evidence
+
       - name: Verify release evidence artifacts exist
         run: |
           set -euo pipefail
           test -s release-evidence/smoke/smoke-e2e-report.json
           test -s release-evidence/backup/backup-drill-report.json
+          test -s .kernel/evidence/data-cloud-release-runtime-profile.json
+          test -s .kernel/evidence/atomic-workflow-posture.json
           echo "Data Cloud strict release gate passed with required evidence artifacts."
+
+      - name: Generate typed release summary
+        env:
+          RELEASE_ENVIRONMENT: ${{ env.RELEASE_ENVIRONMENT }}
+        run: node ./scripts/generate-release-maturity-summary.mjs
+
+      - name: Upload release summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-release-summary
+          path: |
+            release-evidence/release-summary.json
+            release-evidence/release-summary.md
+            release-evidence/wave2-product-quality-scorecard.md
+            .kernel/evidence/wave2-product-quality-scorecard.json
+            .kernel/evidence/product-a11y-route-matrix.json
+          retention-days: 90
+
+      - name: Append release summary to workflow summary
+        run: cat release-evidence/release-summary.md >> "$GITHUB_STEP_SUMMARY"

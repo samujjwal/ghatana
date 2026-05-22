@@ -1,0 +1,277 @@
+{
+  "generatedAt": "2026-05-22T15:50:07.998Z",
+  "summary": {
+    "mutatingRouteCount": 155,
+    "criticalMutatingRouteCount": 53,
+    "hasRollbackRoute": true,
+    "hasRetryRoute": true,
+    "violationCount": 0
+  },
+  "criticalMutatingRoutes": [
+    {
+      "operation": "POST /api/v1/action/autonomy/feedback-policy",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "PUT /api/v1/action/autonomy/level",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/executions/{executionId}/cancel",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/executions/{executionId}/restore",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/executions/{executionId}/rollback",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/learning/review/{reviewId}/approve",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/learning/review/{reviewId}/reject",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/action/memory/{agentId}/{memoryId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "PUT /api/v1/action/memory/{agentId}/{memoryId}/retain",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/action/pipelines/{pipelineId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/plugins/{id}/conformance",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/plugins/{id}/disable",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/plugins/{id}/enable",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/plugins/{id}/upgrade",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/action/plugins/{id}/validate",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/alerts/{id}/remediate/rollback",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/alerts/rules/{ruleId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/analytics/queries/{queryId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/checkpoints/{checkpointId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/compliance/evidence-package",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/compliance/legal-holds",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/compliance/legal-holds/{id}/extend",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/compliance/legal-holds/{id}/release",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/connectors/{connectionId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/connectors/{connectionId}/rotate-credentials",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/entities/{collection}/{id}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/entities/{collection}/batch",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/executions/{executionId}/cancel",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/executions/{executionId}/restore",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/executions/{executionId}/rollback",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/policies",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/governance/policies/{id}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "PUT /api/v1/governance/policies/{id}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/policies/{id}/toggle",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/policies/simulate",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/privacy/redact",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/recommend",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/retention/classify",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/governance/retention/purge",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/models/{modelName}/promote",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/settings/approvals/{id}/approve",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/settings/approvals/{id}/reject",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/settings/keys",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /api/v1/settings/keys/{id}/revoke",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/settings/keys/{id}/rotate",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/settings/security",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/sovereign/backup",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "PUT /api/v1/sovereign/data-subject-controls",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "PUT /api/v1/sovereign/profile",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/sovereign/restore",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "POST /api/v1/sovereign/validate-transfer",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    },
+    {
+      "operation": "DELETE /data-fabric/connectors/{connectionId}",
+      "requiresPolicy": true,
+      "requiresBlockingAudit": true
+    }
+  ]
+}

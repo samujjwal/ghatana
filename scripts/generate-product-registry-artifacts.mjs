@@ -361,6 +361,14 @@ function generatePackageScripts(registry, lifecycleExclusions) {
     } else {
       scripts[`build:${productId}`] = `pnpm product ${productId} build`;
       scripts[`test:${productId}`] = `pnpm product ${productId} test`;
+
+      if (productId === 'finance') {
+        scripts[`validate:${productId}`] = './gradlew :products:finance:check --no-daemon';
+      }
+
+      if (productId === 'flashit') {
+        scripts[`validate:${productId}`] = 'pnpm --dir products/flashit lint';
+      }
     }
   }
   

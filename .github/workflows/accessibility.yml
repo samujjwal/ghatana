@@ -7,6 +7,7 @@ on:
       - 'products/phr/apps/web/**'
       - 'products/digital-marketing/ui/**'
       - 'products/flashit/client/web/**'
+      - 'products/data-cloud/delivery/ui/**'
       - 'platform/typescript/product-shell/**'
       - 'platform/typescript/design-system/**'
       - 'platform/typescript/tokens/**'
@@ -17,6 +18,7 @@ on:
       - 'products/phr/apps/web/**'
       - 'products/digital-marketing/ui/**'
       - 'products/flashit/client/web/**'
+      - 'products/data-cloud/delivery/ui/**'
       - 'platform/typescript/product-shell/**'
       - 'platform/typescript/design-system/**'
       - 'platform/typescript/tokens/**'
@@ -37,6 +39,8 @@ jobs:
             package: '@dmos/ui'
           - product: flashit-web
             package: '@flashit/web'
+          - product: data-cloud-ui
+            package: '@data-cloud/ui'
 
     steps:
       - name: Checkout repository

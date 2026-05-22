@@ -1,0 +1,897 @@
+{
+  "generatedAt": "2026-05-22T15:51:10.078Z",
+  "summary": {
+    "dimensionCount": 47,
+    "coveredDimensions": 47,
+    "uncoveredDimensions": 0,
+    "violationCount": 0,
+    "wave1Complete": true
+  },
+  "waveStatus": {
+    "wave1": {
+      "atomicWorkflowProof": true,
+      "releaseScorecardArtifact": true,
+      "strictAffectedProductReleaseOrchestration": true,
+      "protectedEnvironmentPolicy": true,
+      "typedContractSchemaLint": true
+    }
+  },
+  "dimensions": [
+    {
+      "id": 1,
+      "name": "Vision alignment",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-shape-capability-matrix",
+          "exists": true
+        },
+        {
+          "gate": "check:doc-claims-evidence",
+          "exists": true
+        },
+        {
+          "gate": "check:current-state-claims",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Product coherence",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-registry",
+          "exists": true
+        },
+        {
+          "gate": "check:product-registry-drift",
+          "exists": true
+        },
+        {
+          "gate": "check:platform-product-boundaries",
+          "exists": true
+        },
+        {
+          "gate": "check:cross-product-interaction-boundaries",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Feature completeness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-ui-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:data-cloud-platform-provider-readiness",
+          "exists": true
+        },
+        {
+          "gate": "check:yappc-platform-provider-readiness",
+          "exists": true
+        },
+        {
+          "gate": "check:finance-lifecycle-readiness",
+          "exists": true
+        },
+        {
+          "gate": "check:phr-lifecycle-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "End-to-end workflow completeness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:audited-e2e-workflow",
+          "exists": true
+        },
+        {
+          "gate": "check:studio-artifact-workflow-e2e",
+          "exists": true
+        },
+        {
+          "gate": "check:cross-product-interaction-flows",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Runtime correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:data-cloud-release-runtime-profile",
+          "exists": true
+        },
+        {
+          "gate": "check:runtime-failure-injection",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Domain correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:finance-transaction-workflow-proof",
+          "exists": true
+        },
+        {
+          "gate": "check:phr-lifecycle-pilot",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Data model correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-artifact-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:product-deployment-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Contract correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:openapi-release-quality",
+          "exists": true
+        },
+        {
+          "gate": "check:openapi-canonical",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Route/API correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:route-entitlement-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:data-cloud-release-runtime-profile",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "UI/API/runtime coherence",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-ui-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:route-entitlement-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Runtime Truth maturity",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:interaction-runtime-truth",
+          "exists": true
+        },
+        {
+          "gate": "check:data-cloud-release-runtime-profile",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Security",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:secret-default-credentials",
+          "exists": true
+        },
+        {
+          "gate": "check:route-entitlement-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Privacy",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:security-workflow-coverage",
+          "exists": true
+        },
+        {
+          "gate": "check:data-cloud-platform-provider-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Tenant isolation",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:route-entitlement-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:dmos-boundary-workflow-coverage",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Authorization / RBAC / ABAC",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:route-entitlement-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Governance, policy, compliance",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:kernel-boundaries",
+          "exists": true
+        },
+        {
+          "gate": "check:platform-product-boundaries",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Audit durability and evidence quality",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:audited-e2e-workflow",
+          "exists": true
+        },
+        {
+          "gate": "check:audited-ui-workflows",
+          "exists": true
+        },
+        {
+          "gate": "check:audited-performance-workflows",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Event correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:cross-product-interaction-flows",
+          "exists": true
+        },
+        {
+          "gate": "check:cross-product-interaction-boundaries",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Action Plane / automation correctness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:agentic-lifecycle-action-contracts",
+          "exists": true
+        },
+        {
+          "gate": "check:kernel-lifecycle-truth",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Implicit AI/ML maturity",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:ai-governance-conformance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Human-in-the-loop and override control",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:ai-governance-conformance",
+          "exists": true
+        },
+        {
+          "gate": "check:agentic-lifecycle-action-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Observability",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:observability-conformance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Reliability and resilience",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:runtime-failure-injection",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Error handling and degraded mode",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:kernel-lifecycle-truth",
+          "exists": true
+        },
+        {
+          "gate": "check:interaction-runtime-truth",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Idempotency, retries, replay, rollback",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:atomic-workflow-proof",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Performance",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:interaction-performance",
+          "exists": true
+        },
+        {
+          "gate": "check:audited-performance-workflows",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Scalability",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:cross-product-interaction-flows",
+          "exists": true
+        },
+        {
+          "gate": "check:interaction-performance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Extensibility and plugin model",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:kernel-plugin-interactions",
+          "exists": true
+        },
+        {
+          "gate": "check:plugin-interaction-broker",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Shared-library reuse",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:architecture-boundaries",
+          "exists": true
+        },
+        {
+          "gate": "check:cross-workspace-deps",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Dependency hygiene",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:production-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Architecture boundaries",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:architecture-boundaries",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Simplicity and maintainability",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:orphan-modules",
+          "exists": true
+        },
+        {
+          "gate": "check:cleanup-gate",
+          "exists": true
+        },
+        {
+          "gate": "check:deprecated-imports",
+          "exists": true
+        },
+        {
+          "gate": "check:deprecated-packages",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "name": "UI/UX simplicity and consistency",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:shared-product-shells",
+          "exists": true
+        },
+        {
+          "gate": "check:shared-layout-primitives",
+          "exists": true
+        },
+        {
+          "gate": "check:design-system-conformance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Accessibility",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:data-cloud-ui-a11y",
+          "exists": true
+        },
+        {
+          "gate": "check:product-a11y-route-matrix",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Internationalization and localization",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:i18n-conformance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Testing depth",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:phase8",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Test quality / no test theater",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:test-authenticity",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "name": "CI gate strength",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:affected-product-strict-release-profile",
+          "exists": true
+        },
+        {
+          "gate": "check:product-release-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Release readiness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:product-release-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Deployment and operations readiness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:data-cloud-release-runtime-profile",
+          "exists": true
+        },
+        {
+          "gate": "check:product-environment-contracts",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Backup, restore, and disaster recovery",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "workflow:data-cloud-release.yml:backup-drill-strict",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Configuration and secrets management",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "workflow:data-cloud-release.yml:validate-release-config",
+          "exists": true
+        },
+        {
+          "gate": "check:secret-default-credentials",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Documentation truthfulness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:doc-claims-evidence",
+          "exists": true
+        },
+        {
+          "gate": "check:current-state-claims",
+          "exists": true
+        },
+        {
+          "gate": "check:doc-truth",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Migration and deprecation hygiene",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:deprecated-imports",
+          "exists": true
+        },
+        {
+          "gate": "check:deprecated-packages",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Cost and operational efficiency",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:ai-governance-conformance",
+          "exists": true
+        },
+        {
+          "gate": "check:interaction-performance",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Overall production readiness",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:atomic-workflow-proof",
+          "exists": true
+        },
+        {
+          "gate": "check:affected-product-strict-release-profile",
+          "exists": true
+        },
+        {
+          "gate": "check:product-release-readiness",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Overall world-class maturity",
+      "covered": true,
+      "gateChecks": [
+        {
+          "gate": "check:world-class-platform-readiness",
+          "exists": true
+        }
+      ]
+    }
+  ],
+  "journeyAreas": [
+    {
+      "journey": "vision-and-coherence",
+      "dimensions": [
+        1,
+        2,
+        29,
+        31,
+        32,
+        43,
+        44
+      ]
+    },
+    {
+      "journey": "feature-workflow-and-runtime-proof",
+      "dimensions": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        18,
+        19,
+        23,
+        24,
+        25,
+        36,
+        37
+      ]
+    },
+    {
+      "journey": "security-privacy-tenant-governance-audit",
+      "dimensions": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        22
+      ]
+    },
+    {
+      "journey": "quality-experience-and-world-class",
+      "dimensions": [
+        20,
+        21,
+        26,
+        27,
+        28,
+        30,
+        33,
+        34,
+        35,
+        45,
+        47
+      ]
+    },
+    {
+      "journey": "ci-release-and-operations",
+      "dimensions": [
+        38,
+        39,
+        40,
+        41,
+        42,
+        46
+      ]
+    }
+  ],
+  "releaseAreas": [
+    {
+      "area": "release-gate-strictness",
+      "checks": [
+        {
+          "gate": "check:affected-product-strict-release-profile",
+          "exists": true
+        },
+        {
+          "gate": "check:product-release-readiness",
+          "exists": true
+        },
+        {
+          "gate": "workflow:product-release.yml:Dry-run release mode",
+          "exists": true
+        }
+      ],
+      "covered": true
+    },
+    {
+      "area": "runtime-and-smoke-evidence",
+      "checks": [
+        {
+          "gate": "check:data-cloud-release-runtime-profile",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:smoke-e2e-strict",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:Upload smoke evidence artifact",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:data-cloud-release-runtime-profile.json",
+          "exists": true
+        }
+      ],
+      "covered": true
+    },
+    {
+      "area": "backup-and-dr-evidence",
+      "checks": [
+        {
+          "gate": "workflow:data-cloud-release.yml:backup-drill-strict",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:Upload backup drill evidence artifact",
+          "exists": true
+        }
+      ],
+      "covered": true
+    },
+    {
+      "area": "security-and-sbom-evidence",
+      "checks": [
+        {
+          "gate": "workflow:data-cloud-release.yml:security-scan-strict",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:Generate SBOM (blocking)",
+          "exists": true
+        },
+        {
+          "gate": "workflow:data-cloud-release.yml:Upload SBOM artifact",
+          "exists": true
+        }
+      ],
+      "covered": true
+    },
+    {
+      "area": "a11y-i18n-slo-evidence",
+      "checks": [
+        {
+          "gate": "check:data-cloud-ui-a11y",
+          "exists": true
+        },
+        {
+          "gate": "check:product-a11y-route-matrix",
+          "exists": true
+        },
+        {
+          "gate": "check:i18n-conformance",
+          "exists": true
+        },
+        {
+          "gate": "check:audited-performance-workflows",
+          "exists": true
+        }
+      ],
+      "covered": true
+    }
+  ],
+  "violations": []
+}

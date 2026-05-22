@@ -1823,6 +1823,27 @@
         "readinessReasonCode": "rust-adapter-validation-pending",
         "notes": "Rust fixture product created to validate CargoRustAdapter. Lifecycle disabled until adapter conformance is proven."
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "demo-fixture-not-workspace-wired",
+          "rust-adapter-validation-pending",
+          "planned-shape-only"
+        ],
+        "requiredGates": [
+          "security",
+          "privacy",
+          "i18n",
+          "a11y"
+        ],
+        "nextRequiredWork": [
+          "Complete CargoRustAdapter conformance evidence before enabling lifecycle execution",
+          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+        ],
+        "evidenceRefs": [
+          "products/rust-fixture/README.md",
+          "products/rust-fixture/kernel-product.yaml"
+        ]
+      },
       "lifecycleConfigPath": "products/rust-fixture/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
@@ -1954,6 +1975,27 @@
         "readinessReasonCode": "python-adapter-validation-pending",
         "notes": "Python fixture product created to validate PythonPyprojectAdapter. Lifecycle disabled until adapter conformance is proven."
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "demo-fixture-not-workspace-wired",
+          "python-adapter-validation-pending",
+          "planned-shape-only"
+        ],
+        "requiredGates": [
+          "security",
+          "privacy",
+          "i18n",
+          "a11y"
+        ],
+        "nextRequiredWork": [
+          "Complete PythonPyprojectAdapter conformance evidence before enabling lifecycle execution",
+          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+        ],
+        "evidenceRefs": [
+          "products/python-fixture/README.md",
+          "products/python-fixture/kernel-product.yaml"
+        ]
+      },
       "lifecycleConfigPath": "products/python-fixture/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
@@ -2084,6 +2126,27 @@
         "status": "partial",
         "readinessReasonCode": "typescript-adapter-validation-pending",
         "notes": "TypeScript fixture product created to validate PnpmNodeApiAdapter. Lifecycle disabled until adapter conformance is proven."
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "demo-fixture-not-workspace-wired",
+          "typescript-adapter-validation-pending",
+          "planned-shape-only"
+        ],
+        "requiredGates": [
+          "security",
+          "privacy",
+          "i18n",
+          "a11y"
+        ],
+        "nextRequiredWork": [
+          "Complete PnpmNodeApiAdapter conformance evidence before enabling lifecycle execution",
+          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+        ],
+        "evidenceRefs": [
+          "products/typescript-fixture/README.md",
+          "products/typescript-fixture/kernel-product.yaml"
+        ]
       },
       "lifecycleConfigPath": "products/typescript-fixture/kernel-product.yaml",
       "lifecycle": {

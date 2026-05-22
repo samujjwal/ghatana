@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-19T18:08:00.894Z",
+  "generated": "2026-05-22T15:22:38.967Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -589,6 +589,140 @@
       ]
     },
     {
+      "productId": "python-fixture",
+      "kind": "demo/example",
+      "surfaces": [
+        "backend-api",
+        "sdk"
+      ],
+      "lifecycleStatus": "planned",
+      "lifecycleExecutionAllowed": false,
+      "requiredKernelCapabilities": [
+        "backend-api:python-pyproject",
+        "gate:a11y",
+        "gate:i18n",
+        "gate:privacy",
+        "gate:security",
+        "sdk:python-pyproject"
+      ],
+      "requiredToolchainAdapters": [
+        "python-pyproject"
+      ],
+      "requiredArtifactManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-result",
+        "node-service",
+        "sdk-package"
+      ],
+      "requiredDeploymentTargets": [],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredDataCloudSupport": [],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
+      "requiredAgentRuntimeSupport": [
+        "approval-aware-agent-actions",
+        "verification-proof-evidence"
+      ],
+      "currentEvidenceRefs": [
+        "products/python-fixture/README.md",
+        "products/python-fixture/kernel-product.yaml"
+      ],
+      "missingEvidenceRefs": [
+        "manifest:artifact-manifest",
+        "manifest:deployment-manifest",
+        "manifest:lifecycle-plan",
+        "manifest:lifecycle-result"
+      ],
+      "blockers": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextActions": [
+        "Complete PythonPyprojectAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
+    },
+    {
+      "productId": "rust-fixture",
+      "kind": "demo/example",
+      "surfaces": [
+        "backend-api",
+        "sdk"
+      ],
+      "lifecycleStatus": "planned",
+      "lifecycleExecutionAllowed": false,
+      "requiredKernelCapabilities": [
+        "backend-api:cargo-rust",
+        "gate:a11y",
+        "gate:i18n",
+        "gate:privacy",
+        "gate:security",
+        "sdk:cargo-rust"
+      ],
+      "requiredToolchainAdapters": [
+        "cargo-rust"
+      ],
+      "requiredArtifactManifests": [
+        "artifact-manifest",
+        "container-image",
+        "deployment-manifest",
+        "lifecycle-result",
+        "sdk-package"
+      ],
+      "requiredDeploymentTargets": [],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredDataCloudSupport": [],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
+      "requiredAgentRuntimeSupport": [
+        "approval-aware-agent-actions",
+        "verification-proof-evidence"
+      ],
+      "currentEvidenceRefs": [
+        "products/rust-fixture/README.md",
+        "products/rust-fixture/kernel-product.yaml"
+      ],
+      "missingEvidenceRefs": [
+        "manifest:artifact-manifest",
+        "manifest:deployment-manifest",
+        "manifest:lifecycle-plan",
+        "manifest:lifecycle-result"
+      ],
+      "blockers": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextActions": [
+        "Complete CargoRustAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
+    },
+    {
       "productId": "security-gateway",
       "kind": "shared-service",
       "surfaces": [
@@ -757,6 +891,73 @@
         "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
         "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests",
         "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
+      ]
+    },
+    {
+      "productId": "typescript-fixture",
+      "kind": "demo/example",
+      "surfaces": [
+        "backend-api",
+        "sdk"
+      ],
+      "lifecycleStatus": "planned",
+      "lifecycleExecutionAllowed": false,
+      "requiredKernelCapabilities": [
+        "backend-api:pnpm-node-api",
+        "gate:a11y",
+        "gate:i18n",
+        "gate:privacy",
+        "gate:security",
+        "sdk:pnpm-node-api"
+      ],
+      "requiredToolchainAdapters": [
+        "pnpm-node-api"
+      ],
+      "requiredArtifactManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-result",
+        "node-service",
+        "sdk-package"
+      ],
+      "requiredDeploymentTargets": [],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredDataCloudSupport": [],
+      "requiredYappcVisibility": [
+        "product-unit-summary-visible"
+      ],
+      "requiredAgentRuntimeSupport": [
+        "approval-aware-agent-actions",
+        "verification-proof-evidence"
+      ],
+      "currentEvidenceRefs": [
+        "products/typescript-fixture/README.md",
+        "products/typescript-fixture/kernel-product.yaml"
+      ],
+      "missingEvidenceRefs": [
+        "manifest:artifact-manifest",
+        "manifest:deployment-manifest",
+        "manifest:lifecycle-plan",
+        "manifest:lifecycle-result"
+      ],
+      "blockers": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextActions": [
+        "Complete PnpmNodeApiAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
       ],
       "validationCommands": [
         "pnpm check:product-shape-capability-matrix"

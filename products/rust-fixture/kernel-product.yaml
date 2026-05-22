@@ -49,6 +49,13 @@ environments:
     variables:
       RUST_LOG: info
 
+readiness:
+  requiredGates:
+    - security
+    - privacy
+    - i18n
+    - a11y
+
 gateBindings:
   - gateId: rust-fmt-check
     phase: validate

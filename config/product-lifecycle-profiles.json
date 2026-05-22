@@ -1458,7 +1458,7 @@
           ]
         }
       },
-      "safeForDefault": false,
+      "safeForDefault": true,
       "phaseOutputs": {
         "build": {
           "backend-api": [

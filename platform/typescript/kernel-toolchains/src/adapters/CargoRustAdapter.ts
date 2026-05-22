@@ -90,7 +90,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
           checkName: 'Cargo llvm-cov',
           status: llvmCovResult.exitCode === 0 ? 'passed' : 'failed',
           message: llvmCovResult.exitCode === 0 ? llvmCovResult.stdout.trim() : llvmCovResult.stderr.trim(),
-          ...(llvmCovResult.exitCode === 0 ? {} : { severity: 'warning', remediation: ['Install cargo-llvm-cov: cargo install cargo-llvm-cov'] }),
+          ...(llvmCovResult.exitCode === 0 ? {} : { severity: 'low', remediation: ['Install cargo-llvm-cov: cargo install cargo-llvm-cov'] }),
           checkedAt,
         });
       } catch (error) {
@@ -99,7 +99,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
           checkName: 'Cargo llvm-cov',
           status: 'failed',
           message: error instanceof Error ? error.message : 'Cargo llvm-cov check failed',
-          severity: 'warning',
+          severity: 'low',
           remediation: ['Install cargo-llvm-cov: cargo install cargo-llvm-cov'],
           checkedAt,
         });
@@ -107,7 +107,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
     }
 
     const blockingIssues = checks.filter((check) => check.status === 'failed' && check.severity === 'critical').map((check) => check.message);
-    const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'warning').map((check) => check.message);
+    const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'low').map((check) => check.message);
     return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings };
   }
 

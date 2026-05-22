@@ -46,6 +46,13 @@ environments:
     variables:
       PYTHONPATH: src
 
+readiness:
+  requiredGates:
+    - security
+    - privacy
+    - i18n
+    - a11y
+
 gateBindings:
   - gateId: python-ruff-check
     phase: validate

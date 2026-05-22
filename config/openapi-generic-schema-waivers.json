@@ -1,0 +1,4 @@
+{
+  "description": "Allowlist for intentionally generic OpenAPI schema objects in release checks.",
+  "allowedGenericSchemas": []
+}

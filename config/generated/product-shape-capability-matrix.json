@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-19T18:08:00.894Z",
+  "generated": "2026-05-22T15:22:38.967Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -1277,6 +1277,322 @@
       "status": "Pilot"
     },
     {
+      "productId": "python-fixture",
+      "name": "Python Fixture Product",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api + sdk (standard-polyglot-product)",
+      "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "stable",
+      "requiredAdapters": [
+        "python-pyproject"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "python-pyproject",
+          "surfaceType": "sdk",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "python-pyproject",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "apiReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "uiReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "providerReadiness": {
+          "status": "not-required",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "runtimeTruthReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
+          "evidenceRefs": []
+        },
+        "approvalReadiness": {
+          "status": "planned",
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
+          "evidenceRefs": []
+        },
+        "privacySecurityGateReadiness": {
+          "status": "declared",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "artifactDeploymentManifestReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-manifest:artifact-manifest",
+            "missing-manifest:deployment-manifest",
+            "missing-manifest:lifecycle-plan",
+            "missing-manifest:lifecycle-result"
+          ],
+          "evidenceRefs": []
+        },
+        "adapterExecutionReadiness": {
+          "status": "execution-ready",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "platformModeReadiness": {
+          "status": "requires-data-cloud-bridge",
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
+        "enablementGuardrail": {
+          "status": "can-evaluate",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        }
+      },
+      "minimumReleaseToEnable": "future-readiness-gate",
+      "blockingGaps": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
+      "requiredCapabilities": [
+        "backend-api:python-pyproject",
+        "sdk:python-pyproject"
+      ],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "demo-fixture-not-workspace-wired",
+        "planned-shape-only",
+        "python-adapter-validation-pending"
+      ],
+      "nextActions": [
+        "Complete PythonPyprojectAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/python-fixture/README.md",
+        "products/python-fixture/kernel-product.yaml"
+      ],
+      "executionReadiness": "not-enabled",
+      "status": "Shape-only"
+    },
+    {
+      "productId": "rust-fixture",
+      "name": "Rust Fixture Product",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api + sdk (standard-polyglot-product)",
+      "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "stable",
+      "requiredAdapters": [
+        "cargo-rust"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "cargo-rust",
+          "surfaceType": "sdk",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "cargo-rust",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "apiReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "uiReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "providerReadiness": {
+          "status": "not-required",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "runtimeTruthReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
+          "evidenceRefs": []
+        },
+        "approvalReadiness": {
+          "status": "planned",
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
+          "evidenceRefs": []
+        },
+        "privacySecurityGateReadiness": {
+          "status": "declared",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "artifactDeploymentManifestReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-manifest:artifact-manifest",
+            "missing-manifest:deployment-manifest",
+            "missing-manifest:lifecycle-plan",
+            "missing-manifest:lifecycle-result"
+          ],
+          "evidenceRefs": []
+        },
+        "adapterExecutionReadiness": {
+          "status": "execution-ready",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "platformModeReadiness": {
+          "status": "requires-data-cloud-bridge",
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
+        "enablementGuardrail": {
+          "status": "can-evaluate",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        }
+      },
+      "minimumReleaseToEnable": "future-readiness-gate",
+      "blockingGaps": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
+      "requiredCapabilities": [
+        "backend-api:cargo-rust",
+        "sdk:cargo-rust"
+      ],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "demo-fixture-not-workspace-wired",
+        "planned-shape-only",
+        "rust-adapter-validation-pending"
+      ],
+      "nextActions": [
+        "Complete CargoRustAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/rust-fixture/README.md",
+        "products/rust-fixture/kernel-product.yaml"
+      ],
+      "executionReadiness": "not-enabled",
+      "status": "Shape-only"
+    },
+    {
       "productId": "security-gateway",
       "name": "Security-Gateway",
       "productKind": "shared-service",
@@ -1712,6 +2028,164 @@
       ],
       "executionReadiness": "not-enabled",
       "status": "Shape-only with limitations"
+    },
+    {
+      "productId": "typescript-fixture",
+      "name": "TypeScript Fixture Product",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api + sdk (standard-polyglot-product)",
+      "lifecycleStatus": "planned",
+      "shapeValidationMode": "shape-only",
+      "profileStatus": "stable",
+      "requiredAdapters": [
+        "pnpm-node-api"
+      ],
+      "adapterReadiness": [
+        {
+          "adapterId": "pnpm-node-api",
+          "surfaceType": "sdk",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        },
+        {
+          "adapterId": "pnpm-node-api",
+          "surfaceType": "backend-api",
+          "status": "implemented",
+          "readiness": "execution-ready",
+          "lifecycleEnabled": true,
+          "supportsBootstrapMode": true,
+          "supportsPlatformMode": false
+        }
+      ],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "readinessDimensions": {
+        "contractReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "apiReadiness": {
+          "status": "profile-backed",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "uiReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "providerReadiness": {
+          "status": "not-required",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "runtimeTruthReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
+          "evidenceRefs": []
+        },
+        "approvalReadiness": {
+          "status": "planned",
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
+          "evidenceRefs": []
+        },
+        "privacySecurityGateReadiness": {
+          "status": "declared",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "artifactDeploymentManifestReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-manifest:artifact-manifest",
+            "missing-manifest:deployment-manifest",
+            "missing-manifest:lifecycle-plan",
+            "missing-manifest:lifecycle-result"
+          ],
+          "evidenceRefs": []
+        },
+        "adapterExecutionReadiness": {
+          "status": "execution-ready",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "platformModeReadiness": {
+          "status": "requires-data-cloud-bridge",
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
+        "enablementGuardrail": {
+          "status": "can-evaluate",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        }
+      },
+      "minimumReleaseToEnable": "future-readiness-gate",
+      "blockingGaps": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
+      "requiredCapabilities": [
+        "backend-api:pnpm-node-api",
+        "sdk:pnpm-node-api"
+      ],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "demo-fixture-not-workspace-wired",
+        "planned-shape-only",
+        "typescript-adapter-validation-pending"
+      ],
+      "nextActions": [
+        "Complete PnpmNodeApiAdapter conformance evidence before enabling lifecycle execution",
+        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep shape-only until required adapters and manifests are executable"
+      ],
+      "readinessEvidence": [
+        "products/typescript-fixture/README.md",
+        "products/typescript-fixture/kernel-product.yaml"
+      ],
+      "executionReadiness": "not-enabled",
+      "status": "Shape-only"
     },
     {
       "productId": "virtual-org",
