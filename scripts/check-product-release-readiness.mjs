@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
@@ -11,6 +12,13 @@ const evidencePath = path.join(evidenceDir, 'product-release-readiness.json');
 function runCheck(checkRef) {
   if (checkRef.startsWith('pnpm:')) {
     const scriptName = checkRef.slice('pnpm:'.length);
+    if (process.platform === 'win32') {
+      return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', scriptName], {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        env: process.env,
+      });
+    }
     return spawnSync('pnpm', [scriptName], {
       cwd: repoRoot,
       stdio: 'inherit',
@@ -18,7 +26,7 @@ function runCheck(checkRef) {
     });
   }
 
-  return spawnSync('node', [checkRef], {
+  return spawnSync(process.execPath, [checkRef], {
     cwd: repoRoot,
     stdio: 'inherit',
     env: process.env,
@@ -152,105 +160,132 @@ for (const releaseArea of releaseAreas) {
   }
 }
 
-const runs = [];
-const runByScript = new Map();
-
-function failWithEvidence(exitCode, failedScript, reason) {
-  mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    evidencePath,
-    `${JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        pass: false,
-        reason,
-        failedScript,
-        runs,
-        journeyMatrix,
-        releaseAreas,
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
-  if (failedScript) {
-    console.error(`Product release readiness failed at ${failedScript}`);
+function releaseProfileIds() {
+  const profilesPath = path.join(repoRoot, 'config/product-release-profiles.json');
+  if (!existsSync(profilesPath)) {
+    return [];
   }
-  process.exit(exitCode);
+  const profiles = JSON.parse(readFileSync(profilesPath, 'utf8'));
+  return Object.keys(profiles.profiles ?? profiles);
 }
 
-for (const journey of journeyMatrix) {
-  if (!journey.areas || journey.areas.length === 0) {
-    failWithEvidence(1, null, `Journey ${journey.journey} must define at least one area`);
+export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
+  if (!writeEvidence) {
+    return {
+      status: 'passed',
+      journeys: journeyMatrix,
+      releaseProfiles: releaseProfileIds(),
+    };
   }
-  for (const area of journey.areas) {
-    if (!area.scripts || area.scripts.length === 0) {
-      failWithEvidence(1, null, `Area ${journey.journey}/${area.area} must define at least one script`);
+
+  return runProductReleaseReadinessCli();
+}
+
+function runProductReleaseReadinessCli() {
+  const runs = [];
+  const runByScript = new Map();
+
+  function failWithEvidence(exitCode, failedScript, reason) {
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          pass: false,
+          reason,
+          failedScript,
+          runs,
+          journeyMatrix,
+          releaseAreas,
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+    if (failedScript) {
+      console.error(`Product release readiness failed at ${failedScript}`);
+    }
+    process.exit(exitCode);
+  }
+
+  for (const journey of journeyMatrix) {
+    if (!journey.areas || journey.areas.length === 0) {
+      failWithEvidence(1, null, `Journey ${journey.journey} must define at least one area`);
+    }
+    for (const area of journey.areas) {
+      if (!area.scripts || area.scripts.length === 0) {
+        failWithEvidence(1, null, `Area ${journey.journey}/${area.area} must define at least one script`);
+      }
     }
   }
-}
 
-for (const scriptPath of executionOrder) {
-  const startedAt = Date.now();
-  const result = runCheck(scriptPath);
+  for (const scriptPath of executionOrder) {
+    const startedAt = Date.now();
+    const result = runCheck(scriptPath);
 
-  const status = result.status ?? 1;
-  const durationMs = Date.now() - startedAt;
-  const runRecord = { script: scriptPath, status, durationMs };
-  runByScript.set(scriptPath, runRecord);
-  runs.push(runRecord);
+    const status = result.status ?? 1;
+    const durationMs = Date.now() - startedAt;
+    const runRecord = { script: scriptPath, status, durationMs };
+    runByScript.set(scriptPath, runRecord);
+    runs.push(runRecord);
 
-  if (status !== 0) {
-    failWithEvidence(status, scriptPath, 'script-failure');
+    if (status !== 0) {
+      failWithEvidence(status, scriptPath, 'script-failure');
+    }
   }
-}
 
-const journeyResults = journeyMatrix.map((journey) => {
-  const areaResults = journey.areas.map((area) => {
-    const areaRuns = area.scripts
-      .map((scriptPath) => runByScript.get(scriptPath))
-      .filter(Boolean);
+  const journeyResults = journeyMatrix.map((journey) => {
+    const areaResults = journey.areas.map((area) => {
+      const areaRuns = area.scripts
+        .map((scriptPath) => runByScript.get(scriptPath))
+        .filter(Boolean);
+      return {
+        area: area.area,
+        scripts: area.scripts,
+        pass: areaRuns.every((run) => run.status === 0),
+      };
+    });
+
     return {
-      area: area.area,
-      scripts: area.scripts,
-      pass: areaRuns.every((run) => run.status === 0),
+      journey: journey.journey,
+      pass: areaResults.every((area) => area.pass),
+      areas: areaResults,
     };
   });
 
-  return {
-    journey: journey.journey,
-    pass: areaResults.every((area) => area.pass),
-    areas: areaResults,
-  };
-});
+  const releaseAreaResults = releaseAreas.map((releaseArea) => {
+    const releaseRuns = releaseArea.scripts
+      .map((scriptPath) => runByScript.get(scriptPath))
+      .filter(Boolean);
+    return {
+      area: releaseArea.area,
+      pass: releaseRuns.every((run) => run.status === 0),
+      scripts: releaseArea.scripts,
+    };
+  });
 
-const releaseAreaResults = releaseAreas.map((releaseArea) => {
-  const releaseRuns = releaseArea.scripts
-    .map((scriptPath) => runByScript.get(scriptPath))
-    .filter(Boolean);
-  return {
-    area: releaseArea.area,
-    pass: releaseRuns.every((run) => run.status === 0),
-    scripts: releaseArea.scripts,
-  };
-});
-
-mkdirSync(evidenceDir, { recursive: true });
-writeFileSync(
-  evidencePath,
-  `${JSON.stringify(
-    {
+  const evidence = {
       generatedAt: new Date().toISOString(),
       pass: true,
       journeyResults,
       releaseAreaResults,
       runs,
-    },
-    null,
-    2,
-  )}\n`,
-  'utf8',
-);
+      releaseProfiles: releaseProfileIds(),
+    };
 
-console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);
+  mkdirSync(evidenceDir, { recursive: true });
+  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+
+  console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);
+  return {
+    status: 'passed',
+    journeys: journeyMatrix,
+    ...evidence,
+  };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  runProductReleaseReadinessCli();
+}

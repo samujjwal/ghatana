@@ -6,11 +6,14 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
+const pnpmCommand = 'pnpm';
+const pnpmShell = process.platform === 'win32';
 
 const checks = [
   {
     name: 'Kernel route-entitlement conformance package',
-    command: 'pnpm',
+    command: pnpmCommand,
+    shell: pnpmShell,
     args: [
       '--dir',
       'platform/typescript/product-conformance',
@@ -23,8 +26,9 @@ const checks = [
   },
   {
     name: 'PHR backend route-entitlement behavior',
-    command: './gradlew',
+    command: process.execPath,
     args: [
+      './scripts/run-gradle-wrapper.mjs',
       ':products:phr:test',
       '--tests',
       'com.ghatana.phr.api.PhrHttpServerTest',
@@ -33,8 +37,9 @@ const checks = [
   },
   {
     name: 'DMOS backend route-entitlement behavior',
-    command: './gradlew',
+    command: process.execPath,
     args: [
+      './scripts/run-gradle-wrapper.mjs',
       ':products:digital-marketing:dm-api:test',
       '--tests',
       'com.ghatana.digitalmarketing.api.DmosRouteEntitlementServletTest',
@@ -43,7 +48,8 @@ const checks = [
   },
   {
     name: 'FlashIt backend route-entitlement behavior',
-    command: 'pnpm',
+    command: pnpmCommand,
+    shell: pnpmShell,
     args: [
       '--dir',
       'products/flashit/backend/gateway',
@@ -62,7 +68,7 @@ for (const check of checks) {
   const result = spawnSync(check.command, check.args, {
     cwd: repoRoot,
     stdio: 'inherit',
-    shell: process.platform === 'win32',
+    shell: check.shell ?? false,
   });
 
   if (result.error) {

@@ -43,6 +43,9 @@ module.exports = [
       "products/data-cloud/delivery/ui/**",
       "products/data-cloud/planes/action/ui/**",
       "products/data-cloud/planes/action/gateway/**",
+      // FlashIt backend gateway TS is validated by workspace-specific checks;
+      // root config has no @typescript-eslint parser.
+      "products/flashit/backend/gateway/**",
     ],
   },
   {

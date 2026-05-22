@@ -1,18 +1,18 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-22T20:13:09.144Z",
+  "generatedAt": "2026-05-22T21:29:16.212Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
     "uncoveredDimensions": 0,
     "violationCount": 0,
-    "wave1Complete": false
+    "wave1Complete": true
   },
   "waveStatus": {
     "wave1": {
       "atomicWorkflowProof": true,
       "releaseScorecardArtifact": true,
-      "strictAffectedProductReleaseOrchestration": false,
+      "strictAffectedProductReleaseOrchestration": true,
       "protectedEnvironmentPolicy": true,
       "typedContractSchemaLint": true
     }
@@ -732,75 +732,23 @@
   "journeyAreas": [
     {
       "journey": "vision-and-coherence",
-      "dimensions": [
-        1,
-        2,
-        29,
-        31,
-        32,
-        43,
-        44
-      ]
+      "dimensions": [1, 2, 29, 31, 32, 43, 44]
     },
     {
       "journey": "feature-workflow-and-runtime-proof",
-      "dimensions": [
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        18,
-        19,
-        23,
-        24,
-        25,
-        36,
-        37
-      ]
+      "dimensions": [3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 23, 24, 25, 36, 37]
     },
     {
       "journey": "security-privacy-tenant-governance-audit",
-      "dimensions": [
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        22
-      ]
+      "dimensions": [12, 13, 14, 15, 16, 17, 22]
     },
     {
       "journey": "quality-experience-and-world-class",
-      "dimensions": [
-        20,
-        21,
-        26,
-        27,
-        28,
-        30,
-        33,
-        34,
-        35,
-        45,
-        47
-      ]
+      "dimensions": [20, 21, 26, 27, 28, 30, 33, 34, 35, 45, 47]
     },
     {
       "journey": "ci-release-and-operations",
-      "dimensions": [
-        38,
-        39,
-        40,
-        41,
-        42,
-        46
-      ]
+      "dimensions": [38, 39, 40, 41, 42, 46]
     }
   ],
   "releaseAreas": [

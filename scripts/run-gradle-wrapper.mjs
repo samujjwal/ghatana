@@ -10,10 +10,14 @@ if (args.length === 0) {
   process.exit(1);
 }
 
-const result = spawnSync(gradleCommand, args, {
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
-});
+const result =
+  process.platform === 'win32'
+    ? spawnSync(
+        'cmd.exe',
+        ['/d', '/c', ['call', gradleCommand, ...args].join(' ')],
+        { stdio: 'inherit' },
+      )
+    : spawnSync(gradleCommand, args, { stdio: 'inherit' });
 
 if (typeof result.status === 'number') {
   process.exit(result.status);

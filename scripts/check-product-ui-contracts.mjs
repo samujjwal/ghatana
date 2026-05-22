@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { readFileSync, existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = resolve(new URL('..', import.meta.url).pathname);
+const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'config/product-shape.json'), 'utf8'));
 const workspaceConfig = readFileSync(resolve(repoRoot, 'pnpm-workspace.yaml'), 'utf8');
 const requiredScripts = ['lint', 'type-check', 'test', 'test:coverage', 'test:e2e', 'test:e2e:a11y', 'build'];
@@ -50,10 +51,16 @@ function requireFile(relativePath, message) {
 }
 
 function listProductSourceFiles(clientDir) {
-  const output = execSync(
-    `rg --files ${clientDir}/src --glob '*.{ts,tsx,js,jsx}' --glob '!**/__tests__/**'`,
-    { cwd: repoRoot, encoding: 'utf8' },
-  ).trim();
+  let output = '';
+  try {
+    output = execFileSync(
+      'rg',
+      ['--files', `${clientDir}/src`, '--glob', '*.{ts,tsx,js,jsx}', '--glob', '!**/__tests__/**'],
+      { cwd: repoRoot, encoding: 'utf8' },
+    ).trim();
+  } catch (error) {
+    output = error.stdout?.toString().trim() ?? '';
+  }
 
   return output ? output.split('\n').filter(Boolean) : [];
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T15:50:07.639Z",
+  "generatedAt": "2026-05-22T21:28:49.800Z",
   "checks": [
     {
       "check": "Runtime failure-injection posture",

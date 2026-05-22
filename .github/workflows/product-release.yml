@@ -3,20 +3,20 @@ name: Product Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       products:
-        description: 'Comma-separated list of products to release'
+        description: "Comma-separated list of products to release"
         required: false
       dry_run:
-        description: 'Validate release readiness without publishing manifests'
+        description: "Validate release readiness without publishing manifests"
         required: false
-        default: 'true'
+        default: "true"
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '10.33.0'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   resolve-affected:
@@ -48,8 +48,8 @@ jobs:
     if: needs.resolve-affected.outputs.affected-products != ''
     runs-on: ubuntu-latest
     strategy:
-        fail-fast: false
-        matrix:
+      fail-fast: false
+      matrix:
         product: ${{ fromJson(needs.resolve-affected.outputs.affected-products-json) }}
     steps:
       - uses: actions/checkout@v4
@@ -61,18 +61,27 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: "temurin"
+          java-version: "21"
       - run: pnpm install --frozen-lockfile
-      - name: Validate Product Release Readiness
-        run: pnpm check:product-release-readiness
+      - name: Dry-run release mode
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "Release publishing is disabled for this dry run."
+          else
+            echo "Release publishing is enabled."
+          fi
+      - name: Enforce strict affected-product release profile
+        run: pnpm check:affected-product-strict-release-profile -- --products ${{ matrix.product }}
+      - name: Run strict product release readiness checks
+        run: pnpm check:product-release-readiness && pnpm check:kernel-implementation-plan-coverage
       - name: Release Product
         if: github.event.inputs.dry_run != 'true'
         run: pnpm kernel release create ${{ matrix.product }} --version ${{ github.ref_name }}
       - name: Create Release Manifest
         if: github.event.inputs.dry_run != 'true'
         run: pnpm kernel release manifest ${{ matrix.product }} --version ${{ github.ref_name }}
-      - name: Upload Product Release Evidence
+      - name: Upload release readiness evidence
         uses: actions/upload-artifact@v4
         with:
           name: product-release-evidence-${{ matrix.product }}
