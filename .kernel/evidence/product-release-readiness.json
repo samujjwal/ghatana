@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T21:29:16.223Z",
+  "generatedAt": "2026-05-22T21:47:15.898Z",
   "pass": true,
   "journeyResults": [
     {
@@ -123,82 +123,82 @@
     {
       "script": "./scripts/check-product-shape-capability-matrix.mjs",
       "status": 0,
-      "durationMs": 58
+      "durationMs": 81
     },
     {
       "script": "./scripts/check-product-registry-drift.mjs",
       "status": 0,
-      "durationMs": 56
+      "durationMs": 71
     },
     {
       "script": "pnpm:check:product-registry",
       "status": 0,
-      "durationMs": 4877
+      "durationMs": 5806
     },
     {
       "script": "./scripts/check-platform-product-boundaries.mjs",
       "status": 0,
-      "durationMs": 930
+      "durationMs": 886
     },
     {
       "script": "./scripts/check-cross-product-interaction-boundaries.mjs",
       "status": 0,
-      "durationMs": 773
+      "durationMs": 874
     },
     {
       "script": "./scripts/check-product-ui-contracts.mjs",
       "status": 0,
-      "durationMs": 249
+      "durationMs": 274
     },
     {
       "script": "./scripts/check-audited-e2e-workflow.mjs",
       "status": 0,
-      "durationMs": 53
+      "durationMs": 57
     },
     {
       "script": "pnpm:check:cross-product-interaction-flows",
       "status": 0,
-      "durationMs": 10422
+      "durationMs": 13062
     },
     {
       "script": "./scripts/check-interaction-runtime-truth.mjs",
       "status": 0,
-      "durationMs": 5864
+      "durationMs": 6030
     },
     {
       "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
       "status": 0,
-      "durationMs": 65406
+      "durationMs": 26413
     },
     {
       "script": "./scripts/check-runtime-failure-injection.mjs",
       "status": 0,
-      "durationMs": 68
+      "durationMs": 60
     },
     {
       "script": "./scripts/check-atomic-workflow-proof.mjs",
       "status": 0,
-      "durationMs": 70
+      "durationMs": 62
     },
     {
       "script": "./scripts/check-secret-default-credentials.mjs",
       "status": 0,
-      "durationMs": 441
+      "durationMs": 287
     },
     {
       "script": "./scripts/check-route-entitlement-contracts.mjs",
       "status": 0,
-      "durationMs": 22901
+      "durationMs": 23850
     },
     {
       "script": "./scripts/check-observability-conformance.mjs",
       "status": 0,
-      "durationMs": 1969
+      "durationMs": 2204
     },
     {
       "script": "./scripts/check-doc-claims-evidence.mjs",
       "status": 0,
-      "durationMs": 72
+      "durationMs": 77
     },
     {
       "script": "./scripts/check-current-state-claims.mjs",
@@ -208,32 +208,32 @@
     {
       "script": "./scripts/check-doc-truth.mjs",
       "status": 0,
-      "durationMs": 77
+      "durationMs": 72
     },
     {
       "script": "./scripts/check-data-cloud-ui-a11y.mjs",
       "status": 0,
-      "durationMs": 65
+      "durationMs": 77
     },
     {
       "script": "./scripts/check-product-a11y-route-matrix.mjs",
       "status": 0,
-      "durationMs": 93
+      "durationMs": 80
     },
     {
       "script": "./scripts/check-i18n-conformance.mjs",
       "status": 0,
-      "durationMs": 59
+      "durationMs": 67
     },
     {
       "script": "./scripts/check-ai-governance-conformance.mjs",
       "status": 0,
-      "durationMs": 63
+      "durationMs": 68
     },
     {
       "script": "./scripts/check-audited-performance-workflows.mjs",
       "status": 0,
-      "durationMs": 57
+      "durationMs": 63
     },
     {
       "script": "./scripts/check-openapi-release-quality.mjs",
@@ -243,22 +243,22 @@
     {
       "script": "./scripts/generate-wave2-product-quality-scorecard.mjs",
       "status": 0,
-      "durationMs": 77
+      "durationMs": 91
     },
     {
       "script": "./scripts/check-product-ci-matrices.mjs",
       "status": 0,
-      "durationMs": 62
+      "durationMs": 69
     },
     {
       "script": "./scripts/check-affected-product-strict-release-profile.mjs",
       "status": 0,
-      "durationMs": 140
+      "durationMs": 126
     },
     {
       "script": "./scripts/check-kernel-implementation-plan-coverage.mjs",
       "status": 0,
-      "durationMs": 63
+      "durationMs": 65
     }
   ],
   "releaseProfiles": [

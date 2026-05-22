@@ -1,6 +1,6 @@
 # Wave 2 Product Quality Scorecard
 
-- Generated at: 2026-05-22T21:29:15.946Z
+- Generated at: 2026-05-22T21:47:15.625Z
 - Products evaluated: 6
 
 | Product           | A11y | i18n | AI Governance | Performance/SLO | Runtime Truth | Score |
