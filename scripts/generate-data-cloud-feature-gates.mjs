@@ -22,47 +22,97 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const checkOnly = process.argv.includes('--check');
 
-const generatorPath = join(
-  repoRoot,
-  'products',
-  'data-cloud',
-  'launcher',
-  'src',
-  'main',
-  'java',
-  'com',
-  'ghatana',
-  'datacloud',
-  'launcher',
-  'http',
-  'handlers',
-  'CapabilitySchemaGenerator.java',
-);
+const generatorCandidates = [
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'delivery',
+    'launcher',
+    'src',
+    'main',
+    'java',
+    'com',
+    'ghatana',
+    'datacloud',
+    'launcher',
+    'http',
+    'handlers',
+    'SurfaceSchemaGenerator.java',
+  ),
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'launcher',
+    'src',
+    'main',
+    'java',
+    'com',
+    'ghatana',
+    'datacloud',
+    'launcher',
+    'http',
+    'handlers',
+    'CapabilitySchemaGenerator.java',
+  ),
+];
 
-const outputPath = join(
-  repoRoot,
-  'products',
-  'data-cloud',
-  'ui',
-  'src',
-  'lib',
-  'generated',
-  'feature-gates.generated.ts',
-);
+const generatorPath = generatorCandidates.find((candidate) => existsSync(candidate));
 
-const routeGatesOutputPath = join(
-  repoRoot,
-  'products',
-  'data-cloud',
-  'ui',
-  'src',
-  'lib',
-  'generated',
-  'route-gates.generated.ts',
-);
+const outputCandidates = [
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'delivery',
+    'ui',
+    'src',
+    'lib',
+    'generated',
+    'feature-gates.generated.ts',
+  ),
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'ui',
+    'src',
+    'lib',
+    'generated',
+    'feature-gates.generated.ts',
+  ),
+];
 
-if (!existsSync(generatorPath)) {
-  console.error(`Missing source file: ${generatorPath}`);
+const routeGateOutputCandidates = [
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'delivery',
+    'ui',
+    'src',
+    'lib',
+    'generated',
+    'route-gates.generated.ts',
+  ),
+  join(
+    repoRoot,
+    'products',
+    'data-cloud',
+    'ui',
+    'src',
+    'lib',
+    'generated',
+    'route-gates.generated.ts',
+  ),
+];
+
+const outputPath = outputCandidates.find((candidate) => existsSync(candidate)) ?? outputCandidates[0];
+const routeGatesOutputPath = routeGateOutputCandidates.find((candidate) => existsSync(candidate)) ?? routeGateOutputCandidates[0];
+
+if (!generatorPath) {
+  console.error(`Missing source file. Checked:\n${generatorCandidates.join('\n')}`);
   process.exit(1);
 }
 

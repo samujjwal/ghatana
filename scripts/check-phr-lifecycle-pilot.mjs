@@ -129,9 +129,10 @@ function asArray(value) {
 }
 
 function parseArgs(argv) {
+  const normalizedArgv = argv.filter((arg) => arg !== '--');
   return {
-    smoke: argv.includes('--smoke'),
-    evidencePackDir: readFlagValue(argv, '--evidence-pack-dir'),
+    smoke: normalizedArgv.includes('--smoke'),
+    evidencePackDir: readFlagValue(normalizedArgv, '--evidence-pack-dir'),
   };
 }
 

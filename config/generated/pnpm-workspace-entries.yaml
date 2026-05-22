@@ -12,6 +12,9 @@ packages:
   # Personal Health Records (phr)
   - "products/phr/apps/*"
 
+  # Finance (finance)
+  - "products/typescript-fixture"
+
   # Digital Marketing Operating System (digital-marketing)
   - "products/digital-marketing/ui"
 

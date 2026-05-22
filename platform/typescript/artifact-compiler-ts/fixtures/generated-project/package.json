@@ -1,0 +1,13 @@
+{
+  "name": "@ghatana/generated-artifact-fixture",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "node ./scripts/lint-generated-project.mjs",
+    "test": "vitest run test/generated-project.test.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "preview:smoke": "node ./scripts/preview-smoke.mjs"
+  }
+}

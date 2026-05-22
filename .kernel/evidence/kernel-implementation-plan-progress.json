@@ -1,22 +1,28 @@
 {
-  "generatedAt": "2026-05-22T15:51:10.078Z",
+  "status": "passed",
+  "generatedAt": "2026-05-22T20:13:09.144Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
     "uncoveredDimensions": 0,
     "violationCount": 0,
-    "wave1Complete": true
+    "wave1Complete": false
   },
   "waveStatus": {
     "wave1": {
       "atomicWorkflowProof": true,
       "releaseScorecardArtifact": true,
-      "strictAffectedProductReleaseOrchestration": true,
+      "strictAffectedProductReleaseOrchestration": false,
       "protectedEnvironmentPolicy": true,
       "typedContractSchemaLint": true
     }
   },
-  "dimensions": [
+  "dimensions": {
+    "total": 47,
+    "covered": 47,
+    "uncovered": []
+  },
+  "dimensionResults": [
     {
       "id": 1,
       "name": "Vision alignment",
@@ -893,5 +899,10 @@
       "covered": true
     }
   ],
+  "productionReadinessTickets": {
+    "total": 18,
+    "open": 0,
+    "closed": 18
+  },
   "violations": []
 }

@@ -65,10 +65,11 @@ const REQUIRED_PHASE_EVIDENCE_FIELDS = [
 ];
 
 function parseArgs(argv) {
+  const normalizedArgv = argv.filter((arg) => arg !== '--');
   return {
-    smoke: argv.includes('--smoke'),
-    composeProof: argv.includes('--compose-proof'),
-    evidencePackDir: readFlagValue(argv, '--evidence-pack-dir'),
+    smoke: normalizedArgv.includes('--smoke'),
+    composeProof: normalizedArgv.includes('--compose-proof'),
+    evidencePackDir: readFlagValue(normalizedArgv, '--evidence-pack-dir'),
   };
 }
 

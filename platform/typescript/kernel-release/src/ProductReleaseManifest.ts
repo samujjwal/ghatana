@@ -7,6 +7,7 @@ export const ProductReleaseManifestSchema = z.object({
   schemaVersion: z.string(),
   productId: z.string(),
   version: z.string(),
+  releaseProfileId: z.string().optional(),
   releaseNotes: z.string().optional(),
   changes: z.array(z.object({
     type: z.enum(['feature', 'fix', 'breaking', 'security']),
@@ -26,6 +27,13 @@ export const ProductReleaseManifestSchema = z.object({
     approvedLicenses: z.boolean(),
     compliance: z.boolean(),
   }),
+  sbomChecks: z.object({
+    required: z.boolean(),
+    generated: z.boolean(),
+    formats: z.array(z.string()),
+    artifactTypes: z.array(z.string()),
+    attestationRequired: z.boolean(),
+  }).optional(),
   conformanceChecks: z.object({
     manifest: z.boolean(),
     observability: z.boolean(),
@@ -61,6 +69,17 @@ export class ProductReleaseManifestManager {
     }
     if (!manifest.securityChecks.dependencyScan) {
       errors.push('Dependency scan is required');
+    }
+    if (manifest.sbomChecks?.required === true) {
+      if (!manifest.sbomChecks.generated) {
+        errors.push('SBOM generation is required');
+      }
+      if (manifest.sbomChecks.formats.length === 0) {
+        errors.push('SBOM format is required');
+      }
+      if (manifest.sbomChecks.artifactTypes.length === 0) {
+        errors.push('SBOM artifact type coverage is required');
+      }
     }
     if (!manifest.conformanceChecks.manifest) {
       errors.push('Manifest conformance is required');

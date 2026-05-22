@@ -1,1350 +1,406 @@
-Below is a deeper 47-dimension production-grade plan for commit `ee6b28477b15fd5ab62bcd636867841f8e23ee32`.
+# Deep + Wide Production-Readiness Audit
 
-The snapshot has moved in the right direction: Data Cloud now has a separate strict release workflow with environment validation, strict smoke E2E, strict backup drill, blocking dependency scan/SBOM generation, and release evidence artifacts.   Normal Data Cloud CI is now correctly marked advisory.  The root product scripts also show broad platform checks across interaction runtime truth, product interaction flows, artifact roundtrip, Studio workflow E2E, source acquisition, DS generator contrast, product readiness, observability, secrets, route entitlements, audited UI/E2E/performance workflows, and architecture gates. 
+## Ghatana Studio, Artifact Authoring Stack, Product Interaction Gates, and Release Readiness
 
-The plan below assumes the target is **production-grade first** and **world-class second**.
+**Repo:** `samujjwal/ghatana`
+**Target commit:** `c5388f6712cc3280f7ff71198b595cab9cb1d980`
+**Commit verified:** `df fdasf fdsaf` 
 
----
-
-# Execution strategy
-
-## Release maturity phases
-
-```text id="bctg2r"
-Phase 1 — Block production escape hatches
-Goal: eliminate anything that can ship without runtime proof.
-
-Phase 2 — Prove correctness end to end
-Goal: atomic workflows, tenant isolation, security, audit, Runtime Truth, and cross-product interactions.
-
-Phase 3 — Make product quality world-class
-Goal: simple UX, consistent UI, implicit AI/ML, observability, i18n, a11y, performance, cost, and maintainability.
-
-Phase 4 — Scale across all products
-Goal: product-family release gates, product-specific maturity scorecards, and affected-product release orchestration.
-```
-
-## Hard release rule
-
-A product cannot be considered production-grade until these are true:
-
-```text id="zbbz8c"
-No P0 blockers.
-Every critical workflow has failure-injection tests.
-Every protected route has server-side auth, tenant, policy, audit, and Runtime Truth metadata.
-Release gate is strict and non-advisory.
-Smoke, backup, security, SBOM, a11y, i18n, SLO, and DR evidence are retained as release artifacts.
-```
-
-## Implementation progress snapshot (2026-05-22)
-
-Status update:
-
-- Wave 1 item 1 completed: atomic workflow proof gate is enforced by `check:atomic-workflow-proof`, included in strict runtime profile checks, and retained as release evidence.
-- Wave 1 item 2 completed: release scorecard artifact generation is enforced by `scripts/generate-release-maturity-summary.mjs` and uploaded as `data-cloud-release-summary`.
-- Wave 1 item 3 completed: strict affected-product release orchestration is enforced in `product-release.yml` using resolver + strict profile checks.
-- Wave 1 item 4 completed for Data Cloud strict release: protected environment policy is enforced by release environment validation and environment-scoped job gating.
-- Wave 1 item 5 completed: typed contract schema lint is enforced through `check:openapi-release-quality` in strict release workflow.
-
-New completeness/consistency/correctness enforcement added:
-
-- `check:kernel-implementation-plan-coverage` verifies all 47 dimensions have mapped executable gates and writes machine-readable evidence.
-- `check:product-release-readiness` now enforces explicit journey and release-area matrices, executes deduplicated strict checks, and writes structured pass/fail evidence.
-- Product release workflow now blocks on strict readiness and uploads evidence artifacts per affected product.
-- Product release workflow supports strict `dry_run` execution for controlled CI rehearsal without publishing release artifacts.
-- Wave 2 product quality scorecard generation is now automated and retained with release summary artifacts.
-- Wave 2 item 1 completed: cross-product a11y route matrix coverage is enforced for production-intended web products via `check:product-a11y-route-matrix` and included in strict phase/release gates.
-- `check:affected-product-strict-release-profile` now enforces stricter affected-product release journey coverage (build/test plus release-core scripts) and validates strict workflow tokens.
-
-Evidence artifacts:
-
-- `.kernel/evidence/kernel-implementation-plan-progress.json`
-- `.kernel/evidence/product-release-readiness.json`
-- `.kernel/evidence/affected-product-release-profile.json`
-- `.kernel/evidence/product-a11y-route-matrix.json`
-- `.kernel/evidence/wave2-product-quality-scorecard.json`
-- `.kernel/evidence/data-cloud-release-runtime-profile.json`
-- `.kernel/evidence/atomic-workflow-posture.json`
-- `release-evidence/wave2-product-quality-scorecard.md`
-
-Operational command set:
-
-- `pnpm check:kernel-implementation-plan-coverage`
-- `pnpm check:product-release-readiness`
-- `pnpm check:product-a11y-route-matrix`
-- `pnpm generate:wave2-product-quality-scorecard`
-- `pnpm check:release-gate`
+I audited the current snapshot for the artifact-authoring stack and the wider platform/product release-readiness gates. I did not run local commands; findings are grounded in repository files and scripts visible at this commit.
 
 ---
 
-# 47-dimension production-grade plan
+## A. Executive Summary
 
-## 1. Vision alignment
+### Overall readiness rating
 
-**Current diagnosis:** Strong direction. The product aims for Data Cloud as an AI-native operational data layer with Action Plane, governance, Runtime Truth, and product-family platform checks. The gap is execution proof.
+**Partial, broader and more ambitious than `6a42f9...`, but with new gate-consistency risk.**
 
-**Target maturity:** 4.5
+This commit expands the release/readiness posture significantly. The root `package.json` now includes deeper gates for product interactions, plugin interactions, language/toolchain adapters, affected-surface execution, lifecycle history, artifact round-trip generated validation, Studio production profile, Studio workflow persistence, Studio source acquisition worker, product accessibility, i18n, AI governance, runtime failure injection, atomic workflow proof, and release quality. `check:world-class-platform-readiness` now delegates to `check:release-gate`, which itself depends on `check:phase8` plus Data Cloud release/runtime/UI/product release checks. 
 
-**Plan:**
+However, the wider the gate becomes, the more important script correctness becomes. I found a **high-risk gate consistency issue**: `check:phase8` references `pnpm check:studio-deep-interactions`, `pnpm check:studio-workflow-persistence-contracts`, and `pnpm check:studio-source-acquisition-worker`, but I did not find direct definitions for those script names in the inspected root script block around the phase gates. The visible package scripts define many related checks, including `check:studio-artifact-workflow-e2e` and `check:studio-production-profile`, but not those three names in the same inspected block.  
 
-```text id="9h8vkf"
-Define canonical product vision per product.
-Map every feature to product outcome, user journey, and runtime surface.
-Create a product capability matrix: promised, implemented, tested, release-gated.
-Reject features that are only documented but not runtime-backed.
-```
+### Final verdict
 
-**Tests/gates:**
+**Partial. Not production-grade until release gates are proven executable end-to-end.**
 
-```text id="8a1tuz"
-check:product-shape-capability-matrix
-check:product-doc-claims-evidence
-check:current-state-claims
-```
-
-**Acceptance criteria:** Every claimed capability links to code, contract, tests, Runtime Truth, and release gate.
+The current snapshot is much closer to a world-class readiness framework, but it is not enough to have comprehensive gate names. Every command in `check:phase8` and `check:release-gate` must exist, run deterministically, and validate behavior rather than presence. The biggest risk at this commit is **gate sprawl without guaranteed executability**.
 
 ---
 
-## 2. Product coherence
+## B. Major Improvements Validated
 
-**Current diagnosis:** Improved, but product boundaries still need discipline across Data Cloud, Action Plane, Kernel, Studio, and other products.
+### 1. Artifact round-trip now includes generated validation
 
-**Target maturity:** 4.5
+`check:artifact-roundtrip` now runs the existing round-trip, protected-region, roundtrip-diff, repository-scan tests, and adds `generated-validation.test.ts`. 
 
-**Plan:**
+The generated artifact validation test proves the validator passes valid TSX and catches TypeScript diagnostics with source locations.  The validator uses an in-memory TypeScript compiler host, ambient React/JSX types, syntactic and semantic diagnostics, and returns a `ValidationPipelineResult`. 
 
-```text id="6brwwy"
-Define product ownership map.
-Define which product owns each UI route, API route, data model, workflow, and release gate.
-Keep AEP as Action Plane runtime, not separate customer product.
-Prevent product-specific logic from leaking into shared platform libraries.
-```
-
-**Tests/gates:**
-
-```text id="nsbxdv"
-check:product-registry
-check:product-registry-drift
-check:platform-product-boundaries
-check:cross-product-interaction-boundaries
-```
-
-**Acceptance criteria:** Each route/module/workflow has one product owner and no ambiguous ownership.
+**Assessment:** Strong improvement. This moves beyond source/model/source diff into generated artifact type/syntax validation. It is still not full install/lint/test/build, but it is a meaningful validation layer.
 
 ---
 
-## 3. Feature completeness
+### 2. Studio production profile gate exists
 
-**Current diagnosis:** Many surfaces exist, but completeness varies by product and feature.
+`check:studio-production-profile` is now present in root scripts and phase-8.  The script enforces production deployment profile configuration, production acquisition settings, kernel-backed source acquisition requirements, HTTPS kernel API base URL, required workflow persistence variables, and `VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true` in production. 
 
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="1a71tp"
-Create feature inventory per product.
-Mark each feature as Complete, Partial, Missing, Broken, Overbuilt, or Unknown.
-For each Partial feature, list missing UI, API, storage, policy, audit, tests, docs, and release gates.
-Hide incomplete features behind Runtime Truth instead of exposing broken UI.
-```
-
-**Tests/gates:**
-
-```text id="w0qj06"
-check:product-ui-contracts
-check:data-cloud-platform-provider-readiness
-check:yappc-platform-provider-readiness
-check:finance-lifecycle-readiness
-check:phr-lifecycle-readiness
-```
-
-**Acceptance criteria:** No customer-visible feature is UI-only, mock-backed, or missing runtime support.
+**Assessment:** Good production-profile hardening. One concern: root `check:studio-production-profile` runs `--mode=staging --no-strict`, so the root command is not proving strict production mode by default. 
 
 ---
 
-## 4. End-to-end workflow completeness
+### 3. Source acquisition remains environment-resolved and more production-capable
 
-**Current diagnosis:** Improving, but not all workflows are proven from UI/API to storage/audit/release evidence.
+`ImportDecompilePage` still resolves the provider registry through `resolveProviderRegistryForEnv(env)` and falls back to `defaultProviderRegistry`. It also exposes stable test IDs, acquisition status, and workflow orchestration for decompile, compile, re-import, diff, evidence pack, and persistence. 
 
-**Target maturity:** 4.5
+`source-acquisition.ts` still contains `ProductionSourceAcquisitionBackendClient`, GitHub/GitLab archive download, ZIP/TAR/TAR.GZ archive handling, default registry, production registry factory, and env-based resolver.   
 
-**Plan:**
-
-```text id="4xw5d4"
-For each product, define top 10 critical workflows.
-Trace each workflow: UI → API → service → storage → event → audit → observability → tests → release gate.
-Add golden path, negative path, unauthorized path, degraded path, and retry path tests.
-```
-
-**Tests/gates:**
-
-```text id="3x6xhf"
-check:audited-e2e-workflow
-check:studio-artifact-workflow-e2e
-check:cross-product-interaction-flows
-Data Cloud strict release smoke E2E
-```
-
-**Acceptance criteria:** Every critical workflow has executable end-to-end proof and release evidence.
+**Assessment:** Better than earlier snapshots. Still client-heavy and env-gated.
 
 ---
 
-## 5. Runtime correctness
+### 4. Workflow persistence has kernel adapter
 
-**Current diagnosis:** Stronger production dependency validation exists, but atomic runtime behavior remains under-proven. The server requires key production dependencies such as auth, audit, policy, durable stores, metrics, trace export, idempotency, transaction manager, and completion service in production-like modes. 
+`artifactWorkflowStore.ts` retains `KernelWorkflowPersistenceAdapter`, which persists workflow state to `/api/v1/studio/workflow-state`, loads and clears the same endpoint, and optionally persists evidence packs to `/api/v1/studio/workflow-evidence` with tenant/workspace/project/auth headers. 
 
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="rsk83y"
-Create runtime correctness matrix for every handler.
-Require transaction orchestration for critical mutations.
-Require durable stores for production profiles.
-Fail startup when critical runtime dependencies are missing.
-Expose runtime dependency posture through /api/v1/surfaces.
-```
-
-**Tests/gates:**
-
-```text id="rkfggp"
-Runtime startup tests for local/staging/production/sovereign
-Failure-injection tests
-Release runtime profile gate
-```
-
-**Acceptance criteria:** Production mode cannot start with unsafe runtime dependencies or incomplete critical mutation orchestration.
+**Assessment:** Correct client-side abstraction. Backend endpoint existence and authorization behavior still need proof.
 
 ---
 
-## 6. Domain correctness
+### 5. Round-trip diff is AST/signature-aware
 
-**Current diagnosis:** Domain coverage exists, but domain invariants need deeper golden tests per product.
+`roundtrip-diff.ts` retains AST normalization, semantic signatures for imports, exports, JSX nodes/attributes, calls, event handlers, bindings, style references, plus import graph parity. 
 
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="7zzmr8"
-Define domain invariants per product.
-Add golden datasets for normal, edge, invalid, and compliance-sensitive cases.
-Separate manually entered facts from computed facts.
-Prove computations and state transitions with deterministic tests.
-```
-
-**Tests/gates:**
-
-```text id="jzsicr"
-Golden domain tests
-Workflow lifecycle tests
-Product-specific invariant tests
-```
-
-**Acceptance criteria:** Domain outputs are reproducible, explainable, and tested against authoritative examples.
+**Assessment:** Stronger than earlier diff logic. Still not full generated-project validation, though generated TypeScript validation is now being added through a separate validator.
 
 ---
 
-## 7. Data model correctness
+### 6. Wider product interaction gates are much broader
 
-**Current diagnosis:** Needs deeper proof of durability, lifecycle, history, retention, ownership, tenant boundaries, and computed/manual data separation.
+The root scripts now include checks for plugin interaction broker, product interaction broker, interaction performance, cross-product interaction flows, Java/TypeScript/Rust/Python adapter conformance, polyglot product fixtures, affected-surface execution, lifecycle explain/recover, and lifecycle run history. 
 
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="0bib0c"
-Document data ownership and lifecycle per model.
-Mark source-of-truth fields vs computed fields.
-Add migration and backward-compatibility tests.
-Add retention, redaction, provenance, and audit fields where required.
-```
-
-**Tests/gates:**
-
-```text id="b1fxgw"
-Schema migration tests
-Data lifecycle tests
-Tenant isolation storage tests
-```
-
-**Acceptance criteria:** Every persisted model has owner, lifecycle, retention, migration strategy, and tenant/privacy rules.
+**Assessment:** This is a meaningful shift from artifact-specific readiness to platform/product lifecycle readiness.
 
 ---
 
-## 8. Contract correctness
+## C. Critical Findings
 
-**Current diagnosis:** Route ownership improved. The Action Plane release contract now uses canonical `/api/v1/action/*` and metadata extensions.  Remaining gap is schema specificity.
+### P0 — `check:phase8` appears to reference undefined or unverified scripts
 
-**Target maturity:** 4.5
+`check:phase8` references `check:studio-deep-interactions`, `check:studio-workflow-persistence-contracts`, and `check:studio-source-acquisition-worker`. These names appear in the phase-8 command, but I did not find corresponding direct script definitions in the inspected root script ranges where related Studio scripts are defined.  
 
-**Plan:**
+**Impact:** `pnpm check:phase8` and therefore `pnpm check:world-class-platform-readiness` may fail before executing meaningful checks, or these gate names may represent intended work not actually wired.
 
-```text id="k6wu7j"
-Reject generic object/additionalProperties responses unless explicitly waived.
-Require typed request and response schemas.
-Require standard error envelope.
-Require idempotency headers for mutating routes.
-Generate SDK tests from OpenAPI.
-```
+**Required action:** Add or correct these root scripts, or remove them from phase-8 until implemented. Then run `pnpm check:phase8` from a clean checkout.
 
-**Tests/gates:**
-
-```text id="4wr8ec"
-check-openapi-drift.sh
-SDK generation check
-Schema specificity lint
-Backward compatibility contract tests
-```
-
-**Acceptance criteria:** Public contracts are typed, versioned, generated, and executable.
+**Priority:** P0.
 
 ---
 
-## 9. Route/API correctness
+### P0/P1 — Production-profile check is defined, but root command uses staging/no-strict
 
-**Current diagnosis:** Strong. Route security registry is generated from runtime routes and has router checksum. 
+The script itself can enforce strict production behavior, but the root command currently runs it as:
 
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="7mbw27"
-Keep RouteSecurityRegistry generated only.
-Fail CI if router checksum is stale.
-Fail CI if any runtime route lacks metadata.
-Generate route docs and UI posture from same manifest.
+```bash
+pnpm --dir platform/typescript/kernel-lifecycle exec vitest run --root ../../.. scripts/__tests__/check-studio-production-profile.test.mjs && node ./scripts/check-studio-production-profile.mjs --mode=staging --no-strict
 ```
 
-**Tests/gates:**
+This does not prove production enforcement in the root readiness path.  The script’s strict production logic would fail production if repository/archive providers are exposed without production acquisition and kernel backend settings. 
 
-```text id="qjo02r"
-generate-route-security-metadata --check
-generate-route-manifest --check
-check-openapi-drift.sh
-Route metadata parameterized tests
-```
+**Required action:** Add a separate `check:studio-production-profile:strict` or run the production mode check against `.env.production.example` / deployment profile evidence.
 
-**Acceptance criteria:** Router, OpenAPI, security metadata, Runtime Truth, SDK, and UI posture cannot drift.
+**Priority:** P0/P1.
 
 ---
 
-## 10. UI/API/runtime coherence
+### P1 — Generated artifact validation is TypeScript-only, not full build/test parity
 
-**Current diagnosis:** Improving, especially through Runtime Truth and UI tests.
+`validateGeneratedArtifacts()` creates an in-memory TS program and validates syntactic and semantic diagnostics with ambient React/JSX declarations.  This is valuable, but it does not install dependencies, run a real bundler, run lint, test generated artifacts, validate exports, or run preview/browser execution.
 
-**Target maturity:** 4.0
+**Required action:** Add backend/CI generated artifact validation stage: typecheck, lint, build, smoke render, and re-import.
 
-**Plan:**
-
-```text id="da8pqe"
-All UI actions must map to API routes.
-All API routes must map to Runtime Truth posture.
-All unavailable capabilities must be hidden or shown as unavailable.
-No UI-only authorization.
-No dead buttons or fake actions.
-```
-
-**Tests/gates:**
-
-```text id="rpqwhf"
-Product UI contract tests
-Route entitlement contracts
-Playwright user flow tests
-```
-
-**Acceptance criteria:** Every visible UI action is backed by a real authorized runtime capability.
+**Priority:** P1.
 
 ---
 
-## 11. Runtime Truth maturity
+### P1 — Source acquisition remains client/runtime constrained
 
-**Current diagnosis:** Strong for Data Cloud, needs product-family expansion.
+The production source acquisition client still runs in Studio TypeScript and uses `fetch`, `Blob`, `DecompressionStream`, manual ZIP/TAR parsing, and browser/runtime APIs.   This is not ideal for private repos, large repos, auth, rate limits, durable logs, retries, malware scanning, binary filtering, or archive-bomb protection.
 
-**Target maturity:** 4.5
+**Required action:** Treat the current implementation as a browser-capable adapter; production-grade acquisition should be server-side or worker-backed with durable job evidence.
 
-**Plan:**
-
-```text id="xwhqi6"
-Runtime Truth must include feature status, route posture, dependency status, storage mode, AI mode, audit mode, tenant mode, and release readiness.
-UI must consume Runtime Truth for gating.
-Release evidence must include Runtime Truth snapshot.
-```
-
-**Tests/gates:**
-
-```text id="gy4hw3"
-check:interaction-runtime-truth
-Data Cloud release runtime profile
-Runtime Truth schema tests
-```
-
-**Acceptance criteria:** Runtime Truth is the single customer-facing truth of availability and safety.
+**Priority:** P1.
 
 ---
 
-## 12. Security
+### P1 — Kernel workflow persistence client exists, server contract still unproven
 
-**Current diagnosis:** Stronger. Release workflow now has strict security/SBOM gates for Data Cloud. 
+The client persists to `/api/v1/studio/workflow-state` and `/api/v1/studio/workflow-evidence`, but this audit only verified the client adapter. 
 
-**Target maturity:** 4.5
+**Required action:** Add and verify server handlers, auth, scoping, idempotency, evidence immutability, retention, and audit events.
 
-**Plan:**
-
-```text id="31106m"
-Make security scan blocking for all release workflows.
-Add route-level auth tests.
-Add secret scanning.
-Add dependency severity thresholds.
-Add SBOM generation and artifact retention.
-```
-
-**Tests/gates:**
-
-```text id="z5xcyb"
-security-scan-strict
-check:secret-default-credentials
-check:route-entitlement-contracts
-```
-
-**Acceptance criteria:** No release can proceed with missing SBOM, critical dependency vulnerabilities, hardcoded secrets, or route auth gaps.
+**Priority:** P1.
 
 ---
 
-## 13. Privacy
+## D. Package/Area Ratings
 
-**Current diagnosis:** Privacy principles are visible, but privacy workflow proof needs expansion.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="tcdxlc"
-Classify data by sensitivity.
-Add PII discovery, masking, redaction, export, delete, and retention workflows.
-Ensure AI/ML calls receive redacted or policy-approved data.
-Add privacy audit trail for data access and automation.
-```
-
-**Tests/gates:**
-
-```text id="v7trzu"
-Privacy policy tests
-PII redaction tests
-AI redaction tests
-Data retention tests
-```
-
-**Acceptance criteria:** Sensitive data access, processing, AI usage, export, and deletion are governed and auditable.
+| Area                               |       Rating | Current State                                                                                                                           |
+| ---------------------------------- | -----------: | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `@ghatana/canvas`                  | **80 / 100** | Existing canvas history and isolation gates remain. Need schema/migration/serialization and deep interaction E2E proof.                 |
+| `@ghatana/ui-builder`              | **78 / 100** | Canonical model and NodeId validation path remain strong. Need provenance and durable builder persistence.                              |
+| `@ghatana/ds-generator`            | **82 / 100** | DS golden gate now includes additional document/targets, canonical states/aliases, and contrast tests in root script.                   |
+| `@ghatana/ghatana-studio`          | **82 / 100** | Stronger production-profile/persistence/acquisition gates, but phase-8 script mismatch risk and backend proof remain.                   |
+| Artifact compiler/decompiler       | **78 / 100** | AST-aware diff and generated TS validation exist. Need full build/lint/test/generated-project validation and backend repo intelligence. |
+| Wider platform/product interaction | **78 / 100** | Much broader phase-8 with plugin/product interaction and polyglot adapter checks. Need prove all commands execute.                      |
+| Release readiness                  | **75 / 100** | `check:release-gate` now centralizes phase-8 plus Data Cloud release and product release checks. Needs end-to-end evidence from CI run. |
 
 ---
 
-## 14. Tenant isolation
+## E. Detailed Findings
 
-**Current diagnosis:** Stronger but needs product-family runtime proof.
+### `package.json`
 
-**Target maturity:** 4.5
+**Finding:** The release readiness surface is significantly wider. `check:phase8` now includes artifact, Studio, product interaction, plugin, polyglot, lifecycle, governance, accessibility, i18n, AI governance, runtime failure, atomic workflow, and OpenAPI release checks. `check:world-class-platform-readiness` now maps to `check:release-gate`. 
 
-**Plan:**
+**Risk:** The same `check:phase8` command references Studio scripts that are not visibly defined in the inspected root script block: `check:studio-deep-interactions`, `check:studio-workflow-persistence-contracts`, `check:studio-source-acquisition-worker`. 
 
-```text id="t4xph6"
-Every request resolves tenant from authenticated identity.
-Header/query tenant hints must match principal tenant.
-Cross-product interactions must carry tenant/workspace scope.
-Storage queries must always include tenant filter.
-```
+**Required change:** Add a script-existence validation gate that checks every `pnpm check:*` referenced inside aggregate gates resolves to a root script.
 
-**Tests/gates:**
-
-```text id="16v3u4"
-audit-tenant-isolation.sh
-Cross-product wrong-tenant tests
-Storage tenant isolation tests
-```
-
-**Acceptance criteria:** No route, workflow, report, export, AI action, or cross-product interaction can cross tenant boundaries.
+**Priority:** P0.
 
 ---
 
-## 15. Authorization / RBAC / ABAC / scope enforcement
+### `scripts/check-studio-production-profile.mjs`
 
-**Current diagnosis:** Route metadata includes required access. Needs full matrix.
+**Finding:** Strong production-profile validator. It enforces deployment profile, production acquisition, kernel-backed acquisition, kernel workflow persistence, HTTPS API base URL, required tenant/workspace/project/auth values, and `VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true` in production. 
 
-**Target maturity:** 4.5
+**Risk:** Root command currently runs staging/no-strict mode, so production correctness may only be covered by tests, not by a real production env file.
 
-**Plan:**
+**Required change:** Validate `.env.production.example` or production deployment metadata in strict production mode.
 
-```text id="f5rq7l"
-Generate role-route matrix from RouteSecurityRegistry.
-Test each role against each route category.
-Add ABAC/scope conditions for workspace, module, tenant, client, and product.
-```
-
-**Tests/gates:**
-
-```text id="rcrlhp"
-Route entitlement contract tests
-Security filter parameterized tests
-Role matrix E2E tests
-```
-
-**Acceptance criteria:** Authorization is server-side, route-specific, scope-aware, and test-proven.
+**Priority:** P0/P1.
 
 ---
 
-## 16. Governance, policy, compliance
+### `platform/typescript/artifact-compiler-ts/src/validate/generated-artifacts.ts`
 
-**Current diagnosis:** Strong policy direction, needs runtime evidence.
+**Finding:** Adds deterministic TypeScript generated-source validation with virtual compiler host and diagnostic mapping to `ValidationFinding`. 
 
-**Target maturity:** 4.0
+**Risk:** It validates TypeScript semantics in-memory, not bundler/runtime/lint/test behavior.
 
-**Plan:**
+**Required change:** Extend validation pipeline to include bundler build, lint, tests, preview render, and artifact export checks in backend/CI.
 
-```text id="ct6crh"
-Define policy decision points per route/workflow.
-Require policy engine for critical routes.
-Record policy decision evidence.
-Add simulation/dry-run for policy changes.
-```
-
-**Tests/gates:**
-
-```text id="ugke7k"
-Policy allow/deny tests
-Governance route E2E
-Policy simulation tests
-```
-
-**Acceptance criteria:** Critical behavior cannot execute without policy decision evidence.
+**Priority:** P1.
 
 ---
 
-## 17. Audit durability and evidence quality
+### `platform/typescript/ghatana-studio/src/routes/ImportDecompilePage.tsx`
 
-**Current diagnosis:** Release evidence is improving, but atomic durable audit proof remains incomplete.
+**Finding:** Strong import orchestration remains: provider resolution, acquisition status, decompile, residuals, Builder projection, compile, re-import, round-trip diff, evidence pack, and workflow persistence. 
 
-**Target maturity:** 4.5
+**Risk:** The production behavior still depends on env selection.
 
-**Plan:**
+**Required change:** In production mode, fail closed if production acquisition and kernel persistence are not enabled.
 
-```text id="15n7zz"
-Block critical mutations if audit cannot persist.
-Store audit events durably.
-Attach requestId/correlationId/tenant/principal/route/action/outcome.
-Retain release evidence artifacts.
-```
-
-**Tests/gates:**
-
-```text id="vk6j7m"
-Audit sink failure tests
-Blocking audit tests
-Release evidence artifact checks
-```
-
-**Acceptance criteria:** Critical actions are never allowed without durable audit evidence.
+**Priority:** P0/P1.
 
 ---
 
-## 18. Event correctness
+### `platform/typescript/ghatana-studio/src/providers/source-acquisition.ts`
 
-**Current diagnosis:** Improved, but replay/bridge/rollback needs deeper proof.
+**Finding:** Production registry and production acquisition client remain. `resolveProviderRegistryForEnv()` toggles production acquisition based on env. 
 
-**Target maturity:** 4.0
+**Risk:** Client-side archive/repo acquisition is not the ideal production architecture.
 
-**Plan:**
+**Required change:** Add server-side source acquisition worker/service and treat browser acquisition as local/dev/fallback.
 
-```text id="5wczx4"
-Define canonical event envelope.
-Preserve envelope fields through append, query, tail, replay, and Action Plane bridge.
-Add versioning and schema compatibility.
-```
-
-**Tests/gates:**
-
-```text id="pm7d7s"
-Event envelope golden tests
-Replay tests
-Bridge tests
-Schema compatibility tests
-```
-
-**Acceptance criteria:** No event metadata is lost across storage, replay, automation, or audit.
+**Priority:** P1.
 
 ---
 
-## 19. Action Plane / automation correctness
+### `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts`
 
-**Current diagnosis:** Canonical route model improved. Automation lifecycle still needs end-to-end proof.
+**Finding:** Kernel workflow persistence client exists and can persist workflow state and evidence packs through kernel API endpoints. 
 
-**Target maturity:** 4.0
+**Risk:** Server implementation not verified here.
 
-**Plan:**
+**Required change:** Add server handlers and contract tests; add evidence immutability and retention policy.
 
-```text id="f6gkna"
-Require identity, policy, audit, idempotency, and Runtime Truth for every action.
-Add action dry-run, approval, execute, rollback, cancel, retry, and replay flows.
-Expose action status and evidence.
-```
-
-**Tests/gates:**
-
-```text id="g8s5gu"
-Action lifecycle E2E
-Automation rollback tests
-HITL approval tests
-```
-
-**Acceptance criteria:** Automation is governed, reversible where applicable, observable, and auditable.
+**Priority:** P1.
 
 ---
 
-## 20. Implicit AI/ML maturity
+### `platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts`
 
-**Current diagnosis:** AI/ML is embedded, but production governance needs stronger proof.
+**Finding:** AST signatures and import graph parity are implemented. 
 
-**Target maturity:** 4.0
+**Risk:** Still not a full semantic/executable proof.
 
-**Plan:**
+**Required change:** Attach generated validation pipeline results into the round-trip evidence pack.
 
-```text id="s9o6jl"
-Make AI capability posture explicit.
-Prevent heuristic fallback in production.
-Add model availability checks.
-Add prompt/input/output provenance.
-Add cost and quality telemetry.
-```
-
-**Tests/gates:**
-
-```text id="n56rte"
-AI posture gate
-AI privacy/redaction tests
-AI cost budget gate
-AI feedback loop tests
-```
-
-**Acceptance criteria:** AI/ML is useful, governed, implicit where appropriate, and never unsafe or silently degraded.
+**Priority:** P1.
 
 ---
 
-## 21. Human-in-the-loop and override control
+## F. Recommended Implementation Plan
 
-**Current diagnosis:** Conceptually present, but takeover/delegation needs proof.
+### Phase 1 — Fix aggregate gate integrity
 
-**Target maturity:** 4.0
+**Goal:** Make `check:phase8`, `check:release-gate`, and `check:world-class-platform-readiness` actually executable.
 
-**Plan:**
+Tasks:
 
-```text id="op7w1h"
-Define automation autonomy levels.
-Add manual takeover.
-Add approval queue.
-Add delegation/resume.
-Add break-glass with reason, role, audit, and expiry.
-```
+* Add script that parses aggregate check commands and verifies every referenced `pnpm check:*` is defined.
+* Define or remove `check:studio-deep-interactions`, `check:studio-workflow-persistence-contracts`, and `check:studio-source-acquisition-worker`.
+* Run `pnpm check:phase8` cleanly.
 
-**Tests/gates:**
+### Phase 2 — Strict production profile proof
 
-```text id="oy1zw5"
-HITL approval E2E
-Break-glass tests
-Takeover/resume tests
-```
+**Goal:** Ensure production Studio cannot run with local/fallback acquisition or persistence.
 
-**Acceptance criteria:** Humans can interrupt automation, take over, and delegate again safely.
+Tasks:
 
----
+* Add `.env.production.example` validation.
+* Run `check-studio-production-profile.mjs --mode=production --env-file=.env.production.example`.
+* Fail release if production acquisition or kernel persistence is missing.
 
-## 22. Observability: logs, metrics, traces
+### Phase 3 — Server-side acquisition and persistence
 
-**Current diagnosis:** Stronger runtime validation requires metrics and trace export in production. 
+**Goal:** Move production source acquisition and evidence storage out of the browser path.
 
-**Target maturity:** 4.5
+Tasks:
 
-**Plan:**
+* Add kernel/studio API endpoints for source acquisition jobs.
+* Add workflow-state and workflow-evidence server handlers.
+* Add tenant/workspace/project scoping and idempotency.
+* Add audit events and retention policy.
 
-```text id="uqaiez"
-Require structured logs.
-Propagate requestId/correlationId/traceId.
-Expose metrics for latency, errors, retries, queue depth, model usage, cost, audit writes.
-Add dashboards and alerts.
-```
+### Phase 4 — Deep generated artifact validation
 
-**Tests/gates:**
+**Goal:** Validate generated artifacts like real code.
 
-```text id="n9gmv5"
-Observability conformance
-Trace export readiness
-SLO regression tests
-```
+Tasks:
 
-**Acceptance criteria:** Operators can diagnose every failed workflow from UI action to storage/audit event.
+* Extend `validateGeneratedArtifacts()` with build/lint/test stages in CI.
+* Add generated project fixture.
+* Add bundler validation and preview render validation.
+* Store validation results in evidence pack.
 
----
+### Phase 5 — Deep Studio interaction E2E
 
-## 23. Reliability and resilience
+**Goal:** Add back deep canvas/builder interactions without brittle selectors.
 
-**Current diagnosis:** Needs more failure-injection coverage.
+Tasks:
 
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="myjsph"
-Add timeout, retry, circuit breaker, backpressure, and fallback policies.
-Make degraded mode visible.
-Fail closed for security/governance failures.
-```
-
-**Tests/gates:**
-
-```text id="0lo36m"
-Failure injection suite
-Chaos-style dependency failure tests
-Retry/backoff tests
-```
-
-**Acceptance criteria:** Known dependency failures produce safe, observable, tested behavior.
+* Define stable Canvas node test IDs.
+* Define stable Builder node/property test IDs.
+* Add Playwright test for canvas move, selection, builder prop edit, preview update, and fidelity diff update.
 
 ---
 
-## 24. Error handling and degraded mode
+## G. Exact TODOs
 
-**Current diagnosis:** Some graceful degradation exists, but needs route-level proof.
+* [x] `package.json` — define or remove `check:studio-deep-interactions`.
 
-**Target maturity:** 4.0
+  * Priority: P0.
 
-**Plan:**
+* [x] `package.json` — define or remove `check:studio-workflow-persistence-contracts`.
 
-```text id="0zm85v"
-Standardize error envelope.
-Expose degraded capability status through Runtime Truth.
-Ensure UI has error, empty, loading, unauthorized, unavailable states.
-```
+  * Priority: P0.
 
-**Tests/gates:**
+* [x] `package.json` — define or remove `check:studio-source-acquisition-worker`.
 
-```text id="09ft4q"
-Error envelope contract tests
-UI degraded-state tests
-Runtime Truth degraded-state tests
-```
+  * Priority: P0.
 
-**Acceptance criteria:** Users and operators understand what failed, why, and what to do next.
+* [x] `scripts/` — add aggregate-gate script resolver to fail when aggregate checks reference undefined scripts.
 
----
+  * Priority: P0.
 
-## 25. Idempotency, retries, replay, rollback
+* [x] `scripts/check-studio-production-profile.mjs` — wire strict production env validation into root/release gate.
 
-**Current diagnosis:** Production dependency validation requires idempotency and transaction manager, but workflow proof remains incomplete. 
+  * Priority: P0/P1.
 
-**Target maturity:** 4.5
+* [x] `platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts` — add server-side endpoint contract tests for workflow/evidence persistence.
 
-**Plan:**
+  * Priority: P1.
 
-```text id="ws5hcx"
-Require idempotency keys for mutating APIs.
-Persist idempotency results durably.
-Add retry-safe handlers.
-Add replay and rollback semantics for critical flows.
-```
+* [x] `platform/typescript/ghatana-studio/src/providers/source-acquisition.ts` — move production GitHub/GitLab/archive acquisition behind backend worker/service.
 
-**Tests/gates:**
+  * Priority: P1.
 
-```text id="rg01s5"
-Duplicate request tests
-Retry after partial failure tests
-Replay tests
-Rollback tests
-```
+* [x] `platform/typescript/artifact-compiler-ts/src/validate/generated-artifacts.ts` — extend validation pipeline beyond in-memory TypeScript diagnostics.
 
-**Acceptance criteria:** Retrying a request never duplicates side effects or corrupts state.
+  * Priority: P1.
+
+* [x] `platform/typescript/artifact-compiler-ts/src/diff/roundtrip-diff.ts` — include generated validation results and graph parity detail in diff/evidence output.
+
+  * Priority: P1.
 
 ---
 
-## 26. Performance
+## H. Commands to Validate
 
-**Current diagnosis:** Checks exist, but product SLOs need hard ownership.
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
 
-**Target maturity:** 4.0
+pnpm check:artifact-roundtrip
+pnpm check:studio-artifact-workflow-e2e
+pnpm check:studio-production-profile
+pnpm check:canvas-history
+pnpm check:builder-canonical-document
+pnpm check:builder-canvas-adapter
+pnpm check:ds-generator-golden
 
-**Plan:**
-
-```text id="8omky7"
-Define p50/p95/p99 latency per route family.
-Define throughput and concurrency targets.
-Define query, import, export, automation, and AI latency budgets.
+pnpm check:phase8
+pnpm check:release-gate
+pnpm check:world-class-platform-readiness
 ```
 
-**Tests/gates:**
+Focused validations:
 
-```text id="9fp1fa"
-check:interaction-performance
-check:audited-performance-workflows
-Data Cloud load suite
+```bash
+node ./scripts/check-studio-production-profile.mjs --mode=production --env-file=.env.production.example
+
+pnpm --dir platform/typescript/artifact-compiler-ts exec vitest run \
+  src/__tests__/generated-validation.test.ts \
+  src/__tests__/roundtrip-diff.test.ts \
+  src/__tests__/repository-scan.test.ts
+
+pnpm --dir platform/typescript/ghatana-studio exec playwright test e2e/artifact-workflow.spec.ts
 ```
-
-**Acceptance criteria:** Performance regressions fail release.
 
 ---
 
-## 27. Scalability
+## Final Verdict
 
-**Current diagnosis:** Under-proven.
+```markdown
+Final Verdict: Partial
 
-**Target maturity:** 4.0
+Are these areas feature-complete and correctly implemented for a production-grade, world-class Ghatana product-development platform?
 
-**Plan:**
+No, but c5388f6712cc3280f7ff71198b595cab9cb1d980 is a major readiness-gate expansion.
 
-```text id="gs8ehx"
-Test multi-tenant load.
-Test queue growth/backpressure.
-Test horizontal scaling assumptions.
-Test storage tier behavior.
+Reason:
+The snapshot adds a much broader phase-8/release-gate surface, generated artifact TypeScript validation, Studio production profile validation, deeper DS golden coverage, and wider product/plugin/polyglot/release checks. However, the aggregate phase-8 command appears to reference several Studio checks that are not visibly defined in the inspected root scripts, production profile enforcement is not run in strict production mode by the root command, source acquisition remains client-heavy, workflow/evidence persistence server handlers are not proven, and generated artifact validation is still TypeScript-only rather than full build/lint/test/runtime validation.
+
+Required minimum work before production:
+Prove aggregate gates are executable, enforce strict production Studio profile validation, implement server-side acquisition and workflow/evidence persistence, add full generated artifact build/lint/test validation, and add deep Canvas/Builder interaction E2E.
+
+Recommended next milestone:
+Executable Release Gate + Server-Side Artifact Acquisition/Persistence v1.
+
+Recommended first implementation PR:
+Add an aggregate script resolver that fails if any `pnpm check:*` referenced inside `check:phase8`, `check:release-gate`, or `check:world-class-platform-readiness` is undefined, then fix the missing Studio check scripts.
+
+Recommended parallel workstreams:
+1. Aggregate gate integrity.
+2. Strict production profile validation.
+3. Server-side source acquisition worker.
+4. Kernel workflow/evidence persistence endpoints.
+5. Generated artifact build/lint/test validation.
+6. Deep Studio Canvas/Builder interaction E2E.
 ```
-
-**Tests/gates:**
-
-```text id="f1wd1q"
-Load tests
-Backpressure tests
-Multi-tenant scale tests
-Storage tier tests
-```
-
-**Acceptance criteria:** Product scales under expected tenant, data, workflow, and automation volume.
-
----
-
-## 28. Extensibility and plugin model
-
-**Current diagnosis:** Strong direction with plugin checks, but runtime plugin lifecycle proof needed.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="gbg721"
-Define plugin contract.
-Sandbox plugins.
-Validate plugin security, dependencies, upgrades, rollback, and conformance.
-Expose plugin Runtime Truth.
-```
-
-**Tests/gates:**
-
-```text id="c6xj5d"
-check:kernel-plugin-interactions
-check:plugin-interaction-broker
-Plugin security tests
-Plugin dependency resolver tests
-```
-
-**Acceptance criteria:** Plugins can be installed, validated, enabled, disabled, upgraded, and rolled back safely.
-
----
-
-## 29. Shared-library reuse
-
-**Current diagnosis:** Broad shared platform exists; must prevent over-sharing and product leakage.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="wwzgra"
-Define keep/move/split rules.
-Keep only generic multi-product logic in shared libraries.
-Move product semantics back to product modules.
-Enforce dependency direction.
-```
-
-**Tests/gates:**
-
-```text id="k7pyki"
-check:architecture-boundaries
-check:kernel-boundaries
-check:platform-product-boundaries
-Reuse scorecard
-```
-
-**Acceptance criteria:** Shared libraries are composable, generic, stable, and not product dumping grounds.
-
----
-
-## 30. Dependency hygiene
-
-**Current diagnosis:** Improving through release SBOM and dependency checks.
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="7fa59n"
-Generate SBOM for release.
-Fail on critical/high vulnerabilities.
-Remove unused dependencies.
-Pin versions.
-Audit license compatibility.
-```
-
-**Tests/gates:**
-
-```text id="xna17g"
-security-scan-strict
-SBOM artifact gate
-Dependency hygiene lint
-```
-
-**Acceptance criteria:** Release artifacts include clean dependency evidence.
-
----
-
-## 31. Architecture boundaries
-
-**Current diagnosis:** Strong scripts exist; runtime boundary proof still needed.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="49srh8"
-Enforce module boundaries with ArchUnit and scripts.
-Block product-to-product direct imports.
-Require Kernel/contracts for product interactions.
-```
-
-**Tests/gates:**
-
-```text id="o5yqeg"
-check:architecture-boundaries
-check:cross-product-interaction-boundaries
-DataCloudPlaneBoundaryTest
-```
-
-**Acceptance criteria:** Architecture rules are executable and fail CI on drift.
-
----
-
-## 32. Simplicity and maintainability
-
-**Current diagnosis:** Product is powerful but complex.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="3rl5ap"
-Reduce duplicate patterns.
-Prefer generated registries over manual maps.
-Make Runtime Truth the main operating model.
-Keep product business logic separate from platform setup.
-```
-
-**Tests/gates:**
-
-```text id="pg6ye7"
-Duplicate detection
-Orphan module check
-Deprecated import/package checks
-```
-
-**Acceptance criteria:** New features follow one obvious pattern and require minimal boilerplate.
-
----
-
-## 33. UI/UX simplicity and consistency
-
-**Current diagnosis:** Needs full expert route-by-route review.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="nql0sk"
-Use shared shell/layout primitives.
-Enforce design tokens.
-Ensure no dead space, no cognitive overload, no inconsistent tables/cards.
-Make action discoverability consistent.
-```
-
-**Tests/gates:**
-
-```text id="46uvbd"
-check:shared-product-shells
-check:shared-layout-primitives
-check:design-system-conformance
-Audited UI workflows
-```
-
-**Acceptance criteria:** Users can understand status, take action, and recover from errors without training.
-
----
-
-## 34. Accessibility
-
-**Current diagnosis:** Data Cloud release runs UI a11y checks, which is a good start. 
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="1y1j6w"
-Add WCAG AA route matrix.
-Run axe checks on every key route.
-Add keyboard-only flows.
-Add focus management tests.
-Add screen-reader semantic assertions.
-```
-
-**Tests/gates:**
-
-```text id="tyxwmt"
-check:data-cloud-ui-a11y
-Playwright a11y tests
-Design system accessibility tests
-```
-
-**Acceptance criteria:** Core workflows are keyboard-accessible, screen-reader-friendly, and WCAG AA compliant.
-
----
-
-## 35. Internationalization and localization readiness
-
-**Current diagnosis:** Still weak relative to production-grade expectations.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="kbksmr"
-Add translation extraction.
-Fail on missing keys.
-Add pseudo-locale tests.
-Add date/number/currency/timezone formatting tests.
-Add RTL readiness where relevant.
-```
-
-**Tests/gates:**
-
-```text id="ytmtk0"
-check:i18n-conformance
-Pseudo-locale Playwright tests
-Locale formatting unit tests
-```
-
-**Acceptance criteria:** UI is locale-ready and does not hardcode user-facing strings.
-
----
-
-## 36. Testing depth
-
-**Current diagnosis:** Broad test surface, but runtime and failure tests need expansion.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="hdr7xw"
-Classify tests as unit, integration, browser, release, smoke, performance, failure-injection.
-Ensure each critical path has all relevant tiers.
-Remove duplicate/test-theater checks.
-```
-
-**Tests/gates:**
-
-```text id="7ssujz"
-Product test architecture matrix
-Coverage by workflow
-Release evidence tests
-```
-
-**Acceptance criteria:** Every critical claim is proven by the right test tier.
-
----
-
-## 37. Test quality / no test theater
-
-**Current diagnosis:** Improving but still must guard against presence-only tests.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="ykk8bz"
-Reject tests that only instantiate objects.
-Require behavior assertions.
-Require negative and failure assertions.
-Require real runtime wiring for release tests.
-```
-
-**Tests/gates:**
-
-```text id="a7f1su"
-Test quality lint
-Mutation/failure-injection tests
-Runtime integration tests
-```
-
-**Acceptance criteria:** Tests prove behavior, not just structure.
-
----
-
-## 38. CI gate strength
-
-**Current diagnosis:** Strong improvement. Advisory CI and strict release gate are now separated.  
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="3ood42"
-Keep CI fast and advisory.
-Keep release strict and evidence-backed.
-Add affected-product release orchestration.
-Ensure required branch protection references correct gates.
-```
-
-**Acceptance criteria:** Developers get fast feedback; releases require hard evidence.
-
----
-
-## 39. Release readiness
-
-**Current diagnosis:** Data Cloud release readiness improved significantly.
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="0fp4j4"
-Tie release workflow to protected environments.
-Require approvals.
-Require evidence artifacts.
-Require release scorecard.
-Require rollback plan.
-```
-
-**Tests/gates:** `data-cloud-release.yml`
-
-**Acceptance criteria:** No release without environment validation, smoke, backup, security, SBOM, runtime, and evidence artifacts.
-
----
-
-## 40. Deployment and operations readiness
-
-**Current diagnosis:** Improved for Data Cloud; product-family coverage needs expansion.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="15vmfo"
-Validate Helm/k8s manifests.
-Validate runtime profile.
-Validate secrets/config.
-Validate health/readiness/deep health.
-Validate observability exporters.
-```
-
-**Tests/gates:** Helm/k8s release checks, runtime profile release checks.
-
-**Acceptance criteria:** Operators can deploy, verify, observe, and roll back safely.
-
----
-
-## 41. Backup, restore, and disaster recovery
-
-**Current diagnosis:** Data Cloud release now has strict backup drill. 
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="gygg1o"
-Run strict backup/restore in release.
-Validate restore point.
-Validate RPO/RTO.
-Upload DR evidence.
-Test Postgres, ClickHouse, OpenSearch, and object storage.
-```
-
-**Acceptance criteria:** Backup/restore failures block release.
-
----
-
-## 42. Configuration and secrets management
-
-**Current diagnosis:** Release workflow validates required environment variables and secrets and rejects localhost release endpoint. 
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="k24t1m"
-Validate all required vars/secrets.
-Reject defaults in production.
-Reject localhost release endpoints.
-Use environment-protected secrets.
-Add secret rotation readiness.
-```
-
-**Tests/gates:**
-
-```text id="du34b4"
-validate-release-config
-check:secret-default-credentials
-```
-
-**Acceptance criteria:** Production cannot run with missing, default, localhost, or unsafe config.
-
----
-
-## 43. Documentation truthfulness
-
-**Current diagnosis:** Needs continuous enforcement against generated truth.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="mrm1ie"
-Link docs to generated route/runtime truth.
-Fail stale current-state claims.
-Fail unsupported production claims.
-Add evidence links to release docs.
-```
-
-**Tests/gates:**
-
-```text id="vqz9n9"
-check:doc-claims-evidence
-check:current-state-claims
-check:doc-truth
-```
-
-**Acceptance criteria:** Docs describe only what code/tests/release gates prove.
-
----
-
-## 44. Migration and deprecation hygiene
-
-**Current diagnosis:** Compatibility routing exists and needs lifecycle control.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="jpixvy"
-Define compatibility registry.
-Mark deprecated routes.
-Add removal dates.
-Expose legacyStatus in Runtime Truth.
-Block new legacy routes.
-```
-
-**Tests/gates:** route compatibility registry checks.
-
-**Acceptance criteria:** Migration paths are explicit, tested, and eventually removed.
-
----
-
-## 45. Cost and operational efficiency
-
-**Current diagnosis:** Underdeveloped.
-
-**Target maturity:** 4.0
-
-**Plan:**
-
-```text id="c7tn2n"
-Add cost budgets for AI, storage, query, export, stream, and automation.
-Expose usage/cost metrics.
-Fail release on severe cost regression.
-Add capacity forecast tests.
-```
-
-**Tests/gates:**
-
-```text id="vl3dxl"
-Cost budget gate
-AI cost telemetry tests
-Storage/query cost tests
-```
-
-**Acceptance criteria:** Product can be operated predictably without runaway cost.
-
----
-
-## 46. Overall production readiness
-
-**Current diagnosis:** Close but not ready.
-
-**Target maturity:** 4.5
-
-**Plan:**
-
-```text id="9ztdui"
-Close P0 atomic workflow proof.
-Expand strict release gates to all production-intended products.
-Add release scorecard artifact.
-Add product-family affected release orchestration.
-```
-
-**Acceptance criteria:** All hard blocking rules pass.
-
----
-
-## 47. Overall world-class maturity
-
-**Current diagnosis:** Not yet. Strong direction, not enough proof and simplicity.
-
-**Target maturity:** 5.0 long-term
-
-**Plan:**
-
-```text id="6uor2t"
-Make the platform easy enough that product teams only write business logic.
-Automate setup, runtime truth, tests, releases, docs, observability, and governance.
-Make AI/ML implicit but interruptible.
-Make every product secure, private, accessible, internationalized, observable, and low-cognitive-load by default.
-```
-
-**Acceptance criteria:** New product/features inherit production-grade foundations automatically.
-
----
-
-# Final prioritized implementation waves
-
-## Wave 1 — Production blocking
-
-```text id="q4bdqx"
-1. Add atomic workflow proof gate.
-2. Add release scorecard artifact.
-3. Add strict affected-product release orchestration.
-4. Add production deployment trigger/protected environment policy.
-5. Add typed contract schema lint.
-```
-
-## Wave 2 — Product quality
-
-```text id="t7fqrf"
-1. Add a11y route matrix.
-2. Add i18n conformance.
-3. Add AI governance/cost/HITL tests.
-4. Add SLO/performance release gates.
-5. Add product-family Runtime Truth posture.
-```
-
-## Wave 3 — World-class maturity
-
-```text id="qj8mlc"
-1. Simplify product development around Kernel lifecycle.
-2. Standardize product release profiles.
-3. Standardize generated docs/evidence.
-4. Standardize plugin/action/automation lifecycle.
-5. Standardize customer-facing UX patterns.
-```
-
-The immediate next step is **Wave 2, item 2: i18n conformance expansion across all production-intended products** while preserving strict Wave 1 and Wave 2 item 1 release blockers.

@@ -6,6 +6,28 @@ lifecycleStatus: planned
 executionEnabled: false
 owner: kernel-team
 
+readiness:
+  reasonCodes:
+    - polyglot-fixture-execution-proof
+    - opening-pilot-policy-exemption
+    - rust-adapter-native-tests-pass
+  requiredGates:
+    - cargo-adapter-conformance
+    - rust-native-fixture-tests
+    - polyglot-fixture-proof
+    - security
+    - privacy
+    - i18n
+    - a11y
+  nextRequiredWork:
+    - Keep rust-fixture planned until opening lifecycle pilot policy includes fixture execution products
+    - Run pnpm check:polyglot-product-fixture before changing CargoRustAdapter behavior
+  evidenceRefs:
+    - products/rust-fixture/kernel-product.yaml
+    - products/rust-fixture/Cargo.toml
+    - products/rust-fixture/tests/integration_test.rs
+    - scripts/check-polyglot-fixture-proof.mjs
+
 scope:
   tenantId: ghatana
   workspaceId: kernel
@@ -48,13 +70,6 @@ environments:
     target: local
     variables:
       RUST_LOG: info
-
-readiness:
-  requiredGates:
-    - security
-    - privacy
-    - i18n
-    - a11y
 
 gateBindings:
   - gateId: rust-fmt-check

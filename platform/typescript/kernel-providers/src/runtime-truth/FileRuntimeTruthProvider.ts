@@ -161,8 +161,32 @@ export class FileRuntimeTruthProvider implements LifecycleRuntimeTruthProvider {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
     await fs.writeFile(tempPath, `${JSON.stringify(content, null, 2)}\n`, "utf-8");
-    await fs.rename(tempPath, filePath);
+    await renameWithRetry(tempPath, filePath);
   }
+}
+
+async function renameWithRetry(sourcePath: string, targetPath: string): Promise<void> {
+  const retryableCodes = new Set(["EPERM", "EBUSY", "EACCES"]);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      await fs.rename(sourcePath, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!isNodeError(error) || !retryableCodes.has(error.code)) {
+        throw error;
+      }
+      await delay(25 * (attempt + 1));
+    }
+  }
+
+  throw lastError;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function enrichRuntimeTruthSnapshot(
@@ -255,5 +279,14 @@ function isFileNotFound(error: unknown): boolean {
     error !== null &&
     "code" in error &&
     (error as { readonly code?: unknown }).code === "ENOENT"
+  );
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException & { readonly code: string } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof (error as { readonly code?: unknown }).code === "string"
   );
 }

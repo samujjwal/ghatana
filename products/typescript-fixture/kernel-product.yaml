@@ -6,6 +6,28 @@ lifecycleStatus: planned
 executionEnabled: false
 owner: kernel-team
 
+readiness:
+  reasonCodes:
+    - polyglot-fixture-execution-proof
+    - opening-pilot-policy-exemption
+    - typescript-node-adapter-native-tests-pass
+  requiredGates:
+    - pnpm-node-adapter-conformance
+    - typescript-native-fixture-tests
+    - polyglot-fixture-proof
+    - security
+    - privacy
+    - i18n
+    - a11y
+  nextRequiredWork:
+    - Keep typescript-fixture planned until opening lifecycle pilot policy includes fixture execution products
+    - Run pnpm check:polyglot-product-fixture before changing PnpmNodeApiAdapter behavior
+  evidenceRefs:
+    - products/typescript-fixture/kernel-product.yaml
+    - products/typescript-fixture/package.json
+    - products/typescript-fixture/tests/integration.test.ts
+    - scripts/check-polyglot-fixture-proof.mjs
+
 registryProviderRef:
   providerId: ghatana-file-registry
 
@@ -40,10 +62,3 @@ environments:
     target: local
     variables:
       NODE_ENV: development
-
-readiness:
-  requiredGates:
-    - security
-    - privacy
-    - i18n
-    - a11y

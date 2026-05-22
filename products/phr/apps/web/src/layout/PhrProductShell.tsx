@@ -12,43 +12,43 @@ import {
 import { Outlet, useNavigate } from 'react-router-dom';
 import { usePhrAccess } from '../auth/PhrAccessContext';
 import { API_BASE_URL } from '../api/phrApi';
+import { t } from '../i18n/phrI18n';
 import { PHR_ROLE_ORDER, phrRouteContracts } from '../routeManifest';
 
 const roleLabels = {
-  patient: 'Patient',
-  caregiver: 'Caregiver',
-  clinician: 'Clinician',
-  admin: 'Admin',
+  patient: t('role.patient.label'),
+  caregiver: t('role.caregiver.label'),
+  clinician: t('role.clinician.label'),
+  admin: t('role.admin.label'),
 } satisfies NonNullable<ProductShellConfig['roleLabels']>;
 
 const roleDescriptions = {
-  patient: 'Self-service view with personal health workflows.',
-  caregiver: 'Delegated support view for family and after-hours review.',
-  clinician: 'Clinical operations view with emergency workflows.',
-  admin: 'Administrative and governance view.',
+  patient: t('role.patient.description'),
+  caregiver: t('role.caregiver.description'),
+  clinician: t('role.clinician.description'),
+  admin: t('role.admin.description'),
 } satisfies NonNullable<ProductShellConfig['roleDescriptions']>;
 
 const availableRoles = ['patient', 'caregiver', 'clinician', 'admin'] as const;
 
 const sidebarFooter = (
-  <ProductShellFooter description="Navigation, role visibility, and layout come from shared product-shell contracts." />
+  <ProductShellFooter description={t('shell.sidebarFooter')} />
 );
 
 const roleSelectorConfig = createProductRoleSelectorConfig({
   roleOrder: PHR_ROLE_ORDER,
   roleLabels,
   roleDescriptions,
-  roleSelectorTitle: 'Persona',
-  roleSelectorLabel: 'Persona visibility menu',
-  roleSelectorDisclosureNote:
-    'Navigation visibility comes from route metadata. Backend and route guards still enforce access.',
+  roleSelectorTitle: t('shell.roleSelector.title'),
+  roleSelectorLabel: t('shell.roleSelector.label'),
+  roleSelectorDisclosureNote: t('shell.roleSelector.note'),
   availableRoles,
 });
 
 function labelForRole(role: string): string {
   return Object.prototype.hasOwnProperty.call(roleLabels, role)
     ? roleLabels[role as keyof typeof roleLabels]
-    : 'Signed in';
+    : t('shell.signedIn');
 }
 
 export function PhrProductShell(): React.ReactElement {
@@ -77,7 +77,7 @@ export function PhrProductShell(): React.ReactElement {
   const headerActions = canReviewEmergencyAccess
     ? (
         <div className="flex items-center gap-3">
-          <Button onClick={() => navigate('/emergency')}>Emergency Access Review</Button>
+          <Button onClick={() => navigate('/emergency')}>{t('shell.emergencyReview')}</Button>
           <ProductHeaderUserMenu fallbackLabel={labelForRole(role)} />
         </div>
       )

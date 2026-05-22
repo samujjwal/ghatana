@@ -13,3 +13,6 @@
 - Duplication impact: no product-owned generic lifecycle runtime.
 - Security/privacy/o11y readiness: marketing consent and customer-data minimization gates declared in lifecycle.
 - Next required work: restart/repair Docker Desktop Buildx builders, then rerun full package/deploy/verify evidence.
+- Blocker severity: P0 until package/deploy/verify evidence is refreshed without Docker Buildx environment blockers.
+- Owner module: products/digital-marketing lifecycle, dm-application, dm-api, dm-persistence, and ui.
+- Ticket suggestion: DMOS-PROD-001 refresh package/deploy/verify evidence after Docker Buildx repair and attach release manifest proof.

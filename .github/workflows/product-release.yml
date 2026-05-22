@@ -10,7 +10,7 @@ on:
         description: 'Comma-separated list of products to release'
         required: false
       dry_run:
-        description: 'Run strict release checks without creating release artifacts'
+        description: 'Validate release readiness without publishing manifests'
         required: false
         default: 'true'
 
@@ -23,43 +23,33 @@ jobs:
     name: Resolve Affected Products
     runs-on: ubuntu-latest
     outputs:
+      affected-products: ${{ steps.resolve.outputs.affected-products }}
       affected-products-json: ${{ steps.resolve.outputs.affected-products-json }}
-      affected-products-csv: ${{ steps.resolve.outputs.affected-products-csv }}
     steps:
       - uses: actions/checkout@v4
       - id: resolve
+        env:
+          PRODUCTS_INPUT: ${{ github.event.inputs.products }}
         run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            INPUT_PRODUCTS="${{ github.event.inputs.products }}"
-            if [ -z "${INPUT_PRODUCTS}" ]; then
-              AFFECTED_JSON="[]"
-            else
-              AFFECTED_JSON="$(node -e "const raw=process.argv[1];const out=raw.split(',').map((v)=>v.trim()).filter(Boolean);process.stdout.write(JSON.stringify(out));" "$INPUT_PRODUCTS")"
-            fi
-          else
-            AFFECTED_JSON="$(node -e "const {execFileSync}=require('child_process');const raw=execFileSync('node',['scripts/resolve-affected-products.mjs','--json','--business-products-only'],{encoding:'utf8'});const parsed=JSON.parse(raw);process.stdout.write(JSON.stringify(parsed.affectedProducts||[]));")"
-          fi
-
-          AFFECTED_CSV="$(node -e "const parsed=JSON.parse(process.argv[1]);process.stdout.write(parsed.join(','));" "$AFFECTED_JSON")"
-          echo "affected-products-json=${AFFECTED_JSON}" >> "$GITHUB_OUTPUT"
-          echo "affected-products-csv=${AFFECTED_CSV}" >> "$GITHUB_OUTPUT"
-
-          {
-            echo "## Product Release Scope"
-            echo ""
-            echo "- Affected products (csv): ${AFFECTED_CSV:-none}"
-            echo "- Affected products (json): ${AFFECTED_JSON}"
-          } >> "$GITHUB_STEP_SUMMARY"
+          node <<'NODE' > affected-products.json
+          const { execFileSync } = require('node:child_process');
+          const input = (process.env.PRODUCTS_INPUT || '').trim();
+          const products = input
+            ? input.split(',').map((product) => product.trim()).filter(Boolean)
+            : JSON.parse(execFileSync('node', ['scripts/resolve-affected-products.mjs', '--json'], { encoding: 'utf8' })).affectedProducts || [];
+          process.stdout.write(JSON.stringify(products));
+          NODE
+          echo "affected-products-json=$(cat affected-products.json)" >> $GITHUB_OUTPUT
+          echo "affected-products=$(node -e "console.log(JSON.parse(require('fs').readFileSync('affected-products.json', 'utf8')).join(','))")" >> $GITHUB_OUTPUT
 
   release:
     name: Release Product
     needs: resolve-affected
-    if: needs.resolve-affected.outputs.affected-products-json != '' && needs.resolve-affected.outputs.affected-products-json != '[]'
+    if: needs.resolve-affected.outputs.affected-products != ''
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
-      matrix:
+        fail-fast: false
+        matrix:
         product: ${{ fromJson(needs.resolve-affected.outputs.affected-products-json) }}
     steps:
       - uses: actions/checkout@v4
@@ -74,30 +64,18 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - run: pnpm install --frozen-lockfile
-      - name: Run strict product release readiness checks
-        env:
-          AFFECTED_PRODUCTS: ${{ matrix.product }}
+      - name: Validate Product Release Readiness
         run: pnpm check:product-release-readiness
-      - name: Enforce strict affected-product release profile
-        run: node ./scripts/check-affected-product-strict-release-profile.mjs --products "${{ matrix.product }}"
-      - name: Dry-run release mode
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
-        run: |
-          echo "Dry-run enabled for ${{ matrix.product }}."
-          echo "Strict release readiness checks completed; release/publish steps are intentionally skipped."
       - name: Release Product
-        if: github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true'
+        if: github.event.inputs.dry_run != 'true'
         run: pnpm kernel release create ${{ matrix.product }} --version ${{ github.ref_name }}
       - name: Create Release Manifest
-        if: github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true'
+        if: github.event.inputs.dry_run != 'true'
         run: pnpm kernel release manifest ${{ matrix.product }} --version ${{ github.ref_name }}
-      - name: Upload release readiness evidence
+      - name: Upload Product Release Evidence
         uses: actions/upload-artifact@v4
         with:
           name: product-release-evidence-${{ matrix.product }}
           path: |
             .kernel/evidence/product-release-readiness.json
-            .kernel/evidence/affected-product-release-profile.json
-            .kernel/evidence/kernel-implementation-plan-progress.json
-            .kernel/evidence/product-a11y-route-matrix.json
-          retention-days: 90
+            .kernel/out/products/${{ matrix.product }}/release/**

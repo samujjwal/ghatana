@@ -363,7 +363,7 @@ function generatePackageScripts(registry, lifecycleExclusions) {
       scripts[`test:${productId}`] = `pnpm product ${productId} test`;
 
       if (productId === 'finance') {
-        scripts[`validate:${productId}`] = './gradlew :products:finance:check --no-daemon';
+        scripts[`validate:${productId}`] = 'node ./scripts/run-gradle-wrapper.mjs :products:finance:check --no-daemon';
       }
 
       if (productId === 'flashit') {

@@ -1,5 +1,6 @@
 import { createRouteAccessEvaluator, type ProductRouteCapability } from '@ghatana/product-shell';
 import type { PhrRole } from './auth/PhrAccessContext';
+import { t } from './i18n/phrI18n';
 
 export interface PhrRouteContract extends ProductRouteCapability {
   readonly personas?: readonly string[];
@@ -23,9 +24,9 @@ export function isRouteAllowedForRole(route: Pick<PhrRouteContract, 'minimumRole
 export const phrRouteContracts = [
   {
     path: '/dashboard',
-    label: 'Dashboard',
-    description: 'Overview of care, consent, and alerts.',
-    group: 'Care',
+    label: t('route.dashboard.label'),
+    description: t('route.dashboard.description'),
+    group: t('route.group.care'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
@@ -34,9 +35,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/records',
-    label: 'Records',
-    description: 'FHIR-native record browser and summaries.',
-    group: 'Care',
+    label: t('route.records.label'),
+    description: t('route.records.description'),
+    group: t('route.group.care'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
@@ -45,9 +46,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/consents',
-    label: 'Consents',
-    description: 'Consent grants and revocations.',
-    group: 'Care',
+    label: t('route.consents.label'),
+    description: t('route.consents.description'),
+    group: t('route.group.care'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
@@ -56,9 +57,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/appointments',
-    label: 'Appointments',
-    description: 'Scheduling and visit coordination.',
-    group: 'Care',
+    label: t('route.appointments.label'),
+    description: t('route.appointments.description'),
+    group: t('route.group.care'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
@@ -67,9 +68,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/labs',
-    label: 'Labs',
-    description: 'Lab result review and follow-up.',
-    group: 'Clinical',
+    label: t('route.labs.label'),
+    description: t('route.labs.description'),
+    group: t('route.group.clinical'),
     minimumRole: 'caregiver',
     personas: ['caregiver', 'clinician', 'admin'],
     tiers: ['clinical'],
@@ -78,9 +79,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/medications',
-    label: 'Medications',
-    description: 'Medication history and adherence workflows.',
-    group: 'Clinical',
+    label: t('route.medications.label'),
+    description: t('route.medications.description'),
+    group: t('route.group.clinical'),
     minimumRole: 'caregiver',
     personas: ['caregiver', 'clinician', 'admin'],
     tiers: ['clinical'],
@@ -89,9 +90,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/emergency',
-    label: 'Emergency',
-    description: 'Emergency override and review workflow.',
-    group: 'Governance',
+    label: t('route.emergency.label'),
+    description: t('route.emergency.description'),
+    group: t('route.group.governance'),
     minimumRole: 'clinician',
     personas: ['clinician', 'admin'],
     tiers: ['emergency'],
@@ -101,9 +102,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/settings',
-    label: 'Settings',
-    description: 'Profile, integrations, and environment settings.',
-    group: 'Governance',
+    label: t('route.settings.label'),
+    description: t('route.settings.description'),
+    group: t('route.group.governance'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],
@@ -112,9 +113,9 @@ export const phrRouteContracts = [
   },
   {
     path: '/records/:recordId',
-    label: 'Record detail',
-    description: 'FHIR resource rendering for a specific record.',
-    group: 'Care',
+    label: t('route.recordDetail.label'),
+    description: t('route.recordDetail.description'),
+    group: t('route.group.care'),
     minimumRole: 'patient',
     personas: ['patient', 'caregiver', 'clinician', 'admin'],
     tiers: ['core'],

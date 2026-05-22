@@ -61,4 +61,48 @@ describe("validateGeneratedArtifacts", () => {
       }),
     }));
   });
+
+  it("merges stage-level CI findings into the validation result", () => {
+    const result = validateGeneratedArtifacts({
+      targetId: "model-stage-failures",
+      generatedSources: [
+        {
+          relativePath: "src/Okay.tsx",
+          content: [
+            'import type { ReactElement } from "react";',
+            "",
+            "export function Okay(): ReactElement {",
+            "  return <button>okay</button>;",
+            "}",
+          ].join("\n"),
+        },
+      ],
+      stageResults: [
+        {
+          stageId: "lint",
+          passed: false,
+          summary: "lint stage failed with one violation",
+        },
+        {
+          stageId: "build",
+          passed: true,
+          summary: "build output emitted to dist",
+        },
+      ],
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.errorCount).toBe(1);
+    expect(result.infoCount).toBe(1);
+    expect(result.findings).toContainEqual(expect.objectContaining({
+      code: "stage/lint",
+      severity: "error",
+      category: "eslint",
+    }));
+    expect(result.findings).toContainEqual(expect.objectContaining({
+      code: "stage/build",
+      severity: "info",
+      category: "other",
+    }));
+  });
 });

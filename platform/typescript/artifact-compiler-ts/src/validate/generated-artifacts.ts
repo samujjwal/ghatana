@@ -22,7 +22,22 @@ export interface GeneratedArtifactValidationSource {
 export interface ValidateGeneratedArtifactsOptions {
   readonly targetId: string;
   readonly generatedSources: readonly GeneratedArtifactValidationSource[];
+  readonly stageResults?: readonly ValidationStageResult[];
   readonly now?: () => Date;
+}
+
+export type ValidationStageId =
+  | "typecheck"
+  | "lint"
+  | "test"
+  | "build"
+  | "preview-render";
+
+export interface ValidationStageResult {
+  readonly stageId: ValidationStageId;
+  readonly passed: boolean;
+  readonly findings?: readonly ValidationFinding[];
+  readonly summary?: string;
 }
 
 const AMBIENT_FILE = "/__ghatana_validation__/ambient.d.ts";
@@ -92,6 +107,9 @@ export function validateGeneratedArtifacts(
     .filter((diagnostic) => diagnostic.file?.fileName !== AMBIENT_FILE)
     .map(diagnosticToFinding);
 
+  const stageFindings = collectStageFindings(options.stageResults);
+  findings.push(...stageFindings);
+
   const errorCount = findings.filter((finding) => finding.severity === "error").length;
   const warningCount = findings.filter((finding) => finding.severity === "warning").length;
   const infoCount = findings.filter((finding) => finding.severity === "info").length;
@@ -106,6 +124,52 @@ export function validateGeneratedArtifacts(
     validatedAt: now().toISOString(),
     durationMs: Date.now() - startedAt,
   };
+}
+
+function collectStageFindings(stageResults: readonly ValidationStageResult[] | undefined): ValidationFinding[] {
+  if (!stageResults || stageResults.length === 0) {
+    return [];
+  }
+
+  const findings: ValidationFinding[] = [];
+  for (const stage of stageResults) {
+    if (stage.findings && stage.findings.length > 0) {
+      findings.push(...stage.findings);
+      continue;
+    }
+
+    if (stage.passed) {
+      findings.push({
+        code: `stage/${stage.stageId}`,
+        message: stage.summary ?? `${stage.stageId} stage passed.`,
+        severity: "info",
+        category: categoryForStage(stage.stageId),
+      });
+      continue;
+    }
+
+    findings.push({
+      code: `stage/${stage.stageId}`,
+      message: stage.summary ?? `${stage.stageId} stage failed.`,
+      severity: "error",
+      category: categoryForStage(stage.stageId),
+    });
+  }
+
+  return findings;
+}
+
+function categoryForStage(stageId: ValidationStageId): ValidationFinding["category"] {
+  switch (stageId) {
+    case "typecheck":
+      return "typescript";
+    case "lint":
+      return "eslint";
+    case "preview-render":
+      return "accessibility";
+    default:
+      return "other";
+  }
 }
 
 function createVirtualCompilerHost(files: ReadonlyMap<string, string>): ts.CompilerHost {

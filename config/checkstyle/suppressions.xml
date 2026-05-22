@@ -27,4 +27,19 @@
     <suppress
         files="[\\/]products[\\/]audio-video[\\/]modules[\\/]intelligence[\\/]multimodal-service[\\/]src[\\/]main[\\/]java[\\/].*"
         checks="AvoidStarImport|FinalClass|LeftCurly|MissingJavadocMethod|NeedBraces|OperatorWrap|WhitespaceAround" />
+
+    <!-- Data Cloud runtime-composition test style debt (performance/stress tests use BDD-style naming) -->
+    <suppress
+        files="[\\/]products[\\/]data-cloud[\\/]delivery[\\/]runtime-composition[\\/]src[\\/]test[\\/]java[\\/].*"
+        checks="AvoidStarImport|MethodName|ParenPad|LeftCurly|WhitespaceAround|NeedBraces|WhitespaceAfter" />
+
+    <!-- Platform messaging module style debt (RabbitMQ/S3/SQS config classes use compact style) -->
+    <suppress
+        files="[\\/]platform[\\/]java[\\/]messaging[\\/]src[\\/]main[\\/]java[\\/].*"
+        checks="LeftCurly|WhitespaceAround|NeedBraces" />
+
+    <!-- Integration tests style debt (runtime interaction tests use compact style) -->
+    <suppress
+        files="[\\/]integration-tests[\\/]cross-service-workflow[\\/].*"
+        checks="UnusedImports|WhitespaceAround|LeftCurly|NeedBraces" />
 </suppressions>

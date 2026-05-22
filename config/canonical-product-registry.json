@@ -305,7 +305,9 @@
           "path": "products/finance/platform-sdk"
         }
       ],
-      "pnpmPackages": [],
+      "pnpmPackages": [
+        "products/typescript-fixture"
+      ],
       "ci": {
         "enabled": true,
         "gates": [
@@ -1825,23 +1827,24 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "demo-fixture-not-workspace-wired",
-          "rust-adapter-validation-pending",
-          "planned-shape-only"
+          "polyglot-fixture-execution-proof",
+          "opening-pilot-policy-exemption",
+          "rust-adapter-native-tests-pass"
         ],
         "requiredGates": [
-          "security",
-          "privacy",
-          "i18n",
-          "a11y"
+          "cargo-adapter-conformance",
+          "rust-native-fixture-tests",
+          "polyglot-fixture-proof"
         ],
         "nextRequiredWork": [
-          "Complete CargoRustAdapter conformance evidence before enabling lifecycle execution",
-          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+          "Keep rust-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+          "Run pnpm check:polyglot-product-fixture before changing CargoRustAdapter behavior"
         ],
         "evidenceRefs": [
-          "products/rust-fixture/README.md",
-          "products/rust-fixture/kernel-product.yaml"
+          "products/rust-fixture/kernel-product.yaml",
+          "products/rust-fixture/Cargo.toml",
+          "products/rust-fixture/tests/integration_test.rs",
+          "scripts/check-polyglot-fixture-proof.mjs"
         ]
       },
       "lifecycleConfigPath": "products/rust-fixture/kernel-product.yaml",
@@ -1977,23 +1980,24 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "demo-fixture-not-workspace-wired",
-          "python-adapter-validation-pending",
-          "planned-shape-only"
+          "polyglot-fixture-execution-proof",
+          "opening-pilot-policy-exemption",
+          "python-adapter-native-tests-pass"
         ],
         "requiredGates": [
-          "security",
-          "privacy",
-          "i18n",
-          "a11y"
+          "python-adapter-conformance",
+          "python-native-fixture-tests",
+          "polyglot-fixture-proof"
         ],
         "nextRequiredWork": [
-          "Complete PythonPyprojectAdapter conformance evidence before enabling lifecycle execution",
-          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+          "Keep python-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+          "Run pnpm check:polyglot-product-fixture before changing PythonPyprojectAdapter behavior"
         ],
         "evidenceRefs": [
-          "products/python-fixture/README.md",
-          "products/python-fixture/kernel-product.yaml"
+          "products/python-fixture/kernel-product.yaml",
+          "products/python-fixture/pyproject.toml",
+          "products/python-fixture/tests/test_integration.py",
+          "scripts/check-polyglot-fixture-proof.mjs"
         ]
       },
       "lifecycleConfigPath": "products/python-fixture/kernel-product.yaml",
@@ -2129,23 +2133,24 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "demo-fixture-not-workspace-wired",
-          "typescript-adapter-validation-pending",
-          "planned-shape-only"
+          "polyglot-fixture-execution-proof",
+          "opening-pilot-policy-exemption",
+          "typescript-node-adapter-native-tests-pass"
         ],
         "requiredGates": [
-          "security",
-          "privacy",
-          "i18n",
-          "a11y"
+          "pnpm-node-adapter-conformance",
+          "typescript-native-fixture-tests",
+          "polyglot-fixture-proof"
         ],
         "nextRequiredWork": [
-          "Complete PnpmNodeApiAdapter conformance evidence before enabling lifecycle execution",
-          "Keep fixture lifecycle in planned shape-only mode until explicitly promoted"
+          "Keep typescript-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+          "Run pnpm check:polyglot-product-fixture before changing PnpmNodeApiAdapter behavior"
         ],
         "evidenceRefs": [
-          "products/typescript-fixture/README.md",
-          "products/typescript-fixture/kernel-product.yaml"
+          "products/typescript-fixture/kernel-product.yaml",
+          "products/typescript-fixture/package.json",
+          "products/typescript-fixture/tests/integration.test.ts",
+          "scripts/check-polyglot-fixture-proof.mjs"
         ]
       },
       "lifecycleConfigPath": "products/typescript-fixture/kernel-product.yaml",

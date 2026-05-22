@@ -76,7 +76,18 @@ function globToRegExp(pattern) {
 }
 
 function listPackageJsonDirectories(root, current = root, results = []) {
-  for (const entry of readdirSync(current, { withFileTypes: true })) {
+  if (!existsSync(current)) {
+    return results;
+  }
+
+  let entries;
+  try {
+    entries = readdirSync(current, { withFileTypes: true });
+  } catch {
+    return results;
+  }
+
+  for (const entry of entries) {
     if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist' || entry.name === 'build') {
       continue;
     }

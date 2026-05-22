@@ -60,6 +60,8 @@ describe("buildRoundTripDiffReport", () => {
       'validation',
     ]);
     expect(report.paritySections?.find((section) => section.kind === 'component')?.status).toBe('passed');
+    expect(report.paritySections?.find((section) => section.kind === 'import-graph')?.findings[0])
+      .toContain('Import graph parity summary:');
     expect(report.isLossless).toBe(false);
   });
 

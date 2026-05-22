@@ -90,6 +90,8 @@ export {
 export {
   validateGeneratedArtifacts,
   type GeneratedArtifactValidationSource,
+  type ValidationStageId,
+  type ValidationStageResult,
   type ValidateGeneratedArtifactsOptions,
 } from "./validate/generated-artifacts.js";
 

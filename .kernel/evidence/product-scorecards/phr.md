@@ -13,3 +13,6 @@
 - Duplication impact: no generic lifecycle runner added to product code.
 - Security/privacy/o11y readiness: healthcare gates active, evidence-backed, and fail closed when evidence refs are missing.
 - Next required work: restart/repair Docker Desktop Buildx builders, then rerun `pnpm package:phr`, `pnpm deploy:local:phr`, and `pnpm verify:local:phr`.
+- Blocker severity: P0 for rollback enablement and package/deploy/verify refresh until healthcare post-rollback gates are promoted.
+- Owner module: products/phr backend API, healthcare domain gates, web i18n/a11y, and lifecycle evidence.
+- Ticket suggestion: PHR-PROD-001 complete post-rollback healthcare verification, then promote rollbackReadiness from target-partial with evidence.

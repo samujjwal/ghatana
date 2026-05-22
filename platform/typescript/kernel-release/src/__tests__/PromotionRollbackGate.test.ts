@@ -308,10 +308,18 @@ describe("§2.6 — release manifest validation", () => {
       schemaVersion: "1.0.0",
       productId: "digital-marketing",
       version: "1.0.0",
+      releaseProfileId: "standard-web-api-release",
       changes: [],
       securityChecks: { sast: true, dependencyScan: true, containerScan: true },
       privacyChecks: { dataClassification: true, piiAudit: true },
       licenseChecks: { approvedLicenses: true, compliance: true },
+      sbomChecks: {
+        required: true,
+        generated: true,
+        formats: ["cyclonedx-json"],
+        artifactTypes: ["jvm-service", "container-image"],
+        attestationRequired: true,
+      },
       conformanceChecks: {
         manifest: true,
         observability: true,
@@ -364,6 +372,23 @@ describe("§2.6 — release manifest validation", () => {
     const result = releaseManifestManager.validateManifest(manifest);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain("Dependency scan is required");
+  });
+
+  it("fails validation when required SBOM was not generated", () => {
+    const manifest = releaseManifestManager.createManifest(
+      makeReleaseManifest({
+        sbomChecks: {
+          required: true,
+          generated: false,
+          formats: ["cyclonedx-json"],
+          artifactTypes: ["jvm-service"],
+          attestationRequired: true,
+        },
+      }),
+    );
+    const result = releaseManifestManager.validateManifest(manifest);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("SBOM generation is required");
   });
 
   it("fails validation when e2e checks did not pass", () => {

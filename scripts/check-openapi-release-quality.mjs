@@ -18,7 +18,7 @@ if (!existsSync(waiverPath)) {
   process.exit(1);
 }
 
-const source = readFileSync(specPath, 'utf8');
+const source = readFileSync(specPath, 'utf8').replace(/\r\n/g, '\n');
 const waiver = JSON.parse(readFileSync(waiverPath, 'utf8'));
 const allowed = new Set((waiver.allowedGenericSchemas ?? []).map((entry) => String(entry)));
 

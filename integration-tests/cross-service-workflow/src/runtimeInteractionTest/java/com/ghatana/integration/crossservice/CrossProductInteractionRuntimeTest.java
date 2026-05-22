@@ -64,7 +64,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            validPolicyContext("campaign-activation"),
+                            policyContext("campaign-activation"),
                             new ConsentStatusInteractionHandler.ConsentStatusRequest("subject-1", "campaign-activation"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -95,7 +95,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            validPolicyContext("campaign-activation"),
+                            policyContext("campaign-activation"),
                             new ConsentStatusInteractionHandler.ConsentStatusRequest("subject-1", "campaign-activation"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -126,7 +126,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            validPolicyContext("campaign-activation"),
+                            policyContext("campaign-activation"),
                             new ConsentStatusInteractionHandler.ConsentStatusRequest("subject-1", "campaign-activation"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -191,7 +191,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            validPolicyContext("campaign-activation"),
+                            policyContext("campaign-activation"),
                             new HangingHandler.HangingRequest("subject-1"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -223,7 +223,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                                validPolicyContext("care-plan-notification"),
+                            policyContext("care-plan-notification"),
                             new NotificationPreferenceInteractionHandler.NotificationPreferenceRequest(
                                     "subject-1",
                                     "care-plan-notification"));
@@ -257,16 +257,16 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                 "run-1",
                 "corr-1",
                 Instant.parse("2026-05-21T00:00:00Z"),
-                validPolicyContext(purpose),
+                policyContext(purpose),
                 new ConsentStatusInteractionHandler.ConsentStatusRequest("subject-1", purpose));
     }
 
-    private static Map<String, String> validPolicyContext(String purpose) {
+    private static Map<String, String> policyContext(String purpose) {
         return Map.of(
-                "actor", "kernel-runtime-test",
+                "purpose", purpose,
+                "actor", "runtime-test-runner",
                 "tenantId", "tenant-1",
                 "workspaceId", "workspace-1",
-                "purpose", purpose,
                 "authorized", "true",
                 "consentGranted", "true");
     }

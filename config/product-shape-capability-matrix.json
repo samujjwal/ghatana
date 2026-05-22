@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-22T15:22:38.967Z",
+  "generated": "2026-05-22T17:55:31.354Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -601,7 +601,10 @@
         "backend-api:python-pyproject",
         "gate:a11y",
         "gate:i18n",
+        "gate:polyglot-fixture-proof",
         "gate:privacy",
+        "gate:python-adapter-conformance",
+        "gate:python-native-fixture-tests",
         "gate:security",
         "sdk:python-pyproject"
       ],
@@ -631,8 +634,10 @@
         "verification-proof-evidence"
       ],
       "currentEvidenceRefs": [
-        "products/python-fixture/README.md",
-        "products/python-fixture/kernel-product.yaml"
+        "products/python-fixture/kernel-product.yaml",
+        "products/python-fixture/pyproject.toml",
+        "products/python-fixture/tests/test_integration.py",
+        "scripts/check-polyglot-fixture-proof.mjs"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
@@ -647,8 +652,8 @@
         "missing-manifest:lifecycle-result"
       ],
       "nextActions": [
-        "Complete PythonPyprojectAdapter conformance evidence before enabling lifecycle execution",
-        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep python-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+        "Run pnpm check:polyglot-product-fixture before changing PythonPyprojectAdapter behavior",
         "Keep shape-only until required adapters and manifests are executable"
       ],
       "validationCommands": [
@@ -667,8 +672,11 @@
       "requiredKernelCapabilities": [
         "backend-api:cargo-rust",
         "gate:a11y",
+        "gate:cargo-adapter-conformance",
         "gate:i18n",
+        "gate:polyglot-fixture-proof",
         "gate:privacy",
+        "gate:rust-native-fixture-tests",
         "gate:security",
         "sdk:cargo-rust"
       ],
@@ -698,8 +706,10 @@
         "verification-proof-evidence"
       ],
       "currentEvidenceRefs": [
-        "products/rust-fixture/README.md",
-        "products/rust-fixture/kernel-product.yaml"
+        "products/rust-fixture/kernel-product.yaml",
+        "products/rust-fixture/Cargo.toml",
+        "products/rust-fixture/tests/integration_test.rs",
+        "scripts/check-polyglot-fixture-proof.mjs"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
@@ -714,8 +724,8 @@
         "missing-manifest:lifecycle-result"
       ],
       "nextActions": [
-        "Complete CargoRustAdapter conformance evidence before enabling lifecycle execution",
-        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep rust-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+        "Run pnpm check:polyglot-product-fixture before changing CargoRustAdapter behavior",
         "Keep shape-only until required adapters and manifests are executable"
       ],
       "validationCommands": [
@@ -909,8 +919,11 @@
         "backend-api:pnpm-node-api",
         "gate:a11y",
         "gate:i18n",
+        "gate:pnpm-node-adapter-conformance",
+        "gate:polyglot-fixture-proof",
         "gate:privacy",
         "gate:security",
+        "gate:typescript-native-fixture-tests",
         "sdk:pnpm-node-api"
       ],
       "requiredToolchainAdapters": [
@@ -939,8 +952,10 @@
         "verification-proof-evidence"
       ],
       "currentEvidenceRefs": [
-        "products/typescript-fixture/README.md",
-        "products/typescript-fixture/kernel-product.yaml"
+        "products/typescript-fixture/kernel-product.yaml",
+        "products/typescript-fixture/package.json",
+        "products/typescript-fixture/tests/integration.test.ts",
+        "scripts/check-polyglot-fixture-proof.mjs"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",
@@ -955,8 +970,8 @@
         "missing-manifest:lifecycle-result"
       ],
       "nextActions": [
-        "Complete PnpmNodeApiAdapter conformance evidence before enabling lifecycle execution",
-        "Keep fixture lifecycle in planned shape-only mode until explicitly promoted",
+        "Keep typescript-fixture planned until opening lifecycle pilot policy includes fixture execution products",
+        "Run pnpm check:polyglot-product-fixture before changing PnpmNodeApiAdapter behavior",
         "Keep shape-only until required adapters and manifests are executable"
       ],
       "validationCommands": [

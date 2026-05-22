@@ -9,8 +9,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function fileExists(relativePath) {
   return fs.existsSync(path.join(repoRoot, relativePath));
@@ -122,7 +123,7 @@ const markdownLines = [
   '',
   ...checks.map((item) => {
     const mark = item.passed ? 'PASS' : 'FAIL';
-    return `- [${mark}] ${item.name} (weight ${item.weight}) — ${item.evidence}`;
+    return `- [${mark}] ${item.name} (weight ${item.weight}) - ${item.evidence}`;
   }),
   '',
 ];

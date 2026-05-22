@@ -9,6 +9,7 @@
  * @doc.layer frontend
  */
 import React, { useState, useEffect } from 'react';
+import { formatPhrDateTime, t } from '../i18n/phrI18n';
 
 interface AuditEvent {
   id: string;
@@ -69,53 +70,53 @@ export function AuditPage(): React.ReactElement {
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Audit Trail</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('audit.title')}</h1>
       
       <div className="mb-6 flex gap-4">
         <button
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          All Events
+          {t('audit.filter.all')}
         </button>
         <button
           onClick={() => setFilter('access')}
           className={`px-4 py-2 rounded ${filter === 'access' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          Access Events
+          {t('audit.filter.access')}
         </button>
         <button
           onClick={() => setFilter('consent')}
           className={`px-4 py-2 rounded ${filter === 'consent' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
         >
-          Consent Events
+          {t('audit.filter.consent')}
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading audit events...</div>
+        <div className="text-center py-8">{t('audit.loading')}</div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Timestamp
+                  {t('audit.timestamp')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Event Type
+                  {t('audit.eventType')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Principal
+                  {t('audit.principal')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Resource
+                  {t('audit.resource')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('audit.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Details
+                  {t('audit.details')}
                 </th>
               </tr>
             </thead>
@@ -123,7 +124,7 @@ export function AuditPage(): React.ReactElement {
               {filteredEvents.map((event) => (
                 <tr key={event.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(event.timestamp).toLocaleString()}
+                    {formatPhrDateTime(event.timestamp)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {event.eventType}
@@ -143,7 +144,7 @@ export function AuditPage(): React.ReactElement {
                           : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {event.success ? 'Success' : 'Failed'}
+                      {event.success ? t('audit.success') : t('audit.failed')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -160,7 +161,7 @@ export function AuditPage(): React.ReactElement {
           
           {filteredEvents.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No audit events found
+              {t('audit.empty')}
             </div>
           )}
         </div>

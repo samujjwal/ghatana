@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0.0",
+  "profiles": {
+    "standard-web-api-release": {
+      "status": "stable",
+      "description": "Product-neutral release profile for web plus API products.",
+      "lifecycleProfiles": ["standard-web-api-product"],
+      "requiredEvidence": [
+        "artifactManifest",
+        "deploymentManifest",
+        "releaseManifest",
+        "verifyHealthReport"
+      ],
+      "requiredChecks": {
+        "security": ["sast", "dependencyScan", "containerScan"],
+        "privacy": ["dataClassification", "piiAudit"],
+        "license": ["approvedLicenses", "compliance"],
+        "conformance": ["manifest", "observability", "security"],
+        "runtime": ["e2e", "performance", "health"]
+      },
+      "sbomPolicy": {
+        "required": true,
+        "formats": ["cyclonedx-json"],
+        "artifactTypes": ["jvm-service", "static-web-bundle", "container-image"],
+        "attestationRequired": true
+      },
+      "rollbackPolicy": {
+        "strategy": "previous-artifact",
+        "previousArtifactSelectionRequired": true,
+        "postRollbackVerificationRequired": true
+      }
+    },
+    "backend-only-release": {
+      "status": "stable",
+      "description": "Product-neutral release profile for backend service products.",
+      "lifecycleProfiles": ["backend-only-java-service", "shared-service-product"],
+      "requiredEvidence": [
+        "artifactManifest",
+        "deploymentManifest",
+        "releaseManifest",
+        "verifyHealthReport"
+      ],
+      "requiredChecks": {
+        "security": ["sast", "dependencyScan", "containerScan"],
+        "privacy": ["dataClassification"],
+        "license": ["approvedLicenses", "compliance"],
+        "conformance": ["manifest", "observability", "security"],
+        "runtime": ["e2e", "performance", "health"]
+      },
+      "sbomPolicy": {
+        "required": true,
+        "formats": ["cyclonedx-json"],
+        "artifactTypes": ["jvm-service", "container-image"],
+        "attestationRequired": true
+      },
+      "rollbackPolicy": {
+        "strategy": "previous-artifact",
+        "previousArtifactSelectionRequired": true,
+        "postRollbackVerificationRequired": true
+      }
+    },
+    "polyglot-service-release": {
+      "status": "stable",
+      "description": "Product-neutral release profile for Rust, Python, and TypeScript fixture services.",
+      "lifecycleProfiles": ["standard-polyglot-product", "polyglot-service-product"],
+      "requiredEvidence": [
+        "artifactManifest",
+        "releaseManifest",
+        "nativeFixtureTestReport"
+      ],
+      "requiredChecks": {
+        "security": ["dependencyScan"],
+        "privacy": ["dataClassification"],
+        "license": ["approvedLicenses", "compliance"],
+        "conformance": ["manifest"],
+        "runtime": ["nativeTests"]
+      },
+      "sbomPolicy": {
+        "required": true,
+        "formats": ["cyclonedx-json"],
+        "artifactTypes": ["rust-binary", "rust-library", "python-package", "python-service", "node-bundle"],
+        "attestationRequired": false
+      },
+      "rollbackPolicy": {
+        "strategy": "previous-artifact",
+        "previousArtifactSelectionRequired": true,
+        "postRollbackVerificationRequired": true
+      }
+    }
+  }
+}

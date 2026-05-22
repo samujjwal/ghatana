@@ -1,33 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { fetchDashboardData } from '../api/phrApi';
+import { formatPhrDate, t } from '../i18n/phrI18n';
 import type { LabResultSummary } from '../types';
 
 export function LabsPage(): React.ReactElement {
   const [labs, setLabs] = useState<LabResultSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData()
-      .then(data => setLabs(data.labs))
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load lab results'))
+      .then((data) => setLabs(data.labs))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : t('error.labsLoad')))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="loading">Loading lab results...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (loading) return <div className="loading">{t('labs.loading')}</div>;
+  if (error) return <div className="error">{t('dashboard.errorPrefix')}: {error}</div>;
 
   return (
     <Card>
-      <CardHeader title="Lab results" subheader="HL7-ingested results rendered in a patient-readable view" />
+      <CardHeader title={t('labs.title')} subheader={t('labs.subheader')} />
       <CardContent>
         <div className="stack gap-md">
           {labs.map((lab) => (
             <div key={lab.id} className="data-card">
               <div>
                 <strong>{lab.name}</strong>
-                <p className="muted">Collected {lab.collectedAt}</p>
+                <p className="muted">{t('labs.collected', { date: formatPhrDate(lab.collectedAt) })}</p>
               </div>
               <div className="row gap-sm align-center">
                 <span className={`pill ${lab.status === 'attention' ? 'warning' : ''}`}>{lab.status}</span>

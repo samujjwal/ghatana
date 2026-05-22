@@ -449,9 +449,18 @@ function buildImportGraphFindings(
   reimportedModel: LogicalArtifactModel | undefined,
 ): readonly string[] {
   if (reimportedModel === undefined) return [];
-  return Object.keys(originalModel.nodes)
-    .filter((nodeId) => !isImportGraphEquivalent(originalModel, reimportedModel, nodeId))
-    .map((nodeId) => `Import graph differs for node "${nodeId}".`);
+  const nodeIds = Object.keys(originalModel.nodes);
+  const mismatches = nodeIds
+    .filter((nodeId) => !isImportGraphEquivalent(originalModel, reimportedModel, nodeId));
+
+  const originalEdgeCount = originalModel.edges.length;
+  const reimportedEdgeCount = reimportedModel.edges.length;
+  const findings = [
+    `Import graph parity summary: checked ${nodeIds.length} node(s), ${mismatches.length} mismatch(es), original edges ${originalEdgeCount}, re-imported edges ${reimportedEdgeCount}.`,
+  ];
+
+  findings.push(...mismatches.map((nodeId) => `Import graph differs for node "${nodeId}".`));
+  return findings;
 }
 
 function buildComponentParityFindings(

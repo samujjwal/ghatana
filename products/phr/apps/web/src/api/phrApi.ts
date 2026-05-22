@@ -8,6 +8,7 @@ import type {
   PatientProfile,
   PatientRecordSummary,
 } from '../types';
+import { t } from '../i18n/phrI18n';
 
 // ─── Config ────────────────────────────────────────────────────────────────
 
@@ -333,7 +334,7 @@ export async function exportPatientBundle(): Promise<string> {
   if (USE_MOCK) {
     return JSON.stringify({
       status: 'queued',
-      message: 'Patient summary prepared for Nepal HIE submission',
+      message: t('settings.hie.prepared'),
     });
   }
 
