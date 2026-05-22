@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "products": {
+    "dcmaar": {
+      "workflows": {
+        "default": {
+          "latencyMs": { "p50": 250, "p95": 900, "p99": 1500 },
+          "throughputRps": { "min": 20 },
+          "memoryMb": { "max": 2048 },
+          "queueDepth": { "max": 500 },
+          "backgroundJobRuntimeMs": { "max": 300000 }
+        }
+      }
+    },
+    "digital-marketing": {
+      "workflows": {
+        "campaign-lifecycle": {
+          "latencyMs": { "p50": 200, "p95": 800, "p99": 1400 },
+          "throughputRps": { "min": 40 },
+          "memoryMb": { "max": 2048 },
+          "queueDepth": { "max": 600 },
+          "backgroundJobRuntimeMs": { "max": 240000 }
+        }
+      }
+    },
+    "finance": {
+      "workflows": {
+        "transaction-processing": {
+          "latencyMs": { "p50": 180, "p95": 600, "p99": 1100 },
+          "throughputRps": { "min": 60 },
+          "memoryMb": { "max": 3072 },
+          "queueDepth": { "max": 400 },
+          "backgroundJobRuntimeMs": { "max": 180000 }
+        }
+      }
+    },
+    "flashit": {
+      "workflows": {
+        "message-flow": {
+          "latencyMs": { "p50": 220, "p95": 850, "p99": 1450 },
+          "throughputRps": { "min": 50 },
+          "memoryMb": { "max": 2048 },
+          "queueDepth": { "max": 700 },
+          "backgroundJobRuntimeMs": { "max": 240000 }
+        }
+      }
+    },
+    "phr": {
+      "workflows": {
+        "patient-record": {
+          "latencyMs": { "p50": 200, "p95": 700, "p99": 1200 },
+          "throughputRps": { "min": 30 },
+          "memoryMb": { "max": 2048 },
+          "queueDepth": { "max": 300 },
+          "backgroundJobRuntimeMs": { "max": 180000 }
+        }
+      }
+    },
+    "tutorputor": {
+      "workflows": {
+        "learning-session": {
+          "latencyMs": { "p50": 250, "p95": 900, "p99": 1500 },
+          "throughputRps": { "min": 25 },
+          "memoryMb": { "max": 2048 },
+          "queueDepth": { "max": 500 },
+          "backgroundJobRuntimeMs": { "max": 300000 }
+        }
+      }
+    }
+  }
+}

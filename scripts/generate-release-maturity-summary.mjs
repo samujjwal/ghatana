@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
 const releaseEnv = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceRoot = path.join(repoRoot, 'release-evidence');
+
+function gitValue(command) {
+  try {
+    return execSync(command, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return null;
+  }
+}
 
 function readJsonIfExists(relativePath) {
   const absolutePath = path.join(repoRoot, relativePath);
@@ -21,9 +30,37 @@ const runtimeProfile = readJsonIfExists('.kernel/evidence/data-cloud-release-run
 const atomicPosture = readJsonIfExists('.kernel/evidence/atomic-workflow-posture.json');
 const implementationPlanProgress = readJsonIfExists('.kernel/evidence/kernel-implementation-plan-progress.json');
 const wave2Scorecard = readJsonIfExists('.kernel/evidence/wave2-product-quality-scorecard.json');
+const productReleaseReadiness = readJsonIfExists('.kernel/evidence/product-release-readiness.json');
+
+function readPerProductReleaseScorecards() {
+  const evidenceDir = path.join(repoRoot, '.kernel/evidence');
+  if (!existsSync(evidenceDir)) {
+    return [];
+  }
+
+  return readdirSync(evidenceDir)
+    .filter((entry) => /^product-release-readiness\.[^.]+\.json$/i.test(entry))
+    .map((entry) => readJsonIfExists(`.kernel/evidence/${entry}`))
+    .filter(Boolean);
+}
+
+const perProductReleaseScorecards = readPerProductReleaseScorecards();
+const unresolvedP0P1Blockers = perProductReleaseScorecards
+  .flatMap((scorecard) => scorecard.blockingGaps ?? [])
+  .filter((gap) => gap.severity === 'P0' || gap.severity === 'P1');
+const implementationAverageScore = implementationPlanProgress?.summary?.averageMaturityScore ?? null;
+const criticalDimensionsBelowThreshold = implementationPlanProgress?.summary?.criticalDimensionsBelowThresholdCount ?? null;
+const thresholdPolicyPassed =
+  implementationAverageScore !== null
+  && implementationAverageScore >= 4.0
+  && criticalDimensionsBelowThreshold === 0
+  && unresolvedP0P1Blockers.length === 0;
 
 const summary = {
   generatedAt: new Date().toISOString(),
+  sourceCommit: process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD'),
+  sourceBranch: process.env.GITHUB_REF_NAME ?? gitValue('git branch --show-current'),
+  productScope: productReleaseReadiness?.affectedProducts ?? perProductReleaseScorecards.map((scorecard) => scorecard.productId),
   releaseEnvironment: releaseEnv,
   releaseGate: {
     smoke: {
@@ -70,6 +107,14 @@ const summary = {
         )
         : null,
     },
+    releaseScoreThresholdPolicy: {
+      available: Boolean(implementationPlanProgress),
+      pass: thresholdPolicyPassed,
+      implementationAverageScore,
+      criticalDimensionsBelowThreshold,
+      unresolvedP0P1Blockers: unresolvedP0P1Blockers.length,
+      affectedProductCount: productReleaseReadiness?.affectedProducts?.length ?? perProductReleaseScorecards.length,
+    },
   },
 };
 
@@ -97,6 +142,7 @@ const markdownLines = [
   `| Atomic workflow posture | ${summary.releaseGate.atomicWorkflow.available} | ${summary.releaseGate.atomicWorkflow.pass} | critical routes=${summary.releaseGate.atomicWorkflow.criticalMutatingRouteCount} |`,
   `| Implementation plan coverage | ${summary.releaseGate.implementationPlanCoverage.available} | ${summary.releaseGate.implementationPlanCoverage.pass} | covered=${summary.releaseGate.implementationPlanCoverage.coveredDimensions ?? 'n/a'}, uncovered=${summary.releaseGate.implementationPlanCoverage.uncoveredDimensions ?? 'n/a'}, wave1=${summary.releaseGate.implementationPlanCoverage.wave1Complete ?? 'n/a'} |`,
   `| Wave 2 product quality scorecard | ${summary.releaseGate.wave2ProductQuality.available} | n/a | products=${summary.releaseGate.wave2ProductQuality.productCount}, avgScore=${summary.releaseGate.wave2ProductQuality.avgScoreRatio ?? 'n/a'} |`,
+  `| Release score threshold policy | ${summary.releaseGate.releaseScoreThresholdPolicy.available} | ${summary.releaseGate.releaseScoreThresholdPolicy.pass} | avg=${summary.releaseGate.releaseScoreThresholdPolicy.implementationAverageScore ?? 'n/a'}, critical<4=${summary.releaseGate.releaseScoreThresholdPolicy.criticalDimensionsBelowThreshold ?? 'n/a'}, blockers=${summary.releaseGate.releaseScoreThresholdPolicy.unresolvedP0P1Blockers} |`,
   '',
 ];
 

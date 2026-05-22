@@ -35,15 +35,21 @@ const globalImpactPrefixes = [
   'gradle/',
   'scripts/',
   'config/generated/',
+  'platform-kernel/',
+  'platform-plugins/',
+  'shared-services/',
 ];
 
 const platformJavaPrefixes = [
   'platform/java/',
   'platform/contracts/',
+  'platform-kernel/',
 ];
 
 const platformTypescriptPrefixes = [
   'platform/typescript/',
+  'platform-kernel/',
+  'platform-plugins/',
 ];
 
 const lifecyclePackagePrefixes = [

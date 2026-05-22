@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-05-22T22:49:34.519Z",
+  "status": "passed",
+  "details": [
+    {
+      "id": "data-cloud",
+      "baselinePath": "release-evidence/openapi-baseline/data-cloud.yaml",
+      "currentPath": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "removedCount": 0,
+      "waivedRemoved": [],
+      "unwaivedRemoved": []
+    },
+    {
+      "id": "aep",
+      "baselinePath": "release-evidence/openapi-baseline/aep.yaml",
+      "currentPath": "products/data-cloud/contracts/openapi/aep.yaml",
+      "removedCount": 0,
+      "waivedRemoved": [],
+      "unwaivedRemoved": []
+    },
+    {
+      "id": "digital-marketing",
+      "baselinePath": "release-evidence/openapi-baseline/dmos-openapi.json",
+      "currentPath": "products/digital-marketing/dm-api/src/main/resources/openapi.json",
+      "removedCount": 0,
+      "waivedRemoved": [],
+      "unwaivedRemoved": []
+    },
+    {
+      "id": "flashit",
+      "baselinePath": "release-evidence/openapi-baseline/flashit-openapi.yaml",
+      "currentPath": "products/flashit/backend/gateway/openapi.yaml",
+      "removedCount": 0,
+      "waivedRemoved": [],
+      "unwaivedRemoved": []
+    }
+  ],
+  "violations": []
+}

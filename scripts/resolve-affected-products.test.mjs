@@ -47,7 +47,7 @@ test('resolves shared UI platform changes to pnpm-backed active entries', () => 
   assert(products.includes('flashit'));
   assert(products.includes('data-cloud'));
   assert(products.includes('yappc'));
-  assert(!products.includes('finance'));
+  assert(products.includes('finance'));
 });
 
 test('resolves registry changes to every active non-demo CI entry', () => {
@@ -60,9 +60,30 @@ test('resolves registry changes to every active non-demo CI entry', () => {
 });
 
 test('supports business-product-only CI scopes', () => {
+  const expected = Object.entries(registry)
+    .filter(([, product]) => product.kind === 'business-product')
+    .filter(([, product]) => product.metadata?.status === 'active')
+    .filter(([, product]) => product.ci?.enabled === true)
+    .map(([productId]) => productId)
+    .sort();
+
   assert.deepEqual(
     affected(['config/canonical-product-registry.json'], { businessProductsOnly: true }),
-    ['dcmaar', 'digital-marketing', 'finance', 'flashit', 'phr', 'tutorputor'],
+    expected,
+  );
+});
+
+test('treats platform-kernel changes as shared impact for all active business products', () => {
+  const expected = Object.entries(registry)
+    .filter(([, product]) => product.kind === 'business-product')
+    .filter(([, product]) => product.metadata?.status === 'active')
+    .filter(([, product]) => product.ci?.enabled === true)
+    .map(([productId]) => productId)
+    .sort();
+
+  assert.deepEqual(
+    affected(['platform-kernel/kernel-core/build.gradle.kts'], { businessProductsOnly: true }),
+    expected,
   );
 });
 

@@ -1,47 +1,51 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { ProductUnit } from '@ghatana/kernel-product-contracts';
+import { describe, expect, it, vi } from "vitest";
+import type { ProductUnit } from "@ghatana/kernel-product-contracts";
 import {
   KernelLifecycleApiHandlers,
   type KernelLifecycleActor,
   type KernelLifecycleApiRequest,
   type KernelLifecycleAuthorizer,
-} from '../KernelLifecycleApiHandlers.js';
-import type { KernelLifecycleService } from '../../service/KernelLifecycleService.js';
+} from "../KernelLifecycleApiHandlers.js";
+import type { KernelLifecycleService } from "../../service/KernelLifecycleService.js";
 
-describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
-  it('requires authentication by default when no authorizer is configured', async () => {
+describe("KernelLifecycleApiHandlers — authorization enforcement", () => {
+  it("requires authentication by default when no authorizer is configured", async () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
       requireScopeHeaders: false,
     });
 
-    const response = await handlers.listProductUnits(request('corr-default-auth'));
+    const response = await handlers.listProductUnits(
+      request("corr-default-auth"),
+    );
 
     expect(response.statusCode).toBe(401);
     expect(response.body).toMatchObject({
-      reasonCode: 'authentication-required',
-      correlationId: 'corr-default-auth',
+      reasonCode: "authentication-required",
+      correlationId: "corr-default-auth",
     });
   });
 
-  it('returns 401 when authorizer rejects authentication', async () => {
-    const authorizer = createAuthorizer({ authenticate: vi.fn().mockResolvedValue(null) });
+  it("returns 401 when authorizer rejects authentication", async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(null),
+    });
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
       authorizer,
       requireScopeHeaders: false,
     });
 
-    const response = await handlers.listProductUnits(request('corr-1'));
+    const response = await handlers.listProductUnits(request("corr-1"));
 
     expect(response.statusCode).toBe(401);
     expect(response.body).toMatchObject({
-      reasonCode: 'authentication-required',
-      correlationId: 'corr-1',
+      reasonCode: "authentication-required",
+      correlationId: "corr-1",
     });
   });
 
-  it('returns 403 when actor is authenticated but not authorized for product unit read', async () => {
+  it("returns 403 when actor is authenticated but not authorized for product unit read", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeProductUnitRead: vi.fn().mockResolvedValue(false),
@@ -52,16 +56,16 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
       requireScopeHeaders: false,
     });
 
-    const response = await handlers.listProductUnits(request('corr-2'));
+    const response = await handlers.listProductUnits(request("corr-2"));
 
     expect(response.statusCode).toBe(403);
     expect(response.body).toMatchObject({
-      reasonCode: 'authorization-failed',
-      correlationId: 'corr-2',
+      reasonCode: "authorization-failed",
+      correlationId: "corr-2",
     });
   });
 
-  it('allows the request when actor is authenticated and authorized', async () => {
+  it("allows the request when actor is authenticated and authorized", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeProductUnitRead: vi.fn().mockResolvedValue(true),
@@ -72,12 +76,12 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
       requireScopeHeaders: false,
     });
 
-    const response = await handlers.listProductUnits(request('corr-3'));
+    const response = await handlers.listProductUnits(request("corr-3"));
 
     expect(response.statusCode).toBe(200);
   });
 
-  it('enforces authorizeLifecyclePlan for createLifecyclePlan', async () => {
+  it("enforces authorizeLifecyclePlan for createLifecyclePlan", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeLifecyclePlan: vi.fn().mockResolvedValue(false),
@@ -89,19 +93,19 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     });
 
     const response = await handlers.createLifecyclePlan({
-      params: { productUnitId: 'digital-marketing' },
-      headers: { 'X-Correlation-Id': 'corr-4' },
-      body: { phase: 'build' },
+      params: { productUnitId: "digital-marketing" },
+      headers: { "X-Correlation-Id": "corr-4" },
+      body: { phase: "build" },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeLifecyclePlan).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ productUnitId: 'digital-marketing' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ productUnitId: "digital-marketing" }),
     );
   });
 
-  it('enforces authorizeLifecycleExecute for executeLifecyclePhase', async () => {
+  it("enforces authorizeLifecycleExecute for executeLifecyclePhase", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeLifecycleExecute: vi.fn().mockResolvedValue(false),
@@ -113,16 +117,16 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     });
 
     const response = await handlers.executeLifecyclePhase({
-      params: { productUnitId: 'digital-marketing' },
-      headers: { 'X-Correlation-Id': 'corr-5' },
-      body: { phase: 'build', dryRun: true },
+      params: { productUnitId: "digital-marketing" },
+      headers: { "X-Correlation-Id": "corr-5" },
+      body: { phase: "build", dryRun: true },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalled();
   });
 
-  it('enforces authorizeManifestRead for getArtifactManifest', async () => {
+  it("enforces authorizeManifestRead for getArtifactManifest", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeManifestRead: vi.fn().mockResolvedValue(false),
@@ -134,18 +138,21 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     });
 
     const response = await handlers.getArtifactManifest({
-      params: { productUnitId: 'digital-marketing', runId: 'run-1' },
-      headers: { 'X-Correlation-Id': 'corr-6' },
+      params: { productUnitId: "digital-marketing", runId: "run-1" },
+      headers: { "X-Correlation-Id": "corr-6" },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeManifestRead).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ productUnitId: 'digital-marketing', runId: 'run-1' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({
+        productUnitId: "digital-marketing",
+        runId: "run-1",
+      }),
     );
   });
 
-  it('enforces authorizeApprovalRequest for requestApproval', async () => {
+  it("enforces authorizeApprovalRequest for requestApproval", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeApprovalRequest: vi.fn().mockResolvedValue(false),
@@ -158,27 +165,27 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
 
     const response = await handlers.requestApproval({
       params: {},
-      headers: { 'X-Correlation-Id': 'corr-7' },
+      headers: { "X-Correlation-Id": "corr-7" },
       body: {
-        approvalId: 'approval-1',
-        productUnitId: 'digital-marketing',
-        runId: 'run-1',
-        requestedBy: 'actor-1',
-        requestedAt: '2026-05-14T00:00:00.000Z',
-        reason: 'deployment gate',
-        requiredApprovers: ['actor-2'],
-        expiresAt: '2026-06-14T00:00:00.000Z',
+        approvalId: "approval-1",
+        productUnitId: "digital-marketing",
+        runId: "run-1",
+        requestedBy: "actor-1",
+        requestedAt: "2026-05-14T00:00:00.000Z",
+        reason: "deployment gate",
+        requiredApprovers: ["actor-2"],
+        expiresAt: "2026-06-14T00:00:00.000Z",
       },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeApprovalRequest).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ productUnitId: 'digital-marketing' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ productUnitId: "digital-marketing" }),
     );
   });
 
-  it('enforces authorizeApprovalDecision for submitApprovalDecision', async () => {
+  it("enforces authorizeApprovalDecision for submitApprovalDecision", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeApprovalDecision: vi.fn().mockResolvedValue(false),
@@ -190,13 +197,13 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     });
 
     const response = await handlers.submitApprovalDecision({
-      params: { approvalId: 'approval-1' },
-      headers: { 'X-Correlation-Id': 'corr-8' },
+      params: { approvalId: "approval-1" },
+      headers: { "X-Correlation-Id": "corr-8" },
       body: {
-        approvalId: 'approval-1',
-        decision: 'approved',
-        decidedBy: 'actor-1',
-        decidedAt: '2026-05-14T00:00:00.000Z',
+        approvalId: "approval-1",
+        decision: "approved",
+        decidedBy: "actor-1",
+        decidedAt: "2026-05-14T00:00:00.000Z",
       },
     });
 
@@ -204,20 +211,22 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     expect(authorizer.authorizeApprovalDecision).toHaveBeenCalled();
   });
 
-  it('returns 401 when no authorizer configured and requireAuthentication is true', async () => {
+  it("returns 401 when no authorizer configured and requireAuthentication is true", async () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
       requireScopeHeaders: false,
       requireAuthentication: true,
     });
 
-    const response = await handlers.listProductUnits(request('corr-9'));
+    const response = await handlers.listProductUnits(request("corr-9"));
 
     expect(response.statusCode).toBe(401);
-    expect(response.body).toMatchObject({ reasonCode: 'authentication-required' });
+    expect(response.body).toMatchObject({
+      reasonCode: "authentication-required",
+    });
   });
 
-  it('allows the request when no authorizer and allowUnscopedLocalDevelopment is true', async () => {
+  it("allows the request when no authorizer and allowUnscopedLocalDevelopment is true", async () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
       requireScopeHeaders: false,
@@ -225,12 +234,12 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
       allowUnscopedLocalDevelopment: true,
     });
 
-    const response = await handlers.listProductUnits(request('corr-10'));
+    const response = await handlers.listProductUnits(request("corr-10"));
 
     expect(response.statusCode).toBe(200);
   });
 
-  it('passes correlationId from context to auth context when not provided in authContext', async () => {
+  it("passes correlationId from context to auth context when not provided in authContext", async () => {
     const authorizeProductUnitRead = vi.fn().mockResolvedValue(true);
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
@@ -242,15 +251,15 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
       requireScopeHeaders: false,
     });
 
-    await handlers.listProductUnits(request('corr-ctx'));
+    await handlers.listProductUnits(request("corr-ctx"));
 
     expect(authorizeProductUnitRead).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ correlationId: 'corr-ctx' }),
+      expect.objectContaining({ correlationId: "corr-ctx" }),
     );
   });
 
-  it('uses authorizeLifecycleExecute for apply ProductUnitIntent mutations', async () => {
+  it("uses authorizeLifecycleExecute for apply ProductUnitIntent mutations", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeLifecycleExecute: vi.fn().mockResolvedValue(false),
@@ -262,9 +271,9 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     });
 
     const response = await handlers.mutateProductUnitIntent({
-      headers: { 'X-Correlation-Id': 'corr-intent-apply' },
+      headers: { "X-Correlation-Id": "corr-intent-apply" },
       body: {
-        requestedAction: 'apply',
+        requestedAction: "apply",
         intent: validIntent(),
       },
     });
@@ -273,7 +282,7 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalled();
   });
 
-  it('uses authorizeLifecyclePlan for Studio source acquisition jobs', async () => {
+  it("uses authorizeLifecyclePlan for Studio source acquisition jobs", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeLifecyclePlan: vi.fn().mockResolvedValue(false),
@@ -286,27 +295,27 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
 
     const response = await handlers.createStudioRepositorySourceAcquisition({
       headers: {
-        'X-Correlation-Id': 'corr-source-auth',
-        'X-Ghatana-Tenant-Id': 'tenant-1',
-        'X-Ghatana-Workspace-Id': 'workspace-1',
-        'X-Ghatana-Project-Id': 'project-1',
+        "X-Correlation-Id": "corr-source-auth",
+        "X-Ghatana-Tenant-Id": "tenant-1",
+        "X-Ghatana-Workspace-Id": "workspace-1",
+        "X-Ghatana-Project-Id": "project-1",
       },
       body: {
         input: {
-          kind: 'github-repository',
-          repositoryUrl: 'https://github.com/samujjwal/ghatana',
+          kind: "github-repository",
+          repositoryUrl: "https://github.com/samujjwal/ghatana",
         },
       },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeLifecyclePlan).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ correlationId: 'corr-source-auth' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ correlationId: "corr-source-auth" }),
     );
   });
 
-  it('uses authorizeProductUnitRead for Studio source acquisition job lookup', async () => {
+  it("uses authorizeProductUnitRead for Studio source acquisition job lookup", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeProductUnitRead: vi.fn().mockResolvedValue(false),
@@ -319,22 +328,50 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
 
     const response = await handlers.getStudioSourceAcquisitionJob({
       headers: {
-        'X-Correlation-Id': 'corr-source-read-auth',
-        'X-Ghatana-Tenant-Id': 'tenant-1',
-        'X-Ghatana-Workspace-Id': 'workspace-1',
-        'X-Ghatana-Project-Id': 'project-1',
+        "X-Correlation-Id": "corr-source-read-auth",
+        "X-Ghatana-Tenant-Id": "tenant-1",
+        "X-Ghatana-Workspace-Id": "workspace-1",
+        "X-Ghatana-Project-Id": "project-1",
       },
-      params: { jobId: 'studio-acquisition:github:missing' },
+      params: { jobId: "studio-acquisition:github:missing" },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeProductUnitRead).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ correlationId: 'corr-source-read-auth' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ correlationId: "corr-source-read-auth" }),
     );
   });
 
-  it('uses authorizeLifecycleExecute for Studio source acquisition worker updates', async () => {
+  it("uses authorizeProductUnitRead for Studio workflow evidence lookup", async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeProductUnitRead: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.getStudioWorkflowEvidence({
+      headers: {
+        "X-Correlation-Id": "corr-evidence-read-auth",
+        "X-Ghatana-Tenant-Id": "tenant-1",
+        "X-Ghatana-Workspace-Id": "workspace-1",
+        "X-Ghatana-Project-Id": "project-1",
+      },
+      query: { evidenceId: "ev-1" },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeProductUnitRead).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ correlationId: "corr-evidence-read-auth" }),
+    );
+  });
+
+  it("uses authorizeLifecycleExecute for Studio source acquisition worker updates", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),
       authorizeLifecycleExecute: vi.fn().mockResolvedValue(false),
@@ -347,83 +384,85 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
 
     const response = await handlers.patchStudioSourceAcquisitionJob({
       headers: {
-        'X-Correlation-Id': 'corr-source-worker-auth',
-        'X-Ghatana-Tenant-Id': 'tenant-1',
-        'X-Ghatana-Workspace-Id': 'workspace-1',
-        'X-Ghatana-Project-Id': 'project-1',
+        "X-Correlation-Id": "corr-source-worker-auth",
+        "X-Ghatana-Tenant-Id": "tenant-1",
+        "X-Ghatana-Workspace-Id": "workspace-1",
+        "X-Ghatana-Project-Id": "project-1",
       },
-      params: { jobId: 'studio-acquisition:github:missing' },
+      params: { jobId: "studio-acquisition:github:missing" },
       body: {
-        status: 'running',
-        startedAt: '2026-05-21T00:00:00.000Z',
+        status: "running",
+        startedAt: "2026-05-21T00:00:00.000Z",
       },
     });
 
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ actorId: 'actor-1' }),
-      expect.objectContaining({ correlationId: 'corr-source-worker-auth' }),
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ correlationId: "corr-source-worker-auth" }),
     );
   });
 });
 
 function validIntent(): Record<string, unknown> {
   return {
-    schemaVersion: '1.0.0',
-    intentId: 'intent:yappc:commerce-studio:corr-1',
-    intentType: 'promote-candidate',
+    schemaVersion: "1.0.0",
+    intentId: "intent:yappc:commerce-studio:corr-1",
+    intentType: "promote-candidate",
     scope: {
-      tenantId: 'tenant-1',
-      workspaceId: 'workspace-1',
-      projectId: 'project-1',
+      tenantId: "tenant-1",
+      workspaceId: "workspace-1",
+      projectId: "project-1",
     },
     producer: {
-      id: 'yappc-ui',
-      type: 'yappc',
-      correlationId: 'corr-1',
+      id: "yappc-ui",
+      type: "yappc",
+      correlationId: "corr-1",
     },
     target: {
-      registryProvider: 'kernel-product-registry',
-      sourceProvider: 'yappc-creator',
+      registryProvider: "kernel-product-registry",
+      sourceProvider: "yappc-creator",
     },
     productUnit: {
-      id: 'commerce-studio',
-      name: 'Commerce Studio',
-      kind: 'business-product',
+      id: "commerce-studio",
+      name: "Commerce Studio",
+      kind: "business-product",
       surfaces: [
         {
-          id: 'web',
-          type: 'web',
-          implementationStatus: 'implemented',
-          language: 'typescript',
-          runtime: 'browser',
-          buildSystem: 'pnpm',
+          id: "web",
+          type: "web",
+          implementationStatus: "implemented",
+          language: "typescript",
+          runtime: "browser",
+          buildSystem: "pnpm",
         },
       ],
     },
     provenance: {
-      sourceSystem: 'yappc',
-      sourceArtifactRefs: ['artifact://candidate/commerce-studio'],
-      createdBy: 'yappc-ui',
-      createdAt: '2026-05-16T00:00:00.000Z',
-      evidenceRefs: ['evidence://candidate/commerce-studio'],
+      sourceSystem: "yappc",
+      sourceArtifactRefs: ["artifact://candidate/commerce-studio"],
+      createdBy: "yappc-ui",
+      createdAt: "2026-05-16T00:00:00.000Z",
+      evidenceRefs: ["evidence://candidate/commerce-studio"],
     },
   };
 }
 
 function request(correlationId: string): KernelLifecycleApiRequest {
-  return { headers: { 'X-Correlation-Id': correlationId } };
+  return { headers: { "X-Correlation-Id": correlationId } };
 }
 
 function createActor(): KernelLifecycleActor {
   return {
-    actorId: 'actor-1',
-    roles: ['builder'],
-    capabilities: ['lifecycle:read'],
+    actorId: "actor-1",
+    roles: ["builder"],
+    capabilities: ["lifecycle:read"],
   };
 }
 
-function createAuthorizer(overrides: Partial<KernelLifecycleAuthorizer> = {}): KernelLifecycleAuthorizer {
+function createAuthorizer(
+  overrides: Partial<KernelLifecycleAuthorizer> = {},
+): KernelLifecycleAuthorizer {
   return {
     authenticate: vi.fn().mockResolvedValue(createActor()),
     authorizeProductUnitRead: vi.fn().mockResolvedValue(true),
@@ -437,13 +476,13 @@ function createAuthorizer(overrides: Partial<KernelLifecycleAuthorizer> = {}): K
 }
 
 const productUnit: ProductUnit = {
-  schemaVersion: '1.0.0',
-  id: 'digital-marketing',
-  name: 'Digital Marketing',
-  kind: 'business-product',
-  registryProviderRef: { providerId: 'registry' },
-  sourceProviderRef: { providerId: 'source' },
-  surfaces: [{ id: 'web', type: 'web', implementationStatus: 'implemented' }],
+  schemaVersion: "1.0.0",
+  id: "digital-marketing",
+  name: "Digital Marketing",
+  kind: "business-product",
+  registryProviderRef: { providerId: "registry" },
+  sourceProviderRef: { providerId: "source" },
+  surfaces: [{ id: "web", type: "web", implementationStatus: "implemented" }],
 };
 
 function createService(): KernelLifecycleService {
@@ -451,14 +490,14 @@ function createService(): KernelLifecycleService {
     listProductUnits: vi.fn().mockResolvedValue([productUnit]),
     getProductUnit: vi.fn().mockResolvedValue(productUnit),
     createLifecyclePlan: vi.fn().mockResolvedValue({
-      schemaVersion: '1.0.0',
-      runId: 'run-1',
-      correlationId: 'corr-1',
-      providerMode: 'bootstrap',
-      productId: 'digital-marketing',
-      phase: 'build',
-      phaseMode: 'sequential',
-      lifecycleProfile: 'standard-web-api-product',
+      schemaVersion: "1.0.0",
+      runId: "run-1",
+      correlationId: "corr-1",
+      providerMode: "bootstrap",
+      productId: "digital-marketing",
+      phase: "build",
+      phaseMode: "sequential",
+      lifecycleProfile: "standard-web-api-product",
       surfaces: [],
       gates: [],
       steps: [],
@@ -466,29 +505,41 @@ function createService(): KernelLifecycleService {
       requiredManifests: [],
       requiredPlugins: [],
       approvalRequirements: [],
-      outputDirectory: '/tmp/kernel/run-1',
+      outputDirectory: "/tmp/kernel/run-1",
       estimatedDurationMs: 1,
     }),
     runLifecyclePhase: vi.fn().mockResolvedValue({
-      schemaVersion: '1.0.0',
-      runId: 'run-1',
-      correlationId: 'corr-1',
-      providerMode: 'bootstrap',
-      productId: 'digital-marketing',
-      phase: 'build',
-      status: 'succeeded',
-      startedAt: '2026-05-14T00:00:00.000Z',
-      completedAt: '2026-05-14T00:00:01.000Z',
+      schemaVersion: "1.0.0",
+      runId: "run-1",
+      correlationId: "corr-1",
+      providerMode: "bootstrap",
+      productId: "digital-marketing",
+      phase: "build",
+      status: "succeeded",
+      startedAt: "2026-05-14T00:00:00.000Z",
+      completedAt: "2026-05-14T00:00:01.000Z",
       steps: [],
       gates: [],
       artifacts: [],
-      outputDirectory: '/tmp/kernel/run-1',
+      outputDirectory: "/tmp/kernel/run-1",
     }),
     listLifecycleRuns: vi.fn().mockResolvedValue([]),
-    getLifecycleRun: vi.fn().mockResolvedValue({ runId: 'run-1', correlationId: 'corr-1', productUnitId: 'digital-marketing', phase: 'build', status: 'succeeded' }),
+    getLifecycleRun: vi
+      .fn()
+      .mockResolvedValue({
+        runId: "run-1",
+        correlationId: "corr-1",
+        productUnitId: "digital-marketing",
+        phase: "build",
+        status: "succeeded",
+      }),
     getManifest: vi.fn().mockResolvedValue({ manifest: true }),
-    requestApproval: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'pending' }),
-    submitApprovalDecision: vi.fn().mockResolvedValue({ approvalId: 'approval-1', status: 'approved' }),
+    requestApproval: vi
+      .fn()
+      .mockResolvedValue({ approvalId: "approval-1", status: "pending" }),
+    submitApprovalDecision: vi
+      .fn()
+      .mockResolvedValue({ approvalId: "approval-1", status: "approved" }),
     normalizeError: vi.fn(),
   } as unknown as KernelLifecycleService;
 }

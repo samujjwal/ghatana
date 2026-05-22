@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "products": {
+    "dcmaar": {
+      "ai": { "maxMonthlyUsd": 2500, "maxTokensMonthly": 12000000 },
+      "query": { "maxMonthlyUsd": 1800 },
+      "export": { "maxMonthlyUsd": 1200 },
+      "stream": { "maxMonthlyUsd": 900 },
+      "storageGrowthGbPerMonth": { "max": 600 },
+      "backgroundComputeHours": { "max": 1400 }
+    },
+    "digital-marketing": {
+      "ai": { "maxMonthlyUsd": 4000, "maxTokensMonthly": 20000000 },
+      "query": { "maxMonthlyUsd": 2200 },
+      "export": { "maxMonthlyUsd": 1600 },
+      "stream": { "maxMonthlyUsd": 1200 },
+      "storageGrowthGbPerMonth": { "max": 800 },
+      "backgroundComputeHours": { "max": 1800 }
+    },
+    "finance": {
+      "ai": { "maxMonthlyUsd": 3200, "maxTokensMonthly": 15000000 },
+      "query": { "maxMonthlyUsd": 2800 },
+      "export": { "maxMonthlyUsd": 1500 },
+      "stream": { "maxMonthlyUsd": 1000 },
+      "storageGrowthGbPerMonth": { "max": 700 },
+      "backgroundComputeHours": { "max": 1700 }
+    },
+    "flashit": {
+      "ai": { "maxMonthlyUsd": 2800, "maxTokensMonthly": 14000000 },
+      "query": { "maxMonthlyUsd": 1900 },
+      "export": { "maxMonthlyUsd": 1300 },
+      "stream": { "maxMonthlyUsd": 1500 },
+      "storageGrowthGbPerMonth": { "max": 650 },
+      "backgroundComputeHours": { "max": 1500 }
+    },
+    "phr": {
+      "ai": { "maxMonthlyUsd": 2200, "maxTokensMonthly": 9000000 },
+      "query": { "maxMonthlyUsd": 1500 },
+      "export": { "maxMonthlyUsd": 1000 },
+      "stream": { "maxMonthlyUsd": 700 },
+      "storageGrowthGbPerMonth": { "max": 500 },
+      "backgroundComputeHours": { "max": 1200 }
+    },
+    "tutorputor": {
+      "ai": { "maxMonthlyUsd": 3500, "maxTokensMonthly": 18000000 },
+      "query": { "maxMonthlyUsd": 1700 },
+      "export": { "maxMonthlyUsd": 1100 },
+      "stream": { "maxMonthlyUsd": 900 },
+      "storageGrowthGbPerMonth": { "max": 550 },
+      "backgroundComputeHours": { "max": 1400 }
+    }
+  }
+}

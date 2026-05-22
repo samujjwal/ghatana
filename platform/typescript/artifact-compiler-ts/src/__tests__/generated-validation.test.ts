@@ -52,14 +52,16 @@ describe("validateGeneratedArtifacts", () => {
 
     expect(result.passed).toBe(false);
     expect(result.errorCount).toBeGreaterThan(0);
-    expect(result.findings).toContainEqual(expect.objectContaining({
-      code: "TS2304",
-      category: "typescript",
-      severity: "error",
-      sourceRef: expect.objectContaining({
-        file: expect.objectContaining({ relativePath: "src/Broken.tsx" }),
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "TS2304",
+        category: "typescript",
+        severity: "error",
+        sourceRef: expect.objectContaining({
+          file: expect.objectContaining({ relativePath: "src/Broken.tsx" }),
+        }),
       }),
-    }));
+    );
   });
 
   it("merges stage-level CI findings into the validation result", () => {
@@ -94,15 +96,103 @@ describe("validateGeneratedArtifacts", () => {
     expect(result.passed).toBe(false);
     expect(result.errorCount).toBe(1);
     expect(result.infoCount).toBe(1);
-    expect(result.findings).toContainEqual(expect.objectContaining({
-      code: "stage/lint",
-      severity: "error",
-      category: "eslint",
-    }));
-    expect(result.findings).toContainEqual(expect.objectContaining({
-      code: "stage/build",
-      severity: "info",
-      category: "other",
-    }));
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "stage/lint",
+        severity: "error",
+        category: "eslint",
+      }),
+    );
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "stage/build",
+        severity: "info",
+        category: "other",
+      }),
+    );
+  });
+
+  it("validates cross-file relative imports in generated workspaces", () => {
+    const result = validateGeneratedArtifacts({
+      targetId: "model-cross-file",
+      generatedSources: [
+        {
+          relativePath: "src/App.tsx",
+          content: [
+            'import type { ReactElement } from "react";',
+            'import { Button } from "./components/Button";',
+            "",
+            "export function App(): ReactElement {",
+            '  return <Button label="Save" />;',
+            "}",
+          ].join("\n"),
+        },
+        {
+          relativePath: "src/components/Button.tsx",
+          content: [
+            'import type { ReactElement } from "react";',
+            "",
+            "export interface ButtonProps { readonly label: string; }",
+            "export function Button(props: ButtonProps): ReactElement {",
+            "  return <button>{props.label}</button>;",
+            "}",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    expect(result.passed).toBe(true);
+    expect(result.errorCount).toBe(0);
+  });
+
+  it("fails generated workspaces with missing relative modules and prop mismatches", () => {
+    const result = validateGeneratedArtifacts({
+      targetId: "model-cross-file-invalid",
+      generatedSources: [
+        {
+          relativePath: "src/App.tsx",
+          content: [
+            'import type { ReactElement } from "react";',
+            'import { Button } from "./components/Button";',
+            'import { Missing } from "./Missing";',
+            "",
+            "export function App(): ReactElement {",
+            "  return <Button count={1}><Missing /></Button>;",
+            "}",
+          ].join("\n"),
+        },
+        {
+          relativePath: "src/components/Button.tsx",
+          content: [
+            'import type { ReactElement, ReactNode } from "react";',
+            "",
+            "export interface ButtonProps { readonly label: string; readonly children?: ReactNode; }",
+            "export function Button(props: ButtonProps): ReactElement {",
+            "  return <button>{props.label}{props.children}</button>;",
+            "}",
+          ].join("\n"),
+        },
+      ],
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "TS2307",
+        severity: "error",
+        sourceRef: expect.objectContaining({
+          file: expect.objectContaining({ relativePath: "src/App.tsx" }),
+        }),
+      }),
+    );
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        code: "TS2322",
+        severity: "error",
+        sourceRef: expect.objectContaining({
+          file: expect.objectContaining({ relativePath: "src/App.tsx" }),
+        }),
+      }),
+    );
   });
 });

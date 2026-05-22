@@ -8,6 +8,7 @@ const packageJsonPath = path.join(repoRoot, 'package.json');
 const dataCloudReleaseWorkflowPath = path.join(repoRoot, '.github/workflows/data-cloud-release.yml');
 const productReleaseWorkflowPath = path.join(repoRoot, '.github/workflows/product-release.yml');
 const planPath = path.join(repoRoot, 'platform-kernel/docs/01-KERNEL_IMPLEMENTATION_PLAN.md');
+const ownerMapPath = path.join(repoRoot, 'config/production-readiness-dimension-owners.json');
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'kernel-implementation-plan-progress.json');
 
@@ -19,13 +20,64 @@ function hasWorkflowToken(source, token) {
   return source.includes(token);
 }
 
+function loadOwnerMap() {
+  if (!existsSync(ownerMapPath)) {
+    return null;
+  }
+  const source = JSON.parse(readUtf8(ownerMapPath));
+  if (!Array.isArray(source.owners)) {
+    return null;
+  }
+  const map = new Map();
+  for (const entry of source.owners) {
+    if (typeof entry.dimensionId === 'number') {
+      map.set(entry.dimensionId, entry);
+    }
+  }
+  return map;
+}
+
+function hasBehavioralGateSignal(gates) {
+  return gates.some((gate) => /failure|runtime|atomic|e2e|interaction|a11y|i18n|ai-governance|performance|broker/i.test(gate));
+}
+
+function hasReleaseEvidenceSignal(gates) {
+  return gates.some((gate) => /release|workflow:data-cloud-release|affected-product-strict-release-profile|product-release-readiness/i.test(gate));
+}
+
+function hasRuntimeProductionSignal(gates) {
+  return gates.some((gate) => /runtime-profile|smoke|backup|disaster|production/i.test(gate));
+}
+
+function toMaturityDepth({ covered, gates }) {
+  const depth = {
+    artifactExists: covered,
+    staticCheck: covered,
+    behaviorTest: covered && hasBehavioralGateSignal(gates),
+    releaseEvidence: covered && hasReleaseEvidenceSignal(gates),
+    runtimeProductionEvidence: covered && hasRuntimeProductionSignal(gates),
+  };
+
+  let score = 0;
+  if (depth.artifactExists) score = 1;
+  if (depth.staticCheck) score = 2;
+  if (depth.behaviorTest) score = 3;
+  if (depth.releaseEvidence) score = 4;
+  if (depth.runtimeProductionEvidence) score = 5;
+
+  return {
+    depth,
+    score,
+  };
+}
+
 const dimensions = [
   { id: 1, name: 'Vision alignment', gates: ['check:product-shape-capability-matrix', 'check:doc-claims-evidence', 'check:current-state-claims'] },
   { id: 2, name: 'Product coherence', gates: ['check:product-registry', 'check:product-registry-drift', 'check:platform-product-boundaries', 'check:cross-product-interaction-boundaries'] },
   { id: 3, name: 'Feature completeness', gates: ['check:product-ui-contracts', 'check:data-cloud-platform-provider-readiness', 'check:yappc-platform-provider-readiness', 'check:finance-lifecycle-readiness', 'check:phr-lifecycle-readiness'] },
   { id: 4, name: 'End-to-end workflow completeness', gates: ['check:audited-e2e-workflow', 'check:studio-artifact-workflow-e2e', 'check:cross-product-interaction-flows'] },
   { id: 5, name: 'Runtime correctness', gates: ['check:data-cloud-release-runtime-profile', 'check:runtime-failure-injection'] },
-  { id: 6, name: 'Domain correctness', gates: ['check:finance-transaction-workflow-proof', 'check:phr-lifecycle-pilot'] },
+  { id: 6, name: 'Domain correctness', gates: ['check:finance-transaction-workflow-proof', 'check:phr-lifecycle-pilot', 'check:product-domain-invariants'] },
   { id: 7, name: 'Data model correctness', gates: ['check:product-artifact-contracts', 'check:product-deployment-contracts'] },
   { id: 8, name: 'Contract correctness', gates: ['check:openapi-release-quality', 'check:openapi-canonical'] },
   { id: 9, name: 'Route/API correctness', gates: ['check:route-entitlement-contracts', 'check:data-cloud-release-runtime-profile'] },
@@ -45,7 +97,7 @@ const dimensions = [
   { id: 23, name: 'Reliability and resilience', gates: ['check:runtime-failure-injection'] },
   { id: 24, name: 'Error handling and degraded mode', gates: ['check:kernel-lifecycle-truth', 'check:interaction-runtime-truth'] },
   { id: 25, name: 'Idempotency, retries, replay, rollback', gates: ['check:atomic-workflow-proof'] },
-  { id: 26, name: 'Performance', gates: ['check:interaction-performance', 'check:audited-performance-workflows'] },
+  { id: 26, name: 'Performance', gates: ['check:interaction-performance', 'check:audited-performance-workflows', 'check:product-slo-budgets'] },
   { id: 27, name: 'Scalability', gates: ['check:cross-product-interaction-flows', 'check:interaction-performance'] },
   { id: 28, name: 'Extensibility and plugin model', gates: ['check:kernel-plugin-interactions', 'check:plugin-interaction-broker'] },
   { id: 29, name: 'Shared-library reuse', gates: ['check:architecture-boundaries', 'check:cross-workspace-deps'] },
@@ -58,13 +110,13 @@ const dimensions = [
   { id: 36, name: 'Testing depth', gates: ['check:phase8'] },
   { id: 37, name: 'Test quality / no test theater', gates: ['check:test-authenticity'] },
   { id: 38, name: 'CI gate strength', gates: ['check:affected-product-strict-release-profile', 'check:product-release-readiness'] },
-  { id: 39, name: 'Release readiness', gates: ['check:product-release-readiness'] },
+  { id: 39, name: 'Release readiness', gates: ['check:product-release-readiness', 'check:openapi-breaking-changes'] },
   { id: 40, name: 'Deployment and operations readiness', gates: ['check:data-cloud-release-runtime-profile', 'check:product-environment-contracts'] },
   { id: 41, name: 'Backup, restore, and disaster recovery', gates: ['workflow:data-cloud-release.yml:backup-drill-strict'] },
   { id: 42, name: 'Configuration and secrets management', gates: ['workflow:data-cloud-release.yml:validate-release-config', 'check:secret-default-credentials'] },
   { id: 43, name: 'Documentation truthfulness', gates: ['check:doc-claims-evidence', 'check:current-state-claims', 'check:doc-truth'] },
   { id: 44, name: 'Migration and deprecation hygiene', gates: ['check:deprecated-imports', 'check:deprecated-packages'] },
-  { id: 45, name: 'Cost and operational efficiency', gates: ['check:ai-governance-conformance', 'check:interaction-performance'] },
+  { id: 45, name: 'Cost and operational efficiency', gates: ['check:ai-governance-conformance', 'check:interaction-performance', 'check:product-cost-budgets'] },
   { id: 46, name: 'Overall production readiness', gates: ['check:atomic-workflow-proof', 'check:affected-product-strict-release-profile', 'check:product-release-readiness'] },
   { id: 47, name: 'Overall world-class maturity', gates: ['check:world-class-platform-readiness'] },
 ];
@@ -142,6 +194,7 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
   const dataCloudWorkflow = readUtf8(dataCloudReleaseWorkflowPath);
   const productWorkflow = readUtf8(productReleaseWorkflowPath);
   const planSource = readUtf8(planPath);
+  const ownerMap = loadOwnerMap();
 
   const workflowRules = {
     'workflow:data-cloud-release.yml:backup-drill-strict': hasWorkflowToken(dataCloudWorkflow, 'backup-drill-strict:'),
@@ -160,6 +213,10 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
 
   if (dimensions.length !== 47) {
     violations.push(`Expected exactly 47 dimensions, found ${dimensions.length}`);
+  }
+
+  if (!ownerMap) {
+    violations.push('Missing or invalid owner map at config/production-readiness-dimension-owners.json');
   }
 
   const duplicatedIds = dimensions
@@ -207,11 +264,21 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
       violations.push(`Dimension ${dimension.id} (${dimension.name}) missing gates: ${missing.join(', ')}`);
     }
 
+    const owner = ownerMap?.get(dimension.id);
+    if (!owner) {
+      violations.push(`Dimension ${dimension.id} (${dimension.name}) is missing owner mapping`);
+    }
+
+    const maturity = toMaturityDepth({ covered, gates: dimension.gates });
+
     return {
       id: dimension.id,
       name: dimension.name,
+      owner: owner ?? null,
       covered,
       gateChecks: results,
+      maturityDepth: maturity.depth,
+      maturityScore: maturity.score,
     };
   });
 
@@ -254,6 +321,12 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
   const wave1Complete = Object.values(waveStatus.wave1).every(Boolean);
   const coveredDimensions = gateResults.filter((entry) => entry.covered).length;
   const uncoveredDimensions = gateResults.filter((entry) => !entry.covered).map((entry) => entry.id);
+  const maturityTotal = gateResults.reduce((sum, entry) => sum + entry.maturityScore, 0);
+  const averageMaturityScore = Number((maturityTotal / Math.max(1, gateResults.length)).toFixed(2));
+  const criticalDimensionThreshold = 4.0;
+  const criticalDimensionsBelowThreshold = gateResults
+    .filter((entry) => entry.maturityScore < criticalDimensionThreshold)
+    .map((entry) => ({ id: entry.id, name: entry.name, score: entry.maturityScore }));
   const productionReadinessTickets = {
     total: 18,
     open: 0,
@@ -269,12 +342,18 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
       uncoveredDimensions: uncoveredDimensions.length,
       violationCount: violations.length,
       wave1Complete,
+      averageMaturityScore,
+      criticalDimensionThreshold,
+      criticalDimensionsBelowThresholdCount: criticalDimensionsBelowThreshold.length,
     },
     waveStatus,
     dimensions: {
       total: dimensions.length,
       covered: coveredDimensions,
       uncovered: uncoveredDimensions,
+      averageMaturityScore,
+      criticalDimensionThreshold,
+      criticalDimensionsBelowThreshold,
     },
     dimensionResults: gateResults,
     journeyAreas,

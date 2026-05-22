@@ -1,0 +1,334 @@
+{
+  "version": "1.0.0",
+  "owners": [
+    {
+      "dimensionId": 1,
+      "dimensionName": "Vision alignment",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 2,
+      "dimensionName": "Product coherence",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 3,
+      "dimensionName": "Feature completeness",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 4,
+      "dimensionName": "End-to-end workflow completeness",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 5,
+      "dimensionName": "Runtime correctness",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 6,
+      "dimensionName": "Domain correctness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 7,
+      "dimensionName": "Data model correctness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 8,
+      "dimensionName": "Contract correctness",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 9,
+      "dimensionName": "Route/API correctness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 10,
+      "dimensionName": "UI/API/runtime coherence",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 11,
+      "dimensionName": "Runtime Truth maturity",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 12,
+      "dimensionName": "Security",
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "platform/java/security",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 13,
+      "dimensionName": "Privacy",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 14,
+      "dimensionName": "Tenant isolation",
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "platform/java/security",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 15,
+      "dimensionName": "Authorization / RBAC / ABAC",
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "platform/java/security",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 16,
+      "dimensionName": "Governance, policy, compliance",
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "platform/java/security",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 17,
+      "dimensionName": "Audit durability and evidence quality",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 18,
+      "dimensionName": "Event correctness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 19,
+      "dimensionName": "Action Plane / automation correctness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 20,
+      "dimensionName": "Implicit AI/ML maturity",
+      "ownerTeam": "AI Governance",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 21,
+      "dimensionName": "Human-in-the-loop and override control",
+      "ownerTeam": "AI Governance",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 22,
+      "dimensionName": "Observability",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 23,
+      "dimensionName": "Reliability and resilience",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 24,
+      "dimensionName": "Error handling and degraded mode",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 25,
+      "dimensionName": "Idempotency, retries, replay, rollback",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 26,
+      "dimensionName": "Performance",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 27,
+      "dimensionName": "Scalability",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 28,
+      "dimensionName": "Extensibility and plugin model",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 29,
+      "dimensionName": "Shared-library reuse",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 30,
+      "dimensionName": "Dependency hygiene",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 31,
+      "dimensionName": "Architecture boundaries",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 32,
+      "dimensionName": "Simplicity and maintainability",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 33,
+      "dimensionName": "UI/UX simplicity and consistency",
+      "ownerTeam": "Frontend Experience",
+      "ownerModule": "platform/typescript",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 34,
+      "dimensionName": "Accessibility",
+      "ownerTeam": "Frontend Experience",
+      "ownerModule": "platform/typescript",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 35,
+      "dimensionName": "Internationalization and localization",
+      "ownerTeam": "Frontend Experience",
+      "ownerModule": "platform/typescript",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 36,
+      "dimensionName": "Testing depth",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 37,
+      "dimensionName": "Test quality / no test theater",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 38,
+      "dimensionName": "CI gate strength",
+      "ownerTeam": "Release Operations",
+      "ownerModule": ".github/workflows",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 39,
+      "dimensionName": "Release readiness",
+      "ownerTeam": "Release Operations",
+      "ownerModule": ".github/workflows",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 40,
+      "dimensionName": "Deployment and operations readiness",
+      "ownerTeam": "Release Operations",
+      "ownerModule": ".github/workflows",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 41,
+      "dimensionName": "Backup, restore, and disaster recovery",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 42,
+      "dimensionName": "Configuration and secrets management",
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "platform/java/security",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 43,
+      "dimensionName": "Documentation truthfulness",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 44,
+      "dimensionName": "Migration and deprecation hygiene",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 45,
+      "dimensionName": "Cost and operational efficiency",
+      "ownerTeam": "AI Governance",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 46,
+      "dimensionName": "Overall production readiness",
+      "ownerTeam": "Product Engineering",
+      "ownerModule": "products",
+      "escalation": "kernel-platform-oncall"
+    },
+    {
+      "dimensionId": 47,
+      "dimensionName": "Overall world-class maturity",
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "escalation": "kernel-platform-oncall"
+    }
+  ]
+}

@@ -14,8 +14,8 @@ on:
     types: [published]
   push:
     tags:
-      - 'data-cloud-v*'
-      - 'v*'
+      - "data-cloud-v*"
+      - "v*"
 
 env:
   RELEASE_ENVIRONMENT: ${{ inputs.release_environment || (github.event_name == 'release' && 'production') || (startsWith(github.ref, 'refs/tags/') && 'staging') || 'staging' }}
@@ -423,6 +423,13 @@ jobs:
         env:
           RELEASE_ENVIRONMENT: ${{ env.RELEASE_ENVIRONMENT }}
         run: node ./scripts/generate-release-maturity-summary.mjs
+
+      - name: Validate release evidence content and freshness
+        env:
+          RELEASE_ENVIRONMENT: ${{ env.RELEASE_ENVIRONMENT }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: pnpm check:validate-release-evidence
 
       - name: Upload release summary artifact
         uses: actions/upload-artifact@v4

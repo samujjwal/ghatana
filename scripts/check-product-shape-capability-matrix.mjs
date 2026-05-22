@@ -11,7 +11,7 @@
  * - All registered products have shape rows
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +31,21 @@ const requiredReadinessDimensions = [
   'studioUxReadiness',
   'e2eReadiness',
 ];
+const capabilityStatusScale = new Set(['Complete', 'Partial', 'Missing', 'Broken', 'Overbuilt', 'Unknown']);
+
+function loadPackageScripts() {
+  const packageJsonPath = join(repoRoot, 'package.json');
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+  return packageJson.scripts ?? {};
+}
+
+function loadCapabilityTraceabilityMatrix() {
+  const matrixPath = join(repoRoot, 'config/product-capability-matrix.json');
+  if (!existsSync(matrixPath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(matrixPath, 'utf8'));
+}
 
 function loadRegistry() {
   const registryPath = join(repoRoot, 'config/canonical-product-registry.json');
@@ -61,6 +76,7 @@ function loadAdapters() {
 async function main() {
   const errors = [];
   const warnings = [];
+  const packageScripts = loadPackageScripts();
 
   // 1. Check matrix exists
   const matrix = loadMatrix();
@@ -74,7 +90,17 @@ async function main() {
     errors.push('Public product shape capability matrix not found at config/product-shape-capability-matrix.json');
   }
 
-  // 2. Check matrix is recent (generated within last 7 days)
+  // 2. Load registry for comparison and cross-validation
+  const registry = loadRegistry();
+
+  const capabilityMatrix = loadCapabilityTraceabilityMatrix();
+  if (!capabilityMatrix) {
+    errors.push('Canonical capability traceability matrix not found at config/product-capability-matrix.json');
+  } else {
+    validateCapabilityTraceabilityMatrix(capabilityMatrix, registry, packageScripts, errors, warnings);
+  }
+
+  // 3. Check matrix is recent (generated within last 7 days)
   const generatedDate = new Date(matrix.generated);
   const now = new Date();
   const daysSinceGeneration = (now - generatedDate) / (1000 * 60 * 60 * 24);
@@ -82,8 +108,7 @@ async function main() {
     warnings.push(`Matrix was generated ${Math.floor(daysSinceGeneration)} days ago. Consider regenerating.`);
   }
 
-  // 3. Load registry for comparison
-  const registry = loadRegistry();
+  // 4. Continue matrix checks
   const adapters = loadAdapters();
   const registryProductIds = Object.keys(registry);
   const matrixProductIds = matrix.matrix.map(m => m.productId);
@@ -291,7 +316,125 @@ async function main() {
     }
   }
 
+  writeCapabilityCheckEvidence(errors, warnings, capabilityMatrix);
   reportAndExit(errors, warnings);
+}
+
+function validateCapabilityTraceabilityMatrix(capabilityMatrix, registry, packageScripts, errors, warnings) {
+  const capabilities = capabilityMatrix.capabilities;
+  if (!Array.isArray(capabilities) || capabilities.length === 0) {
+    errors.push('Capability traceability matrix must define a non-empty capabilities array');
+    return;
+  }
+
+  const activeBusinessProducts = Object.entries(registry)
+    .filter(([, product]) => product.kind === 'business-product' && product.metadata?.status === 'active')
+    .map(([productId]) => productId)
+    .sort();
+  const coveredProducts = new Set();
+
+  for (const capability of capabilities) {
+    const capabilityKey = `${capability.productId}:${capability.capabilityId}`;
+
+    if (!capability.productId || typeof capability.productId !== 'string') {
+      errors.push(`Capability entry ${capabilityKey} is missing productId`);
+      continue;
+    }
+    if (!registry[capability.productId]) {
+      errors.push(`Capability entry ${capabilityKey} references unknown productId ${capability.productId}`);
+      continue;
+    }
+
+    coveredProducts.add(capability.productId);
+
+    if (!capability.capabilityId || typeof capability.capabilityId !== 'string') {
+      errors.push(`Capability entry for ${capability.productId} is missing capabilityId`);
+    }
+    if (!capability.capabilityName || typeof capability.capabilityName !== 'string') {
+      errors.push(`Capability entry ${capabilityKey} is missing capabilityName`);
+    }
+    if (!capability.owner || typeof capability.owner !== 'string') {
+      errors.push(`Capability entry ${capabilityKey} is missing owner`);
+    }
+    if (!capabilityStatusScale.has(capability.status)) {
+      errors.push(`Capability entry ${capabilityKey} has invalid status ${JSON.stringify(capability.status)}`);
+    }
+
+    if (capability.requiredForRelease === true && ['Missing', 'Broken', 'Unknown'].includes(capability.status)) {
+      errors.push(
+        `Required capability ${capabilityKey} has blocking status ${capability.status}; release must fail until resolved`,
+      );
+    }
+
+    if (!Array.isArray(capability.implementationModules) || capability.implementationModules.length === 0) {
+      errors.push(`Capability entry ${capabilityKey} is missing implementationModules`);
+    }
+
+    const evidence = Array.isArray(capability.testEvidence) ? capability.testEvidence : [];
+    if (capability.requiredForRelease === true && evidence.length === 0) {
+      errors.push(`Required capability ${capabilityKey} is missing testEvidence`);
+    }
+
+    let hasValidEvidence = false;
+    for (const evidenceItem of evidence) {
+      if (!evidenceItem || typeof evidenceItem !== 'object') {
+        errors.push(`Capability entry ${capabilityKey} has invalid evidence item`);
+        continue;
+      }
+
+      if (evidenceItem.kind === 'command') {
+        if (typeof evidenceItem.value !== 'string' || !packageScripts[evidenceItem.value]) {
+          errors.push(`Capability entry ${capabilityKey} references unknown command evidence ${JSON.stringify(evidenceItem.value)}`);
+        } else {
+          hasValidEvidence = true;
+        }
+        continue;
+      }
+
+      if (evidenceItem.kind === 'file') {
+        const relativePath = evidenceItem.value;
+        if (typeof relativePath !== 'string' || !existsSync(join(repoRoot, relativePath))) {
+          errors.push(`Capability entry ${capabilityKey} references missing file evidence ${JSON.stringify(relativePath)}`);
+        } else {
+          hasValidEvidence = true;
+        }
+        continue;
+      }
+
+      warnings.push(`Capability entry ${capabilityKey} uses non-enforced evidence kind ${JSON.stringify(evidenceItem.kind)}`);
+    }
+
+    if (capability.requiredForRelease === true && !hasValidEvidence) {
+      errors.push(`Required capability ${capabilityKey} does not provide validated implementation evidence`);
+    }
+  }
+
+  for (const productId of activeBusinessProducts) {
+    if (!coveredProducts.has(productId)) {
+      errors.push(`Capability matrix is missing active business product coverage for ${productId}`);
+    }
+  }
+}
+
+function writeCapabilityCheckEvidence(errors, warnings, capabilityMatrix) {
+  const evidenceDir = join(repoRoot, '.kernel/evidence');
+  const evidencePath = join(evidenceDir, 'product-capability-matrix-validation.json');
+  mkdirSync(evidenceDir, { recursive: true });
+  writeFileSync(
+    evidencePath,
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        status: errors.length === 0 ? 'passed' : 'failed',
+        capabilityCount: Array.isArray(capabilityMatrix?.capabilities) ? capabilityMatrix.capabilities.length : 0,
+        warnings,
+        errors,
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
 }
 
 function validatePublicMatrixRows(rows, registry, errors) {

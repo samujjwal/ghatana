@@ -110,9 +110,15 @@ export function validateGeneratedArtifacts(
   const stageFindings = collectStageFindings(options.stageResults);
   findings.push(...stageFindings);
 
-  const errorCount = findings.filter((finding) => finding.severity === "error").length;
-  const warningCount = findings.filter((finding) => finding.severity === "warning").length;
-  const infoCount = findings.filter((finding) => finding.severity === "info").length;
+  const errorCount = findings.filter(
+    (finding) => finding.severity === "error",
+  ).length;
+  const warningCount = findings.filter(
+    (finding) => finding.severity === "warning",
+  ).length;
+  const infoCount = findings.filter(
+    (finding) => finding.severity === "info",
+  ).length;
 
   return {
     targetId: options.targetId,
@@ -126,7 +132,9 @@ export function validateGeneratedArtifacts(
   };
 }
 
-function collectStageFindings(stageResults: readonly ValidationStageResult[] | undefined): ValidationFinding[] {
+function collectStageFindings(
+  stageResults: readonly ValidationStageResult[] | undefined,
+): ValidationFinding[] {
   if (!stageResults || stageResults.length === 0) {
     return [];
   }
@@ -159,7 +167,9 @@ function collectStageFindings(stageResults: readonly ValidationStageResult[] | u
   return findings;
 }
 
-function categoryForStage(stageId: ValidationStageId): ValidationFinding["category"] {
+function categoryForStage(
+  stageId: ValidationStageId,
+): ValidationFinding["category"] {
   switch (stageId) {
     case "typecheck":
       return "typescript";
@@ -172,9 +182,13 @@ function categoryForStage(stageId: ValidationStageId): ValidationFinding["catego
   }
 }
 
-function createVirtualCompilerHost(files: ReadonlyMap<string, string>): ts.CompilerHost {
-  const fileExists = (fileName: string): boolean => files.has(normalizeCompilerPath(fileName));
-  const readFile = (fileName: string): string | undefined => files.get(normalizeCompilerPath(fileName));
+function createVirtualCompilerHost(
+  files: ReadonlyMap<string, string>,
+): ts.CompilerHost {
+  const fileExists = (fileName: string): boolean =>
+    files.has(normalizeCompilerPath(fileName));
+  const readFile = (fileName: string): string | undefined =>
+    files.get(normalizeCompilerPath(fileName));
 
   return {
     fileExists,
@@ -189,23 +203,37 @@ function createVirtualCompilerHost(files: ReadonlyMap<string, string>): ts.Compi
       if (content === undefined) {
         return undefined;
       }
-      return ts.createSourceFile(normalized, content, languageVersion, true, scriptKindForPath(normalized));
+      return ts.createSourceFile(
+        normalized,
+        content,
+        languageVersion,
+        true,
+        scriptKindForPath(normalized),
+      );
     },
     readFile,
-    resolveModuleNames: (moduleNames, containingFile) => moduleNames.map((moduleName) => {
-      if (moduleName === "react") {
-        return {
-          resolvedFileName: AMBIENT_FILE,
-          extension: ts.Extension.Dts,
-          isExternalLibraryImport: true,
-        };
-      }
+    resolveModuleNames: (moduleNames, containingFile) =>
+      moduleNames.map((moduleName) => {
+        if (moduleName === "react") {
+          return {
+            resolvedFileName: AMBIENT_FILE,
+            extension: ts.Extension.Dts,
+            isExternalLibraryImport: true,
+          };
+        }
 
-      const resolved = resolveRelativeModule(moduleName, containingFile, files);
-      return resolved
-        ? { resolvedFileName: resolved, extension: scriptExtensionForPath(resolved) }
-        : undefined;
-    }),
+        const resolved = resolveRelativeModule(
+          moduleName,
+          containingFile,
+          files,
+        );
+        return resolved
+          ? {
+              resolvedFileName: resolved,
+              extension: scriptExtensionForPath(resolved),
+            }
+          : undefined;
+      }),
     useCaseSensitiveFileNames: () => true,
     writeFile: () => undefined,
   };
@@ -219,7 +247,10 @@ function resolveRelativeModule(
   if (!moduleName.startsWith(".")) {
     return undefined;
   }
-  const containingDir = normalizeCompilerPath(containingFile).split("/").slice(0, -1).join("/");
+  const containingDir = normalizeCompilerPath(containingFile)
+    .split("/")
+    .slice(0, -1)
+    .join("/");
   const base = normalizeCompilerPath(`${containingDir}/${moduleName}`);
   const candidates = [
     base,
@@ -235,13 +266,18 @@ function resolveRelativeModule(
 
 function diagnosticToFinding(diagnostic: ts.Diagnostic): ValidationFinding {
   const sourceRef = diagnostic.file
-    ? sourceRefForDiagnostic(diagnostic.file, diagnostic.start, diagnostic.length)
+    ? sourceRefForDiagnostic(
+        diagnostic.file,
+        diagnostic.start,
+        diagnostic.length,
+      )
     : undefined;
 
   return {
     code: `TS${diagnostic.code}`,
     message: ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
-    severity: diagnostic.category === ts.DiagnosticCategory.Error ? "error" : "warning",
+    severity:
+      diagnostic.category === ts.DiagnosticCategory.Error ? "error" : "warning",
     category: "typescript",
     ...(sourceRef === undefined ? {} : { sourceRef }),
   };
@@ -279,8 +315,21 @@ function sourceRefForDiagnostic(
 }
 
 function normalizeCompilerPath(fileName: string): string {
-  const normalized = fileName.replace(/\\/g, "/").replace(/^\/+/, "");
-  return `/${normalized}`.replace(/\/+/g, "/");
+  const segments: string[] = [];
+  for (const segment of fileName
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .split("/")) {
+    if (segment === "" || segment === ".") {
+      continue;
+    }
+    if (segment === "..") {
+      segments.pop();
+      continue;
+    }
+    segments.push(segment);
+  }
+  return `/${segments.join("/")}`;
 }
 
 function stripLeadingSlash(fileName: string): string {

@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-05-22T22:49:31.547Z",
+  "status": "passed",
+  "coverage": [
+    {
+      "productId": "dcmaar",
+      "javaTestCount": 2,
+      "tsTestCount": 216,
+      "invariantNamedTestCount": 2
+    },
+    {
+      "productId": "digital-marketing",
+      "javaTestCount": 289,
+      "tsTestCount": 49,
+      "invariantNamedTestCount": 103
+    },
+    {
+      "productId": "finance",
+      "javaTestCount": 179,
+      "tsTestCount": 0,
+      "invariantNamedTestCount": 118
+    },
+    {
+      "productId": "flashit",
+      "javaTestCount": 6,
+      "tsTestCount": 79,
+      "invariantNamedTestCount": 1
+    },
+    {
+      "productId": "phr",
+      "javaTestCount": 75,
+      "tsTestCount": 7,
+      "invariantNamedTestCount": 7
+    },
+    {
+      "productId": "tutorputor",
+      "javaTestCount": 35,
+      "tsTestCount": 367,
+      "invariantNamedTestCount": 23
+    }
+  ],
+  "violations": []
+}

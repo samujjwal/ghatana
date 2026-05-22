@@ -74,7 +74,7 @@ jobs:
       - name: Enforce strict affected-product release profile
         run: pnpm check:affected-product-strict-release-profile -- --products ${{ matrix.product }}
       - name: Run strict product release readiness checks
-        run: pnpm check:product-release-readiness && pnpm check:kernel-implementation-plan-coverage
+        run: pnpm check:product-release-readiness -- --products ${{ matrix.product }} && pnpm check:kernel-implementation-plan-coverage
       - name: Release Product
         if: github.event.inputs.dry_run != 'true'
         run: pnpm kernel release create ${{ matrix.product }} --version ${{ github.ref_name }}
@@ -87,4 +87,5 @@ jobs:
           name: product-release-evidence-${{ matrix.product }}
           path: |
             .kernel/evidence/product-release-readiness.json
+            .kernel/evidence/product-release-readiness.${{ matrix.product }}.json
             .kernel/out/products/${{ matrix.product }}/release/**

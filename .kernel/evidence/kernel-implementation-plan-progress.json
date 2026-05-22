@@ -1,12 +1,15 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-22T21:47:15.886Z",
+  "generatedAt": "2026-05-22T22:49:25.306Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
     "uncoveredDimensions": 0,
     "violationCount": 0,
-    "wave1Complete": true
+    "wave1Complete": true,
+    "averageMaturityScore": 2.91,
+    "criticalDimensionThreshold": 4,
+    "criticalDimensionsBelowThresholdCount": 36
   },
   "waveStatus": {
     "wave1": {
@@ -20,12 +23,203 @@
   "dimensions": {
     "total": 47,
     "covered": 47,
-    "uncovered": []
+    "uncovered": [],
+    "averageMaturityScore": 2.91,
+    "criticalDimensionThreshold": 4,
+    "criticalDimensionsBelowThreshold": [
+      {
+        "id": 1,
+        "name": "Vision alignment",
+        "score": 2
+      },
+      {
+        "id": 2,
+        "name": "Product coherence",
+        "score": 3
+      },
+      {
+        "id": 3,
+        "name": "Feature completeness",
+        "score": 2
+      },
+      {
+        "id": 4,
+        "name": "End-to-end workflow completeness",
+        "score": 3
+      },
+      {
+        "id": 6,
+        "name": "Domain correctness",
+        "score": 2
+      },
+      {
+        "id": 7,
+        "name": "Data model correctness",
+        "score": 2
+      },
+      {
+        "id": 10,
+        "name": "UI/API/runtime coherence",
+        "score": 2
+      },
+      {
+        "id": 12,
+        "name": "Security",
+        "score": 2
+      },
+      {
+        "id": 13,
+        "name": "Privacy",
+        "score": 2
+      },
+      {
+        "id": 14,
+        "name": "Tenant isolation",
+        "score": 2
+      },
+      {
+        "id": 15,
+        "name": "Authorization / RBAC / ABAC",
+        "score": 2
+      },
+      {
+        "id": 16,
+        "name": "Governance, policy, compliance",
+        "score": 2
+      },
+      {
+        "id": 17,
+        "name": "Audit durability and evidence quality",
+        "score": 3
+      },
+      {
+        "id": 18,
+        "name": "Event correctness",
+        "score": 3
+      },
+      {
+        "id": 19,
+        "name": "Action Plane / automation correctness",
+        "score": 2
+      },
+      {
+        "id": 20,
+        "name": "Implicit AI/ML maturity",
+        "score": 3
+      },
+      {
+        "id": 21,
+        "name": "Human-in-the-loop and override control",
+        "score": 3
+      },
+      {
+        "id": 22,
+        "name": "Observability",
+        "score": 2
+      },
+      {
+        "id": 23,
+        "name": "Reliability and resilience",
+        "score": 3
+      },
+      {
+        "id": 24,
+        "name": "Error handling and degraded mode",
+        "score": 3
+      },
+      {
+        "id": 25,
+        "name": "Idempotency, retries, replay, rollback",
+        "score": 3
+      },
+      {
+        "id": 26,
+        "name": "Performance",
+        "score": 3
+      },
+      {
+        "id": 27,
+        "name": "Scalability",
+        "score": 3
+      },
+      {
+        "id": 28,
+        "name": "Extensibility and plugin model",
+        "score": 3
+      },
+      {
+        "id": 29,
+        "name": "Shared-library reuse",
+        "score": 2
+      },
+      {
+        "id": 31,
+        "name": "Architecture boundaries",
+        "score": 2
+      },
+      {
+        "id": 32,
+        "name": "Simplicity and maintainability",
+        "score": 2
+      },
+      {
+        "id": 33,
+        "name": "UI/UX simplicity and consistency",
+        "score": 2
+      },
+      {
+        "id": 34,
+        "name": "Accessibility",
+        "score": 3
+      },
+      {
+        "id": 35,
+        "name": "Internationalization and localization",
+        "score": 3
+      },
+      {
+        "id": 36,
+        "name": "Testing depth",
+        "score": 2
+      },
+      {
+        "id": 37,
+        "name": "Test quality / no test theater",
+        "score": 2
+      },
+      {
+        "id": 43,
+        "name": "Documentation truthfulness",
+        "score": 2
+      },
+      {
+        "id": 44,
+        "name": "Migration and deprecation hygiene",
+        "score": 2
+      },
+      {
+        "id": 45,
+        "name": "Cost and operational efficiency",
+        "score": 3
+      },
+      {
+        "id": 47,
+        "name": "Overall world-class maturity",
+        "score": 2
+      }
+    ]
   },
   "dimensionResults": [
     {
       "id": 1,
       "name": "Vision alignment",
+      "owner": {
+        "dimensionId": 1,
+        "dimensionName": "Vision alignment",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -40,11 +234,26 @@
           "gate": "check:current-state-claims",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 2,
       "name": "Product coherence",
+      "owner": {
+        "dimensionId": 2,
+        "dimensionName": "Product coherence",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -63,11 +272,26 @@
           "gate": "check:cross-product-interaction-boundaries",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 3,
       "name": "Feature completeness",
+      "owner": {
+        "dimensionId": 3,
+        "dimensionName": "Feature completeness",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -90,11 +314,26 @@
           "gate": "check:phr-lifecycle-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 4,
       "name": "End-to-end workflow completeness",
+      "owner": {
+        "dimensionId": 4,
+        "dimensionName": "End-to-end workflow completeness",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -109,11 +348,26 @@
           "gate": "check:cross-product-interaction-flows",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 5,
       "name": "Runtime correctness",
+      "owner": {
+        "dimensionId": 5,
+        "dimensionName": "Runtime correctness",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -124,11 +378,26 @@
           "gate": "check:runtime-failure-injection",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 6,
       "name": "Domain correctness",
+      "owner": {
+        "dimensionId": 6,
+        "dimensionName": "Domain correctness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -138,12 +407,31 @@
         {
           "gate": "check:phr-lifecycle-pilot",
           "exists": true
+        },
+        {
+          "gate": "check:product-domain-invariants",
+          "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 7,
       "name": "Data model correctness",
+      "owner": {
+        "dimensionId": 7,
+        "dimensionName": "Data model correctness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -154,11 +442,26 @@
           "gate": "check:product-deployment-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 8,
       "name": "Contract correctness",
+      "owner": {
+        "dimensionId": 8,
+        "dimensionName": "Contract correctness",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -169,11 +472,26 @@
           "gate": "check:openapi-canonical",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 4
     },
     {
       "id": 9,
       "name": "Route/API correctness",
+      "owner": {
+        "dimensionId": 9,
+        "dimensionName": "Route/API correctness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -184,11 +502,26 @@
           "gate": "check:data-cloud-release-runtime-profile",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 10,
       "name": "UI/API/runtime coherence",
+      "owner": {
+        "dimensionId": 10,
+        "dimensionName": "UI/API/runtime coherence",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -199,11 +532,26 @@
           "gate": "check:route-entitlement-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 11,
       "name": "Runtime Truth maturity",
+      "owner": {
+        "dimensionId": 11,
+        "dimensionName": "Runtime Truth maturity",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -214,11 +562,26 @@
           "gate": "check:data-cloud-release-runtime-profile",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 12,
       "name": "Security",
+      "owner": {
+        "dimensionId": 12,
+        "dimensionName": "Security",
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "platform/java/security",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -229,11 +592,26 @@
           "gate": "check:route-entitlement-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 13,
       "name": "Privacy",
+      "owner": {
+        "dimensionId": 13,
+        "dimensionName": "Privacy",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -244,11 +622,26 @@
           "gate": "check:data-cloud-platform-provider-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 14,
       "name": "Tenant isolation",
+      "owner": {
+        "dimensionId": 14,
+        "dimensionName": "Tenant isolation",
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "platform/java/security",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -259,22 +652,52 @@
           "gate": "check:dmos-boundary-workflow-coverage",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 15,
       "name": "Authorization / RBAC / ABAC",
+      "owner": {
+        "dimensionId": 15,
+        "dimensionName": "Authorization / RBAC / ABAC",
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "platform/java/security",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:route-entitlement-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 16,
       "name": "Governance, policy, compliance",
+      "owner": {
+        "dimensionId": 16,
+        "dimensionName": "Governance, policy, compliance",
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "platform/java/security",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -285,11 +708,26 @@
           "gate": "check:platform-product-boundaries",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 17,
       "name": "Audit durability and evidence quality",
+      "owner": {
+        "dimensionId": 17,
+        "dimensionName": "Audit durability and evidence quality",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -304,11 +742,26 @@
           "gate": "check:audited-performance-workflows",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 18,
       "name": "Event correctness",
+      "owner": {
+        "dimensionId": 18,
+        "dimensionName": "Event correctness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -319,11 +772,26 @@
           "gate": "check:cross-product-interaction-boundaries",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 19,
       "name": "Action Plane / automation correctness",
+      "owner": {
+        "dimensionId": 19,
+        "dimensionName": "Action Plane / automation correctness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -334,22 +802,52 @@
           "gate": "check:kernel-lifecycle-truth",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 20,
       "name": "Implicit AI/ML maturity",
+      "owner": {
+        "dimensionId": 20,
+        "dimensionName": "Implicit AI/ML maturity",
+        "ownerTeam": "AI Governance",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:ai-governance-conformance",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 21,
       "name": "Human-in-the-loop and override control",
+      "owner": {
+        "dimensionId": 21,
+        "dimensionName": "Human-in-the-loop and override control",
+        "ownerTeam": "AI Governance",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -360,33 +858,78 @@
           "gate": "check:agentic-lifecycle-action-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 22,
       "name": "Observability",
+      "owner": {
+        "dimensionId": 22,
+        "dimensionName": "Observability",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:observability-conformance",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 23,
       "name": "Reliability and resilience",
+      "owner": {
+        "dimensionId": 23,
+        "dimensionName": "Reliability and resilience",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:runtime-failure-injection",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 24,
       "name": "Error handling and degraded mode",
+      "owner": {
+        "dimensionId": 24,
+        "dimensionName": "Error handling and degraded mode",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -397,22 +940,52 @@
           "gate": "check:interaction-runtime-truth",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 25,
       "name": "Idempotency, retries, replay, rollback",
+      "owner": {
+        "dimensionId": 25,
+        "dimensionName": "Idempotency, retries, replay, rollback",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:atomic-workflow-proof",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 26,
       "name": "Performance",
+      "owner": {
+        "dimensionId": 26,
+        "dimensionName": "Performance",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -422,12 +995,31 @@
         {
           "gate": "check:audited-performance-workflows",
           "exists": true
+        },
+        {
+          "gate": "check:product-slo-budgets",
+          "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 27,
       "name": "Scalability",
+      "owner": {
+        "dimensionId": 27,
+        "dimensionName": "Scalability",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -438,11 +1030,26 @@
           "gate": "check:interaction-performance",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 28,
       "name": "Extensibility and plugin model",
+      "owner": {
+        "dimensionId": 28,
+        "dimensionName": "Extensibility and plugin model",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -453,11 +1060,26 @@
           "gate": "check:plugin-interaction-broker",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 29,
       "name": "Shared-library reuse",
+      "owner": {
+        "dimensionId": 29,
+        "dimensionName": "Shared-library reuse",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -468,33 +1090,78 @@
           "gate": "check:cross-workspace-deps",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 30,
       "name": "Dependency hygiene",
+      "owner": {
+        "dimensionId": 30,
+        "dimensionName": "Dependency hygiene",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:production-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 31,
       "name": "Architecture boundaries",
+      "owner": {
+        "dimensionId": 31,
+        "dimensionName": "Architecture boundaries",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:architecture-boundaries",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 32,
       "name": "Simplicity and maintainability",
+      "owner": {
+        "dimensionId": 32,
+        "dimensionName": "Simplicity and maintainability",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -513,11 +1180,26 @@
           "gate": "check:deprecated-packages",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 33,
       "name": "UI/UX simplicity and consistency",
+      "owner": {
+        "dimensionId": 33,
+        "dimensionName": "UI/UX simplicity and consistency",
+        "ownerTeam": "Frontend Experience",
+        "ownerModule": "platform/typescript",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -532,11 +1214,26 @@
           "gate": "check:design-system-conformance",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 34,
       "name": "Accessibility",
+      "owner": {
+        "dimensionId": 34,
+        "dimensionName": "Accessibility",
+        "ownerTeam": "Frontend Experience",
+        "ownerModule": "platform/typescript",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -547,44 +1244,104 @@
           "gate": "check:product-a11y-route-matrix",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 35,
       "name": "Internationalization and localization",
+      "owner": {
+        "dimensionId": 35,
+        "dimensionName": "Internationalization and localization",
+        "ownerTeam": "Frontend Experience",
+        "ownerModule": "platform/typescript",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:i18n-conformance",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 36,
       "name": "Testing depth",
+      "owner": {
+        "dimensionId": 36,
+        "dimensionName": "Testing depth",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:phase8",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 37,
       "name": "Test quality / no test theater",
+      "owner": {
+        "dimensionId": 37,
+        "dimensionName": "Test quality / no test theater",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:test-authenticity",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 38,
       "name": "CI gate strength",
+      "owner": {
+        "dimensionId": 38,
+        "dimensionName": "CI gate strength",
+        "ownerTeam": "Release Operations",
+        "ownerModule": ".github/workflows",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -595,22 +1352,56 @@
           "gate": "check:product-release-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 4
     },
     {
       "id": 39,
       "name": "Release readiness",
+      "owner": {
+        "dimensionId": 39,
+        "dimensionName": "Release readiness",
+        "ownerTeam": "Release Operations",
+        "ownerModule": ".github/workflows",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:product-release-readiness",
           "exists": true
+        },
+        {
+          "gate": "check:openapi-breaking-changes",
+          "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 4
     },
     {
       "id": 40,
       "name": "Deployment and operations readiness",
+      "owner": {
+        "dimensionId": 40,
+        "dimensionName": "Deployment and operations readiness",
+        "ownerTeam": "Release Operations",
+        "ownerModule": ".github/workflows",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -621,22 +1412,52 @@
           "gate": "check:product-environment-contracts",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 41,
       "name": "Backup, restore, and disaster recovery",
+      "owner": {
+        "dimensionId": 41,
+        "dimensionName": "Backup, restore, and disaster recovery",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "workflow:data-cloud-release.yml:backup-drill-strict",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": true
+      },
+      "maturityScore": 5
     },
     {
       "id": 42,
       "name": "Configuration and secrets management",
+      "owner": {
+        "dimensionId": 42,
+        "dimensionName": "Configuration and secrets management",
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "platform/java/security",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -647,11 +1468,26 @@
           "gate": "check:secret-default-credentials",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 4
     },
     {
       "id": 43,
       "name": "Documentation truthfulness",
+      "owner": {
+        "dimensionId": 43,
+        "dimensionName": "Documentation truthfulness",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -666,11 +1502,26 @@
           "gate": "check:doc-truth",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 44,
       "name": "Migration and deprecation hygiene",
+      "owner": {
+        "dimensionId": 44,
+        "dimensionName": "Migration and deprecation hygiene",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -681,11 +1532,26 @@
           "gate": "check:deprecated-packages",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     },
     {
       "id": 45,
       "name": "Cost and operational efficiency",
+      "owner": {
+        "dimensionId": 45,
+        "dimensionName": "Cost and operational efficiency",
+        "ownerTeam": "AI Governance",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -695,12 +1561,31 @@
         {
           "gate": "check:interaction-performance",
           "exists": true
+        },
+        {
+          "gate": "check:product-cost-budgets",
+          "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 3
     },
     {
       "id": 46,
       "name": "Overall production readiness",
+      "owner": {
+        "dimensionId": 46,
+        "dimensionName": "Overall production readiness",
+        "ownerTeam": "Product Engineering",
+        "ownerModule": "products",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
@@ -715,18 +1600,41 @@
           "gate": "check:product-release-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": true,
+        "releaseEvidence": true,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 4
     },
     {
       "id": 47,
       "name": "Overall world-class maturity",
+      "owner": {
+        "dimensionId": 47,
+        "dimensionName": "Overall world-class maturity",
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "escalation": "kernel-platform-oncall"
+      },
       "covered": true,
       "gateChecks": [
         {
           "gate": "check:world-class-platform-readiness",
           "exists": true
         }
-      ]
+      ],
+      "maturityDepth": {
+        "artifactExists": true,
+        "staticCheck": true,
+        "behaviorTest": false,
+        "releaseEvidence": false,
+        "runtimeProductionEvidence": false
+      },
+      "maturityScore": 2
     }
   ],
   "journeyAreas": [

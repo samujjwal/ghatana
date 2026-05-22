@@ -1,0 +1,306 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-05-22T00:00:00.000Z",
+  "statusScale": [
+    "Complete",
+    "Partial",
+    "Missing",
+    "Broken",
+    "Overbuilt",
+    "Unknown"
+  ],
+  "capabilities": [
+    {
+      "productId": "phr",
+      "capabilityId": "phr-patient-record-workflow",
+      "capabilityName": "Patient record lifecycle workflow",
+      "owner": "PHR Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/patients", "/records"],
+      "apiRoutes": ["/api/v1/patients", "/api/v1/records"],
+      "runtimeTruthSurfaces": ["kernel-lifecycle", "interaction-runtime-truth"],
+      "implementationModules": ["products/phr", "products/phr/apps/web"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "test:phr"
+        },
+        {
+          "kind": "command",
+          "value": "check:phr-lifecycle-pilot"
+        }
+      ],
+      "documentationEvidence": [
+        "products/phr/README.md",
+        "products/phr/lifecycle/readiness-evidence.yaml"
+      ],
+      "releaseGates": [
+        "check:product-release-readiness",
+        "check:kernel-implementation-plan-coverage"
+      ]
+    },
+    {
+      "productId": "phr",
+      "capabilityId": "phr-consent-privacy-audit",
+      "capabilityName": "Consent, privacy, and audit workflow",
+      "owner": "PHR Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/consent", "/audit"],
+      "apiRoutes": ["/api/v1/consent", "/api/v1/audit"],
+      "runtimeTruthSurfaces": ["route-entitlement", "audited-e2e"],
+      "implementationModules": [
+        "products/phr",
+        "products/phr/lifecycle/gate-packs"
+      ],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "check:security-workflow-coverage"
+        },
+        {
+          "kind": "command",
+          "value": "check:route-entitlement-contracts"
+        }
+      ],
+      "documentationEvidence": [
+        "products/phr/lifecycle/gate-packs/consent.yaml"
+      ],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "digital-marketing",
+      "capabilityId": "dmos-campaign-lifecycle",
+      "capabilityName": "Campaign lifecycle workflow",
+      "owner": "Digital Marketing Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/campaigns", "/analytics"],
+      "apiRoutes": ["/api/v1/campaigns"],
+      "runtimeTruthSurfaces": [
+        "kernel-lifecycle",
+        "studio-lifecycle-control-plane"
+      ],
+      "implementationModules": [
+        "products/digital-marketing",
+        "products/digital-marketing/ui"
+      ],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "test:digital-marketing"
+        },
+        {
+          "kind": "command",
+          "value": "check:digital-marketing-lifecycle-pilot"
+        }
+      ],
+      "documentationEvidence": ["products/digital-marketing/README.md"],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "digital-marketing",
+      "capabilityId": "dmos-connector-governance",
+      "capabilityName": "Connector governance and release posture",
+      "owner": "Digital Marketing Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/connectors", "/settings"],
+      "apiRoutes": ["/api/v1/connectors"],
+      "runtimeTruthSurfaces": ["observability", "runtime-failure-injection"],
+      "implementationModules": [
+        "products/digital-marketing",
+        "config/product-release-profiles.json"
+      ],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "check:runtime-failure-injection"
+        },
+        {
+          "kind": "command",
+          "value": "check:openapi-release-quality"
+        }
+      ],
+      "documentationEvidence": ["products/digital-marketing/README.md"],
+      "releaseGates": ["check:product-release-readiness", "check:release-gate"]
+    },
+    {
+      "productId": "finance",
+      "capabilityId": "finance-transaction-governance",
+      "capabilityName": "Transaction workflow and governance",
+      "owner": "Finance Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/trades", "/risk"],
+      "apiRoutes": ["/api/v1/transactions"],
+      "runtimeTruthSurfaces": ["finance-transaction-workflow-proof"],
+      "implementationModules": ["products/finance"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "test:finance"
+        },
+        {
+          "kind": "command",
+          "value": "check:finance-transaction-workflow-proof"
+        }
+      ],
+      "documentationEvidence": ["products/finance/README.md"],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "finance",
+      "capabilityId": "finance-release-readiness",
+      "capabilityName": "Finance lifecycle release readiness",
+      "owner": "Finance Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/operator"],
+      "apiRoutes": ["/api/v1/health"],
+      "runtimeTruthSurfaces": ["kernel-implementation-plan-coverage"],
+      "implementationModules": ["products/finance"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "check:finance-lifecycle-readiness"
+        }
+      ],
+      "documentationEvidence": ["products/finance/kernel-product.yaml"],
+      "releaseGates": ["check:affected-product-strict-release-profile"]
+    },
+    {
+      "productId": "flashit",
+      "capabilityId": "flashit-omnichannel-flow",
+      "capabilityName": "Omnichannel experience workflow",
+      "owner": "Flashit Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/app", "/messages"],
+      "apiRoutes": ["/api/v1/messages"],
+      "runtimeTruthSurfaces": ["cross-product-interaction-flows"],
+      "implementationModules": ["products/flashit"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "test:flashit"
+        },
+        {
+          "kind": "command",
+          "value": "check:flashit-lifecycle-readiness"
+        }
+      ],
+      "documentationEvidence": ["products/flashit/README.md"],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "flashit",
+      "capabilityId": "flashit-client-contracts",
+      "capabilityName": "Client contract and API compatibility",
+      "owner": "Flashit Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/client"],
+      "apiRoutes": ["/api/v1/client"],
+      "runtimeTruthSurfaces": ["openapi-release-quality"],
+      "implementationModules": ["products/flashit"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "check:flashit-client-conformance"
+        }
+      ],
+      "documentationEvidence": ["products/flashit/kernel-product.yaml"],
+      "releaseGates": ["check:openapi-release-quality"]
+    },
+    {
+      "productId": "dcmaar",
+      "capabilityId": "dcmaar-threat-governance",
+      "capabilityName": "Threat and guardian governance workflow",
+      "owner": "DCMAAR Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/guardian"],
+      "apiRoutes": ["/api/v1/guardian"],
+      "runtimeTruthSurfaces": ["security-workflow-coverage"],
+      "implementationModules": ["products/dcmaar"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "build:dcmaar"
+        },
+        {
+          "kind": "command",
+          "value": "test:dcmaar"
+        }
+      ],
+      "documentationEvidence": ["products/dcmaar/README.md"],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "dcmaar",
+      "capabilityId": "dcmaar-lifecycle-readiness",
+      "capabilityName": "Lifecycle command readiness",
+      "owner": "DCMAAR Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/"],
+      "apiRoutes": ["/api/v1/health"],
+      "runtimeTruthSurfaces": ["affected-product-strict-release-profile"],
+      "implementationModules": ["products/dcmaar"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "build:dcmaar"
+        }
+      ],
+      "documentationEvidence": ["products/dcmaar/README.md"],
+      "releaseGates": ["check:affected-product-strict-release-profile"]
+    },
+    {
+      "productId": "tutorputor",
+      "capabilityId": "tutorputor-learning-flow",
+      "capabilityName": "Learning workflow lifecycle",
+      "owner": "Tutorputor Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/learn", "/workspace"],
+      "apiRoutes": ["/api/v1/sessions"],
+      "runtimeTruthSurfaces": ["cross-product-interaction-flows"],
+      "implementationModules": ["products/tutorputor"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "build:tutorputor"
+        },
+        {
+          "kind": "command",
+          "value": "test:tutorputor"
+        }
+      ],
+      "documentationEvidence": ["products/tutorputor/README.md"],
+      "releaseGates": ["check:product-release-readiness"]
+    },
+    {
+      "productId": "tutorputor",
+      "capabilityId": "tutorputor-ai-governance",
+      "capabilityName": "AI-assisted tutoring governance",
+      "owner": "Tutorputor Team",
+      "requiredForRelease": true,
+      "status": "Partial",
+      "uiRoutes": ["/assistant"],
+      "apiRoutes": ["/api/v1/assistant"],
+      "runtimeTruthSurfaces": ["ai-governance-conformance"],
+      "implementationModules": ["products/tutorputor"],
+      "testEvidence": [
+        {
+          "kind": "command",
+          "value": "check:ai-governance-conformance"
+        }
+      ],
+      "documentationEvidence": ["products/tutorputor/kernel-product.yaml"],
+      "releaseGates": ["check:ai-governance-conformance"]
+    }
+  ]
+}

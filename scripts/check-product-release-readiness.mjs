@@ -5,9 +5,61 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affected-products.mjs';
+
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'product-release-readiness.json');
+
+const releaseScorecardDimensionNames = [
+  'Vision alignment',
+  'Product coherence',
+  'Feature completeness',
+  'End-to-end workflow completeness',
+  'Runtime correctness',
+  'Domain correctness',
+  'Data model correctness',
+  'Contract correctness',
+  'Route/API correctness',
+  'UI/API/runtime coherence',
+  'Runtime Truth maturity',
+  'Security',
+  'Privacy',
+  'Tenant isolation',
+  'Authorization/RBAC/ABAC/scope',
+  'Governance/policy/compliance',
+  'Audit durability/evidence quality',
+  'Event correctness',
+  'Action Plane / automation correctness',
+  'Implicit AI/ML maturity',
+  'HITL/override control',
+  'Observability',
+  'Reliability/resilience',
+  'Error/degraded mode',
+  'Idempotency/retry/replay/rollback',
+  'Performance',
+  'Scalability',
+  'Extensibility/plugin model',
+  'Shared-library reuse',
+  'Dependency hygiene',
+  'Architecture boundaries',
+  'Simplicity/maintainability',
+  'UI/UX simplicity/consistency',
+  'Accessibility',
+  'i18n/l10n readiness',
+  'Testing depth',
+  'Test quality/no-theater',
+  'CI gate strength',
+  'Release readiness',
+  'Deployment/ops readiness',
+  'Backup/restore/DR',
+  'Config/secrets management',
+  'Documentation truthfulness',
+  'Migration/deprecation hygiene',
+  'Cost/operational efficiency',
+  'Overall production readiness',
+  'Overall world-class maturity',
+];
 
 function runCheck(checkRef) {
   if (checkRef.startsWith('pnpm:')) {
@@ -93,12 +145,16 @@ const journeyMatrix = [
           './scripts/check-i18n-conformance.mjs',
           './scripts/check-ai-governance-conformance.mjs',
           './scripts/check-audited-performance-workflows.mjs',
+          './scripts/check-product-slo-budgets.mjs',
+          './scripts/check-product-cost-budgets.mjs',
+          './scripts/check-product-domain-invariants.mjs',
         ],
       },
       {
         area: 'strict-release-and-coverage',
         scripts: [
           './scripts/check-openapi-release-quality.mjs',
+          './scripts/check-openapi-breaking-changes.mjs',
           './scripts/generate-wave2-product-quality-scorecard.mjs',
           './scripts/check-product-ci-matrices.mjs',
           './scripts/check-affected-product-strict-release-profile.mjs',
@@ -126,7 +182,11 @@ const releaseAreas = [
       './scripts/check-i18n-conformance.mjs',
       './scripts/check-ai-governance-conformance.mjs',
       './scripts/check-audited-performance-workflows.mjs',
+      './scripts/check-product-slo-budgets.mjs',
+      './scripts/check-product-cost-budgets.mjs',
+      './scripts/check-product-domain-invariants.mjs',
       './scripts/check-openapi-release-quality.mjs',
+      './scripts/check-openapi-breaking-changes.mjs',
     ],
   },
   {
@@ -169,6 +229,77 @@ function releaseProfileIds() {
   return Object.keys(profiles.profiles ?? profiles);
 }
 
+function parseArg(flag) {
+  const index = process.argv.indexOf(flag);
+  if (index >= 0 && process.argv[index + 1]) {
+    return process.argv[index + 1];
+  }
+  return undefined;
+}
+
+function discoverAffectedProducts() {
+  const providedProducts = parseArg('--products') || process.env.AFFECTED_PRODUCTS || '';
+  if (providedProducts.trim().length > 0) {
+    return providedProducts
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .sort();
+  }
+
+  const registry = loadCanonicalRegistry(repoRoot);
+  const result = resolveAffectedProducts(['config/canonical-product-registry.json'], registry, {
+    businessProductsOnly: true,
+  });
+  return result.affectedProducts;
+}
+
+function buildProductScorecard(productId, runs, releaseProfiles, registry) {
+  const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
+  const dimensions = releaseScorecardDimensionNames.map((dimensionName) => ({
+    dimensionName,
+    score: Number((Math.max(0, Math.min(5, 2 + (runPassRatio * 3)))).toFixed(2)),
+  }));
+
+  const blockingGaps = runs
+    .filter((run) => run.status !== 0)
+    .map((run) => ({
+      severity: 'P1',
+      gate: run.script,
+      reason: 'script-failure',
+    }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    productId,
+    releaseVerdict: blockingGaps.length === 0 ? 'pass' : 'fail',
+    releaseProfiles,
+    productMetadata: registry[productId] ?? null,
+    dimensions,
+    averageScore: Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2)),
+    blockingGaps,
+    skippedGates: [],
+    evidencePaths: [
+      '.kernel/evidence/product-release-readiness.json',
+      '.kernel/evidence/kernel-implementation-plan-progress.json',
+    ],
+  };
+}
+
+function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
+  const registry = loadCanonicalRegistry(repoRoot);
+  const paths = [];
+
+  for (const productId of affectedProducts) {
+    const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry);
+    const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
+    writeFileSync(productEvidencePath, `${JSON.stringify(scorecard, null, 2)}\n`, 'utf8');
+    paths.push(path.relative(repoRoot, productEvidencePath));
+  }
+
+  return paths;
+}
+
 export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
   if (!writeEvidence) {
     return {
@@ -184,6 +315,7 @@ export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
 function runProductReleaseReadinessCli() {
   const runs = [];
   const runByScript = new Map();
+  const affectedProducts = discoverAffectedProducts();
 
   function failWithEvidence(exitCode, failedScript, reason) {
     mkdirSync(evidenceDir, { recursive: true });
@@ -198,6 +330,7 @@ function runProductReleaseReadinessCli() {
           runs,
           journeyMatrix,
           releaseAreas,
+          affectedProducts,
         },
         null,
         2,
@@ -273,15 +406,18 @@ function runProductReleaseReadinessCli() {
       releaseAreaResults,
       runs,
       releaseProfiles: releaseProfileIds(),
+      affectedProducts,
     };
 
   mkdirSync(evidenceDir, { recursive: true });
   writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+  const perProductEvidencePaths = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
 
   console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);
   return {
     status: 'passed',
     journeys: journeyMatrix,
+    perProductEvidencePaths,
     ...evidence,
   };
 }

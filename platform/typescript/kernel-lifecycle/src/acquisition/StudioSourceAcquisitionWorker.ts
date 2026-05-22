@@ -7,9 +7,16 @@
  * provided by platform infrastructure without leaking into Studio.
  */
 
-import { gunzipSync, inflateRawSync } from 'node:zlib';
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { gunzipSync, inflateRawSync } from "node:zlib";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
 
 import type {
   StudioSourceAcquisitionArchivePayload,
@@ -17,13 +24,14 @@ import type {
   StudioSourceAcquisitionJobStore,
   StudioSourceAcquisitionPayloadStore,
   StudioWorkflowStoreScope,
-} from '../api/KernelLifecycleApiHandlers.js';
+} from "../api/KernelLifecycleApiHandlers.js";
 
 export interface StudioSourceAcquisitionWorkerOptions {
   readonly maxArchiveBytes?: number;
   readonly maxTotalUncompressedBytes?: number;
   readonly maxFileBytes?: number;
   readonly maxEntryCount?: number;
+  readonly maxNestedPathDepth?: number;
   readonly allowedExtensions?: readonly string[];
   readonly includeHidden?: boolean;
 }
@@ -87,7 +95,9 @@ export interface StudioSourceAcquisitionQueueSnapshot {
 }
 
 export interface StudioSourceAcquisitionQueueStore extends StudioSourceAcquisitionJobStore {
-  claimNextPendingJob(claim: StudioSourceAcquisitionQueueClaim): Promise<StudioSourceAcquisitionJob | null>;
+  claimNextPendingJob(
+    claim: StudioSourceAcquisitionQueueClaim,
+  ): Promise<StudioSourceAcquisitionJob | null>;
   getQueueSnapshot(now: string): Promise<StudioSourceAcquisitionQueueSnapshot>;
 }
 
@@ -102,7 +112,7 @@ export interface StudioSourceAcquisitionQueueRunnerOptions {
 
 export interface StudioRepositoryArchiveTokenProvider {
   getToken(request: {
-    readonly provider: 'github' | 'gitlab';
+    readonly provider: "github" | "gitlab";
     readonly repositoryUrl: string;
   }): Promise<string | null>;
 }
@@ -139,7 +149,8 @@ const DEFAULT_OPTIONS: Required<StudioSourceAcquisitionWorkerOptions> = {
   maxTotalUncompressedBytes: 100 * 1024 * 1024,
   maxFileBytes: 5 * 1024 * 1024,
   maxEntryCount: 5_000,
-  allowedExtensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.json'],
+  maxNestedPathDepth: 24,
+  allowedExtensions: [".ts", ".tsx", ".js", ".jsx", ".css", ".json"],
   includeHidden: false,
 };
 
@@ -150,19 +161,28 @@ export class StudioSourceAcquisitionWorker {
     private readonly clock: () => string = () => new Date().toISOString(),
   ) {}
 
-  async executeArchive(request: StudioArchiveAcquisitionRequest): Promise<StudioSourceAcquisitionWorkerResult> {
+  async executeArchive(
+    request: StudioArchiveAcquisitionRequest,
+  ): Promise<StudioSourceAcquisitionWorkerResult> {
     const options = resolveOptions(request.options);
     await this.markRunning(request.scope, request.jobId);
     try {
-      const files = materializeArchive(request.fileName, request.bytes, options);
-      const totalBytes = files.reduce((sum, file) => sum + file.bytes.byteLength, 0);
+      const files = materializeArchive(
+        request.fileName,
+        request.bytes,
+        options,
+      );
+      const totalBytes = files.reduce(
+        (sum, file) => sum + file.bytes.byteLength,
+        0,
+      );
       const writeResult = await this.writer.writeFiles({
         scope: request.scope,
         jobId: request.jobId,
         files,
       });
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'complete',
+        status: "complete",
         completedAt: this.clock(),
         totalBytes,
         fileCount: files.length,
@@ -172,7 +192,7 @@ export class StudioSourceAcquisitionWorker {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'failed',
+        status: "failed",
         completedAt: this.clock(),
         errorMessage: message,
       });
@@ -180,7 +200,9 @@ export class StudioSourceAcquisitionWorker {
     }
   }
 
-  async executeStoredArchive(request: StudioStoredArchiveAcquisitionRequest): Promise<StudioSourceAcquisitionWorkerResult> {
+  async executeStoredArchive(
+    request: StudioStoredArchiveAcquisitionRequest,
+  ): Promise<StudioSourceAcquisitionWorkerResult> {
     const options = resolveOptions(request.options);
     await this.markRunning(request.scope, request.jobId);
     return await this.executeStoredArchiveFromRunningJob({
@@ -191,7 +213,9 @@ export class StudioSourceAcquisitionWorker {
     });
   }
 
-  async executeRunningStoredArchive(request: StudioRunningStoredArchiveAcquisitionRequest): Promise<StudioSourceAcquisitionWorkerResult> {
+  async executeRunningStoredArchive(
+    request: StudioRunningStoredArchiveAcquisitionRequest,
+  ): Promise<StudioSourceAcquisitionWorkerResult> {
     return await this.executeStoredArchiveFromRunningJob({
       scope: request.scope,
       jobId: request.jobId,
@@ -209,22 +233,34 @@ export class StudioSourceAcquisitionWorker {
     let payload: StudioSourceAcquisitionArchivePayload;
     let bytes: Uint8Array;
     try {
-      const storedPayload = await request.payloadStore.getArchivePayload(request.scope, request.jobId);
+      const storedPayload = await request.payloadStore.getArchivePayload(
+        request.scope,
+        request.jobId,
+      );
       if (storedPayload === null) {
-        throw new Error(`Studio source acquisition archive payload not found: ${request.jobId}`);
+        throw new Error(
+          `Studio source acquisition archive payload not found: ${request.jobId}`,
+        );
       }
-      if (!sameScope(storedPayload.scope, request.scope) || storedPayload.jobId !== request.jobId) {
-        throw new Error('Studio source acquisition archive payload scope mismatch');
+      if (
+        !sameScope(storedPayload.scope, request.scope) ||
+        storedPayload.jobId !== request.jobId
+      ) {
+        throw new Error(
+          "Studio source acquisition archive payload scope mismatch",
+        );
       }
       payload = storedPayload;
-      bytes = Uint8Array.from(Buffer.from(payload.contentBase64, 'base64'));
+      bytes = Uint8Array.from(Buffer.from(payload.contentBase64, "base64"));
       if (bytes.byteLength !== payload.size) {
-        throw new Error(`Stored archive payload size mismatch for job ${request.jobId}`);
+        throw new Error(
+          `Stored archive payload size mismatch for job ${request.jobId}`,
+        );
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'failed',
+        status: "failed",
         completedAt: this.clock(),
         errorMessage: message,
       });
@@ -237,13 +273,18 @@ export class StudioSourceAcquisitionWorker {
       bytes,
       options: request.options,
     });
-    if (result.job.status === 'complete') {
-      await request.payloadStore.deleteArchivePayload?.(request.scope, request.jobId);
+    if (result.job.status === "complete") {
+      await request.payloadStore.deleteArchivePayload?.(
+        request.scope,
+        request.jobId,
+      );
     }
     return result;
   }
 
-  async executeRepository(request: StudioRepositoryAcquisitionRequest): Promise<StudioSourceAcquisitionWorkerResult> {
+  async executeRepository(
+    request: StudioRepositoryAcquisitionRequest,
+  ): Promise<StudioSourceAcquisitionWorkerResult> {
     const options = resolveOptions(request.options);
     await this.markRunning(request.scope, request.jobId);
     return await this.executeRepositoryFromRunningJob({
@@ -256,7 +297,9 @@ export class StudioSourceAcquisitionWorker {
     });
   }
 
-  async executeRunningRepository(request: StudioRunningRepositoryAcquisitionRequest): Promise<StudioSourceAcquisitionWorkerResult> {
+  async executeRunningRepository(
+    request: StudioRunningRepositoryAcquisitionRequest,
+  ): Promise<StudioSourceAcquisitionWorkerResult> {
     return await this.executeRepositoryFromRunningJob({
       scope: request.scope,
       jobId: request.jobId,
@@ -291,7 +334,7 @@ export class StudioSourceAcquisitionWorker {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'failed',
+        status: "failed",
         completedAt: this.clock(),
         errorMessage: message,
       });
@@ -307,15 +350,22 @@ export class StudioSourceAcquisitionWorker {
     readonly options: Required<StudioSourceAcquisitionWorkerOptions>;
   }): Promise<StudioSourceAcquisitionWorkerResult> {
     try {
-      const files = materializeArchive(request.fileName, request.bytes, request.options);
-      const totalBytes = files.reduce((sum, file) => sum + file.bytes.byteLength, 0);
+      const files = materializeArchive(
+        request.fileName,
+        request.bytes,
+        request.options,
+      );
+      const totalBytes = files.reduce(
+        (sum, file) => sum + file.bytes.byteLength,
+        0,
+      );
       const writeResult = await this.writer.writeFiles({
         scope: request.scope,
         jobId: request.jobId,
         files,
       });
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'complete',
+        status: "complete",
         completedAt: this.clock(),
         totalBytes,
         fileCount: files.length,
@@ -325,7 +375,7 @@ export class StudioSourceAcquisitionWorker {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const job = await this.updateRequired(request.scope, request.jobId, {
-        status: 'failed',
+        status: "failed",
         completedAt: this.clock(),
         errorMessage: message,
       });
@@ -333,9 +383,12 @@ export class StudioSourceAcquisitionWorker {
     }
   }
 
-  private async markRunning(scope: StudioWorkflowStoreScope, jobId: string): Promise<void> {
+  private async markRunning(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<void> {
     await this.updateRequired(scope, jobId, {
-      status: 'running',
+      status: "running",
       startedAt: this.clock(),
     });
   }
@@ -343,7 +396,7 @@ export class StudioSourceAcquisitionWorker {
   private async updateRequired(
     scope: StudioWorkflowStoreScope,
     jobId: string,
-    patch: Parameters<StudioSourceAcquisitionJobStore['updateJob']>[2],
+    patch: Parameters<StudioSourceAcquisitionJobStore["updateJob"]>[2],
   ): Promise<StudioSourceAcquisitionJob> {
     const job = await this.jobStore.updateJob(scope, jobId, patch);
     if (job === null) {
@@ -360,24 +413,32 @@ export class StudioSourceAcquisitionQueueRunner {
     private readonly clock: () => string = () => new Date().toISOString(),
   ) {}
 
-  async runNext(options: StudioSourceAcquisitionQueueRunnerOptions): Promise<StudioSourceAcquisitionWorkerResult | null> {
+  async runNext(
+    options: StudioSourceAcquisitionQueueRunnerOptions,
+  ): Promise<StudioSourceAcquisitionWorkerResult | null> {
     const now = this.clock();
-    const leaseExpiresAt = new Date(Date.parse(now) + (options.leaseMs ?? 5 * 60 * 1000)).toISOString();
+    const leaseExpiresAt = new Date(
+      Date.parse(now) + (options.leaseMs ?? 5 * 60 * 1000),
+    ).toISOString();
     const job = await this.queueStore.claimNextPendingJob({
       workerId: options.workerId,
       now,
       leaseExpiresAt,
-      ...(options.maxAttempts === undefined ? {} : { maxAttempts: options.maxAttempts }),
+      ...(options.maxAttempts === undefined
+        ? {}
+        : { maxAttempts: options.maxAttempts }),
     });
     if (job === null) {
       return null;
     }
-    if (job.descriptor.kind === 'archive') {
+    if (job.descriptor.kind === "archive") {
       return await this.sourceWorker.executeRunningStoredArchive({
         scope: job.scope,
         jobId: job.jobId,
         payloadStore: options.archivePayloadStore,
-        ...(options.workerOptions === undefined ? {} : { options: options.workerOptions }),
+        ...(options.workerOptions === undefined
+          ? {}
+          : { options: options.workerOptions }),
       });
     }
     return await this.sourceWorker.executeRunningRepository({
@@ -386,44 +447,64 @@ export class StudioSourceAcquisitionQueueRunner {
       repositoryUrl: job.descriptor.uri,
       ...(job.descriptor.ref === undefined ? {} : { ref: job.descriptor.ref }),
       fetcher: options.repositoryFetcher,
-      ...(options.workerOptions === undefined ? {} : { options: options.workerOptions }),
+      ...(options.workerOptions === undefined
+        ? {}
+        : { options: options.workerOptions }),
     });
   }
 }
 
 export class HttpStudioRepositoryArchiveFetcher implements StudioRepositoryArchiveFetcher {
-  constructor(private readonly options: HttpStudioRepositoryArchiveFetcherOptions = {}) {}
+  constructor(
+    private readonly options: HttpStudioRepositoryArchiveFetcherOptions = {},
+  ) {}
 
   async fetchArchive(request: {
     readonly repositoryUrl: string;
     readonly ref?: string;
     readonly maxBytes: number;
   }): Promise<{ readonly fileName: string; readonly bytes: Uint8Array }> {
-    const parsed = parseRepositoryArchiveRequest(request.repositoryUrl, request.ref);
-    const token = await this.options.tokenProvider?.getToken({
-      provider: parsed.provider,
-      repositoryUrl: request.repositoryUrl,
-    }) ?? null;
-    const response = await (this.options.fetchFn ?? fetch)(this.archiveUrl(parsed), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/octet-stream',
-        ...(token === null ? {} : { Authorization: `Bearer ${token}` }),
+    const parsed = parseRepositoryArchiveRequest(
+      request.repositoryUrl,
+      request.ref,
+    );
+    const token =
+      (await this.options.tokenProvider?.getToken({
+        provider: parsed.provider,
+        repositoryUrl: request.repositoryUrl,
+      })) ?? null;
+    const response = await (this.options.fetchFn ?? fetch)(
+      this.archiveUrl(parsed),
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/octet-stream",
+          ...(token === null ? {} : { Authorization: `Bearer ${token}` }),
+        },
       },
-    });
+    );
 
     if (!response.ok) {
-      throw new Error(`${parsed.provider} archive fetch failed (${response.status})`);
+      throw new Error(
+        `${parsed.provider} archive fetch failed (${response.status})`,
+      );
     }
 
-    const contentLength = response.headers.get('content-length');
-    if (contentLength !== null && Number.parseInt(contentLength, 10) > request.maxBytes) {
-      throw new Error(`Repository archive exceeds maximum size (${request.maxBytes} bytes)`);
+    const contentLength = response.headers.get("content-length");
+    if (
+      contentLength !== null &&
+      Number.parseInt(contentLength, 10) > request.maxBytes
+    ) {
+      throw new Error(
+        `Repository archive exceeds maximum size (${request.maxBytes} bytes)`,
+      );
     }
 
     const buffer = await response.arrayBuffer();
     if (buffer.byteLength > request.maxBytes) {
-      throw new Error(`Repository archive exceeds maximum size (${request.maxBytes} bytes)`);
+      throw new Error(
+        `Repository archive exceeds maximum size (${request.maxBytes} bytes)`,
+      );
     }
 
     return {
@@ -433,18 +514,21 @@ export class HttpStudioRepositoryArchiveFetcher implements StudioRepositoryArchi
   }
 
   private archiveUrl(parsed: ParsedRepositoryArchiveRequest): string {
-    if (parsed.provider === 'github') {
-      const apiUrl = this.options.githubApiUrl ?? 'https://api.github.com';
+    if (parsed.provider === "github") {
+      const apiUrl = this.options.githubApiUrl ?? "https://api.github.com";
       return `${apiUrl}/repos/${encodeURIComponent(parsed.owner)}/${encodeURIComponent(parsed.repo)}/tarball/${encodeURIComponent(parsed.ref)}`;
     }
-    const apiUrl = this.options.gitlabApiUrl ?? 'https://gitlab.com/api/v4';
+    const apiUrl = this.options.gitlabApiUrl ?? "https://gitlab.com/api/v4";
     const projectPath = encodeURIComponent(`${parsed.owner}/${parsed.repo}`);
     return `${apiUrl}/projects/${projectPath}/repository/archive.tar.gz?sha=${encodeURIComponent(parsed.ref)}`;
   }
 }
 
 export class InMemoryStudioSourceWorkspaceWriter implements StudioSourceWorkspaceWriter {
-  readonly filesByJob = new Map<string, readonly StudioMaterializedSourceFile[]>();
+  readonly filesByJob = new Map<
+    string,
+    readonly StudioMaterializedSourceFile[]
+  >();
 
   async writeFiles(request: {
     readonly scope: StudioWorkflowStoreScope;
@@ -466,7 +550,11 @@ export class FileSystemStudioSourceWorkspaceWriter implements StudioSourceWorksp
     readonly jobId: string;
     readonly files: readonly StudioMaterializedSourceFile[];
   }): Promise<{ readonly localWorkspacePath: string }> {
-    const workspaceRoot = scopedJobDirectory(this.rootDirectory, request.scope, request.jobId);
+    const workspaceRoot = scopedJobDirectory(
+      this.rootDirectory,
+      request.scope,
+      request.jobId,
+    );
     await mkdir(workspaceRoot, { recursive: true });
     for (const file of request.files) {
       const targetPath = containedPath(workspaceRoot, file.relativePath);
@@ -480,14 +568,19 @@ export class FileSystemStudioSourceWorkspaceWriter implements StudioSourceWorksp
 export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAcquisitionQueueStore {
   constructor(private readonly rootDirectory: string) {}
 
-  async putJob(job: StudioSourceAcquisitionJob): Promise<StudioSourceAcquisitionJob> {
+  async putJob(
+    job: StudioSourceAcquisitionJob,
+  ): Promise<StudioSourceAcquisitionJob> {
     await this.writeJob(job);
     return job;
   }
 
-  async getJob(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionJob | null> {
+  async getJob(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceAcquisitionJob | null> {
     try {
-      const content = await readFile(this.jobPath(scope, jobId), 'utf8');
+      const content = await readFile(this.jobPath(scope, jobId), "utf8");
       return JSON.parse(content) as StudioSourceAcquisitionJob;
     } catch (error) {
       if (isFileNotFound(error)) {
@@ -500,7 +593,7 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
   async updateJob(
     scope: StudioWorkflowStoreScope,
     jobId: string,
-    patch: Parameters<StudioSourceAcquisitionJobStore['updateJob']>[2],
+    patch: Parameters<StudioSourceAcquisitionJobStore["updateJob"]>[2],
   ): Promise<StudioSourceAcquisitionJob | null> {
     const existing = await this.getJob(scope, jobId);
     if (existing === null) {
@@ -511,27 +604,40 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
       ...existing,
       status: patch.status,
       ...(patch.startedAt === undefined ? {} : { startedAt: patch.startedAt }),
-      ...(patch.completedAt === undefined ? {} : { completedAt: patch.completedAt }),
-      ...(patch.totalBytes === undefined ? {} : { totalBytes: patch.totalBytes }),
+      ...(patch.completedAt === undefined
+        ? {}
+        : { completedAt: patch.completedAt }),
+      ...(patch.totalBytes === undefined
+        ? {}
+        : { totalBytes: patch.totalBytes }),
       ...(patch.fileCount === undefined ? {} : { fileCount: patch.fileCount }),
-      ...(patch.localWorkspacePath === undefined ? {} : { localWorkspacePath: patch.localWorkspacePath }),
-      ...(patch.errorMessage === undefined ? {} : { errorMessage: patch.errorMessage }),
+      ...(patch.localWorkspacePath === undefined
+        ? {}
+        : { localWorkspacePath: patch.localWorkspacePath }),
+      ...(patch.errorMessage === undefined
+        ? {}
+        : { errorMessage: patch.errorMessage }),
     };
     await this.writeJob(updated);
     return updated;
   }
 
-  async claimNextPendingJob(claim: StudioSourceAcquisitionQueueClaim): Promise<StudioSourceAcquisitionJob | null> {
+  async claimNextPendingJob(
+    claim: StudioSourceAcquisitionQueueClaim,
+  ): Promise<StudioSourceAcquisitionJob | null> {
     const jobs = await this.readAllJobs();
     const claimableJobs = jobs
-      .filter((job) => job.status === 'pending' || isExpiredRunningJob(job, claim.now))
+      .filter(
+        (job) =>
+          job.status === "pending" || isExpiredRunningJob(job, claim.now),
+      )
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     for (const job of claimableJobs) {
       const attemptCount = (job.attemptCount ?? 0) + 1;
       if (attemptCount > (claim.maxAttempts ?? 3)) {
         await this.writeJob({
           ...job,
-          status: 'failed',
+          status: "failed",
           completedAt: claim.now,
           errorMessage: `Studio source acquisition exceeded maximum retry attempts (${claim.maxAttempts ?? 3})`,
         });
@@ -539,7 +645,7 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
       }
       const claimed: StudioSourceAcquisitionJob = {
         ...job,
-        status: 'running',
+        status: "running",
         startedAt: claim.now,
         leasedBy: claim.workerId,
         leaseExpiresAt: claim.leaseExpiresAt,
@@ -551,26 +657,35 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
     return null;
   }
 
-  async getQueueSnapshot(now: string): Promise<StudioSourceAcquisitionQueueSnapshot> {
+  async getQueueSnapshot(
+    now: string,
+  ): Promise<StudioSourceAcquisitionQueueSnapshot> {
     const jobs = await this.readAllJobs();
-    const pendingJobs = jobs.filter((job) => job.status === 'pending');
-    const expiredRunningJobs = jobs.filter((job) => isExpiredRunningJob(job, now));
+    const pendingJobs = jobs.filter((job) => job.status === "pending");
+    const expiredRunningJobs = jobs.filter((job) =>
+      isExpiredRunningJob(job, now),
+    );
     const oldestPendingCreatedAt = pendingJobs
       .map((job) => job.createdAt)
       .sort()[0];
     const oldestExpiredLeaseAt = expiredRunningJobs
       .map((job) => job.leaseExpiresAt)
-      .filter((leaseExpiresAt): leaseExpiresAt is string => leaseExpiresAt !== undefined)
+      .filter(
+        (leaseExpiresAt): leaseExpiresAt is string =>
+          leaseExpiresAt !== undefined,
+      )
       .sort()[0];
     return {
       total: jobs.length,
       pending: pendingJobs.length,
-      running: jobs.filter((job) => job.status === 'running').length,
+      running: jobs.filter((job) => job.status === "running").length,
       expiredRunning: expiredRunningJobs.length,
-      complete: jobs.filter((job) => job.status === 'complete').length,
-      failed: jobs.filter((job) => job.status === 'failed').length,
-      cancelled: jobs.filter((job) => job.status === 'cancelled').length,
-      ...(oldestPendingCreatedAt === undefined ? {} : { oldestPendingCreatedAt }),
+      complete: jobs.filter((job) => job.status === "complete").length,
+      failed: jobs.filter((job) => job.status === "failed").length,
+      cancelled: jobs.filter((job) => job.status === "cancelled").length,
+      ...(oldestPendingCreatedAt === undefined
+        ? {}
+        : { oldestPendingCreatedAt }),
       ...(oldestExpiredLeaseAt === undefined ? {} : { oldestExpiredLeaseAt }),
     };
   }
@@ -579,7 +694,7 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
     const paths = await findJobFiles(this.rootDirectory);
     const jobs: StudioSourceAcquisitionJob[] = [];
     for (const path of paths) {
-      const content = await readFile(path, 'utf8');
+      const content = await readFile(path, "utf8");
       jobs.push(JSON.parse(content) as StudioSourceAcquisitionJob);
     }
     return jobs;
@@ -589,29 +704,37 @@ export class FileSystemStudioSourceAcquisitionJobStore implements StudioSourceAc
     const targetPath = this.jobPath(job.scope, job.jobId);
     await mkdir(dirname(targetPath), { recursive: true });
     const tempPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
-    await writeFile(tempPath, `${JSON.stringify(job, null, 2)}\n`, 'utf8');
+    await writeFile(tempPath, `${JSON.stringify(job, null, 2)}\n`, "utf8");
     await rename(tempPath, targetPath);
   }
 
   private jobPath(scope: StudioWorkflowStoreScope, jobId: string): string {
-    return join(scopedJobDirectory(this.rootDirectory, scope, jobId), 'job.json');
+    return join(
+      scopedJobDirectory(this.rootDirectory, scope, jobId),
+      "job.json",
+    );
   }
 }
 
 export class FileSystemStudioSourceAcquisitionPayloadStore implements StudioSourceAcquisitionPayloadStore {
   constructor(private readonly rootDirectory: string) {}
 
-  async putArchivePayload(payload: StudioSourceAcquisitionArchivePayload): Promise<void> {
+  async putArchivePayload(
+    payload: StudioSourceAcquisitionArchivePayload,
+  ): Promise<void> {
     const targetPath = this.payloadPath(payload.scope, payload.jobId);
     await mkdir(dirname(targetPath), { recursive: true });
     const tempPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
-    await writeFile(tempPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+    await writeFile(tempPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
     await rename(tempPath, targetPath);
   }
 
-  async getArchivePayload(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionArchivePayload | null> {
+  async getArchivePayload(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceAcquisitionArchivePayload | null> {
     try {
-      const content = await readFile(this.payloadPath(scope, jobId), 'utf8');
+      const content = await readFile(this.payloadPath(scope, jobId), "utf8");
       return JSON.parse(content) as StudioSourceAcquisitionArchivePayload;
     } catch (error) {
       if (isFileNotFound(error)) {
@@ -621,90 +744,132 @@ export class FileSystemStudioSourceAcquisitionPayloadStore implements StudioSour
     }
   }
 
-  async deleteArchivePayload(scope: StudioWorkflowStoreScope, jobId: string): Promise<void> {
+  async deleteArchivePayload(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<void> {
     await rm(this.payloadPath(scope, jobId), { force: true });
   }
 
   private payloadPath(scope: StudioWorkflowStoreScope, jobId: string): string {
-    return join(scopedJobDirectory(this.rootDirectory, scope, jobId), 'archive-payload.json');
+    return join(
+      scopedJobDirectory(this.rootDirectory, scope, jobId),
+      "archive-payload.json",
+    );
   }
 }
 
 function assertWorkerAllowedAcquisitionJobTransition(
-  currentStatus: StudioSourceAcquisitionJob['status'],
-  nextStatus: Parameters<StudioSourceAcquisitionJobStore['updateJob']>[2]['status'],
+  currentStatus: StudioSourceAcquisitionJob["status"],
+  nextStatus: Parameters<
+    StudioSourceAcquisitionJobStore["updateJob"]
+  >[2]["status"],
 ): void {
-  const allowed: Record<StudioSourceAcquisitionJob['status'], readonly Parameters<StudioSourceAcquisitionJobStore['updateJob']>[2]['status'][]> = {
-    pending: ['running', 'failed', 'cancelled'],
-    running: ['complete', 'failed', 'cancelled'],
+  const allowed: Record<
+    StudioSourceAcquisitionJob["status"],
+    readonly Parameters<
+      StudioSourceAcquisitionJobStore["updateJob"]
+    >[2]["status"][]
+  > = {
+    pending: ["running", "failed", "cancelled"],
+    running: ["complete", "failed", "cancelled"],
     complete: [],
     failed: [],
     cancelled: [],
   };
   if (!allowed[currentStatus].includes(nextStatus)) {
-    throw new Error(`Cannot transition Studio source acquisition job from ${currentStatus} to ${nextStatus}`);
+    throw new Error(
+      `Cannot transition Studio source acquisition job from ${currentStatus} to ${nextStatus}`,
+    );
   }
 }
 
-function resolveOptions(options: StudioSourceAcquisitionWorkerOptions | undefined): Required<StudioSourceAcquisitionWorkerOptions> {
+function resolveOptions(
+  options: StudioSourceAcquisitionWorkerOptions | undefined,
+): Required<StudioSourceAcquisitionWorkerOptions> {
   return {
     ...DEFAULT_OPTIONS,
     ...(options ?? {}),
-    allowedExtensions: options?.allowedExtensions ?? DEFAULT_OPTIONS.allowedExtensions,
+    allowedExtensions:
+      options?.allowedExtensions ?? DEFAULT_OPTIONS.allowedExtensions,
   };
 }
 
-function sameScope(left: StudioWorkflowStoreScope, right: StudioWorkflowStoreScope): boolean {
-  return left.tenantId === right.tenantId
-    && left.workspaceId === right.workspaceId
-    && left.projectId === right.projectId;
+function sameScope(
+  left: StudioWorkflowStoreScope,
+  right: StudioWorkflowStoreScope,
+): boolean {
+  return (
+    left.tenantId === right.tenantId &&
+    left.workspaceId === right.workspaceId &&
+    left.projectId === right.projectId
+  );
 }
 
-function isExpiredRunningJob(job: StudioSourceAcquisitionJob, now: string): boolean {
-  return job.status === 'running'
-    && job.leaseExpiresAt !== undefined
-    && Date.parse(job.leaseExpiresAt) <= Date.parse(now);
+function isExpiredRunningJob(
+  job: StudioSourceAcquisitionJob,
+  now: string,
+): boolean {
+  return (
+    job.status === "running" &&
+    job.leaseExpiresAt !== undefined &&
+    Date.parse(job.leaseExpiresAt) <= Date.parse(now)
+  );
 }
 
 interface ParsedRepositoryArchiveRequest {
-  readonly provider: 'github' | 'gitlab';
+  readonly provider: "github" | "gitlab";
   readonly owner: string;
   readonly repo: string;
   readonly ref: string;
 }
 
-function parseRepositoryArchiveRequest(repositoryUrl: string, ref: string | undefined): ParsedRepositoryArchiveRequest {
+function parseRepositoryArchiveRequest(
+  repositoryUrl: string,
+  ref: string | undefined,
+): ParsedRepositoryArchiveRequest {
   let url: URL;
   try {
     url = new URL(repositoryUrl);
   } catch {
-    throw new Error('Repository archive fetch requires a valid HTTPS URL');
+    throw new Error("Repository archive fetch requires a valid HTTPS URL");
   }
-  if (url.protocol !== 'https:' || url.username !== '' || url.password !== '') {
-    throw new Error('Repository archive fetch requires an HTTPS URL without embedded credentials');
+  if (url.protocol !== "https:" || url.username !== "" || url.password !== "") {
+    throw new Error(
+      "Repository archive fetch requires an HTTPS URL without embedded credentials",
+    );
   }
-  const provider = url.hostname.toLowerCase() === 'github.com'
-    ? 'github'
-    : url.hostname.toLowerCase() === 'gitlab.com'
-      ? 'gitlab'
-      : null;
+  const provider =
+    url.hostname.toLowerCase() === "github.com"
+      ? "github"
+      : url.hostname.toLowerCase() === "gitlab.com"
+        ? "gitlab"
+        : null;
   if (provider === null) {
-    throw new Error('Repository archive fetch only supports github.com and gitlab.com');
+    throw new Error(
+      "Repository archive fetch only supports github.com and gitlab.com",
+    );
   }
-  const [owner, rawRepo] = url.pathname.split('/').filter(Boolean);
+  const [owner, rawRepo] = url.pathname.split("/").filter(Boolean);
   if (owner === undefined || rawRepo === undefined) {
-    throw new Error('Repository archive fetch requires owner/project path segments');
+    throw new Error(
+      "Repository archive fetch requires owner/project path segments",
+    );
   }
-  const repo = rawRepo.replace(/\.git$/i, '');
+  const repo = rawRepo.replace(/\.git$/i, "");
   return {
     provider,
     owner,
     repo,
-    ref: ref ?? 'main',
+    ref: ref ?? "main",
   };
 }
 
-function scopedJobDirectory(rootDirectory: string, scope: StudioWorkflowStoreScope, jobId: string): string {
+function scopedJobDirectory(
+  rootDirectory: string,
+  scope: StudioWorkflowStoreScope,
+  jobId: string,
+): string {
   const root = resolve(rootDirectory);
   return containedPath(
     root,
@@ -724,7 +889,7 @@ async function findJobFiles(rootDirectory: string): Promise<readonly string[]> {
   return files;
 
   async function walk(directory: string): Promise<void> {
-    let entries: import('node:fs').Dirent[];
+    let entries: import("node:fs").Dirent[];
     try {
       entries = await readdir(directory, { withFileTypes: true });
     } catch (error) {
@@ -734,10 +899,13 @@ async function findJobFiles(rootDirectory: string): Promise<readonly string[]> {
       throw error;
     }
     for (const entry of entries) {
-      const entryPath = containedPath(root, relative(root, join(directory, entry.name)));
+      const entryPath = containedPath(
+        root,
+        relative(root, join(directory, entry.name)),
+      );
       if (entry.isDirectory()) {
         await walk(entryPath);
-      } else if (entry.isFile() && entry.name === 'job.json') {
+      } else if (entry.isFile() && entry.name === "job.json") {
         files.push(entryPath);
       }
     }
@@ -749,25 +917,35 @@ function containedPath(rootDirectory: string, relativePath: string): string {
   const target = resolve(root, relativePath);
   const relativePathFromRoot = relative(root, target);
   if (
-    relativePathFromRoot === '' ||
-    relativePathFromRoot.startsWith('..') ||
+    relativePathFromRoot === "" ||
+    relativePathFromRoot.startsWith("..") ||
     relativePathFromRoot.includes(`..${sep()}`)
   ) {
-    throw new Error(`Resolved path escapes source acquisition workspace: ${relativePath}`);
+    throw new Error(
+      `Resolved path escapes source acquisition workspace: ${relativePath}`,
+    );
   }
   return target;
 }
 
 function safePathSegment(value: string): string {
-  return encodeURIComponent(value).replace(/[!'().*]/g, (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+  return encodeURIComponent(value).replace(
+    /[!'().*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 function sep(): string {
-  return process.platform === 'win32' ? '\\' : '/';
+  return process.platform === "win32" ? "\\" : "/";
 }
 
 function isFileNotFound(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && (error as { readonly code?: unknown }).code === 'ENOENT';
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { readonly code?: unknown }).code === "ENOENT"
+  );
 }
 
 function materializeArchive(
@@ -776,23 +954,33 @@ function materializeArchive(
   options: Required<StudioSourceAcquisitionWorkerOptions>,
 ): readonly StudioMaterializedSourceFile[] {
   if (bytes.byteLength > options.maxArchiveBytes) {
-    throw new Error(`Archive exceeds maximum size (${options.maxArchiveBytes} bytes)`);
+    throw new Error(
+      `Archive exceeds maximum size (${options.maxArchiveBytes} bytes)`,
+    );
   }
   const normalizedName = fileName.toLowerCase();
   if (isZip(bytes)) {
     return unpackZip(bytes, options);
   }
-  if (normalizedName.endsWith('.tar.gz') || normalizedName.endsWith('.tgz') || isGzip(bytes)) {
-    const decompressed = gunzipSync(bytes);
+  if (
+    normalizedName.endsWith(".tar.gz") ||
+    normalizedName.endsWith(".tgz") ||
+    isGzip(bytes)
+  ) {
+    const decompressed = gunzipSync(bytes, {
+      maxOutputLength: options.maxTotalUncompressedBytes + 1,
+    });
     if (decompressed.byteLength > options.maxTotalUncompressedBytes) {
-      throw new Error(`Archive uncompressed size exceeds maximum (${options.maxTotalUncompressedBytes} bytes)`);
+      throw new Error(
+        `Archive uncompressed size exceeds maximum (${options.maxTotalUncompressedBytes} bytes)`,
+      );
     }
     return unpackTar(decompressed, options);
   }
-  if (normalizedName.endsWith('.tar') || isTar(bytes)) {
+  if (normalizedName.endsWith(".tar") || isTar(bytes)) {
     return unpackTar(bytes, options);
   }
-  throw new Error('Unsupported archive format (supported: ZIP, TAR, TAR.GZ)');
+  throw new Error("Unsupported archive format (supported: ZIP, TAR, TAR.GZ)");
 }
 
 function unpackZip(
@@ -804,6 +992,8 @@ function unpackZip(
   let offset = 0;
   let entryCount = 0;
   let totalUncompressedBytes = 0;
+  const seenPaths = new Set<string>();
+  const symlinkPaths = readZipSymlinkPaths(bytes);
 
   while (offset + 30 <= view.byteLength) {
     const signature = view.getUint32(offset, true);
@@ -816,30 +1006,63 @@ function unpackZip(
     const fileNameLength = view.getUint16(offset + 26, true);
     const extraFieldLength = view.getUint16(offset + 28, true);
     if ((flags & 0x0008) !== 0) {
-      throw new Error('ZIP archives with data descriptors are not supported');
+      throw new Error("ZIP archives with data descriptors are not supported");
     }
 
     const fileNameStart = offset + 30;
     const fileDataStart = fileNameStart + fileNameLength + extraFieldLength;
     const fileDataEnd = fileDataStart + compressedSize;
     if (fileDataEnd > bytes.byteLength) {
-      throw new Error('Invalid ZIP archive: entry exceeds archive size');
+      throw new Error("Invalid ZIP archive: entry exceeds archive size");
     }
 
-    const relativePath = normalizeSourceEntryPath(new TextDecoder().decode(bytes.slice(fileNameStart, fileNameStart + fileNameLength)));
-    if (!relativePath.endsWith('/')) {
+    const relativePath = normalizeSourceEntryPath(
+      new TextDecoder().decode(
+        bytes.slice(fileNameStart, fileNameStart + fileNameLength),
+      ),
+    );
+    if (!relativePath.endsWith("/")) {
       entryCount += 1;
-      assertArchiveLimits(relativePath, uncompressedSize, entryCount, totalUncompressedBytes + uncompressedSize, options);
-      totalUncompressedBytes += uncompressedSize;
-      const compressed = bytes.slice(fileDataStart, fileDataEnd);
-      const fileBytes = compressionMethod === 0
-        ? compressed
-        : compressionMethod === 8
-          ? inflateRawSync(compressed)
-          : undefined;
-      if (fileBytes === undefined) {
-        throw new Error(`Unsupported ZIP compression method: ${compressionMethod}`);
+      assertUniqueArchivePath(relativePath, seenPaths);
+      if (symlinkPaths.has(relativePath)) {
+        throw new Error(
+          `Archive link entry "${relativePath}" is not supported`,
+        );
       }
+      assertArchiveLimits(
+        relativePath,
+        uncompressedSize,
+        entryCount,
+        totalUncompressedBytes + uncompressedSize,
+        options,
+      );
+      const compressed = bytes.slice(fileDataStart, fileDataEnd);
+      const fileBytes =
+        compressionMethod === 0
+          ? compressed
+          : compressionMethod === 8
+            ? inflateRawSync(compressed, {
+                maxOutputLength: options.maxFileBytes + 1,
+              })
+            : undefined;
+      if (fileBytes === undefined) {
+        throw new Error(
+          `Unsupported ZIP compression method: ${compressionMethod}`,
+        );
+      }
+      if (fileBytes.byteLength !== uncompressedSize) {
+        throw new Error(
+          `ZIP entry "${relativePath}" size mismatch: expected ${uncompressedSize}, got ${fileBytes.byteLength}`,
+        );
+      }
+      totalUncompressedBytes += fileBytes.byteLength;
+      assertArchiveLimits(
+        relativePath,
+        fileBytes.byteLength,
+        entryCount,
+        totalUncompressedBytes,
+        options,
+      );
       if (shouldIncludeFile(relativePath, options)) {
         assertTextLike(relativePath, fileBytes);
         files.push({ relativePath, bytes: fileBytes });
@@ -860,6 +1083,7 @@ function unpackTar(
   let offset = 0;
   let entryCount = 0;
   let totalUncompressedBytes = 0;
+  const seenPaths = new Set<string>();
 
   while (offset + 512 <= bytes.byteLength) {
     const header = bytes.slice(offset, offset + 512);
@@ -869,19 +1093,31 @@ function unpackTar(
     const prefix = readTarString(header, 345, 155);
     const typeFlag = readTarString(header, 156, 1);
     const sizeOctal = readTarString(header, 124, 12);
-    const fileSize = Number.parseInt(sizeOctal.trim() || '0', 8);
-    const relativePath = normalizeSourceEntryPath(prefix.length > 0 ? `${prefix}/${name}` : name);
+    const fileSize = Number.parseInt(sizeOctal.trim() || "0", 8);
+    const relativePath = normalizeSourceEntryPath(
+      prefix.length > 0 ? `${prefix}/${name}` : name,
+    );
     const dataStart = offset + 512;
     const dataEnd = dataStart + fileSize;
     if (dataEnd > bytes.byteLength) {
-      throw new Error('Invalid TAR archive: entry exceeds archive size');
+      throw new Error("Invalid TAR archive: entry exceeds archive size");
     }
 
-    const isRegularFile = typeFlag === '' || typeFlag === '0';
-    if (isRegularFile && fileSize > 0 && !relativePath.endsWith('/')) {
+    const isRegularFile = typeFlag === "" || typeFlag === "0";
+    if (typeFlag === "1" || typeFlag === "2") {
+      throw new Error(`Archive link entry "${relativePath}" is not supported`);
+    }
+    if (isRegularFile && fileSize > 0 && !relativePath.endsWith("/")) {
       entryCount += 1;
+      assertUniqueArchivePath(relativePath, seenPaths);
       totalUncompressedBytes += fileSize;
-      assertArchiveLimits(relativePath, fileSize, entryCount, totalUncompressedBytes, options);
+      assertArchiveLimits(
+        relativePath,
+        fileSize,
+        entryCount,
+        totalUncompressedBytes,
+        options,
+      );
       if (shouldIncludeFile(relativePath, options)) {
         const fileBytes = bytes.slice(dataStart, dataEnd);
         assertTextLike(relativePath, fileBytes);
@@ -903,35 +1139,111 @@ function assertArchiveLimits(
   options: Required<StudioSourceAcquisitionWorkerOptions>,
 ): void {
   if (entryCount > options.maxEntryCount) {
-    throw new Error(`Archive entry count exceeds maximum (${options.maxEntryCount})`);
+    throw new Error(
+      `Archive entry count exceeds maximum (${options.maxEntryCount})`,
+    );
+  }
+  if (relativePath.split("/").length > options.maxNestedPathDepth) {
+    throw new Error(
+      `Archive entry "${relativePath}" exceeds nested path depth limit (${options.maxNestedPathDepth})`,
+    );
   }
   if (fileBytes > options.maxFileBytes) {
-    throw new Error(`Archive entry "${relativePath}" exceeds file size limit (${fileBytes} bytes)`);
+    throw new Error(
+      `Archive entry "${relativePath}" exceeds file size limit (${fileBytes} bytes)`,
+    );
   }
   if (totalUncompressedBytes > options.maxTotalUncompressedBytes) {
-    throw new Error(`Archive uncompressed size exceeds maximum (${options.maxTotalUncompressedBytes} bytes)`);
+    throw new Error(
+      `Archive uncompressed size exceeds maximum (${options.maxTotalUncompressedBytes} bytes)`,
+    );
   }
 }
 
-function shouldIncludeFile(relativePath: string, options: Required<StudioSourceAcquisitionWorkerOptions>): boolean {
-  const hasAllowedExtension = options.allowedExtensions.some((extension) => relativePath.endsWith(extension));
-  const isHidden = relativePath.split('/').some((segment) => segment.startsWith('.'));
+function shouldIncludeFile(
+  relativePath: string,
+  options: Required<StudioSourceAcquisitionWorkerOptions>,
+): boolean {
+  const hasAllowedExtension = options.allowedExtensions.some((extension) =>
+    relativePath.endsWith(extension),
+  );
+  const isHidden = relativePath
+    .split("/")
+    .some((segment) => segment.startsWith("."));
   return hasAllowedExtension && (options.includeHidden || !isHidden);
 }
 
 function normalizeSourceEntryPath(path: string): string {
-  const normalized = path.replace(/\\/g, '/').replace(/^\.\/+/, '');
-  const segments = normalized.split('/');
+  const normalized = path.replace(/\\/g, "/").replace(/^\.\/+/, "");
+  const segments = normalized.split("/");
+  const windowsReservedNames =
+    /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
   if (
     normalized.trim().length === 0 ||
-    normalized.includes('\0') ||
-    normalized.startsWith('/') ||
+    normalized.includes("\0") ||
+    normalized.startsWith("/") ||
     /^[a-z]:\//i.test(normalized) ||
-    segments.some((segment) => segment === '' || segment === '.' || segment === '..')
+    segments.some(
+      (segment) =>
+        segment === "" ||
+        segment === "." ||
+        segment === ".." ||
+        /[\u0000-\u001f\u007f]/u.test(segment) ||
+        windowsReservedNames.test(segment) ||
+        segment.endsWith(".") ||
+        segment === "__MACOSX" ||
+        segment === ".DS_Store" ||
+        segment === "Thumbs.db",
+    )
   ) {
     throw new Error(`Unsafe source path rejected: ${path}`);
   }
   return normalized;
+}
+
+function assertUniqueArchivePath(
+  relativePath: string,
+  seenPaths: Set<string>,
+): void {
+  const canonicalPath = relativePath.toLowerCase();
+  if (seenPaths.has(canonicalPath)) {
+    throw new Error(`Archive contains duplicate source path: ${relativePath}`);
+  }
+  seenPaths.add(canonicalPath);
+}
+
+function readZipSymlinkPaths(bytes: Uint8Array): ReadonlySet<string> {
+  const symlinkPaths = new Set<string>();
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 0;
+  while (offset + 46 <= view.byteLength) {
+    const signature = view.getUint32(offset, true);
+    if (signature !== 0x02014b50) {
+      offset += 1;
+      continue;
+    }
+    const fileNameLength = view.getUint16(offset + 28, true);
+    const extraFieldLength = view.getUint16(offset + 30, true);
+    const fileCommentLength = view.getUint16(offset + 32, true);
+    const externalAttributes = view.getUint32(offset + 38, true);
+    const fileNameStart = offset + 46;
+    const fileNameEnd = fileNameStart + fileNameLength;
+    if (fileNameEnd > view.byteLength) {
+      throw new Error(
+        "Invalid ZIP archive: central directory entry exceeds archive size",
+      );
+    }
+    const unixMode = externalAttributes >>> 16;
+    if ((unixMode & 0o170000) === 0o120000) {
+      symlinkPaths.add(
+        normalizeSourceEntryPath(
+          new TextDecoder().decode(bytes.slice(fileNameStart, fileNameEnd)),
+        ),
+      );
+    }
+    offset = fileNameEnd + extraFieldLength + fileCommentLength;
+  }
+  return symlinkPaths;
 }
 
 function assertTextLike(relativePath: string, bytes: Uint8Array): void {
@@ -940,8 +1252,15 @@ function assertTextLike(relativePath: string, bytes: Uint8Array): void {
   }
 }
 
-function readTarString(bytes: Uint8Array, start: number, length: number): string {
-  return new TextDecoder().decode(bytes.slice(start, start + length)).replace(/\0.*$/, '').trim();
+function readTarString(
+  bytes: Uint8Array,
+  start: number,
+  length: number,
+): string {
+  return new TextDecoder()
+    .decode(bytes.slice(start, start + length))
+    .replace(/\0.*$/, "")
+    .trim();
 }
 
 function isZip(bytes: Uint8Array): boolean {
@@ -953,5 +1272,5 @@ function isGzip(bytes: Uint8Array): boolean {
 }
 
 function isTar(bytes: Uint8Array): boolean {
-  return bytes.byteLength >= 512 && readTarString(bytes, 257, 5) === 'ustar';
+  return bytes.byteLength >= 512 && readTarString(bytes, 257, 5) === "ustar";
 }
