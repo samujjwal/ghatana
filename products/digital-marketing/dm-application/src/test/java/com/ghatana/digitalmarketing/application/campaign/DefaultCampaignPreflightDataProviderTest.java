@@ -34,6 +34,7 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
     private InMemoryBudgetRepository budgetRepo;
     private InMemoryAudienceRepository audienceRepo;
     private InMemoryContentAssetRepository contentRepo;
+    private StubConsentInteractionBroker consentBroker;
     private DefaultCampaignPreflightDataProvider provider;
 
     private DmOperationContext ctx;
@@ -44,7 +45,8 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         budgetRepo   = new InMemoryBudgetRepository();
         audienceRepo = new InMemoryAudienceRepository();
         contentRepo  = new InMemoryContentAssetRepository();
-        provider     = new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, contentRepo);
+        consentBroker = new StubConsentInteractionBroker();
+        provider     = new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, contentRepo, consentBroker);
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -70,11 +72,13 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
     @DisplayName("constructor rejects null dependencies")
     void shouldRejectNullDependencies() {
         assertThatNullPointerException()
-            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(null, audienceRepo, contentRepo));
+            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(null, audienceRepo, contentRepo, consentBroker));
         assertThatNullPointerException()
-            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(budgetRepo, null, contentRepo));
+            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(budgetRepo, null, contentRepo, consentBroker));
         assertThatNullPointerException()
-            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, null));
+            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, null, consentBroker));
+        assertThatNullPointerException()
+            .isThrownBy(() -> new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, contentRepo, null));
     }
 
     @Test
@@ -285,6 +289,25 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         @Override
         public Promise<Integer> countApprovedByCampaign(DmWorkspaceId workspaceId, String campaignId) {
             return Promise.of(approvedCount);
+        }
+    }
+
+    private static final class StubConsentInteractionBroker implements ConsentInteractionBroker {
+        private boolean consentGranted = true;
+
+        void setConsentGranted(boolean granted) {
+            this.consentGranted = granted;
+        }
+
+        @Override
+        public Promise<ConsentDecision> checkConsentStatus(DmOperationContext ctx, ConsentCheckRequest request) {
+            String status = consentGranted ? "granted" : "denied";
+            return Promise.of(new ConsentDecision(
+                consentGranted,
+                status,
+                Instant.now(),
+                "evidence-ref-123"
+            ));
         }
     }
 }

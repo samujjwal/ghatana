@@ -1,0 +1,339 @@
+name: Data Cloud Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_environment:
+        description: "Target release environment"
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+concurrency:
+  group: data-cloud-release-${{ github.ref }}-${{ inputs.release_environment }}
+  cancel-in-progress: false
+
+jobs:
+  validate-release-config:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.release_environment }}
+    steps:
+      - name: Validate required release environment variables and secrets
+        env:
+          DC_RELEASE_BASE_URL: ${{ vars.DC_RELEASE_BASE_URL }}
+          DC_RELEASE_TENANT_ID: ${{ vars.DC_RELEASE_TENANT_ID }}
+          DC_RELEASE_API_TOKEN: ${{ secrets.DC_RELEASE_API_TOKEN }}
+          POSTGRES_HOST: ${{ vars.DC_POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ vars.DC_POSTGRES_PORT }}
+          POSTGRES_DB: ${{ vars.DC_POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.DC_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DC_POSTGRES_PASSWORD }}
+          CLICKHOUSE_HOST: ${{ vars.DC_CLICKHOUSE_HOST }}
+          CLICKHOUSE_PORT: ${{ vars.DC_CLICKHOUSE_PORT }}
+          CLICKHOUSE_USER: ${{ secrets.DC_CLICKHOUSE_USER }}
+          CLICKHOUSE_PASSWORD: ${{ secrets.DC_CLICKHOUSE_PASSWORD }}
+          OPENSEARCH_HOST: ${{ vars.DC_OPENSEARCH_HOST }}
+          OPENSEARCH_PORT: ${{ vars.DC_OPENSEARCH_PORT }}
+          OPENSEARCH_USER: ${{ secrets.DC_OPENSEARCH_USER }}
+          OPENSEARCH_PASSWORD: ${{ secrets.DC_OPENSEARCH_PASSWORD }}
+          S3_ENDPOINT: ${{ vars.DC_S3_ENDPOINT }}
+          S3_BUCKET: ${{ vars.DC_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DC_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DC_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+
+          require_var() {
+            local name="$1"
+            local value="$2"
+            if [ -z "$value" ]; then
+              echo "::error::Missing required release variable/secret: $name"
+              exit 1
+            fi
+          }
+
+          require_var "DC_RELEASE_BASE_URL" "${DC_RELEASE_BASE_URL:-}"
+          require_var "DC_RELEASE_TENANT_ID" "${DC_RELEASE_TENANT_ID:-}"
+          require_var "DC_RELEASE_API_TOKEN" "${DC_RELEASE_API_TOKEN:-}"
+
+          if echo "${DC_RELEASE_BASE_URL}" | grep -Eq 'localhost|127\.0\.0\.1'; then
+            echo "::error::DC_RELEASE_BASE_URL must reference a real staging/production endpoint, not localhost."
+            exit 1
+          fi
+
+          if ! echo "${DC_RELEASE_BASE_URL}" | grep -Eq '^https?://'; then
+            echo "::error::DC_RELEASE_BASE_URL must include http(s) scheme."
+            exit 1
+          fi
+
+          require_var "POSTGRES_HOST" "${POSTGRES_HOST:-}"
+          require_var "POSTGRES_PORT" "${POSTGRES_PORT:-}"
+          require_var "POSTGRES_DB" "${POSTGRES_DB:-}"
+          require_var "POSTGRES_USER" "${POSTGRES_USER:-}"
+          require_var "POSTGRES_PASSWORD" "${POSTGRES_PASSWORD:-}"
+          require_var "CLICKHOUSE_HOST" "${CLICKHOUSE_HOST:-}"
+          require_var "CLICKHOUSE_PORT" "${CLICKHOUSE_PORT:-}"
+          require_var "CLICKHOUSE_USER" "${CLICKHOUSE_USER:-}"
+          require_var "CLICKHOUSE_PASSWORD" "${CLICKHOUSE_PASSWORD:-}"
+          require_var "OPENSEARCH_HOST" "${OPENSEARCH_HOST:-}"
+          require_var "OPENSEARCH_PORT" "${OPENSEARCH_PORT:-}"
+          require_var "OPENSEARCH_USER" "${OPENSEARCH_USER:-}"
+          require_var "OPENSEARCH_PASSWORD" "${OPENSEARCH_PASSWORD:-}"
+          require_var "S3_ENDPOINT" "${S3_ENDPOINT:-}"
+          require_var "S3_BUCKET" "${S3_BUCKET:-}"
+          require_var "AWS_ACCESS_KEY_ID" "${AWS_ACCESS_KEY_ID:-}"
+          require_var "AWS_SECRET_ACCESS_KEY" "${AWS_SECRET_ACCESS_KEY:-}"
+
+          echo "Release configuration validation passed."
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: [validate-release-config]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and test Data Cloud modules
+        run: |
+          ./gradlew \
+            :products:data-cloud:planes:shared-spi:check \
+            :products:data-cloud:delivery:runtime-composition:check \
+            :products:data-cloud:delivery:launcher:check \
+            :products:data-cloud:extensions:agent-registry:check \
+            :products:data-cloud:delivery:sdk:check \
+            --no-daemon
+
+      - name: Data Cloud UI type-check and readiness tests
+        run: |
+          pnpm --dir products/data-cloud/delivery/ui run type-check
+          pnpm --dir products/data-cloud/delivery/ui run test:readiness
+
+  release-runtime-profile:
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium for Data Cloud UI a11y suite
+        run: pnpm --dir products/data-cloud/delivery/ui exec playwright install --with-deps chromium
+
+      - name: Run Data Cloud release runtime profile checks
+        run: |
+          pnpm check:data-cloud-release-runtime-profile
+          pnpm check:data-cloud-ui-a11y
+
+  smoke-e2e-strict:
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    environment: ${{ inputs.release_environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run smoke E2E in strict mode
+        env:
+          DC_BASE_URL: ${{ vars.DC_RELEASE_BASE_URL }}
+          DC_TENANT_ID: ${{ vars.DC_RELEASE_TENANT_ID }}
+          DC_API_TOKEN: ${{ secrets.DC_RELEASE_API_TOKEN }}
+          SMOKE_TIMEOUT: "15"
+        run: |
+          set -euo pipefail
+          chmod +x products/data-cloud/scripts/run-smoke-e2e.sh
+          bash products/data-cloud/scripts/run-smoke-e2e.sh --json | tee smoke-e2e-report.json
+
+      - name: Validate smoke evidence report
+        run: |
+          set -euo pipefail
+          test -s smoke-e2e-report.json
+          jq -e '.results | length > 0' smoke-e2e-report.json >/dev/null
+          jq -e '.summary.fail == 0 and .summary.warn == 0' smoke-e2e-report.json >/dev/null
+
+      - name: Upload smoke evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-smoke-evidence
+          path: smoke-e2e-report.json
+          retention-days: 30
+
+  backup-drill-strict:
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    environment: ${{ inputs.release_environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate recovery runbook commands
+        run: |
+          chmod +x products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
+          bash products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
+
+      - name: Run backup drill in strict mode
+        env:
+          POSTGRES_HOST: ${{ vars.DC_POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ vars.DC_POSTGRES_PORT }}
+          POSTGRES_DB: ${{ vars.DC_POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.DC_POSTGRES_USER }}
+          PGPASSWORD: ${{ secrets.DC_POSTGRES_PASSWORD }}
+          CLICKHOUSE_HOST: ${{ vars.DC_CLICKHOUSE_HOST }}
+          CLICKHOUSE_PORT: ${{ vars.DC_CLICKHOUSE_PORT }}
+          CLICKHOUSE_USER: ${{ secrets.DC_CLICKHOUSE_USER }}
+          CLICKHOUSE_PASSWORD: ${{ secrets.DC_CLICKHOUSE_PASSWORD }}
+          OPENSEARCH_HOST: ${{ vars.DC_OPENSEARCH_HOST }}
+          OPENSEARCH_PORT: ${{ vars.DC_OPENSEARCH_PORT }}
+          OPENSEARCH_USER: ${{ secrets.DC_OPENSEARCH_USER }}
+          OPENSEARCH_PASSWORD: ${{ secrets.DC_OPENSEARCH_PASSWORD }}
+          S3_ENDPOINT: ${{ vars.DC_S3_ENDPOINT }}
+          S3_BUCKET: ${{ vars.DC_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DC_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DC_AWS_SECRET_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          chmod +x products/data-cloud/scripts/run-backup-drill.sh
+          bash products/data-cloud/scripts/run-backup-drill.sh --json | tee backup-drill-report.json
+
+      - name: Validate backup drill evidence report
+        run: |
+          set -euo pipefail
+          test -s backup-drill-report.json
+          jq -e '.results | length > 0' backup-drill-report.json >/dev/null
+          jq -e '.fail == 0' backup-drill-report.json >/dev/null
+          jq -e '([.results[] | select(.status == "WARN" or .status == "SKIP")] | length) == 0' backup-drill-report.json >/dev/null
+
+      - name: Upload backup drill evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-backup-evidence
+          path: backup-drill-report.json
+          retention-days: 30
+
+  security-scan-strict:
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Run dependency vulnerability check (blocking)
+        run: |
+          ./gradlew \
+            :products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze \
+            --no-daemon
+
+      - name: Generate SBOM (blocking)
+        run: |
+          ./gradlew cyclonedxBom --no-daemon
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-sbom
+          path: |
+            **/build/reports/bom.json
+            **/build/reports/bom.xml
+          retention-days: 30
+
+  quality-gates-strict:
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: SonarQube analysis (blocking when configured)
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_LOGIN: ${{ secrets.SONAR_LOGIN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SONAR_HOST_URL:-}" ] && [ -n "${SONAR_LOGIN:-}" ]; then
+            if ./gradlew tasks --all --no-daemon | grep -q '^sonarqube '; then
+              ./gradlew sonarqube --no-daemon
+            else
+              echo "::error::SonarQube secrets are configured but Gradle sonarqube task is missing."
+              exit 1
+            fi
+          else
+            echo "SonarQube secrets not configured; skipping Sonar gate by policy."
+          fi
+
+  release-gate:
+    runs-on: ubuntu-latest
+    needs:
+      - validate-release-config
+      - build-and-test
+      - release-runtime-profile
+      - smoke-e2e-strict
+      - backup-drill-strict
+      - security-scan-strict
+      - quality-gates-strict
+    steps:
+      - name: Download smoke evidence artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-cloud-smoke-evidence
+          path: release-evidence/smoke
+
+      - name: Download backup evidence artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-cloud-backup-evidence
+          path: release-evidence/backup
+
+      - name: Verify release evidence artifacts exist
+        run: |
+          set -euo pipefail
+          test -s release-evidence/smoke/smoke-e2e-report.json
+          test -s release-evidence/backup/backup-drill-report.json
+          echo "Data Cloud strict release gate passed with required evidence artifacts."

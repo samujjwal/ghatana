@@ -676,6 +676,14 @@ export const routeCapabilities: RouteCapability[] = [
     tenantRequired: true,
   },
   {
+    path: '/api/v1/entities/{collection}/export',
+    method: 'POST',
+    sensitivity: 'INTERNAL',
+    accessLevel: 'OPERATOR',
+    requiresAuth: true,
+    tenantRequired: true,
+  },
+  {
     path: '/api/v1/entities/{collection}/anomalies',
     method: 'POST',
     sensitivity: 'INTERNAL',
@@ -1494,6 +1502,22 @@ export const routeCapabilities: RouteCapability[] = [
   {
     path: '/api/v1/connectors/{connectionId}',
     method: 'GET',
+    sensitivity: 'INTERNAL',
+    accessLevel: 'VIEWER',
+    requiresAuth: true,
+    tenantRequired: true,
+  },
+  {
+    path: '/api/v1/connectors/{connectionId}',
+    method: 'PUT',
+    sensitivity: 'INTERNAL',
+    accessLevel: 'VIEWER',
+    requiresAuth: true,
+    tenantRequired: true,
+  },
+  {
+    path: '/api/v1/connectors/{connectionId}',
+    method: 'DELETE',
     sensitivity: 'INTERNAL',
     accessLevel: 'VIEWER',
     requiresAuth: true,

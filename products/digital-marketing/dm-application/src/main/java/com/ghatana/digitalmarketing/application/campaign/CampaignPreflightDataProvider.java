@@ -35,13 +35,17 @@ public interface CampaignPreflightDataProvider {
      * @param approvedContentCount number of approved content assets assigned to the campaign
      * @param totalSpend accumulated spend for the campaign
      * @param approvedBudget approved spend ceiling for the campaign
+     * @param consentGranted whether PHR consent has been granted for campaign activation
+     * @param consentPurpose the consent purpose (e.g., "campaign-activation")
      */
     record CampaignPreflightData(
         boolean budgetApproved,
         int targetAudienceCount,
         int approvedContentCount,
         double totalSpend,
-        double approvedBudget
+        double approvedBudget,
+        boolean consentGranted,
+        String consentPurpose
     ) {
         /**
          * Validates numeric preflight invariants at construction time.
@@ -58,6 +62,9 @@ public interface CampaignPreflightDataProvider {
             }
             if (approvedBudget < 0) {
                 throw new IllegalArgumentException("approvedBudget must be >= 0");
+            }
+            if (consentPurpose == null || consentPurpose.isBlank()) {
+                throw new IllegalArgumentException("consentPurpose must not be blank");
             }
         }
     }

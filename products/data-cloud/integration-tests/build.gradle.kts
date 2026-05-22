@@ -19,6 +19,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.archunit.junit5)
 
     // Testcontainers for real provider integration tests
     testImplementation(libs.testcontainers.core)
@@ -36,6 +37,20 @@ tasks.test {
     useJUnitPlatform {
         excludeTags("performance", "integration")
     }
+}
+
+/**
+ * Shared-library and package-boundary architecture enforcement.
+ * Run with: ./gradlew :products:data-cloud:integration-tests:boundaryArchitectureTest
+ */
+val boundaryArchitectureTest by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Runs boundary architecture guards for Data Cloud shared-library/module constraints"
+    useJUnitPlatform {
+        includeTags("architecture")
+    }
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
 }
 
 /**
@@ -69,15 +84,12 @@ val runbookSmoke by tasks.registering(Exec::class) {
     group = "verification"
     description = "Validates recovery runbook commands are executable and current (DC-P1-452)"
 
-    val scriptFile = project.file("../planes/action/server/src/test/scripts/validate-runbook-commands.sh")
+    val scriptFile = project.file("../scripts/validate-runbook-commands.mjs")
+    val disasterRecoveryDir = project.file("../planes/action/scripts/disaster-recovery")
     inputs.file(scriptFile)
-    inputs.dir(project.file("../scripts/disaster-recovery"))
+    inputs.dir(disasterRecoveryDir)
 
-    if (System.getProperty("os.name").lowercase().contains("windows")) {
-        commandLine("bash", scriptFile.absolutePath)
-    } else {
-        commandLine(scriptFile.absolutePath)
-    }
+    commandLine("node", scriptFile.absolutePath)
 
     isIgnoreExitValue = false
 }

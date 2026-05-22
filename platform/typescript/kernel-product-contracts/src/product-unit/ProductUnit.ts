@@ -19,7 +19,9 @@ import {
   IMPLEMENTATION_STATUSES,
   PRODUCT_SURFACE_BUILD_SYSTEMS,
   PRODUCT_SURFACE_LANGUAGES,
+  PRODUCT_SURFACE_RUNTIMES,
   PRODUCT_UNIT_SURFACE_TYPES,
+  isValidLanguageRuntimeBuildSystemCombination,
 } from "./ProductUnitSurface.js";
 import type { ProductShape } from "./ProductShape.js";
 import { PRODUCT_SHAPES } from "./ProductShape.js";
@@ -384,8 +386,11 @@ export const ProductUnitSurfaceSchema = z
     sourceRef: z.string().trim().min(1).optional(),
     implementationStatus: z.enum(IMPLEMENTATION_STATUSES),
     language: z.enum(PRODUCT_SURFACE_LANGUAGES).optional(),
-    runtime: z.string().trim().min(1).optional(),
+    languageVersion: z.string().trim().min(1).optional(),
+    runtime: z.enum(PRODUCT_SURFACE_RUNTIMES).optional(),
+    runtimeVersion: z.string().trim().min(1).optional(),
     buildSystem: z.enum(PRODUCT_SURFACE_BUILD_SYSTEMS).optional(),
+    buildSystemVersion: z.string().trim().min(1).optional(),
     packagePath: z.string().trim().min(1).optional(),
     gradleModule: z.string().trim().min(1).optional(),
     cratePath: z.string().trim().min(1).optional(),
@@ -393,7 +398,48 @@ export const ProductUnitSurfaceSchema = z
     pyprojectPath: z.string().trim().min(1).optional(),
     adapterHint: z.string().trim().min(1).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((surface, context) => {
+    // Require language/runtime/buildSystem for implemented surfaces
+    if (surface.implementationStatus === "implemented") {
+      if (surface.language === undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["language"],
+          message: "language is required for implemented surfaces",
+        });
+      }
+      if (surface.runtime === undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["runtime"],
+          message: "runtime is required for implemented surfaces",
+        });
+      }
+      if (surface.buildSystem === undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["buildSystem"],
+          message: "buildSystem is required for implemented surfaces",
+        });
+      }
+    }
+
+    // Validate language/runtime/buildSystem combination when all are present
+    if (
+      surface.language !== undefined &&
+      surface.runtime !== undefined &&
+      surface.buildSystem !== undefined
+    ) {
+      if (!isValidLanguageRuntimeBuildSystemCombination(surface.language, surface.runtime, surface.buildSystem)) {
+        context.addIssue({
+          code: "custom",
+          path: ["language"],
+          message: `Invalid combination: language="${surface.language}", runtime="${surface.runtime}", buildSystem="${surface.buildSystem}". This combination is not supported by Kernel lifecycle adapters.`,
+        });
+      }
+    }
+  });
 
 export const ProviderRefSchema = z
   .object({

@@ -94,8 +94,11 @@ export interface ProductInteractionContract {
   readonly topic?: string | undefined;
   readonly capability?: string | undefined;
   readonly requestSchemaRef?: string | undefined;
+  readonly requestSchemaSha256?: string | undefined;
   readonly responseSchemaRef?: string | undefined;
+  readonly responseSchemaSha256?: string | undefined;
   readonly eventSchemaRef?: string | undefined;
+  readonly eventSchemaSha256?: string | undefined;
   readonly policy: ProductInteractionPolicy;
   readonly evidence: ProductInteractionEvidence;
   readonly required?: boolean | undefined;
@@ -173,8 +176,11 @@ export const ProductInteractionContractSchema = z
     topic: z.string().trim().min(1).optional(),
     capability: z.string().trim().min(1).optional(),
     requestSchemaRef: z.string().trim().min(1).optional(),
+    requestSchemaSha256: z.string().trim().min(1).optional(),
     responseSchemaRef: z.string().trim().min(1).optional(),
+    responseSchemaSha256: z.string().trim().min(1).optional(),
     eventSchemaRef: z.string().trim().min(1).optional(),
+    eventSchemaSha256: z.string().trim().min(1).optional(),
     policy: ProductInteractionPolicySchema,
     evidence: ProductInteractionEvidenceSchema,
     required: z.boolean().optional(),

@@ -29,10 +29,11 @@ public final class NotificationPreferenceInteractionHandler
 
     private final NotificationPreferenceService preferenceService;
 
-    public NotificationPreferenceInteractionHandler() {
-        this(new DefaultNotificationPreferenceService());
-    }
-
+    /**
+     * Constructs a handler with a real preference service.
+     *
+     * @param preferenceService the preference service for notification lookups
+     */
     public NotificationPreferenceInteractionHandler(NotificationPreferenceService preferenceService) {
         this.preferenceService = Objects.requireNonNull(preferenceService, "preferenceService must not be null");
     }
@@ -94,17 +95,4 @@ public final class NotificationPreferenceInteractionHandler
             boolean emailEnabled,
             String source
     ) {}
-
-    private static final class DefaultNotificationPreferenceService implements NotificationPreferenceService {
-        @Override
-        public Promise<NotificationPreferenceResponse> lookup(
-                ProductInteractionRequest<NotificationPreferenceRequest> request) {
-            NotificationPreferenceRequest payload = request.payload();
-            return Promise.of(new NotificationPreferenceResponse(
-                    payload.subjectId(),
-                    true,
-                    false,
-                    "tenant-scoped-preference"));
-        }
-    }
 }

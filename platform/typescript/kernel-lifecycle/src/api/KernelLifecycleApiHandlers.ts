@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import type {
   ApprovalDecision,
   ApprovalRequest,
@@ -84,6 +85,7 @@ const ParamsSchema = z.object({
   productUnitId: z.string().trim().min(1).optional(),
   runId: z.string().trim().min(1).optional(),
   approvalId: z.string().trim().min(1).optional(),
+  jobId: z.string().trim().min(1).optional(),
 });
 
 const QuerySchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({});
@@ -135,6 +137,89 @@ const ProductUnitIntentMutationBodySchema = z.object({
   evidenceRefs: z.array(z.string().trim().min(1)).optional(),
 });
 
+const MAX_SOURCE_ACQUISITION_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SOURCE_ACQUISITION_ARCHIVE_BYTES = 50 * 1024 * 1024;
+const MAX_SOURCE_ACQUISITION_BASE64_BYTES = Math.ceil(MAX_SOURCE_ACQUISITION_ARCHIVE_BYTES * 4 / 3) + 4;
+const ALLOWED_REPOSITORY_HOSTS = new Set(['github.com', 'gitlab.com']);
+
+const WorkflowAuditSchema = z.object({
+  persistedAt: z.string().datetime({ offset: true }),
+  lastModifiedAt: z.string().datetime({ offset: true }),
+  persistenceVersion: z.number().int().min(0),
+});
+
+const StudioWorkflowStateBodySchema = z.object({
+  state: z.record(z.string(), z.unknown()),
+  audit: WorkflowAuditSchema,
+}).strict();
+
+const StudioWorkflowEvidenceBodySchema = z.object({
+  evidenceId: z.string().trim().min(1),
+  createdAt: z.string().datetime({ offset: true }),
+  modelId: z.string().trim().min(1).optional(),
+  label: z.string().trim().min(1).optional(),
+}).passthrough();
+
+const SourceAcquisitionOptionsSchema = z.object({
+  maxFileSize: z.number().int().positive().max(MAX_SOURCE_ACQUISITION_FILE_SIZE_BYTES).optional(),
+  allowedExtensions: z.array(z.string().trim().regex(/^\.[a-z0-9][a-z0-9.+-]*$/i)).max(64).optional(),
+  includeHidden: z.boolean().optional(),
+}).strict().default({});
+
+const RepositorySourceAcquisitionBodySchema = z.object({
+  input: z.object({
+    kind: z.enum(['github-repository', 'gitlab-repository']),
+    repositoryUrl: z.string().url(),
+    ref: z.string().trim().min(1).optional(),
+  }).strict(),
+  options: SourceAcquisitionOptionsSchema.optional(),
+}).strict();
+
+const ArchiveSourceAcquisitionBodySchema = z.object({
+  input: z.object({
+    kind: z.literal('archive-upload'),
+    file: z.object({
+      name: z.string().trim().min(1).max(255),
+      size: z.number().int().positive().max(MAX_SOURCE_ACQUISITION_ARCHIVE_BYTES),
+      type: z.string().trim().max(128).optional(),
+      contentBase64: z.string().trim().min(1).max(MAX_SOURCE_ACQUISITION_BASE64_BYTES),
+    }).strict(),
+  }).strict(),
+  options: SourceAcquisitionOptionsSchema.optional(),
+}).strict();
+
+const SourceAcquisitionJobUpdateBodySchema = z.object({
+  status: z.enum(['running', 'complete', 'failed', 'cancelled']),
+  startedAt: z.string().datetime({ offset: true }).optional(),
+  completedAt: z.string().datetime({ offset: true }).optional(),
+  totalBytes: z.number().int().nonnegative().optional(),
+  fileCount: z.number().int().nonnegative().optional(),
+  localWorkspacePath: z.string().trim().min(1).optional(),
+  errorMessage: z.string().trim().min(1).optional(),
+}).strict().superRefine((body, context) => {
+  if ((body.status === 'complete' || body.status === 'failed' || body.status === 'cancelled') && body.completedAt === undefined) {
+    context.addIssue({
+      code: 'custom',
+      path: ['completedAt'],
+      message: 'completedAt is required for terminal acquisition job states',
+    });
+  }
+  if (body.status === 'complete' && (body.totalBytes === undefined || body.fileCount === undefined || body.localWorkspacePath === undefined)) {
+    context.addIssue({
+      code: 'custom',
+      path: ['status'],
+      message: 'complete acquisition jobs require totalBytes, fileCount, and localWorkspacePath',
+    });
+  }
+  if (body.status === 'failed' && body.errorMessage === undefined) {
+    context.addIssue({
+      code: 'custom',
+      path: ['errorMessage'],
+      message: 'failed acquisition jobs require errorMessage',
+    });
+  }
+});
+
 export interface KernelLifecycleApiRequest {
   readonly params?: Record<string, string | undefined>;
   readonly query?: Record<string, string | number | boolean | undefined>;
@@ -174,8 +259,93 @@ export interface KernelLifecycleAuthorizer {
   authorizeApprovalDecision(actor: KernelLifecycleActor, context: KernelLifecycleAuthContext): Promise<boolean>;
 }
 
+export interface StudioWorkflowStoreScope {
+  readonly tenantId: string;
+  readonly workspaceId: string;
+  readonly projectId: string;
+}
+
+export interface StudioWorkflowStateRecord {
+  readonly state: Record<string, unknown>;
+  readonly audit: z.infer<typeof WorkflowAuditSchema>;
+  readonly scope: StudioWorkflowStoreScope;
+  readonly idempotencyKey?: string;
+}
+
+export interface StudioWorkflowEvidenceRecord {
+  readonly evidence: Record<string, unknown>;
+  readonly evidenceId: string;
+  readonly scope: StudioWorkflowStoreScope;
+  readonly idempotencyKey?: string;
+}
+
+export interface StudioSourceAcquisitionJob {
+  readonly jobId: string;
+  readonly status: 'pending' | 'running' | 'complete' | 'failed' | 'cancelled';
+  readonly descriptor: {
+    readonly kind: 'github' | 'gitlab' | 'archive';
+    readonly uri: string;
+    readonly label: string;
+    readonly ref?: string;
+  };
+  readonly createdAt: string;
+  readonly startedAt?: string;
+  readonly completedAt?: string;
+  readonly totalBytes?: number;
+  readonly fileCount?: number;
+  readonly localWorkspacePath?: string;
+  readonly errorMessage?: string;
+  readonly correlationId?: string;
+  readonly leasedBy?: string;
+  readonly leaseExpiresAt?: string;
+  readonly attemptCount?: number;
+  readonly scope: StudioWorkflowStoreScope;
+}
+
+export interface StudioWorkflowPersistenceStore {
+  putWorkflowState(record: StudioWorkflowStateRecord): Promise<StudioWorkflowStateRecord>;
+  getWorkflowState(scope: StudioWorkflowStoreScope): Promise<StudioWorkflowStateRecord | null>;
+  clearWorkflowState(scope: StudioWorkflowStoreScope): Promise<void>;
+  putWorkflowEvidence(record: StudioWorkflowEvidenceRecord): Promise<StudioWorkflowEvidenceRecord>;
+}
+
+export interface StudioSourceAcquisitionJobStore {
+  putJob(job: StudioSourceAcquisitionJob): Promise<StudioSourceAcquisitionJob>;
+  getJob(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionJob | null>;
+  updateJob(scope: StudioWorkflowStoreScope, jobId: string, patch: StudioSourceAcquisitionJobUpdate): Promise<StudioSourceAcquisitionJob | null>;
+}
+
+export interface StudioSourceAcquisitionArchivePayload {
+  readonly jobId: string;
+  readonly scope: StudioWorkflowStoreScope;
+  readonly fileName: string;
+  readonly size: number;
+  readonly contentBase64: string;
+  readonly receivedAt: string;
+  readonly contentType?: string;
+}
+
+export interface StudioSourceAcquisitionPayloadStore {
+  putArchivePayload(payload: StudioSourceAcquisitionArchivePayload): Promise<void>;
+  getArchivePayload(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionArchivePayload | null>;
+  deleteArchivePayload?(scope: StudioWorkflowStoreScope, jobId: string): Promise<void>;
+}
+
+export interface StudioSourceAcquisitionJobUpdate {
+  readonly status: 'running' | 'complete' | 'failed' | 'cancelled';
+  readonly startedAt?: string;
+  readonly completedAt?: string;
+  readonly totalBytes?: number;
+  readonly fileCount?: number;
+  readonly localWorkspacePath?: string;
+  readonly errorMessage?: string;
+}
+
 export interface KernelLifecycleApiHandlersOptions {
   readonly service: KernelLifecycleService;
+  readonly studioWorkflowStore?: StudioWorkflowPersistenceStore;
+  readonly studioSourceAcquisitionJobStore?: StudioSourceAcquisitionJobStore;
+  readonly studioSourceAcquisitionPayloadStore?: StudioSourceAcquisitionPayloadStore;
   readonly requireScopeHeaders?: boolean;
   readonly allowUnscopedLocalDevelopment?: boolean;
   readonly authorizer?: KernelLifecycleAuthorizer;
@@ -184,7 +354,7 @@ export interface KernelLifecycleApiHandlersOptions {
 
 export interface KernelLifecycleRouteMetadata {
   readonly routeId: string;
-  readonly method: 'GET' | 'POST';
+  readonly method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly path: string;
   readonly handler: keyof KernelLifecycleApiHandlers;
 }
@@ -206,9 +376,20 @@ export class KernelLifecycleApiHandlers {
     { routeId: 'kernel.approvals.decide', method: 'POST', path: '/api/kernel/approvals/:approvalId/decisions', handler: 'submitApprovalDecision' },
     { routeId: 'kernel.lifecycle.productUnitIntent.mutate', method: 'POST', path: '/api/v1/kernel/lifecycle/product-unit-intents', handler: 'mutateProductUnitIntent' },
     { routeId: 'kernel.lifecycle.productUnitIntent.mutate', method: 'POST', path: '/api/kernel/lifecycle/product-unit-intents', handler: 'mutateProductUnitIntent' },
+    { routeId: 'kernel.studio.workflowState.put', method: 'PUT', path: '/api/v1/studio/workflow-state', handler: 'putStudioWorkflowState' },
+    { routeId: 'kernel.studio.workflowState.get', method: 'GET', path: '/api/v1/studio/workflow-state', handler: 'getStudioWorkflowState' },
+    { routeId: 'kernel.studio.workflowState.delete', method: 'DELETE', path: '/api/v1/studio/workflow-state', handler: 'deleteStudioWorkflowState' },
+    { routeId: 'kernel.studio.workflowEvidence.put', method: 'PUT', path: '/api/v1/studio/workflow-evidence', handler: 'putStudioWorkflowEvidence' },
+    { routeId: 'kernel.studio.sourceAcquisition.repository', method: 'POST', path: '/api/v1/studio/source-acquisition/repository', handler: 'createStudioRepositorySourceAcquisition' },
+    { routeId: 'kernel.studio.sourceAcquisition.archive', method: 'POST', path: '/api/v1/studio/source-acquisition/archive', handler: 'createStudioArchiveSourceAcquisition' },
+    { routeId: 'kernel.studio.sourceAcquisition.job.get', method: 'GET', path: '/api/v1/studio/source-acquisition/jobs/:jobId', handler: 'getStudioSourceAcquisitionJob' },
+    { routeId: 'kernel.studio.sourceAcquisition.job.patch', method: 'PATCH', path: '/api/v1/studio/source-acquisition/jobs/:jobId', handler: 'patchStudioSourceAcquisitionJob' },
   ];
 
   private readonly service: KernelLifecycleService;
+  private readonly studioWorkflowStore: StudioWorkflowPersistenceStore;
+  private readonly studioSourceAcquisitionJobStore: StudioSourceAcquisitionJobStore;
+  private readonly studioSourceAcquisitionPayloadStore: StudioSourceAcquisitionPayloadStore;
   private readonly requireScopeHeaders: boolean;
   private readonly allowUnscopedLocalDevelopment: boolean;
   private readonly authorizer: KernelLifecycleAuthorizer | undefined;
@@ -216,6 +397,9 @@ export class KernelLifecycleApiHandlers {
 
   constructor(options: KernelLifecycleApiHandlersOptions) {
     this.service = options.service;
+    this.studioWorkflowStore = options.studioWorkflowStore ?? new InMemoryStudioWorkflowPersistenceStore();
+    this.studioSourceAcquisitionJobStore = options.studioSourceAcquisitionJobStore ?? new InMemoryStudioSourceAcquisitionJobStore();
+    this.studioSourceAcquisitionPayloadStore = options.studioSourceAcquisitionPayloadStore ?? new InMemoryStudioSourceAcquisitionPayloadStore();
     this.requireScopeHeaders = options.requireScopeHeaders ?? true;
     this.allowUnscopedLocalDevelopment = options.allowUnscopedLocalDevelopment ?? false;
     this.authorizer = options.authorizer;
@@ -391,6 +575,172 @@ export class KernelLifecycleApiHandlers {
     });
   }
 
+  async putStudioWorkflowState(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const body = StudioWorkflowStateBodySchema.parse(request.body ?? {});
+      assertNoSecrets(body.state, context.correlationId);
+      await this.enforceAuth(request, context, 'authorizeLifecyclePlan', { correlationId: context.correlationId });
+      const idempotencyKey = idempotencyKeyFromHeaders(request.headers);
+      const record = await this.studioWorkflowStore.putWorkflowState({
+        state: body.state,
+        audit: body.audit,
+        scope,
+        ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      });
+      return this.ok({ state: record.state, audit: record.audit }, context.correlationId);
+    });
+  }
+
+  async getStudioWorkflowState(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', { correlationId: context.correlationId });
+      const record = await this.studioWorkflowStore.getWorkflowState(scope);
+      if (record === null) {
+        throw new KernelLifecycleError({
+          reasonCode: 'studio-workflow-state-not-found',
+          message: 'Studio workflow state was not found for this scope',
+          correlationId: context.correlationId,
+        });
+      }
+      return this.ok({ state: record.state, audit: record.audit }, context.correlationId);
+    });
+  }
+
+  async deleteStudioWorkflowState(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      await this.enforceAuth(request, context, 'authorizeLifecycleExecute', { correlationId: context.correlationId });
+      await this.studioWorkflowStore.clearWorkflowState(scope);
+      return this.ok({ deleted: true }, context.correlationId);
+    });
+  }
+
+  async putStudioWorkflowEvidence(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const evidence = StudioWorkflowEvidenceBodySchema.parse(request.body ?? {});
+      assertNoSecrets(evidence, context.correlationId);
+      await this.enforceAuth(request, context, 'authorizeLifecyclePlan', { correlationId: context.correlationId });
+      const idempotencyKey = idempotencyKeyFromHeaders(request.headers);
+      const record = await this.studioWorkflowStore.putWorkflowEvidence({
+        evidence,
+        evidenceId: evidence.evidenceId,
+        scope,
+        ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+      });
+      return this.created(record.evidence, context.correlationId);
+    });
+  }
+
+  async createStudioRepositorySourceAcquisition(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const body = RepositorySourceAcquisitionBodySchema.parse(request.body ?? {});
+      assertNoSecrets(body, context.correlationId);
+      assertSupportedRepositoryUrl(body.input.kind, body.input.repositoryUrl, context.correlationId);
+      await this.enforceAuth(request, context, 'authorizeLifecyclePlan', { correlationId: context.correlationId });
+      const descriptorKind = body.input.kind === 'github-repository' ? 'github' : 'gitlab';
+      const acquisitionJob = await this.studioSourceAcquisitionJobStore.putJob(createStudioAcquisitionJob({
+        kind: descriptorKind,
+        uri: body.input.repositoryUrl,
+        label: body.input.repositoryUrl,
+        ...(body.input.ref === undefined ? {} : { ref: body.input.ref }),
+        correlationId: context.correlationId,
+        scope,
+      }));
+      return this.accepted({
+        sources: [],
+        errors: [],
+        partial: false,
+        descriptor: {
+          kind: descriptorKind,
+          uri: body.input.repositoryUrl,
+          label: body.input.repositoryUrl,
+          ...(body.input.ref === undefined ? {} : { ref: body.input.ref }),
+        },
+        acquisitionJob,
+      }, context.correlationId);
+    });
+  }
+
+  async createStudioArchiveSourceAcquisition(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const body = ArchiveSourceAcquisitionBodySchema.parse(request.body ?? {});
+      assertNoSecrets(body.options ?? {}, context.correlationId);
+      assertSafeArchiveName(body.input.file.name, context.correlationId);
+      assertArchivePayloadSize(body.input.file.contentBase64, body.input.file.size, context.correlationId);
+      await this.enforceAuth(request, context, 'authorizeLifecyclePlan', { correlationId: context.correlationId });
+      const uri = `archive://${body.input.file.name}`;
+      const acquisitionJob = await this.studioSourceAcquisitionJobStore.putJob(createStudioAcquisitionJob({
+        kind: 'archive',
+        uri,
+        label: body.input.file.name,
+        correlationId: context.correlationId,
+        totalBytes: body.input.file.size,
+        scope,
+      }));
+      await this.studioSourceAcquisitionPayloadStore.putArchivePayload({
+        jobId: acquisitionJob.jobId,
+        scope,
+        fileName: body.input.file.name,
+        size: body.input.file.size,
+        contentBase64: body.input.file.contentBase64,
+        receivedAt: acquisitionJob.createdAt,
+        ...(body.input.file.type === undefined ? {} : { contentType: body.input.file.type }),
+      });
+      return this.accepted({
+        sources: [],
+        errors: [],
+        partial: false,
+        descriptor: {
+          kind: 'archive',
+          uri,
+          label: body.input.file.name,
+        },
+        acquisitionJob,
+      }, context.correlationId);
+    });
+  }
+
+  async getStudioSourceAcquisitionJob(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const jobId = requireParam(context.params, 'jobId');
+      await this.enforceAuth(request, context, 'authorizeProductUnitRead', { correlationId: context.correlationId });
+      const job = await this.studioSourceAcquisitionJobStore.getJob(scope, jobId);
+      if (job === null) {
+        throw new KernelLifecycleError({
+          reasonCode: 'studio-source-acquisition-job-not-found',
+          message: 'Studio source acquisition job was not found for this scope',
+          correlationId: context.correlationId,
+        });
+      }
+      return this.ok(job, context.correlationId);
+    });
+  }
+
+  async patchStudioSourceAcquisitionJob(request: KernelLifecycleApiRequest): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const jobId = requireParam(context.params, 'jobId');
+      const body = SourceAcquisitionJobUpdateBodySchema.parse(request.body ?? {});
+      assertNoSecrets(body, context.correlationId);
+      await this.enforceAuth(request, context, 'authorizeLifecycleExecute', { correlationId: context.correlationId });
+      const job = await this.studioSourceAcquisitionJobStore.updateJob(scope, jobId, toSourceAcquisitionJobUpdate(body));
+      if (job === null) {
+        throw new KernelLifecycleError({
+          reasonCode: 'studio-source-acquisition-job-not-found',
+          message: 'Studio source acquisition job was not found for this scope',
+          correlationId: context.correlationId,
+        });
+      }
+      return this.ok(job, context.correlationId);
+    });
+  }
+
   private async getManifest(
     request: KernelLifecycleApiRequest,
     manifestType: ProductLifecycleManifestType,
@@ -472,9 +822,9 @@ export class KernelLifecycleApiHandlers {
     headers: Record<string, string>,
     correlationId: string,
   ): ProductUnitScope | undefined {
-    const tenantId = headers['x-ghatana-tenant-id'];
-    const workspaceId = headers['x-ghatana-workspace-id'];
-    const projectId = headers['x-ghatana-project-id'];
+    const tenantId = headers['x-ghatana-tenant-id'] ?? headers['x-tenant-id'];
+    const workspaceId = headers['x-ghatana-workspace-id'] ?? headers['x-workspace-id'];
+    const projectId = headers['x-ghatana-project-id'] ?? headers['x-project-id'];
     if (tenantId !== undefined && workspaceId !== undefined && projectId !== undefined) {
       return { tenantId, workspaceId, projectId };
     }
@@ -501,6 +851,21 @@ export class KernelLifecycleApiHandlers {
 
   private created(body: unknown, correlationId: string): KernelLifecycleApiResponse {
     return { statusCode: 201, headers: responseHeaders(correlationId), body };
+  }
+
+  private accepted(body: unknown, correlationId: string): KernelLifecycleApiResponse {
+    return { statusCode: 202, headers: responseHeaders(correlationId), body };
+  }
+
+  private requireScope(context: HandlerContext): StudioWorkflowStoreScope {
+    if (context.scope === undefined) {
+      throw new KernelLifecycleError({
+        reasonCode: 'scope-headers-required',
+        message: 'Studio workflow persistence requires tenant, workspace, and project scope',
+        correlationId: context.correlationId,
+      });
+    }
+    return context.scope;
   }
 
   private errorResponse(error: unknown, fallbackCorrelationId?: string): KernelLifecycleApiResponse {
@@ -540,7 +905,7 @@ interface HandlerContext {
   readonly scope?: ProductUnitScope;
 }
 
-function requireParam(params: z.infer<typeof ParamsSchema>, name: 'productUnitId' | 'runId' | 'approvalId'): string {
+function requireParam(params: z.infer<typeof ParamsSchema>, name: 'productUnitId' | 'runId' | 'approvalId' | 'jobId'): string {
   const value = params[name];
   if (value === undefined) {
     throw new KernelLifecycleError({
@@ -584,6 +949,10 @@ function correlationIdFromHeaders(headers: KernelLifecycleApiRequest['headers'])
   return normalizeHeaders(headers)['x-correlation-id'];
 }
 
+function idempotencyKeyFromHeaders(headers: KernelLifecycleApiRequest['headers']): string | undefined {
+  return normalizeHeaders(headers)['idempotency-key'];
+}
+
 function responseHeaders(correlationId: string): Record<string, string> {
   return {
     'content-type': 'application/json',
@@ -624,13 +993,25 @@ function toApprovalDecision(parsed: z.infer<typeof ApprovalDecisionBodySchema>):
 }
 
 function statusCodeForReason(reasonCode: string): number {
-  if (reasonCode === 'product-unit-not-found' || reasonCode === 'run-not-found' || reasonCode === 'manifest-not-found') {
+  if (
+    reasonCode === 'product-unit-not-found' ||
+    reasonCode === 'run-not-found' ||
+    reasonCode === 'manifest-not-found' ||
+    reasonCode === 'studio-workflow-state-not-found' ||
+    reasonCode === 'studio-source-acquisition-job-not-found'
+  ) {
     return 404;
   }
   if (reasonCode === 'invalid-request' || reasonCode === 'invalid-approval-decision') {
     return 400;
   }
+  if (reasonCode === 'invalid-acquisition-job-transition') {
+    return 409;
+  }
   if (reasonCode === 'approval-required') {
+    return 409;
+  }
+  if (reasonCode === 'evidence-immutable') {
     return 409;
   }
   if (reasonCode === 'not-ready' || reasonCode === 'lifecycle-not-enabled') {
@@ -646,6 +1027,294 @@ function statusCodeForReason(reasonCode: string): number {
     return 503;
   }
   return 500;
+}
+
+function scopeKey(scope: StudioWorkflowStoreScope): string {
+  return `${scope.tenantId}:${scope.workspaceId}:${scope.projectId}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${stableStringify(entry)}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function assertNoSecrets(value: unknown, correlationId: string): void {
+  const secretKeys = new Set(['authorization', 'authtoken', 'accesstoken', 'refreshtoken', 'password', 'secret']);
+  const visit = (node: unknown): boolean => {
+    if (Array.isArray(node)) {
+      return node.some(visit);
+    }
+    if (node !== null && typeof node === 'object') {
+      return Object.entries(node as Record<string, unknown>).some(([key, entry]) =>
+        secretKeys.has(key.toLowerCase()) || visit(entry),
+      );
+    }
+    return false;
+  };
+  if (visit(value)) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Studio workflow payloads must not contain credentials or secrets',
+      correlationId,
+    });
+  }
+}
+
+function assertSupportedRepositoryUrl(
+  kind: 'github-repository' | 'gitlab-repository',
+  repositoryUrl: string,
+  correlationId: string,
+): void {
+  let url: URL;
+  try {
+    url = new URL(repositoryUrl);
+  } catch {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Repository source acquisition requires a valid HTTPS URL',
+      correlationId,
+    });
+  }
+  if (url.protocol !== 'https:') {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Repository source acquisition only accepts HTTPS repository URLs',
+      correlationId,
+    });
+  }
+  if (url.username !== '' || url.password !== '') {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Repository source acquisition URLs must not contain embedded credentials',
+      correlationId,
+    });
+  }
+  const expectedHost = kind === 'github-repository' ? 'github.com' : 'gitlab.com';
+  if (url.hostname.toLowerCase() !== expectedHost || !ALLOWED_REPOSITORY_HOSTS.has(url.hostname.toLowerCase())) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: `${kind} source acquisition only accepts ${expectedHost} repository URLs`,
+      correlationId,
+    });
+  }
+  const pathSegments = url.pathname.split('/').filter(Boolean);
+  if (pathSegments.length < 2) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Repository source acquisition requires owner/project path segments',
+      correlationId,
+    });
+  }
+}
+
+function assertSafeArchiveName(fileName: string, correlationId: string): void {
+  const normalizedName = fileName.replace(/\\/g, '/');
+  const segments = normalizedName.split('/');
+  if (
+    normalizedName.startsWith('/') ||
+    /^[a-z]:\//i.test(normalizedName) ||
+    normalizedName.includes('\0') ||
+    segments.some((segment) => segment === '' || segment === '.' || segment === '..')
+  ) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Archive source acquisition requires a safe archive file name',
+      correlationId,
+    });
+  }
+  if (!/\.(zip|tar|tgz|tar\.gz)$/i.test(normalizedName)) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Archive source acquisition only accepts ZIP, TAR, TGZ, or TAR.GZ uploads',
+      correlationId,
+    });
+  }
+}
+
+function assertArchivePayloadSize(contentBase64: string, declaredSize: number, correlationId: string): void {
+  let decodedSize = 0;
+  try {
+    decodedSize = Buffer.from(contentBase64, 'base64').byteLength;
+  } catch {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Archive upload payload must be valid base64',
+      correlationId,
+    });
+  }
+  if (decodedSize !== declaredSize) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-request',
+      message: 'Archive upload size must match decoded payload bytes',
+      correlationId,
+    });
+  }
+}
+
+class InMemoryStudioWorkflowPersistenceStore implements StudioWorkflowPersistenceStore {
+  private readonly workflowStates = new Map<string, StudioWorkflowStateRecord>();
+  private readonly evidence = new Map<string, StudioWorkflowEvidenceRecord>();
+
+  async putWorkflowState(record: StudioWorkflowStateRecord): Promise<StudioWorkflowStateRecord> {
+    const key = scopeKey(record.scope);
+    const existing = this.workflowStates.get(key);
+    if (existing?.idempotencyKey !== undefined && existing.idempotencyKey === record.idempotencyKey) {
+      return existing;
+    }
+    this.workflowStates.set(key, record);
+    return record;
+  }
+
+  async getWorkflowState(scope: StudioWorkflowStoreScope): Promise<StudioWorkflowStateRecord | null> {
+    return this.workflowStates.get(scopeKey(scope)) ?? null;
+  }
+
+  async clearWorkflowState(scope: StudioWorkflowStoreScope): Promise<void> {
+    this.workflowStates.delete(scopeKey(scope));
+  }
+
+  async putWorkflowEvidence(record: StudioWorkflowEvidenceRecord): Promise<StudioWorkflowEvidenceRecord> {
+    const key = `${scopeKey(record.scope)}:${record.evidenceId}`;
+    const existing = this.evidence.get(key);
+    if (existing !== undefined) {
+      if (stableStringify(existing.evidence) !== stableStringify(record.evidence)) {
+        throw new KernelLifecycleError({
+          reasonCode: 'evidence-immutable',
+          message: 'Studio workflow evidence is immutable once persisted',
+        });
+      }
+      return existing;
+    }
+    this.evidence.set(key, record);
+    return record;
+  }
+}
+
+class InMemoryStudioSourceAcquisitionJobStore implements StudioSourceAcquisitionJobStore {
+  private readonly jobs = new Map<string, StudioSourceAcquisitionJob>();
+
+  async putJob(job: StudioSourceAcquisitionJob): Promise<StudioSourceAcquisitionJob> {
+    this.jobs.set(this.key(job.scope, job.jobId), job);
+    return job;
+  }
+
+  async getJob(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionJob | null> {
+    return this.jobs.get(this.key(scope, jobId)) ?? null;
+  }
+
+  async updateJob(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+    patch: StudioSourceAcquisitionJobUpdate,
+  ): Promise<StudioSourceAcquisitionJob | null> {
+    const key = this.key(scope, jobId);
+    const existing = this.jobs.get(key);
+    if (existing === undefined) {
+      return null;
+    }
+    assertAllowedAcquisitionJobTransition(existing.status, patch.status);
+    const updated: StudioSourceAcquisitionJob = {
+      ...existing,
+      status: patch.status,
+      ...(patch.startedAt === undefined ? {} : { startedAt: patch.startedAt }),
+      ...(patch.completedAt === undefined ? {} : { completedAt: patch.completedAt }),
+      ...(patch.totalBytes === undefined ? {} : { totalBytes: patch.totalBytes }),
+      ...(patch.fileCount === undefined ? {} : { fileCount: patch.fileCount }),
+      ...(patch.localWorkspacePath === undefined ? {} : { localWorkspacePath: patch.localWorkspacePath }),
+      ...(patch.errorMessage === undefined ? {} : { errorMessage: patch.errorMessage }),
+    };
+    this.jobs.set(key, updated);
+    return updated;
+  }
+
+  private key(scope: StudioWorkflowStoreScope, jobId: string): string {
+    return `${scopeKey(scope)}:${jobId}`;
+  }
+}
+
+class InMemoryStudioSourceAcquisitionPayloadStore implements StudioSourceAcquisitionPayloadStore {
+  private readonly payloads = new Map<string, StudioSourceAcquisitionArchivePayload>();
+
+  async putArchivePayload(payload: StudioSourceAcquisitionArchivePayload): Promise<void> {
+    this.payloads.set(this.key(payload.scope, payload.jobId), payload);
+  }
+
+  async getArchivePayload(scope: StudioWorkflowStoreScope, jobId: string): Promise<StudioSourceAcquisitionArchivePayload | null> {
+    return this.payloads.get(this.key(scope, jobId)) ?? null;
+  }
+
+  async deleteArchivePayload(scope: StudioWorkflowStoreScope, jobId: string): Promise<void> {
+    this.payloads.delete(this.key(scope, jobId));
+  }
+
+  private key(scope: StudioWorkflowStoreScope, jobId: string): string {
+    return `${scopeKey(scope)}:${jobId}`;
+  }
+}
+
+function assertAllowedAcquisitionJobTransition(
+  currentStatus: StudioSourceAcquisitionJob['status'],
+  nextStatus: StudioSourceAcquisitionJobUpdate['status'],
+): void {
+  const allowed: Record<StudioSourceAcquisitionJob['status'], readonly StudioSourceAcquisitionJobUpdate['status'][]> = {
+    pending: ['running', 'failed', 'cancelled'],
+    running: ['complete', 'failed', 'cancelled'],
+    complete: [],
+    failed: [],
+    cancelled: [],
+  };
+  if (!allowed[currentStatus].includes(nextStatus)) {
+    throw new KernelLifecycleError({
+      reasonCode: 'invalid-acquisition-job-transition',
+      message: `Cannot transition Studio source acquisition job from ${currentStatus} to ${nextStatus}`,
+    });
+  }
+}
+
+function toSourceAcquisitionJobUpdate(
+  body: z.infer<typeof SourceAcquisitionJobUpdateBodySchema>,
+): StudioSourceAcquisitionJobUpdate {
+  return {
+    status: body.status,
+    ...(body.startedAt === undefined ? {} : { startedAt: body.startedAt }),
+    ...(body.completedAt === undefined ? {} : { completedAt: body.completedAt }),
+    ...(body.totalBytes === undefined ? {} : { totalBytes: body.totalBytes }),
+    ...(body.fileCount === undefined ? {} : { fileCount: body.fileCount }),
+    ...(body.localWorkspacePath === undefined ? {} : { localWorkspacePath: body.localWorkspacePath }),
+    ...(body.errorMessage === undefined ? {} : { errorMessage: body.errorMessage }),
+  };
+}
+
+function createStudioAcquisitionJob(input: {
+  readonly kind: 'github' | 'gitlab' | 'archive';
+  readonly uri: string;
+  readonly label: string;
+  readonly ref?: string;
+  readonly correlationId: string;
+  readonly totalBytes?: number;
+  readonly scope: StudioWorkflowStoreScope;
+}): StudioSourceAcquisitionJob {
+  const createdAt = new Date().toISOString();
+  return {
+    jobId: `studio-acquisition:${input.kind}:${randomUUID()}`,
+    status: 'pending',
+    scope: input.scope,
+    descriptor: {
+      kind: input.kind,
+      uri: input.uri,
+      label: input.label,
+      ...(input.ref === undefined ? {} : { ref: input.ref }),
+    },
+    createdAt,
+    ...(input.totalBytes === undefined ? {} : { totalBytes: input.totalBytes }),
+    correlationId: input.correlationId,
+  };
 }
 
 function toLifecyclePlanResponse(plan: ProductLifecyclePlan): Record<string, unknown> {

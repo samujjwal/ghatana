@@ -1,0 +1,61 @@
+schemaVersion: "1.0.0"
+id: python-fixture
+name: Python Fixture Product
+kind: product
+lifecycleStatus: planned
+executionEnabled: false
+owner: kernel-team
+
+scope:
+  tenantId: ghatana
+  workspaceId: kernel
+  projectId: fixtures
+
+registryProviderRef:
+  providerId: ghatana-file-registry
+
+sourceProviderRef:
+  providerId: ghatana-file-registry
+  config:
+    lifecycleConfigPath: kernel-product.yaml
+
+lifecycleProfile: standard-polyglot-product
+
+surfaces:
+  - id: python-fixture-lib
+    type: sdk
+    implementationStatus: implemented
+    language: python
+    runtime: python
+    buildSystem: pyproject
+    pyprojectPath: products/python-fixture/pyproject.toml
+    adapterHint: python-pyproject
+
+  - id: python-fixture-service
+    type: backend-api
+    implementationStatus: implemented
+    language: python
+    runtime: python
+    buildSystem: pyproject
+    pyprojectPath: products/python-fixture/pyproject.toml
+    adapterHint: python-pyproject
+
+environments:
+  - name: local
+    target: local
+    variables:
+      PYTHONPATH: src
+
+gateBindings:
+  - gateId: python-ruff-check
+    phase: validate
+    required: true
+  - gateId: python-mypy-check
+    phase: validate
+    required: true
+  - gateId: python-unit-test
+    phase: test
+    required: true
+  - gateId: python-build
+    phase: build
+    required: true

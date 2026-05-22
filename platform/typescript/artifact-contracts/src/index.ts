@@ -118,6 +118,7 @@ export {
 // Scan / Acquisition / Validation / Diff
 export type {
   AcquisitionJobStatus,
+  AcquisitionJobScope,
   AcquisitionJob,
   ScanJobStatus,
   ScanJob,
@@ -129,10 +130,12 @@ export type {
   DiffHunkKind,
   DiffHunk,
   DiffRecord,
+  RoundTripParitySection,
   RoundTripDiffReport,
 } from "./scan.js";
 export {
   AcquisitionJobStatusSchema,
+  AcquisitionJobScopeSchema,
   AcquisitionJobSchema,
   ScanJobStatusSchema,
   ScanJobSchema,
@@ -144,5 +147,6 @@ export {
   DiffHunkKindSchema,
   DiffHunkSchema,
   DiffRecordSchema,
+  RoundTripParitySectionSchema,
   RoundTripDiffReportSchema,
 } from "./scan.js";

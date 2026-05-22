@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kernel://interactions/digital-marketing.notification-preference.v1/response",
+  "title": "Notification Preference Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["enabled", "preferenceStatus", "updatedAt"],
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "preferenceStatus": {
+      "type": "string",
+      "enum": ["enabled", "disabled", "unknown"]
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidenceRef": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

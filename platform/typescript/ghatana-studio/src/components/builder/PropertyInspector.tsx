@@ -123,13 +123,14 @@ export function PropertyInspector({
               </Typography>
             ) : (
               Object.entries(selectedInstance.props).map(([prop, value]) => (
-                <div key={prop} className="space-y-1">
+                <div key={prop} className="space-y-1" data-testid={`builder-property-row-${prop}`}>
                   <Typography variant="body2" className="text-gray-500 text-xs uppercase tracking-wide">
                     {prop}
                   </Typography>
                   {editingProp === prop ? (
                     <div className="flex gap-2">
                       <Input
+                        data-testid={`builder-property-input-${prop}`}
                         value={propValue}
                         onChange={(e) => setPropValue(e.target.value)}
                         className="flex-1"
@@ -139,7 +140,7 @@ export function PropertyInspector({
                         }}
                         autoFocus
                       />
-                      <Button variant="primary" size="sm" onClick={saveEdit}>
+                      <Button variant="primary" size="sm" onClick={saveEdit} data-testid={`builder-property-save-${prop}`}>
                         Save
                       </Button>
                       <Button variant="secondary" size="sm" onClick={cancelEdit}>
@@ -148,6 +149,7 @@ export function PropertyInspector({
                     </div>
                   ) : (
                     <div
+                      data-testid={`builder-property-value-${prop}`}
                       className="p-2 bg-gray-50 rounded border cursor-pointer hover:bg-gray-100"
                       onClick={() => startEdit(prop, value)}
                     >

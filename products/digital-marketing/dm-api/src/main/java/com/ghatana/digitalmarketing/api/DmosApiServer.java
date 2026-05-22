@@ -728,7 +728,15 @@ public final class DmosApiServer extends Launcher {
             // Development fallback to keep local developer loops ergonomic.
             preflightProvider =
                 (ctx, campaign) -> io.activej.promise.Promise.of(
-                    new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
+                    new CampaignPreflightDataProvider.CampaignPreflightData(
+                        true,
+                        1,
+                        1,
+                        0.0,
+                        10000.0,
+                        true,
+                        "campaign-activation"
+                    ));
         }
 
         DmKillSwitchService killSwitchService;

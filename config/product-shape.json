@@ -230,6 +230,72 @@
         "file": "products/security-gateway/README.md",
         "mustContain": "backend-only"
       }
+    },
+    "rust-fixture": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "sdk",
+        "backend-api"
+      ],
+      "surfaceStatuses": {
+        "sdk": "implemented",
+        "backend-api": "implemented"
+      },
+      "clientPackages": [],
+      "lifecycle": {
+        "profile": "standard-polyglot-product",
+        "enabled": false,
+        "configPath": "products/rust-fixture/kernel-product.yaml"
+      },
+      "backendOnlyDeclaration": {
+        "file": "products/rust-fixture/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "python-fixture": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "sdk",
+        "backend-api"
+      ],
+      "surfaceStatuses": {
+        "sdk": "implemented",
+        "backend-api": "implemented"
+      },
+      "clientPackages": [],
+      "lifecycle": {
+        "profile": "standard-polyglot-product",
+        "enabled": false,
+        "configPath": "products/python-fixture/kernel-product.yaml"
+      },
+      "backendOnlyDeclaration": {
+        "file": "products/python-fixture/README.md",
+        "mustContain": "backend-only"
+      }
+    },
+    "typescript-fixture": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "surfaces": [
+        "sdk",
+        "backend-api"
+      ],
+      "surfaceStatuses": {
+        "sdk": "implemented",
+        "backend-api": "implemented"
+      },
+      "clientPackages": [],
+      "lifecycle": {
+        "profile": "standard-polyglot-product",
+        "enabled": false,
+        "configPath": "products/typescript-fixture/kernel-product.yaml"
+      },
+      "backendOnlyDeclaration": {
+        "file": "products/typescript-fixture/README.md",
+        "mustContain": "backend-only"
+      }
     }
   }
 }

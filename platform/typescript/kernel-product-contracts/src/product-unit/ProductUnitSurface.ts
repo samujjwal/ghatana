@@ -76,6 +76,24 @@ export type ProductSurfaceLanguage =
   | "go"
   | "other";
 
+/**
+ * Language version constraints for precise toolchain specification.
+ * Examples: "21" for Java 21, "3.11" for Python 3.11, "20" for Node.js 20.
+ */
+export type LanguageVersion = string;
+
+/**
+ * Runtime version constraints for precise environment specification.
+ * Examples: "21" for Java JRE 21, "20.10.0" for Node.js 20.10.0, "3.11" for Python 3.11.
+ */
+export type RuntimeVersion = string;
+
+/**
+ * Build system version constraints for precise toolchain specification.
+ * Examples: "8.5" for Gradle 8.5, "1.75" for Cargo 1.75, "9.0" for pnpm 9.0.
+ */
+export type BuildSystemVersion = string;
+
 export const PRODUCT_SURFACE_LANGUAGES = [
   "java",
   "typescript",
@@ -117,6 +135,55 @@ export const PRODUCT_SURFACE_BUILD_SYSTEMS = [
 ] as const satisfies readonly ProductSurfaceBuildSystem[];
 
 /**
+ * Canonical runtime environment identifiers for Kernel-managed surfaces.
+ * These represent the execution environment where the surface runs.
+ */
+export type ProductSurfaceRuntime =
+  | "java-jre"
+  | "java-jdk"
+  | "nodejs"
+  | "nodejs-bun"
+  | "python"
+  | "python-uv"
+  | "rust-native"
+  | "rust-wasm"
+  | "go"
+  | "swift"
+  | "kotlin-jvm"
+  | "kotlin-native"
+  | "docker-container"
+  | "docker-compose"
+  | "browser"
+  | "mobile-ios"
+  | "mobile-android"
+  | "cli-native"
+  | "none"
+  | "other";
+
+export const PRODUCT_SURFACE_RUNTIMES = [
+  "java-jre",
+  "java-jdk",
+  "nodejs",
+  "nodejs-bun",
+  "python",
+  "python-uv",
+  "rust-native",
+  "rust-wasm",
+  "go",
+  "swift",
+  "kotlin-jvm",
+  "kotlin-native",
+  "docker-container",
+  "docker-compose",
+  "browser",
+  "mobile-ios",
+  "mobile-android",
+  "cli-native",
+  "none",
+  "other",
+] as const satisfies readonly ProductSurfaceRuntime[];
+
+/**
  * Represents a deployable component within a ProductUnit.
  */
 export interface ProductUnitSurface {
@@ -142,18 +209,39 @@ export interface ProductUnitSurface {
 
   /**
    * Primary implementation language for this surface.
+   * Required for implemented surfaces to enable polyglot adapter selection.
    */
   readonly language?: ProductSurfaceLanguage | undefined;
 
   /**
-   * Runtime environment for the surface (e.g., "nodejs", "java", "python").
+   * Optional language version constraint (e.g., "21" for Java 21, "3.11" for Python 3.11).
+   * Used by adapters to validate toolchain compatibility and ensure reproducible builds.
    */
-  readonly runtime?: string | undefined;
+  readonly languageVersion?: LanguageVersion | undefined;
+
+  /**
+   * Runtime environment for the surface (e.g., "nodejs", "java-jre", "python").
+   * Required for implemented surfaces to enable proper lifecycle execution.
+   */
+  readonly runtime?: ProductSurfaceRuntime | undefined;
+
+  /**
+   * Optional runtime version constraint (e.g., "21" for Java JRE 21, "20.10.0" for Node.js 20.10.0).
+   * Used by adapters to validate runtime compatibility and ensure consistent execution environments.
+   */
+  readonly runtimeVersion?: RuntimeVersion | undefined;
 
   /**
    * Build system used by the lifecycle adapter for this surface.
+   * Required for implemented surfaces to enable toolchain adapter selection.
    */
   readonly buildSystem?: ProductSurfaceBuildSystem | undefined;
+
+  /**
+   * Optional build system version constraint (e.g., "8.5" for Gradle 8.5, "1.75" for Cargo 1.75).
+   * Used by adapters to validate build tool compatibility and ensure reproducible builds.
+   */
+  readonly buildSystemVersion?: BuildSystemVersion | undefined;
 
   /**
    * Package path for the surface (e.g., in a monorepo).
@@ -214,4 +302,130 @@ export function isProductSurfaceBuildSystem(
   value: unknown
 ): value is ProductSurfaceBuildSystem {
   return typeof value === "string" && PRODUCT_SURFACE_BUILD_SYSTEMS.includes(value as ProductSurfaceBuildSystem);
+}
+
+export function isProductSurfaceRuntime(
+  value: unknown
+): value is ProductSurfaceRuntime {
+  return typeof value === "string" && PRODUCT_SURFACE_RUNTIMES.includes(value as ProductSurfaceRuntime);
+}
+
+/**
+ * Valid combinations of language, runtime, and build system.
+ * This validation ensures that polyglot surfaces use compatible toolchains.
+ */
+export interface LanguageRuntimeBuildSystemTriplet {
+  readonly language: ProductSurfaceLanguage;
+  readonly runtime: ProductSurfaceRuntime;
+  readonly buildSystem: ProductSurfaceBuildSystem;
+}
+
+/**
+ * Validates that a language/runtime/buildSystem combination is valid.
+ * Returns true if the combination is supported by the Kernel.
+ */
+export function isValidLanguageRuntimeBuildSystemCombination(
+  language: ProductSurfaceLanguage,
+  runtime: ProductSurfaceRuntime,
+  buildSystem: ProductSurfaceBuildSystem
+): boolean {
+  // Java combinations
+  if (language === "java") {
+    return (
+      (runtime === "java-jre" || runtime === "java-jdk") &&
+      (buildSystem === "gradle" || buildSystem === "maven")
+    );
+  }
+
+  // TypeScript/JavaScript combinations
+  if (language === "typescript" || language === "javascript") {
+    if (runtime === "nodejs" || runtime === "nodejs-bun") {
+      return buildSystem === "pnpm" || buildSystem === "none";
+    }
+    if (runtime === "browser") {
+      return buildSystem === "pnpm" || buildSystem === "none";
+    }
+    return false;
+  }
+
+  // Rust combinations
+  if (language === "rust") {
+    if (runtime === "rust-native" || runtime === "rust-wasm") {
+      return buildSystem === "cargo";
+    }
+    return false;
+  }
+
+  // Python combinations
+  if (language === "python") {
+    if (runtime === "python" || runtime === "python-uv") {
+      return buildSystem === "pyproject";
+    }
+    return false;
+  }
+
+  // Swift combinations
+  if (language === "swift") {
+    if (runtime === "mobile-ios") {
+      return buildSystem === "xcode";
+    }
+    return false;
+  }
+
+  // Kotlin combinations
+  if (language === "kotlin") {
+    if (runtime === "kotlin-jvm") {
+      return buildSystem === "gradle" || buildSystem === "maven";
+    }
+    if (runtime === "kotlin-native") {
+      return buildSystem === "gradle";
+    }
+    return false;
+  }
+
+  // Go combinations
+  if (language === "go") {
+    if (runtime === "cli-native") {
+      return buildSystem === "none";
+    }
+    return false;
+  }
+
+  // Docker-based combinations (language-agnostic)
+  if (runtime === "docker-container" || runtime === "docker-compose") {
+    return buildSystem === "docker" || buildSystem === "compose";
+  }
+
+  // Allow "other" for experimental or custom combinations
+  if (language === "other" || runtime === "other" || buildSystem === "other") {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Validation result for surface triplet validation.
+ */
+export interface SurfaceTripletValidationResult {
+  readonly valid: boolean;
+  readonly error?: string;
+}
+
+/**
+ * Validates a surface's language/runtime/buildSystem triplet.
+ */
+export function validateSurfaceTriplet(
+  language: ProductSurfaceLanguage,
+  runtime: ProductSurfaceRuntime,
+  buildSystem: ProductSurfaceBuildSystem
+): SurfaceTripletValidationResult {
+  if (!isValidLanguageRuntimeBuildSystemCombination(language, runtime, buildSystem)) {
+    return {
+      valid: false,
+      error: `Invalid combination: language="${language}", runtime="${runtime}", buildSystem="${buildSystem}". ` +
+        `This combination is not supported by the Kernel lifecycle adapters.`,
+    };
+  }
+  return { valid: true };
 }

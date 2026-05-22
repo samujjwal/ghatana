@@ -84,4 +84,142 @@ describe("ProductUnitSurface", () => {
     }
     expect(isProductSurfaceBuildSystem("make-it-so")).toBe(false);
   });
+
+  it("accepts canonical runtime environments and rejects unknown values", () => {
+    const {
+      isProductSurfaceRuntime,
+    } = require("../ProductUnitSurface");
+
+    const runtimes: readonly ProductSurfaceRuntime[] = [
+      "java-jre",
+      "java-jdk",
+      "nodejs",
+      "nodejs-bun",
+      "python",
+      "python-uv",
+      "rust-native",
+      "rust-wasm",
+      "go",
+      "swift",
+      "kotlin-jvm",
+      "kotlin-native",
+      "docker-container",
+      "docker-compose",
+      "browser",
+      "mobile-ios",
+      "mobile-android",
+      "cli-native",
+      "none",
+      "other",
+    ];
+
+    for (const runtime of runtimes) {
+      expect(isProductSurfaceRuntime(runtime)).toBe(true);
+    }
+    expect(isProductSurfaceRuntime("ruby-runtime")).toBe(false);
+  });
+
+  describe("language/runtime/buildSystem combination validation", () => {
+    const {
+      isValidLanguageRuntimeBuildSystemCombination,
+      validateSurfaceTriplet,
+    } = require("../ProductUnitSurface");
+
+    it("accepts valid Java combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jre", "gradle")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jdk", "gradle")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jre", "maven")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jdk", "maven")).toBe(true);
+    });
+
+    it("rejects invalid Java combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "nodejs", "gradle")).toBe(false);
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jre", "pnpm")).toBe(false);
+    });
+
+    it("accepts valid TypeScript/JavaScript combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("typescript", "nodejs", "pnpm")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("typescript", "nodejs-bun", "pnpm")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("typescript", "browser", "pnpm")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("javascript", "nodejs", "pnpm")).toBe(true);
+    });
+
+    it("rejects invalid TypeScript/JavaScript combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("typescript", "java-jre", "pnpm")).toBe(false);
+      expect(isValidLanguageRuntimeBuildSystemCombination("typescript", "nodejs", "gradle")).toBe(false);
+    });
+
+    it("accepts valid Rust combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "rust-native", "cargo")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "rust-wasm", "cargo")).toBe(true);
+    });
+
+    it("rejects invalid Rust combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "rust-native", "gradle")).toBe(false);
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "nodejs", "cargo")).toBe(false);
+    });
+
+    it("accepts valid Python combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("python", "python", "pyproject")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("python", "python-uv", "pyproject")).toBe(true);
+    });
+
+    it("rejects invalid Python combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("python", "python", "gradle")).toBe(false);
+      expect(isValidLanguageRuntimeBuildSystemCombination("python", "nodejs", "pyproject")).toBe(false);
+    });
+
+    it("accepts valid Swift combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("swift", "mobile-ios", "xcode")).toBe(true);
+    });
+
+    it("rejects invalid Swift combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("swift", "mobile-android", "xcode")).toBe(false);
+    });
+
+    it("accepts valid Kotlin combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("kotlin", "kotlin-jvm", "gradle")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("kotlin", "kotlin-jvm", "maven")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("kotlin", "kotlin-native", "gradle")).toBe(true);
+    });
+
+    it("rejects invalid Kotlin combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("kotlin", "kotlin-jvm", "cargo")).toBe(false);
+    });
+
+    it("accepts valid Go combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("go", "cli-native", "none")).toBe(true);
+    });
+
+    it("rejects invalid Go combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("go", "cli-native", "gradle")).toBe(false);
+    });
+
+    it("accepts Docker-based combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "docker-container", "docker")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "docker-container", "docker")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("python", "docker-compose", "compose")).toBe(true);
+    });
+
+    it("accepts 'other' for experimental combinations", () => {
+      expect(isValidLanguageRuntimeBuildSystemCombination("other", "other", "other")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("java", "other", "gradle")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "rust-native", "other")).toBe(true);
+    });
+
+    it("provides detailed validation errors", () => {
+      const result = validateSurfaceTriplet("java", "nodejs", "gradle");
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Invalid combination");
+      expect(result.error).toContain('language="java"');
+      expect(result.error).toContain('runtime="nodejs"');
+      expect(result.error).toContain('buildSystem="gradle"');
+    });
+
+    it("validates successful combinations", () => {
+      const result = validateSurfaceTriplet("java", "java-jre", "gradle");
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+  });
 });

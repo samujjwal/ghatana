@@ -130,6 +130,7 @@ export function ComponentPalette({
             {filteredContracts.map((contract) => (
               <div
                 key={contract.name}
+                data-testid={`builder-palette-item-${contract.name}`}
                 draggable
                 onDragStart={() => handleDragStart(contract)}
                 onClick={() => onComponentSelect(contract)}

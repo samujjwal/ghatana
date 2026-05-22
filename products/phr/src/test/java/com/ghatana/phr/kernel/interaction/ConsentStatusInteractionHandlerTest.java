@@ -20,7 +20,12 @@ class ConsentStatusInteractionHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("allows campaign activation consent checks with audit evidence")
     void allowsCampaignActivationConsentChecksWithAuditEvidence() {
-        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler();
+        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler(new RecordingConsentService(
+                ConsentService.ConsentAccessDecision.allow(
+                        ConsentService.ReasonCode.EXPLICIT_GRANT,
+                        "grant-1",
+                        ConsentService.CacheStatus.MISS,
+                        Instant.parse("2026-06-21T00:00:00Z"))));
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome =
                 runPromise(() -> handler.handle(request("tenant-1", "campaign-activation")));
@@ -36,7 +41,10 @@ class ConsentStatusInteractionHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("denies unsupported consent purpose with reason code")
     void deniesUnsupportedConsentPurposeWithReasonCode() {
-        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler();
+        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler(new RecordingConsentService(
+                ConsentService.ConsentAccessDecision.deny(
+                        ConsentService.ReasonCode.OUT_OF_SCOPE,
+                        ConsentService.CacheStatus.MISS)));
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome =
                 runPromise(() -> handler.handle(request("tenant-1", "ad-hoc-export")));
@@ -49,7 +57,12 @@ class ConsentStatusInteractionHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks missing tenant scope")
     void blocksMissingTenantScope() {
-        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler();
+        ConsentStatusInteractionHandler handler = new ConsentStatusInteractionHandler(new RecordingConsentService(
+                ConsentService.ConsentAccessDecision.allow(
+                        ConsentService.ReasonCode.EXPLICIT_GRANT,
+                        "grant-1",
+                        ConsentService.CacheStatus.MISS,
+                        Instant.parse("2026-06-21T00:00:00Z"))));
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome =
                 runPromise(() -> handler.handle(request(null, "campaign-activation")));

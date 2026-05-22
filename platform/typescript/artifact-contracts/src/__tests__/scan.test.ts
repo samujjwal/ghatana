@@ -66,9 +66,15 @@ describe('AcquisitionJobSchema', () => {
       fileCount: 42,
       localWorkspacePath: '/tmp/workspace',
       correlationId: 'corr-123',
+      scope: {
+        tenantId: 'tenant-1',
+        workspaceId: 'workspace-1',
+        projectId: 'project-1',
+      },
     });
     expect(result.status).toBe('complete');
     expect(result.fileCount).toBe(42);
+    expect(result.scope?.tenantId).toBe('tenant-1');
   });
 
   it('rejects an invalid status', () => {

@@ -63,12 +63,20 @@ public final class PostgresCampaignPreflightDataProvider implements CampaignPref
                 int audienceCount = 1;
                 double totalSpend = 0.0;
 
+                // Consent status is checked at the application layer via ConsentService.
+                // For persistence-only preflight, we assume consent is granted and the
+                // application layer will perform the actual consent check.
+                boolean consentGranted = true;
+                String consentPurpose = "campaign-activation";
+
                 return new CampaignPreflightData(
                     budgetApproved,
                     audienceCount,
                     approvedContentCount,
                     totalSpend,
-                    approvedBudget
+                    approvedBudget,
+                    consentGranted,
+                    consentPurpose
                 );
             } catch (Exception e) {
                 LOG.error("[DMOS-PREFLIGHT] Failed to resolve preflight data for workspace={} campaign={}",

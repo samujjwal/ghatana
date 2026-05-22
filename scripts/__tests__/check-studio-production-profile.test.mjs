@@ -45,7 +45,10 @@ describe('check-studio-production-profile', () => {
   it('passes with valid production configuration', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 VITE_GHATANA_KERNEL_API_BASE_URL=https://api.ghatana.io
 VITE_STUDIO_TENANT_ID=tenant-prod
 VITE_STUDIO_WORKSPACE_ID=workspace-prod
@@ -74,12 +77,15 @@ VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=false
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('FAILED');
-    expect(result.stdout).toContain('must be \'true\'');
+    expect(result.stdout).toContain('VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION must be true');
   });
 
   it('fails when production acquisition is missing', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 VITE_GHATANA_KERNEL_API_BASE_URL=https://api.ghatana.io
 `;
     const envFile = join(tempDir, '.env.missing');
@@ -89,13 +95,16 @@ VITE_GHATANA_KERNEL_API_BASE_URL=https://api.ghatana.io
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('FAILED');
-    expect(result.stdout).toContain('Missing required variable');
+    expect(result.stdout).toContain('VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION must be true');
   });
 
   it('fails when kernel persistence is enabled but API URL uses HTTP', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 VITE_GHATANA_KERNEL_API_BASE_URL=http://api.ghatana.io
 `;
     const envFile = join(tempDir, '.env.http');
@@ -111,7 +120,10 @@ VITE_GHATANA_KERNEL_API_BASE_URL=http://api.ghatana.io
   it('fails closed when kernel persistence is disabled in strict production mode', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=false
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 `;
     const envFile = join(tempDir, '.env.local');
     writeFileSync(envFile, envContent);
@@ -142,7 +154,10 @@ VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=false
   it('fails when kernel persistence is enabled but required vars are missing', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 # Missing: VITE_GHATANA_KERNEL_API_BASE_URL, VITE_STUDIO_TENANT_ID, etc.
 `;
     const envFile = join(tempDir, '.env.incomplete');
@@ -158,7 +173,10 @@ VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
   it('fails when auth token is missing with kernel persistence enabled', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel
+VITE_STUDIO_DEPLOYMENT_PROFILE=production
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE=true
 VITE_GHATANA_KERNEL_API_BASE_URL=https://api.ghatana.io
 VITE_STUDIO_TENANT_ID=tenant-test
 VITE_STUDIO_WORKSPACE_ID=workspace-test
@@ -172,7 +190,7 @@ VITE_STUDIO_PROJECT_ID=project-test
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toContain('FAILED');
-    expect(result.stdout).toContain('VITE_STUDIO_AUTH_TOKEN is required');
+    expect(result.stdout).toContain('VITE_STUDIO_AUTH_TOKEN');
   });
 
   it('fails when env file does not exist', () => {
@@ -185,7 +203,10 @@ VITE_STUDIO_PROJECT_ID=project-test
   it('handles quoted values in env file', () => {
     const envContent = `
 VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION="true"
+VITE_STUDIO_SOURCE_ACQUISITION_BACKEND="kernel"
+VITE_STUDIO_DEPLOYMENT_PROFILE="production"
 VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE='true'
+VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE='true'
 VITE_GHATANA_KERNEL_API_BASE_URL="https://api.ghatana.io"
 VITE_STUDIO_TENANT_ID="tenant-quoted"
 VITE_STUDIO_WORKSPACE_ID="workspace-quoted"

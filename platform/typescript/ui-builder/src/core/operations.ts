@@ -187,6 +187,13 @@ export function insertNode(
     // Add to nodes record (canonical uses Record, not Map)
     // Spread metadata to create mutable copy for Immer compatibility with platform-events readonly arrays
     draft.nodes[id] = castDraft(newInstance);
+    draft.layout.nodes[id] = {
+      id,
+      type: Object.keys(newInstance.slots).length > 0 ? 'container' : 'leaf',
+      children: [],
+      layout: 'flex',
+      layoutProps: {},
+    };
     
     // Add to parent's slot or root layout
     if (parentId && slotName) {
@@ -309,6 +316,18 @@ export function duplicateNode(
       slots: Object.fromEntries(Object.entries(source.slots).map(([k, v]) => [k, [...v]])),
       bindings: [...source.bindings],
     } as typeof draft.nodes[string];
+    draft.layout.nodes[newId] = {
+      ...(draft.layout.nodes[nodeId] ?? {
+        id: newId,
+        type: Object.keys(source.slots).length > 0 ? 'container' : 'leaf',
+        children: [],
+        layout: 'flex',
+        layoutProps: {},
+      }),
+      id: newId,
+      children: [...(draft.layout.nodes[nodeId]?.children ?? [])],
+      layoutProps: { ...(draft.layout.nodes[nodeId]?.layoutProps ?? {}) },
+    };
     // Insert after the original in root layout
     const rootLayoutNode = draft.layout.nodes[draft.layout.rootId];
     if (rootLayoutNode) {
@@ -369,6 +388,7 @@ export function deleteNode(document: BuilderDocument, nodeId: NodeId, bus?: Oper
     // Delete all nodes (canonical uses Record, not Map)
     for (const id of idsToDelete) {
       delete draft.nodes[id];
+      delete draft.layout.nodes[id];
     }
     
     draft.metadata = { ...draft.metadata, updatedAt: nextUpdatedAt(document.metadata.updatedAt, ctx) };
@@ -881,17 +901,27 @@ function findParent(document: BuilderDocument, nodeId: NodeId): NodeId | null {
 }
 
 /** Collect all node IDs in a subtree (including the root). */
-function collectNodeIds(document: BuilderDocument, rootId: NodeId): readonly NodeId[] {
+function collectNodeIds(document: BuilderDocument, rootId: NodeId, visited: ReadonlySet<NodeId> = new Set()): readonly NodeId[] {
+  if (visited.has(rootId)) {
+    return [];
+  }
+  const nextVisited = new Set(visited);
+  nextVisited.add(rootId);
   const ids: NodeId[] = [rootId];
   const node = document.nodes[rootId];
+  const layoutNode = document.layout.nodes[rootId];
+
+  for (const childId of layoutNode?.children ?? []) {
+    ids.push(...collectNodeIds(document, childId, nextVisited));
+  }
   
   if (node) {
     for (const children of Object.values(node.slots)) {
       for (const childId of children) {
-        ids.push(...collectNodeIds(document, childId));
+        ids.push(...collectNodeIds(document, childId, nextVisited));
       }
     }
   }
   
-  return ids;
+  return [...new Set(ids)];
 }

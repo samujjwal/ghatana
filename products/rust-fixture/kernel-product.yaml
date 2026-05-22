@@ -1,0 +1,64 @@
+schemaVersion: "1.0.0"
+id: rust-fixture
+name: Rust Fixture Product
+kind: product
+lifecycleStatus: planned
+executionEnabled: false
+owner: kernel-team
+
+scope:
+  tenantId: ghatana
+  workspaceId: kernel
+  projectId: fixtures
+
+registryProviderRef:
+  providerId: ghatana-file-registry
+
+sourceProviderRef:
+  providerId: ghatana-file-registry
+  config:
+    lifecycleConfigPath: kernel-product.yaml
+
+lifecycleProfile: standard-polyglot-product
+
+surfaces:
+  - id: rust-fixture-lib
+    type: sdk
+    implementationStatus: implemented
+    language: rust
+    runtime: rust-native
+    buildSystem: cargo
+    cratePath: products/rust-fixture
+    cargoToml: products/rust-fixture/Cargo.toml
+    adapterHint: cargo-rust
+
+  - id: rust-fixture-service
+    type: backend-api
+    implementationStatus: implemented
+    language: rust
+    runtime: rust-native
+    buildSystem: cargo
+    cratePath: products/rust-fixture
+    cargoToml: products/rust-fixture/Cargo.toml
+    adapterHint: cargo-rust
+    artifactName: rust_fixture_service
+
+environments:
+  - name: local
+    target: local
+    variables:
+      RUST_LOG: info
+
+gateBindings:
+  - gateId: rust-fmt-check
+    phase: validate
+    required: true
+  - gateId: rust-clippy-check
+    phase: validate
+    required: true
+  - gateId: rust-unit-test
+    phase: test
+    required: true
+  - gateId: rust-release-build
+    phase: build
+    required: true

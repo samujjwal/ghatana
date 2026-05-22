@@ -79,6 +79,7 @@ interactions:
       mode: event-publish
       topic: product.digital-marketing.lead.captured
       eventSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/lead-captured.v1.json
+      eventSchemaSha256: d224dad433d03ed8a66acbd9b19d9e6daabeae08ad7a9bf86046770cc00c4d04
       policy:
         requiresAuth: true
         requiresTenant: true
@@ -100,7 +101,9 @@ interactions:
       consumerProductIds: [digital-marketing]
       mode: request-response
       requestSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-request.v1.json
+      requestSchemaSha256: 5dd305739c9e608e9efcefb4fc3fe5a3a8b39ef6525e6ebed7aec2eb802544fd
       responseSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/phr-consent-status-response.v1.json
+      responseSchemaSha256: 7081157e1cc6a35498b4d1dd80f7e921a786f1a3f4ecdea56622729f16a05213
       required: false
       policy:
         requiresAuth: true
@@ -125,7 +128,9 @@ interactions:
       consumerProductIds: [phr]
       mode: request-response
       requestSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-request.v1.json
+      requestSchemaSha256: 94311aadb386caf848c107a5aaa1449157d205b1afc1e7877b7ccf60f59dca42
       responseSchemaRef: products/digital-marketing/dm-core-contracts/src/main/resources/contracts/notification-preference-response.v1.json
+      responseSchemaSha256: 354b3c21cf517955971fb3869d4b28a67842d2e216c46c79779324e32ccc9266
       required: true
       policy:
         requiresAuth: true

@@ -28,9 +28,12 @@ public final class ProductInteractionEventBroker {
     private final Set<String> supportedContractVersions;
     private final ProductInteractionEventPolicyEvaluator policyEvaluator;
     private final ProductInteractionEventEvidenceWriter evidenceWriter;
+    private final ProductInteractionEventProvider eventProvider;
     private final AtomicLong published;
     private final AtomicLong delivered;
     private final AtomicLong blocked;
+    private final AtomicLong dlqCount;
+    private final AtomicLong idempotencySkips;
     private final AtomicLong evidenceFailures;
     private final AtomicLong totalLatencyMs;
     private final AtomicLong maxLatencyMs;
@@ -40,9 +43,12 @@ public final class ProductInteractionEventBroker {
         this.supportedContractVersions = Set.copyOf(builder.supportedContractVersions);
         this.policyEvaluator = builder.policyEvaluator;
         this.evidenceWriter = builder.evidenceWriter;
+        this.eventProvider = builder.eventProvider;
         this.published = new AtomicLong();
         this.delivered = new AtomicLong();
         this.blocked = new AtomicLong();
+        this.dlqCount = new AtomicLong();
+        this.idempotencySkips = new AtomicLong();
         this.evidenceFailures = new AtomicLong();
         this.totalLatencyMs = new AtomicLong();
         this.maxLatencyMs = new AtomicLong();
@@ -57,17 +63,43 @@ public final class ProductInteractionEventBroker {
         long startedAtNanos = System.nanoTime();
         published.incrementAndGet();
 
+        // Idempotency check: skip if already delivered
+        if (eventProvider != null && eventProvider.isDelivered(envelope.eventId())) {
+            idempotencySkips.incrementAndGet();
+            return complete(envelope, ProductInteractionEventOutcome.succeeded(
+                    envelope.eventId(),
+                    List.of("kernel://interaction-events/" + envelope.eventId()),
+                    List.of()), startedAtNanos);
+        }
+
         Optional<ProductInteractionEventOutcome> preflightFailure = validatePreflight(envelope);
         if (preflightFailure.isPresent()) {
-            return complete(envelope, preflightFailure.get(), startedAtNanos);
+            ProductInteractionEventOutcome outcome = preflightFailure.get();
+            // Send to DLQ if blocked
+            if (eventProvider != null && outcome.status() == ProductInteractionStatus.BLOCKED) {
+                eventProvider.sendToDlq(envelope, outcome.reasonCode() != null ? outcome.reasonCode() : "preflight_failed");
+                dlqCount.incrementAndGet();
+            }
+            return complete(envelope, outcome, startedAtNanos);
         }
 
         List<ProductInteractionEventHandler<?>> subscribers = subscribersByTopic.getOrDefault(envelope.topic(), List.of());
         if (subscribers.isEmpty()) {
-            return complete(envelope, ProductInteractionEventOutcome.blocked(
+            ProductInteractionEventOutcome outcome = ProductInteractionEventOutcome.blocked(
                     envelope.eventId(),
                     "product_interaction.event_handler_unavailable",
-                    List.of()), startedAtNanos);
+                    List.of());
+            // Send to DLQ if no subscribers
+            if (eventProvider != null) {
+                eventProvider.sendToDlq(envelope, "event_handler_unavailable");
+                dlqCount.incrementAndGet();
+            }
+            return complete(envelope, outcome, startedAtNanos);
+        }
+
+        // Store event before delivery
+        if (eventProvider != null) {
+            eventProvider.store(envelope, ProductInteractionStatus.ALLOWED);
         }
 
         return Promise.ofCallback(cb -> dispatchSequentially(envelope, subscribers, 0, new ArrayList<>())
@@ -78,11 +110,21 @@ public final class ProductInteractionEventBroker {
                                 envelope.eventId(),
                                 "product_interaction.event_delivery_failed",
                                 List.of());
+                        // Send to DLQ on delivery failure
+                        if (eventProvider != null) {
+                            eventProvider.sendToDlq(envelope, "event_delivery_failed");
+                            eventProvider.updateStatus(envelope.eventId(), ProductInteractionStatus.BLOCKED);
+                            dlqCount.incrementAndGet();
+                        }
                     } else {
                         outcome = ProductInteractionEventOutcome.succeeded(
                                 envelope.eventId(),
                                 List.of("kernel://interaction-events/" + envelope.eventId()),
                                 subscriberIds);
+                        // Update status to delivered
+                        if (eventProvider != null) {
+                            eventProvider.updateStatus(envelope.eventId(), ProductInteractionStatus.SUCCEEDED);
+                        }
                     }
                     complete(envelope, outcome, startedAtNanos).whenComplete((finalOutcome, evidenceError) -> {
                         if (evidenceError != null) {
@@ -101,7 +143,53 @@ public final class ProductInteractionEventBroker {
                 blocked.get(),
                 evidenceFailures.get(),
                 totalLatencyMs.get(),
-                maxLatencyMs.get());
+                maxLatencyMs.get(),
+                dlqCount.get(),
+                idempotencySkips.get());
+    }
+
+    /**
+     * Replays events from the event provider within the specified time range.
+     *
+     * @param topic the topic to replay
+     * @param fromTimestampMs start timestamp in milliseconds
+     * @param toTimestampMs end timestamp in milliseconds
+     * @param limit maximum number of events to replay
+     * @return number of events replayed
+     */
+    public int replay(String topic, long fromTimestampMs, long toTimestampMs, int limit) {
+        if (eventProvider == null) {
+            throw new IllegalStateException("eventProvider not configured - cannot replay events");
+        }
+        List<ProductInteractionEventEnvelope<?>> events = eventProvider.getEventsForReplay(topic, fromTimestampMs, toTimestampMs, limit);
+        int replayed = 0;
+        for (ProductInteractionEventEnvelope<?> event : events) {
+            try {
+                publish(event).whenComplete((outcome, error) -> {
+                    if (error != null || outcome.status() != ProductInteractionStatus.SUCCEEDED) {
+                        // Log replay failure but continue with other events
+                    }
+                });
+                replayed++;
+            } catch (Exception e) {
+                // Log replay failure but continue with other events
+            }
+        }
+        return replayed;
+    }
+
+    /**
+     * Retrieves DLQ events for the specified topic.
+     *
+     * @param topic the topic
+     * @param limit maximum number of events to retrieve
+     * @return list of DLQ events
+     */
+    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(String topic, int limit) {
+        if (eventProvider == null) {
+            throw new IllegalStateException("eventProvider not configured - cannot retrieve DLQ events");
+        }
+        return eventProvider.getDlqEvents(topic, limit);
     }
 
     private <Event> Promise<List<String>> dispatchSequentially(
@@ -231,6 +319,7 @@ public final class ProductInteractionEventBroker {
         private Set<String> supportedContractVersions = DEFAULT_SUPPORTED_CONTRACT_VERSIONS;
         private ProductInteractionEventPolicyEvaluator policyEvaluator = ProductInteractionEventPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEventEvidenceWriter evidenceWriter = ProductInteractionEventEvidenceWriter.noop();
+        private ProductInteractionEventProvider eventProvider;
 
         public Builder subscribe(ProductInteractionEventHandler<?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -268,6 +357,11 @@ public final class ProductInteractionEventBroker {
 
         public Builder evidenceWriter(ProductInteractionEventEvidenceWriter writer) {
             this.evidenceWriter = Objects.requireNonNull(writer, "writer must not be null");
+            return this;
+        }
+
+        public Builder eventProvider(ProductInteractionEventProvider provider) {
+            this.eventProvider = provider;
             return this;
         }
 

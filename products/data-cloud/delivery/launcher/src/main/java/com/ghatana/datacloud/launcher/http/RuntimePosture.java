@@ -18,27 +18,35 @@ public record RuntimePosture(
     boolean tracingEnabled,      // Distributed tracing is enabled
     boolean eventStoreEnabled,   // Event store is durable and operational
     boolean idempotencyEnabled,  // Idempotency store is durable
-    Map<String, DependencyHealth> dependencyHealth  // Health of required dependencies
+    Map<String, DependencyHealth> dependencyHealth,  // Health of required dependencies
+    Map<String, Object> details
 ) {
     public RuntimePosture {
         dependencyHealth = dependencyHealth == null
             ? Map.of()
             : Collections.unmodifiableMap(Map.copyOf(dependencyHealth));
+        details = details == null
+            ? Map.of()
+            : Collections.unmodifiableMap(Map.copyOf(details));
     }
 
     public Map<String, Object> toMap() {
-        return Map.of(
-            "authEnabled", authEnabled,
-            "durabilityEnabled", durabilityEnabled,
-            "auditEnabled", auditEnabled,
-            "policyEnabled", policyEnabled,
-            "metricsEnabled", metricsEnabled,
-            "tracingEnabled", tracingEnabled,
-            "eventStoreEnabled", eventStoreEnabled,
-            "idempotencyEnabled", idempotencyEnabled,
-            "dependencyHealth", dependencyHealth.entrySet().stream()
-                .collect(java.util.HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().toMap()), java.util.HashMap::putAll)
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("authEnabled", authEnabled);
+        result.put("durabilityEnabled", durabilityEnabled);
+        result.put("auditEnabled", auditEnabled);
+        result.put("policyEnabled", policyEnabled);
+        result.put("metricsEnabled", metricsEnabled);
+        result.put("tracingEnabled", tracingEnabled);
+        result.put("eventStoreEnabled", eventStoreEnabled);
+        result.put("idempotencyEnabled", idempotencyEnabled);
+        result.put(
+            "dependencyHealth",
+            dependencyHealth.entrySet().stream()
+                .collect(java.util.LinkedHashMap::new, (m, e) -> m.put(e.getKey(), e.getValue().toMap()), java.util.LinkedHashMap::putAll)
         );
+        result.putAll(details);
+        return Collections.unmodifiableMap(result);
     }
 
     public static RuntimePostureBuilder builder() {
@@ -55,6 +63,7 @@ public record RuntimePosture(
         private boolean eventStoreEnabled;
         private boolean idempotencyEnabled;
         private Map<String, DependencyHealth> dependencyHealth = Map.of();
+        private Map<String, Object> details = Map.of();
 
         public RuntimePostureBuilder authEnabled(boolean authEnabled) {
             this.authEnabled = authEnabled;
@@ -101,6 +110,11 @@ public record RuntimePosture(
             return this;
         }
 
+        public RuntimePostureBuilder details(Map<String, Object> details) {
+            this.details = details;
+            return this;
+        }
+
         public RuntimePosture build() {
             return new RuntimePosture(
                 authEnabled,
@@ -111,7 +125,8 @@ public record RuntimePosture(
                 tracingEnabled,
                 eventStoreEnabled,
                 idempotencyEnabled,
-                dependencyHealth
+                dependencyHealth,
+                details
             );
         }
     }

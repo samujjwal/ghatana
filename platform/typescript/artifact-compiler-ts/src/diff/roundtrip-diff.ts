@@ -14,6 +14,8 @@ import {
   type LogicalArtifactModel,
   type ResidualIslandReport,
   type RoundTripDiffReport,
+  type RoundTripParitySection,
+  type ValidationPipelineResult,
 } from "@ghatana/artifact-contracts";
 
 export interface RoundTripDiffSourceFile {
@@ -29,6 +31,7 @@ export interface BuildRoundTripDiffReportOptions {
   readonly reimportedModel?: LogicalArtifactModel;
   readonly fidelity?: FidelityReport;
   readonly residuals?: ResidualIslandReport;
+  readonly validation?: ValidationPipelineResult;
 }
 
 export function buildRoundTripDiffReport(
@@ -46,6 +49,14 @@ export function buildRoundTripDiffReport(
       generatedContent: generated.content,
     });
   });
+  const paritySections = buildRoundTripParitySections({
+    model: options.model,
+    reimportedModel: options.reimportedModel,
+    originalSources: options.originalSources,
+    generatedSources: options.generatedSources,
+    diffs,
+    validation: options.validation,
+  });
 
   return {
     reportId: options.reportId,
@@ -53,8 +64,34 @@ export function buildRoundTripDiffReport(
     diffs,
     fidelity: options.fidelity ?? computeFidelityReport([], options.model.modelId, "pipeline"),
     residuals: options.residuals ?? createResidualIslandReport([]),
-    isLossless: diffs.every((diff) => diff.semanticallyEquivalent && diff.hunks.length === 0),
+    ...(options.validation === undefined ? {} : { validation: options.validation }),
+    paritySections,
+    isLossless: diffs.every((diff) => diff.semanticallyEquivalent && diff.hunks.length === 0) &&
+      (options.validation?.passed ?? true),
     generatedAt: new Date().toISOString(),
+  };
+}
+
+export function createNotRunValidationPipelineResult(params: {
+  readonly targetId: string;
+  readonly reason: string;
+}): ValidationPipelineResult {
+  return {
+    targetId: params.targetId,
+    passed: false,
+    findings: [
+      {
+        code: 'validation/not-run',
+        message: params.reason,
+        severity: 'warning',
+        category: 'other',
+        suggestion: 'Run generated project install, typecheck, lint, test, and build gates before marking the round-trip production-ready.',
+      },
+    ],
+    errorCount: 0,
+    warningCount: 1,
+    infoCount: 0,
+    validatedAt: new Date().toISOString(),
   };
 }
 
@@ -87,6 +124,88 @@ function diffSourcePair(options: {
     unchangedLines,
     diffedAt: new Date().toISOString(),
   };
+}
+
+function buildRoundTripParitySections(options: {
+  readonly model: LogicalArtifactModel;
+  readonly reimportedModel?: LogicalArtifactModel;
+  readonly originalSources: readonly RoundTripDiffSourceFile[];
+  readonly generatedSources: readonly RoundTripDiffSourceFile[];
+  readonly diffs: readonly DiffRecord[];
+  readonly validation?: ValidationPipelineResult;
+}): RoundTripParitySection[] {
+  const semanticFailures = options.diffs
+    .filter((diff) => !diff.semanticallyEquivalent)
+    .map((diff) => `${diff.originalPath} -> ${diff.generatedPath}`);
+  const importGraphFailures = buildImportGraphFindings(options.model, options.reimportedModel);
+  const componentFindings = buildComponentParityFindings(options.model, options.reimportedModel);
+  const apiFindings = buildApiParityFindings(options.model, options.reimportedModel);
+  const designTokenFindings = buildDesignTokenParityFindings(options.originalSources, options.generatedSources);
+
+  return [
+    {
+      kind: 'ast-semantic',
+      status: semanticFailures.length === 0 ? 'passed' : 'failed',
+      summary: semanticFailures.length === 0
+        ? 'AST semantic signatures are equivalent for all generated files.'
+        : 'AST semantic signature drift was detected.',
+      findings: [...semanticFailures],
+    },
+    {
+      kind: 'import-graph',
+      status: options.reimportedModel === undefined ? 'not-run' : importGraphFailures.length === 0 ? 'passed' : 'failed',
+      summary: options.reimportedModel === undefined
+        ? 'Import graph parity requires a re-imported model.'
+        : importGraphFailures.length === 0
+          ? 'Import graph edges are preserved across re-import.'
+          : 'Import graph drift was detected across re-import.',
+      findings: [...importGraphFailures],
+    },
+    {
+      kind: 'component',
+      status: options.reimportedModel === undefined ? 'not-run' : componentFindings.length === 0 ? 'passed' : 'failed',
+      summary: options.reimportedModel === undefined
+        ? 'Component parity requires a re-imported model.'
+        : componentFindings.length === 0
+          ? 'Component node identities and display names are preserved.'
+          : 'Component node drift was detected.',
+      findings: [...componentFindings],
+    },
+    {
+      kind: 'api',
+      status: options.reimportedModel === undefined ? 'not-run' : apiFindings.length === 0 ? 'passed' : 'failed',
+      summary: options.reimportedModel === undefined
+        ? 'API parity requires a re-imported model.'
+        : apiFindings.length === 0
+          ? 'Exported symbols and inferred prop contracts are preserved.'
+          : 'API contract drift was detected.',
+      findings: [...apiFindings],
+    },
+    {
+      kind: 'design-token',
+      status: designTokenFindings.length === 0 ? 'passed' : 'warning',
+      summary: designTokenFindings.length === 0
+        ? 'Design token and CSS variable references are preserved.'
+        : 'Design token or CSS variable reference drift was detected.',
+      findings: [...designTokenFindings],
+    },
+    {
+      kind: 'validation',
+      status: options.validation === undefined
+        ? 'not-run'
+        : options.validation.passed
+          ? 'passed'
+          : options.validation.errorCount > 0
+            ? 'failed'
+            : 'warning',
+      summary: options.validation === undefined
+        ? 'Generated artifact validation was not run.'
+        : options.validation.passed
+          ? 'Generated artifact validation passed.'
+          : 'Generated artifact validation reported findings.',
+      findings: options.validation?.findings.map((finding) => `${finding.severity}:${finding.code}:${finding.message}`) ?? [],
+    },
+  ];
 }
 
 function splitLines(content: string): string[] {
@@ -323,6 +442,104 @@ function isImportGraphEquivalent(
   const reimportedNormalized = reimportedEdges.map(normalizeEdge).sort();
 
   return JSON.stringify(originalNormalized) === JSON.stringify(reimportedNormalized);
+}
+
+function buildImportGraphFindings(
+  originalModel: LogicalArtifactModel,
+  reimportedModel: LogicalArtifactModel | undefined,
+): readonly string[] {
+  if (reimportedModel === undefined) return [];
+  return Object.keys(originalModel.nodes)
+    .filter((nodeId) => !isImportGraphEquivalent(originalModel, reimportedModel, nodeId))
+    .map((nodeId) => `Import graph differs for node "${nodeId}".`);
+}
+
+function buildComponentParityFindings(
+  originalModel: LogicalArtifactModel,
+  reimportedModel: LogicalArtifactModel | undefined,
+): readonly string[] {
+  if (reimportedModel === undefined) return [];
+  const findings: string[] = [];
+  const originalNodeIds = Object.keys(originalModel.nodes).sort((left, right) => left.localeCompare(right));
+  const reimportedNodeIds = Object.keys(reimportedModel.nodes).sort((left, right) => left.localeCompare(right));
+  for (const nodeId of originalNodeIds) {
+    const originalNode = originalModel.nodes[nodeId];
+    const reimportedNode = reimportedModel.nodes[nodeId];
+    if (originalNode === undefined) continue;
+    if (reimportedNode === undefined) {
+      findings.push(`Component node "${nodeId}" is missing after re-import.`);
+      continue;
+    }
+    if (originalNode.kind !== reimportedNode.kind) {
+      findings.push(`Component node "${nodeId}" kind changed from "${originalNode.kind}" to "${reimportedNode.kind}".`);
+    }
+    if (originalNode.displayName !== reimportedNode.displayName) {
+      findings.push(`Component node "${nodeId}" displayName changed from "${originalNode.displayName}" to "${reimportedNode.displayName}".`);
+    }
+  }
+  for (const nodeId of reimportedNodeIds) {
+    if (originalModel.nodes[nodeId] === undefined) {
+      findings.push(`Component node "${nodeId}" was introduced during re-import.`);
+    }
+  }
+  return findings;
+}
+
+function buildApiParityFindings(
+  originalModel: LogicalArtifactModel,
+  reimportedModel: LogicalArtifactModel | undefined,
+): readonly string[] {
+  if (reimportedModel === undefined) return [];
+  const findings: string[] = [];
+  for (const nodeId of Object.keys(originalModel.nodes).sort((left, right) => left.localeCompare(right))) {
+    const originalNode = originalModel.nodes[nodeId];
+    const reimportedNode = reimportedModel.nodes[nodeId];
+    if (originalNode === undefined || reimportedNode === undefined) continue;
+    const originalExports = JSON.stringify([...originalNode.exportedSymbols].sort());
+    const reimportedExports = JSON.stringify([...reimportedNode.exportedSymbols].sort());
+    if (originalExports !== reimportedExports) {
+      findings.push(`Exported symbols differ for node "${nodeId}".`);
+    }
+    if (JSON.stringify(normalizeRecord(originalNode.inferredProps)) !== JSON.stringify(normalizeRecord(reimportedNode.inferredProps))) {
+      findings.push(`Inferred prop contract differs for node "${nodeId}".`);
+    }
+    if (JSON.stringify(normalizeSourceImportShape(originalNode.sourceImports)) !== JSON.stringify(normalizeSourceImportShape(reimportedNode.sourceImports))) {
+      findings.push(`Source import contract differs for node "${nodeId}".`);
+    }
+  }
+  return findings;
+}
+
+function buildDesignTokenParityFindings(
+  originalSources: readonly RoundTripDiffSourceFile[],
+  generatedSources: readonly RoundTripDiffSourceFile[],
+): readonly string[] {
+  const originalTokens = collectDesignTokenReferences(originalSources);
+  const generatedTokens = collectDesignTokenReferences(generatedSources);
+  const findings: string[] = [];
+  for (const token of originalTokens) {
+    if (!generatedTokens.has(token)) {
+      findings.push(`Design token reference "${token}" is missing from generated sources.`);
+    }
+  }
+  for (const token of generatedTokens) {
+    if (!originalTokens.has(token)) {
+      findings.push(`Design token reference "${token}" was introduced in generated sources.`);
+    }
+  }
+  return findings;
+}
+
+function collectDesignTokenReferences(sources: readonly RoundTripDiffSourceFile[]): ReadonlySet<string> {
+  const tokens = new Set<string>();
+  const tokenPattern = /\b(?:token-[a-z0-9_-]+|var\(--[a-z0-9_-]+\))/gi;
+  for (const source of sources) {
+    const matches = source.content.matchAll(tokenPattern);
+    for (const match of matches) {
+      tokens.add(match[0]);
+    }
+  }
+  return tokens;
 }
 
 function normalizeRecord(record: Record<string, string> | undefined): Record<string, string> {

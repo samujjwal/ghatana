@@ -27,6 +27,7 @@ import type { BuilderDocument } from '@ghatana/ui-builder';
 import type { EvidencePack, FidelityReport, RoundTripDiffReport } from '@ghatana/artifact-contracts';
 import type { LogicalArtifactModel } from '@ghatana/artifact-contracts';
 import { studioLogger } from '../logging/studioLogger';
+import { StudioProductionProfileError, isProductionStudioProfile } from '../config/studioEnvironment';
 
 // ============================================================================
 // PERSISTENCE ADAPTER
@@ -130,7 +131,7 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
     try {
       const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
         method: 'PUT',
-        headers: this.headers,
+        headers: this.headersWithIdempotency(`studio-workflow-state:${audit.persistenceVersion}:${audit.lastModifiedAt}`),
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
@@ -186,16 +187,26 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
     return {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.config.authToken}`,
+      'x-ghatana-tenant-id': this.config.tenantId,
+      'x-ghatana-workspace-id': this.config.workspaceId,
+      'x-ghatana-project-id': this.config.projectId,
       'x-tenant-id': this.config.tenantId,
       'x-workspace-id': this.config.workspaceId,
       'x-project-id': this.config.projectId,
     };
   }
 
+  private headersWithIdempotency(idempotencyKey: string): Record<string, string> {
+    return {
+      ...this.headers,
+      'Idempotency-Key': idempotencyKey,
+    };
+  }
+
   private async persistEvidencePack(evidencePack: EvidencePack): Promise<void> {
     const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-evidence`, {
       method: 'PUT',
-      headers: this.headers,
+      headers: this.headersWithIdempotency(`studio-workflow-evidence:${evidencePack.evidenceId}`),
       body: JSON.stringify(evidencePack),
     });
 
@@ -209,8 +220,16 @@ export function resolvePersistenceAdapterForEnv(
   env?: Record<string, string | undefined>,
 ): WorkflowPersistenceAdapter {
   const enableKernelPersistence = env?.VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE === 'true';
+  const requireKernelPersistence =
+    env?.VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE === 'true' ||
+    isProductionStudioProfile(env);
 
   if (!enableKernelPersistence) {
+    if (requireKernelPersistence) {
+      throw new StudioProductionProfileError(
+        'Production Studio requires VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true.',
+      );
+    }
     return new LocalStoragePersistenceAdapter();
   }
 
@@ -222,6 +241,11 @@ export function resolvePersistenceAdapterForEnv(
   const enableEvidencePersistence = env?.VITE_STUDIO_ENABLE_KERNEL_EVIDENCE_PERSISTENCE !== 'false';
 
   if (!baseUrl || !tenantId || !workspaceId || !projectId || !authToken) {
+    if (requireKernelPersistence) {
+      throw new StudioProductionProfileError(
+        'Kernel workflow persistence requires kernel base URL, tenant, workspace, project, and auth token.',
+      );
+    }
     studioLogger.error('Kernel workflow persistence is enabled but runtime identity is incomplete; using local storage fallback.', {
       hasBaseUrl: Boolean(baseUrl),
       hasTenantId: Boolean(tenantId),

@@ -4,7 +4,7 @@
 
 ## Snapshot
 
-- Products in product shape: `audio-video`, `aura`, `data-cloud`, `dcmaar`, `digital-marketing`, `finance`, `flashit`, `phr`, `security-gateway`, `software-org`, `tutorputor`, `virtual-org`, `yappc`
+- Products in product shape: `audio-video`, `aura`, `data-cloud`, `dcmaar`, `digital-marketing`, `finance`, `flashit`, `phr`, `python-fixture`, `rust-fixture`, `security-gateway`, `software-org`, `tutorputor`, `typescript-fixture`, `virtual-org`, `yappc`
 - Kernel capabilities in registry: 7
 - Platform plugins in registry: 7
 - Domain packs in registry: 9

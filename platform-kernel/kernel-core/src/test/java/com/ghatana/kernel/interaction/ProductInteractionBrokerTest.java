@@ -73,7 +73,13 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            Map.of("purpose", "test"),
+                                Map.of(
+                                    "actor", "kernel-test-runner",
+                                    "tenantId", "",
+                                    "workspaceId", "workspace-1",
+                                    "purpose", "test",
+                                    "authorized", "true",
+                                    "consentGranted", "true"),
                             new EchoRequest("hello"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -123,7 +129,12 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                             "run-1",
                             "corr-1",
                             Instant.parse("2026-05-21T00:00:00Z"),
-                            Map.of(),
+                                Map.of(
+                                    "actor", "kernel-test-runner",
+                                    "tenantId", "tenant-1",
+                                    "workspaceId", "workspace-1",
+                                    "authorized", "true",
+                                    "consentGranted", "true"),
                             new EchoRequest("hello"))));
 
             assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
@@ -304,7 +315,13 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                 "run-1",
                 "corr-1",
                 Instant.parse("2026-05-21T00:00:00Z"),
-                Map.of("purpose", "test"),
+                Map.of(
+                    "actor", "kernel-test-runner",
+                    "tenantId", "tenant-1",
+                    "workspaceId", "workspace-1",
+                    "purpose", "test",
+                    "authorized", "true",
+                    "consentGranted", "true"),
                 payload);
     }
 

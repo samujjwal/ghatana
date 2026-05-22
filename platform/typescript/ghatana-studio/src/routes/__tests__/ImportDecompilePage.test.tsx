@@ -64,6 +64,22 @@ vi.mock('@ghatana/artifact-compiler-ts', () => ({
     isLossless: true,
     generatedAt: new Date().toISOString(),
   })),
+  validateGeneratedArtifacts: vi.fn(() => ({
+    targetId: 'model-test',
+    passed: true,
+    findings: [
+      {
+        code: 'validation/test-pass',
+        message: 'Validation passed in test',
+        severity: 'info',
+        category: 'typescript',
+      },
+    ],
+    errorCount: 0,
+    warningCount: 0,
+    infoCount: 1,
+    validatedAt: new Date().toISOString(),
+  })),
 }));
 
 // Mock the ModelToBuilderAdapter dynamic import

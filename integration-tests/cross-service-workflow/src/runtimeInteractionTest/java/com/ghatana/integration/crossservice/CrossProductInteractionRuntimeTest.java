@@ -6,6 +6,8 @@ import com.ghatana.kernel.interaction.ProductInteractionOutcome;
 import com.ghatana.kernel.interaction.ProductInteractionPolicyDecision;
 import com.ghatana.kernel.interaction.ProductInteractionRequest;
 import com.ghatana.kernel.interaction.ProductInteractionStatus;
+import com.ghatana.phr.kernel.consent.ConsentAccessDeniedException;
+import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.kernel.interaction.ConsentStatusInteractionHandler;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,7 +29,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("routes valid request through registered provider handler")
     void routesValidRequestThroughRegisteredHandler() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
-                .register(new ConsentStatusInteractionHandler())
+                .register(consentHandler())
                 .build();
         try {
             ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome = runPromise(() ->
@@ -44,7 +47,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("blocks unsupported contract version before dispatch")
     void blocksUnsupportedContractVersion() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
-                .register(new ConsentStatusInteractionHandler())
+                .register(consentHandler())
                 .build();
         try {
             ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome = runPromise(() ->
@@ -75,7 +78,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("blocks request when workspace scope is missing")
     void blocksMissingWorkspace() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
-                .register(new ConsentStatusInteractionHandler())
+                .register(consentHandler())
                 .build();
         try {
             ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome = runPromise(() ->
@@ -106,7 +109,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("blocks request when tenant scope is missing")
     void blocksMissingTenant() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
-                .register(new ConsentStatusInteractionHandler())
+                .register(consentHandler())
                 .build();
         try {
             ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome = runPromise(() ->
@@ -137,7 +140,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("blocks on policy evaluator denial")
     void blocksOnPolicyDenial() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
-                .register(new ConsentStatusInteractionHandler())
+                .register(consentHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
                 .build();
         try {
@@ -258,11 +261,24 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                 new ConsentStatusInteractionHandler.ConsentStatusRequest("subject-1", purpose));
     }
 
+    private static ConsentStatusInteractionHandler consentHandler() {
+        return new ConsentStatusInteractionHandler(new TestConsentService());
+    }
+
+    private static NotificationPreferenceInteractionHandler notificationPreferenceHandler() {
+        return new NotificationPreferenceInteractionHandler(request -> Promise.of(
+                new NotificationPreferenceInteractionHandler.NotificationPreferenceResponse(
+                        request.payload().subjectId(),
+                        true,
+                        false,
+                        "runtime-test-service")));
+    }
+
     private static final class CountingNotificationHandler implements com.ghatana.kernel.interaction.ProductInteractionHandler<
             NotificationPreferenceInteractionHandler.NotificationPreferenceRequest,
             NotificationPreferenceInteractionHandler.NotificationPreferenceResponse> {
         private final AtomicInteger invocations = new AtomicInteger();
-        private final NotificationPreferenceInteractionHandler delegate = new NotificationPreferenceInteractionHandler();
+        private final NotificationPreferenceInteractionHandler delegate = notificationPreferenceHandler();
 
         @Override
         public String contractId() {
@@ -317,5 +333,40 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         private record HangingRequest(String subjectId) {}
 
         private record HangingResponse(String status) {}
+    }
+
+    private static final class TestConsentService implements ConsentService {
+        @Override
+        public Promise<ConsentAccessDecision> checkAccess(ConsentCheckRequest request) {
+            boolean allowed = request.actor().scopes().contains("campaign-activation");
+            if (allowed) {
+                return Promise.of(ConsentAccessDecision.allow(
+                        ReasonCode.EXPLICIT_GRANT,
+                        "grant-runtime-test",
+                        CacheStatus.MISS,
+                        null));
+            }
+            return Promise.of(ConsentAccessDecision.deny(ReasonCode.OUT_OF_SCOPE, CacheStatus.MISS));
+        }
+
+        @Override
+        public Promise<ConsentAccessDecision> assertAccess(ConsentCheckRequest request) {
+            return checkAccess(request).map(decision -> {
+                if (!decision.allowed()) {
+                    throw new ConsentAccessDeniedException(
+                            request.requestId(),
+                            request.tenantId(),
+                            request.actor().actorId(),
+                            request.target().patientId(),
+                            decision);
+                }
+                return decision;
+            });
+        }
+
+        @Override
+        public Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request) {
+            return Promise.complete();
+        }
     }
 }

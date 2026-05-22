@@ -81,38 +81,35 @@ val checkDataCloudNoDeprecatedEventFactory by tasks.registering {
         rootProject.file("products/data-cloud")
     )
 
-    inputs.files(scanRoots.map { root ->
-        project.fileTree(root) {
-            include("**/src/main/**/*.java")
-            include("**/src/test/**/*.java")
-        }
-    })
+    val scanFiles = scanRoots.flatMap { root ->
+        listOf(root.resolve("src/main/java"), root.resolve("src/test/java"))
+            .filter(File::exists)
+            .map { sourceDir ->
+                project.fileTree(sourceDir) {
+                    include("**/*.java")
+                }
+            }
+    }
+
+    inputs.files(scanFiles)
 
     doLast {
         val marker = "DataCloudClient.Event.of("
         val violations = mutableListOf<String>()
 
-        scanRoots.forEach { root ->
-            if (!root.exists()) {
-                return@forEach
-            }
-            root.walkTopDown()
-                .filter { it.isFile }
-                .filter { it.extension == "java" }
-                .filter { file ->
-                    val p = file.invariantSeparatorsPath
-                    p.contains("/src/main/") || p.contains("/src/test/")
-                }
-                .forEach { file ->
-                    file.useLines { lines ->
-                        lines.forEachIndexed { index, line ->
-                            if (line.contains(marker)) {
-                                violations += "${project.relativePath(file)}:${index + 1}"
-                            }
+        scanFiles.asSequence()
+            .flatMap { it.files.asSequence() }
+            .filter(File::isFile)
+            .sortedBy { it.path }
+            .forEach { file ->
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        if (line.contains(marker)) {
+                            violations += "${project.relativePath(file)}:${index + 1}"
                         }
                     }
                 }
-        }
+            }
 
         if (violations.isNotEmpty()) {
             throw GradleException(
@@ -143,12 +140,17 @@ val checkDataCloudNoAepServerDependencies by tasks.registering {
         rootProject.file("products/data-cloud/delivery/launcher")
     )
 
-    inputs.files(scanRoots.map { root ->
-        project.fileTree(root) {
-            include("**/src/main/**/*.java")
-            include("**/src/test/**/*.java")
-        }
-    })
+    val scanFiles = scanRoots.flatMap { root ->
+        listOf(root.resolve("src/main/java"), root.resolve("src/test/java"))
+            .filter(File::exists)
+            .map { sourceDir ->
+                project.fileTree(sourceDir) {
+                    include("**/*.java")
+                }
+            }
+    }
+
+    inputs.files(scanFiles)
 
     doLast {
         val forbiddenPackages = listOf(
@@ -158,29 +160,21 @@ val checkDataCloudNoAepServerDependencies by tasks.registering {
         )
         val violations = mutableListOf<String>()
 
-        scanRoots.forEach { root ->
-            if (!root.exists()) {
-                return@forEach
-            }
-            root.walkTopDown()
-                .filter { it.isFile }
-                .filter { it.extension == "java" }
-                .filter { file ->
-                    val p = file.invariantSeparatorsPath
-                    p.contains("/src/main/") || p.contains("/src/test/")
-                }
-                .forEach { file ->
-                    file.useLines { lines ->
-                        lines.forEachIndexed { index, line ->
-                            forbiddenPackages.forEach { pkg ->
-                                if (line.contains("import $pkg") || line.contains("import static $pkg")) {
-                                    violations += "${project.relativePath(file)}:${index + 1} imports $pkg"
-                                }
+        scanFiles.asSequence()
+            .flatMap { it.files.asSequence() }
+            .filter(File::isFile)
+            .sortedBy { it.path }
+            .forEach { file ->
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        forbiddenPackages.forEach { pkg ->
+                            if (line.contains("import $pkg") || line.contains("import static $pkg")) {
+                                violations += "${project.relativePath(file)}:${index + 1} imports $pkg"
                             }
                         }
                     }
                 }
-        }
+            }
 
         if (violations.isNotEmpty()) {
             throw GradleException(
@@ -190,6 +184,25 @@ val checkDataCloudNoAepServerDependencies by tasks.registering {
                     violations.joinToString("\n")
             )
         }
+    }
+}
+
+gradle.projectsEvaluated {
+    val dataCloudProcessResourcesTaskPaths = rootProject.allprojects
+        .filter { it.path.startsWith(":products:data-cloud") }
+        .mapNotNull { candidate ->
+            if (candidate.tasks.findByName("processResources") != null) {
+                "${candidate.path}:processResources"
+            } else {
+                null
+            }
+        }
+
+    checkDataCloudNoDeprecatedEventFactory.configure {
+        dependsOn(dataCloudProcessResourcesTaskPaths)
+    }
+    checkDataCloudNoAepServerDependencies.configure {
+        dependsOn(dataCloudProcessResourcesTaskPaths)
     }
 }
 
@@ -239,6 +252,11 @@ private val sharedProductApiAllowlist = setOf(
     ":products:data-cloud:planes:action:orchestrator",
     // Virtual Org shared APIs (framework consumed by software-org)
     ":products:virtual-org:modules:framework",
+)
+
+private val architectureDependencyEdgeAllowlist = setOf(
+    // Transitional edge: ProductDataServiceBase in platform database still depends on kernel contracts.
+    ":platform:java:database->:platform-kernel:kernel-core",
 )
 
 fun Project.architectureDependencyEdges(includeTests: Boolean = false): List<ArchitectureDependencyEdge> {
@@ -318,6 +336,10 @@ fun productRoot(projectPath: String): String? {
 }
 
 fun isAllowedArchitectureDependency(fromProjectPath: String, toProjectPath: String): Boolean {
+    if ("$fromProjectPath->$toProjectPath" in architectureDependencyEdgeAllowlist) {
+        return true
+    }
+
     if (fromProjectPath == toProjectPath) {
         return true
     }

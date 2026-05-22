@@ -985,6 +985,514 @@
           ]
         }
       }
+    },
+    "standard-polyglot-product": {
+      "status": "stable",
+      "description": "A fixture product for validating polyglot adapter support across Rust, Python, and TypeScript",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": [
+          "sdk"
+        ],
+        "test": [
+          "sdk"
+        ],
+        "build": [
+          "sdk",
+          "backend-api"
+        ],
+        "package": [
+          "sdk",
+          "backend-api"
+        ],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "toolchain-preflight"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "unit-test"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight"
+        ],
+        "build": [
+          "security-scan"
+        ]
+      },
+      "defaultAdapters": {
+        "sdk.rust": "cargo-rust",
+        "backend-api.rust": "cargo-rust",
+        "sdk.python": "python-pyproject",
+        "backend-api.python": "python-pyproject",
+        "sdk.node": "pnpm-node-api",
+        "backend-api.node": "pnpm-node-api"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "sdk": [
+            "rust-library",
+            "python-package",
+            "node-bundle"
+          ],
+          "backend-api": [
+            "rust-binary",
+            "python-service",
+            "node-bundle"
+          ]
+        },
+        "package": {
+          "sdk": [
+            "rust-library",
+            "python-package",
+            "node-bundle"
+          ],
+          "backend-api": [
+            "rust-binary",
+            "python-service",
+            "node-bundle"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "sdk": [
+            "rust-library",
+            "python-package",
+            "node-bundle"
+          ],
+          "backend-api": [
+            "rust-binary",
+            "python-service",
+            "node-bundle"
+          ]
+        },
+        "package": {
+          "sdk": [
+            "rust-library",
+            "python-package",
+            "node-bundle"
+          ],
+          "backend-api": [
+            "rust-binary",
+            "python-service",
+            "node-bundle"
+          ]
+        }
+      }
+    },
+    "fast-gate-profile": {
+      "status": "stable",
+      "description": "Fast gate for quick feedback during development - runs essential checks only",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": [
+          "backend-api",
+          "web"
+        ],
+        "test": [
+          "backend-api"
+        ],
+        "build": [
+          "backend-api"
+        ],
+        "package": [],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation"
+        ],
+        "build": [
+          "typecheck",
+          "unit-test"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight"
+        ],
+        "build": []
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        }
+      }
+    },
+    "focused-gate-profile": {
+      "status": "stable",
+      "description": "Focused gate for feature development - runs targeted checks on changed surfaces",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": [
+          "backend-api",
+          "web"
+        ],
+        "test": [
+          "backend-api",
+          "web"
+        ],
+        "build": [
+          "backend-api",
+          "web"
+        ],
+        "package": [],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check"
+        ],
+        "build": [
+          "security-scan"
+        ]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react",
+        "package.backend-api": "docker-buildx",
+        "package.web": "docker-buildx"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        }
+      }
+    },
+    "nightly-gate-profile": {
+      "status": "stable",
+      "description": "Nightly gate for comprehensive validation - runs all checks including e2e and performance",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": [
+          "backend-api",
+          "web"
+        ],
+        "test": [
+          "backend-api",
+          "web"
+        ],
+        "build": [
+          "backend-api",
+          "web"
+        ],
+        "package": [
+          "backend-api",
+          "web"
+        ],
+        "deploy": []
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "package": [
+          "artifact-validation"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy",
+          "bundle-budget"
+        ],
+        "package": [
+          "security-scan",
+          "privacy-check",
+          "license-policy"
+        ],
+        "deploy": [
+          "e2e",
+          "performance"
+        ]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react",
+        "package.backend-api": "docker-buildx",
+        "package.web": "docker-buildx"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": true,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        },
+        "deploy": {
+          "backend-api": [
+            "deployment-manifest"
+          ],
+          "web": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "backend-api": [
+            "health-check-report"
+          ],
+          "web": [
+            "health-check-report"
+          ]
+        }
+      }
+    },
+    "release-gate-profile": {
+      "status": "stable",
+      "description": "Release gate for production deployment - runs all checks with strict gates and approval requirements",
+      "defaultSurfaces": {
+        "dev": [],
+        "validate": [
+          "backend-api",
+          "web"
+        ],
+        "test": [
+          "backend-api",
+          "web"
+        ],
+        "build": [
+          "backend-api",
+          "web"
+        ],
+        "package": [
+          "backend-api",
+          "web"
+        ],
+        "deploy": [
+          "backend-api",
+          "web"
+        ]
+      },
+      "requiredGates": {
+        "validate": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation"
+        ],
+        "build": [
+          "registry-validation",
+          "manifest-validation",
+          "typecheck",
+          "unit-test",
+          "conformance"
+        ],
+        "package": [
+          "artifact-validation"
+        ],
+        "deploy": [
+          "artifact-validation",
+          "environment-validation",
+          "health-check",
+          "observability-check"
+        ]
+      },
+      "optionalGates": {
+        "validate": [
+          "security-preflight",
+          "policy-action-resource-check",
+          "plugin-binding-check"
+        ],
+        "build": [
+          "security-scan",
+          "license-policy"
+        ],
+        "package": [
+          "security-scan",
+          "privacy-check",
+          "license-policy"
+        ],
+        "deploy": [
+          "security-scan",
+          "privacy-check",
+          "license-policy",
+          "conformance",
+          "e2e",
+          "performance",
+          "rollback-plan",
+          "approval"
+        ]
+      },
+      "defaultAdapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react",
+        "package.backend-api": "docker-buildx",
+        "package.web": "docker-buildx",
+        "deploy.local": "compose-local",
+        "verify.local": "compose-local"
+      },
+      "expectedArtifacts": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        }
+      },
+      "safeForDefault": false,
+      "phaseOutputs": {
+        "build": {
+          "backend-api": [
+            "jvm-service"
+          ],
+          "web": [
+            "static-web-bundle"
+          ]
+        },
+        "package": {
+          "backend-api": [
+            "container-image"
+          ],
+          "web": [
+            "container-image"
+          ]
+        },
+        "deploy": {
+          "backend-api": [
+            "deployment-manifest"
+          ],
+          "web": [
+            "deployment-manifest"
+          ]
+        },
+        "verify": {
+          "backend-api": [
+            "health-check-report"
+          ],
+          "web": [
+            "health-check-report"
+          ]
+        }
+      }
     }
   }
 }

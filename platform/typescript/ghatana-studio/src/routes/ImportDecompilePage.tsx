@@ -34,6 +34,7 @@ import { setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
 import {
   defaultProviderRegistry,
   resolveProviderRegistryForEnv,
+  resolveSourceAcquisitionRuntimeProfileForEnv,
   type ArchiveUploadInput,
   type PastedSourceInput,
   type RepositorySourceInput,
@@ -75,18 +76,39 @@ export default function ImportDecompilePage(): ReactElement {
   const navigate = useNavigate();
   const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
 
-  const { providerRegistry, isProductionAcquisitionEnabled } = useMemo(() => {
+  const { providerRegistry, acquisitionProfile, productionProfileError } = useMemo(() => {
     const env = (import.meta as ImportMeta & { readonly env?: Record<string, string | undefined> }).env;
-    const isEnabled = env?.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
-    return {
-      providerRegistry: resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry,
-      isProductionAcquisitionEnabled: isEnabled,
-    };
+    try {
+      const profile = resolveSourceAcquisitionRuntimeProfileForEnv(env);
+      return {
+        providerRegistry: resolveProviderRegistryForEnv(env) ?? defaultProviderRegistry,
+        acquisitionProfile: profile,
+        productionProfileError: null,
+      };
+    } catch (error) {
+      return {
+        providerRegistry: defaultProviderRegistry,
+        acquisitionProfile: {
+          mode: 'local' as const,
+          exposeRepositoryAndArchiveProviders: false,
+          backendKind: 'none' as const,
+        },
+        productionProfileError: error instanceof Error ? error.message : String(error),
+      };
+    }
   }, []);
 
   // Determine which provider options are available based on production profile
-  const isRepositoryProviderAvailable = isProductionAcquisitionEnabled;
-  const isArchiveProviderAvailable = isProductionAcquisitionEnabled;
+  const isProductionAcquisitionEnabled = acquisitionProfile.mode === 'production-acquisition';
+  const isRepositoryProviderAvailable = acquisitionProfile.exposeRepositoryAndArchiveProviders;
+  const isArchiveProviderAvailable = acquisitionProfile.exposeRepositoryAndArchiveProviders;
+  const acquisitionModeDetails = {
+    local: 'Browser upload and pasted source are available. Repository and archive options are disabled for this profile.',
+    'pending-backend': 'Repository and archive options create pending backend jobs. Browser upload and pasted source run locally.',
+    'production-acquisition': acquisitionProfile.backendKind === 'kernel'
+      ? 'Repository and archive acquisition are handled by the kernel backend with tenant, workspace, and project scope.'
+      : 'Repository and archive acquisition are handled by the browser runtime. This mode is not valid for production deployment profiles.',
+  } satisfies Record<typeof acquisitionProfile.mode, string>;
 
   const runAcquisition = useCallback(
     async (input: unknown) => {
@@ -158,7 +180,11 @@ export default function ImportDecompilePage(): ReactElement {
         const projectedBuilderDocument = projectModelToBuilderDocument(result.model);
 
         // Compile preview source from the top-level components
-        const { buildRoundTripDiffReport, compileReact } = await import('@ghatana/artifact-compiler-ts');
+        const {
+          buildRoundTripDiffReport,
+          compileReact,
+          validateGeneratedArtifacts,
+        } = await import('@ghatana/artifact-compiler-ts');
         const compiled = compileReact(result.model);
         const previewSource = compiled.emittedFiles.map(f => f.content).join('\n\n');
         const reimported = decompileTsx({
@@ -168,6 +194,10 @@ export default function ImportDecompilePage(): ReactElement {
             relativePath: file.relativePath,
             content: file.content,
           })),
+        });
+        const validationResult = validateGeneratedArtifacts({
+          targetId: result.model.modelId,
+          generatedSources: compiled.emittedFiles,
         });
         const roundTripDiffReport = buildRoundTripDiffReport({
           reportId: `round-trip:${jobId}`,
@@ -180,12 +210,14 @@ export default function ImportDecompilePage(): ReactElement {
           reimportedModel: reimported.model,
           fidelity: compiled.overallFidelity,
           residuals: residualReport,
+          validation: validationResult,
         });
         const evidencePack = buildStudioEvidencePack({
           jobResult,
           generatedSources: compiled.emittedFiles,
           compileFidelity: compiled.overallFidelity,
           compileResiduals: residualReport,
+          validationResult,
         });
 
         // Persist into the workflow store so all routes can read it
@@ -310,9 +342,7 @@ export default function ImportDecompilePage(): ReactElement {
       >
         <div className="flex items-center justify-between">
           <span className="font-medium">
-            {isProductionAcquisitionEnabled
-              ? 'Production acquisition mode enabled'
-              : 'Production acquisition mode disabled'}
+            Source acquisition mode: {acquisitionProfile.mode}
           </span>
           <button
             type="button"
@@ -326,20 +356,25 @@ export default function ImportDecompilePage(): ReactElement {
         </div>
         {productionStatusVisible && (
           <div id="production-status-details" className="mt-2 text-xs space-y-1">
-            <p>
-              {isProductionAcquisitionEnabled
-                ? 'Repository and archive acquisition are active. GitHub/GitLab APIs and archive extraction will be processed directly in the browser runtime.'
-                : 'Repository and archive acquisition require backend support. Only browser upload and pasted source are available in this configuration.'}
-            </p>
-            {!isProductionAcquisitionEnabled && (
+            <p>{acquisitionModeDetails[acquisitionProfile.mode]}</p>
+            {acquisitionProfile.mode === 'pending-backend' && (
               <p className="font-medium">
-                To enable production acquisition, set VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true
-                in your environment configuration.
+                To enable production acquisition, set VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION=true and VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel.
               </p>
             )}
           </div>
         )}
       </div>
+
+      {productionProfileError !== null && (
+        <div
+          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          role="alert"
+          data-testid="production-profile-error"
+        >
+          {productionProfileError}
+        </div>
+      )}
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-6">
         <label htmlFor="source-provider-select" className="block text-sm font-medium text-gray-700">

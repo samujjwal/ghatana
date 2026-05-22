@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { server } from '../../mocks/server';
 import { TestWrapper } from '../test-utils/wrapper';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
+import { DataExplorer } from '../../pages/DataExplorer';
 import {
   AiModelListSchema,
   AiModelSchema,
@@ -200,11 +201,6 @@ describe('Contract-Backed Route Tests', () => {
             timestamp: new Date().toISOString(),
           })
         )
-      );
-
-      // Dynamically import to avoid circular/static issues
-      const { default: DataExplorer } = await import(
-        '../../pages/DataExplorer'
       );
 
       render(<DataExplorer />, { wrapper: TestWrapper });

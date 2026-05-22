@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "title": "Kernel Lifecycle Telemetry",
+    "uid": "kernel-lifecycle",
+    "tags": ["kernel", "lifecycle", "telemetry"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Lifecycle Phase Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "kernel_lifecycle_phase_success_rate",
+            "legendFormat": "{{phase}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Lifecycle Phase Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_lifecycle_phase_duration_ms_sum[5m])",
+            "legendFormat": "{{phase}} duration"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Adapter Execution Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "kernel_adapter_success_rate",
+            "legendFormat": "{{adapter_id}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Adapter Execution Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_adapter_execution_duration_ms_sum[5m])",
+            "legendFormat": "{{adapter_id}} duration"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Lifecycle Phase Failures",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_lifecycle_phase_failures_total[5m])",
+            "legendFormat": "{{phase}} failures"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Adapter Failures by Stage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_adapter_preflight_failures_total[5m])",
+            "legendFormat": "{{adapter_id}} preflight"
+          },
+          {
+            "expr": "rate(kernel_adapter_plan_failures_total[5m])",
+            "legendFormat": "{{adapter_id}} plan"
+          },
+          {
+            "expr": "rate(kernel_adapter_execute_failures_total[5m])",
+            "legendFormat": "{{adapter_id}} execute"
+          }
+        ]
+      }
+    ]
+  }
+}

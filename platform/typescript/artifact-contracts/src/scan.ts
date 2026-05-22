@@ -20,6 +20,14 @@ import { OwnershipRegionSchema } from "./provenance.js";
 // ACQUISITION JOB
 // ============================================================================
 
+export const AcquisitionJobScopeSchema = z.object({
+  tenantId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  projectId: z.string().min(1),
+});
+
+export type AcquisitionJobScope = z.infer<typeof AcquisitionJobScopeSchema>;
+
 /**
  * Status of a source acquisition job.
  */
@@ -66,6 +74,8 @@ export const AcquisitionJobSchema = z.object({
   errorMessage: z.string().optional(),
   /** Correlation ID propagated from the originating request. */
   correlationId: z.string().optional(),
+  /** Tenant/workspace/project scope that owns this job. */
+  scope: AcquisitionJobScopeSchema.optional(),
 });
 
 export type AcquisitionJob = z.infer<typeof AcquisitionJobSchema>;
@@ -300,6 +310,26 @@ export const DiffRecordSchema = z.object({
 
 export type DiffRecord = z.infer<typeof DiffRecordSchema>;
 
+export const RoundTripParitySectionSchema = z.object({
+  /** Stable section kind for Studio grouping and evidence review. */
+  kind: z.enum([
+    "ast-semantic",
+    "import-graph",
+    "component",
+    "api",
+    "design-token",
+    "validation",
+  ]),
+  /** Whether this parity section passed, failed, warned, or was not run. */
+  status: z.enum(["passed", "failed", "warning", "not-run"]),
+  /** Human-readable summary for this section. */
+  summary: z.string().min(1),
+  /** Specific findings or file paths contributing to the status. */
+  findings: z.array(z.string().min(1)).default([]),
+});
+
+export type RoundTripParitySection = z.infer<typeof RoundTripParitySectionSchema>;
+
 /**
  * A set of diffs for a full round-trip: source → model → generated.
  */
@@ -314,6 +344,10 @@ export const RoundTripDiffReportSchema = z.object({
   fidelity: FidelityReportSchema,
   /** Residuals that were not regenerated. */
   residuals: ResidualIslandReportSchema,
+  /** Generated artifact validation result, if build/typecheck/lint/test gates were run. */
+  validation: ValidationPipelineResultSchema.optional(),
+  /** Structured parity sections for AST, graph, component/API, token, and validation review. */
+  paritySections: z.array(RoundTripParitySectionSchema).optional(),
   /** Whether the round-trip can be considered lossless. */
   isLossless: z.boolean(),
   /** ISO-8601 timestamp. */

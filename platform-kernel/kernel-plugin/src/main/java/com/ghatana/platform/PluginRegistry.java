@@ -44,6 +44,23 @@ public class PluginRegistry {
 
     private final Map<String, Plugin> plugins = new ConcurrentHashMap<>();
     private final Map<PluginType, Set<String>> pluginsByType = new ConcurrentHashMap<>();
+    private final PluginStartupOrderPlanner startupOrderPlanner;
+
+    /**
+     * Creates a new PluginRegistry with a default startup order planner.
+     */
+    public PluginRegistry() {
+        this.startupOrderPlanner = new PluginStartupOrderPlanner();
+    }
+
+    /**
+     * Creates a new PluginRegistry with a custom startup order planner.
+     *
+     * @param startupOrderPlanner the startup order planner to use
+     */
+    public PluginRegistry(PluginStartupOrderPlanner startupOrderPlanner) {
+        this.startupOrderPlanner = Objects.requireNonNull(startupOrderPlanner, "startupOrderPlanner must not be null");
+    }
 
     // =========================================================================
     // Registration
@@ -197,13 +214,21 @@ public class PluginRegistry {
     }
 
     /**
-     * Starts all registered plugins.
+     * Starts all registered plugins in dependency order.
+     * Uses the startup order planner to determine the correct sequence.
      */
     @NotNull
     public Promise<Void> startAll() {
-        return Promises.all(plugins.values().stream()
-            .map(Plugin::start)
-            .collect(Collectors.toList()));
+        try {
+            List<String> startupOrder = startupOrderPlanner.computeStartupOrder(this);
+            return Promises.all(startupOrder.stream()
+                .map(pluginId -> plugins.get(pluginId))
+                .filter(Objects::nonNull)
+                .map(Plugin::start)
+                .collect(Collectors.toList()));
+        } catch (PluginDependencyException e) {
+            return Promise.ofException(e);
+        }
     }
 
     /**

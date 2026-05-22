@@ -39,6 +39,7 @@ const registry = {
 
 test('product interaction contracts pass when consumed contract has provider declaration', () => {
   const result = checkProductInteractionContracts(registry, {
+    validateSchemaRefs: false,
     loadKernelProduct: (productId) => ({
       config: {
         interactions:
@@ -55,6 +56,7 @@ test('product interaction contracts pass when consumed contract has provider dec
 
 test('product interaction contracts fail when consumed contract has no provider declaration', () => {
   const result = checkProductInteractionContracts(registry, {
+    validateSchemaRefs: false,
     loadKernelProduct: (productId) => ({
       config: {
         interactions:
@@ -74,6 +76,7 @@ test('product interaction contracts fail when consumed contract has no provider 
 
 test('product interaction contracts require pii classification for consent interactions', () => {
   const result = checkProductInteractionContracts(registry, {
+    validateSchemaRefs: false,
     loadKernelProduct: (productId) => ({
       config: {
         interactions:
@@ -97,6 +100,69 @@ test('product interaction contracts require pii classification for consent inter
   assert(
     result.errors.some((error) =>
       error.includes('policy.piiClassification is required'),
+    ),
+  );
+});
+
+test('product interaction contracts fail when schema hash drifts from schema content', () => {
+  const result = checkProductInteractionContracts(registry, {
+    readSchemaFile: () => JSON.stringify({ type: 'object' }),
+    loadKernelProduct: (productId) => ({
+      config: {
+        interactions:
+          productId === 'phr'
+            ? {
+                provides: [
+                  contract({
+                    requestSchemaSha256: '0'.repeat(64),
+                    responseSchemaSha256: '0'.repeat(64),
+                  }),
+                ],
+              }
+            : {},
+      },
+    }),
+  });
+
+  assert(
+    result.errors.some((error) =>
+      error.includes('requestSchemaSha256 is 0000000000000000000000000000000000000000000000000000000000000000'),
+    ),
+  );
+});
+
+test('product interaction contracts fail when consumer schema hash differs from provider hash', () => {
+  const schema = JSON.stringify({ type: 'object' });
+  const digest = '7a38bf81f383f69433ad6e90063b36dae41e6b357c797b8a14be4175a2c59a7b';
+  const result = checkProductInteractionContracts(registry, {
+    readSchemaFile: () => schema,
+    loadKernelProduct: (productId) => ({
+      config: {
+        interactions:
+          productId === 'phr'
+            ? {
+                provides: [
+                  contract({
+                    requestSchemaSha256: digest,
+                    responseSchemaSha256: digest,
+                  }),
+                ],
+              }
+            : {
+                consumes: [
+                  contract({
+                    requestSchemaSha256: '1'.repeat(64),
+                    responseSchemaSha256: digest,
+                  }),
+                ],
+              },
+      },
+    }),
+  });
+
+  assert(
+    result.errors.some((error) =>
+      error.includes('requestSchemaSha256') && error.includes('does not match provider'),
     ),
   );
 });

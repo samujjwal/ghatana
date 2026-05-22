@@ -141,12 +141,29 @@ describe('buildStudioEvidencePack', () => {
       jobResult,
       generatedSources: [{ relativePath: 'src/Button.tsx', content: 'export function Button() {}' }],
       compileFidelity: fidelityReport,
+      validationResult: {
+        targetId: 'model-1',
+        passed: false,
+        findings: [
+          {
+            code: 'validation/not-run',
+            message: 'Validation not run',
+            severity: 'warning',
+            category: 'other',
+          },
+        ],
+        errorCount: 0,
+        warningCount: 1,
+        infoCount: 0,
+        validatedAt: '2024-01-01T00:00:00.000Z',
+      },
     });
 
     expect(pack).not.toBeNull();
     expect(pack?.stage).toBe('round-trip');
     expect(pack?.decompileResult?.nodeCount).toBe(1);
     expect(pack?.compileResult?.emittedFiles['src/Button.tsx']).toContain('Button');
+    expect(pack?.validationResult?.findings[0]?.code).toBe('validation/not-run');
   });
 
   it('returns null when required workflow pieces are absent', () => {

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kernel://interactions/digital-marketing.notification-preference.v1/request",
+  "title": "Notification Preference Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tenantId", "subjectId", "channel", "purpose"],
+  "properties": {
+    "tenantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subjectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["email", "sms", "push"]
+    },
+    "purpose": {
+      "type": "string",
+      "enum": ["care-plan-notification"]
+    }
+  }
+}

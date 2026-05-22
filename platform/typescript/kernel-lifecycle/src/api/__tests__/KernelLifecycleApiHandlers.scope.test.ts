@@ -117,6 +117,30 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
     expect(response.statusCode).toBe(403);
     expect((response.body as { readonly correlationId: string }).correlationId).toBe("test-correlation-123");
   });
+
+  it("requires scope headers for Studio source acquisition even when generic scope enforcement is disabled", async () => {
+    const handlers = createKernelLifecycleApiHandlers({
+      service: createMockService(),
+      requireScopeHeaders: false,
+      requireAuthentication: false,
+    });
+
+    const response = await handlers.createStudioRepositorySourceAcquisition({
+      headers: { "x-correlation-id": "source-scope-required" },
+      body: {
+        input: {
+          kind: "github-repository",
+          repositoryUrl: "https://github.com/samujjwal/ghatana",
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(response.body).toMatchObject({
+      reasonCode: "scope-headers-required",
+      correlationId: "source-scope-required",
+    });
+  });
 });
 
 function createMockService(): KernelLifecycleService {

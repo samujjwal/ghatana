@@ -272,6 +272,99 @@ describe('KernelLifecycleApiHandlers — authorization enforcement', () => {
     expect(response.statusCode).toBe(403);
     expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalled();
   });
+
+  it('uses authorizeLifecyclePlan for Studio source acquisition jobs', async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeLifecyclePlan: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.createStudioRepositorySourceAcquisition({
+      headers: {
+        'X-Correlation-Id': 'corr-source-auth',
+        'X-Ghatana-Tenant-Id': 'tenant-1',
+        'X-Ghatana-Workspace-Id': 'workspace-1',
+        'X-Ghatana-Project-Id': 'project-1',
+      },
+      body: {
+        input: {
+          kind: 'github-repository',
+          repositoryUrl: 'https://github.com/samujjwal/ghatana',
+        },
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeLifecyclePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: 'actor-1' }),
+      expect.objectContaining({ correlationId: 'corr-source-auth' }),
+    );
+  });
+
+  it('uses authorizeProductUnitRead for Studio source acquisition job lookup', async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeProductUnitRead: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.getStudioSourceAcquisitionJob({
+      headers: {
+        'X-Correlation-Id': 'corr-source-read-auth',
+        'X-Ghatana-Tenant-Id': 'tenant-1',
+        'X-Ghatana-Workspace-Id': 'workspace-1',
+        'X-Ghatana-Project-Id': 'project-1',
+      },
+      params: { jobId: 'studio-acquisition:github:missing' },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeProductUnitRead).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: 'actor-1' }),
+      expect.objectContaining({ correlationId: 'corr-source-read-auth' }),
+    );
+  });
+
+  it('uses authorizeLifecycleExecute for Studio source acquisition worker updates', async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeLifecycleExecute: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.patchStudioSourceAcquisitionJob({
+      headers: {
+        'X-Correlation-Id': 'corr-source-worker-auth',
+        'X-Ghatana-Tenant-Id': 'tenant-1',
+        'X-Ghatana-Workspace-Id': 'workspace-1',
+        'X-Ghatana-Project-Id': 'project-1',
+      },
+      params: { jobId: 'studio-acquisition:github:missing' },
+      body: {
+        status: 'running',
+        startedAt: '2026-05-21T00:00:00.000Z',
+      },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeLifecycleExecute).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: 'actor-1' }),
+      expect.objectContaining({ correlationId: 'corr-source-worker-auth' }),
+    );
+  });
 });
 
 function validIntent(): Record<string, unknown> {
@@ -302,6 +395,9 @@ function validIntent(): Record<string, unknown> {
           id: 'web',
           type: 'web',
           implementationStatus: 'implemented',
+          language: 'typescript',
+          runtime: 'browser',
+          buildSystem: 'pnpm',
         },
       ],
     },

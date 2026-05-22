@@ -54,6 +54,7 @@ describe('Operation Validation', () => {
 
       const validation = validateBuilderDocument(doc);
       expect(validation.valid).toBe(true);
+      expect(validation.warnings).not.toContainEqual(expect.objectContaining({ code: 'ORPHANED_NODE' }));
       expect(getUserNodeIds(doc)).toHaveLength(1);
     });
 
@@ -84,6 +85,10 @@ describe('Operation Validation', () => {
 
       const rootNode = doc.layout.nodes[doc.layout.rootId];
       expect(rootNode?.children).toHaveLength(1);
+      expect(doc.layout.nodes[rootNode!.children![0]!]).toMatchObject({
+        type: 'leaf',
+        layout: 'flex',
+      });
     });
   });
 

@@ -5,7 +5,10 @@
 import { describe, expect, it } from "vitest";
 import { compileReact } from "../compile/react.js";
 import { decompileTsx } from "../decompile/tsx.js";
-import { buildRoundTripDiffReport } from "../diff/roundtrip-diff.js";
+import {
+  buildRoundTripDiffReport,
+  createNotRunValidationPipelineResult,
+} from "../diff/roundtrip-diff.js";
 
 const SOURCE = `
 import type { ReactElement } from "react";
@@ -48,6 +51,15 @@ describe("buildRoundTripDiffReport", () => {
     expect(report.diffs).toHaveLength(1);
     expect(report.diffs[0]?.semanticallyEquivalent).toBe(true);
     expect(report.diffs[0]?.hunks.length).toBeGreaterThan(0);
+    expect(report.paritySections?.map((section) => section.kind)).toEqual([
+      'ast-semantic',
+      'import-graph',
+      'component',
+      'api',
+      'design-token',
+      'validation',
+    ]);
+    expect(report.paritySections?.find((section) => section.kind === 'component')?.status).toBe('passed');
     expect(report.isLossless).toBe(false);
   });
 
@@ -157,5 +169,69 @@ export function Button(props: ButtonProps): ReactElement {
     });
 
     expect(report.diffs[0]?.semanticallyEquivalent).toBe(false);
+  });
+
+  it('includes generated artifact validation results in the round-trip report', () => {
+    const decompiled = decompileTsx({
+      label: 'diff-test-validation',
+      modelId: 'diff-model-validation',
+      files: [{ relativePath: 'src/Button.tsx', content: SOURCE }],
+    });
+    const compiled = compileReact(decompiled.model);
+    const validation = createNotRunValidationPipelineResult({
+      targetId: decompiled.model.modelId,
+      reason: 'Validation runner was not invoked in this test.',
+    });
+
+    const report = buildRoundTripDiffReport({
+      reportId: 'diff-report-validation',
+      model: decompiled.model,
+      originalSources: [{ relativePath: 'src/Button.tsx', content: SOURCE }],
+      generatedSources: compiled.emittedFiles,
+      validation,
+    });
+
+    expect(report.validation).toEqual(validation);
+    expect(report.isLossless).toBe(false);
+    expect(report.validation?.findings[0]?.code).toBe('validation/not-run');
+    expect(report.paritySections?.find((section) => section.kind === 'validation')).toMatchObject({
+      status: 'warning',
+      findings: [expect.stringContaining('validation/not-run')],
+    });
+  });
+
+  it('surfaces design-token parity drift as a structured warning section', () => {
+    const original = `
+      export function Card() {
+        return <section className="card token-primary">Card</section>;
+      }
+    `;
+    const decompiled = decompileTsx({
+      label: 'diff-test-token-section',
+      modelId: 'diff-model-token-section',
+      files: [{ relativePath: 'src/Card.tsx', content: original }],
+    });
+
+    const report = buildRoundTripDiffReport({
+      reportId: 'diff-report-token-section',
+      model: decompiled.model,
+      originalSources: [{ relativePath: 'src/Card.tsx', content: original }],
+      generatedSources: [{
+        relativePath: 'src/Card.tsx',
+        content: `
+          export function Card() {
+            return <section className="card token-secondary">Card</section>;
+          }
+        `,
+      }],
+    });
+
+    expect(report.paritySections?.find((section) => section.kind === 'design-token')).toMatchObject({
+      status: 'warning',
+      findings: [
+        'Design token reference "token-primary" is missing from generated sources.',
+        'Design token reference "token-secondary" was introduced in generated sources.',
+      ],
+    });
   });
 });

@@ -17,6 +17,7 @@ import {
   lifecycleDataBadgeTone,
 } from "./studioLifecycleRouteSupport";
 import { RuntimeTruthPanel } from "../runtimeTruth";
+import { getRecoveryGuidance, inferFailureCategory } from "@ghatana/kernel-lifecycle/recovery";
 
 const LIFECYCLE_PHASES = [
   "validate",
@@ -893,6 +894,22 @@ export default function LifecyclePage(): ReactElement {
         </article>
       )}
 
+      {/* Recovery guidance for failed runs */}
+      {selectedRun && selectedRun.status !== "succeeded" && (
+        <article
+          className="studio-card space-y-3"
+          aria-labelledby="recovery-title"
+        >
+          <h3
+            id="recovery-title"
+            className="text-base font-semibold text-gray-950"
+          >
+            {t("studio.route.lifecycle.recoveryTitle")}
+          </h3>
+          <RecoveryPanel run={selectedRun} />
+        </article>
+      )}
+
       <article
         className="studio-card space-y-3"
         aria-labelledby="runtime-truth-title"
@@ -1638,6 +1655,93 @@ function DeploymentManifestPanel(props: {
         {Array.isArray(manifest.surfaces)
           ? String(manifest.surfaces.length)
           : "0"}
+      </div>
+    </div>
+  );
+}
+
+function RecoveryPanel(props: {
+  readonly run?: LifecycleRun;
+}): ReactElement {
+  const t = useStudioTranslation();
+  const run = props.run;
+
+  if (!run || run.status === "succeeded") {
+    return (
+      <p className="text-sm text-gray-600">
+        {t("studio.route.lifecycle.noRecoveryNeeded")}
+      </p>
+    );
+  }
+
+  const failureCategory = inferFailureCategory(
+    run.errorMessage || "Unknown error",
+    run.statusCode
+  );
+  const guidance = getRecoveryGuidance(failureCategory);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
+        <div className="text-sm font-semibold text-amber-900">
+          {guidance.title}
+        </div>
+        <div className="mt-1 text-xs text-amber-800">
+          {guidance.explanation}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-xs font-semibold text-gray-700">
+          {t("studio.route.lifecycle.recoveryActionsTitle")}
+        </div>
+        <ul className="mt-2 space-y-2">
+          {guidance.actions.map((action, index) => (
+            <li key={index} className="text-sm">
+              <div className="font-medium text-gray-900">
+                {action.description}
+              </div>
+              {action.command && (
+                <code className="mt-1 block rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">
+                  {action.command}
+                </code>
+              )}
+              {action.referenceUrl && (
+                <a
+                  href={action.referenceUrl}
+                  className="mt-1 block text-xs text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("studio.route.lifecycle.recoveryReferenceLink")}
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="font-medium text-gray-700">
+          {t("studio.route.lifecycle.recoveryComplexityLabel")}:
+        </span>
+        <Badge
+          tone={
+            guidance.estimatedComplexity === "simple"
+              ? "success"
+              : guidance.estimatedComplexity === "moderate"
+                ? "warning"
+                : "danger"
+          }
+          variant="soft"
+        >
+          {guidance.estimatedComplexity}
+        </Badge>
+        {guidance.requiresIntervention && (
+          <Badge tone="warning" variant="soft">
+            {t("studio.route.lifecycle.recoveryInterventionRequired")}
+          </Badge>
+        )}
       </div>
     </div>
   );

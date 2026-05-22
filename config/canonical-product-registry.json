@@ -10,7 +10,10 @@
       "manifestPath": "products/phr/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
       "buildFile": "products/phr/build.gradle.kts",
-      "gradleModules": [":products:phr", ":products:phr:launcher"],
+      "gradleModules": [
+        ":products:phr",
+        ":products:phr:launcher"
+      ],
       "surfaces": [
         {
           "type": "backend-api",
@@ -24,10 +27,17 @@
           "implementationStatus": "implemented"
         }
       ],
-      "pnpmPackages": ["products/phr/apps/*"],
+      "pnpmPackages": [
+        "products/phr/apps/*"
+      ],
       "ci": {
         "enabled": true,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": true,
@@ -84,12 +94,12 @@
         "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
       },
       "lifecycleReadiness": {
-          "reasonCodes": [
-            "healthcare-pilot-enabled",
-            "fhir-r4-pilot-surfaces-validated",
-            "consent-gate-active",
-            "pii-classification-active",
-            "phr-rollback-after-stable-deploy-verify"
+        "reasonCodes": [
+          "healthcare-pilot-enabled",
+          "fhir-r4-pilot-surfaces-validated",
+          "consent-gate-active",
+          "pii-classification-active",
+          "phr-rollback-after-stable-deploy-verify"
         ],
         "requiredGates": [
           "consent",
@@ -175,11 +185,17 @@
         "enabled": true,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -208,15 +224,21 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local"]
+        "supported": [
+          "local"
+        ]
       },
       "lifecycleExecutionAllowed": true
     },
@@ -405,11 +427,19 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "defaultSurfaces": [
+              "backend-api",
+              "worker",
+              "operator"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "worker", "operator"],
+            "defaultSurfaces": [
+              "backend-api",
+              "worker",
+              "operator"
+            ],
             "mode": "parallel"
           }
         },
@@ -445,15 +475,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -491,10 +530,17 @@
           "implementationStatus": "implemented"
         }
       ],
-      "pnpmPackages": ["products/digital-marketing/ui"],
+      "pnpmPackages": [
+        "products/digital-marketing/ui"
+      ],
       "ci": {
         "enabled": true,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": true,
@@ -539,11 +585,17 @@
         "enabled": true,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -572,15 +624,21 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local"]
+        "supported": [
+          "local"
+        ]
       },
       "lifecycleExecutionAllowed": true
     },
@@ -593,7 +651,9 @@
       "manifestPath": "products/flashit/domain-pack-manifest.yaml",
       "manifestFormat": "yaml",
       "buildFile": "products/flashit/build.gradle.kts",
-      "gradleModules": [":products:flashit"],
+      "gradleModules": [
+        ":products:flashit"
+      ],
       "surfaces": [
         {
           "type": "backend-api",
@@ -621,7 +681,12 @@
       ],
       "ci": {
         "enabled": true,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": true,
@@ -734,7 +799,10 @@
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
@@ -781,15 +849,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1152,7 +1229,12 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1221,7 +1303,12 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1244,12 +1331,18 @@
           "requires-lifecycle-profile",
           "requires-security-threat-model-gates"
         ],
-        "requiredGates": ["threat-model", "guardian-policy", "security-review"],
+        "requiredGates": [
+          "threat-model",
+          "guardian-policy",
+          "security-review"
+        ],
         "nextRequiredWork": [
           "Define DCMAAR executable backend and web surfaces before adding lifecycle configs",
           "Add threat-model and Guardian policy evidence before enabling lifecycle execution"
         ],
-        "evidenceRefs": ["products/dcmaar/libs/java/guardian-threat-service"]
+        "evidenceRefs": [
+          "products/dcmaar/libs/java/guardian-threat-service"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1286,7 +1379,12 @@
       ],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1327,18 +1425,26 @@
           "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
           "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests"
         ],
-        "evidenceRefs": ["products/tutorputor/kernel-product.yaml"]
+        "evidenceRefs": [
+          "products/tutorputor/kernel-product.yaml"
+        ]
       },
       "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
       "lifecycle": {
         "enabled": false,
         "phases": {
           "dev": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "parallel"
           },
           "build": {
-            "defaultSurfaces": ["backend-api", "web"],
+            "defaultSurfaces": [
+              "backend-api",
+              "web"
+            ],
             "mode": "sequential"
           }
         },
@@ -1367,15 +1473,24 @@
         }
       },
       "deployment": {
-        "targets": ["compose-local"],
+        "targets": [
+          "compose-local"
+        ],
         "defaultEnvironment": "local",
-        "healthChecks": ["standard-http"],
+        "healthChecks": [
+          "standard-http"
+        ],
         "rollback": {
           "strategy": "previous-artifact"
         }
       },
       "environments": {
-        "supported": ["local", "dev", "staging", "prod"]
+        "supported": [
+          "local",
+          "dev",
+          "staging",
+          "prod"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1412,7 +1527,12 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1444,7 +1564,9 @@
           "Keep Aura disabled until product owners define executable lifecycle surfaces",
           "Add recommendation safety and explainability evidence before lifecycle execution"
         ],
-        "evidenceRefs": ["products/aura/platform/api"]
+        "evidenceRefs": [
+          "products/aura/platform/api"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1478,7 +1600,12 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1510,7 +1637,9 @@
           "Keep software-org disabled until product owners define executable lifecycle surfaces",
           "Add governance and integration evidence before lifecycle execution"
         ],
-        "evidenceRefs": ["products/software-org"]
+        "evidenceRefs": [
+          "products/software-org"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1543,7 +1672,12 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": false,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1575,7 +1709,9 @@
           "Keep virtual-org disabled until product owners define executable lifecycle surfaces",
           "Add governance and integration evidence before lifecycle execution"
         ],
-        "evidenceRefs": ["products/virtual-org"]
+        "evidenceRefs": [
+          "products/virtual-org"
+        ]
       },
       "lifecycleExecutionAllowed": false
     },
@@ -1601,7 +1737,12 @@
       "pnpmPackages": [],
       "ci": {
         "enabled": true,
-        "gates": ["build", "test", "manifest-validation", "security-scan"]
+        "gates": [
+          "build",
+          "test",
+          "manifest-validation",
+          "security-scan"
+        ]
       },
       "conformance": {
         "manifest": false,
@@ -1616,6 +1757,399 @@
         "created": "2026-03-19",
         "documentation": "products/security-gateway/README.md",
         "status": "active"
+      },
+      "lifecycleExecutionAllowed": false
+    },
+    "rust-fixture": {
+      "id": "rust-fixture",
+      "name": "Rust Fixture Product",
+      "description": "Minimal Rust service and library for validating CargoRustAdapter lifecycle support",
+      "type": "product",
+      "kind": "demo/example",
+      "manifestPath": "products/rust-fixture/kernel-product.yaml",
+      "manifestFormat": "yaml",
+      "buildFile": "products/rust-fixture/Cargo.toml",
+      "gradleModules": [],
+      "surfaces": [
+        {
+          "type": "sdk",
+          "path": "products/rust-fixture",
+          "implementationStatus": "implemented",
+          "language": "rust",
+          "runtime": "rust-native",
+          "buildSystem": "cargo"
+        },
+        {
+          "type": "backend-api",
+          "path": "products/rust-fixture",
+          "implementationStatus": "implemented",
+          "language": "rust",
+          "runtime": "rust-native",
+          "buildSystem": "cargo"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "validate"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false
+      },
+      "metadata": {
+        "owner": "Kernel Team",
+        "created": "2026-05-21",
+        "documentation": "products/rust-fixture/README.md",
+        "status": "active",
+        "fixture": true,
+        "purpose": "Validate CargoRustAdapter through full lifecycle"
+      },
+      "lifecycleProfile": "standard-polyglot-product",
+      "lifecycleStatus": "planned",
+      "lifecycleMigration": {
+        "status": "partial",
+        "readinessReasonCode": "rust-adapter-validation-pending",
+        "notes": "Rust fixture product created to validate CargoRustAdapter. Lifecycle disabled until adapter conformance is proven."
+      },
+      "lifecycleConfigPath": "products/rust-fixture/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": false,
+        "phases": {
+          "validate": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "test": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "build": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          },
+          "package": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "sdk": "cargo-rust",
+          "backend-api": "cargo-rust"
+        }
+      },
+      "toolchain": {
+        "profile": "polyglot",
+        "adapters": {
+          "sdk": "cargo-rust",
+          "backend-api": "cargo-rust"
+        }
+      },
+      "artifacts": {
+        "sdk": {
+          "type": "sdk-package",
+          "packaging": "distribution",
+          "required": true
+        },
+        "backend-api": {
+          "type": "container-image",
+          "packaging": "container",
+          "required": true
+        }
+      },
+      "deployment": {
+        "targets": [],
+        "defaultEnvironment": "local",
+        "healthChecks": [],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": []
+      },
+      "lifecycleExecutionAllowed": false
+    },
+    "python-fixture": {
+      "id": "python-fixture",
+      "name": "Python Fixture Product",
+      "description": "Minimal Python FastAPI service and library for validating PythonPyprojectAdapter lifecycle support",
+      "type": "product",
+      "kind": "demo/example",
+      "manifestPath": "products/python-fixture/kernel-product.yaml",
+      "manifestFormat": "yaml",
+      "buildFile": "products/python-fixture/pyproject.toml",
+      "gradleModules": [],
+      "surfaces": [
+        {
+          "type": "sdk",
+          "path": "products/python-fixture",
+          "implementationStatus": "implemented",
+          "language": "python",
+          "runtime": "python",
+          "buildSystem": "pyproject"
+        },
+        {
+          "type": "backend-api",
+          "path": "products/python-fixture",
+          "implementationStatus": "implemented",
+          "language": "python",
+          "runtime": "python",
+          "buildSystem": "pyproject"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "validate"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false
+      },
+      "metadata": {
+        "owner": "Kernel Team",
+        "created": "2026-05-21",
+        "documentation": "products/python-fixture/README.md",
+        "status": "active",
+        "fixture": true,
+        "purpose": "Validate PythonPyprojectAdapter through full lifecycle"
+      },
+      "lifecycleProfile": "standard-polyglot-product",
+      "lifecycleStatus": "planned",
+      "lifecycleMigration": {
+        "status": "partial",
+        "readinessReasonCode": "python-adapter-validation-pending",
+        "notes": "Python fixture product created to validate PythonPyprojectAdapter. Lifecycle disabled until adapter conformance is proven."
+      },
+      "lifecycleConfigPath": "products/python-fixture/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": false,
+        "phases": {
+          "validate": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "test": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "build": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          },
+          "package": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "sdk": "python-pyproject",
+          "backend-api": "python-pyproject"
+        }
+      },
+      "toolchain": {
+        "profile": "polyglot",
+        "adapters": {
+          "sdk": "python-pyproject",
+          "backend-api": "python-pyproject"
+        }
+      },
+      "artifacts": {
+        "sdk": {
+          "type": "sdk-package",
+          "packaging": "distribution",
+          "required": true
+        },
+        "backend-api": {
+          "type": "node-service",
+          "packaging": "npm",
+          "required": true
+        }
+      },
+      "deployment": {
+        "targets": [],
+        "defaultEnvironment": "local",
+        "healthChecks": [],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": []
+      },
+      "lifecycleExecutionAllowed": false
+    },
+    "typescript-fixture": {
+      "id": "typescript-fixture",
+      "name": "TypeScript Fixture Product",
+      "description": "Minimal TypeScript Node API service and library for validating PnpmNodeApiAdapter lifecycle support",
+      "type": "product",
+      "kind": "demo/example",
+      "manifestPath": "products/typescript-fixture/kernel-product.yaml",
+      "manifestFormat": "yaml",
+      "buildFile": "products/typescript-fixture/package.json",
+      "gradleModules": [],
+      "surfaces": [
+        {
+          "type": "sdk",
+          "path": "products/typescript-fixture",
+          "implementationStatus": "implemented",
+          "language": "typescript",
+          "runtime": "nodejs",
+          "buildSystem": "pnpm"
+        },
+        {
+          "type": "backend-api",
+          "path": "products/typescript-fixture",
+          "implementationStatus": "implemented",
+          "language": "typescript",
+          "runtime": "nodejs",
+          "buildSystem": "pnpm"
+        }
+      ],
+      "pnpmPackages": [],
+      "ci": {
+        "enabled": true,
+        "gates": [
+          "build",
+          "test",
+          "validate"
+        ]
+      },
+      "conformance": {
+        "manifest": true,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false,
+        "runtimeModule": false
+      },
+      "metadata": {
+        "owner": "Kernel Team",
+        "created": "2026-05-21",
+        "documentation": "products/typescript-fixture/README.md",
+        "status": "active",
+        "fixture": true,
+        "purpose": "Validate PnpmNodeApiAdapter through full lifecycle"
+      },
+      "lifecycleProfile": "standard-polyglot-product",
+      "lifecycleStatus": "planned",
+      "lifecycleMigration": {
+        "status": "partial",
+        "readinessReasonCode": "typescript-adapter-validation-pending",
+        "notes": "TypeScript fixture product created to validate PnpmNodeApiAdapter. Lifecycle disabled until adapter conformance is proven."
+      },
+      "lifecycleConfigPath": "products/typescript-fixture/kernel-product.yaml",
+      "lifecycle": {
+        "enabled": false,
+        "phases": {
+          "validate": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "test": {
+            "defaultSurfaces": [
+              "sdk"
+            ],
+            "mode": "sequential"
+          },
+          "build": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          },
+          "package": {
+            "defaultSurfaces": [
+              "sdk",
+              "backend-api"
+            ],
+            "mode": "sequential"
+          }
+        },
+        "toolchain": {
+          "sdk": "pnpm-node-api",
+          "backend-api": "pnpm-node-api"
+        }
+      },
+      "toolchain": {
+        "profile": "polyglot",
+        "adapters": {
+          "sdk": "pnpm-node-api",
+          "backend-api": "pnpm-node-api"
+        }
+      },
+      "artifacts": {
+        "sdk": {
+          "type": "sdk-package",
+          "packaging": "npm",
+          "required": true
+        },
+        "backend-api": {
+          "type": "node-service",
+          "packaging": "npm",
+          "required": true
+        }
+      },
+      "deployment": {
+        "targets": [],
+        "defaultEnvironment": "local",
+        "healthChecks": [],
+        "rollback": {
+          "strategy": "previous-artifact"
+        }
+      },
+      "environments": {
+        "supported": []
       },
       "lifecycleExecutionAllowed": false
     }

@@ -34,6 +34,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
 
   private readonly repoRoot: string;
   private readonly commandRunner: CommandRunner;
+  private isWorkspaceMemberCache: boolean | null = null;
 
   constructor(options: { repoRoot?: string; commandRunner?: CommandRunner } = {}) {
     this.repoRoot = options.repoRoot ?? process.cwd();
@@ -44,6 +45,10 @@ export class CargoRustAdapter implements ToolchainAdapter {
     const checkedAt = new Date().toISOString();
     const manifestPath = this.resolveCargoToml(context);
     const manifestExists = await exists(manifestPath);
+    
+    // Cache workspace detection result
+    this.isWorkspaceMemberCache = await this.isWorkspaceMember(context);
+    
     const checks: AdapterPreflightResult['checks'] = [
       {
         checkId: 'cargo-manifest',
@@ -76,8 +81,34 @@ export class CargoRustAdapter implements ToolchainAdapter {
       });
     }
 
-    const blockingIssues = checks.filter((check) => check.status === 'failed').map((check) => check.message);
-    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings: [] };
+    // Check for llvm-cov if coverage is configured
+    if (context.phaseConfig.enableCoverage === true) {
+      try {
+        const llvmCovResult = await this.commandRunner.run('cargo', ['llvm-cov', '--version'], { cwd: this.repoRoot, timeoutMs: 10_000 });
+        checks.push({
+          checkId: 'cargo-llvm-cov',
+          checkName: 'Cargo llvm-cov',
+          status: llvmCovResult.exitCode === 0 ? 'passed' : 'failed',
+          message: llvmCovResult.exitCode === 0 ? llvmCovResult.stdout.trim() : llvmCovResult.stderr.trim(),
+          ...(llvmCovResult.exitCode === 0 ? {} : { severity: 'warning', remediation: ['Install cargo-llvm-cov: cargo install cargo-llvm-cov'] }),
+          checkedAt,
+        });
+      } catch (error) {
+        checks.push({
+          checkId: 'cargo-llvm-cov',
+          checkName: 'Cargo llvm-cov',
+          status: 'failed',
+          message: error instanceof Error ? error.message : 'Cargo llvm-cov check failed',
+          severity: 'warning',
+          remediation: ['Install cargo-llvm-cov: cargo install cargo-llvm-cov'],
+          checkedAt,
+        });
+      }
+    }
+
+    const blockingIssues = checks.filter((check) => check.status === 'failed' && check.severity === 'critical').map((check) => check.message);
+    const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'warning').map((check) => check.message);
+    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings };
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
@@ -85,7 +116,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
     if (!(await exists(this.resolveCargoToml(context)))) {
       throw new Error(`cargo-manifest-not-found: ${path.join(crateDirectory, 'Cargo.toml')}`);
     }
-    return this.mapPhaseToCommands(context.phase).map((command, index) => ({
+    return this.mapPhaseToCommands(context.phase, context).map((command, index) => ({
       id: `cargo-${context.phase}-${index + 1}`,
       description: `Run cargo ${command.join(' ')} for ${crateDirectory}`,
       command: ['cargo', ...command],
@@ -124,11 +155,22 @@ export class CargoRustAdapter implements ToolchainAdapter {
     return createEnvironmentBlockedClassifier(error, this.id, 'cargo');
   }
 
-  private mapPhaseToCommands(phase: ProductLifecyclePhase): readonly string[][] {
+  private mapPhaseToCommands(phase: ProductLifecyclePhase, context: ToolchainAdapterContext): readonly string[][] {
+    const isWorkspace = this.isWorkspaceMemberCache ?? false;
     switch (phase) {
       case 'validate':
-        return [['fmt', '--check'], ['check'], ['clippy', '--', '-D', 'warnings']];
+        return [
+          ['fmt', '--check'],
+          isWorkspace ? ['fmt', '--check', '--workspace'] : ['check'],
+          ['clippy', '--', '-D', 'warnings'],
+        ];
       case 'test':
+        if (context.phaseConfig?.enableCoverage === true) {
+          return [
+            ['llvm-cov', 'clean', '--workspace'],
+            ['llvm-cov', '--workspace', '--lcov', '--output-path', 'target/llvm-cov'],
+          ];
+        }
         return [['test']];
       case 'build':
         return [['build', '--release']];
@@ -194,5 +236,35 @@ export class CargoRustAdapter implements ToolchainAdapter {
     return typeof configured === 'number' && Number.isFinite(configured) && configured > 0
       ? configured
       : defaultTimeoutMs(context.phase);
+  }
+
+  private async isWorkspaceMember(context: ToolchainAdapterContext): Promise<boolean> {
+    const crateDirectory = this.resolveCrateDirectory(context);
+    const workspaceTomlPath = path.join(this.repoRoot, 'Cargo.toml');
+    const localWorkspaceTomlPath = path.join(crateDirectory, 'Cargo.toml');
+
+    // Check for workspace manifest at repo root
+    const hasWorkspaceAtRoot = await exists(workspaceTomlPath);
+    if (hasWorkspaceAtRoot) {
+      try {
+        const content = await this.commandRunner.run('cat', [workspaceTomlPath], { cwd: this.repoRoot, timeoutMs: 5000 });
+        return content.stdout.includes('[workspace]');
+      } catch {
+        return false;
+      }
+    }
+
+    // Check for workspace manifest in local crate directory
+    const hasLocalWorkspace = await exists(localWorkspaceTomlPath);
+    if (hasLocalWorkspace) {
+      try {
+        const content = await this.commandRunner.run('cat', [localWorkspaceTomlPath], { cwd: crateDirectory, timeoutMs: 5000 });
+        return content.stdout.includes('[workspace]');
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
   }
 }

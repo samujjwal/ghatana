@@ -147,6 +147,14 @@ export function findBuilderComponents(
     if (!contract.builder) continue;
 
     const p = contract.builder.palette;
+    const defaultProps = {
+      ...Object.fromEntries(
+        contract.props
+          .filter((prop) => prop.defaultValue !== undefined)
+          .map((prop) => [prop.name, prop.defaultValue]),
+      ),
+      ...((contract.builder.defaultProps ?? {}) as Record<string, unknown>),
+    };
     palette.push({
       id: entry.id,
       name: contract.name,
@@ -156,10 +164,7 @@ export function findBuilderComponents(
       subGroup: p?.subGroup,
       rank: p?.rank ?? Number.MAX_SAFE_INTEGER,
       icon: contract.builder.icon,
-      defaultProps: (contract.builder.defaultProps ?? {}) as Record<
-        string,
-        unknown
-      >,
+      defaultProps,
       featured: p?.featured ?? false,
       searchKeywords: p?.searchKeywords ?? [],
       version: entry.version,

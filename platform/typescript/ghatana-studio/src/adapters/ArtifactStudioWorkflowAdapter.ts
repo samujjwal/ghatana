@@ -20,6 +20,7 @@ import type {
   LogicalArtifactModel,
   FidelityReport,
   ResidualIslandReport,
+  ValidationPipelineResult,
 } from '@ghatana/artifact-contracts';
 import { createResidualIslandReport } from '@ghatana/artifact-contracts';
 
@@ -197,6 +198,7 @@ export function buildStudioEvidencePack(params: {
   readonly generatedSources: readonly GeneratedSourceEntry[];
   readonly compileFidelity: FidelityReport;
   readonly compileResiduals?: ResidualIslandReport;
+  readonly validationResult?: ValidationPipelineResult;
   readonly durationMs?: number;
 }): EvidencePack | null {
   const { jobResult } = params;
@@ -241,6 +243,7 @@ export function buildStudioEvidencePack(params: {
       durationMs: Math.max(0, new Date(jobResult.completedAt).getTime() - new Date(jobResult.startedAt).getTime()),
     },
     compileResult,
+    ...(params.validationResult === undefined ? {} : { validationResult: params.validationResult }),
     summary: `Round-trip workflow generated ${params.generatedSources.length} file${params.generatedSources.length === 1 ? '' : 's'} from ${Object.keys(jobResult.model.nodes).length} artifact node${Object.keys(jobResult.model.nodes).length === 1 ? '' : 's'}.`,
     reviewStatus: 'pending',
   };

@@ -380,6 +380,28 @@ describe('resolvePersistenceAdapterForEnv', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it('fails closed when production requires kernel persistence but identity is incomplete', () => {
+    expect(() =>
+      resolvePersistenceAdapterForEnv({
+        VITE_STUDIO_DEPLOYMENT_PROFILE: 'production',
+        VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'true',
+        VITE_GHATANA_KERNEL_API_BASE_URL: 'https://kernel.local',
+        VITE_STUDIO_TENANT_ID: 'tenant-a',
+        VITE_STUDIO_WORKSPACE_ID: 'workspace-a',
+        VITE_STUDIO_PROJECT_ID: 'project-a',
+      }),
+    ).toThrow(/requires kernel base URL, tenant, workspace, project, and auth token/);
+  });
+
+  it('fails closed when kernel persistence is explicitly required but disabled', () => {
+    expect(() =>
+      resolvePersistenceAdapterForEnv({
+        VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE: 'true',
+        VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'false',
+      }),
+    ).toThrow(/requires VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE=true/);
+  });
+
   it('persists workflow state and evidence through kernel endpoints when profile is fully enabled', async () => {
     const adapter = resolvePersistenceAdapterForEnv({
       VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE: 'true',

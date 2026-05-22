@@ -16,6 +16,7 @@ import com.ghatana.datacloud.spi.EntityWriteIdempotencyStore;
 import com.ghatana.datacloud.spi.TransactionManager;
 import com.ghatana.datacloud.spi.WriteIdempotencyStore;
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.domain.eventstore.EventLogStore;
 import com.ghatana.platform.governance.security.Principal;
@@ -93,7 +94,8 @@ class DataCloudHttpServerAiAssistTest {
     void setUp() throws Exception { 
         mockClient    = mock(DataCloudClient.class); 
         mockCompletion = mock(CompletionService.class); 
-        mockAuditService = mock(AuditService.class);
+        // Production-mode validation requires EventLogAuditService specifically (instanceof check).
+        mockAuditService = mock(EventLogAuditService.class);
         mockPolicyEngine = mock(PolicyEngine.class);
         mockSettingsStore = mock(SettingsStore.class);
         mockIdempotencyStore = mock(EntityWriteIdempotencyStore.class);

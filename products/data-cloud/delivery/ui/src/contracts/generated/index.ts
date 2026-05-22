@@ -9,4 +9,4 @@
  * @doc.layer frontend
  */
 
-export * as datacloud from "./data-cloud.js";
+export * as datacloud from './data-cloud.js';

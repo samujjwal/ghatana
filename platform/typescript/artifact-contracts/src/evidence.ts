@@ -12,6 +12,7 @@
 
 import { z } from "zod";
 import { FidelityReportSchema, ResidualIslandReportSchema } from "./fidelity.js";
+import { ValidationPipelineResultSchema } from "./scan.js";
 import { SourceRefSchema } from "./source.js";
 
 // ============================================================================
@@ -131,6 +132,10 @@ export const EvidencePackSchema = z.object({
    * Compile result, if stage includes compile.
    */
   compileResult: CompileResultSchema.optional(),
+  /**
+   * Generated artifact validation result, if build/typecheck/lint/test gates were run.
+   */
+  validationResult: ValidationPipelineResultSchema.optional(),
   /**
    * Human-readable summary of the overall pipeline outcome.
    */

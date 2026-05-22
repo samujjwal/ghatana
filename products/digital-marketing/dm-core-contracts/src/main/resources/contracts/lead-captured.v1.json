@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kernel://interactions/marketing.lead-captured.v1/event",
+  "title": "Marketing Lead Captured Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tenantId", "leadId", "contactHash", "occurredAt", "consentEvidenceRef"],
+  "properties": {
+    "tenantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "leadId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contactHash": {
+      "type": "string",
+      "minLength": 32
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "consentEvidenceRef": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

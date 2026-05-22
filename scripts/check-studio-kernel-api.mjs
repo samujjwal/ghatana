@@ -54,6 +54,37 @@ requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClien
 requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleAuthError', 'Studio Kernel API client auth error');
 requireIncludes('platform/typescript/ghatana-studio/src/api/kernelLifecycleClient.ts', 'KernelLifecycleScopeError', 'Studio Kernel API client scope error');
 
+// Check Studio artifact workflow persistence and source acquisition use Kernel-backed endpoints
+requireFile('platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts');
+requireIncludes('platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts', '/api/v1/studio/workflow-state', 'Studio workflow persistence adapter');
+requireIncludes('platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts', '/api/v1/studio/workflow-evidence', 'Studio workflow persistence adapter');
+requireIncludes('platform/typescript/ghatana-studio/src/state/artifactWorkflowStore.ts', 'Idempotency-Key', 'Studio workflow persistence adapter');
+requireFile('platform/typescript/ghatana-studio/src/providers/source-acquisition.ts');
+requireIncludes('platform/typescript/ghatana-studio/src/providers/source-acquisition.ts', '/api/v1/studio/source-acquisition/repository', 'Studio source acquisition client');
+requireIncludes('platform/typescript/ghatana-studio/src/providers/source-acquisition.ts', '/api/v1/studio/source-acquisition/archive', 'Studio source acquisition client');
+requireIncludes('platform/typescript/ghatana-studio/src/providers/source-acquisition.ts', '/api/v1/studio/source-acquisition/jobs/', 'Studio source acquisition client');
+requireFile('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', '/api/v1/studio/workflow-state', 'Kernel Studio API handlers');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', '/api/v1/studio/workflow-evidence', 'Kernel Studio API handlers');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', '/api/v1/studio/source-acquisition/repository', 'Kernel Studio API handlers');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', '/api/v1/studio/source-acquisition/archive', 'Kernel Studio API handlers');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', '/api/v1/studio/source-acquisition/jobs/:jobId', 'Kernel Studio API handlers');
+requireIncludes('platform/typescript/kernel-lifecycle/src/api/KernelLifecycleApiHandlers.ts', 'patchStudioSourceAcquisitionJob', 'Kernel Studio API handlers');
+requireFile('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'StudioSourceAcquisitionWorker', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'HttpStudioRepositoryArchiveFetcher', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'StudioRepositoryArchiveTokenProvider', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'FileSystemStudioSourceAcquisitionPayloadStore', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'executeStoredArchive', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'StudioSourceAcquisitionQueueRunner', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'claimNextPendingJob', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/acquisition/StudioSourceAcquisitionWorker.ts', 'getQueueSnapshot', 'Kernel Studio source acquisition worker');
+requireIncludes('platform/typescript/kernel-lifecycle/src/index.ts', 'StudioSourceAcquisitionWorker', 'Kernel lifecycle public exports');
+requireIncludes('platform/typescript/kernel-lifecycle/src/index.ts', 'FileSystemStudioSourceAcquisitionPayloadStore', 'Kernel lifecycle public exports');
+requireIncludes('platform/typescript/kernel-lifecycle/src/index.ts', 'StudioSourceAcquisitionQueueRunner', 'Kernel lifecycle public exports');
+requireIncludes('platform/typescript/kernel-lifecycle/src/index.ts', 'StudioSourceAcquisitionQueueSnapshot', 'Kernel lifecycle public exports');
+requireIncludes('platform/typescript/kernel-lifecycle/src/index.ts', 'HttpStudioRepositoryArchiveFetcher', 'Kernel lifecycle public exports');
+
 // Check Studio runtime context exists and is used
 requireFile('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts');
 requireIncludes('platform/typescript/ghatana-studio/src/config/studioRuntimeContext.ts', 'StudioRuntimeIdentity', 'Studio runtime context');

@@ -14,9 +14,19 @@ public record ProductInteractionEventBrokerMetrics(
         long blocked,
         long evidenceFailures,
         long totalLatencyMs,
-        long maxLatencyMs
+        long maxLatencyMs,
+        long dlqCount,
+        long idempotencySkips
 ) {
     public double averageLatencyMs() {
         return published == 0L ? 0.0D : (double) totalLatencyMs / (double) published;
+    }
+
+    public double dlqRate() {
+        return published == 0L ? 0.0D : (double) dlqCount / (double) published;
+    }
+
+    public double idempotencySkipRate() {
+        return published == 0L ? 0.0D : (double) idempotencySkips / (double) published;
     }
 }

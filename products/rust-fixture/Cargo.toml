@@ -1,0 +1,20 @@
+[package]
+name = "rust-fixture"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+tokio = { version = "1.35", features = ["full"] }
+
+[lib]
+name = "rust_fixture"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rust_fixture_service"
+path = "src/main.rs"

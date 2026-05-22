@@ -58,7 +58,7 @@ export function VisualCanvas({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-white" data-testid="builder-visual-canvas">
       <HybridCanvas
         nodes={[...canvasNodes]}
         edges={[...canvasEdges]}

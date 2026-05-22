@@ -22,17 +22,13 @@ public abstract class PluginTestBase extends EventloopTestBase {
     protected PluginContext context;
 
     @BeforeEach
-    public void setUp() { 
-        registry = new PluginRegistry(); 
-        context = new TestPluginContext(); 
+    void setUpPluginTestBase() {
+        registry = new PluginRegistry();
+        context = new TestPluginContext();
     }
 
-    /**
-     * Helper to register and initialize a plugin.
-     * Must be called within runPromise or similar context.
-     */
-    protected Promise<Void> registerAndInit(Plugin plugin) { 
-        registry.register(plugin); 
-        return registry.initializeAll(context); 
+    protected Promise<Void> registerAndInit(Plugin plugin) {
+        registry.register(plugin);
+        return registry.initializeAll(context);
     }
 }

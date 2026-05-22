@@ -1589,6 +1589,8 @@ public class DataCloudHttpServer {
         dataLifecycleHandler = new DataLifecycleHandler(client, objectMapper, httpSupport, auditService);
         dataLifecycleHandler.withTraceSupport(traceSpanSupport);
         if (genericIdempotencyStore != null) dataLifecycleHandler.withIdempotencyStore(genericIdempotencyStore);
+        if (transactionManager != null) dataLifecycleHandler.withTransactionManager(transactionManager);
+        dataLifecycleHandler.withDeploymentProfile(deploymentMode);
 
         // B9: Autonomy management handler — nullable controller enables graceful 503
         autonomyHandler = new AutonomyHandler(autonomyController, httpSupport);
@@ -1735,6 +1737,7 @@ public class DataCloudHttpServer {
         // Subsystem-specific validation for handlers that have additional requirements
         entityHandler.validateProductionRequirements();
         eventHandler.validateProductionRequirements();
+        dataLifecycleHandler.validateProductionRequirements();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
 
@@ -1902,18 +1905,13 @@ public class DataCloudHttpServer {
             .completionServiceConfigured(completionService != null)
             .build();
 
-        Map<String, Object> runtimePosture = new LinkedHashMap<>(validator.toPostureSnapshot());
-        runtimePosture.put("settingsStorageMode", settingsStorageMode);
-        runtimePosture.put("settingsDurable", settingsDurable);
-        runtimePosture.put("eventStoreWired", eventLogStore != null);
-        runtimePosture.put("eventTail", buildEventTailPosture(client.eventLogStore()));
-        runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
-        runtimePosture.put("contextStoreMode", contextStore.getClass().getSimpleName());
-        runtimePosture.put("contextStoreDurable", !(contextStore instanceof InMemoryContextStore));
-        runtimePosture.put("transactionOrchestrationMode", transactionManager != null ? "transactional" : "non-transactional");
-        runtimePosture.put("entityWriteOutboxMode", entityWriteOutboxProcessor != null
-            ? entityWriteOutboxProcessor.getClass().getSimpleName()
-            : "in-memory-fallback");
+        Map<String, Object> runtimePosture = buildRuntimePostureSnapshot(
+            validator,
+            settingsStorageMode,
+            settingsDurable,
+            entityStoreDurable,
+            coreEventStoreDurable,
+            authConfigured);
 
         surfaces.put("_meta", Map.of(
             "deploymentMode", deploymentMode,
@@ -2036,8 +2034,47 @@ public class DataCloudHttpServer {
     }
 
     private java.util.List<SurfaceRecord> buildTypedSurfaceSnapshot() {
+        boolean authConfigured = apiKeyResolver != null || jwtProvider != null;
+        String settingsStorageMode = settingsStore != null ? settingsStore.getStorageMode() : "in-memory";
+        boolean settingsDurable = settingsStorageMode != null
+            && !settingsStorageMode.isBlank()
+            && !"in-memory".equalsIgnoreCase(settingsStorageMode.trim());
         boolean entityStoreDurable = isDurableStoreBacking(client.entityStore());
         boolean coreEventStoreDurable = isDurableStoreBacking(client.eventLogStore());
+
+        RuntimeProfileValidator validator = RuntimeProfileValidator.builder()
+            .deploymentProfile(deploymentMode)
+            .strictTenantResolution(strictTenantResolution)
+            .authConfigured(authConfigured)
+            .auditConfigured(auditService != null)
+            .policyEngineConfigured(policyEngine != null)
+            .durableEntityStore(entityStoreDurable)
+            .durableEventStore(coreEventStoreDurable)
+            .durableIdempotencyStore(genericIdempotencyStore != null)
+            .transactionManagerConfigured(transactionManager != null)
+            .metricsConfigured(metricsCollectorConfigured)
+            .traceExportConfigured(traceExportService != null)
+            .completionServiceConfigured(completionService != null)
+            .build();
+
+        Map<String, Object> runtimePostureDetails = buildRuntimePostureSnapshot(
+            validator,
+            settingsStorageMode,
+            settingsDurable,
+            entityStoreDurable,
+            coreEventStoreDurable,
+            authConfigured);
+        RuntimePosture runtimePosture = RuntimePosture.builder()
+            .authEnabled(authConfigured)
+            .durabilityEnabled(settingsDurable && entityStoreDurable && coreEventStoreDurable && !(contextStore instanceof InMemoryContextStore))
+            .auditEnabled(auditService != null)
+            .policyEnabled(policyEngine != null)
+            .metricsEnabled(metricsCollectorConfigured)
+            .tracingEnabled(traceExportService != null)
+            .eventStoreEnabled(coreEventStoreDurable)
+            .idempotencyEnabled(entityWriteIdempotencyStore != null)
+            .details(runtimePostureDetails)
+            .build();
 
         java.util.List<SurfaceRecord> records = new java.util.ArrayList<>();
 
@@ -2051,6 +2088,7 @@ public class DataCloudHttpServer {
             .tenantScope("global")
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("authenticate"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("authentication.jwt")
@@ -2063,6 +2101,7 @@ public class DataCloudHttpServer {
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("authenticate", "exchange-token"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("governance.audit")
@@ -2075,6 +2114,7 @@ public class DataCloudHttpServer {
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("emit-audit-event", "query-audit-log"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("governance.policyEngine")
@@ -2087,6 +2127,7 @@ public class DataCloudHttpServer {
             .tenantScope("tenant")
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("evaluate-policy", "enforce-policy"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("data.entityStore")
@@ -2100,6 +2141,7 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(entityStoreDurable ? null : "Data is non-durable — in-memory only, lost on process restart")
             .actionsAllowed(List.of("read-entity", "write-entity", "delete-entity", "query"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("event.store")
@@ -2113,6 +2155,7 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(coreEventStoreDurable ? null : "Events are non-durable — lost on process restart")
             .actionsAllowed(List.of("append-event", "tail-events", "replay-events"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("operations.idempotency")
@@ -2126,6 +2169,7 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(genericIdempotencyStore != null ? null : "Idempotency keys are in-memory only — retries may cause duplicate writes after restart")
             .actionsAllowed(List.of("idempotent-write"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("operations.transactionManager")
@@ -2139,6 +2183,7 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(transactionManager != null ? null : "Multi-step writes (entity + event + audit) are not atomic")
             .actionsAllowed(List.of("atomic-write"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("observability.metrics")
@@ -2151,6 +2196,7 @@ public class DataCloudHttpServer {
             .tenantScope("global")
             .runtimeProfile(deploymentMode)
             .actionsAllowed(List.of("emit-metric", "scrape-prometheus"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("observability.tracing")
@@ -2164,6 +2210,7 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(traceExportService == null ? "Spans are generated but not persisted — no distributed tracing" : null)
             .actionsAllowed(List.of("export-span", "query-trace"))
+            .runtimePosture(runtimePosture)
             .build());
 
         records.add(SurfaceRecord.builder("intelligence.aiCompletion")
@@ -2177,9 +2224,36 @@ public class DataCloudHttpServer {
             .runtimeProfile(deploymentMode)
             .limitations(completionService == null ? "AI assist, voice gateway, and heuristic AI routes return 503" : null)
             .actionsAllowed(List.of("ai-assist", "recommend", "explain", "voice-intent"))
+            .runtimePosture(runtimePosture)
             .build());
 
         return java.util.Collections.unmodifiableList(records);
+    }
+
+    private Map<String, Object> buildRuntimePostureSnapshot(
+            RuntimeProfileValidator validator,
+            String settingsStorageMode,
+            boolean settingsDurable,
+            boolean entityStoreDurable,
+            boolean coreEventStoreDurable,
+            boolean authConfigured) {
+        Map<String, Object> runtimePosture = new LinkedHashMap<>(validator.toPostureSnapshot());
+        runtimePosture.put("authenticationConfigured", authConfigured);
+        runtimePosture.put("transactionManager", transactionManager != null);
+        runtimePosture.put("settingsStorageMode", settingsStorageMode);
+        runtimePosture.put("settingsDurable", settingsDurable);
+        runtimePosture.put("entityStoreDurable", entityStoreDurable);
+        runtimePosture.put("coreEventStoreDurable", coreEventStoreDurable);
+        runtimePosture.put("eventStoreWired", eventLogStore != null);
+        runtimePosture.put("eventTail", buildEventTailPosture(client.eventLogStore()));
+        runtimePosture.put("idempotencyStoreDurable", entityWriteIdempotencyStore != null);
+        runtimePosture.put("contextStoreMode", contextStore.getClass().getSimpleName());
+        runtimePosture.put("contextStoreDurable", !(contextStore instanceof InMemoryContextStore));
+        runtimePosture.put("transactionOrchestrationMode", transactionManager != null ? "transactional" : "non-transactional");
+        runtimePosture.put("entityWriteOutboxMode", entityWriteOutboxProcessor != null
+            ? entityWriteOutboxProcessor.getClass().getSimpleName()
+            : "in-memory-fallback");
+        return runtimePosture;
     }
 
     @SuppressWarnings("unchecked")

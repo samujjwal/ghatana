@@ -10,7 +10,7 @@
  */
 
 import type { ReactElement } from 'react';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Typography } from '@ghatana/design-system';
 import type { ComponentInstance, NodeId } from '@ghatana/ui-builder';
 import type { BuilderDocument } from '@ghatana/ui-builder';
@@ -39,7 +39,11 @@ export function ComponentTree({
   onNodeSelect,
   onNodeToggle,
 }: ComponentTreeProps): ReactElement {
-  const [expandedNodes, setExpandedNodes] = useState<Set<NodeId>>(new Set());
+  const [expandedNodes, setExpandedNodes] = useState<Set<NodeId>>(() => new Set([document.layout.rootId]));
+
+  useEffect(() => {
+    setExpandedNodes((current) => new Set([...current, document.layout.rootId]));
+  }, [document.layout.rootId]);
 
   // Build tree structure from document using slots
   const treeRoot = useMemo(() => {
@@ -51,19 +55,41 @@ export function ComponentTree({
       return null;
     }
 
-    const buildTree = (nodeId: NodeId, depth: number = 0, slotName?: string): TreeNode | null => {
+    const buildTree = (
+      nodeId: NodeId,
+      depth: number = 0,
+      slotName?: string,
+      visited: ReadonlySet<NodeId> = new Set(),
+    ): TreeNode | null => {
       const instance = nodes[nodeId];
       if (!instance) return null;
 
       const children: TreeNode[] = [];
+      const nextVisited = new Set(visited);
+      nextVisited.add(nodeId);
+      const appendedChildIds = new Set<NodeId>();
 
-      // ComponentInstance uses slots instead of children
+      const appendChild = (childId: NodeId, childSlotName?: string): void => {
+        if (appendedChildIds.has(childId) || nextVisited.has(childId)) {
+          return;
+        }
+        const childTree = buildTree(childId, depth + 1, childSlotName, nextVisited);
+        if (childTree) {
+          children.push(childTree);
+          appendedChildIds.add(childId);
+        }
+      };
+
+      // Canonical root-level BuilderDocument children are stored in layout,
+      // while nested component children are represented through slots.
+      const layoutChildren = document.layout.nodes[nodeId]?.children ?? [];
+      for (const childId of layoutChildren) {
+        appendChild(childId, 'layout');
+      }
+
       for (const [slotName, childIds] of Object.entries(instance.slots)) {
         for (const childId of childIds) {
-          const childTree = buildTree(childId, depth + 1, slotName);
-          if (childTree) {
-            children.push(childTree);
-          }
+          appendChild(childId, slotName);
         }
       }
 
@@ -93,6 +119,7 @@ export function ComponentTree({
       <div key={node.instance.id}>
         {/* Node Row */}
         <div
+          data-testid={`builder-tree-node-${node.instance.contractName}`}
           className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-gray-100 rounded ${
             isSelected ? 'bg-blue-50 border-l-2 border-blue-500' : ''
           }`}

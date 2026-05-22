@@ -139,7 +139,7 @@ export default function CanvasPage(): ReactElement {
       />
 
       {/* Live Canvas Workspace */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden" data-testid="artifact-graph-canvas">
         <div className="bg-gray-100 p-2 text-sm text-gray-600 flex items-center justify-between">
           <span>Artifact Graph Canvas</span>
           <Badge tone="success" variant="soft" className="text-xs">Live</Badge>

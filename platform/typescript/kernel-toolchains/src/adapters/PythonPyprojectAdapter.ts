@@ -25,6 +25,11 @@ import {
 } from './PolyglotAdapterSupport.js';
 
 /**
+ * Python environment strategy for dependency management and virtualization.
+ */
+type PythonEnvironment = 'venv' | 'uv' | 'poetry' | 'system';
+
+/**
  * Python pyproject adapter for Kernel-managed Python services, workers, and libraries.
  */
 export class PythonPyprojectAdapter implements ToolchainAdapter {
@@ -34,6 +39,7 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
   private readonly repoRoot: string;
   private readonly commandRunner: CommandRunner;
+  private pythonEnvironmentCache: PythonEnvironment | null = null;
 
   constructor(options: { repoRoot?: string; commandRunner?: CommandRunner } = {}) {
     this.repoRoot = options.repoRoot ?? process.cwd();
@@ -44,6 +50,10 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
     const checkedAt = new Date().toISOString();
     const pyprojectPath = this.resolvePyprojectPath(context);
     const manifestExists = await exists(pyprojectPath);
+    
+    // Detect Python environment strategy
+    this.pythonEnvironmentCache = await this.detectPythonEnvironment(context);
+    
     const checks: AdapterPreflightResult['checks'] = [
       {
         checkId: 'pyproject-manifest',
@@ -78,8 +88,63 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
         checkedAt,
       });
     }
-    const blockingIssues = checks.filter((check) => check.status === 'failed').map((check) => check.message);
-    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings: [] };
+
+    // Check for mypy and ruff if configured
+    if (context.phaseConfig.enableLinting !== false) {
+      try {
+        const mypyResult = await this.commandRunner.run(this.pythonCommand(context), ['-m', 'mypy', '--version'], {
+          cwd: this.repoRoot,
+          timeoutMs: 10_000,
+        });
+        checks.push({
+          checkId: 'mypy-version',
+          checkName: 'mypy type checker',
+          status: mypyResult.exitCode === 0 ? 'passed' : 'failed',
+          message: mypyResult.exitCode === 0 ? mypyResult.stdout.trim() : mypyResult.stderr.trim(),
+          ...(mypyResult.exitCode === 0 ? {} : { severity: 'low', remediation: ['Install mypy: pip install mypy'] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'mypy-version',
+          checkName: 'mypy type checker',
+          status: 'failed',
+          message: 'mypy not found',
+          severity: 'low',
+          remediation: ['Install mypy: pip install mypy'],
+          checkedAt,
+        });
+      }
+
+      try {
+        const ruffResult = await this.commandRunner.run('ruff', ['--version'], {
+          cwd: this.repoRoot,
+          timeoutMs: 10_000,
+        });
+        checks.push({
+          checkId: 'ruff-version',
+          checkName: 'ruff linter',
+          status: ruffResult.exitCode === 0 ? 'passed' : 'failed',
+          message: ruffResult.exitCode === 0 ? ruffResult.stdout.trim() : ruffResult.stderr.trim(),
+          ...(ruffResult.exitCode === 0 ? {} : { severity: 'low', remediation: ['Install ruff: pip install ruff'] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'ruff-version',
+          checkName: 'ruff linter',
+          status: 'failed',
+          message: 'ruff not found',
+          severity: 'low',
+          remediation: ['Install ruff: pip install ruff'],
+          checkedAt,
+        });
+      }
+    }
+
+    const blockingIssues = checks.filter((check) => check.status === 'failed' && check.severity === 'critical').map((check) => check.message);
+    const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'low').map((check) => check.message);
+    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings };
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
@@ -128,14 +193,38 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
   private mapPhaseToCommands(context: ToolchainAdapterContext): readonly string[][] {
     const python = this.pythonCommand(context);
+    const env = this.pythonEnvironmentCache ?? 'system';
     switch (context.phase) {
       case 'validate':
-        return this.configuredCommands(context, 'validateCommands') ?? [[python, '-m', 'compileall', this.sourceDirectory(context)]];
+        const validateCommands = this.configuredCommands(context, 'validateCommands');
+        if (validateCommands) {
+          return validateCommands;
+        }
+        const baseValidate = [[python, '-m', 'compileall', this.sourceDirectory(context)]];
+        if (context.phaseConfig.enableLinting !== false) {
+          return [
+            ...baseValidate,
+            [python, '-m', 'mypy', this.sourceDirectory(context)],
+            ['ruff', 'check', this.sourceDirectory(context)],
+          ];
+        }
+        return baseValidate;
       case 'test':
         return this.configuredCommands(context, 'testCommands') ?? [[python, '-m', 'pytest']];
       case 'build':
       case 'package':
-        return this.configuredCommands(context, 'buildCommands') ?? [[python, '-m', 'build']];
+        const buildCommands = this.configuredCommands(context, 'buildCommands');
+        if (buildCommands) {
+          return buildCommands;
+        }
+        // Use environment-specific build commands
+        if (env === 'poetry') {
+          return [['poetry', 'build']];
+        }
+        if (env === 'uv') {
+          return [['uv', 'build']];
+        }
+        return [[python, '-m', 'build']];
       default:
         throw new Error(`PythonPyprojectAdapter does not support phase ${context.phase}`);
     }
@@ -222,5 +311,50 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
       return 'python-worker';
     }
     return 'python-service';
+  }
+
+  private async detectPythonEnvironment(context: ToolchainAdapterContext): Promise<PythonEnvironment> {
+    const packageDirectory = this.resolvePackageDirectory(context);
+    
+    // Check for poetry.lock
+    const poetryLockPath = path.join(packageDirectory, 'poetry.lock');
+    if (await exists(poetryLockPath)) {
+      try {
+        const result = await this.commandRunner.run('poetry', ['--version'], {
+          cwd: packageDirectory,
+          timeoutMs: 10_000,
+        });
+        if (result.exitCode === 0) {
+          return 'poetry';
+        }
+      } catch {
+        // Fall through to other checks
+      }
+    }
+
+    // Check for uv.lock
+    const uvLockPath = path.join(packageDirectory, 'uv.lock');
+    if (await exists(uvLockPath)) {
+      try {
+        const result = await this.commandRunner.run('uv', ['--version'], {
+          cwd: packageDirectory,
+          timeoutMs: 10_000,
+        });
+        if (result.exitCode === 0) {
+          return 'uv';
+        }
+      } catch {
+        // Fall through to other checks
+      }
+    }
+
+    // Check for venv
+    const venvPath = path.join(packageDirectory, 'venv');
+    if (await exists(venvPath)) {
+      return 'venv';
+    }
+
+    // Default to system
+    return 'system';
   }
 }

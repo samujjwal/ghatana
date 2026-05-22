@@ -19,7 +19,12 @@ class NotificationPreferenceInteractionHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("returns tenant-scoped notification preferences with evidence")
     void returnsTenantScopedNotificationPreferencesWithEvidence() {
-        NotificationPreferenceInteractionHandler handler = new NotificationPreferenceInteractionHandler();
+        NotificationPreferenceInteractionHandler handler = new NotificationPreferenceInteractionHandler(
+                request -> Promise.of(new NotificationPreferenceInteractionHandler.NotificationPreferenceResponse(
+                        request.payload().subjectId(),
+                        true,
+                        false,
+                        "fixture-preference-service")));
 
         ProductInteractionOutcome<NotificationPreferenceInteractionHandler.NotificationPreferenceResponse> outcome =
                 runPromise(() -> handler.handle(request("tenant-1")));
@@ -34,7 +39,12 @@ class NotificationPreferenceInteractionHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks missing tenant scope without fake success")
     void blocksMissingTenantScopeWithoutFakeSuccess() {
-        NotificationPreferenceInteractionHandler handler = new NotificationPreferenceInteractionHandler();
+        NotificationPreferenceInteractionHandler handler = new NotificationPreferenceInteractionHandler(
+                request -> Promise.of(new NotificationPreferenceInteractionHandler.NotificationPreferenceResponse(
+                        request.payload().subjectId(),
+                        true,
+                        false,
+                        "fixture-preference-service")));
 
         ProductInteractionOutcome<NotificationPreferenceInteractionHandler.NotificationPreferenceResponse> outcome =
                 runPromise(() -> handler.handle(request(null)));

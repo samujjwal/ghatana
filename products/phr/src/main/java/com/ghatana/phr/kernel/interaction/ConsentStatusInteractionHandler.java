@@ -34,10 +34,11 @@ public final class ConsentStatusInteractionHandler
 
     private final ConsentService consentService;
 
-    public ConsentStatusInteractionHandler() {
-        this.consentService = null;
-    }
-
+    /**
+     * Constructs a handler with a real consent service.
+     *
+     * @param consentService the consent service for access decisions
+     */
     public ConsentStatusInteractionHandler(ConsentService consentService) {
         this.consentService = Objects.requireNonNull(consentService, "consentService must not be null");
     }
@@ -67,27 +68,8 @@ public final class ConsentStatusInteractionHandler
                     "product_interaction.policy_denied",
                     DENY_EVIDENCE_REFS));
         }
-        if (consentService != null) {
-            return consentService.checkAccess(toConsentCheckRequest(request))
-                    .map(decision -> toInteractionOutcome(request, decision));
-        }
-        boolean allowed = "campaign-activation".equals(request.payload().purpose())
-                || "consent-verification".equals(request.payload().purpose());
-        ConsentStatusResponse response = new ConsentStatusResponse(
-                request.payload().subjectId(),
-                allowed ? "allowed" : "denied",
-                allowed ? null : "product_interaction.consent_missing");
-        ProductInteractionOutcome<ConsentStatusResponse> outcome = allowed
-                ? ProductInteractionOutcome.succeeded(
-                        request.interactionId(),
-                        CONSENT_EVIDENCE_REFS,
-                        response)
-                : ProductInteractionOutcome.failed(
-                        request.interactionId(),
-                        ProductInteractionStatus.DENIED,
-                        "product_interaction.consent_missing",
-                        DENY_EVIDENCE_REFS);
-        return Promise.of(outcome);
+        return consentService.checkAccess(toConsentCheckRequest(request))
+                .map(decision -> toInteractionOutcome(request, decision));
     }
 
     private ConsentService.ConsentCheckRequest toConsentCheckRequest(

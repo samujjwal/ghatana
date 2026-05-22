@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kernel://interactions/phr.consent-status.v1/request",
+  "title": "PHR Consent Status Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tenantId", "subjectId", "purpose"],
+  "properties": {
+    "tenantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subjectId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "enum": ["campaign-activation", "consent-verification"]
+    }
+  }
+}

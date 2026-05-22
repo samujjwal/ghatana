@@ -81,9 +81,17 @@ export {
 // Round-trip diff
 export {
   buildRoundTripDiffReport,
+  createNotRunValidationPipelineResult,
   type BuildRoundTripDiffReportOptions,
   type RoundTripDiffSourceFile,
 } from "./diff/roundtrip-diff.js";
+
+// Generated artifact validation
+export {
+  validateGeneratedArtifacts,
+  type GeneratedArtifactValidationSource,
+  type ValidateGeneratedArtifactsOptions,
+} from "./validate/generated-artifacts.js";
 
 // Repository scan facade
 export {

@@ -75,7 +75,9 @@ class CampaignServiceImplTest extends EventloopTestBase {
                 1,
                 1,
                 0.0,
-                1000.0
+                1000.0,
+                true,
+                "campaign-activation"
             )),
             DmosMetricsCollector.noop(),
             killSwitchService,
@@ -101,7 +103,15 @@ class CampaignServiceImplTest extends EventloopTestBase {
     @DisplayName("constructor throws on null dependencies")
     void shouldRejectNullDependencies() {
         CampaignPreflightDataProvider preflightProvider = (opCtx, campaign) -> Promise.of(
-            new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 1000.0)
+            new CampaignPreflightDataProvider.CampaignPreflightData(
+                true,
+                1,
+                1,
+                0.0,
+                1000.0,
+                true,
+                "campaign-activation"
+            )
         );
 
         assertThatNullPointerException()

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kernel://interactions/phr.consent-status.v1/response",
+  "title": "PHR Consent Status Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["consentGranted", "consentStatus", "evaluatedAt"],
+  "properties": {
+    "consentGranted": {
+      "type": "boolean"
+    },
+    "consentStatus": {
+      "type": "string",
+      "enum": ["granted", "denied", "unknown", "expired"]
+    },
+    "evaluatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidenceRef": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

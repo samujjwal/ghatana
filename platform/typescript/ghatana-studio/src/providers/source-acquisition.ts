@@ -16,6 +16,10 @@ import type {
   SourceAcquisitionDescriptor,
   SourceAcquisitionKind,
 } from '@ghatana/artifact-contracts';
+import {
+  StudioProductionProfileError,
+  isProductionStudioProfile,
+} from '../config/studioEnvironment.js';
 
 // ============================================================================
 // Source Acquisition Contracts
@@ -69,6 +73,9 @@ export interface SourceAcquisitionOptions {
   /** Whether to include hidden files (default: false). */
   readonly includeHidden?: boolean;
 }
+
+const MAX_ARCHIVE_ENTRY_COUNT = 5_000;
+const MAX_TEXT_DECODE_BYTES = 5_000_000;
 
 // ============================================================================
 // Provider Abstraction
@@ -162,6 +169,15 @@ export interface SourceAcquisitionBackendClient {
     input: ArchiveUploadInput,
     options?: SourceAcquisitionOptions,
   ): Promise<SourceAcquisitionResult>;
+  getAcquisitionJob?(jobId: string): Promise<AcquisitionJob>;
+}
+
+export type SourceAcquisitionRuntimeMode = 'local' | 'pending-backend' | 'production-acquisition';
+
+export interface SourceAcquisitionRuntimeProfile {
+  readonly mode: SourceAcquisitionRuntimeMode;
+  readonly exposeRepositoryAndArchiveProviders: boolean;
+  readonly backendKind: 'none' | 'kernel' | 'browser';
 }
 
 /**
@@ -295,7 +311,7 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     }
 
     const arrayBuffer = await blob.arrayBuffer();
-    return this.unpackZipBuffer(arrayBuffer, options);
+    return this.unpackZipBuffer(arrayBuffer, options, maxBytes);
   }
 
   private async fetchGitLabRepository(
@@ -320,7 +336,7 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     }
 
     const arrayBuffer = await blob.arrayBuffer();
-    return this.unpackZipBuffer(arrayBuffer, options);
+    return this.unpackZipBuffer(arrayBuffer, options, maxBytes);
   }
 
   private async unpackArchive(
@@ -341,11 +357,11 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     const isTar = this.isTarArchive(header);
 
     if (isZip) {
-      return this.unpackZipBuffer(arrayBuffer, options);
+      return this.unpackZipBuffer(arrayBuffer, options, maxBytes);
     } else if (isTarGz) {
-      return this.unpackTarGzBuffer(arrayBuffer, options);
+      return this.unpackTarGzBuffer(arrayBuffer, options, maxBytes);
     } else if (isTar) {
-      return this.unpackTarBuffer(arrayBuffer, options);
+      return this.unpackTarBuffer(arrayBuffer, options, maxBytes);
     } else {
       throw new Error('Unsupported archive format (supported: ZIP, TAR, TAR.GZ)');
     }
@@ -354,9 +370,12 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
   private async unpackZipBuffer(
     buffer: ArrayBuffer,
     options: SourceAcquisitionOptions,
+    maxTotalUncompressedBytes: number,
   ): Promise<readonly SourceFileEntry[]> {
     const sources: SourceFileEntry[] = [];
     const view = new DataView(buffer);
+    let entryCount = 0;
+    let totalUncompressedBytes = 0;
 
     // ZIP format: local file header signature 0x04034b50
     let offset = 0;
@@ -382,7 +401,7 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
 
       const fileNameStart = offset + 30;
       const fileNameBytes = new Uint8Array(buffer, fileNameStart, fileNameLength);
-      const fileName = new TextDecoder().decode(fileNameBytes);
+      const fileName = normalizeSourceEntryPath(new TextDecoder().decode(fileNameBytes));
 
       // Skip directories and macOS metadata
       if (fileName.endsWith('/') || fileName.startsWith('__MACOSX/') || fileName.includes('.DS_Store')) {
@@ -393,9 +412,21 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
       const fileDataStart = offset + 30 + fileNameLength + extraFieldLength;
 
       if (uncompressedSize > 0) {
+        entryCount += 1;
+        if (entryCount > MAX_ARCHIVE_ENTRY_COUNT) {
+          throw new Error(`Archive entry count exceeds maximum (${MAX_ARCHIVE_ENTRY_COUNT})`);
+        }
+        if (uncompressedSize > options.maxFileSize!) {
+          throw new Error(`Archive entry "${fileName}" exceeds file size limit (${uncompressedSize} bytes)`);
+        }
+        totalUncompressedBytes += uncompressedSize;
+        if (totalUncompressedBytes > maxTotalUncompressedBytes) {
+          throw new Error(`Archive uncompressed size exceeds maximum (${maxTotalUncompressedBytes} bytes)`);
+        }
+
         const compressedData = new Uint8Array(buffer, fileDataStart, compressedSize);
         const fileData = await this.decodeZipEntry(compressionMethod, compressedData, uncompressedSize);
-        const content = new TextDecoder().decode(fileData);
+        const content = decodeSourceText(fileData, fileName);
 
         const hasAllowedExtension = options.allowedExtensions?.some((ext) => fileName.endsWith(ext)) ?? true;
         const includeFile = options.includeHidden || !fileName.split('/').some((part) => part.startsWith('.'));
@@ -421,9 +452,13 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
   private async unpackTarGzBuffer(
     buffer: ArrayBuffer,
     options: SourceAcquisitionOptions,
+    maxTotalUncompressedBytes: number,
   ): Promise<readonly SourceFileEntry[]> {
     const decompressedTar = await this.decompressBuffer(buffer, 'gzip');
-    return this.unpackTarBuffer(decompressedTar, options);
+    if (decompressedTar.byteLength > maxTotalUncompressedBytes) {
+      throw new Error(`Archive uncompressed size exceeds maximum (${maxTotalUncompressedBytes} bytes)`);
+    }
+    return this.unpackTarBuffer(decompressedTar, options, maxTotalUncompressedBytes);
   }
 
   private async decodeZipEntry(
@@ -474,10 +509,13 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
   private unpackTarBuffer(
     buffer: ArrayBuffer,
     options: SourceAcquisitionOptions,
+    maxTotalUncompressedBytes: number,
   ): readonly SourceFileEntry[] {
     const sources: SourceFileEntry[] = [];
     const bytes = new Uint8Array(buffer);
     let offset = 0;
+    let entryCount = 0;
+    let totalUncompressedBytes = 0;
 
     while (offset + 512 <= bytes.byteLength) {
       const header = bytes.slice(offset, offset + 512);
@@ -490,7 +528,7 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
       const typeFlag = this.readTarString(header, 156, 1);
       const sizeOctal = this.readTarString(header, 124, 12);
       const fileSize = parseInt(sizeOctal.trim() || '0', 8);
-      const relativePath = prefix.length > 0 ? `${prefix}/${name}` : name;
+      const relativePath = normalizeSourceEntryPath(prefix.length > 0 ? `${prefix}/${name}` : name);
 
       const dataStart = offset + 512;
       const dataEnd = dataStart + fileSize;
@@ -500,11 +538,23 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
 
       const isRegularFile = typeFlag === '' || typeFlag === '0';
       if (isRegularFile && fileSize > 0 && !relativePath.endsWith('/')) {
+        entryCount += 1;
+        if (entryCount > MAX_ARCHIVE_ENTRY_COUNT) {
+          throw new Error(`Archive entry count exceeds maximum (${MAX_ARCHIVE_ENTRY_COUNT})`);
+        }
+        if (fileSize > options.maxFileSize!) {
+          throw new Error(`Archive entry "${relativePath}" exceeds file size limit (${fileSize} bytes)`);
+        }
+        totalUncompressedBytes += fileSize;
+        if (totalUncompressedBytes > maxTotalUncompressedBytes) {
+          throw new Error(`Archive uncompressed size exceeds maximum (${maxTotalUncompressedBytes} bytes)`);
+        }
+
         const hasAllowedExtension = options.allowedExtensions?.some((ext) => relativePath.endsWith(ext)) ?? true;
         const includeFile = options.includeHidden || !relativePath.split('/').some((part) => part.startsWith('.'));
 
         if (hasAllowedExtension && includeFile) {
-          const content = new TextDecoder().decode(bytes.slice(dataStart, dataEnd));
+          const content = decodeSourceText(bytes.slice(dataStart, dataEnd), relativePath);
           sources.push({
             relativePath,
             content,
@@ -539,6 +589,94 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
   }
 }
 
+export class KernelSourceAcquisitionBackendClient implements SourceAcquisitionBackendClient {
+  constructor(
+    private readonly config: {
+      readonly baseUrl: string;
+      readonly tenantId: string;
+      readonly workspaceId: string;
+      readonly projectId: string;
+      readonly authToken: string;
+    },
+  ) {}
+
+  async acquireRepository(
+    input: RepositorySourceInput,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
+    return this.request('/api/v1/studio/source-acquisition/repository', { input, options });
+  }
+
+  async acquireArchive(
+    input: ArchiveUploadInput,
+    options: SourceAcquisitionOptions = {},
+  ): Promise<SourceAcquisitionResult> {
+    const content = await input.file.arrayBuffer();
+    const encoded = this.encodeBase64(content);
+    return this.request('/api/v1/studio/source-acquisition/archive', {
+      input: {
+        kind: input.kind,
+        file: {
+          name: input.file.name,
+          type: input.file.type,
+          size: input.file.size,
+          contentBase64: encoded,
+        },
+      },
+      options,
+    });
+  }
+
+  async getAcquisitionJob(jobId: string): Promise<AcquisitionJob> {
+    const response = await fetch(`${this.config.baseUrl}/api/v1/studio/source-acquisition/jobs/${encodeURIComponent(jobId)}`, {
+      method: 'GET',
+      headers: this.headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Kernel source acquisition job lookup failed (${response.status})`);
+    }
+
+    return (await response.json()) as AcquisitionJob;
+  }
+
+  private async request(path: string, payload: unknown): Promise<SourceAcquisitionResult> {
+    const response = await fetch(`${this.config.baseUrl}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Kernel source acquisition failed (${response.status})`);
+    }
+
+    return (await response.json()) as SourceAcquisitionResult;
+  }
+
+  private get headers(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${this.config.authToken}`,
+      'x-ghatana-tenant-id': this.config.tenantId,
+      'x-ghatana-workspace-id': this.config.workspaceId,
+      'x-ghatana-project-id': this.config.projectId,
+      'x-tenant-id': this.config.tenantId,
+      'x-workspace-id': this.config.workspaceId,
+      'x-project-id': this.config.projectId,
+    };
+  }
+
+  private encodeBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+  }
+}
+
 /**
  * Default options for source acquisition.
  */
@@ -558,6 +696,36 @@ function hasFileListShape(value: unknown): value is FileList | readonly File[] {
       typeof value.length === 'number'
     )
   );
+}
+
+function normalizeSourceEntryPath(path: string): string {
+  const normalized = path.replace(/\\/g, '/').replace(/^\.\/+/, '');
+  const segments = normalized.split('/');
+  const hasUnsafeSegment = segments.some((segment) => segment === '' || segment === '.' || segment === '..');
+  if (
+    normalized.trim().length === 0 ||
+    normalized.includes('\0') ||
+    normalized.startsWith('/') ||
+    /^[A-Za-z]:\//.test(normalized) ||
+    hasUnsafeSegment
+  ) {
+    throw new Error(`Unsafe source path rejected: ${path}`);
+  }
+  return normalized;
+}
+
+function decodeSourceText(bytes: Uint8Array, relativePath: string): string {
+  if (bytes.byteLength > MAX_TEXT_DECODE_BYTES) {
+    throw new Error(`Source file "${relativePath}" exceeds text decode limit (${MAX_TEXT_DECODE_BYTES} bytes)`);
+  }
+  if (bytes.includes(0)) {
+    throw new Error(`Source file "${relativePath}" appears to be binary`);
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    throw new Error(`Source file "${relativePath}" is not valid UTF-8 text`);
+  }
 }
 
 function allowedExtensionsLabel(extensions: readonly string[]): string {
@@ -638,7 +806,14 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
     const errors: string[] = [];
 
     for (const file of files) {
-      const relativePath = getBrowserFileRelativePath(file);
+      let relativePath: string;
+      try {
+        relativePath = normalizeSourceEntryPath(getBrowserFileRelativePath(file));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`Skipped "${file.name}": ${message}`);
+        continue;
+      }
 
       // Skip hidden files if configured
       if (!opts.includeHidden && relativePath.split('/').some((part) => part.startsWith('.'))) {
@@ -666,7 +841,7 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
       }
 
       try {
-        const content = await this.readFileAsText(file);
+        const content = await this.readFileAsText(file, relativePath);
         sources.push({
           relativePath,
           content,
@@ -693,10 +868,21 @@ export class BrowserFileUploadProvider implements SourceAcquisitionProvider {
   /**
    * Read a file as text using FileReader.
    */
-  private readFileAsText(file: File): Promise<string> {
+  private readFileAsText(file: File, relativePath: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result !== 'string') {
+          reject(new Error(`Failed to read file as text: ${file.name}`));
+          return;
+        }
+        try {
+          resolve(decodeSourceText(new TextEncoder().encode(result), relativePath));
+        } catch (error) {
+          reject(error);
+        }
+      };
       reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
       reader.readAsText(file);
     });
@@ -728,29 +914,51 @@ export class PastedSourceProvider implements SourceAcquisitionProvider {
     }
 
     const opts = { ...DEFAULT_ACQUISITION_OPTIONS, ...options };
-    const hasAllowedExtension = opts.allowedExtensions.some((ext) => input.relativePath.endsWith(ext));
+    let relativePath: string;
+    try {
+      relativePath = normalizeSourceEntryPath(input.relativePath);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { sources: [], errors: [`Skipped "${input.relativePath}": ${message}`], partial: false };
+    }
+    const hasAllowedExtension = opts.allowedExtensions.some((ext) => relativePath.endsWith(ext));
     if (!hasAllowedExtension) {
       return {
         sources: [],
-        errors: [`Skipped "${input.relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`],
+        errors: [`Skipped "${relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`],
         partial: false,
       };
+    }
+    const size = new Blob([input.content]).size;
+    if (size > opts.maxFileSize) {
+      return {
+        sources: [],
+        errors: [`Skipped "${relativePath}": file exceeds ${megabytesLabel(opts.maxFileSize)} limit.`],
+        partial: false,
+      };
+    }
+    let content: string;
+    try {
+      content = decodeSourceText(new TextEncoder().encode(input.content), relativePath);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { sources: [], errors: [`Skipped "${relativePath}": ${message}`], partial: false };
     }
 
     return {
       sources: [
         {
-          relativePath: input.relativePath,
-          content: input.content,
+          relativePath,
+          content,
           metadata: {
-            size: new Blob([input.content]).size,
+            size,
             contentType: 'text/plain',
           },
         },
       ],
       errors: [],
       partial: false,
-      descriptor: createDescriptor('pasted-source', `pasted://${input.relativePath}`, input.relativePath),
+      descriptor: createDescriptor('pasted-source', `pasted://${relativePath}`, relativePath),
     };
   }
 }
@@ -782,16 +990,41 @@ export class LocalFolderDescriptorProvider implements SourceAcquisitionProvider 
     const sources: SourceFileEntry[] = [];
     const errors: string[] = [];
     for (const source of input.descriptor.files) {
-      const hasAllowedExtension = opts.allowedExtensions.some((ext) => source.relativePath.endsWith(ext));
+      let relativePath: string;
+      try {
+        relativePath = normalizeSourceEntryPath(source.relativePath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`Skipped "${source.relativePath}": ${message}`);
+        continue;
+      }
+      const hasAllowedExtension = opts.allowedExtensions.some((ext) => relativePath.endsWith(ext));
       if (!hasAllowedExtension) {
-        errors.push(`Skipped "${source.relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`);
+        errors.push(`Skipped "${relativePath}": only ${allowedExtensionsLabel(opts.allowedExtensions)} files are supported.`);
         continue;
       }
-      if (!opts.includeHidden && source.relativePath.split('/').some((part) => part.startsWith('.'))) {
-        errors.push(`Skipped "${source.relativePath}": hidden file.`);
+      if (!opts.includeHidden && relativePath.split('/').some((part) => part.startsWith('.'))) {
+        errors.push(`Skipped "${relativePath}": hidden file.`);
         continue;
       }
-      sources.push(source);
+      const size = source.metadata?.size ?? new Blob([source.content]).size;
+      if (size > opts.maxFileSize) {
+        errors.push(`Skipped "${relativePath}": file exceeds ${megabytesLabel(opts.maxFileSize)} limit.`);
+        continue;
+      }
+      let content: string;
+      try {
+        content = decodeSourceText(new TextEncoder().encode(source.content), relativePath);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`Skipped "${relativePath}": ${message}`);
+        continue;
+      }
+      sources.push({
+        ...source,
+        relativePath,
+        content,
+      });
     }
     return {
       sources,
@@ -1029,6 +1262,56 @@ export function createProductionProviderRegistry(
   return registry;
 }
 
+export function createKernelProviderRegistry(config: ConstructorParameters<typeof KernelSourceAcquisitionBackendClient>[0]): SourceAcquisitionProviderRegistry {
+  const registry = new SourceAcquisitionProviderRegistry();
+  const backendClient = new KernelSourceAcquisitionBackendClient(config);
+
+  registry.register(new BrowserFileUploadProvider());
+  registry.register(new PastedSourceProvider());
+  registry.register(new LocalFolderDescriptorProvider());
+  registry.register(new RepositorySourceProvider(backendClient));
+  registry.register(new ArchiveUploadProvider(backendClient));
+
+  return registry;
+}
+
+export function resolveSourceAcquisitionRuntimeProfileForEnv(
+  env?: Record<string, string | undefined>,
+): SourceAcquisitionRuntimeProfile {
+  const productionProfile = isProductionStudioProfile(env);
+  const productionAcquisitionEnabled = env?.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
+  const backendKind = env?.VITE_STUDIO_SOURCE_ACQUISITION_BACKEND === 'kernel'
+    ? 'kernel'
+    : env?.VITE_STUDIO_SOURCE_ACQUISITION_BACKEND === 'browser'
+      ? 'browser'
+      : 'none';
+  const exposeRepositoryAndArchiveProviders =
+    env?.VITE_STUDIO_EXPOSE_REPOSITORY_ARCHIVE_PROVIDERS !== 'false';
+
+  if (productionProfile && exposeRepositoryAndArchiveProviders) {
+    if (!productionAcquisitionEnabled) {
+      throw new StudioProductionProfileError(
+        'Production Studio exposes repository/archive providers but production acquisition is disabled.',
+      );
+    }
+    if (backendKind !== 'kernel') {
+      throw new StudioProductionProfileError(
+        'Production Studio repository/archive acquisition must use VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel.',
+      );
+    }
+  }
+
+  if (!exposeRepositoryAndArchiveProviders) {
+    return { mode: 'local', exposeRepositoryAndArchiveProviders, backendKind };
+  }
+
+  if (!productionAcquisitionEnabled) {
+    return { mode: 'pending-backend', exposeRepositoryAndArchiveProviders, backendKind: 'none' };
+  }
+
+  return { mode: 'production-acquisition', exposeRepositoryAndArchiveProviders, backendKind };
+}
+
 /**
  * Resolve the source acquisition provider registry from runtime environment.
  *
@@ -1037,9 +1320,25 @@ export function createProductionProviderRegistry(
 export function resolveProviderRegistryForEnv(
   env?: Record<string, string | undefined>,
 ): SourceAcquisitionProviderRegistry {
-  const enableProductionAcquisition = env?.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
-  if (!enableProductionAcquisition) {
+  const profile = resolveSourceAcquisitionRuntimeProfileForEnv(env);
+  if (profile.mode !== 'production-acquisition') {
     return defaultProviderRegistry;
+  }
+
+  if (profile.backendKind === 'kernel') {
+    const baseUrl = env?.VITE_GHATANA_KERNEL_API_BASE_URL?.trim();
+    const tenantId = env?.VITE_STUDIO_TENANT_ID?.trim();
+    const workspaceId = env?.VITE_STUDIO_WORKSPACE_ID?.trim();
+    const projectId = env?.VITE_STUDIO_PROJECT_ID?.trim();
+    const authToken = env?.VITE_STUDIO_AUTH_TOKEN?.trim();
+
+    if (!baseUrl || !tenantId || !workspaceId || !projectId || !authToken) {
+      throw new StudioProductionProfileError(
+        'Kernel source acquisition requires kernel base URL, tenant, workspace, project, and auth token.',
+      );
+    }
+
+    return createKernelProviderRegistry({ baseUrl, tenantId, workspaceId, projectId, authToken });
   }
 
   return createProductionProviderRegistry({

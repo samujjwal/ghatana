@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const REQUIRED_PRODUCTION_VARS = [
-  'VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION',
+  'VITE_STUDIO_DEPLOYMENT_PROFILE',
 ];
 
 const KERNEL_PERSISTENCE_VARS = [
@@ -21,6 +21,7 @@ const KERNEL_PERSISTENCE_VARS = [
   'VITE_STUDIO_TENANT_ID',
   'VITE_STUDIO_WORKSPACE_ID',
   'VITE_STUDIO_PROJECT_ID',
+  'VITE_STUDIO_AUTH_TOKEN',
 ];
 
 function parseArgs() {
@@ -117,14 +118,37 @@ function parseEnvFile(filePath) {
 function validateProductionProfile(env, options) {
   const errors = [];
   const warnings = [];
+  const productionMode = options.mode === 'production';
+  const deploymentProfile = env.VITE_STUDIO_DEPLOYMENT_PROFILE;
+  const exposesRepositoryArchiveProviders =
+    env.VITE_STUDIO_EXPOSE_REPOSITORY_ARCHIVE_PROVIDERS !== 'false';
+  const productionAcquisitionEnabled = env.VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION === 'true';
+  const sourceAcquisitionBackend = env.VITE_STUDIO_SOURCE_ACQUISITION_BACKEND;
 
-  for (const key of REQUIRED_PRODUCTION_VARS) {
-    const value = env[key];
-    if (!value) {
-      errors.push(`Missing required variable: ${key}`);
-    } else if (value !== 'true') {
-      errors.push(`${key} must be 'true' in production, got: ${value}`);
+  if (productionMode) {
+    for (const key of REQUIRED_PRODUCTION_VARS) {
+      const value = env[key];
+      if (!value) {
+        errors.push(`Missing required variable: ${key}`);
+      }
     }
+
+    if (deploymentProfile !== 'production') {
+      errors.push(`VITE_STUDIO_DEPLOYMENT_PROFILE must be 'production' in production mode, got: ${deploymentProfile ?? '<missing>'}`);
+    }
+
+    if (exposesRepositoryArchiveProviders) {
+      if (!productionAcquisitionEnabled) {
+        errors.push('Repository/archive providers are exposed, so VITE_STUDIO_ENABLE_PRODUCTION_ACQUISITION must be true in production.');
+      }
+      if (sourceAcquisitionBackend !== 'kernel') {
+        errors.push(`Repository/archive acquisition must be kernel-backed in production; set VITE_STUDIO_SOURCE_ACQUISITION_BACKEND=kernel, got: ${sourceAcquisitionBackend ?? '<missing>'}`);
+      }
+    } else if (productionAcquisitionEnabled) {
+      warnings.push('Production acquisition is enabled but repository/archive providers are disabled.');
+    }
+  } else if (exposesRepositoryArchiveProviders && !productionAcquisitionEnabled) {
+    warnings.push('Repository/archive providers will create pending backend jobs because production acquisition is disabled.');
   }
 
   const kernelPersistenceEnabled = env.VITE_STUDIO_ENABLE_KERNEL_WORKFLOW_PERSISTENCE === 'true';
@@ -141,15 +165,15 @@ function validateProductionProfile(env, options) {
     }
   } else {
     const message = 'Kernel workflow persistence is disabled. Production Studio must use Kernel-backed workflow persistence.';
-    if (options.strict && options.mode === 'production') {
+    if (options.strict && productionMode) {
       errors.push(message);
     } else {
       warnings.push(message);
     }
   }
 
-  if (!env.VITE_STUDIO_AUTH_TOKEN && kernelPersistenceEnabled) {
-    errors.push('VITE_STUDIO_AUTH_TOKEN is required when kernel persistence is enabled');
+  if (productionMode && env.VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE !== 'true') {
+    errors.push('VITE_STUDIO_REQUIRE_KERNEL_WORKFLOW_PERSISTENCE must be true in production.');
   }
 
   return { errors, warnings };

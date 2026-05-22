@@ -1,0 +1,42 @@
+schemaVersion: "1.0.0"
+id: typescript-fixture
+name: TypeScript Fixture Product
+kind: product
+lifecycleStatus: planned
+executionEnabled: false
+owner: kernel-team
+
+registryProviderRef:
+  providerId: ghatana-file-registry
+
+sourceProviderRef:
+  providerId: ghatana-file-registry
+  config:
+    lifecycleConfigPath: kernel-product.yaml
+
+lifecycleProfile: standard-polyglot-product
+
+surfaces:
+  - id: typescript-fixture-lib
+    type: sdk
+    implementationStatus: implemented
+    language: typescript
+    runtime: nodejs
+    buildSystem: pnpm
+    packagePath: products/typescript-fixture/package.json
+    adapterHint: pnpm-node-api
+
+  - id: typescript-fixture-service
+    type: backend-api
+    implementationStatus: implemented
+    language: typescript
+    runtime: nodejs
+    buildSystem: pnpm
+    packagePath: products/typescript-fixture/package.json
+    adapterHint: pnpm-node-api
+
+environments:
+  - name: local
+    target: local
+    variables:
+      NODE_ENV: development

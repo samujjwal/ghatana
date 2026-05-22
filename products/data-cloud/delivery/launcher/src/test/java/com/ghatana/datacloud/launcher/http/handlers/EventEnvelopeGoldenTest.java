@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -655,5 +656,131 @@ class EventEnvelopeGoldenTest extends EventloopTestBase {
         assertThat(tenantId).isNotNull();
         assertThat(offset).isGreaterThanOrEqualTo(0);
         assertThat(timestamp).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("DC-P0-02/P1-2: Canonical lifecycle event types preserve envelope fields on append")
+    void canonicalLifecycleEventTypesPreserveEnvelopeFieldsOnAppend() throws Exception {
+        List<String> lifecycleEventTypes = List.of(
+            "entity.created",
+            "entity.updated",
+            "entity.deleted",
+            "workflow.run.started",
+            "workflow.run.completed",
+            "policy.decision.recorded",
+            "audit.appended",
+            "runtime.truth.updated"
+        );
+
+        var persistedEvents = new ArrayList<DataCloudClient.Event>();
+        when(client.appendEvent(anyString(), any())).thenAnswer(invocation -> {
+            DataCloudClient.Event persisted = invocation.getArgument(1);
+            persistedEvents.add(persisted);
+            return Promise.of(DataCloudClient.Offset.of(persistedEvents.size()));
+        });
+
+        for (int i = 0; i < lifecycleEventTypes.size(); i++) {
+            String eventType = lifecycleEventTypes.get(i);
+            String eventId = "evt-lifecycle-" + i;
+            String causationId = "cause-lifecycle-" + i;
+
+            Map<String, Object> envelope = Map.ofEntries(
+                Map.entry("eventId", eventId),
+                Map.entry("type", eventType),
+                Map.entry("tenantId", "tenant-123"),
+                Map.entry("workspaceId", "workspace-456"),
+                Map.entry("subject", "entity-789"),
+                Map.entry("subjectType", "Product"),
+                Map.entry("actor", "user-alice"),
+                Map.entry("classification", "sensitive"),
+                Map.entry("policyContext", Map.of("policyId", "policy-001", "decision", "allow")),
+                Map.entry("provenance", "datacloud.launcher.event-handler"),
+                Map.entry("traceContext", "trace-abc123"),
+                Map.entry("correlationId", "corr-def456"),
+                Map.entry("causationId", causationId),
+                Map.entry("payload", Map.of("kind", "golden", "iteration", i)),
+                Map.entry("timestamp", "2026-05-20T12:00:00Z")
+            );
+
+            when(request.loadBody()).thenReturn(
+                Promise.of(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(envelope))));
+
+            HttpResponse response = runPromise(() -> handler.handleAppendEvent(request));
+            assertThat(response).isNotNull();
+        }
+
+        assertThat(persistedEvents).hasSize(lifecycleEventTypes.size());
+        for (int i = 0; i < persistedEvents.size(); i++) {
+            DataCloudClient.Event persisted = persistedEvents.get(i);
+            assertThat(persisted.type()).isEqualTo(lifecycleEventTypes.get(i));
+            assertThat(persisted.actor().orElse(null)).isEqualTo("user-alice");
+            assertThat(persisted.classification().orElse(null)).isEqualTo("sensitive");
+            assertThat(persisted.traceContext().orElse(null)).isEqualTo("trace-abc123");
+            assertThat(persisted.correlationId().orElse(null)).isEqualTo("corr-def456");
+            assertThat(persisted.causationId().orElse(null)).isEqualTo("cause-lifecycle-" + i);
+            assertThat(persisted.headers().get("eventId")).isEqualTo("evt-lifecycle-" + i);
+            assertThat(persisted.headers().get("workspaceId")).isEqualTo("workspace-456");
+            assertThat(persisted.headers().get("tenantId")).isEqualTo("tenant-123");
+            assertThat(persisted.policyContext().orElse(""))
+                .contains("policyId")
+                .contains("decision");
+            assertThat(persisted.payload()).containsEntry("kind", "golden");
+        }
+    }
+
+    @Test
+    @DisplayName("DC-P0-02/P1-3: get-by-offset returns full canonical envelope fields")
+    void getByOffsetReturnsFullCanonicalEnvelopeFields() {
+        DataCloudClient.Event persistedEvent = DataCloudClient.Event.builder()
+            .type("entity.created")
+            .payload(Map.of("name", "Test Product", "price", 99.99))
+            .source("datacloud.launcher.event-handler")
+            .subjectType("Product")
+            .subjectId("entity-789")
+            .correlationId("corr-def456")
+            .causationId("cause-ghi789")
+            .actor("user-alice")
+            .classification("sensitive")
+            .policyContext("{\"policyId\":\"policy-001\",\"decision\":\"allow\"}")
+            .provenance("datacloud.launcher.event-handler")
+            .traceContext("trace-abc123")
+            .headers(Map.of(
+                "eventId", "evt-12345678-1234-1234-1234-123456789abc",
+                "workspaceId", "workspace-456",
+                "tenantId", "tenant-123"
+            ))
+            .timestamp(Instant.parse("2026-05-20T12:00:00Z"))
+            .build();
+
+        when(request.getPathParameter("offset")).thenReturn("0");
+        when(client.queryEvents(eq("tenant-123"), any()))
+            .thenReturn(Promise.of(List.of(persistedEvent)));
+
+        HttpResponse response = runPromise(() -> handler.handleGetEventByOffset(request));
+
+        assertThat(response).isNotNull();
+        verify(http).jsonResponse(argThat(responseBody -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = (Map<String, Object>) responseBody;
+
+            assertThat(body.get("offset")).isEqualTo(0L);
+            assertThat(body.get("eventId")).isEqualTo("evt-12345678-1234-1234-1234-123456789abc");
+            assertThat(body.get("type")).isEqualTo("entity.created");
+            assertThat(body.get("tenantId")).isEqualTo("tenant-123");
+            assertThat(body.get("workspaceId")).isEqualTo("workspace-456");
+            assertThat(body.get("subject")).isEqualTo("entity-789");
+            assertThat(body.get("subjectType")).isEqualTo("Product");
+            assertThat(body.get("actor")).isEqualTo("user-alice");
+            assertThat(body.get("classification")).isEqualTo("sensitive");
+            assertThat(body.get("provenance")).isEqualTo("datacloud.launcher.event-handler");
+            assertThat(body.get("traceContext")).isEqualTo("trace-abc123");
+            assertThat(body.get("correlationId")).isEqualTo("corr-def456");
+            assertThat(body.get("causationId")).isEqualTo("cause-ghi789");
+            assertThat(body.get("payload")).isEqualTo(Map.of("name", "Test Product", "price", 99.99));
+            assertThat(body.get("timestamp")).isEqualTo("2026-05-20T12:00:00Z");
+            assertThat(body.get("policyContext")).isEqualTo(Map.of("policyId", "policy-001", "decision", "allow"));
+
+            return true;
+        }));
     }
 }

@@ -1,0 +1,85 @@
+{
+  "dashboard": {
+    "title": "Kernel Interaction Broker Telemetry",
+    "uid": "kernel-interaction",
+    "tags": ["kernel", "interaction", "broker", "telemetry"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Interaction Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_interaction_requests_total[5m])",
+            "legendFormat": "requests/sec"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Interaction Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "kernel_interaction_success_rate",
+            "legendFormat": "success rate"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Interaction Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_interaction_latency_ms_sum[5m]) / rate(kernel_interaction_latency_ms_count[5m])",
+            "legendFormat": "avg latency (ms)"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(kernel_interaction_latency_ms_bucket[5m]))",
+            "legendFormat": "p95 latency (ms)"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(kernel_interaction_latency_ms_bucket[5m]))",
+            "legendFormat": "p99 latency (ms)"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Interaction Outcomes",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "kernel_interaction_outcomes_total",
+            "legendFormat": "{{outcome}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Policy Decision Distribution",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_policy_decisions_total[5m])",
+            "legendFormat": "{{decision}}"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Evidence Write Failures",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(kernel_evidence_write_failures_total[5m])",
+            "legendFormat": "evidence write failures"
+          }
+        ]
+      }
+    ]
+  }
+}

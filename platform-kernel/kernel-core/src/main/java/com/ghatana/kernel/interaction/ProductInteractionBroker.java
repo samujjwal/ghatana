@@ -48,6 +48,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private final AtomicLong evidenceFailures;
     private final AtomicLong totalLatencyMs;
     private final AtomicLong maxLatencyMs;
+    private final ProductInteractionHandlerRegistry handlerRegistry;
 
     private ProductInteractionBroker(Builder builder) {
         this.handlersByContractId = new ConcurrentHashMap<>(builder.handlersByContractId);
@@ -64,6 +65,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.evidenceFailures = new AtomicLong();
         this.totalLatencyMs = new AtomicLong();
         this.maxLatencyMs = new AtomicLong();
+        this.handlerRegistry = builder.handlerRegistry;
     }
 
     public static Builder builder() {
@@ -89,6 +91,15 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         @SuppressWarnings("unchecked")
         ProductInteractionHandler<Req, Res> handler = (ProductInteractionHandler<Req, Res>) handlersByContractId.get(request.contractId());
+        if (handler == null && handlerRegistry != null) {
+            ProductInteractionHandler<?, ?> discovered = handlerRegistry.getHandler(request.contractId());
+            if (discovered != null) {
+                @SuppressWarnings("unchecked")
+                ProductInteractionHandler<Req, Res> typedDiscovered = (ProductInteractionHandler<Req, Res>) discovered;
+                handler = typedDiscovered;
+                handlersByContractId.put(request.contractId(), handler);
+            }
+        }
         if (handler == null) {
             return complete(request, interactionKey, blocked(request, "product_interaction.handler_unavailable"), startedNanos);
         }
@@ -98,6 +109,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
         if (!handler.requestType().isInstance(request.payload())) {
             return complete(request, interactionKey, blocked(request, "product_interaction.invalid_payload"), startedNanos);
         }
+
+        final ProductInteractionHandler<Req, Res> executionHandler = handler;
 
         return Promise.ofCallback(cb -> {
             AtomicBoolean completed = new AtomicBoolean(false);
@@ -117,7 +130,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 }
             }, timeoutMs, TimeUnit.MILLISECONDS);
 
-            handler.handle(request).whenComplete((outcome, error) -> {
+            executionHandler.handle(request).whenComplete((outcome, error) -> {
                 if (!completed.compareAndSet(false, true)) {
                     return;
                 }
@@ -287,6 +300,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
         private ProductInteractionPolicyEvaluator policyEvaluator = ProductInteractionPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEvidenceWriter evidenceWriter = ProductInteractionEvidenceWriter.noop();
         private Duration requestTimeout = Duration.ofSeconds(2);
+        private ProductInteractionHandlerRegistry handlerRegistry;
 
         public Builder register(ProductInteractionHandler<?, ?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -326,6 +340,11 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 throw new IllegalArgumentException("request timeout must be positive");
             }
             this.requestTimeout = timeout;
+            return this;
+        }
+
+        public Builder handlerRegistry(ProductInteractionHandlerRegistry registry) {
+            this.handlerRegistry = registry;
             return this;
         }
 

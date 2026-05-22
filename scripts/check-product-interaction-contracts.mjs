@@ -2,6 +2,7 @@
 
 import { readFileSync } from 'node:fs';
 import { existsSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -30,6 +31,7 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
   const errors = [];
   const providedContracts = new Map();
   const consumedContracts = [];
+  const schemaDigests = new Map();
   const loadKernelProduct =
     options.loadKernelProduct ??
     ((productId) => {
@@ -59,7 +61,11 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
     }
     for (const bucket of ['publishes', 'consumes', 'provides']) {
       const contracts = asArray(interactions[bucket]);
-      contracts.forEach((contract, index) => validateContract(errors, productIds, productId, bucket, contract, index));
+      contracts.forEach((contract, index) => validateContract(errors, productIds, productId, bucket, contract, index, {
+        validateSchemaRefs: options.validateSchemaRefs !== false,
+        schemaDigests,
+        readSchemaFile: options.readSchemaFile,
+      }));
       if (bucket === 'publishes' || bucket === 'provides') {
         for (const contract of contracts) {
           if (typeof contract?.contractId === 'string') {
@@ -88,6 +94,7 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
     if (provider.contract.providerProductId !== consumed.contract.providerProductId) {
       errors.push(`${consumed.productId}.interactions.consumes ${contractId} expects provider ${consumed.contract.providerProductId}, but provider contract declares ${provider.contract.providerProductId}`);
     }
+    validateContractSchemaParity(errors, provider.productId, provider.contract, consumed.productId, consumed.contract);
   }
 
   if (options.validateBridgeHandlers !== false) {
@@ -137,7 +144,7 @@ function validateBridgeHandlers(errors) {
   }
 }
 
-function validateContract(errors, productIds, productId, bucket, contract, index) {
+function validateContract(errors, productIds, productId, bucket, contract, index, options = {}) {
   const path = `${productId}.interactions.${bucket}[${index}]`;
   if (typeof contract !== 'object' || contract === null) {
     errors.push(`${path} must be an object`);
@@ -167,9 +174,13 @@ function validateContract(errors, productIds, productId, bucket, contract, index
   if (contract.mode === 'request-response') {
     if (typeof contract.requestSchemaRef !== 'string' || contract.requestSchemaRef.length === 0) {
       errors.push(`${path}.requestSchemaRef is required for request-response`);
+    } else {
+      validateSchemaRef(errors, path, contract, 'requestSchemaRef', 'requestSchemaSha256', options);
     }
     if (typeof contract.responseSchemaRef !== 'string' || contract.responseSchemaRef.length === 0) {
       errors.push(`${path}.responseSchemaRef is required for request-response`);
+    } else {
+      validateSchemaRef(errors, path, contract, 'responseSchemaRef', 'responseSchemaSha256', options);
     }
   }
   if ((contract.mode === 'event-publish' || contract.mode === 'event-subscribe')) {
@@ -178,6 +189,8 @@ function validateContract(errors, productIds, productId, bucket, contract, index
     }
     if (typeof contract.eventSchemaRef !== 'string' || contract.eventSchemaRef.length === 0) {
       errors.push(`${path}.eventSchemaRef is required for event interactions`);
+    } else {
+      validateSchemaRef(errors, path, contract, 'eventSchemaRef', 'eventSchemaSha256', options);
     }
   }
   if (contract.mode === 'provider-capability' && (typeof contract.capability !== 'string' || contract.capability.length === 0)) {
@@ -206,6 +219,61 @@ function validateContract(errors, productIds, productId, bucket, contract, index
       errors.push(`${path}.evidence.manifestType must be interaction-evidence`);
     }
   }
+}
+
+function validateSchemaRef(errors, path, contract, refField, hashField, options) {
+  if (options.validateSchemaRefs === false) {
+    return;
+  }
+  const ref = contract[refField];
+  const declaredHash = contract[hashField];
+  if (typeof declaredHash !== 'string' || !/^[0-9a-f]{64}$/.test(declaredHash)) {
+    errors.push(`${path}.${hashField} must be a lowercase SHA-256 digest for ${refField}`);
+    return;
+  }
+
+  const readSchemaFile = options.readSchemaFile ?? ((relativePath) => {
+    const absolutePath = join(repoRoot, relativePath);
+    if (!existsSync(absolutePath)) {
+      return undefined;
+    }
+    return readFileSync(absolutePath, 'utf8');
+  });
+  const content = readSchemaFile(ref);
+  if (typeof content !== 'string') {
+    errors.push(`${path}.${refField} references missing schema file ${ref}`);
+    return;
+  }
+
+  try {
+    JSON.parse(content);
+  } catch (error) {
+    errors.push(`${path}.${refField} references invalid JSON schema ${ref}: ${error.message}`);
+    return;
+  }
+
+  const actualHash = sha256(content);
+  options.schemaDigests?.set(ref, actualHash);
+  if (actualHash !== declaredHash) {
+    errors.push(`${path}.${hashField} is ${declaredHash}, but ${refField} hashes to ${actualHash}`);
+  }
+}
+
+function validateContractSchemaParity(errors, providerProductId, providerContract, consumerProductId, consumerContract) {
+  for (const field of ['schemaVersion', 'requestSchemaSha256', 'responseSchemaSha256', 'eventSchemaSha256']) {
+    const providerValue = providerContract[field];
+    const consumerValue = consumerContract[field];
+    if (providerValue === undefined || consumerValue === undefined) {
+      continue;
+    }
+    if (providerValue !== consumerValue) {
+      errors.push(`${consumerProductId}.interactions.consumes ${consumerContract.contractId} ${field} (${consumerValue}) does not match provider ${providerProductId} (${providerValue})`);
+    }
+  }
+}
+
+function sha256(content) {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
 }
 
 function main() {

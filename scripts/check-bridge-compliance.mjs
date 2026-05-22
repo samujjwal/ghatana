@@ -3,8 +3,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { execSync, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = resolve(new URL('..', import.meta.url).pathname);
+const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const registryPath = resolve(repoRoot, 'config/canonical-product-registry.json');
 const registry = JSON.parse(readFileSync(registryPath, 'utf8')).registry;
 const registryEntries = Object.values(registry);

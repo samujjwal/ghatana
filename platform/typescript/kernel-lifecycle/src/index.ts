@@ -37,6 +37,31 @@ export {
   type AgentLifecycleActionPlanner,
   type AgentLifecycleActionServiceOptions,
 } from "./agentic/AgentLifecycleActionService.js";
+export {
+  FileSystemStudioSourceAcquisitionJobStore,
+  FileSystemStudioSourceAcquisitionPayloadStore,
+  FileSystemStudioSourceWorkspaceWriter,
+  HttpStudioRepositoryArchiveFetcher,
+  InMemoryStudioSourceWorkspaceWriter,
+  StudioSourceAcquisitionQueueRunner,
+  StudioSourceAcquisitionWorker,
+  type HttpStudioRepositoryArchiveFetcherOptions,
+  type StudioArchiveAcquisitionRequest,
+  type StudioMaterializedSourceFile,
+  type StudioRepositoryAcquisitionRequest,
+  type StudioRepositoryArchiveFetcher,
+  type StudioRepositoryArchiveTokenProvider,
+  type StudioRunningRepositoryAcquisitionRequest,
+  type StudioRunningStoredArchiveAcquisitionRequest,
+  type StudioSourceAcquisitionQueueClaim,
+  type StudioSourceAcquisitionQueueRunnerOptions,
+  type StudioSourceAcquisitionQueueSnapshot,
+  type StudioSourceAcquisitionQueueStore,
+  type StudioSourceAcquisitionWorkerOptions,
+  type StudioSourceAcquisitionWorkerResult,
+  type StudioSourceWorkspaceWriter,
+  type StudioStoredArchiveAcquisitionRequest,
+} from "./acquisition/StudioSourceAcquisitionWorker.js";
 
 export {
   LifecycleManifestWriter,
@@ -98,6 +123,8 @@ export {
   type KernelLifecycleApiRequest,
   type KernelLifecycleApiResponse,
   type KernelLifecycleRouteMetadata,
+  type StudioSourceAcquisitionArchivePayload,
+  type StudioSourceAcquisitionPayloadStore,
 } from "./api/KernelLifecycleApiHandlers.js";
 
 export { CanonicalRegistryLoader } from "./io/CanonicalRegistryLoader.js";
@@ -124,3 +151,13 @@ export { ProductArtifactValidator } from "./validation/ProductArtifactValidator.
 export { ProductGateValidator } from "./validation/ProductGateValidator.js";
 
 export { SchemaValidator } from "./SchemaValidator.js";
+
+export {
+  getRecoveryGuidance,
+  inferFailureCategory,
+  formatRecoveryGuidance,
+  type LifecycleFailureCategory,
+  type RecoveryAction,
+  type RecoveryActionType,
+  type LifecycleRecoveryGuidance,
+} from "./recovery/LifecycleRecoveryGuidance.js";
