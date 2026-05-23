@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -9,6 +9,7 @@ import { runTaskMatrixCheck } from './check-kernel-implementation-task-matrix.mj
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'kernel-implementation-wave-run.json');
+const foundationUsageProfilesPath = path.join(repoRoot, 'config/product-foundation-usage-profiles.json');
 
 const waveDefinitions = {
   'wave-1-foundation': [
@@ -60,6 +61,7 @@ function parseArgs(argv) {
   const options = {
     execute: false,
     includeHeavy: false,
+    products: [],
     waves: ['wave-1-foundation', 'wave-2-runtime-governance', 'wave-3-quality-performance', 'wave-4-release-ops'],
   };
 
@@ -81,32 +83,64 @@ function parseArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--products' && argv[index + 1]) {
+      options.products = argv[index + 1]
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+      index += 1;
+      continue;
+    }
   }
 
   return options;
 }
 
-function runCommand(commandRef) {
+function resolveScopedProducts(explicitProducts) {
+  if (Array.isArray(explicitProducts) && explicitProducts.length > 0) {
+    return explicitProducts;
+  }
+
+  if (!existsSync(foundationUsageProfilesPath)) {
+    return [];
+  }
+
+  try {
+    const source = JSON.parse(readFileSync(foundationUsageProfilesPath, 'utf8'));
+    const profiles = source?.profiles ?? {};
+    return Object.keys(profiles).sort();
+  } catch {
+    return [];
+  }
+}
+
+function runCommand(commandRef, options) {
+  const scopedProducts = options.scopedProducts ?? [];
+  const scopedEnv = { ...process.env };
+  if (commandRef === 'pnpm:check:affected-product-strict-release-profile' && scopedProducts.length > 0) {
+    scopedEnv.AFFECTED_PRODUCTS = scopedProducts.join(',');
+  }
+
   if (commandRef.startsWith('pnpm:')) {
     const scriptName = commandRef.slice('pnpm:'.length);
     if (process.platform === 'win32') {
       return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', scriptName], {
         cwd: repoRoot,
         stdio: 'inherit',
-        env: process.env,
+        env: scopedEnv,
       });
     }
     return spawnSync('pnpm', [scriptName], {
       cwd: repoRoot,
       stdio: 'inherit',
-      env: process.env,
+      env: scopedEnv,
     });
   }
 
   return spawnSync(process.execPath, [commandRef], {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: process.env,
+    env: scopedEnv,
   });
 }
 
@@ -133,6 +167,7 @@ function buildExecutionPlan(waves, includeHeavy) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  options.scopedProducts = resolveScopedProducts(options.products);
   const matrix = runTaskMatrixCheck({ writeEvidence: true });
   const unknownWaves = options.waves.filter((wave) => !waveDefinitions[wave]);
 
@@ -154,7 +189,7 @@ function main() {
   if (options.execute) {
     for (const commandRef of plannedCommands) {
       const startedAt = Date.now();
-      const result = runCommand(commandRef);
+      const result = runCommand(commandRef, options);
       const durationMs = Date.now() - startedAt;
       const status = result.status ?? 1;
       commandRuns.push({ command: commandRef, status, durationMs });
@@ -175,6 +210,7 @@ function main() {
     mode: options.execute ? 'execute' : 'plan-only',
     includeHeavy: options.includeHeavy,
     selectedWaves: options.waves,
+    scopedProducts: options.scopedProducts,
     deferredHeavyCommands: options.includeHeavy ? [] : heavyCommands,
     commandCount: plannedCommands.length,
     plannedCommands,

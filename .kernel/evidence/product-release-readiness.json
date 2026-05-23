@@ -1,68 +1,93 @@
 {
-  "generatedAt": "2026-05-23T19:45:44.993Z",
+  "generatedAt": "2026-05-23T22:10:18.384Z",
   "pass": false,
   "reason": "script-failure",
-  "failedScript": "./scripts/check-runtime-dependency-failure-injection.mjs",
+  "failedScript": "./scripts/check-production-stubs.mjs",
   "runs": [
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 20054
+      "durationMs": 26954
     },
     {
       "script": "./scripts/check-product-shape-capability-matrix.mjs",
       "status": 0,
-      "durationMs": 67
+      "durationMs": 158
     },
     {
       "script": "./scripts/check-product-registry-drift.mjs",
       "status": 0,
-      "durationMs": 62
+      "durationMs": 87
     },
     {
       "script": "pnpm:check:product-registry",
       "status": 0,
-      "durationMs": 6492
+      "durationMs": 9764
     },
     {
       "script": "./scripts/check-platform-product-boundaries.mjs",
       "status": 0,
-      "durationMs": 940
+      "durationMs": 1698
     },
     {
       "script": "./scripts/check-cross-product-interaction-boundaries.mjs",
       "status": 0,
-      "durationMs": 870
+      "durationMs": 1157
     },
     {
       "script": "./scripts/check-product-ui-contracts.mjs",
       "status": 0,
-      "durationMs": 279
+      "durationMs": 344
     },
     {
       "script": "./scripts/check-audited-e2e-workflow.mjs",
       "status": 0,
-      "durationMs": 59
+      "durationMs": 74
     },
     {
       "script": "pnpm:check:cross-product-interaction-flows",
       "status": 0,
-      "durationMs": 25193
+      "durationMs": 32416
     },
     {
       "script": "./scripts/check-interaction-runtime-truth.mjs",
       "status": 0,
-      "durationMs": 6410
+      "durationMs": 7209
     },
     {
       "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
       "status": 0,
-      "durationMs": 395323
+      "durationMs": 438460
     },
     {
       "script": "./scripts/check-runtime-dependency-failure-injection.mjs",
+      "status": 0,
+      "durationMs": 105207
+    },
+    {
+      "script": "./scripts/check-atomic-workflow-failure-injection.mjs",
+      "status": 0,
+      "durationMs": 103562
+    },
+    {
+      "script": "./scripts/check-runtime-failure-injection.mjs",
+      "status": 0,
+      "durationMs": 89
+    },
+    {
+      "script": "./scripts/check-atomic-workflow-proof.mjs",
+      "status": 0,
+      "durationMs": 88
+    },
+    {
+      "script": "./scripts/check-secret-default-credentials.mjs",
+      "status": 0,
+      "durationMs": 510
+    },
+    {
+      "script": "./scripts/check-production-stubs.mjs",
       "status": 1,
-      "durationMs": 459761
+      "durationMs": 87350
     }
   ],
   "journeyMatrix": [
@@ -107,6 +132,7 @@
           "area": "secure-routes-observability-and-doc-truth",
           "scripts": [
             "./scripts/check-secret-default-credentials.mjs",
+            "./scripts/check-production-stubs.mjs",
             "./scripts/check-route-entitlement-contracts.mjs",
             "./scripts/check-observability-conformance.mjs",
             "./scripts/check-doc-claims-evidence.mjs",
@@ -135,11 +161,15 @@
         {
           "area": "strict-release-and-coverage",
           "scripts": [
+            "./scripts/check-release-profile-local-targets.mjs",
             "./scripts/check-openapi-release-quality.mjs",
             "./scripts/check-openapi-breaking-changes.mjs",
+            "./scripts/check-product-release-evidence-packs.mjs",
             "./scripts/generate-wave2-product-quality-scorecard.mjs",
             "./scripts/check-product-ci-matrices.mjs",
             "./scripts/check-affected-product-strict-release-profile.mjs",
+            "./scripts/check-product-family-asset-promotion-policy.mjs",
+            "./scripts/check-yappc-product-family-control-plane.mjs",
             "./scripts/check-kernel-implementation-task-matrix.mjs",
             "./scripts/check-kernel-implementation-plan-coverage.mjs"
           ]
@@ -162,6 +192,10 @@
     {
       "area": "strict-release-gate-evidence",
       "scripts": [
+        "./scripts/check-product-family-asset-registry.mjs",
+        "./scripts/check-product-family-asset-promotion-policy.mjs",
+        "./scripts/check-product-release-evidence-packs.mjs",
+        "./scripts/check-release-profile-local-targets.mjs",
         "./scripts/check-data-cloud-release-runtime-profile.mjs",
         "./scripts/check-affected-product-strict-release-profile.mjs",
         "./scripts/check-kernel-implementation-plan-coverage.mjs"
@@ -186,6 +220,7 @@
       "area": "security-and-doc-truth-gates",
       "scripts": [
         "./scripts/check-secret-default-credentials.mjs",
+        "./scripts/check-production-stubs.mjs",
         "./scripts/check-route-entitlement-contracts.mjs",
         "./scripts/check-doc-claims-evidence.mjs",
         "./scripts/check-current-state-claims.mjs",

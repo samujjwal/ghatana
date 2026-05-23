@@ -229,6 +229,15 @@ yappc-services:
     operationId: listProductFamilyAssets
     auditEventType: PRODUCT_FAMILY_ASSETS_LIST
     privacyClassification: CONFIDENTIAL
+  - method: POST
+    path: /api/v1/yappc/product-family/assets/{assetId}/promotions
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: promoteProductFamilyAsset
+    auditEventType: PRODUCT_FAMILY_ASSET_PROMOTE
+    privacyClassification: CONFIDENTIAL
   - method: GET
     path: /api/v1/yappc/product-family/doc-truth
     auth: required

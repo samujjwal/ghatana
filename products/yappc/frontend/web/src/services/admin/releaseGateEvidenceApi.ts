@@ -211,7 +211,7 @@ async function fetchApiReleaseGates(
     throw new Error(`Failed to load release gate evidence: ${detail}`);
   }
 
-  const payload = await parseJsonResponse<unknown>(response, 'release gate evidence');
+  const payload = await parseJsonResponse(response, 'release gate evidence');
   const items = readApiItems(payload);
   if (!items) {
     throw new Error('release gate evidence returned an unsupported payload shape');
@@ -245,7 +245,7 @@ async function fetchArtifactEvidence(
     };
   }
 
-  const payload = await parseJsonResponse<unknown>(response, `${descriptor.id} evidence`);
+  const payload = await parseJsonResponse(response, `${descriptor.id} evidence`);
   return normalizeRecord(payload, descriptor, fallbackTimestamp);
 }
 

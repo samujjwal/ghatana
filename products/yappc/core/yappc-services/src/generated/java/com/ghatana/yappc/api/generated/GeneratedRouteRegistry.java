@@ -66,6 +66,17 @@ public final class GeneratedRouteRegistry {
             PrivacyClassification.CONFIDENTIAL
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/v1/yappc/product-family/assets/{assetId}/promotions",
+            AuthMode.REQUIRED,
+            Set.of("project:write"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "promoteProductFamilyAsset",
+            "PRODUCT_FAMILY_ASSET_PROMOTE",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",
             "/api/v1/yappc/product-family/doc-truth",
             AuthMode.REQUIRED,

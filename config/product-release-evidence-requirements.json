@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "products": {
+    "phr": {
+      "requiredCategories": {
+        "build-test": [
+          "products/phr/build.gradle.kts",
+          "products/phr/lifecycle/readiness-evidence.yaml"
+        ],
+        "api-parity": [
+          "products/phr/docs/openapi.yaml",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrApiContractConformanceTest.java"
+        ],
+        "tenant-isolation-and-auth": [
+          "products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java",
+          "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+        ],
+        "policy-gates-and-audit": [
+          "products/phr/lifecycle/gate-packs/consent.yaml",
+          "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+        ],
+        "observability-i18n-a11y": [
+          "products/phr/apps/web/src/i18n/phrI18n.ts",
+          "products/phr/apps/web/tests/e2e/phr-a11y.spec.ts"
+        ],
+        "deployment-rollback": [
+          "products/phr/kernel-product.yaml",
+          "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml"
+        ]
+      }
+    },
+    "digital-marketing": {
+      "requiredCategories": {
+        "build-test": [
+          "products/digital-marketing/dm-application/build.gradle.kts",
+          "products/digital-marketing/dm-persistence/build.gradle.kts"
+        ],
+        "api-parity": [
+          "products/digital-marketing/dm-api/src/main/resources/openapi.json",
+          "products/digital-marketing/lifecycle/gate-packs/contract-test-coverage.yaml"
+        ],
+        "tenant-isolation-and-auth": [
+          "products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/security/DmosHttpContextFactory.java",
+          "products/digital-marketing/lifecycle/gate-packs/non-regulated-customer-data-minimization.yaml"
+        ],
+        "policy-gates-and-audit": [
+          "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml"
+        ],
+        "observability-i18n-a11y": [
+          "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/metrics/MicrometerDmosMetricsCollector.java",
+          "products/digital-marketing/ui/e2e/accessibility.spec.ts"
+        ],
+        "deployment-rollback": [
+          "products/digital-marketing/kernel-product.yaml",
+          ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json"
+        ]
+      }
+    }
+  }
+}

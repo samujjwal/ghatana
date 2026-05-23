@@ -163,6 +163,27 @@ describe('useCapabilityGate', () => {
     expect(result.current).toEqual({ granted: true, reason: undefined });
   });
 
+  it('grants product-family control plane when backend is live and workspace role is allowed', () => {
+    mockUseAuth.isAuthenticated = true;
+    mockUseAuth.hasRole.mockImplementation((role: string) => role === 'DEVELOPER');
+
+    const { result } = renderHook(() => useCapabilityGate('product-family:control-plane'), {
+      wrapper: createWorkspaceWrapper({
+        role: 'MEMBER',
+        isOwner: false,
+        capabilities: {
+          read: true,
+          create: false,
+          update: false,
+          delete: false,
+          comment: true,
+        },
+      }),
+    });
+
+    expect(result.current).toEqual({ granted: true, reason: undefined });
+  });
+
   it('does not let global roles override backend workspace role for admin capabilities', () => {
     mockUseAuth.isAuthenticated = true;
     mockUseAuth.hasRole.mockReturnValue(true);

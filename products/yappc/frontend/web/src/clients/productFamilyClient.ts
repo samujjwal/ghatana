@@ -41,6 +41,7 @@ const ProductAssetSchema = z.object({
   productUsage: z.array(z.unknown()),
   owner: z.string(),
   promotionTarget: z.string(),
+  promotionState: z.string(),
   compatibility: UnknownRecordSchema,
 });
 
@@ -69,12 +70,19 @@ const KernelTimelineSchema = z.object({
   rollbackVisibility: UnknownRecordSchema,
 });
 
+const AssetPromotionSchema = z.object({
+  status: z.string(),
+  asset: ProductAssetSchema,
+  promotion: UnknownRecordSchema,
+});
+
 export type ReleaseReadiness = z.infer<typeof ReleaseReadinessSchema>;
 export type ProductAsset = z.infer<typeof ProductAssetSchema>;
 export type AssetRegistry = z.infer<typeof AssetRegistrySchema>;
 export type DocTruthWarnings = z.infer<typeof DocTruthSchema>;
 export type GuidedReuseRecommendations = z.infer<typeof GuidedReuseSchema>;
 export type KernelTimeline = z.infer<typeof KernelTimelineSchema>;
+export type AssetPromotion = z.infer<typeof AssetPromotionSchema>;
 
 export interface ProductAssetFilters {
   readonly search?: string;
@@ -86,6 +94,13 @@ export interface ProductAssetFilters {
   readonly compatibility?: string;
 }
 
+export interface ProductAssetPromotionRequest {
+  readonly targetState: 'hardened' | 'production' | 'shared-package' | 'plugin' | 'template' | 'schema';
+  readonly promotionTarget?: string;
+  readonly evidenceRefs?: readonly unknown[];
+  readonly reason?: string;
+}
+
 const BASE_URL = '/api/v1/yappc/product-family';
 
 async function apiFetch<T>(url: string, schema: z.ZodType<T>): Promise<T> {
@@ -94,6 +109,25 @@ async function apiFetch<T>(url: string, schema: z.ZodType<T>): Promise<T> {
       Accept: 'application/json',
     },
     credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Product-family API error: ${response.status} ${response.statusText}`);
+  }
+
+  const raw: unknown = await response.json();
+  return schema.parse(raw);
+}
+
+async function apiJson<T>(url: string, body: unknown, schema: z.ZodType<T>): Promise<T> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -115,6 +149,17 @@ export function listProductAssets(filters: ProductAssetFilters = {}): Promise<As
   });
   const query = params.toString();
   return apiFetch(`${BASE_URL}/assets${query ? `?${query}` : ''}`, AssetRegistrySchema);
+}
+
+export function promoteProductAsset(
+  assetId: string,
+  request: ProductAssetPromotionRequest,
+): Promise<AssetPromotion> {
+  return apiJson(
+    `${BASE_URL}/assets/${encodeURIComponent(assetId)}/promotions`,
+    request,
+    AssetPromotionSchema,
+  );
 }
 
 export function listDocTruthWarnings(): Promise<DocTruthWarnings> {

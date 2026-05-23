@@ -449,6 +449,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                         productFamilyControlPlaneController::getReleaseReadiness)
                 .with(GET, "/api/v1/yappc/product-family/assets",
                         productFamilyControlPlaneController::listAssets)
+                .with(POST, "/api/v1/yappc/product-family/assets/:assetId/promotions",
+                        productFamilyControlPlaneController::promoteAsset)
                 .with(GET, "/api/v1/yappc/product-family/doc-truth",
                         productFamilyControlPlaneController::listDocTruthWarnings)
                 .with(GET, "/api/v1/yappc/product-family/reuse-recommendations/:targetProduct",

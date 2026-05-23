@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "policyId": "product-family-asset-promotion",
+  "states": ["candidate", "hardened", "production", "shared"],
+  "allowedTransitions": {
+    "candidate": ["hardened"],
+    "hardened": ["production"],
+    "production": ["shared"],
+    "shared": []
+  },
+  "requirements": {
+    "candidate": {
+      "minimumEvidenceRefs": 1,
+      "allowedTargetPromotions": ["shared-package", "kernel-plugin", "template", "schema-pack", "none"]
+    },
+    "hardened": {
+      "minimumEvidenceRefs": 2,
+      "allowedTargetPromotions": ["shared-package", "kernel-plugin", "template", "schema-pack"]
+    },
+    "production": {
+      "minimumEvidenceRefs": 2,
+      "allowedTargetPromotions": ["shared-package", "kernel-plugin", "template", "schema-pack"]
+    },
+    "shared": {
+      "minimumEvidenceRefs": 2,
+      "allowedTargetPromotions": ["shared-package", "kernel-plugin", "template", "schema-pack"]
+    }
+  }
+}

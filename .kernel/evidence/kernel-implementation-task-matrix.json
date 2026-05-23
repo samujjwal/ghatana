@@ -1,70 +1,44 @@
 {
-  "generatedAt": "2026-05-23T19:49:36.598Z",
+  "generatedAt": "2026-05-23T21:56:24.293Z",
   "status": "passed",
   "summary": {
-    "requiredTaskCount": 18,
-    "parsedTaskCount": 18,
+    "requiredTaskCount": 8,
+    "parsedTaskCount": 8,
     "statusCounts": {
-      "Partial": 18
+      "Partial": 5,
+      "Planned": 3
     },
-    "averageMaturityDepth": 2.39,
-    "warningCount": 12,
+    "averageMaturityDepth": 2.5,
+    "warningCount": 0,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-23T19:49:36.601Z",
+    "generatedAt": "2026-05-23T21:56:24.294Z",
     "targetMaturityDepth": 5,
-    "remainingTaskCount": 18,
+    "remainingTaskCount": 8,
     "deferredTaskIds": [],
     "waveBuckets": {
       "wave-1-foundation": [
-        1,
-        4,
+        8,
         5,
-        6,
-        9,
-        10,
+        7,
+        1,
         2,
         3,
-        7,
-        8
-      ],
-      "wave-2-runtime-governance": [
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18
+        4,
+        6
       ]
     },
     "tasks": [
       {
-        "id": 1,
-        "title": "TODO-001",
-        "status": "Partial",
-        "maturityDepth": 2,
+        "id": 8,
+        "title": "FND-008",
+        "status": "Planned",
+        "maturityDepth": 1,
         "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-1-foundation",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 4,
-        "title": "TODO-004",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
+        "depthGap": 4,
+        "ownerTeam": "YAPPC Frontend",
+        "ownerModule": "products/yappc/frontend/web",
         "requiredForRelease": true,
         "executionWave": "wave-1-foundation",
         "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
@@ -73,13 +47,13 @@
       },
       {
         "id": 5,
-        "title": "TODO-005",
-        "status": "Partial",
+        "title": "FND-005",
+        "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
         "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "products/yappc",
         "requiredForRelease": true,
         "executionWave": "wave-1-foundation",
         "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
@@ -87,14 +61,14 @@
         "deferReason": null
       },
       {
-        "id": 6,
-        "title": "TODO-006",
-        "status": "Partial",
+        "id": 7,
+        "title": "FND-007",
+        "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
         "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
+        "ownerTeam": "Product Family Platform",
+        "ownerModule": "docs",
         "requiredForRelease": true,
         "executionWave": "wave-1-foundation",
         "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
@@ -102,113 +76,23 @@
         "deferReason": null
       },
       {
-        "id": 9,
-        "title": "TODO-009",
+        "id": 1,
+        "title": "FND-001",
         "status": "Partial",
-        "maturityDepth": 2,
+        "maturityDepth": 3,
         "targetDepth": 5,
-        "depthGap": 3,
+        "depthGap": 2,
         "ownerTeam": "Kernel Release Engineering",
         "ownerModule": "scripts",
         "requiredForRelease": true,
         "executionWave": "wave-1-foundation",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 10,
-        "title": "TODO-010",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-1-foundation",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 11,
-        "title": "TODO-011",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 12,
-        "title": "TODO-012",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 13,
-        "title": "TODO-013",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 14,
-        "title": "TODO-014",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 15,
-        "title": "TODO-015",
-        "status": "Partial",
-        "maturityDepth": 2,
-        "targetDepth": 5,
-        "depthGap": 3,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
         "deferred": false,
         "deferReason": null
       },
       {
         "id": 2,
-        "title": "TODO-002",
+        "title": "FND-002",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -223,7 +107,7 @@
       },
       {
         "id": 3,
-        "title": "TODO-003",
+        "title": "FND-003",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -237,8 +121,8 @@
         "deferReason": null
       },
       {
-        "id": 7,
-        "title": "TODO-007",
+        "id": 4,
+        "title": "FND-004",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -252,61 +136,16 @@
         "deferReason": null
       },
       {
-        "id": 8,
-        "title": "TODO-008",
+        "id": 6,
+        "title": "FND-006",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
         "depthGap": 2,
         "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": "scripts",
-        "requiredForRelease": true,
-        "executionWave": "wave-1-foundation",
-        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 16,
-        "title": "TODO-016",
-        "status": "Partial",
-        "maturityDepth": 3,
-        "targetDepth": 5,
-        "depthGap": 2,
-        "ownerTeam": "Documentation Governance",
-        "ownerModule": "products/yappc/docs",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 17,
-        "title": "TODO-017",
-        "status": "Partial",
-        "maturityDepth": 3,
-        "targetDepth": 5,
-        "depthGap": 2,
-        "ownerTeam": "Kernel Release Engineering",
-        "ownerModule": ".github/workflows",
-        "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
-        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
-        "deferred": false,
-        "deferReason": null
-      },
-      {
-        "id": 18,
-        "title": "TODO-018",
-        "status": "Partial",
-        "maturityDepth": 3,
-        "targetDepth": 5,
-        "depthGap": 2,
-        "ownerTeam": "Frontend Experience",
         "ownerModule": "release-evidence",
         "requiredForRelease": true,
-        "executionWave": "wave-2-runtime-governance",
+        "executionWave": "wave-1-foundation",
         "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
         "deferred": false,
         "deferReason": null
@@ -318,13 +157,14 @@
       "ownerTeam": "Kernel Release Engineering",
       "ownerModule": "scripts",
       "status": "Partial",
-      "maturityDepth": 2,
+      "maturityDepth": 3,
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 1,
-      "title": "TODO-001",
+      "title": "FND-001",
       "whereRefs": [
-        "PhasePacketServiceImpl.java"
+        "phr",
+        "digital-marketing"
       ]
     },
     {
@@ -335,9 +175,10 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 2,
-      "title": "TODO-002",
+      "title": "FND-002",
       "whereRefs": [
-        "PhasePacketServiceImpl.queryPhaseBlockers"
+        "implemented/ready/enabled",
+        "local"
       ]
     },
     {
@@ -348,212 +189,76 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 3,
-      "title": "TODO-003",
+      "title": "FND-003",
       "whereRefs": [
-        "PhasePacketServiceImpl.determineAvailableActions"
+        "test-tenant",
+        "test-user",
+        "InMemory*",
+        "Noop*",
+        "fallback",
+        "disabled",
+        "sample",
+        "local-only"
       ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
       "ownerModule": "scripts",
       "status": "Partial",
-      "maturityDepth": 2,
+      "maturityDepth": 3,
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 4,
-      "title": "TODO-004",
+      "title": "FND-004",
       "whereRefs": [
-        "ProductUnitIntentExporter.java",
-        "ProductUnitIntentValidationService.java"
+        "implemented"
       ]
     },
     {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc",
+      "status": "Planned",
       "maturityDepth": 2,
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 5,
-      "title": "TODO-005",
-      "whereRefs": [
-        "CreateCommand.java"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 6,
-      "title": "TODO-006",
-      "whereRefs": [
-        "KernelLifecycleEventIngestService.java"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 3,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 7,
-      "title": "TODO-007",
-      "whereRefs": [
-        "KernelLifecycleEventIngestService.java"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 3,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 8,
-      "title": "TODO-008",
-      "whereRefs": [
-        "PhasePacketServiceImpl.calculatePhaseReadiness"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 9,
-      "title": "TODO-009",
-      "whereRefs": [
-        "PhasePacketServiceImpl.determineEnabledFlags"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 10,
-      "title": "TODO-010",
-      "whereRefs": [
-        "PhasePacketServiceImpl.queryPhaseEvidence"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 11,
-      "title": "TODO-011",
-      "whereRefs": [
-        "_phaseCockpit.tsx"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 12,
-      "title": "TODO-012",
-      "whereRefs": [
-        "usePhasePacket.ts",
-        "_phaseCockpit.tsx"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 13,
-      "title": "TODO-013",
+      "title": "FND-005",
       "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 14,
-      "title": "TODO-014",
-      "whereRefs": []
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts",
-      "status": "Partial",
-      "maturityDepth": 2,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 15,
-      "title": "TODO-015",
-      "whereRefs": []
-    },
-    {
-      "ownerTeam": "Documentation Governance",
-      "ownerModule": "products/yappc/docs",
-      "status": "Partial",
-      "maturityDepth": 3,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 16,
-      "title": "TODO-016",
-      "whereRefs": [
-        "KERNEL_VISIBILITY_AND_CONTROL_PLANE.md"
-      ]
-    },
-    {
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": ".github/workflows",
-      "status": "Partial",
-      "maturityDepth": 3,
-      "requiredForRelease": true,
-      "evidenceRefs": [],
-      "id": 17,
-      "title": "TODO-017",
-      "whereRefs": []
-    },
-    {
-      "ownerTeam": "Frontend Experience",
       "ownerModule": "release-evidence",
       "status": "Partial",
       "maturityDepth": 3,
       "requiredForRelease": true,
       "evidenceRefs": [],
-      "id": 18,
-      "title": "TODO-018",
+      "id": 6,
+      "title": "FND-006",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "docs",
+      "status": "Planned",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 7,
+      "title": "FND-007",
+      "whereRefs": []
+    },
+    {
+      "ownerTeam": "YAPPC Frontend",
+      "ownerModule": "products/yappc/frontend/web",
+      "status": "Planned",
+      "maturityDepth": 1,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 8,
+      "title": "FND-008",
       "whereRefs": []
     }
   ],
-  "warnings": [
-    "Task 1 references non-existing path \"PhasePacketServiceImpl.java\"",
-    "Task 4 references non-existing path \"ProductUnitIntentExporter.java\"",
-    "Task 4 references non-existing path \"ProductUnitIntentValidationService.java\"",
-    "Task 5 references non-existing path \"CreateCommand.java\"",
-    "Task 6 references non-existing path \"KernelLifecycleEventIngestService.java\"",
-    "Task 7 references non-existing path \"KernelLifecycleEventIngestService.java\"",
-    "Task 13 has no parsed Where references in implementation plan",
-    "Task 14 has no parsed Where references in implementation plan",
-    "Task 15 has no parsed Where references in implementation plan",
-    "Task 16 references non-existing path \"KERNEL_VISIBILITY_AND_CONTROL_PLANE.md\"",
-    "Task 17 has no parsed Where references in implementation plan",
-    "Task 18 has no parsed Where references in implementation plan"
-  ],
+  "warnings": [],
   "violations": []
 }

@@ -117,7 +117,7 @@ function ObservabilityRouteContent() {
         metrics={metrics}
         releaseGates={[...releaseGates]}
         isLoading={isLoading}
-        error={loadError}
+        error={loadError ?? undefined}
         onRefresh={() => {
           void refreshEvidence();
         }}

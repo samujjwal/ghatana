@@ -51,7 +51,7 @@ class LifecyclePhaseTruthMapperTest {
                 LifecyclePhaseTruthMapper.fromExecution(execution, "GENERATE");
 
         assertThat(snapshot.gateContext()).containsEntry("complete", false);
-        assertThat((List<?>) snapshot.gateContext().get("missingInputs"))
+        assertThat(strings(snapshot.gateContext().get("missingInputs")))
                 .contains("artifacts", "evidence", "featureFlags", "tenantEntitlements");
     }
 
@@ -68,7 +68,11 @@ class LifecyclePhaseTruthMapperTest {
         assertThat(snapshot.gateContext())
                 .containsEntry("policy.allowed", false)
                 .containsEntry("complete", false);
-        assertThat((List<?>) snapshot.gateContext().get("missingInputs")).contains("policy");
+        assertThat(strings(snapshot.gateContext().get("missingInputs"))).contains("policy");
+    }
+
+    private static List<String> strings(Object values) {
+        return ((List<?>) values).stream().map(String::valueOf).toList();
     }
 
     private static LifecycleExecutionRepository.LifecycleExecution execution(

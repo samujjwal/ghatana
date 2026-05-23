@@ -12,9 +12,13 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Product-family control-plane read API for YAPPC release cockpits and reusable assets.
@@ -87,19 +91,219 @@ public final class ProductFamilyControlPlaneController {
                 .limit(500)
                 .build();
         return dataCloudClient.query(tenantId, ASSET_COLLECTION, query)
-                .map(records -> records.stream()
-                        .map(record -> normalizeAssetRecord(record.id(), record.data()))
-                        .filter(asset -> assetMatches(asset, filters))
-                        .toList())
-                .map(assets -> Map.of(
-                        "status", assets.isEmpty() ? "NOT_READY" : "READY",
-                        "assets", assets,
+                .map(records -> {
+                    List<Map<String, Object>> allAssets = records.stream()
+                            .map(record -> normalizeAssetRecord(record.id(), record.data()))
+                            .toList();
+                    List<Map<String, Object>> matchedAssets = allAssets.stream()
+                            .filter(asset -> assetMatches(asset, filters))
+                            .toList();
+                    return Map.of(
+                        "status", assetRegistryStatus(allAssets, matchedAssets, filters),
+                        "assets", matchedAssets,
                         "appliedFilters", filters,
-                        "warnings", assets.isEmpty()
-                                ? List.of("No reusable product-family assets registered in Data Cloud")
-                                : List.of()))
+                        "warnings", assetRegistryWarnings(allAssets, matchedAssets, filters));
+                })
                 .map(this::jsonResponse)
                 .then((response, error) -> errorResponse(response, error, "asset registry", tenantId, null));
+    }
+
+    public Promise<HttpResponse> promoteAsset(HttpRequest request) {
+        Principal principal = request.getAttachment(Principal.class);
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(HttpResponse.ofCode(400).withJson("{\"error\":\"tenant context required\"}").build());
+        }
+        String assetId = request.getPathParameter("assetId");
+        if (assetId == null || assetId.isBlank()) {
+            return Promise.of(HttpResponse.ofCode(400).withJson("{\"error\":\"assetId is required\"}").build());
+        }
+        String actorId = principal != null && principal.getName() != null ? principal.getName() : "system";
+        String correlationId = correlationId(request);
+
+        return request.loadBody().then(body -> {
+            try {
+                String json = body.asString(StandardCharsets.UTF_8);
+                AssetPromotionRequest payload = objectMapper.readValue(json, AssetPromotionRequest.class);
+                String targetState = normalizePromotionState(payload.targetState());
+                if (targetState == null) {
+                    return Promise.of(HttpResponse.ofCode(400)
+                            .withJson("{\"error\":\"targetState must be hardened, production, shared-package, plugin, template, or schema\"}")
+                            .build());
+                }
+
+                return findAsset(tenantId, assetId)
+                        .then(found -> {
+                            if (found.isEmpty()) {
+                                return Promise.of(HttpResponse.ofCode(404)
+                                        .withJson("{\"error\":\"asset not found\"}")
+                                        .build());
+                            }
+                            Map<String, Object> current = found.get().data();
+                            String currentState = currentPromotionState(current);
+                            if (!isAllowedPromotion(currentState, targetState)) {
+                                return Promise.of(HttpResponse.ofCode(409)
+                                        .withJson(promotionError(currentState, targetState))
+                                        .build());
+                            }
+
+                            Instant now = Instant.now();
+                            Map<String, Object> updatedAsset = promotedAsset(found.get().id(), assetId, current, payload, targetState, actorId, correlationId, now);
+                            Map<String, Object> history = promotionHistory(assetId, updatedAsset, payload, targetState, actorId, correlationId, now);
+                            return dataCloudClient.save(tenantId, ASSET_COLLECTION, updatedAsset)
+                                    .then(saved -> dataCloudClient.save(tenantId, "product_family_asset_history", history)
+                                            .map(ignored -> Map.of(
+                                                    "status", "PROMOTED",
+                                                    "asset", normalizeAssetRecord(assetId, saved.data()),
+                                                    "promotion", history)))
+                                    .map(this::jsonResponse);
+                        });
+            } catch (Exception e) {
+                return Promise.of(HttpResponse.ofCode(400)
+                        .withJson("{\"error\":\"Invalid asset promotion request\"}")
+                        .build());
+            }
+        }).then((response, error) -> errorResponse(response, error, "asset promotion", tenantId, assetId));
+    }
+
+    private Promise<Optional<DataCloudClient.Entity>> findAsset(String tenantId, String assetId) {
+        return dataCloudClient.findById(tenantId, ASSET_COLLECTION, assetId)
+                .then(found -> {
+                    if (found.isPresent()) {
+                        return Promise.of(found);
+                    }
+                    DataCloudClient.Query query = DataCloudClient.Query.builder()
+                            .filter(DataCloudClient.Filter.eq("asset_id", assetId))
+                            .limit(1)
+                            .build();
+                    return dataCloudClient.query(tenantId, ASSET_COLLECTION, query)
+                            .map(records -> records.stream().findFirst());
+                });
+    }
+
+    private Map<String, Object> promotedAsset(
+            String entityId,
+            String assetId,
+            Map<String, Object> current,
+            AssetPromotionRequest payload,
+            String targetState,
+            String actorId,
+            String correlationId,
+            Instant now) {
+        Map<String, Object> updated = new LinkedHashMap<>(current);
+        updated.put("id", entityId);
+        updated.put("asset_id", value(current, "asset_id", assetId));
+        updated.put("promotion_state", targetState);
+        updated.put("promotion_target", payload.promotionTarget() == null ? "" : payload.promotionTarget());
+        updated.put("promotion_reason", payload.reason() == null ? "" : payload.reason());
+        updated.put("promotion_evidence_refs", payload.evidenceRefs() == null ? List.of() : payload.evidenceRefs());
+        updated.put("promoted_by", actorId);
+        updated.put("promotion_correlation_id", correlationId);
+        updated.put("version", nextVersion(current));
+        updated.put("updated_at", now.toString());
+        if ("hardened".equals(targetState) || "production".equals(targetState)) {
+            updated.put("maturity", targetState);
+        } else {
+            updated.put("maturity", "production");
+            updated.put("reuse_mode", targetState);
+        }
+        return updated;
+    }
+
+    private Map<String, Object> promotionHistory(
+            String assetId,
+            Map<String, Object> updatedAsset,
+            AssetPromotionRequest payload,
+            String targetState,
+            String actorId,
+            String correlationId,
+            Instant now) {
+        return Map.of(
+                "id", UUID.randomUUID().toString(),
+                "asset_id", assetId,
+                "tenant_id", value(updatedAsset, "tenant_id", ""),
+                "version", value(updatedAsset, "version", 1),
+                "promotion_state", targetState,
+                "actor_id", actorId,
+                "correlation_id", correlationId,
+                "payload", Map.of(
+                        "targetState", targetState,
+                        "promotionTarget", payload.promotionTarget() == null ? "" : payload.promotionTarget(),
+                        "reason", payload.reason() == null ? "" : payload.reason(),
+                        "evidenceRefs", payload.evidenceRefs() == null ? List.of() : payload.evidenceRefs()),
+                "occurred_at", now.toString());
+    }
+
+    private int nextVersion(Map<String, Object> asset) {
+        Object value = asset.get("version");
+        if (value instanceof Number number) {
+            return number.intValue() + 1;
+        }
+        return 1;
+    }
+
+    private String currentPromotionState(Map<String, Object> asset) {
+        Object explicit = asset.get("promotion_state");
+        if (explicit != null && !String.valueOf(explicit).isBlank()) {
+            return normalizePromotionState(String.valueOf(explicit));
+        }
+        String reuseMode = String.valueOf(asset.getOrDefault("reuse_mode", ""));
+        String normalizedReuseMode = normalizePromotionState(reuseMode);
+        if (normalizedReuseMode != null && normalizedReuseMode.startsWith("shared")) {
+            return normalizedReuseMode;
+        }
+        return normalizePromotionState(String.valueOf(asset.getOrDefault("maturity", "candidate")));
+    }
+
+    private String normalizePromotionState(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toLowerCase(java.util.Locale.ROOT).replace('_', '-');
+        if (normalized.equals("shared")) {
+            return "shared-package";
+        }
+        return switch (normalized) {
+            case "candidate", "hardened", "production", "shared-package", "plugin", "template", "schema" -> normalized;
+            default -> null;
+        };
+    }
+
+    private boolean isAllowedPromotion(String currentState, String targetState) {
+        return ("candidate".equals(currentState) && "hardened".equals(targetState))
+                || ("hardened".equals(currentState) && "production".equals(targetState))
+                || ("production".equals(currentState)
+                && List.of("shared-package", "plugin", "template", "schema").contains(targetState));
+    }
+
+    private String promotionError(String currentState, String targetState) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(Map.of(
+                "error", "asset promotion transition is not allowed",
+                "currentState", currentState == null ? "unknown" : currentState,
+                "targetState", targetState));
+    }
+
+    private String assetRegistryStatus(
+            List<Map<String, Object>> allAssets,
+            List<Map<String, Object>> matchedAssets,
+            Map<String, String> filters) {
+        if (!matchedAssets.isEmpty()) {
+            return "READY";
+        }
+        return filters.isEmpty() || allAssets.isEmpty() ? "NOT_READY" : "NO_MATCHES";
+    }
+
+    private List<String> assetRegistryWarnings(
+            List<Map<String, Object>> allAssets,
+            List<Map<String, Object>> matchedAssets,
+            Map<String, String> filters) {
+        if (!matchedAssets.isEmpty()) {
+            return List.of();
+        }
+        if (!filters.isEmpty() && !allAssets.isEmpty()) {
+            return List.of("No reusable product-family assets match the applied filters");
+        }
+        return List.of("No reusable product-family assets registered in Data Cloud");
     }
 
     public Promise<HttpResponse> listDocTruthWarnings(HttpRequest request) {
@@ -122,14 +326,17 @@ public final class ProductFamilyControlPlaneController {
         }
         String targetProduct = request.getPathParameter("targetProduct");
         DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("targetProduct", targetProduct))
                 .limit(100)
                 .build();
         return dataCloudClient.query(tenantId, REUSE_COLLECTION, query)
+                .map(records -> records.stream()
+                        .map(DataCloudClient.Entity::data)
+                        .filter(data -> targetProduct.equals(value(data, "targetProduct", value(data, "target_product", ""))))
+                        .toList())
                 .map(records -> Map.of(
                         "targetProduct", targetProduct,
                         "status", records.isEmpty() ? "NOT_READY" : "READY",
-                        "recommendations", records.stream().map(record -> record.data()).toList()))
+                        "recommendations", records))
                 .map(this::jsonResponse)
                 .then((response, error) -> errorResponse(response, error, "guided reuse", tenantId, targetProduct));
     }
@@ -141,17 +348,19 @@ public final class ProductFamilyControlPlaneController {
         }
         String productUnitId = request.getPathParameter("productUnitId");
         DataCloudClient.Query query = DataCloudClient.Query.builder()
-                .filter(DataCloudClient.Filter.eq("productUnitId", productUnitId))
                 .sorts(List.of(DataCloudClient.Sort.asc("occurredAt")))
                 .limit(200)
                 .build();
         return dataCloudClient.query(tenantId, "kernel_lifecycle_truth", query)
+                .map(records -> records.stream()
+                        .map(DataCloudClient.Entity::data)
+                        .filter(data -> productUnitId.equals(value(data, "productUnitId", value(data, "product_unit_id", ""))))
+                        .toList())
                 .map(records -> Map.of(
                         "productUnitId", productUnitId,
                         "status", records.isEmpty() ? "NOT_READY" : "READY",
-                        "timeline", records.stream().map(record -> record.data()).toList(),
+                        "timeline", records,
                         "rollbackVisibility", records.stream()
-                                .map(DataCloudClient.Entity::data)
                                 .filter(data -> Boolean.TRUE.equals(data.get("rollbackAvailable")))
                                 .findFirst()
                                 .orElse(Map.of("rollbackAvailable", false, "executedBy", "kernel"))))
@@ -192,6 +401,7 @@ public final class ProductFamilyControlPlaneController {
         result.put("productUsage", value(data, "product_usage", List.of()));
         result.put("owner", value(data, "owner", "unassigned"));
         result.put("promotionTarget", value(data, "promotion_target", ""));
+        result.put("promotionState", value(data, "promotion_state", value(data, "maturity", "candidate")));
         result.put("compatibility", value(data, "compatibility", Map.of()));
         return Map.copyOf(result);
     }
@@ -269,6 +479,11 @@ public final class ProductFamilyControlPlaneController {
         return header == null || header.isBlank() ? null : header;
     }
 
+    private String correlationId(HttpRequest request) {
+        String header = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
+        return header == null || header.isBlank() ? UUID.randomUUID().toString() : header;
+    }
+
     private HttpResponse jsonResponse(Object payload) {
         try {
             return HttpResponse.ok200().withJson(objectMapper.writeValueAsString(payload)).build();
@@ -290,5 +505,12 @@ public final class ProductFamilyControlPlaneController {
         return Promise.of(HttpResponse.ofCode(503)
                 .withJson("{\"status\":\"UNAVAILABLE\",\"error\":\"Data Cloud read model unavailable\"}")
                 .build());
+    }
+
+    private record AssetPromotionRequest(
+            String targetState,
+            String promotionTarget,
+            List<Object> evidenceRefs,
+            String reason) {
     }
 }

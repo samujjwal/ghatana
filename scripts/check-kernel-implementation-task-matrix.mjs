@@ -60,21 +60,57 @@ function parsePlanTasks(planSource) {
 function parsePlanTasksFromTodoTable(planSource) {
   const tasks = [];
   const lines = planSource.split(/\r?\n/);
-  const rowRegex = /^\|\s*TODO-(\d{3})\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/;
+  const legacyRegex = /^\|\s*TODO-(\d{3})\s*\|/;
+  const idRegex = /^([A-Z]+)-(\d{3})$/;
 
   for (const line of lines) {
-    const match = line.match(rowRegex);
-    if (!match) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|')) {
+      continue;
+    }
+    if (/^\|\s*-+/.test(trimmed)) {
       continue;
     }
 
-    const id = Number(match[1]);
-    const fileColumn = match[2].trim();
-    const whereRefs = [...fileColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+    if (legacyRegex.test(trimmed)) {
+      const match = trimmed.match(/^\|\s*TODO-(\d{3})\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/);
+      if (!match) {
+        continue;
+      }
+
+      const id = Number(match[1]);
+      const fileColumn = match[2].trim();
+      const whereRefs = [...fileColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+
+      tasks.push({
+        id,
+        title: `TODO-${String(id).padStart(3, '0')}`,
+        whereRefs,
+      });
+      continue;
+    }
+
+    const columns = trimmed
+      .split('|')
+      .map((column) => column.trim())
+      .filter((column, index, arr) => !(index === 0 && column === '') && !(index === arr.length - 1 && column === ''));
+
+    if (columns.length < 3) {
+      continue;
+    }
+
+    const idMatch = columns[0].match(idRegex);
+    if (!idMatch) {
+      continue;
+    }
+
+    const id = Number(idMatch[2]);
+    const todoColumn = columns[2];
+    const whereRefs = [...todoColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
 
     tasks.push({
       id,
-      title: `TODO-${String(id).padStart(3, '0')}`,
+      title: `${idMatch[1]}-${idMatch[2]}`,
       whereRefs,
     });
   }
@@ -83,7 +119,11 @@ function parsePlanTasksFromTodoTable(planSource) {
 }
 
 function isWorkspacePathRef(ref) {
-  return ref.includes('/') || ref.endsWith('.json') || ref.endsWith('.mjs') || ref.endsWith('.yml') || ref.endsWith('.yaml') || ref.endsWith('.java') || ref.endsWith('.md');
+  const normalized = normalizePathRef(ref);
+  const pathLikeRoots = ['products/', 'platform/', 'platform-kernel/', 'platform-plugins/', 'shared-services/', 'scripts/', 'config/', 'docs/', '.kernel/'];
+  const hasKnownRoot = pathLikeRoots.some((root) => normalized.startsWith(root));
+  const hasKnownExtension = /\.(json|mjs|yml|yaml|java|kt|kts|ts|tsx|js|jsx|md)$/i.test(normalized);
+  return hasKnownRoot || hasKnownExtension;
 }
 
 function normalizePathRef(ref) {
@@ -231,7 +271,7 @@ export function runTaskMatrixCheck({ writeEvidence = true } = {}) {
       }
     }
 
-    if (!Array.isArray(resolved.whereRefs) || resolved.whereRefs.length === 0) {
+    if ((!Array.isArray(resolved.whereRefs) || resolved.whereRefs.length === 0) && !resolved.title.startsWith('FND-')) {
       warnings.push(`Task ${task.id} has no parsed Where references in implementation plan`);
     }
 

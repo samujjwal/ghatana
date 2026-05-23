@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-23T04:09:40.157Z",
+  "generated": "2026-05-23T21:42:53.169Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -626,8 +626,15 @@
       ],
       "gatesNeeded": [
         "a11y",
+        "bridge-compliance",
+        "connector-google-ads-proof",
         "i18n",
+        "lifecycle-contract-validation",
+        "manifest-validation",
+        "marketing-consent-boundary",
+        "persistence-proof",
         "privacy",
+        "registry-validation",
         "security"
       ],
       "readinessDimensions": {
@@ -721,12 +728,26 @@
       ],
       "capabilityGaps": [],
       "reasonCodes": [
-        "execution-ready"
+        "bridge-compliance-active",
+        "execution-ready",
+        "marketing-consent-boundary-active",
+        "validated-digital-marketing-lifecycle-pilot"
       ],
       "nextActions": [
+        "Promote non-local deployment profiles after staging/prod adapter evidence gates pass",
+        "Keep migration and persistence evidence packs current for release validation",
         "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
-      "readinessEvidence": [],
+      "readinessEvidence": [
+        "products/digital-marketing/kernel-product.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/registry-validation.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/manifest-validation.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/lifecycle-contract-validation.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml",
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+      ],
       "executionReadiness": "executable",
       "status": "Pilot"
     },

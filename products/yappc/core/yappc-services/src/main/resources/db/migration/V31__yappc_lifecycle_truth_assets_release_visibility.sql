@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS product_family_assets (
     tests JSONB NOT NULL DEFAULT '[]'::jsonb,
     product_usage JSONB NOT NULL DEFAULT '[]'::jsonb,
     owner VARCHAR(255) NOT NULL,
+    promotion_state VARCHAR(64) NOT NULL DEFAULT 'candidate',
     promotion_target VARCHAR(255),
     compatibility JSONB NOT NULL DEFAULT '{}'::jsonb,
     version INTEGER NOT NULL DEFAULT 1,

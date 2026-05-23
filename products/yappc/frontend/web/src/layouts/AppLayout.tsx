@@ -41,6 +41,7 @@ import {
 } from '../state/atoms';
 import { ROUTES } from '../router/paths';
 import { useAppNavigation } from '../router/hooks';
+import { useCapabilityGate, type CapabilityName } from '../hooks/useCapabilityGate';
 
 // =============================================================================
 // Types
@@ -51,6 +52,7 @@ interface NavItem {
   path: string;
   icon: React.ReactNode;
   badge?: number;
+  capability?: CapabilityName;
 }
 
 interface LayoutUser {
@@ -82,7 +84,7 @@ const notificationsStateAtom = notificationsAtom as Atom<LayoutNotification[]>;
 const mainNavItems: NavItem[] = [
   { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: <Home className="w-5 h-5" /> },
   { label: 'Projects', path: ROUTES.PROJECTS, icon: <FolderKanban className="w-5 h-5" /> },
-  { label: 'Product Family', path: '/product-family', icon: <Boxes className="w-5 h-5" /> },
+  { label: 'Product Family', path: '/product-family', icon: <Boxes className="w-5 h-5" />, capability: 'product-family:control-plane' },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -103,7 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const currentUser = useAtomValue(currentUserStateAtom);
   const activeProject = useAtomValue(activeProjectStateAtom);
   const notifications = useAtomValue(notificationsStateAtom);
+  const productFamilyGate = useCapabilityGate('product-family:control-plane');
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const visibleMainNavItems = useMemo(
+    () => mainNavItems.filter((item) => item.capability !== 'product-family:control-plane' || productFamilyGate.granted),
+    [productFamilyGate.granted],
+  );
 
   return (
     <aside
@@ -163,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {mainNavItems.map((item) => (
+        {visibleMainNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

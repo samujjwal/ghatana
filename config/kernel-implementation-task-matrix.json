@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "planPath": "platform-kernel/docs/01-KERNEL_IMPLEMENTATION_PLAN.md",
-  "requiredTaskCount": 18,
+  "requiredTaskCount": 8,
   "defaults": {
     "ownerTeam": "Kernel Release Engineering",
     "ownerModule": "scripts",
@@ -15,6 +15,12 @@
     "deferredRequiresReason": true
   },
   "overrides": {
+    "1": {
+      "status": "Partial",
+      "maturityDepth": 3,
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts"
+    },
     "2": {
       "status": "Partial",
       "maturityDepth": 3,
@@ -27,35 +33,35 @@
       "ownerTeam": "Kernel Release Engineering",
       "ownerModule": "scripts"
     },
-    "7": {
+    "4": {
       "status": "Partial",
       "maturityDepth": 3,
       "ownerTeam": "Kernel Release Engineering",
       "ownerModule": "scripts"
+    },
+    "5": {
+      "status": "Planned",
+      "maturityDepth": 2,
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "products/yappc"
+    },
+    "6": {
+      "status": "Partial",
+      "maturityDepth": 3,
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "release-evidence"
+    },
+    "7": {
+      "status": "Planned",
+      "maturityDepth": 2,
+      "ownerTeam": "Product Family Platform",
+      "ownerModule": "docs"
     },
     "8": {
-      "status": "Partial",
-      "maturityDepth": 3,
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts"
-    },
-    "16": {
-      "status": "Partial",
-      "maturityDepth": 3,
-      "ownerTeam": "Documentation Governance",
-      "ownerModule": "products/yappc/docs"
-    },
-    "17": {
-      "status": "Partial",
-      "maturityDepth": 3,
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": ".github/workflows"
-    },
-    "18": {
-      "status": "Partial",
-      "maturityDepth": 3,
-      "ownerTeam": "Frontend Experience",
-      "ownerModule": "release-evidence"
+      "status": "Planned",
+      "maturityDepth": 1,
+      "ownerTeam": "YAPPC Frontend",
+      "ownerModule": "products/yappc/frontend/web"
     }
   }
 }

@@ -347,6 +347,51 @@ paths:
         "503":
           description: Data Cloud read model unavailable
 
+  /api/v1/yappc/product-family/assets/{assetId}/promotions:
+    post:
+      tags: [product-family]
+      summary: Promote a reusable product-family asset
+      operationId: promoteProductFamilyAsset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetState]
+              properties:
+                targetState:
+                  type: string
+                  enum: [hardened, production, shared-package, plugin, template, schema]
+                promotionTarget:
+                  type: string
+                evidenceRefs:
+                  type: array
+                  items: {}
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Asset promotion result
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Promotion transition is not allowed
+        "503":
+          description: Data Cloud read model unavailable
+
   /api/v1/yappc/product-family/doc-truth:
     get:
       tags: [product-family]
