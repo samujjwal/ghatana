@@ -82,10 +82,17 @@ public final class TenantExtractor {
     /**
      * Extracts tenant id from HTTP request, returning a default when absent.
      *
+     * <p><b>DEPRECATED</b> - Default fallback is being phased out for security reasons.
+     * Use {@link #fromHttpOrThrow(HttpRequest)} for user-facing paths to enforce
+     * tenant isolation. Default fallback should only be used for internal system
+     * paths where tenant context is optional.</p>
+     *
      * @param request      the ActiveJ HTTP request
      * @param defaultValue fallback tenant id
      * @return tenant id from header, or {@code defaultValue}
+     * @deprecated Use {@link #fromHttpOrThrow(HttpRequest)} for user-facing paths
      */
+    @Deprecated
     public static String fromHttpOrDefault(HttpRequest request, String defaultValue) {
         return fromHttp(request).orElse(defaultValue);
     }

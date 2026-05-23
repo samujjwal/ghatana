@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "generatedAt": "2026-05-23T00:00:00Z",
+  "assets": [
+    {
+      "asset_id": "phr-consent-panel",
+      "asset_name": "PHR Consent Panel",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "Reusable consent management panel for healthcare applications with granular consent tracking and patient-controlled preferences",
+      "tags": ["healthcare", "consent", "privacy", "ui", "patient-control"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          "products/phr/domains/consent/src/main/java/com/ghatana/phr/consent/"
+        ],
+        "test_coverage": "85%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/consent/ConsentPanel.tsx",
+        "products/phr/frontend/src/components/consent/ConsentPreferences.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:tokens"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      }
+    },
+    {
+      "asset_id": "phr-audit-trail-panel",
+      "asset_name": "PHR Audit Trail Panel",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "Comprehensive audit trail display component for healthcare data access and modifications with HIPAA-compliant logging",
+      "tags": ["healthcare", "audit", "compliance", "hipaa", "ui"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          "products/phr/domains/audit/src/main/java/com/ghatana/phr/audit/"
+        ],
+        "test_coverage": "90%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/audit/AuditTrailPanel.tsx",
+        "products/phr/frontend/src/components/audit/AuditEventDetail.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/audit/__tests__/AuditTrailPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:observability"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      }
+    },
+    {
+      "asset_id": "phr-fhir-validation-gate",
+      "asset_name": "PHR FHIR Validation Gate",
+      "asset_type": "service",
+      "source_product": "phr",
+      "description": "FHIR R4 validation service with schema validation, data type checking, and healthcare-specific constraints enforcement",
+      "tags": ["healthcare", "fhir", "validation", "hl7", "r4"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          "products/phr/hie/src/main/java/com/ghatana/phr/hie/fhir/"
+        ],
+        "test_coverage": "95%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/hie/src/main/java/com/ghatana/phr/hie/fhir/FhirValidationService.java",
+        "products/phr/hie/src/main/java/com/ghatana/phr/hie/fhir/FhirSchemaValidator.java"
+      ],
+      "tests": [
+        "products/phr/hie/src/test/java/com/ghatana/phr/hie/fhir/FhirValidationServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:core",
+        "platform:java:observability"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "phr-break-glass-workflow",
+      "asset_name": "PHR Break-Glass Workflow",
+      "asset_type": "workflow",
+      "source_product": "phr",
+      "description": "Emergency access workflow for healthcare with patient notification, audit logging, post-hoc review, and compliance evidence generation",
+      "tags": ["healthcare", "emergency", "break-glass", "compliance", "workflow"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          "products/phr/domains/emergency/src/main/java/com/ghatana/phr/emergency/"
+        ],
+        "test_coverage": "92%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/domains/emergency/src/main/java/com/ghatana/phr/emergency/BreakGlassWorkflowService.java",
+        "products/phr/domains/emergency/src/main/java/com/ghatana/phr/emergency/EmergencyAccessService.java"
+      ],
+      "tests": [
+        "products/phr/domains/emergency/src/test/java/com/ghatana/phr/emergency/BreakGlassWorkflowServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:workflow",
+        "platform:java:observability",
+        "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "phr-tenant-scoped-repository-pattern",
+      "asset_name": "PHR Tenant-Scoped Repository Pattern",
+      "asset_type": "pattern",
+      "source_product": "phr",
+      "description": "Repository pattern with automatic tenant isolation, row-level security, and multi-tenancy support for healthcare data",
+      "tags": ["healthcare", "repository", "tenant-isolation", "pattern", "multi-tenancy"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          "products/phr/domains/persistence/src/main/java/com/ghatana/phr/persistence/"
+        ],
+        "test_coverage": "88%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/domains/persistence/src/main/java/com/ghatana/phr/persistence/TenantScopedRepository.java",
+        "products/phr/domains/persistence/src/main/java/com/ghatana/phr/persistence/TenantContext.java"
+      ],
+      "tests": [
+        "products/phr/domains/persistence/src/test/java/com/ghatana/phr/persistence/TenantScopedRepositoryTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    }
+  ]
+}

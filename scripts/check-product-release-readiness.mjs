@@ -419,6 +419,148 @@ export function discoverAffectedProducts() {
   return filterReleaseEligibleProducts(result.affectedProducts, registry);
 }
 
+function validateProductionEvidence(productId, productMetadata) {
+  const gaps = [];
+  
+  // Check deployment targets from registry
+  const deploymentTargets = productMetadata?.deployment?.targets || [];
+  const environments = productMetadata?.environments?.supported || [];
+  
+  // Determine if product targets staging or prod
+  const targetsStaging = deploymentTargets.includes('staging') || environments.includes('staging');
+  const targetsProd = deploymentTargets.includes('prod') || environments.includes('prod');
+  
+  if (!targetsStaging && !targetsProd) {
+    return gaps; // No staging/prod target, no validation needed
+  }
+
+  // Helper to validate bootstrap evidence for a specific environment
+  function validateBootstrapEvidence(environment) {
+    const bootstrapEvidencePath = path.join(evidenceDir, productId, `${environment}-bootstrap-evidence.json`);
+    const bootstrapAltPath = path.join(evidenceDir, productId, 'bootstrap-evidence.json');
+    const bootstrapGenericPath = path.join(evidenceDir, productId, 'phr-release-readiness.json');
+    
+    const bootstrapEvidenceExists = existsSync(bootstrapEvidencePath) || 
+                                   existsSync(bootstrapAltPath) || 
+                                   existsSync(bootstrapGenericPath);
+    
+    if (!bootstrapEvidenceExists) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-bootstrap-evidence`,
+        reason: 'missing-bootstrap-evidence',
+        message: `Product ${productId} targets ${environment} but lacks bootstrap evidence file`,
+        environment,
+      });
+      return false;
+    }
+    
+    // Validate bootstrap evidence content
+    const evidencePath = existsSync(bootstrapEvidencePath) ? bootstrapEvidencePath :
+                        existsSync(bootstrapAltPath) ? bootstrapAltPath : bootstrapGenericPath;
+    const evidence = readJsonIfExists(evidencePath);
+    
+    if (!evidence || !evidence.bootstrap || !evidence.bootstrap.validated) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-bootstrap-evidence`,
+        reason: 'invalid-bootstrap-evidence',
+        message: `Product ${productId} ${environment} bootstrap evidence exists but is not validated`,
+        environment,
+      });
+      return false;
+    }
+    
+    // Check for required bootstrap fields
+    const requiredFields = ['postgres', 'migrations', 'secrets', 'storage', 'distributedCache'];
+    const missingFields = requiredFields.filter(field => !evidence.bootstrap[field]);
+    
+    if (missingFields.length > 0) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-bootstrap-evidence`,
+        reason: 'incomplete-bootstrap-evidence',
+        message: `Product ${productId} ${environment} bootstrap evidence missing required fields: ${missingFields.join(', ')}`,
+        environment,
+        missingFields,
+      });
+      return false;
+    }
+    
+    return true;
+  }
+
+  // Helper to validate rollback evidence for a specific environment
+  function validateRollbackEvidence(environment) {
+    const rollbackEvidencePath = path.join(evidenceDir, productId, `${environment}-rollback-evidence.json`);
+    const rollbackAltPath = path.join(evidenceDir, productId, 'rollback-evidence.json');
+    const rollbackPolicyPath = path.join(evidenceDir, productId, 'stable-deployment-manifest-history-policy.yaml');
+    
+    const rollbackEvidenceExists = existsSync(rollbackEvidencePath) || 
+                                  existsSync(rollbackAltPath) || 
+                                  existsSync(rollbackPolicyPath);
+    
+    if (!rollbackEvidenceExists) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-rollback-evidence`,
+        reason: 'missing-rollback-evidence',
+        message: `Product ${productId} targets ${environment} but lacks rollback evidence file`,
+        environment,
+      });
+      return false;
+    }
+    
+    // Validate rollback evidence content
+    const evidencePath = existsSync(rollbackEvidencePath) ? rollbackEvidencePath :
+                        existsSync(rollbackAltPath) ? rollbackAltPath : rollbackPolicyPath;
+    const evidence = readJsonIfExists(evidencePath);
+    
+    if (!evidence || (!evidence.rollback && !evidence.deploymentManifestHistory)) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-rollback-evidence`,
+        reason: 'invalid-rollback-evidence',
+        message: `Product ${productId} ${environment} rollback evidence exists but is not valid`,
+        environment,
+      });
+      return false;
+    }
+    
+    // Check for required rollback fields
+    const requiredFields = ['deploymentManifestHistory', 'artifactSelectionPolicy', 'approvalContract'];
+    const missingFields = requiredFields.filter(field => !evidence[field]);
+    
+    if (missingFields.length > 0) {
+      gaps.push({
+        severity: 'P0',
+        gate: `${environment}-rollback-evidence`,
+        reason: 'incomplete-rollback-evidence',
+        message: `Product ${productId} ${environment} rollback evidence missing required fields: ${missingFields.join(', ')}`,
+        environment,
+        missingFields,
+      });
+      return false;
+    }
+    
+    return true;
+  }
+
+  // Validate staging evidence if staging is a target
+  if (targetsStaging) {
+    validateBootstrapEvidence('staging');
+    validateRollbackEvidence('staging');
+  }
+
+  // Validate prod evidence if prod is a target
+  if (targetsProd) {
+    validateBootstrapEvidence('prod');
+    validateRollbackEvidence('prod');
+  }
+
+  return gaps;
+}
+
 export function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
   const { wave2Rows, releaseTargetScore } = options;
   const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
@@ -462,6 +604,10 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
       reason: 'missing-product-metadata',
     });
   }
+
+  // FND-002: Validate production evidence for products targeting production
+  const productionEvidenceGaps = validateProductionEvidence(productId, productMetadata);
+  blockingGaps.push(...productionEvidenceGaps);
 
   const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
   const belowTargetDimensions = dimensions

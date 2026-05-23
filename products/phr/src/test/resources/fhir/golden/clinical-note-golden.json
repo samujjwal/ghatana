@@ -1,0 +1,89 @@
+{
+  "resourceType": "ClinicalImpression",
+  "id": "clinical-note-golden-001",
+  "meta": {
+    "lastUpdated": "2026-05-23T12:00:00Z",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/ClinicalImpression"
+    ]
+  },
+  "status": "completed",
+  "description": "Patient presents with persistent cough and mild fever for 3 days. Physical examination reveals clear lung sounds bilaterally. No signs of respiratory distress. Suspected viral upper respiratory infection.",
+  "subject": {
+    "reference": "Patient/patient-golden-001",
+    "display": "Arjun Sharma"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-001"
+  },
+  "effectiveDateTime": "2026-05-23T10:00:00Z",
+  "date": "2026-05-23T10:30:00Z",
+  "assessor": {
+    "reference": "Practitioner/practitioner-001",
+    "display": "Dr. Sarah Johnson"
+  },
+  "problem": [
+    {
+      "condition": {
+        "reference": "Condition/condition-001",
+        "display": "Viral upper respiratory infection"
+      }
+    }
+  ],
+  "investigation": [
+    {
+      "item": {
+        "reference": "Observation/observation-lab-golden-001",
+        "display": "Platelet count"
+      }
+    },
+    {
+      "item": {
+        "reference": "ImagingStudy/imaging-study-golden-001",
+        "display": "CT Chest"
+      }
+    }
+  ],
+  "finding": [
+    {
+      "itemCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "267036007",
+            "display": "Dyspnea"
+          }
+        ],
+        "text": "Shortness of breath"
+      },
+      "basis": [
+        "Patient reported mild shortness of breath on exertion"
+      ]
+    },
+    {
+      "itemCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "386661006",
+            "display": "Fever"
+          }
+        ],
+        "text": "Fever"
+      },
+      "basis": [
+        "Temperature 38.2°C"
+      ]
+    }
+  ],
+  "note": [
+    {
+      "authorReference": {
+        "reference": "Practitioner/practitioner-001",
+        "display": "Dr. Sarah Johnson"
+      },
+      "time": "2026-05-23T10:30:00Z",
+      "text": "Patient advised to rest, increase fluid intake, and monitor symptoms. Prescribed amoxicillin for potential bacterial superinfection. Follow up in 5 days if symptoms persist."
+    }
+  ]
+}

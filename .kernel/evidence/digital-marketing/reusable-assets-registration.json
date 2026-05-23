@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "generatedAt": "2026-05-23T00:00:00Z",
+  "assets": [
+    {
+      "asset_id": "dmos-approval-queue",
+      "asset_name": "DMOS Approval Queue",
+      "asset_type": "service",
+      "source_product": "digital-marketing",
+      "description": "Multi-stage approval queue for marketing campaigns with role-based approvals, delegation, and audit trail",
+      "tags": ["marketing", "approval", "workflow", "governance", "campaign"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          "products/digital-marketing/domains/approval/src/main/java/com/ghatana/digitalmarketing/approval/"
+        ],
+        "test_coverage": "87%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/domains/approval/src/main/java/com/ghatana/digitalmarketing/approval/ApprovalQueueService.java",
+        "products/digital-marketing/domains/approval/src/main/java/com/ghatana/digitalmarketing/approval/ApprovalWorkflowEngine.java"
+      ],
+      "tests": [
+        "products/digital-marketing/domains/approval/src/test/java/com/ghatana/digitalmarketing/approval/ApprovalQueueServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:workflow",
+        "platform:java:observability",
+        "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "dmos-connector-workflow",
+      "asset_name": "DMOS Connector Workflow",
+      "asset_type": "workflow",
+      "source_product": "digital-marketing",
+      "description": "Generic connector workflow pattern with OAuth handshake, idempotency, retry logic, DLQ, compensation, and external ID persistence",
+      "tags": ["marketing", "connector", "workflow", "integration", "oauth"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/"
+        ],
+        "test_coverage": "92%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/ConnectorWorkflowEngine.java",
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/ConnectorRetryHandler.java"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProductionProofTest.java"
+      ],
+      "dependencies": [
+        "platform:java:workflow",
+        "platform:java:observability",
+        "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "dmos-campaign-dashboard",
+      "asset_name": "DMOS Campaign Dashboard",
+      "asset_type": "ui-component",
+      "source_product": "digital-marketing",
+      "description": "Campaign management dashboard with performance metrics, budget tracking, and multi-channel visibility",
+      "tags": ["marketing", "dashboard", "campaign", "analytics", "ui"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          "products/digital-marketing/frontend/src/components/campaign/"
+        ],
+        "test_coverage": "80%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/frontend/src/components/campaign/CampaignDashboard.tsx",
+        "products/digital-marketing/frontend/src/components/campaign/CampaignMetrics.tsx"
+      ],
+      "tests": [
+        "products/digital-marketing/frontend/src/components/campaign/__tests__/CampaignDashboard.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:tokens"
+      ],
+      "product_usage": [],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      }
+    },
+    {
+      "asset_id": "dmos-ai-transparency-panel",
+      "asset_name": "DMOS AI Transparency Panel",
+      "asset_type": "ui-component",
+      "source_product": "digital-marketing",
+      "description": "AI action transparency panel displaying prompt metadata, model version, confidence scores, rationale, and policy decisions",
+      "tags": ["marketing", "ai", "transparency", "governance", "ui"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          "products/digital-marketing/frontend/src/components/ai/"
+        ],
+        "test_coverage": "85%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/frontend/src/components/ai/AiTransparencyPanel.tsx",
+        "products/digital-marketing/frontend/src/components/ai/AiActionLog.tsx"
+      ],
+      "tests": [
+        "products/digital-marketing/frontend/src/components/ai/__tests__/AiTransparencyPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:observability"
+      ],
+      "product_usage": [],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      }
+    },
+    {
+      "asset_id": "dmos-retry-dlq-pattern",
+      "asset_name": "DMOS Retry/DLQ Pattern",
+      "asset_type": "pattern",
+      "source_product": "digital-marketing",
+      "description": "Retry pattern with exponential backoff, dead-letter queue, compensation, and idempotency guarantees for external integrations",
+      "tags": ["marketing", "retry", "dlq", "pattern", "resilience"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/"
+        ],
+        "test_coverage": "95%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/RetryPolicy.java",
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/DeadLetterQueueHandler.java"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProductionProofTest.java"
+      ],
+      "dependencies": [
+        "platform:java:core",
+        "platform:java:observability"
+      ],
+      "product_usage": [],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "resourceType": "ServiceRequest",
+  "id": "service-request-referral-golden-001",
+  "meta": {
+    "lastUpdated": "2026-05-23T12:00:00Z",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/ServiceRequest"
+    ]
+  },
+  "status": "active",
+  "intent": "order",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "103696004",
+          "display": "Referral"
+        }
+      ],
+      "text": "Referral"
+    }
+  ],
+  "priority": "routine",
+  "code": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "306205008",
+        "display": "Referral to pulmonologist"
+      }
+    ],
+    "text": "Referral to pulmonologist"
+  },
+  "subject": {
+    "reference": "Patient/patient-golden-001",
+    "display": "Arjun Sharma"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-001"
+  },
+  "occurrenceDateTime": "2026-05-23T10:00:00Z",
+  "authoredOn": "2026-05-23T10:00:00Z",
+  "requester": {
+    "reference": "Practitioner/practitioner-001",
+    "display": "Dr. Sarah Johnson"
+  },
+  "performer": [
+    {
+      "reference": "Practitioner/practitioner-002",
+      "display": "Dr. Michael Chen - Pulmonologist"
+    }
+  ],
+  "reasonCode": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "267036007",
+          "display": "Dyspnea"
+        }
+      ],
+      "text": "Persistent shortness of breath requiring specialist evaluation"
+    }
+  ],
+  "reasonReference": [
+    {
+      "reference": "Condition/condition-001",
+      "display": "Viral upper respiratory infection"
+    }
+  ],
+  "supportingInfo": [
+    {
+      "reference": "Observation/observation-lab-golden-001",
+      "display": "Platelet count"
+    },
+    {
+      "reference": "ImagingStudy/imaging-study-golden-001",
+      "display": "CT Chest"
+    }
+  ],
+  "note": [
+    {
+      "authorReference": {
+        "reference": "Practitioner/practitioner-001",
+        "display": "Dr. Sarah Johnson"
+      },
+      "time": "2026-05-23T10:00:00Z",
+      "text": "Patient presents with persistent dyspnea despite treatment for viral URI. CT chest shows no acute abnormalities. Referring for pulmonology evaluation to rule out underlying chronic respiratory condition."
+    }
+  ],
+  "patientInstruction": "Please bring all previous imaging studies and lab results to your pulmonology appointment. Continue current medications until seen by specialist."
+}

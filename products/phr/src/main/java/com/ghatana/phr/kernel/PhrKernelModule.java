@@ -26,6 +26,9 @@ import com.ghatana.phr.hie.NepalHieConfig;
 import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hie.NepalHieMessageBuilder;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
+import com.ghatana.phr.kernel.event.PhrAuditEvent;
+import com.ghatana.phr.kernel.event.PhrConsentEvent;
+import com.ghatana.phr.kernel.event.PhrLifecycleEvent;
 import com.ghatana.phr.kernel.service.AppointmentService;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.phr.kernel.service.CaregiverService;
@@ -225,7 +228,52 @@ public class PhrKernelModule implements KernelModule {
     }
 
     private void registerEventHandlers(KernelContext context) {
-        // Register PHR-specific event handlers when concrete events are promoted to kernel contracts.
+        // Register PHR lifecycle event handler
+        context.registerEventHandler(
+            PhrLifecycleEvent.class,
+            (PhrLifecycleEvent event) -> {
+                // Log lifecycle phase transitions for evidence collection
+                // In production, this would write to Data Cloud evidence store
+                // For now, we log to the kernel event system
+                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
+                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
+                    eventBus.publish("phr.lifecycle." + event.phase(), event);
+                }
+            }
+        );
+
+        // Register PHR audit event handler
+        context.registerEventHandler(
+            PhrAuditEvent.class,
+            (PhrAuditEvent event) -> {
+                // Log audit events for compliance evidence
+                // In production, this would write to audit sink (Elasticsearch/Data Cloud)
+                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
+                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
+                    eventBus.publish("phr.audit." + event.auditType(), event);
+                }
+            }
+        );
+
+        // Register PHR consent event handler
+        context.registerEventHandler(
+            PhrConsentEvent.class,
+            (PhrConsentEvent event) -> {
+                // Handle consent changes and trigger cache invalidation
+                // In production, this would invalidate distributed cache entries
+                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
+                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
+                    eventBus.publish("phr.consent." + event.action(), event);
+                }
+                
+                // Trigger cache invalidation for the affected consent
+                if (context.hasDependency(DistributedCachePort.class)) {
+                    DistributedCachePort<?, ?> cache = context.getDependency(DistributedCachePort.class);
+                    String cacheKey = event.patientId() + ":" + event.recipientId();
+                    cache.invalidate(cacheKey);
+                }
+            }
+        );
     }
 
     private void registerServices(KernelContext context) {

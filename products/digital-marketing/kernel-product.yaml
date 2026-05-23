@@ -6,6 +6,26 @@ executionEnabled: true
 allowExperimentalAdapters: false
 # Authoritative Source: docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md
 
+# Runtime Module Architecture Decision
+# runtimeModule: false is intentional and production-approved
+# 
+# Rationale:
+# - Digital Marketing is a standard web API product that leverages the Kernel's lifecycle framework
+# - The Kernel provides runtime infrastructure through its built-in lifecycle execution engine
+# - Product-specific runtime modules are only required for products with custom runtime orchestration needs
+# - Digital Marketing uses the standard kernel lifecycle phases (dev, build, test, deploy, verify, rollback)
+# - All runtime behavior is handled by kernel adapters (compose-local, kubernetes-manifest)
+# - No custom runtime orchestration or specialized execution logic is required
+#
+# Architectural Proof:
+# - Kernel lifecycle service (platform/typescript/kernel-lifecycle) handles all phase transitions
+# - Adapter assignments in this file define production-safe deployment targets
+# - Plugin bindings (audit, observability, data-access, identity-entitlement, security) provide cross-cutting concerns
+# - Policy packs enforce security and privacy boundaries at the kernel level
+# - The product focuses on business logic (campaigns, workspaces, Google Ads integration) not runtime orchestration
+#
+# This decision is documented in the canonical product registry and is part of the approved lifecycle architecture.
+
 readiness:
   reasonCodes:
     - validated-digital-marketing-lifecycle-pilot

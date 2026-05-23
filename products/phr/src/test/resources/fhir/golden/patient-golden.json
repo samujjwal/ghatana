@@ -1,0 +1,51 @@
+{
+  "resourceType": "Patient",
+  "id": "patient-golden-001",
+  "meta": {
+    "lastUpdated": "2026-05-23T12:00:00Z",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/Patient"
+    ]
+  },
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "9434765919"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Sharma",
+      "given": ["Arjun"],
+      "prefix": ["Mr"]
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "+977-984-1234567",
+      "use": "mobile"
+    },
+    {
+      "system": "email",
+      "value": "arjun.sharma@example.com",
+      "use": "home"
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1990-05-15",
+  "address": [
+    {
+      "use": "home",
+      "type": "both",
+      "line": ["123 Thamel Street"],
+      "city": "Kathmandu",
+      "district": "Bagmati",
+      "postalCode": "44600",
+      "country": "NP"
+    }
+  ],
+  "active": true
+}

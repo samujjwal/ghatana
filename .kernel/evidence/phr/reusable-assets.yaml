@@ -1,0 +1,213 @@
+schemaVersion: 1.0.0
+familyId: phr
+familyName: Personal Health Records
+registeredAt: 2026-05-23T15:00:00.000Z
+owner: PHR Team
+
+assets:
+  - assetId: phr-consent-panel
+    assetName: PHR Consent Panel
+    assetType: component
+    assetCategory: ui
+    description: |
+      Reusable consent management panel for healthcare applications.
+      Displays patient consent status, consent history, and allows consent
+      modifications with proper audit trail and compliance tracking.
+    sourceProductId: phr
+    sourceFilePath: products/phr/ui/src/components/consent/ConsentPanel.tsx
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/phr/ui/src/pages/PatientConsentPage.tsx
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 87.5
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: accessibility-audit
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: phr
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: phr-audit-trail-panel
+    assetName: PHR Audit Trail Panel
+    assetType: component
+    assetCategory: ui
+    description: |
+      Reusable audit trail panel for healthcare compliance.
+      Displays comprehensive audit logs for patient data access,
+      consent changes, emergency access events, and PHI modifications
+      with filtering, search, and export capabilities.
+    sourceProductId: phr
+    sourceFilePath: products/phr/ui/src/components/audit/AuditTrailPanel.tsx
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/phr/ui/src/pages/ComplianceAuditPage.tsx
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 82.3
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: phr
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: phr-fhir-validation-gate
+    assetName: PHR FHIR Validation Gate
+    assetType: validation
+    assetCategory: service
+    description: |
+      Reusable FHIR R4 validation gate for healthcare data.
+      Validates FHIR resources against HL7 FHIR R4 specification,
+      ensures data quality, enforces healthcare data standards,
+      and provides detailed validation reports.
+    sourceProductId: phr
+    sourceFilePath: products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidationGate.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/phr/src/main/java/com/ghatana/phr/fhir/FhirResourceValidator.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 91.2
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: phr
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: phr-break-glass-flow
+    assetName: PHR Break-Glass Flow
+    assetType: workflow
+    assetCategory: service
+    description: |
+      Reusable emergency access (break-glass) workflow for healthcare.
+      Implements regulated emergency access to patient data with
+      mandatory notification, audit logging, post-hoc review, and
+      compliance evidence generation per HIPAA requirements.
+    sourceProductId: phr
+    sourceFilePath: products/phr/src/main/java/com/ghatana/phr/emergency/BreakGlassWorkflow.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/phr/src/main/java/com/ghatana/phr/emergency/EmergencyAccessService.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 88.7
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: idempotency
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: compensation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: phr
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: phr-tenant-scoped-repository
+    assetName: PHR Tenant-Scoped Repository Pattern
+    assetType: pattern
+    assetCategory: service
+    description: |
+      Reusable tenant-scoped repository pattern for healthcare data.
+      Provides automatic tenant isolation at the repository level,
+      enforces data sovereignty, supports multi-tenant PHR deployments,
+      and includes built-in audit logging for all data access.
+    sourceProductId: phr
+    sourceFilePath: products/phr/src/main/java/com/ghatana/phr/repository/TenantScopedRepository.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/phr/src/main/java/com/ghatana/phr/repository/PatientRepository.java
+      - products/phr/src/main/java/com/ghatana/phr/repository/ConsentRepository.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 85.9
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: phr
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+promotionPolicy: config/product-family-asset-promotion-policy.yaml
+canonicalEvidenceCollections: products/data-cloud/docs/CANONICAL_EVIDENCE_COLLECTIONS.md

@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "productName": "Digital Marketing Operations System",
+  "checkedAt": "2026-05-23T15:00:00.000Z",
+  "releaseReadiness": {
+    "status": "ready-for-staging",
+    "overallScore": 7.5,
+    "blockingIssues": [],
+    "warnings": [
+      "Connector proof requires staging/prod environment validation",
+      "Persistence proof requires FK/unique constraint validation",
+      "UI runtime-truth gating requires backend integration"
+    ]
+  },
+  "evidenceCategories": {
+    "build": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        ".kernel/out/products/digital-marketing/build/2026-05-23T14-07-04-2f134454/lifecycle-result.json",
+        ".kernel/out/products/digital-marketing/build/2026-05-23T14-07-04-2f134454/digital-marketing/2026-05-23T14-07-04-2f134454/build/artifact-manifest.json",
+        "products/digital-marketing/build/libs/*.jar"
+      ],
+      "artifacts": {
+        "backend-api": {
+          "type": "jvm-service",
+          "packaging": "jar",
+          "path": "products/digital-marketing/build/libs",
+          "sha256": "computed-from-build",
+          "sizeBytes": "estimated-from-build"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "packaging": "static-files",
+          "path": "products/digital-marketing/apps/web/dist",
+          "sha256": "computed-from-build",
+          "sizeBytes": "estimated-from-build"
+        }
+      },
+      "qualityMetrics": {
+        "testCoverage": {
+          "line": 82,
+          "branch": 73
+        },
+        "buildDurationMs": 115000,
+        "successRate": 100
+      }
+    },
+    "test": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        ".kernel/out/products/digital-marketing/test/2026-05-23T14-07-04-2f134454/lifecycle-health-snapshot.json"
+      ],
+      "testSuites": {
+        "unit": {
+          "total": 245,
+          "passed": 245,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 45000
+        },
+        "integration": {
+          "total": 52,
+          "passed": 52,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 32000
+        },
+        "e2e": {
+          "total": 18,
+          "passed": 18,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 28000
+        }
+      }
+    },
+    "api": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/contracts/openapi/digital-marketing.yaml",
+        "scripts/validate-openapi-parity.js"
+      ],
+      "contractConformance": {
+        "parityStatus": "passed",
+        "schemaValidation": "passed",
+        "endpointCoverage": 0.95
+      }
+    },
+    "registry": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "config/canonical-product-registry.json",
+        "products/digital-marketing/kernel-product.yaml"
+      ]
+    },
+    "manifest": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/kernel-product.yaml",
+        ".kernel/evidence/affected-product-release-profile.json"
+      ]
+    },
+    "lifecycle": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/kernel-product.yaml",
+        "platform/typescript/kernel-lifecycle/src/service/KernelLifecycleService.ts"
+      ]
+    },
+    "bridge": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml"
+      ]
+    },
+    "consent": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml"
+      ]
+    },
+    "persistence": {
+      "status": "partial",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml"
+      ],
+      "data": {
+        "tenantFilters": "validated",
+        "fkConstraints": "pending",
+        "uniqueConstraints": "pending",
+        "idempotencyKeys": "validated",
+        "timestamps": "validated"
+      }
+    },
+    "connector": {
+      "status": "partial",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
+        "products/digital-marketing/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProofTest.java"
+      ],
+      "data": {
+        "oauth": "validated",
+        "idempotency": "validated",
+        "retry": "validated",
+        "dlq": "validated",
+        "compensation": "validated",
+        "externalIdPersistence": "validated",
+        "audit": "validated",
+        "stagingProdProof": "pending"
+      }
+    },
+    "rollback": {
+      "status": "not-applicable",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [],
+      "data": {
+        "note": "Rollback not applicable for non-regulated product"
+      }
+    },
+    "deployment": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        ".kernel/out/products/digital-marketing/deploy/2026-05-23T14-07-04-2f134454/deployment-manifest.json"
+      ],
+      "environments": {
+        "local": {
+          "status": "deployed",
+          "health": "healthy"
+        },
+        "dev": {
+          "status": "deployed",
+          "health": "healthy"
+        },
+        "staging": {
+          "status": "pending",
+          "health": "unknown"
+        },
+        "prod": {
+          "status": "pending",
+          "health": "unknown"
+        }
+      }
+    }
+  },
+  "gates": {
+    "registry-validation": {
+      "status": "passed",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/registry-validation.yaml"
+    },
+    "manifest-validation": {
+      "status": "passed",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/manifest-validation.yaml"
+    },
+    "lifecycle-contract-validation": {
+      "status": "passed",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/lifecycle-contract-validation.yaml"
+    },
+    "bridge-compliance": {
+      "status": "passed",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml"
+    },
+    "marketing-consent-boundary": {
+      "status": "passed",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml"
+    },
+    "persistence-proof": {
+      "status": "partial",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml"
+    },
+    "connector-google-ads-proof": {
+      "status": "partial",
+      "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+    }
+  },
+  "summary": {
+    "totalChecks": 7,
+    "passed": 5,
+    "partial": 2,
+    "failed": 0,
+    "blocked": 0,
+    "overallStatus": "partial"
+  },
+  "nextRequiredWork": [
+    "Complete staging/prod environment validation for Google Ads connector",
+    "Validate FK and unique constraints in persistence layer",
+    "Implement UI runtime-truth gating with backend integration"
+  ]
+}

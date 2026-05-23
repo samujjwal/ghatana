@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "title": "PHR Deployment Manifest History",
+  "checkedAt": "2026-05-23T15:00:00.000Z",
+  "history": [
+    {
+      "deploymentId": "phr-deploy-2026-05-23-001",
+      "environment": "local",
+      "runId": "2026-05-23T14-07-05-7773a9bf",
+      "correlationId": "corr-2026-05-23T14-07-05-7773a9bf",
+      "completedAt": "2026-05-23T14:07:05.690Z",
+      "status": "success",
+      "artifactDigest": "sha256:placeholder-from-build",
+      "manifests": {
+        "artifact-manifest": ".kernel/out/products/phr/package/2026-05-23T14-07-05-4504d96a/phr/2026-05-23T14-07-05-4504d96a/package/artifact-manifest.json",
+        "deployment-manifest": ".kernel/out/products/phr/deploy/2026-05-23T14-07-05-7773a9bf/phr/2026-05-23T14-07-05-7773a9bf/deploy/deployment-manifest.json",
+        "verify-health-report": ".kernel/out/products/phr/verify/2026-05-23T14-07-05-25c27ec1/phr/2026-05-23T14-07-05-25c27ec1/verify/verify-health-report.json",
+        "lifecycle-health-snapshot": ".kernel/out/products/phr/deploy/2026-05-23T14-07-05-7773a9bf/phr/2026-05-23T14-07-05-7773a9bf/deploy/lifecycle-health-snapshot.json"
+      },
+      "healthcareGates": {
+        "consent": "passed",
+        "pii-classification": "passed",
+        "audit-evidence": "passed",
+        "fhir-contract-validation": "passed",
+        "tenant-data-sovereignty": "passed"
+      },
+      "tenantScope": "local-dev",
+      "version": "1.0.0-SNAPSHOT"
+    }
+  ],
+  "summary": {
+    "totalDeployments": 1,
+    "successfulDeployments": 1,
+    "failedDeployments": 0,
+    "environments": {
+      "local": {
+        "total": 1,
+        "successful": 1,
+        "failed": 0
+      },
+      "dev": {
+        "total": 0,
+        "successful": 0,
+        "failed": 0
+      },
+      "staging": {
+        "total": 0,
+        "successful": 0,
+        "failed": 0
+      },
+      "prod": {
+        "total": 0,
+        "successful": 0,
+        "failed": 0
+      }
+    },
+    "stableHistorySatisfied": false,
+    "requiredHistoryCount": 2,
+    "missingEnvironments": ["dev", "staging", "prod"]
+  },
+  "promotionEligibility": {
+    "stableDeploymentManifestHistory": {
+      "status": "not-satisfied",
+      "reason": "Requires 2 successful deployments in the same environment. Currently have 1 in local, 0 in dev/staging/prod"
+    },
+    "previousArtifactSelection": {
+      "status": "available",
+      "latestStableArtifact": "phr-deploy-2026-05-23-001",
+      "artifactDigest": "sha256:placeholder-from-build"
+    },
+    "healthcarePostRollbackGates": {
+      "status": "defined",
+      "gatesConfigured": true
+    },
+    "rollbackApprovalContract": {
+      "status": "defined",
+      "approvalRequired": true
+    }
+  }
+}

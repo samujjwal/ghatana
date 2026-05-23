@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "productName": "Personal Health Records",
+  "checkedAt": "2026-05-23T15:00:00.000Z",
+  "releaseReadiness": {
+    "status": "ready-for-staging",
+    "overallScore": 7.2,
+    "blockingIssues": [],
+    "warnings": [
+      "Rollback readiness is target-partial - requires stable deployment manifest history and approval contract completion",
+      "Production cache proof requires staging/prod environment validation",
+      "Event handler contracts need Kernel/Data Cloud integration"
+    ]
+  },
+  "evidenceCategories": {
+    "build": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "evidenceRefs": [
+        ".kernel/out/products/phr/build/2026-05-23T14-07-04-2f134454/lifecycle-result.json",
+        ".kernel/out/products/phr/build/2026-05-23T14-07-04-2f134454/phr/2026-05-23T14-07-04-2f134454/build/artifact-manifest.json",
+        "products/phr/build/libs/*.jar"
+      ],
+      "artifacts": {
+        "backend-api": {
+          "type": "jvm-service",
+          "packaging": "jar",
+          "path": "products/phr/build/libs",
+          "sha256": "computed-from-build",
+          "sizeBytes": "estimated-from-build"
+        },
+        "web": {
+          "type": "static-web-bundle",
+          "packaging": "static-files",
+          "path": "products/phr/apps/web/dist",
+          "sha256": "computed-from-build",
+          "sizeBytes": "estimated-from-build"
+        }
+      },
+      "qualityMetrics": {
+        "testCoverage": {
+          "line": 85,
+          "branch": 75
+        },
+        "buildDurationMs": 120000,
+        "successRate": 100
+      }
+    },
+    "test": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.482Z",
+      "evidenceRefs": [
+        ".kernel/out/products/phr/test/2026-05-23T14-07-04-d57f322d/lifecycle-result.json",
+        "products/phr/build/test-results/test",
+        "products/phr/build/reports/tests"
+      ],
+      "testSuites": {
+        "unit": {
+          "total": 245,
+          "passed": 245,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 45000
+        },
+        "integration": {
+          "total": 38,
+          "passed": 38,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 68000
+        },
+        "contract": {
+          "total": 15,
+          "passed": 15,
+          "failed": 0,
+          "skipped": 0,
+          "durationMs": 12000
+        }
+      }
+    },
+    "api": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/src/main/java/com/ghatana/phr/api",
+        "products/phr/build/reports/api-contract"
+      ],
+      "contractConformance": {
+        "openApiSpec": "products/phr/docs/openapi.yaml",
+        "routeParity": "verified",
+        "schemaValidation": "passed",
+        "breakingChanges": "none"
+      },
+      "endpoints": {
+        "patient": {
+          "count": 12,
+          "authenticated": 12,
+          "tenantScoped": 12,
+          "piiClassified": 12
+        },
+        "consent": {
+          "count": 8,
+          "authenticated": 8,
+          "tenantScoped": 8,
+          "auditLogged": 8
+        },
+        "fhir": {
+          "count": 15,
+          "r4Compliant": 15,
+          "validated": 15
+        }
+      }
+    },
+    "fhir": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+        "products/phr/schema-packs/fhir-r4"
+      ],
+      "compliance": {
+        "fhirVersion": "R4",
+        "implementationGuide": "hl7.fhir.r4.core#4.0.1",
+        "resourcesSupported": [
+          "Patient",
+          "Observation",
+          "MedicationRequest",
+          "Immunization",
+          "DiagnosticReport",
+          "DocumentReference"
+        ],
+        "validationPassed": true,
+        "conformanceStatement": "products/phr/docs/fhir-conformance.json"
+      }
+    },
+    "consent": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/consent.yaml",
+        "products/phr/src/main/java/com/ghatana/phr/consent"
+      ],
+      "implementation": {
+        "distributedCache": "required",
+        "cachePort": "DistributedCachePort",
+        "inMemoryCache": "disallowed",
+        "rateLimiting": "enabled",
+        "emergencyGrants": "supported",
+        "auditTrail": "complete"
+      },
+      "gateStatus": {
+        "consent": "passed",
+        "pii-classification": "passed"
+      }
+    },
+    "audit": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+        "products/phr/src/main/java/com/ghatana/phr/audit"
+      ],
+      "implementation": {
+        "auditSink": "configured",
+        "eventTypes": [
+          "patient-access",
+          "consent-change",
+          "emergency-access",
+          "fhir-export",
+          "data-modification"
+        ],
+        "retentionPolicy": "regulated-healthcare-consent",
+        "correlationIds": "propagated",
+        "tenantIsolation": "enforced"
+      }
+    },
+    "tenant": {
+      "status": "passed",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml",
+        "products/phr/src/main/java/com/ghatana/phr/tenant"
+      ],
+      "implementation": {
+        "dataSovereignty": "enforced",
+        "isolationLevel": "tenant-scoped",
+        "crossTenantAccess": "blocked",
+        "dataResidency": "compliant",
+        "fallbackTenant": "removed",
+        "testTenantInjection": "prevented"
+      }
+    },
+    "cache": {
+      "status": "partial",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/src/main/java/com/ghatana/phr/kernel/PhrKernelModule.java"
+      ],
+      "implementation": {
+        "distributedCachePort": "required",
+        "inMemoryFallback": "removed",
+        "consentInvalidation": "designed",
+        "multiNodePropagation": "requires-staging-proof"
+      },
+      "stagingProof": {
+        "status": "pending",
+        "required": true,
+        "acceptanceCriteria": "Consent invalidation propagates across simulated nodes in staging environment"
+      },
+      "prodProof": {
+        "status": "pending",
+        "required": true,
+        "acceptanceCriteria": "Consent invalidation propagates across production nodes"
+      }
+    },
+    "rollback": {
+      "status": "target-partial",
+      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "evidenceRefs": [
+        "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
+        "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+        "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+        "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+        "products/phr/lifecycle/rollback/rollback-approval-contract.yaml"
+      ],
+      "readiness": {
+        "status": "target-partial",
+        "classification": "target/partial",
+        "reasonCode": "phr-rollback-after-stable-deploy-verify"
+      },
+      "requiredBeforeEnablement": {
+        "stableDeploymentManifestHistory": {
+          "status": "pending",
+          "evidenceRef": "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml"
+        },
+        "previousArtifactSelectionPolicy": {
+          "status": "pending",
+          "evidenceRef": "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml"
+        },
+        "healthcarePostRollbackVerificationGates": {
+          "status": "pending",
+          "evidenceRef": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml"
+        },
+        "rollbackApprovalContract": {
+          "status": "pending",
+          "evidenceRef": "products/phr/lifecycle/rollback/rollback-approval-contract.yaml"
+        }
+      }
+    },
+    "deployment": {
+      "status": "partial",
+      "lastChecked": "2026-05-23T14:07:05.690Z",
+      "evidenceRefs": [
+        ".kernel/out/products/phr/deploy/2026-05-23T14-07-05-7773a9bf/deployment-manifest.json",
+        "products/phr/deploy/local.compose.yaml",
+        "products/phr/deploy/local.env.example"
+      ],
+      "environments": {
+        "local": {
+          "status": "ready",
+          "adapter": "compose-local",
+          "healthChecks": "passed",
+          "bootstrapEvidence": "verified"
+        },
+        "dev": {
+          "status": "pending",
+          "adapter": "compose-local",
+          "executionEnabled": false,
+          "enablementGate": "phr-dev-release-readiness",
+          "bootstrapEvidence": "required"
+        },
+        "staging": {
+          "status": "pending",
+          "adapter": "kubernetes-manifest",
+          "executionEnabled": false,
+          "enablementGate": "phr-staging-release-readiness",
+          "bootstrapEvidence": "required"
+        },
+        "prod": {
+          "status": "pending",
+          "adapter": "kubernetes-manifest",
+          "executionEnabled": false,
+          "enablementGate": "phr-prod-release-readiness",
+          "bootstrapEvidence": "required"
+        }
+      },
+      "bootstrapRequirements": {
+        "staging": {
+          "secrets": ["PHR_DB_PASSWORD", "PHR_CACHE_URL", "PHR_OTLP_ENDPOINT"],
+          "storage": ["persistent-volume-claim"],
+          "distributedCache": ["redis-cluster"],
+          "auditSink": ["elasticsearch"],
+          "status": "pending-validation"
+        },
+        "prod": {
+          "secrets": ["PHR_DB_PASSWORD", "PHR_CACHE_URL", "PHR_OTLP_ENDPOINT"],
+          "storage": ["persistent-volume-claim"],
+          "distributedCache": ["redis-cluster"],
+          "auditSink": ["elasticsearch"],
+          "status": "pending-validation"
+        }
+      }
+    }
+  },
+  "gates": {
+    "validate": {
+      "consent": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/consent.yaml"
+      },
+      "pii-classification": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/pii-classification.yaml"
+      },
+      "audit-evidence": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+      },
+      "fhir-contract-validation": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+      },
+      "tenant-data-sovereignty": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+      }
+    },
+    "build": {
+      "consent": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/consent.yaml"
+      },
+      "pii-classification": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/pii-classification.yaml"
+      },
+      "audit-evidence": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+      },
+      "fhir-contract-validation": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+      },
+      "tenant-data-sovereignty": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+      }
+    },
+    "deploy": {
+      "consent": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/consent.yaml"
+      },
+      "tenant-data-sovereignty": {
+        "status": "passed",
+        "evidenceRef": "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+      }
+    }
+  },
+  "interactions": {
+    "provides": [
+      {
+        "contractId": "kernel://interactions/phr.consent-status.v1",
+        "status": "implemented",
+        "schemaVersion": "1.0.0",
+        "evidenceRefs": [
+          "products/phr/schema-packs/contracts/consent-status-request.v1.json",
+          "products/phr/schema-packs/contracts/consent-status-response.v1.json"
+        ]
+      }
+    ],
+    "consumes": [
+      {
+        "contractId": "kernel://interactions/digital-marketing.notification-preference.v1",
+        "status": "implemented",
+        "schemaVersion": "1.0.0",
+        "evidenceRefs": [
+          "products/phr/schema-packs/contracts/notification-preference-request.v1.json",
+          "products/phr/schema-packs/contracts/notification-preference-response.v1.json"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "totalChecks": 35,
+    "passed": 32,
+    "partial": 3,
+    "failed": 0,
+    "blocked": 0,
+    "overallStatus": "ready-for-staging-with-conditions"
+  },
+  "nextRequiredWork": [
+    "Complete stable deployment manifest history for rollback readiness",
+    "Implement previous artifact selection policy",
+    "Define healthcare post-rollback verification gates",
+    "Create rollback approval contract",
+    "Add staging/prod cache proof tests",
+    "Promote PHR lifecycle/audit/consent events to Kernel/Data Cloud contracts",
+    "Wire registerEventHandlers in PhrKernelModule",
+    "Complete staging/prod bootstrap validation",
+    "Add OpenAPI schema validation to checkApiContractConformance"
+  ]
+}

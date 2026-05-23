@@ -1,0 +1,302 @@
+schemaVersion: 1.0.0
+policyId: product-family-asset-promotion
+title: Product Family Asset Promotion Policy
+status: active
+effectiveDate: 2026-05-23
+owner: Kernel Team
+description: |
+  Defines the canonical policy for promoting product-specific assets to
+  product-family level reusable assets across all Ghatana products.
+
+promotionCriteria:
+  # Asset must meet all mandatory criteria
+  mandatory:
+    - id: schema-conformance
+      description: Asset must conform to canonical schema
+      validation: Asset schema validation passes
+      severity: blocking
+    
+    - id: production-safety
+      description: Asset must be production-safe (no mocks, stubs, or test-only code)
+      validation: Production fallback scanner passes
+      severity: blocking
+    
+    - id: test-coverage
+      description: Asset must have adequate test coverage
+      validation: Test coverage >= 80% for critical paths
+      severity: blocking
+    
+    - id: documentation
+      description: Asset must have comprehensive documentation
+      validation: Documentation includes purpose, usage, and examples
+      severity: blocking
+    
+    - id: tenant-isolation
+      description: Asset must respect tenant isolation
+      validation: Tenant context properly scoped
+      severity: blocking
+
+  # Asset should meet recommended criteria
+  recommended:
+    - id: observability
+      description: Asset should have observability hooks
+      validation: Structured logging and metrics present
+      severity: warning
+    
+    - id: error-handling
+      description: Asset should have robust error handling
+      validation: Errors are categorized and actionable
+      severity: warning
+    
+    - id: performance
+      description: Asset should meet performance SLAs
+      validation: Response time < 100ms for 95th percentile
+      severity: warning
+
+assetCategories:
+  # UI Components
+  ui-components:
+    allowedTypes:
+      - component
+      - pattern
+    validationGates:
+      - accessibility-audit
+      - i18n-compatibility
+      - responsive-design
+    promotionPath: product → family → platform
+  
+  # Services
+  services:
+    allowedTypes:
+      - service
+      - gateway
+    validationGates:
+      - api-contract-conformance
+      - rate-limiting
+      - circuit-breaker
+    promotionPath: product → family → platform
+  
+  # Workflows
+  workflows:
+    allowedTypes:
+      - workflow
+      - pipeline
+    validationGates:
+      - idempotency
+      - compensation
+      - retry-logic
+    promotionPath: product → family → platform
+  
+  # Policies
+  policies:
+    allowedTypes:
+      - policy
+      - validation
+    validationGates:
+      - policy-schema-validation
+      - rule-coverage
+      - test-scenarios
+    promotionPath: product → family → platform
+
+promotionWorkflow:
+  stages:
+    - stage: draft
+      description: Asset registered as draft
+      requiredActions:
+        - Register asset in product_family_reusable_assets table
+        - Set promotion_status to 'draft'
+        - Attach source file path and metadata
+      autoTransition: false
+    
+    - stage: proposed
+      description: Asset proposed for promotion
+      requiredActions:
+        - Run schema validation gate
+        - Run production safety gate
+        - Run test coverage gate
+        - Run documentation gate
+        - Set promotion_status to 'proposed'
+      autoTransition: true
+      transitionCondition: All mandatory gates pass
+    
+    - stage: review
+      description: Asset under review by product-family team
+      requiredActions:
+        - Review by product-family owner
+        - Review by platform architect
+        - Security review if applicable
+        - Set promotion_status to 'review'
+      autoTransition: false
+      approvalRequired: true
+      approvers:
+        - product-family-owner
+        - platform-architect
+    
+    - stage: approved
+      description: Asset approved for promotion
+      requiredActions:
+        - Update promotion_status to 'approved'
+        - Record promotion evidence
+        - Notify adopting products
+      autoTransition: true
+      transitionCondition: All approvals granted
+    
+    - stage: rejected
+      description: Asset rejected for promotion
+      requiredActions:
+        - Set promotion_status to 'rejected'
+        - Record rejection reason
+        - Notify asset owner
+      autoTransition: true
+      transitionCondition: Any approval denied or gate fails
+    
+    - stage: adopted
+      description: Asset adopted by one or more products
+      requiredActions:
+        - Record adoption in product_family_asset_adoption table
+        - Track adaptation notes
+        - Monitor usage metrics
+      autoTransition: false
+
+gates:
+  schema-validation:
+    type: automated
+    description: Validates asset against canonical schema
+    implementation: AssetSchemaValidator
+    severity: blocking
+  
+  production-safety:
+    type: automated
+    description: Scans for production-unsafe patterns
+    implementation: ProductionFallbackScanner
+    severity: blocking
+  
+  test-coverage:
+    type: automated
+    description: Validates test coverage meets threshold
+    implementation: TestCoverageValidator
+    severity: blocking
+  
+  documentation:
+    type: manual
+    description: Reviews documentation completeness
+    implementation: DocumentationReviewer
+    severity: blocking
+  
+  tenant-isolation:
+    type: automated
+    description: Validates tenant context handling
+    implementation: TenantIsolationValidator
+    severity: blocking
+  
+  accessibility-audit:
+    type: automated
+    description: Runs accessibility audit on UI components
+    implementation: AccessibilityAuditor
+    severity: warning
+  
+  api-contract-conformance:
+    type: automated
+    description: Validates API contract conformance
+    implementation: ApiContractValidator
+    severity: blocking
+  
+  idempotency:
+    type: automated
+    description: Validates workflow idempotency
+    implementation: IdempotencyValidator
+    severity: blocking
+
+approvalRoles:
+  product-family-owner:
+    description: Owner of the product family
+    responsibilities:
+      - Review asset relevance to family
+      - Approve or reject promotion
+      - Ensure alignment with family strategy
+  
+  platform-architect:
+    description: Platform architecture reviewer
+    responsibilities:
+      - Review architectural soundness
+      - Ensure platform compatibility
+      - Approve or reject promotion
+  
+  security-reviewer:
+    description: Security reviewer (conditional)
+    responsibilities:
+      - Review security implications
+      - Ensure compliance with security policies
+      - Approve or reject promotion
+    requiredWhen:
+      - asset handles PII
+      - asset implements authentication/authorization
+      - asset processes financial data
+
+adoptionTracking:
+  metrics:
+    - adoption-count
+    - adaptation-rate
+    - usage-frequency
+    - bug-reports
+    - enhancement-requests
+  
+  retention:
+    draft: 30 days
+    proposed: 90 days
+    rejected: 180 days
+    approved: indefinite
+    adopted: indefinite
+
+deprecationPolicy:
+  triggers:
+    - asset replaced by newer version
+    - asset no longer maintained
+    - asset has critical security vulnerability
+    - asset adoption rate below threshold for 6 months
+  
+  process:
+    - Mark asset as deprecated
+    - Notify all adopting products
+    - Provide migration path
+    - Set deprecation timeline (minimum 90 days)
+    - Remove from promotion catalog after timeline expires
+
+exceptions:
+  emergency-promotion:
+    description: Fast-track promotion for critical fixes
+    approvalRequired: true
+    approvers:
+      - cto
+      - product-family-owner
+    documentationRequired: true
+    reviewPeriod: 7 days
+  
+  experimental-asset:
+    description: Allow experimental assets with limited scope
+    approvalRequired: true
+    approvers:
+      - product-family-owner
+    documentationRequired: true
+    restrictions:
+      - Must be marked as experimental
+      - Must have limited adoption scope
+      - Must have clear deprecation path
+
+compliance:
+  frameworks:
+    - SOC2
+    - HIPAA (for healthcare assets)
+    - GDPR
+  
+  evidence:
+    - Promotion evidence recorded in promotion_evidence table
+    - Audit trail for all state transitions
+    - Approval records with timestamps and rationale
+    - Gate validation results stored
+
+references:
+  - products/data-cloud/docs/CANONICAL_EVIDENCE_COLLECTIONS.md
+  - platform/contracts/src/main/proto/ghatana/contracts/
+  - config/canonical-product-registry.json
+  - scripts/check-production-fallbacks.mjs

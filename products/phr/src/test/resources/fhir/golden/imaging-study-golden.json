@@ -1,0 +1,108 @@
+{
+  "resourceType": "ImagingStudy",
+  "id": "imaging-study-golden-001",
+  "meta": {
+    "lastUpdated": "2026-05-23T12:00:00Z",
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/ImagingStudy"
+    ]
+  },
+  "identifier": [
+    {
+      "system": "urn:dicom:uid",
+      "value": "2.25.1234567890123456.1234567890123456"
+    }
+  ],
+  "status": "available",
+  "modality": [
+    {
+      "coding": [
+        {
+          "system": "http://dicom.nema.org/resources/ontology/DCM",
+          "code": "CT",
+          "display": "Computed Tomography"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "reference": "Patient/patient-golden-001",
+    "display": "Arjun Sharma"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-001"
+  },
+  "started": "2026-05-23T09:00:00Z",
+  "procedureReference": {
+    "reference": "ServiceRequest/service-request-001",
+    "display": "CT Chest with contrast"
+  },
+  "procedureCode": [
+    {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "24627-2",
+          "display": "CT Chest WO contrast"
+        }
+      ],
+      "text": "CT Chest with contrast"
+    }
+  ],
+  "reasonCode": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "267036007",
+          "display": "Dyspnea"
+        }
+      ],
+      "text": "Shortness of breath"
+    }
+  ],
+  "note": [
+    {
+      "text": "CT scan performed with IV contrast. No adverse reactions observed."
+    }
+  ],
+  "series": [
+    {
+      "uid": "2.25.1234567890123456.1234567890123456.1",
+      "number": 1,
+      "modality": {
+        "coding": [
+          {
+            "system": "http://dicom.nema.org/resources/ontology/DCM",
+            "code": "CT",
+            "display": "Computed Tomography"
+          }
+        ]
+      },
+      "description": "Axial CT Chest",
+      "numberOfInstances": 150,
+      "bodySite": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "416550000",
+            "display": "Structure of thoracic cavity"
+          }
+        ]
+      },
+      "started": "2026-05-23T09:00:00Z",
+      "instance": [
+        {
+          "uid": "2.25.1234567890123456.1234567890123456.1.1",
+          "sopClass": {
+            "system": "urn:oid:1.2.840.10008.5.1.4.1.1.2",
+            "code": "1.2.840.10008.5.1.4.1.1.2",
+            "display": "CT Image Storage"
+          },
+          "number": 1,
+          "title": "CT Chest Image 001"
+        }
+      ]
+    }
+  ]
+}

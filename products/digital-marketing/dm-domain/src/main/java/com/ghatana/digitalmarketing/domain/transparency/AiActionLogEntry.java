@@ -32,7 +32,10 @@ public record AiActionLogEntry(
         String details,
         String relatedEntityId,
         Instant occurredAt,
-        long version) {
+        long version,
+        String rationale,
+        String policyDecision,
+        String approvalOutcome) {
 
     public AiActionLogEntry(
             String actionId,
@@ -68,7 +71,10 @@ public record AiActionLogEntry(
             details,
             relatedEntityId,
             occurredAt,
-            version
+            version,
+            null,
+            null,
+            null
         );
     }
 
@@ -124,7 +130,10 @@ public record AiActionLogEntry(
             "REDACTED",
             relatedEntityId,
             occurredAt,
-            version
+            version,
+            rationale,
+            policyDecision,
+            approvalOutcome
         );
     }
 }

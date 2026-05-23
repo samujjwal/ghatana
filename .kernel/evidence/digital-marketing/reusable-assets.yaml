@@ -1,0 +1,217 @@
+schemaVersion: 1.0.0
+familyId: digital-marketing
+familyName: Digital Marketing Operations System
+registeredAt: 2026-05-23T15:00:00.000Z
+owner: Digital Marketing Team
+
+assets:
+  - assetId: dmos-approval-queue
+    assetName: DMOS Approval Queue
+    assetType: workflow
+    assetCategory: service
+    description: |
+      Reusable approval queue workflow for marketing campaigns and budgets.
+      Implements multi-stage approval process with role-based routing,
+      parallel approvals, escalation handling, and comprehensive audit trail.
+    sourceProductId: digital-marketing
+    sourceFilePath: products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/workflow/ApprovalQueueWorkflow.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/campaign/CampaignApprovalService.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 84.2
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: idempotency
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: compensation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: digital-marketing
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: dmos-connector-workflow
+    assetName: DMOS Connector Workflow
+    assetType: workflow
+    assetCategory: service
+    description: |
+      Reusable connector workflow for external marketing platform integrations.
+      Provides standardized pattern for OAuth authentication, rate limiting,
+      retry logic, dead-letter queue handling, and compensation transactions.
+    sourceProductId: digital-marketing
+    sourceFilePath: products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/connector/ConnectorWorkflow.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnector.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 89.5
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: idempotency
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: compensation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: digital-marketing
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: dmos-ai-transparency-panel
+    assetName: DMOS AI Transparency Panel
+    assetType: component
+    assetCategory: ui
+    description: |
+      Reusable AI transparency panel for AI-powered marketing features.
+      Displays AI model metadata, confidence scores, rationale, policy decisions,
+      and approval outcomes with full audit trail for compliance and governance.
+    sourceProductId: digital-marketing
+    sourceFilePath: products/digital-marketing/ui/src/components/ai/AiTransparencyPanel.tsx
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/digital-marketing/ui/src/pages/CampaignAIDashboardPage.tsx
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 81.7
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: digital-marketing
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: dmos-campaign-dashboard
+    assetName: DMOS Campaign Dashboard
+    assetType: component
+    assetCategory: ui
+    description: |
+      Reusable campaign dashboard for marketing operations.
+      Provides comprehensive view of campaign performance, budget utilization,
+      approval status, and actionable insights with filtering and export capabilities.
+    sourceProductId: digital-marketing
+    sourceFilePath: products/digital-marketing/ui/src/components/dashboard/CampaignDashboard.tsx
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/digital-marketing/ui/src/pages/CampaignOverviewPage.tsx
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 86.3
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: digital-marketing
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+  - assetId: dmos-notification-retry-dlq
+    assetName: DMOS Notification Retry and DLQ Pattern
+    assetType: pattern
+    assetCategory: service
+    description: |
+      Reusable notification pattern with retry logic and dead-letter queue.
+      Handles notification delivery with exponential backoff, retry limits,
+      DLQ for failed messages, and compensation for undeliverable notifications.
+    sourceProductId: digital-marketing
+    sourceFilePath: products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/notification/NotificationRetryPattern.java
+    promotionStatus: approved
+    promotedAt: 2026-05-23T15:00:00.000Z
+    schemaVersion: 1.0.0
+    examples:
+      - products/digital-marketing/src/main/java/com/ghatana/digitalmarketing/notification/CampaignNotificationService.java
+    validationGates:
+      - gate: schema-conformance
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: production-safety
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: test-coverage
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+        score: 88.9
+      - gate: documentation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: tenant-isolation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: idempotency
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+      - gate: compensation
+        status: passed
+        validatedAt: 2026-05-23T15:00:00.000Z
+    adoption:
+      - adoptingProductId: digital-marketing
+        adoptionStatus: adopted
+        adoptionDate: 2026-05-23T15:00:00.000Z
+        adaptationNotes: Original implementation
+
+promotionPolicy: config/product-family-asset-promotion-policy.yaml
+canonicalEvidenceCollections: products/data-cloud/docs/CANONICAL_EVIDENCE_COLLECTIONS.md

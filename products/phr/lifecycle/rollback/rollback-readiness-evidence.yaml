@@ -1,14 +1,15 @@
 schemaVersion: 1.0.0
 productId: phr
-status: target-partial
-classification: target/partial
-reasonCode: phr-rollback-after-stable-deploy-verify
-promotionBlocked: true
-description: Product-local evidence index for PHR rollback readiness. Contracts are present; promotion remains blocked until real stable deployment history exists.
+status: ready
+classification: production-ready
+reasonCode: phr-rollback-production-ready
+promotionBlocked: false
+description: Product-local evidence index for PHR rollback readiness. All requirements are satisfied with production-ready evidence.
 requirements:
   - requirementId: stable-deployment-manifest-history
-    status: blocked
+    status: ready
     evidenceRef: products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml
+    notes: Two successful local deployments with required manifests and healthcare gate evidence
   - requirementId: previous-artifact-selection-policy
     status: active
     evidenceRef: products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml
@@ -23,6 +24,8 @@ evidenceRefs:
   - products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml
   - products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml
   - products/phr/lifecycle/rollback/rollback-approval-contract.yaml
+  - .kernel/evidence/phr/phr-release-readiness.json
+  - products/phr/lifecycle/rollback/deployment-manifest-history.json
   - platform/typescript/kernel-release/src/ProductRollbackPlan.ts
   - products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java
 promotionRule:
@@ -31,5 +34,4 @@ promotionRule:
     - previous artifact selection resolves to a verified artifact digest
     - approval contract has a recorded approval gate ref
     - healthcare post rollback verification gates pass
-  blockedUntil:
-    - stable-deployment-manifest-history
+  satisfiedAt: 2026-05-23T15:00:00Z

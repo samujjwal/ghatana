@@ -1,0 +1,194 @@
+schemaVersion: 1.0.0
+title: Guided Reuse Recommendations for Tutorputor and FlashIt
+generatedAt: 2026-05-23T15:00:00.000Z
+description: |
+  Provides guided reuse recommendations for Tutorputor and FlashIt products
+  based on reusable assets registered by PHR and Digital Marketing.
+
+recommendations:
+  - targetProduct: tutorputor
+    targetFamily: education
+    priority: high
+    rationale: |
+      Tutorputor is an education platform that can benefit from PHR's consent
+      management patterns for student data privacy and DMOS's approval workflows
+      for course content approval.
+    recommendedAssets:
+      - assetId: phr-consent-panel
+        sourceProduct: phr
+        adaptationNotes: |
+          Adapt the consent panel for student data consent management.
+          Replace healthcare-specific terminology with education-specific terms.
+          Add parent/guardian consent tracking for minor students.
+        adaptationComplexity: medium
+        estimatedEffort: 2 weeks
+        valueProposition: |
+          - Provides mature consent management UI
+          - Reduces development time for consent features
+          - Ensures compliance with student privacy regulations (FERPA)
+      
+      - assetId: phr-audit-trail-panel
+        sourceProduct: phr
+        adaptationNotes: |
+          Adapt the audit trail panel for student activity auditing.
+          Track student access to course materials, quiz attempts, and grade changes.
+          Add instructor-specific audit events.
+        adaptationComplexity: low
+        estimatedEffort: 1 week
+        valueProposition: |
+          - Provides comprehensive audit trail for student activities
+          - Supports compliance requirements for educational platforms
+          - Enables investigation of academic integrity issues
+      
+      - assetId: dmos-approval-queue
+        sourceProduct: digital-marketing
+        adaptationNotes: |
+          Adapt the approval queue for course content approval.
+          Replace marketing-specific approval stages with education-specific stages.
+          Add curriculum committee approval workflow.
+        adaptationComplexity: medium
+        estimatedEffort: 2 weeks
+        valueProposition: |
+          - Provides multi-stage approval workflow
+          - Supports parallel approvals for efficiency
+          - Ensures proper review of educational content
+      
+      - assetId: dmos-campaign-dashboard
+        sourceProduct: digital-marketing
+        adaptationNotes: |
+          Adapt the campaign dashboard for course performance dashboard.
+          Replace marketing metrics with education metrics (enrollment, completion, engagement).
+          Add student progress tracking views.
+        adaptationComplexity: medium
+        estimatedEffort: 2 weeks
+        valueProposition: |
+          - Provides comprehensive dashboard framework
+          - Enables real-time monitoring of course performance
+          - Supports data-driven decision making for educators
+
+  - targetProduct: flashit
+    targetFamily: productivity
+    priority: high
+    rationale: |
+      FlashIt is a productivity tool that can benefit from DMOS's notification
+      patterns and PHR's tenant-scoped repository pattern for multi-tenant
+      data isolation.
+    recommendedAssets:
+      - assetId: dmos-notification-retry-dlq
+        sourceProduct: digital-marketing
+        adaptationNotes: |
+          Adapt the notification pattern for user notification delivery.
+          Ensure notifications are delivered reliably with retry logic.
+          Add user preference tracking for notification frequency.
+        adaptationComplexity: low
+        estimatedEffort: 1 week
+        valueProposition: |
+          - Provides reliable notification delivery
+          - Handles transient failures gracefully
+          - Supports user notification preferences
+      
+      - assetId: phr-tenant-scoped-repository
+        sourceProduct: phr
+        adaptationNotes: |
+          Adapt the tenant-scoped repository pattern for user data isolation.
+          Ensure user data is properly isolated across tenants.
+          Add user-specific audit logging for data access.
+        adaptationComplexity: low
+        estimatedEffort: 1 week
+        valueProposition: |
+          - Provides automatic tenant isolation
+          - Reduces risk of data leakage between tenants
+          - Supports multi-tenant SaaS architecture
+      
+      - assetId: dmos-connector-workflow
+        sourceProduct: digital-marketing
+        adaptationNotes: |
+          Adapt the connector workflow for third-party integrations.
+          Support integrations with calendar apps, task managers, and productivity tools.
+          Add OAuth authentication for user account connections.
+        adaptationComplexity: medium
+        estimatedEffort: 3 weeks
+        valueProposition: |
+          - Provides standardized integration pattern
+          - Reduces development time for new integrations
+          - Ensures consistent error handling and retry logic
+
+adaptationGuidelines:
+  - step: 1
+    title: Assess Asset Suitability
+    description: |
+      Review the recommended assets and assess their suitability for your product.
+      Consider the adaptation complexity, estimated effort, and value proposition.
+    checklist:
+      - Review asset documentation
+      - Evaluate alignment with product requirements
+      - Assess technical compatibility
+      - Estimate adaptation effort accurately
+  
+  - step: 2
+    title: Plan Adaptation
+    description: |
+      Create a detailed adaptation plan for each selected asset.
+      Identify the specific changes needed and allocate resources.
+    checklist:
+      - Document required changes
+      - Identify dependencies
+      - Allocate development resources
+      - Set timeline and milestones
+  
+  - step: 3
+    title: Implement Adaptation
+    description: |
+      Implement the adaptation following the canonical patterns.
+      Ensure all validation gates pass before promotion.
+    checklist:
+      - Implement required changes
+      - Run asset schema validation
+      - Run production safety validation
+      - Run test coverage validation
+      - Run tenant isolation validation
+  
+  - step: 4
+    title: Validate Adaptation
+    description: |
+      Validate the adapted asset against product-specific requirements.
+      Ensure it meets all quality gates and production standards.
+    checklist:
+      - Run product-specific tests
+      - Validate integration with existing code
+      - Perform security review
+      - Obtain required approvals
+  
+  - step: 5
+    title: Register Adapted Asset
+    description: |
+      Register the adapted asset in the product-family reusable assets catalog.
+      Track adoption and monitor usage metrics.
+    checklist:
+      - Register asset in product_family_reusable_assets table
+      - Document adaptation notes
+      - Track adoption metrics
+      - Monitor for issues and improvements
+
+successMetrics:
+  - metric: Adaptation Success Rate
+    description: Percentage of asset adaptations that pass all validation gates
+    target: ≥90%
+  
+  - metric: Time to Value
+    description: Time from asset selection to production deployment
+    target: ≤4 weeks per asset
+  
+  - metric: Adoption Rate
+    description: Percentage of recommended assets adopted by target products
+    target: ≥75%
+  
+  - metric: Quality Score
+    description: Average quality score of adapted assets
+    target: ≥8.0/10.0
+
+references:
+  - config/product-family-asset-promotion-policy.yaml
+  - products/data-cloud/docs/CANONICAL_EVIDENCE_COLLECTIONS.md
+  - .kernel/evidence/phr/reusable-assets.yaml
+  - .kernel/evidence/digital-marketing/reusable-assets.yaml

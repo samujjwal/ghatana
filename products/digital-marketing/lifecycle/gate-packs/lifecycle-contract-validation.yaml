@@ -16,7 +16,7 @@ blockingReasonCodes:
   - requires-lifecycle-contract-validation
   - missing-lifecycle-contract-validation
 validationCommands:
-  - node scripts/check-digital-marketing-lifecycle-pilot.mjs
+  - node scripts/check-product-release-readiness.mjs --products digital-marketing
   - node scripts/check-release-profile-local-targets.mjs --products digital-marketing
 notes:
   - Lifecycle contract validation is enforced by the kernel planning and execution pipeline.

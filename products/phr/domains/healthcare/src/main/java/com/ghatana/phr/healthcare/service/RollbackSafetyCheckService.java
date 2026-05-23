@@ -4,6 +4,8 @@ import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
 import io.activej.promise.Promise;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -31,18 +33,21 @@ public final class RollbackSafetyCheckService {
 
     private final PatientStore patientStore;
     private final Executor executor;
+    private final Path deploymentHistoryPath;
 
     public record RollbackSafetyCheck(
         String tenantId,
         String currentArtifactId,
         String targetArtifactId,
-        Instant checkTimestamp
+        Instant checkTimestamp,
+        String environment
     ) {
         public RollbackSafetyCheck {
             Objects.requireNonNull(tenantId, "tenantId must not be null");
             Objects.requireNonNull(currentArtifactId, "currentArtifactId must not be null");
             Objects.requireNonNull(targetArtifactId, "targetArtifactId must not be null");
             Objects.requireNonNull(checkTimestamp, "checkTimestamp must not be null");
+            Objects.requireNonNull(environment, "environment must not be null");
         }
     }
 
@@ -69,9 +74,10 @@ public final class RollbackSafetyCheckService {
         }
     }
 
-    public RollbackSafetyCheckService(PatientStore patientStore, Executor executor) {
+    public RollbackSafetyCheckService(PatientStore patientStore, Executor executor, Path deploymentHistoryPath) {
         this.patientStore = Objects.requireNonNull(patientStore, "patientStore must not be null");
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
+        this.deploymentHistoryPath = Objects.requireNonNull(deploymentHistoryPath, "deploymentHistoryPath must not be null");
     }
 
     /**
@@ -125,11 +131,22 @@ public final class RollbackSafetyCheckService {
 
     /**
      * Checks if the previous artifact is known in deployment history.
+     * This reads the deployment-manifest-history.json file to verify the artifact exists.
      */
     private boolean isPreviousArtifactKnown(String artifactId) {
-        // In a real implementation, this would check the deployment history store
-        // For now, we assume any artifact ID is valid for demonstration
-        return artifactId != null && !artifactId.isBlank();
+        try {
+            if (!Files.exists(deploymentHistoryPath)) {
+                return false;
+            }
+            
+            String content = Files.readString(deploymentHistoryPath);
+            // In production, this would parse JSON and check if artifactId exists in history
+            // For now, we do a simple string check
+            return content.contains(artifactId) && artifactId != null && !artifactId.isBlank();
+        } catch (Exception e) {
+            // Log error in production
+            return false;
+        }
     }
 
     /**

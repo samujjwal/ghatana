@@ -1,8 +1,154 @@
 {
-  "generatedAt": "2026-05-23T21:53:56.917Z",
-  "status": "passed",
-  "violations": [],
-  "warnings": [],
+  "schemaVersion": "1.0.0",
   "policyVersion": "1.0.0",
-  "assetCount": 4
+  "generatedAt": "2026-05-23T00:00:00Z",
+  "description": "Product-family asset promotion policy governing how reusable assets can be promoted between products in the Ghatana ecosystem",
+  "policies": [
+    {
+      "policyId": "policy-phr-to-all",
+      "policyName": "PHR Healthcare Assets Promotion Policy",
+      "policyType": "gated",
+      "sourceProductId": "phr",
+      "targetProductIds": ["yappc", "data-cloud", "tutorputor", "flashit"],
+      "assetTypes": ["ui-component", "service", "workflow", "pattern"],
+      "requiredMaturityLevel": "hardened",
+      "approvalWorkflowId": "healthcare-asset-approval",
+      "policyRules": {
+        "minTestCoverage": 0.85,
+        "securityReviewRequired": true,
+        "hipaaComplianceRequired": true,
+        "evidenceRefsRequired": true,
+        "consentBoundaryCompliance": true
+      },
+      "isActive": true
+    },
+    {
+      "policyId": "policy-dmos-to-all",
+      "policyName": "Digital Marketing Assets Promotion Policy",
+      "policyType": "gated",
+      "sourceProductId": "digital-marketing",
+      "targetProductIds": ["yappc", "data-cloud", "tutorputor", "flashit"],
+      "assetTypes": ["ui-component", "service", "workflow", "pattern"],
+      "requiredMaturityLevel": "hardened",
+      "approvalWorkflowId": "marketing-asset-approval",
+      "policyRules": {
+        "minTestCoverage": 0.80,
+        "securityReviewRequired": true,
+        "gdprComplianceRequired": true,
+        "evidenceRefsRequired": true,
+        "aiTransparencyRequired": true
+      },
+      "isActive": true
+    },
+    {
+      "policyId": "policy-yappc-to-all",
+      "policyName": "YAPPC Platform Assets Promotion Policy",
+      "policyType": "automatic",
+      "sourceProductId": "yappc",
+      "targetProductIds": ["data-cloud", "tutorputor", "flashit"],
+      "assetTypes": ["service", "pattern"],
+      "requiredMaturityLevel": "production",
+      "approvalWorkflowId": null,
+      "policyRules": {
+        "minTestCoverage": 0.90,
+        "securityReviewRequired": true,
+        "evidenceRefsRequired": true
+      },
+      "isActive": true
+    },
+    {
+      "policyId": "policy-data-cloud-to-all",
+      "policyName": "Data Cloud Infrastructure Assets Promotion Policy",
+      "policyType": "automatic",
+      "sourceProductId": "data-cloud",
+      "targetProductIds": ["yappc", "phr", "digital-marketing", "tutorputor", "flashit"],
+      "assetTypes": ["service", "pattern"],
+      "requiredMaturityLevel": "production",
+      "approvalWorkflowId": null,
+      "policyRules": {
+        "minTestCoverage": 0.95,
+        "securityReviewRequired": true,
+        "evidenceRefsRequired": true,
+        "infrastructureCompliance": true
+      },
+      "isActive": true
+    }
+  ],
+  "promotionGates": {
+    "draftToProposed": {
+      "requiredFields": ["asset_id", "asset_name", "asset_type", "source_product", "description", "paths", "tests", "dependencies"],
+      "requiredMaturity": "stable",
+      "evidenceRequired": false
+    },
+    "proposedToApproved": {
+      "requiredFields": ["asset_id", "asset_name", "asset_type", "source_product", "description", "paths", "tests", "dependencies", "evidence_refs"],
+      "requiredMaturity": "hardened",
+      "evidenceRequired": true,
+      "approvalRequired": true
+    },
+    "approvedToSharedPackage": {
+      "requiredFields": ["asset_id", "asset_name", "asset_type", "source_product", "description", "paths", "tests", "dependencies", "evidence_refs"],
+      "requiredMaturity": "hardened",
+      "evidenceRequired": true,
+      "approvalRequired": true,
+      "policyComplianceRequired": true
+    },
+    "sharedPackageToProduction": {
+      "requiredFields": ["asset_id", "asset_name", "asset_type", "source_product", "description", "paths", "tests", "dependencies", "evidence_refs"],
+      "requiredMaturity": "production",
+      "evidenceRequired": true,
+      "approvalRequired": true,
+      "policyComplianceRequired": true,
+      "securityReviewRequired": true
+    }
+  },
+  "maturityLevels": {
+    "experimental": {
+      "description": "Early stage asset under active development",
+      "allowedPromotionTargets": ["draft"],
+      "minTestCoverage": 0.0
+    },
+    "beta": {
+      "description": "Asset in testing phase with limited usage",
+      "allowedPromotionTargets": ["draft", "proposed"],
+      "minTestCoverage": 0.60
+    },
+    "stable": {
+      "description": "Asset considered stable for internal use",
+      "allowedPromotionTargets": ["draft", "proposed"],
+      "minTestCoverage": 0.75
+    },
+    "hardened": {
+      "description": "Asset has undergone rigorous testing and review",
+      "allowedPromotionTargets": ["draft", "proposed", "approved", "shared-package"],
+      "minTestCoverage": 0.85
+    },
+    "production": {
+      "description": "Asset is production-ready with full compliance",
+      "allowedPromotionTargets": ["draft", "proposed", "approved", "shared-package", "production"],
+      "minTestCoverage": 0.90
+    }
+  },
+  "complianceRequirements": {
+    "healthcare": {
+      "hipaa": true,
+      "consentBoundary": true,
+      "auditTrail": true,
+      "dataClassification": true,
+      "breakGlassWorkflow": true
+    },
+    "marketing": {
+      "gdpr": true,
+      "aiTransparency": true,
+      "auditTrail": true,
+      "dataClassification": true,
+      "consentManagement": true
+    },
+    "platform": {
+      "securityReview": true,
+      "infrastructureCompliance": true,
+      "auditTrail": true,
+      "dataClassification": true
+    }
+  }
 }

@@ -16,7 +16,7 @@ blockingReasonCodes:
   - requires-registry-validation
   - missing-registry-validation
 validationCommands:
-  - node scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+  - node scripts/check-product-release-readiness.mjs --products digital-marketing
   - node scripts/check-affected-product-strict-release-profile.mjs --products digital-marketing
 notes:
   - Registry validation confirms the product is a known, canonically-registered lifecycle participant.

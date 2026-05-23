@@ -38,7 +38,10 @@ public interface AiActionLogService {
             List<String> policyChecks,
             String summary,
             String details,
-            String relatedEntityId) {
+            String relatedEntityId,
+            String rationale,
+            String policyDecision,
+            String approvalOutcome) {
 
                 public RecordActionCommand(
                                 String correlationId,
@@ -66,7 +69,10 @@ public interface AiActionLogService {
                                 policyChecks,
                                 summary,
                                 details,
-                                relatedEntityId
+                                relatedEntityId,
+                                null,
+                                null,
+                                null
                         );
                 }
     }

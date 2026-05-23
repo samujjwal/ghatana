@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package ghatana.contracts.phr.v1;
+
+import "ghatana/contracts/event/v1/event.proto";
+
+option java_package = "com.ghatana.contracts.phr.v1";
+option java_outer_classname = "PhrEventsProto";
+
+// PHR Lifecycle Events
+message PhrLifecycleEvent {
+  string schema_version = 1;
+  string event_id = 2;
+  string correlation_id = 3;
+  string tenant_id = 4;
+  string phase = 5;  // dev, build, test, deploy, verify, rollback
+  string status = 6;  // started, completed, failed, blocked
+  map<string, string> metadata = 7;
+  int64 occurred_at = 8;
+}
+
+// PHR Audit Events
+message PhrAuditEvent {
+  string schema_version = 1;
+  string event_id = 2;
+  string correlation_id = 3;
+  string tenant_id = 4;
+  string patient_id = 5;
+  string actor_id = 6;
+  string actor_type = 7;  // PROVIDER, PATIENT, ADMIN, SYSTEM
+  string audit_type = 8;  // patient-access, consent-change, emergency-access, fhir-export, data-modification
+  string resource_type = 9;
+  string resource_id = 10;
+  string action = 11;  // READ, WRITE, DELETE, EXPORT
+  string decision = 12;  // ALLOWED, DENIED
+  string reason_code = 13;
+  bool audit_required = 14;
+  int64 occurred_at = 15;
+}
+
+// PHR Consent Events
+message PhrConsentEvent {
+  string schema_version = 1;
+  string event_id = 2;
+  string correlation_id = 3;
+  string tenant_id = 4;
+  string patient_id = 5;
+  string recipient_id = 6;
+  string action = 7;  // granted, revoked, modified, expired
+  string resource_type = 8;  // clinical-care, billing, research, emergency
+  string status = 9;  // active, inactive, pending
+  int64 expires_at = 10;
+  string reason_code = 11;
+  int64 occurred_at = 12;
+}
+
+// PHR Emergency Access Events
+message PhrEmergencyAccessEvent {
+  string schema_version = 1;
+  string event_id = 2;
+  string correlation_id = 3;
+  string tenant_id = 4;
+  string patient_id = 5;
+  string accessor_id = 6;
+  string accessor_role = 7;
+  string access_reason = 8;
+  string emergency_type = 9;  // life-threatening, urgent-care, public-health
+  bool notification_sent = 10;
+  bool review_required = 11;
+  int64 occurred_at = 12;
+}
+
+// PHR FHIR Export Events
+message PhrFhirExportEvent {
+  string schema_version = 1;
+  string event_id = 2;
+  string correlation_id = 3;
+  string tenant_id = 4;
+  string patient_id = 5;
+  string resource_type = 6;  // Patient, Observation, MedicationRequest, etc.
+  string export_format = 7;  // JSON, XML
+  string destination = 8;
+  string status = 9;  // started, completed, failed
+  int64 record_count = 10;
+  int64 occurred_at = 11;
+}

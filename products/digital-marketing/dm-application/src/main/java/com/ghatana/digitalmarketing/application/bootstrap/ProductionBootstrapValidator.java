@@ -22,9 +22,16 @@ import java.util.Objects;
  * <p>Required for production:</p>
  * <ul>
  *   <li>PostgreSQL repositories (no in-memory adapters)</li>
+ *   <li>Database migrations applied and up-to-date</li>
  *   <li>Kernel plugins: FeatureFlagPlugin, RiskManagementPlugin, AuditTrailPlugin,
  *       NotificationPlugin, ConsentPlugin, HumanApprovalPlugin</li>
  *   <li>PII HMAC/encryption keys configured</li>
+ *   <li>Connector credentials configured (Google Ads, etc.)</li>
+ *   <li>Secrets management configured</li>
+ *   <li>OTLP telemetry endpoint configured</li>
+ *   <li>Rate limits configured</li>
+ *   <li>Feature flags configured</li>
+ *   <li>Kill switches configured</li>
  *   <li>Google Ads disabled unless outbox/workflow configured (if applicable)</li>
  *   <li>P1-040: Default-deny policy pack loaded for compliance rule sets</li>
  * </ul>
@@ -47,6 +54,12 @@ public final class ProductionBootstrapValidator {
     private final List<Object> adaptersToValidate;
     private final com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
     private final Object googleAdsOutboxExecutor;
+    private final String otelEndpoint;
+    private final String googleAdsDeveloperToken;
+    private final String googleAdsCustomerId;
+    private final String rateLimitConfig;
+    private final String featureFlagConfig;
+    private final String killSwitchConfig;
 
     private ProductionBootstrapValidator(Builder builder) {
         this.isProduction = builder.isProduction;
@@ -60,6 +73,12 @@ public final class ProductionBootstrapValidator {
             : new ArrayList<>();
         this.complianceRulePack = builder.complianceRulePack;
         this.googleAdsOutboxExecutor = builder.googleAdsOutboxExecutor;
+        this.otelEndpoint = builder.otelEndpoint;
+        this.googleAdsDeveloperToken = builder.googleAdsDeveloperToken;
+        this.googleAdsCustomerId = builder.googleAdsCustomerId;
+        this.rateLimitConfig = builder.rateLimitConfig;
+        this.featureFlagConfig = builder.featureFlagConfig;
+        this.killSwitchConfig = builder.killSwitchConfig;
     }
 
     /**
@@ -80,19 +99,40 @@ public final class ProductionBootstrapValidator {
         // 1. Validate durable persistence (no in-memory adapters)
         validatePersistence(violations);
 
-        // 2. Validate Kernel plugins
+        // 2. Validate database migrations
+        validateMigrations(violations);
+
+        // 3. Validate Kernel plugins
         validateKernelPlugins(violations);
 
-        // 3. Validate PII/encryption configuration
+        // 4. Validate PII/encryption configuration
         validatePiiConfiguration(violations);
 
-        // 4. Validate external integrations safety
+        // 5. Validate connector credentials
+        validateConnectorCredentials(violations);
+
+        // 6. Validate secrets management
+        validateSecretsManagement(violations);
+
+        // 7. Validate OTLP telemetry endpoint
+        validateOtlpEndpoint(violations);
+
+        // 8. Validate rate limits
+        validateRateLimits(violations);
+
+        // 9. Validate feature flags
+        validateFeatureFlags(violations);
+
+        // 10. Validate kill switches
+        validateKillSwitches(violations);
+
+        // 11. Validate external integrations safety
         validateExternalIntegrations(violations);
 
-        // 5. Validate no invalid/deterministic/test adapters in production (P0-016)
+        // 12. Validate no invalid/deterministic/test adapters in production (P0-016)
         validateNoInvalidAdapters(violations);
 
-        // 6. P1-040: Validate default-deny policy pack is loaded
+        // 13. P1-040: Validate default-deny policy pack is loaded
         validateDefaultDenyPolicyPack(violations);
 
         if (!violations.isEmpty()) {
@@ -133,6 +173,32 @@ public final class ProductionBootstrapValidator {
         }
     }
 
+    private void validateMigrations(List<String> violations) {
+        if (dataSource == null) {
+            violations.add("MIGRATION-001: Cannot validate migrations without DataSource");
+            return;
+        }
+
+        // Check for Flyway schema history table
+        try {
+            java.sql.Connection conn = dataSource.getConnection();
+            java.sql.DatabaseMetaData meta = conn.getMetaData();
+            java.sql.ResultSet tables = meta.getTables(null, null, "flyway_schema_history", null);
+            boolean hasFlywayTable = tables.next();
+            tables.close();
+            conn.close();
+
+            if (!hasFlywayTable) {
+                violations.add("MIGRATION-002: Flyway schema history table not found. " +
+                    "Database migrations may not have been applied.");
+            } else {
+                LOG.info("[DMOS-BOOTSTRAP] Database migrations validated (flyway_schema_history exists)");
+            }
+        } catch (Exception e) {
+            violations.add("MIGRATION-003: Failed to validate database migrations: " + e.getMessage());
+        }
+    }
+
     private void validateKernelPlugins(List<String> violations) {
         if (kernelAdapter == null) {
             violations.add("KERNEL-001: DigitalMarketingKernelAdapter not configured");
@@ -164,6 +230,76 @@ public final class ProductionBootstrapValidator {
                 "ContactEncryptionService will reject all operations in production.");
         } else if (contactEncryptionKey.length() < 32) {
             violations.add("PII-004: DMOS_CONTACT_ENCRYPTION_KEY too short (minimum 32 characters required).");
+        }
+    }
+
+    private void validateConnectorCredentials(List<String> violations) {
+        // Validate Google Ads credentials if connector is enabled
+        boolean googleAdsEnabled = Boolean.parseBoolean(System.getenv("DMOS_GOOGLE_ADS_ENABLED"));
+        if (googleAdsEnabled) {
+            if (googleAdsDeveloperToken == null || googleAdsDeveloperToken.isBlank()) {
+                violations.add("CONNECTOR-001: GOOGLE_ADS_DEVELOPER_TOKEN not configured. " +
+                    "Required when Google Ads connector is enabled.");
+            }
+            if (googleAdsCustomerId == null || googleAdsCustomerId.isBlank()) {
+                violations.add("CONNECTOR-002: GOOGLE_ADS_CUSTOMER_ID not configured. " +
+                    "Required when Google Ads connector is enabled.");
+            }
+        } else {
+            LOG.info("[DMOS-BOOTSTRAP] Google Ads connector disabled, skipping credential validation");
+        }
+    }
+
+    private void validateSecretsManagement(List<String> violations) {
+        // Validate that secrets are not using default/test values
+        if (piiHmacKey != null && piiHmacKey.equals("development-dmos-pii-hmac-key")) {
+            violations.add("SECRETS-001: PII HMAC key is using default development value. " +
+                "Production requires a securely generated key.");
+        }
+        if (contactEncryptionKey != null && contactEncryptionKey.equals("development-dmos-contact-encryption-key")) {
+            violations.add("SECRETS-002: Contact encryption key is using default development value. " +
+                "Production requires a securely generated key.");
+        }
+    }
+
+    private void validateOtlpEndpoint(List<String> violations) {
+        if (otelEndpoint == null || otelEndpoint.isBlank()) {
+            violations.add("OTLP-001: OTLP endpoint not configured. " +
+                "OpenTelemetry telemetry export is required in production.");
+        } else if (!otelEndpoint.startsWith("http://") && !otelEndpoint.startsWith("https://")) {
+            violations.add("OTLP-002: OTLP endpoint must be a valid HTTP/HTTPS URL: " + otelEndpoint);
+        } else {
+            LOG.info("[DMOS-BOOTSTRAP] OTLP endpoint configured: {}", otelEndpoint);
+        }
+    }
+
+    private void validateRateLimits(List<String> violations) {
+        // Validate rate limit configuration is present
+        if (rateLimitConfig == null || rateLimitConfig.isBlank()) {
+            violations.add("RATELIMIT-001: Rate limit configuration not set. " +
+                "DMOS_RATE_LIMIT_CONFIG environment variable is required in production.");
+        } else {
+            LOG.info("[DMOS-BOOTSTRAP] Rate limit configuration validated");
+        }
+    }
+
+    private void validateFeatureFlags(List<String> violations) {
+        // Validate feature flag configuration is present
+        if (featureFlagConfig == null || featureFlagConfig.isBlank()) {
+            violations.add("FEATUREFLAG-001: Feature flag configuration not set. " +
+                "DMOS_FEATURE_FLAGS environment variable is required in production.");
+        } else {
+            LOG.info("[DMOS-BOOTSTRAP] Feature flag configuration validated");
+        }
+    }
+
+    private void validateKillSwitches(List<String> violations) {
+        // Validate kill switch configuration is present
+        if (killSwitchConfig == null || killSwitchConfig.isBlank()) {
+            violations.add("KILLSWITCH-001: Kill switch configuration not set. " +
+                "DMOS_KILL_SWITCHES environment variable is required in production.");
+        } else {
+            LOG.info("[DMOS-BOOTSTRAP] Kill switch configuration validated");
         }
     }
 
@@ -292,6 +428,12 @@ public final class ProductionBootstrapValidator {
         private List<Object> adaptersToValidate = new ArrayList<>();
         private com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
         private Object googleAdsOutboxExecutor;
+        private String otelEndpoint;
+        private String googleAdsDeveloperToken;
+        private String googleAdsCustomerId;
+        private String rateLimitConfig;
+        private String featureFlagConfig;
+        private String killSwitchConfig;
 
         public Builder isProduction(boolean isProduction) {
             this.isProduction = isProduction;
@@ -352,6 +494,54 @@ public final class ProductionBootstrapValidator {
          */
         public Builder googleAdsOutboxExecutor(Object googleAdsOutboxExecutor) {
             this.googleAdsOutboxExecutor = googleAdsOutboxExecutor;
+            return this;
+        }
+
+        /**
+         * Sets the OTLP endpoint for telemetry validation.
+         */
+        public Builder otelEndpoint(String otelEndpoint) {
+            this.otelEndpoint = otelEndpoint;
+            return this;
+        }
+
+        /**
+         * Sets the Google Ads developer token for connector credential validation.
+         */
+        public Builder googleAdsDeveloperToken(String googleAdsDeveloperToken) {
+            this.googleAdsDeveloperToken = googleAdsDeveloperToken;
+            return this;
+        }
+
+        /**
+         * Sets the Google Ads customer ID for connector credential validation.
+         */
+        public Builder googleAdsCustomerId(String googleAdsCustomerId) {
+            this.googleAdsCustomerId = googleAdsCustomerId;
+            return this;
+        }
+
+        /**
+         * Sets the rate limit configuration for validation.
+         */
+        public Builder rateLimitConfig(String rateLimitConfig) {
+            this.rateLimitConfig = rateLimitConfig;
+            return this;
+        }
+
+        /**
+         * Sets the feature flag configuration for validation.
+         */
+        public Builder featureFlagConfig(String featureFlagConfig) {
+            this.featureFlagConfig = featureFlagConfig;
+            return this;
+        }
+
+        /**
+         * Sets the kill switch configuration for validation.
+         */
+        public Builder killSwitchConfig(String killSwitchConfig) {
+            this.killSwitchConfig = killSwitchConfig;
             return this;
         }
 

@@ -147,6 +147,22 @@ public final class ProductFamilyControlPlaneController {
                                         .build());
                             }
 
+                            // YAPPC-006: Validate asset schema before promotion
+                            List<String> schemaViolations = validateAssetSchema(current, targetState);
+                            if (!schemaViolations.isEmpty()) {
+                                try {
+                                    return Promise.of(HttpResponse.ofCode(422)
+                                            .withJson(objectMapper.writeValueAsString(Map.of(
+                                                    "error", "asset schema validation failed",
+                                                    "violations", schemaViolations)))
+                                            .build());
+                                } catch (JsonProcessingException e) {
+                                    return Promise.of(HttpResponse.ofCode(500)
+                                            .withJson("{\"error\":\"failed to serialize validation errors\"}")
+                                            .build());
+                                }
+                            }
+
                             Instant now = Instant.now();
                             Map<String, Object> updatedAsset = promotedAsset(found.get().id(), assetId, current, payload, targetState, actorId, correlationId, now);
                             Map<String, Object> history = promotionHistory(assetId, updatedAsset, payload, targetState, actorId, correlationId, now);
@@ -281,6 +297,50 @@ public final class ProductFamilyControlPlaneController {
                 "error", "asset promotion transition is not allowed",
                 "currentState", currentState == null ? "unknown" : currentState,
                 "targetState", targetState));
+    }
+
+    private List<String> validateAssetSchema(Map<String, Object> asset, String targetState) {
+        List<String> violations = new java.util.ArrayList<>();
+        
+        // Validate required fields
+        if (asset.get("asset_id") == null || String.valueOf(asset.get("asset_id")).isBlank()) {
+            violations.add("asset_id is required");
+        }
+        if (asset.get("asset_type") == null || String.valueOf(asset.get("asset_type")).isBlank()) {
+            violations.add("asset_type is required");
+        }
+        if (asset.get("source_product") == null || String.valueOf(asset.get("source_product")).isBlank()) {
+            violations.add("source_product is required");
+        }
+        
+        // Validate target state-specific requirements
+        if ("production".equals(targetState) || "shared-package".equals(targetState)) {
+            if (asset.get("paths") == null || ((List<?>) asset.get("paths")).isEmpty()) {
+                violations.add("paths must be non-empty for production/shared-package promotion");
+            }
+            if (asset.get("tests") == null || ((List<?>) asset.get("tests")).isEmpty()) {
+                violations.add("tests must be non-empty for production/shared-package promotion");
+            }
+            if (asset.get("dependencies") == null) {
+                violations.add("dependencies must be specified for production/shared-package promotion");
+            }
+        }
+        
+        // Validate maturity consistency
+        String maturity = String.valueOf(asset.getOrDefault("maturity", ""));
+        if ("production".equals(targetState) && !"hardened".equals(maturity) && !"production".equals(maturity)) {
+            violations.add("asset must be in 'hardened' or 'production' maturity to promote to production");
+        }
+        
+        // Validate evidence refs for production promotion
+        if ("production".equals(targetState)) {
+            Object evidenceRefs = asset.get("evidence_refs");
+            if (evidenceRefs == null || ((List<?>) evidenceRefs).isEmpty()) {
+                violations.add("evidence_refs must be non-empty for production promotion");
+            }
+        }
+        
+        return violations;
     }
 
     private String assetRegistryStatus(
@@ -471,12 +531,14 @@ public final class ProductFamilyControlPlaneController {
     }
 
     private String resolveTenantId(HttpRequest request) {
+        // YAPPC-003: Harden tenant resolution - only accept signed tenant ID from Principal
+        // Remove unsigned X-Tenant-Id header fallback to prevent tenant spoofing
         Principal principal = request.getAttachment(Principal.class);
         if (principal != null && principal.getTenantId() != null && !principal.getTenantId().isBlank()) {
             return principal.getTenantId();
         }
-        String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        return header == null || header.isBlank() ? null : header;
+        // Reject requests without signed tenant context
+        return null;
     }
 
     private String correlationId(HttpRequest request) {

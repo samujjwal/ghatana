@@ -62,8 +62,14 @@ public final class TenantExtractionFilter implements FilterChain.Filter {
     /**
      * Create a lenient filter. Requests without tenant header fall back to "default-tenant".
      *
+     * <p><b>DEPRECATED</b> - Lenient mode is being phased out for security reasons.
+     * Use {@link #strict()} for all user-facing paths. Lenient mode should only be used
+     * for internal system paths where tenant context is optional.</p>
+     *
      * @return lenient filter instance
+     * @deprecated Use {@link #strict()} for user-facing paths to enforce tenant isolation
      */
+    @Deprecated
     public static TenantExtractionFilter lenient() {
         return new TenantExtractionFilter(
                 DEFAULT_TENANT_HEADER, DEFAULT_PRINCIPAL_HEADER,
