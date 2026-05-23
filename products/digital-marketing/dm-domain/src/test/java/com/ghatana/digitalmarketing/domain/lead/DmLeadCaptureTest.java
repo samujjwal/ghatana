@@ -10,7 +10,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("DmLeadCapture domain entity")
+/**
+ * @doc.type class
+ * @doc.purpose Validates lead capture data integrity with campaign and consent referential integrity
+ * @doc.layer product
+ * @doc.pattern DomainTest
+ */
+@DisplayName("dm-003: Lead Capture Data Integrity Tests")
 class DmLeadCaptureTest {
 
     private DmLeadCapture valid() {

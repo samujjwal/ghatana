@@ -21,6 +21,9 @@ MAX_P95_EVENT_APPEND_MS="${DATACLOUD_LOAD_MAX_P95_EVENT_APPEND_MS:-2500}"
 MAX_P95_QUERY_MS="${DATACLOUD_LOAD_MAX_P95_QUERY_MS:-2500}"
 MAX_P99_ENTITY_SAVE_MS="${DATACLOUD_LOAD_MAX_P99_ENTITY_SAVE_MS:-0}"
 MAX_P99_QUERY_MS="${DATACLOUD_LOAD_MAX_P99_QUERY_MS:-0}"
+BACKPRESSURE_MAX_CONCURRENT="${DATACLOUD_LOAD_BACKPRESSURE_MAX_CONCURRENT:-2}"
+BACKPRESSURE_QUEUE_CAPACITY="${DATACLOUD_LOAD_BACKPRESSURE_QUEUE_CAPACITY:-4}"
+BACKPRESSURE_REQUEST_COUNT="${DATACLOUD_LOAD_BACKPRESSURE_REQUEST_COUNT:-12}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required to run DurableMultiTenantLoadIntegrationTest." >&2
@@ -60,6 +63,9 @@ TESTCONTAINERS_HOST_OVERRIDE=localhost \
   -Ddatacloud.load.maxP95QueryMs="${MAX_P95_QUERY_MS}" \
   -Ddatacloud.load.maxP99EntitySaveMs="${MAX_P99_ENTITY_SAVE_MS}" \
   -Ddatacloud.load.maxP99QueryMs="${MAX_P99_QUERY_MS}" \
+  -Ddatacloud.load.backpressure.maxConcurrent="${BACKPRESSURE_MAX_CONCURRENT}" \
+  -Ddatacloud.load.backpressure.queueCapacity="${BACKPRESSURE_QUEUE_CAPACITY}" \
+  -Ddatacloud.load.backpressure.requestCount="${BACKPRESSURE_REQUEST_COUNT}" \
   -Ddatacloud.load.metricsOutput="${OUTPUT_FILE}"
 
 echo "Durable load metrics written to ${OUTPUT_FILE}"

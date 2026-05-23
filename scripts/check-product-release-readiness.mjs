@@ -10,6 +10,7 @@ import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affect
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'product-release-readiness.json');
+const affectedProductProfilePath = path.join(evidenceDir, 'affected-product-release-profile.json');
 const implementationPlanEvidencePath = path.join(evidenceDir, 'kernel-implementation-plan-progress.json');
 const wave2ScorecardPath = path.join(evidenceDir, 'wave2-product-quality-scorecard.json');
 const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
@@ -162,6 +163,21 @@ function loadDimensionScoreMap() {
   }
 
   return map;
+}
+
+export function filterReleaseEligibleProducts(productIds, registry) {
+  return productIds.filter((productId) => {
+    const metadata = registry[productId];
+    if (!metadata || metadata.kind !== 'business-product') {
+      return false;
+    }
+
+    if (metadata.metadata?.status !== 'active') {
+      return false;
+    }
+
+    return metadata.lifecycleExecutionAllowed === true || metadata.lifecycleStatus === 'enabled';
+  });
 }
 
 function loadWave2ScoreRows() {
@@ -366,30 +382,40 @@ function parseArg(flag) {
   return undefined;
 }
 
-function discoverAffectedProducts() {
+export function discoverAffectedProducts() {
   const providedProducts = parseArg('--products') || process.env.AFFECTED_PRODUCTS || '';
+  const registry = loadCanonicalRegistry(repoRoot);
+
   if (providedProducts.trim().length > 0) {
-    return providedProducts
+    return filterReleaseEligibleProducts(
+      providedProducts
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean)
-      .sort();
+      .sort(),
+      registry,
+    );
   }
 
-  const registry = loadCanonicalRegistry(repoRoot);
+  const affectedProfile = readJsonIfExists(affectedProductProfilePath);
+  if (Array.isArray(affectedProfile?.affectedProducts) && affectedProfile.affectedProducts.length > 0) {
+    return filterReleaseEligibleProducts([...affectedProfile.affectedProducts].sort(), registry);
+  }
+
   const result = resolveAffectedProducts(['config/canonical-product-registry.json'], registry, {
     businessProductsOnly: true,
   });
-  return result.affectedProducts;
+  return filterReleaseEligibleProducts(result.affectedProducts, registry);
 }
 
-function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
-  const { dimensionScoreMap, wave2Rows, releaseTargetScore } = options;
+export function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
+  const { wave2Rows, releaseTargetScore } = options;
   const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
   const wave2Row = wave2Rows.get(productId);
+  const productMetadata = registry[productId] ?? null;
+  const defaultScore = Number(Math.max(0, Math.min(5, 2 + (runPassRatio * 3))).toFixed(2));
   const dimensions = releaseScorecardDimensionNames.map((dimensionName) => {
-    const normalized = normalizeDimensionName(dimensionName);
-    const baseline = dimensionScoreMap.get(normalized) ?? Number((Math.max(0, Math.min(5, 2 + (runPassRatio * 3)))).toFixed(2));
+    const baseline = defaultScore;
     const wave2Delta = scoreBoostFromWave2(dimensionName, wave2Row);
     const score = Number(Math.max(0, Math.min(5, baseline + wave2Delta)).toFixed(2));
     return {
@@ -418,6 +444,14 @@ function buildProductScorecard(productId, runs, releaseProfiles, registry, optio
     });
   }
 
+  if (!productMetadata) {
+    blockingGaps.push({
+      severity: 'P0',
+      gate: 'product-metadata',
+      reason: 'missing-product-metadata',
+    });
+  }
+
   const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
   const belowTargetDimensions = dimensions
     .filter((dimension) => dimension.score < releaseTargetScore)
@@ -440,7 +474,7 @@ function buildProductScorecard(productId, runs, releaseProfiles, registry, optio
     productId,
     releaseVerdict: blockingGaps.length === 0 ? 'pass' : 'fail',
     releaseProfiles,
-    productMetadata: registry[productId] ?? null,
+    productMetadata,
     dimensions,
     averageScore,
     releaseTargetScore,
@@ -458,13 +492,11 @@ function buildProductScorecard(productId, runs, releaseProfiles, registry, optio
 
 function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
   const registry = loadCanonicalRegistry(repoRoot);
-  const dimensionScoreMap = loadDimensionScoreMap();
   const wave2Rows = loadWave2ScoreRows();
   const paths = [];
 
   for (const productId of affectedProducts) {
     const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry, {
-      dimensionScoreMap,
       wave2Rows,
       releaseTargetScore: defaultReleaseTargetScore,
     });

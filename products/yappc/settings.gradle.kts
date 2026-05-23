@@ -152,6 +152,7 @@ include(":examples:sample-build-generator-plugin")
 
 // --- Integration Tests ---
 include(":integration")
+include(":e2e")
 
 // --- Gradle build tooling & validation tests ---
 val validationTestsDir = File(rootDir, "tools/validation-tests")
@@ -233,7 +234,8 @@ if (isStandaloneBuild) {
             "core:yappc-services",
             "core:yappc-infrastructure",
             // core:yappc-agents removed — consolidated into core:agents
-            "core:yappc-shared")
+            "core:yappc-shared",
+            "e2e")
 
     yappcAliasModules.forEach { modulePath ->
         val pathParts = modulePath.split(":")

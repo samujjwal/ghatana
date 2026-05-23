@@ -42,7 +42,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api", "frontend"))
                 .runtimeProvider("ghatana-kernel")
-                .lifecycleProfile("standard")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .build();
 
@@ -64,7 +64,7 @@ class ProductUnitIntentExporterTest {
         assertThat(productUnit.get("name")).isEqualTo("Digital Marketing Campaign");
         assertThat(productUnit.get("kind")).isEqualTo("business-product");
         assertThat(productUnit.get("surfaces")).isEqualTo(List.of("web-api", "frontend"));
-        assertThat(productUnit.get("lifecycleProfile")).isEqualTo("standard");
+        assertThat(productUnit.get("lifecycleProfile")).isEqualTo("standard-web-api-product");
 
         @SuppressWarnings("unchecked")
         Map<String, Object> metadata = (Map<String, Object>) productUnit.get("metadata");
@@ -85,7 +85,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("frontend"))
                 .runtimeProvider("ghatana-kernel")
-                .lifecycleProfile("frontend-only")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-456")
                 .build();
 
@@ -110,7 +110,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
-                .lifecycleProfile("backend-only")
+                .lifecycleProfile("backend-only-java-service")
                 .workspaceId("workspace-789")
                 .build();
 
@@ -134,6 +134,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .build();
 
@@ -151,6 +152,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .build();
 
@@ -187,6 +189,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .build();
 
@@ -208,6 +211,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .sourcePhase("validate")
                 .build();
@@ -237,6 +241,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .build();
 
@@ -261,6 +266,7 @@ class ProductUnitIntentExporterTest {
                 .targetType("kernel-product-unit")
                 .surfaces(List.of("web-api"))
                 .runtimeProvider("ghatana-kernel")
+                .lifecycleProfile("standard-web-api-product")
                 .workspaceId("workspace-123")
                 .metadata(customMetadata)
                 .build();

@@ -9,7 +9,13 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-@DisplayName("ConsentProofSnapshot")
+/**
+ * @doc.type class
+ * @doc.purpose Validates consent-gated campaign activation requiring valid PHR consent status
+ * @doc.layer product
+ * @doc.pattern ConsentTest
+ */
+@DisplayName("dm-002: Consent-Gated Campaign Activation Tests")
 class ConsentProofSnapshotTest {
 
     @Test

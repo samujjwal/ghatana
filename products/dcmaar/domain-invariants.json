@@ -1,0 +1,71 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "dcmaar",
+  "description": "Domain invariant declarations for DCMAR product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "dcmaar-001",
+      "name": "Data model consistency",
+      "category": "data_integrity",
+      "description": "Data models must maintain referential integrity across all entities",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "dcmaar-002",
+      "name": "Data access authorization",
+      "category": "identity/authorization",
+      "description": "Data access must be authorized based on user roles and permissions",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "dcmaar-003",
+      "name": "Data audit trail",
+      "category": "audit/evidence",
+      "description": "All data modifications must be logged with user, timestamp, and change details",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "dcmaar-004",
+      "name": "Tenant data isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Data must be isolated by tenant with no cross-tenant access",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "dcmaar-005",
+      "name": "Data privacy encryption",
+      "category": "privacy/consent",
+      "description": "Sensitive data must be encrypted at rest and in transit",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "dcmaar-006",
+      "name": "Data validation rules",
+      "category": "product_specific_business_correctness",
+      "description": "Data must validate against business rules before persistence",
+      "testId": null,
+      "testPath": null,
+      "severity": "high"
+    }
+  ]
+}

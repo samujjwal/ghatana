@@ -1,7 +1,19 @@
 {
   "timestamp": "generated-on-demand",
   "violations": [],
-  "warnings": [],
+  "warnings": [
+    "Data Cloud SDK: No atomic workflow failure-injection test found, falling back to posture checks",
+    "Data Cloud SDK: Test execution failed, falling back to posture checks",
+    "Data Cloud SDK: Missing business write/event append failure scenario",
+    "Data Cloud SDK: Missing event append/audit write failure scenario",
+    "Data Cloud SDK: Missing audit/outbox failure scenario",
+    "Data Cloud SDK: Missing idempotency write failure scenario",
+    "Data Cloud SDK: Missing retry after partial failure scenario",
+    "Data Cloud SDK: Missing rollback after partial failure scenario",
+    "Data Cloud SDK: Missing replay after crash scenario",
+    "Finance Gateway: Product path not found at products/finance/gateway",
+    "PHR Gateway: Product path not found at products/phr/gateway"
+  ],
   "evidence": [
     "Data Cloud Launcher: Executed real atomic workflow failure scenarios",
     "Data Cloud Launcher: Executable test run validated business write/event append failure",
@@ -23,7 +35,7 @@
   },
   "summary": {
     "totalViolations": 0,
-    "totalWarnings": 0,
+    "totalWarnings": 11,
     "totalEvidence": 8,
     "missingScenarioCount": 0,
     "executedTestProductCount": 1

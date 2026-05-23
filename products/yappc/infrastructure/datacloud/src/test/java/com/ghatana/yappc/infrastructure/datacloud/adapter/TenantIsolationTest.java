@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,13 +40,11 @@ import static org.mockito.Mockito.when;
  *   <li>Cross-tenant reads: a query by tenant-B never sees tenant-A's data.</li>
  *   <li>Same-tenant reads: a query by the owning tenant returns its data.</li>
  *   <li>Tenant-ID propagation: every repository call carries the exact ID from TenantContext.</li>
- *   <li>Default-tenant fallback: when no explicit context is set, "default-tenant" is used.</li>
+ *   <li>Default-tenant fallback: when no explicit context is set, repository access fails closed.</li>
  * </ol>
  *
- * <p>Note: {@link TenantContext#getCurrentTenantId()} falls back to {@code "default-tenant"} when 
- * the ThreadLocal is empty; it never returns {@code null}. Consequently, the SecurityException path
- * in {@code resolveTenantId()} is only reachable if a caller explicitly sets a blank string via 
- * {@link TenantContext#setCurrentTenantId(String)}. 
+ * <p>Note: {@link TenantContext#getCurrentTenantId()} falls back to {@code "default-tenant"} when
+ * the ThreadLocal is empty; repository access treats that sentinel as missing tenant context.
  *
  * @doc.type class
  * @doc.purpose Tenant isolation integration tests for YappcDataCloudRepository (plan 4.4.3) 
@@ -225,23 +224,22 @@ class TenantIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("when no tenant is explicitly set, 'default-tenant' fallback is used")
-        void noExplicitTenantUsesDefaultFallback() { 
-            // GIVEN — TenantContext cleared; getCurrentTenantId() returns "default-tenant" 
+        @DisplayName("when no tenant is explicitly set, default-tenant fails closed")
+        void noExplicitTenantFailsClosed() {
+            // GIVEN — TenantContext cleared; getCurrentTenantId() returns "default-tenant"
             TenantContext.clear(); 
             when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
                     .thenReturn(Promise.of(List.of())); 
 
-            // WHEN
-            runPromise(() -> repository.findAll()); 
+            // WHEN / THEN
+            assertThat(runPromiseThrowing(() -> repository.findAll()))
+                    .isInstanceOfAny(SecurityException.class, RuntimeException.class)
+                    .satisfiesAnyOf(
+                            ex -> assertThat(ex).isInstanceOf(SecurityException.class),
+                            ex -> assertThat(ex.getCause()).isInstanceOf(SecurityException.class));
 
-            // THEN — the fallback sentinel is forwarded to DataCloudClient
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
-            verify(client).query( 
-                    tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); 
-            assertThat(tenantCaptor.getValue()) 
-                    .as("TenantContext.getCurrentTenantId() defaults to 'default-tenant' when not set")
-                    .isEqualTo("default-tenant");
+            // THEN — the fallback sentinel is rejected before DataCloudClient is called
+            verify(client, never()).query(anyString(), anyString(), any(DataCloudClient.Query.class));
         }
     }
 

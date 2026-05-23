@@ -1,0 +1,83 @@
+schemaVersion: "1.0.0"
+id: java-fixture
+name: Java Fixture Product
+kind: product
+lifecycleStatus: planned
+executionEnabled: false
+owner: kernel-team
+
+readiness:
+  reasonCodes:
+    - polyglot-fixture-execution-proof
+    - opening-pilot-policy-exemption
+    - java-adapter-native-tests-pass
+  requiredGates:
+    - gradle-adapter-conformance
+    - java-native-fixture-tests
+    - polyglot-fixture-proof
+    - security
+    - privacy
+    - i18n
+    - a11y
+  nextRequiredWork:
+    - Keep java-fixture planned until opening lifecycle pilot policy includes fixture execution products
+    - Run pnpm check:polyglot-product-fixture before changing GradleJavaAdapter behavior
+  evidenceRefs:
+    - products/java-fixture/kernel-product.yaml
+    - products/java-fixture/build.gradle.kts
+    - products/java-fixture/src/test/java/com/ghatana/fixture/IntegrationTest.java
+    - scripts/check-polyglot-fixture-proof.mjs
+
+scope:
+  tenantId: ghatana
+  workspaceId: kernel
+  projectId: fixtures
+
+registryProviderRef:
+  providerId: ghatana-file-registry
+
+sourceProviderRef:
+  providerId: ghatana-file-registry
+  config:
+    lifecycleConfigPath: kernel-product.yaml
+
+lifecycleProfile: standard-polyglot-product
+
+surfaces:
+  - id: java-fixture-lib
+    type: sdk
+    implementationStatus: implemented
+    language: java
+    runtime: jvm
+    buildSystem: gradle
+    gradlePath: products/java-fixture/build.gradle.kts
+    adapterHint: gradle-java
+
+  - id: java-fixture-service
+    type: backend-api
+    implementationStatus: implemented
+    language: java
+    runtime: jvm
+    buildSystem: gradle
+    gradlePath: products/java-fixture/build.gradle.kts
+    adapterHint: gradle-java
+
+environments:
+  - name: local
+    target: local
+    variables:
+      JAVA_OPTS: -Xmx512m
+
+gateBindings:
+  - gateId: java-checkstyle
+    phase: validate
+    required: true
+  - gateId: java-spotbugs
+    phase: validate
+    required: true
+  - gateId: java-unit-test
+    phase: test
+    required: true
+  - gateId: java-build
+    phase: build
+    required: true

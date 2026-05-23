@@ -22,11 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -72,19 +69,7 @@ public final class ProductUnitIntentValidationService {
     private static final Logger log = LoggerFactory.getLogger(ProductUnitIntentValidationService.class);
 
     private static final Pattern KEBAB_CASE_PATTERN = Pattern.compile("^[a-z0-9]+(?:-[a-z0-9]+)*$");
-    private static final Set<String> KNOWN_LIFECYCLE_PROFILES = Set.of(
-            "standard",
-            "frontend-only",
-            "backend-only",
-            "minimal",
-            "full"
-    );
-    private static final Set<String> KNOWN_PROVIDERS = Set.of(
-            "ghatana-kernel",
-            "ghatana-file-registry",
-            "external"
-    );
-    private static final Set<String> SECRET_KEY_PATTERNS = Set.of(
+    private static final java.util.Set<String> SECRET_KEY_PATTERNS = java.util.Set.of(
             "password",
             "secret",
             "token",
@@ -93,6 +78,23 @@ public final class ProductUnitIntentValidationService {
             "api_key",
             "private_key"
     );
+    private final ProductUnitKernelContractRegistry contractRegistry;
+
+    /**
+     * Creates a validation service using the default Kernel ProductUnit contract registry.
+     */
+    public ProductUnitIntentValidationService() {
+        this(new ProductUnitKernelContractRegistry());
+    }
+
+    /**
+     * Creates a validation service with an explicit Kernel contract registry.
+     *
+     * @param contractRegistry Kernel contract registry
+     */
+    public ProductUnitIntentValidationService(@NotNull ProductUnitKernelContractRegistry contractRegistry) {
+        this.contractRegistry = contractRegistry;
+    }
 
     /**
      * Result of ProductUnitIntent validation.
@@ -221,7 +223,7 @@ public final class ProductUnitIntentValidationService {
             errors.add("target.registryProvider is required");
         } else if (!(registryProvider instanceof String) || ((String) registryProvider).isBlank()) {
             errors.add("target.registryProvider must be a non-empty string");
-        } else if (!KNOWN_PROVIDERS.contains(registryProvider) && !"external".equals(registryProvider)) {
+        } else if (!contractRegistry.isProviderKnown((String) registryProvider)) {
             errors.add("target.registryProvider '" + registryProvider + "' is not a known provider. Mark as 'external' if intentional.");
         }
 
@@ -285,6 +287,14 @@ public final class ProductUnitIntentValidationService {
             List<?> surfacesList = (List<?>) surfaces;
             if (surfacesList.isEmpty()) {
                 errors.add("productUnit.surfaces must be non-empty");
+            } else {
+                for (Object surface : surfacesList) {
+                    if (!(surface instanceof String surfaceName) || surfaceName.isBlank()) {
+                        errors.add("productUnit.surfaces entries must be non-empty strings");
+                    } else if (!contractRegistry.isSurfaceKnown(surfaceName)) {
+                        errors.add("productUnit.surfaces contains unknown surface: " + surfaceName);
+                    }
+                }
             }
         }
 
@@ -293,7 +303,7 @@ public final class ProductUnitIntentValidationService {
         if (lifecycleProfile != null) {
             if (!(lifecycleProfile instanceof String)) {
                 errors.add("productUnit.lifecycleProfile must be a string");
-            } else if (!KNOWN_LIFECYCLE_PROFILES.contains(lifecycleProfile)) {
+            } else if (!contractRegistry.isLifecycleProfileKnown((String) lifecycleProfile)) {
                 errors.add("productUnit.lifecycleProfile '" + lifecycleProfile + "' is not a recognized profile");
             }
         }
@@ -368,7 +378,7 @@ public final class ProductUnitIntentValidationService {
         if (profile != null) {
             if (!(profile instanceof String)) {
                 errors.add("requestedLifecycle.profile must be a string");
-            } else if (!KNOWN_LIFECYCLE_PROFILES.contains(profile)) {
+            } else if (!contractRegistry.isLifecycleProfileKnown((String) profile)) {
                 errors.add("requestedLifecycle.profile '" + profile + "' is not a recognized profile");
             }
         }
@@ -396,7 +406,7 @@ public final class ProductUnitIntentValidationService {
      * @return true if recognized, false otherwise
      */
     public boolean isRecognizedLifecycleProfile(@Nullable String profile) {
-        return profile != null && KNOWN_LIFECYCLE_PROFILES.contains(profile);
+        return contractRegistry.isLifecycleProfileKnown(profile);
     }
 
     /**
@@ -404,7 +414,7 @@ public final class ProductUnitIntentValidationService {
      *
      * @return unmodifiable set of recognized profile names
      */
-    public Set<String> getRecognizedLifecycleProfiles() {
-        return Set.copyOf(KNOWN_LIFECYCLE_PROFILES);
+    public java.util.Set<String> getRecognizedLifecycleProfiles() {
+        return contractRegistry.lifecycleProfiles();
     }
 }

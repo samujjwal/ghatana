@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.learn.*;
@@ -32,14 +33,35 @@ public class LearningServiceImpl implements LearningService {
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
+    private final LearningEvidenceRepository evidenceRepository;
+    private final boolean persistEvidence;
 
     public LearningServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics) {
+        this(aiService, auditLogger, metrics, LearningEvidenceRepository.noop(), false);
+    }
+
+    public LearningServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            LearningEvidenceRepository evidenceRepository) {
+        this(aiService, auditLogger, metrics, evidenceRepository, true);
+    }
+
+    private LearningServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            LearningEvidenceRepository evidenceRepository,
+            boolean persistEvidence) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
+        this.evidenceRepository = evidenceRepository;
+        this.persistEvidence = persistEvidence;
     }
 
     @Override
@@ -59,7 +81,10 @@ public class LearningServiceImpl implements LearningService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.learn.analyze", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("learn.analyze", observation, insights))
-                            .map(v -> insights);
+                            .then(v -> persistEvidence
+                                    ? evidenceRepository.save(buildLearningEvidence(observation, insights))
+                                            .map(ignored -> insights)
+                                    : Promise.of(insights));
                 })
                 .whenException(e -> {
                     log.error("Learning analysis failed", e);
@@ -90,6 +115,60 @@ public class LearningServiceImpl implements LearningService {
                     AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.learn.analyze", result, tags);
                     return Promise.of(parseInsightsFromAIResponse(result, observation));
                 });
+    }
+
+    private LearningEvidenceRepository.LearningEvidence buildLearningEvidence(
+            Observation observation,
+            Insights insights) {
+        String tenantId = resolveTenantId();
+        String runRef = stableRef(observation.runRef(), "run-unavailable");
+        String projectId = extractProjectRef(runRef);
+        return new LearningEvidenceRepository.LearningEvidence(
+                "learn-" + insights.id(),
+                tenantId,
+                projectId,
+                runRef,
+                observation,
+                insights,
+                List.of(observation.id(), insights.id(), runRef),
+                Map.of(
+                        "patternCount", safeSize(insights.patterns()),
+                        "anomalyCount", safeSize(insights.anomalies()),
+                        "recommendationCount", safeSize(insights.recommendations())
+                ),
+                Instant.now()
+        );
+    }
+
+    private static String resolveTenantId() {
+        String tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new SecurityException(
+                    "LearningService requires an active tenant context. "
+                            + "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "LearningService does not allow default-tenant. "
+                            + "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
+        }
+        return tenantId;
+    }
+
+    private static String stableRef(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String extractProjectRef(String runRef) {
+        int separator = runRef.indexOf(':');
+        if (separator > 0) {
+            return runRef.substring(0, separator);
+        }
+        return runRef;
+    }
+
+    private static int safeSize(List<?> values) {
+        return values == null ? 0 : values.size();
     }
 
     private String buildAnalysisPrompt(Observation observation, HistoricalContext context) {

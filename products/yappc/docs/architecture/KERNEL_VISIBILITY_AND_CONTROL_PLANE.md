@@ -1,6 +1,6 @@
 # Kernel Visibility and Control Plane
 
-> **Status**: Existing and Executable
+> **Status**: Partially Production-Backed
 > 
 > This document defines the YAPPC → Kernel visibility and control plane boundaries as implemented and operational.
 
@@ -59,9 +59,9 @@ YAPPC consumes Kernel outputs through:
 
 ## 4. Data Inputs
 
-### 4.1 Local Development (Initial Implementation)
+### 4.1 Local Development Provider
 
-YAPPC reads Kernel outputs from local filesystem:
+YAPPC can read Kernel outputs from the local filesystem through the development provider:
 
 ```
 .kernel/out/products/<productId>/
@@ -73,13 +73,25 @@ YAPPC reads Kernel outputs from local filesystem:
 └── gates.json                   # Gate evaluation results
 ```
 
-### 4.2 Future: Data Cloud / Event Stream
+### 4.2 Production Provider
 
-Production implementation will consume:
-- Data Cloud events for lifecycle phase transitions
-- Event Cloud streams for real-time updates
-- Kernel health APIs for current state
-- ProductUnit registry for metadata
+Production reads must flow through `KernelLifecycleTruthSource` implementations backed by durable platform truth:
+- Data Cloud lifecycle/run/read-model records
+- Event Cloud streams for real-time lifecycle changes
+- Kernel health APIs for current state when available
+- ProductUnit registry metadata
+
+The filesystem provider is valid only for local development and deterministic test fixtures. Production profile wiring must inject a Data Cloud/Event Cloud provider and must not treat `.kernel/out/products/**` as multi-tenant runtime truth.
+
+### 4.3 Implementation State
+
+| Component | State | Notes |
+| --- | --- | --- |
+| ProductUnitIntent export | Production-backed | Export validates workspace, project, lifecycle profile, provider, and surfaces through a shared registry. |
+| ProductUnitIntent validation | Production-backed | Provider/profile/surface validation uses `ProductUnitKernelContractRegistry`. |
+| CLI Kernel handoff | Production-backed | Kernel ProductUnit creation requires explicit workspace ID, project ID, lifecycle profile, and surfaces. |
+| Kernel filesystem ingest | Local-development provider | Managed executor lifecycle is supported; filesystem reads are not production truth. |
+| Kernel Data Cloud ingest | Provider contract implemented | Runtime composition must wire the Data Cloud/Event Cloud provider for production deployments. |
 
 ---
 

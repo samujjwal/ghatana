@@ -69,16 +69,27 @@ public final class ProductUnitIntentExporter {
 
     private final ObjectMapper yamlMapper;
     private final ObjectMapper jsonMapper;
+    private final ProductUnitKernelContractRegistry contractRegistry;
 
     /**
      * Constructs a new ProductUnitIntentExporter with default YAML and JSON mappers.
      */
     public ProductUnitIntentExporter() {
+        this(new ProductUnitKernelContractRegistry());
+    }
+
+    /**
+     * Constructs a new ProductUnitIntentExporter with an explicit Kernel contract registry.
+     *
+     * @param contractRegistry Kernel contract registry
+     */
+    public ProductUnitIntentExporter(@NotNull ProductUnitKernelContractRegistry contractRegistry) {
         this.yamlMapper = new ObjectMapper(new YAMLFactory());
         this.yamlMapper.enable(SerializationFeature.INDENT_OUTPUT);
         
         this.jsonMapper = new ObjectMapper();
         this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        this.contractRegistry = contractRegistry;
     }
 
     /**
@@ -260,8 +271,28 @@ public final class ProductUnitIntentExporter {
         if (request.surfaces() == null || request.surfaces().isEmpty()) {
             throw new ExportException("surfaces must be non-empty");
         }
+        for (String surface : request.surfaces()) {
+            if (surface == null || surface.isBlank()) {
+                throw new ExportException("surfaces must contain only non-empty values");
+            }
+            if (!contractRegistry.isSurfaceKnown(surface)) {
+                throw new ExportException("Unknown ProductUnit surface: " + surface);
+            }
+        }
         if (request.runtimeProvider() == null || request.runtimeProvider().isBlank()) {
             throw new ExportException("runtimeProvider is required");
+        }
+        if (!contractRegistry.isProviderKnown(request.runtimeProvider())) {
+            throw new ExportException("Unknown Kernel registry provider: " + request.runtimeProvider());
+        }
+        if (request.lifecycleProfile() == null || request.lifecycleProfile().isBlank()) {
+            throw new ExportException("lifecycleProfile is required");
+        }
+        if (!contractRegistry.isLifecycleProfileKnown(request.lifecycleProfile())) {
+            throw new ExportException("Unknown lifecycle profile: " + request.lifecycleProfile());
+        }
+        if (request.workspaceId() == null || request.workspaceId().isBlank()) {
+            throw new ExportException("workspaceId is required");
         }
     }
 

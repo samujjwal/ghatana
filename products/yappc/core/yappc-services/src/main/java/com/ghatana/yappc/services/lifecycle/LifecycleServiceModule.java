@@ -29,12 +29,14 @@ import com.ghatana.yappc.services.ai.AiServiceModule;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
+import com.ghatana.yappc.services.evolve.DataCloudEvolutionPlanRepository;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
+import com.ghatana.yappc.services.learn.DataCloudLearningEvidenceRepository;
 import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.observe.ObserveServiceImpl;
 import com.ghatana.yappc.services.run.CiCdPort;
@@ -262,9 +264,14 @@ public class LifecycleServiceModule extends AbstractModule {
     EvolutionService evolutionService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            DataCloudClient dataCloudClient) {
         logger.info("Creating EvolutionService");
-        return new EvolutionServiceImpl(aiService, auditLogger, metrics);
+        return new EvolutionServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                new DataCloudEvolutionPlanRepository(dataCloudClient));
     }
 
     // ========== Phase 7: Learn ==========
@@ -274,9 +281,14 @@ public class LifecycleServiceModule extends AbstractModule {
     LearningService learningService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
+            MetricsCollector metrics,
+            DataCloudClient dataCloudClient) {
         logger.info("Creating LearningService");
-        return new LearningServiceImpl(aiService, auditLogger, metrics);
+        return new LearningServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                new DataCloudLearningEvidenceRepository(dataCloudClient));
     }
 
     // ========== Phase 8: Validate ==========

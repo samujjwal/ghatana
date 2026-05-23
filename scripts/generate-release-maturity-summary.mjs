@@ -3,8 +3,16 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const repoRoot = process.cwd();
+function resolveRepoRoot() {
+  const cliRootFlagIndex = process.argv.indexOf('--root');
+  const cliRoot = cliRootFlagIndex >= 0 ? process.argv[cliRootFlagIndex + 1] : null;
+  const envRoot = process.env.RELEASE_EVIDENCE_ROOT ?? null;
+  return path.resolve(cliRoot ?? envRoot ?? process.cwd());
+}
+
+const repoRoot = resolveRepoRoot();
 const releaseEnv = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceRoot = path.join(repoRoot, 'release-evidence');
 const releaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
@@ -47,10 +55,13 @@ function readPerProductReleaseScorecards() {
     return [];
   }
 
+  const scopedProductIds = new Set(productReleaseReadiness?.affectedProducts ?? []);
+
   return readdirSync(evidenceDir)
     .filter((entry) => /^product-release-readiness\.[^.]+\.json$/i.test(entry))
     .map((entry) => readJsonIfExists(`.kernel/evidence/${entry}`))
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((scorecard) => scopedProductIds.size === 0 || scopedProductIds.has(scorecard.productId));
 }
 
 const perProductReleaseScorecards = readPerProductReleaseScorecards();
@@ -62,8 +73,13 @@ const perProductFailedScorecards = perProductReleaseScorecards.filter((scorecard
 const unresolvedP0P1Blockers = perProductReleaseScorecards
   .flatMap((scorecard) => scorecard.blockingGaps ?? [])
   .filter((gap) => gap.severity === 'P0' || gap.severity === 'P1');
-const implementationAverageScore = implementationPlanProgress?.summary?.averageMaturityScore ?? null;
-const criticalDimensionsBelowThreshold = implementationPlanProgress?.summary?.criticalDimensionsBelowThresholdCount ?? null;
+const implementationAverageScore = perProductReleaseScorecards.length > 0
+  ? Number((perProductReleaseScorecards.reduce((sum, scorecard) => sum + Number(scorecard.averageScore ?? 0), 0) / perProductReleaseScorecards.length).toFixed(2))
+  : null;
+const criticalDimensionsBelowThreshold = perProductReleaseScorecards.reduce(
+  (sum, scorecard) => sum + (Array.isArray(scorecard.belowTargetDimensions) ? scorecard.belowTargetDimensions.length : 0),
+  0,
+);
 const productSloBudgetsPass = isPassingEvidence(productSloBudgets);
 const productCostBudgetsPass = isPassingEvidence(productCostBudgets);
 const productDomainInvariantsPass = isPassingEvidence(productDomainInvariants);
@@ -78,7 +94,7 @@ const thresholdPolicyAvailable = Boolean(
 const thresholdPolicyPassed =
   thresholdPolicyAvailable
   && implementationAverageScore !== null
-  && implementationAverageScore >= 4.0
+  && implementationAverageScore >= releaseTargetScore
   && criticalDimensionsBelowThreshold === 0
   && unresolvedP0P1Blockers.length === 0
   && productSloBudgetsPass
@@ -240,3 +256,7 @@ const markdownLines = [
 
 writeFileSync(summaryMarkdownPath, `${markdownLines.join('\n')}\n`, 'utf8');
 console.log(`Generated release summary: ${path.relative(repoRoot, summaryJsonPath)}`);
+
+if (import.meta.url !== pathToFileURL(process.argv[1]).href) {
+  // no-op when imported by tests
+}

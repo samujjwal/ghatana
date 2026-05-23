@@ -1,0 +1,90 @@
+schemaVersion: 1.0.0
+productId: polyglot-fixture
+lifecycleProfile: standard-web-api-product
+allowExperimentalAdapters: false
+executionEnabled: true
+# Authoritative Source: docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md
+
+requiredManifests:
+  build:
+    - lifecycle-result
+    - artifact-manifest
+    - lifecycle-health-snapshot
+  package:
+    - artifact-manifest
+    - lifecycle-health-snapshot
+  deploy:
+    - deployment-manifest
+    - lifecycle-health-snapshot
+  verify:
+    - verify-health-report
+    - lifecycle-health-snapshot
+  rollback:
+    - rollback-manifest
+    - lifecycle-health-snapshot
+
+manifestSchemaVersions:
+  lifecycle-result: 1.0.0
+  artifact-manifest: 1.0.0
+  lifecycle-health-snapshot: 1.0.0
+  deployment-manifest: 1.0.0
+  verify-health-report: 1.0.0
+  lifecycle-events: 1.0.0
+  rollback-manifest: 1.0.0
+
+plugins:
+  audit:
+    bindingId: kernel.audit
+    required: true
+  observability:
+    bindingId: kernel.observability
+    required: true
+  data-access:
+    bindingId: kernel.data-access
+    required: true
+  identity-entitlement:
+    bindingId: kernel.identity-entitlement
+    required: true
+  security:
+    bindingId: kernel.security
+    required: true
+
+policyPacks:
+  security:
+    - kernel://policy-packs/web-api-security-baseline
+    - kernel://policy-packs/container-image-integrity
+  privacy:
+    - kernel://policy-packs/non-regulated-customer-data-minimization
+
+environments:
+  local:
+    type: local
+    secretsProvider: local-env
+    deploymentProvider: compose-local
+    safeForDefault: true
+
+telemetry:
+  productUnitId: polyglot-fixture
+  correlationScope: product-lifecycle
+
+surfaces:
+  - type: java-service
+    path: surfaces/java
+    buildFile: surfaces/java/build.gradle.kts
+    implementationStatus: implemented
+  - type: typescript-web
+    path: surfaces/typescript
+    packagePath: surfaces/typescript/package.json
+    implementationStatus: implemented
+  - type: node-service
+    path: surfaces/node
+    packagePath: surfaces/node/package.json
+    implementationStatus: implemented
+  - type: rust-service
+    path: surfaces/rust
+    buildFile: surfaces/rust/Cargo.toml
+    implementationStatus: implemented
+  - type: python-worker
+    path: surfaces/python
+    buildFile: surfaces/python/pyproject.toml
+    implementationStatus: implemented

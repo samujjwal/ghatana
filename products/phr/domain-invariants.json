@@ -1,0 +1,107 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "phr",
+  "description": "Domain invariant declarations for PHR (Personal Health Record) product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "phr-001",
+      "name": "Patient identity verification",
+      "category": "identity/authorization",
+      "description": "Patient identity must be verified before any record access",
+      "testId": "PatientIdentityVerificationTest",
+      "testPath": "src/test/java/com/ghatana/phr/security/PHRSecurityManagerImplTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-002",
+      "name": "Tenant data isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Patient data must be isolated by tenant with no cross-tenant leakage",
+      "testId": "TenantDataIsolationTest",
+      "testPath": "src/test/java/com/ghatana/phr/security/PHRSecurityIntegrationTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-003",
+      "name": "Consent grant lifecycle",
+      "category": "lifecycle_state_transitions",
+      "description": "Consent grants must follow valid state transitions (granted -> active -> revoked -> expired)",
+      "testId": "ConsentGrantLifecycleTest",
+      "testPath": "src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-004",
+      "name": "FHIR resource data integrity",
+      "category": "data_integrity",
+      "description": "FHIR resources must maintain referential integrity and schema compliance",
+      "testId": "FhirResourceIntegrityTest",
+      "testPath": "src/test/java/com/ghatana/phr/kernel/PhrKernelBoundaryContractTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-005",
+      "name": "Patient access audit trail",
+      "category": "audit/evidence",
+      "description": "All patient data access must be logged with user, timestamp, purpose, and outcome",
+      "testId": "PatientAccessAuditTrailTest",
+      "testPath": "src/test/java/com/ghatana/phr/observability/PHRAuditTrailServiceTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-006",
+      "name": "Consent-based access control",
+      "category": "privacy/consent",
+      "description": "Data access must be gated by valid consent for the requested purpose",
+      "testId": "ConsentBasedAccessControlTest",
+      "testPath": "src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-007",
+      "name": "Data sovereignty enforcement",
+      "category": "privacy/consent",
+      "description": "Patient data must be stored and processed according to data sovereignty requirements",
+      "testId": "DataSovereigntyEnforcementTest",
+      "testPath": "src/test/java/com/ghatana/phr/security/PHRPrivacyManagerImplTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-008",
+      "name": "Break-glass emergency access",
+      "category": "product_specific_business_correctness",
+      "description": "Emergency break-glass access must be audited, time-boxed, and post-reviewed",
+      "testId": "BreakGlassEmergencyAccessTest",
+      "testPath": "src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "phr-009",
+      "name": "Patient data access matrix",
+      "category": "product_specific_business_correctness",
+      "description": "Access rights must follow patient/caregiver/clinician/admin matrix",
+      "testId": "PatientAccessMatrixTest",
+      "testPath": "src/test/java/com/ghatana/phr/security/PHRSecurityIntegrationTest.java",
+      "severity": "high"
+    },
+    {
+      "id": "phr-010",
+      "name": "FHIR R4 validation",
+      "category": "product_specific_business_correctness",
+      "description": "All FHIR resources must validate against R4 specification and profiles",
+      "testId": "FhirR4ValidationTest",
+      "testPath": "src/test/java/com/ghatana/phr/kernel/PhrKernelBoundaryContractTest.java",
+      "severity": "high"
+    }
+  ]
+}

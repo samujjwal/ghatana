@@ -13,7 +13,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("NotificationPreferenceInteractionHandler")
+/**
+ * @doc.type class
+ * @doc.purpose Validates notification preference handling with opt-out respect
+ * @doc.layer product
+ * @doc.pattern InteractionHandlerTest
+ */
+@DisplayName("dm-010: Notification Preference Handling Tests")
 class NotificationPreferenceInteractionHandlerTest extends EventloopTestBase {
 
     @Test

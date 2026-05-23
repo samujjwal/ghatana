@@ -296,6 +296,24 @@
         "file": "products/typescript-fixture/README.md",
         "mustContain": "backend-only"
       }
+    },
+    "polyglot-fixture": {
+      "ui": true,
+      "uiMode": "web",
+      "surfaces": [
+        "backend-api",
+        "web",
+        "worker",
+        "worker"
+      ],
+      "surfaceStatuses": {
+        "backend-api": "implemented",
+        "web": "implemented",
+        "worker": "implemented"
+      },
+      "clientPackages": [
+        "products/polyglot-fixture/surfaces/typescript/package.json"
+      ]
     }
   }
 }

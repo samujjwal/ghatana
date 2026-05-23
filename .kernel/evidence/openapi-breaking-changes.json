@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T02:17:59.365Z",
+  "generatedAt": "2026-05-23T04:04:26.622Z",
   "status": "passed",
   "details": [
     {
@@ -8,7 +8,10 @@
       "currentPath": "products/data-cloud/contracts/openapi/data-cloud.yaml",
       "removedCount": 0,
       "waivedRemoved": [],
-      "unwaivedRemoved": []
+      "unwaivedRemoved": [],
+      "schemaBreakingChanges": 0,
+      "unwaivedSchemaChanges": 0,
+      "schemaChanges": []
     },
     {
       "id": "aep",
@@ -16,7 +19,10 @@
       "currentPath": "products/data-cloud/contracts/openapi/aep.yaml",
       "removedCount": 0,
       "waivedRemoved": [],
-      "unwaivedRemoved": []
+      "unwaivedRemoved": [],
+      "schemaBreakingChanges": 0,
+      "unwaivedSchemaChanges": 0,
+      "schemaChanges": []
     },
     {
       "id": "digital-marketing",
@@ -24,7 +30,10 @@
       "currentPath": "products/digital-marketing/dm-api/src/main/resources/openapi.json",
       "removedCount": 0,
       "waivedRemoved": [],
-      "unwaivedRemoved": []
+      "unwaivedRemoved": [],
+      "schemaBreakingChanges": 0,
+      "unwaivedSchemaChanges": 0,
+      "schemaChanges": []
     },
     {
       "id": "flashit",
@@ -32,7 +41,10 @@
       "currentPath": "products/flashit/backend/gateway/openapi.yaml",
       "removedCount": 0,
       "waivedRemoved": [],
-      "unwaivedRemoved": []
+      "unwaivedRemoved": [],
+      "schemaBreakingChanges": 0,
+      "unwaivedSchemaChanges": 0,
+      "schemaChanges": []
     }
   ],
   "violations": []

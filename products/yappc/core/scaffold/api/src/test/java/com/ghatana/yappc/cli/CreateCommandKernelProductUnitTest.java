@@ -64,7 +64,11 @@ class CreateCommandKernelProductUnitTest {
         int exitCode = new CommandLine(new CreateCommand()).execute(
                 "digital-marketing",
                 "--target", "kernel-product-unit",
-                "--intent-output", intentOutput.toString()
+                "--intent-output", intentOutput.toString(),
+                "--workspace-id", "workspace-001",
+                "--project-id", "digital-marketing",
+                "--surface", "web-api",
+                "--lifecycle-profile", "standard-web-api-product"
         );
 
         assertThat(exitCode).isEqualTo(0);
@@ -82,7 +86,10 @@ class CreateCommandKernelProductUnitTest {
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
                 "--runtime-provider", "ghatana-kernel",
-                "--lifecycle-profile", "standard"
+                "--workspace-id", "workspace-001",
+                "--project-id", "campaign-management",
+                "--surface", "web-api",
+                "--lifecycle-profile", "standard-web-api-product"
         );
 
         assertThat(exitCode).isEqualTo(0);
@@ -101,7 +108,11 @@ class CreateCommandKernelProductUnitTest {
         int exitCode = new CommandLine(new CreateCommand()).execute(
                 "test-product",
                 "--target", "kernel-product-unit",
-                "--intent-output", intentOutput.toString()
+                "--intent-output", intentOutput.toString(),
+                "--workspace-id", "workspace-001",
+                "--project-id", "test-product",
+                "--surface", "web-api",
+                "--lifecycle-profile", "standard-web-api-product"
         );
 
         assertThat(exitCode).isEqualTo(0);
@@ -118,6 +129,42 @@ class CreateCommandKernelProductUnitTest {
         int exitCode = new CommandLine(new CreateCommand()).execute(
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString()
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when workspace ID is missing for kernel-product-unit")
+    void failsWhenWorkspaceIdMissing() {
+        Path intentOutput = tempDir.resolve("missing-workspace.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--project-id", "digital-marketing",
+                "--surface", "web-api",
+                "--lifecycle-profile", "standard-web-api-product"
+        );
+
+        assertThat(exitCode).isEqualTo(1);
+        assertThat(intentOutput).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("fails when surfaces are missing for kernel-product-unit")
+    void failsWhenSurfacesMissing() {
+        Path intentOutput = tempDir.resolve("missing-surface.yaml");
+
+        int exitCode = new CommandLine(new CreateCommand()).execute(
+                "digital-marketing",
+                "--target", "kernel-product-unit",
+                "--intent-output", intentOutput.toString(),
+                "--workspace-id", "workspace-001",
+                "--project-id", "digital-marketing",
+                "--lifecycle-profile", "standard-web-api-product"
         );
 
         assertThat(exitCode).isEqualTo(1);

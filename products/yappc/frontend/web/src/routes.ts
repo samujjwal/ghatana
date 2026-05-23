@@ -78,6 +78,7 @@ export default [
       route('admin/prompt-versions', 'routes/app/admin/prompt-versions.tsx'),
       route('admin/ab-testing', 'routes/app/admin/ab-testing.tsx'),
       route('admin/feature-flags', 'routes/app/admin/feature-flags.tsx'),
+      route('admin/observability', 'routes/app/admin/observability.tsx'),
     ]),
 
     // Catch-all route for 404

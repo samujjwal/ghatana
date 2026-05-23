@@ -209,7 +209,17 @@ public final class AISuggestionService {
 
     private static String resolveTenantId() {
         String tenantId = TenantContext.getCurrentTenantId();
-        return (tenantId != null && !tenantId.isBlank()) ? tenantId : "default";
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new SecurityException(
+                    "AISuggestionService requires an active tenant context. "
+                            + "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "AISuggestionService does not allow default-tenant. "
+                            + "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
+        }
+        return tenantId;
     }
 
     // ── Domain types ──────────────────────────────────────────────────────────

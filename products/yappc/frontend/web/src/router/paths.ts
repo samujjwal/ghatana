@@ -190,6 +190,7 @@ export const ROUTES = {
     billing: '/admin/billing',
     promptVersions: '/admin/prompt-versions',
     abTesting: '/admin/ab-testing',
+    observability: '/admin/observability',
   },
 
   // ── Errors ─────────────────────────────────────────────────────────────

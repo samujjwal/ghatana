@@ -12,8 +12,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for CampaignStateMachine.
+ * 
+ * @doc.type class
+ * @doc.purpose Validates campaign lifecycle state machine transitions
+ * @doc.layer product
+ * @doc.pattern StateMachineTest
  */
-@DisplayName("CampaignStateMachine Tests")
+@DisplayName("dm-001: Campaign Lifecycle State Machine Tests")
 class CampaignStateMachineTest {
 
     private final CampaignStateMachine stateMachine = new CampaignStateMachine();

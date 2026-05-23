@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "language": "rust",
+  "buildTime": "2026-05-22T20:22:00Z",
+  "toolchain": "rust",
+  "artifacts": [
+    {
+      "name": "polyglot-rust-service",
+      "type": "binary",
+      "path": "target/release/polyglot-rust-service"
+    }
+  ],
+  "dependencies": []
+}

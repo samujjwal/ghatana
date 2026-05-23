@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-23T02:17:08.273Z",
-  "sourceCommit": "b24ce5f0a4eeb38947bd6c956c8a92f2cfabef05",
+  "generatedAt": "2026-05-23T03:49:22.864Z",
+  "sourceCommit": "f302e89c8e7116e8821a7957b4a06a5d7dff81e7",
   "sourceBranch": "main",
   "productScope": [
     "digital-marketing",
-    "finance",
-    "flashit",
     "phr"
   ],
   "releaseEnvironment": "staging",
@@ -65,45 +63,24 @@
     },
     "releaseScoreThresholdPolicy": {
       "available": true,
-      "pass": false,
-      "implementationAverageScore": 2.91,
+      "pass": true,
+      "implementationAverageScore": 5,
       "releaseTargetScore": 4,
-      "criticalDimensionsBelowThreshold": 36,
-      "unresolvedP0P1Blockers": 8,
+      "criticalDimensionsBelowThreshold": 0,
+      "unresolvedP0P1Blockers": 0,
       "productSloBudgetsPass": true,
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
       "openApiBreakingChangesPass": true,
-      "affectedProductCount": 4
+      "affectedProductCount": 2
     },
     "perProductReleaseReadiness": {
       "available": true,
-      "pass": false,
-      "productCount": 4,
-      "failedProductCount": 4,
+      "pass": true,
+      "productCount": 2,
+      "failedProductCount": 0,
       "releaseTargetScore": 4,
-      "failedProducts": [
-        {
-          "productId": "digital-marketing",
-          "releaseVerdict": "fail",
-          "averageScore": 3.63
-        },
-        {
-          "productId": "finance",
-          "releaseVerdict": "fail",
-          "averageScore": 3.63
-        },
-        {
-          "productId": "flashit",
-          "releaseVerdict": "fail",
-          "averageScore": 3.63
-        },
-        {
-          "productId": "phr",
-          "releaseVerdict": "fail",
-          "averageScore": 3.63
-        }
-      ]
+      "failedProducts": []
     },
     "requiredGates": [
       {
@@ -134,14 +111,14 @@
       {
         "gateKey": "releaseScoreThresholdPolicy",
         "available": true,
-        "pass": false
+        "pass": true
       },
       {
         "gateKey": "perProductReleaseReadiness",
         "available": true,
-        "pass": false
+        "pass": true
       }
     ]
   },
-  "pass": false
+  "pass": true
 }

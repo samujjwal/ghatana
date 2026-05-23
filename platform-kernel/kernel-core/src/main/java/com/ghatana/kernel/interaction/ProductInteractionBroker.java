@@ -94,10 +94,11 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.handlerRegistry = builder.handlerRegistry;
 
         // P0-01: Validate evidence writer in production and development modes
+        // Phase 3: TEST mode allows no-op evidence writer for test convenience
         if ((brokerMode == BrokerMode.PRODUCTION || brokerMode == BrokerMode.DEVELOPMENT)
             && evidenceWriter.isNoop()) {
             throw new IllegalStateException(
-                    "Production mode requires a real evidence writer. No-op evidence writer is not allowed.");
+                    "Production and development modes require a real evidence writer. No-op evidence writer is not allowed.");
         }
 
         // Phase 1: Start cache eviction task if TTL is configured
@@ -124,6 +125,51 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 .evidenceWriter(evidenceWriter)
                 .policyContextResolver(policyContextResolver)
                 .brokerMode(BrokerMode.PRODUCTION);
+    }
+
+    /**
+     * Phase 3: Creates a development-mode broker factory with optional evidence writer.
+     * Development mode allows no-op evidence writer for local development convenience.
+     *
+     * @param evidenceWriter the evidence writer (can be no-op in development)
+     * @param policyContextResolver the policy context resolver
+     * @return a builder configured for development mode
+     */
+    public static Builder developmentFactory(
+            ProductInteractionEvidenceWriter evidenceWriter,
+            ProductInteractionPolicyContextResolver policyContextResolver) {
+        return builder()
+                .evidenceWriter(evidenceWriter)
+                .policyContextResolver(policyContextResolver)
+                .brokerMode(BrokerMode.DEVELOPMENT);
+    }
+
+    /**
+     * Phase 3: Creates a test-mode broker factory with no-op evidence writer and relaxed policy.
+     * Test mode is optimized for unit and integration testing with minimal external dependencies.
+     *
+     * @return a builder configured for test mode
+     */
+    public static Builder testFactory() {
+        return builder()
+                .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
+                .brokerMode(BrokerMode.TEST);
+    }
+
+    /**
+     * Phase 3: Creates a test-mode broker factory with custom policy evaluator.
+     * Test mode is optimized for unit and integration testing with minimal external dependencies.
+     *
+     * @param policyEvaluator custom policy evaluator for test scenarios
+     * @return a builder configured for test mode
+     */
+    public static Builder testFactory(ProductInteractionPolicyEvaluator policyEvaluator) {
+        return builder()
+                .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
+                .policyEvaluator(policyEvaluator)
+                .brokerMode(BrokerMode.TEST);
     }
 
     public <Req, Res> Promise<ProductInteractionOutcome<Res>> execute(ProductInteractionRequest<Req> request) {
@@ -385,19 +431,22 @@ public final class ProductInteractionBroker implements AutoCloseable {
     }
 
     // P0-03: Include payload hash and contract metadata in replay key for idempotency
+    // Phase 3: Include contract schema hash for stronger idempotency guarantees
     private static String interactionKey(ProductInteractionRequest<?> request, ProductInteractionContract contract) {
         String payloadHash = computePayloadHash(request.payload());
+        String contractSchemaHash = computeContractSchemaHash(contract);
         String contractVersion = request.contractVersion();
         String providerId = request.providerProductId();
         String consumerId = request.consumerProductId();
         String productUnitId = request.productUnitId();
         
-        return String.format("%s::%s::%s::%s::%s::%s::%s::%s::%s",
+        return String.format("%s::%s::%s::%s::%s::%s::%s::%s::%s::%s",
                 request.contractId(),
                 request.interactionId(),
                 request.tenantId(),
                 request.workspaceId(),
                 payloadHash,
+                contractSchemaHash,
                 contractVersion,
                 providerId,
                 consumerId,
@@ -405,18 +454,33 @@ public final class ProductInteractionBroker implements AutoCloseable {
     }
 
     private static String computePayloadHash(Object payload) {
-        if (payload == null) {
-            return "null";
-        }
-        try {
-            String payloadString = payload.toString();
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(payloadString.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            // Fallback to string hash if SHA-256 is not available
-            return String.valueOf(payload.hashCode());
-        }
+        // Phase 3: Use canonical JSON hashing for deterministic payload hashing
+        return CanonicalJsonHasher.hash(payload);
+    }
+
+    /**
+     * Phase 3: Computes a hash of the contract schema for idempotency.
+     * This ensures that contract changes invalidate cached interactions.
+     *
+     * @param contract the product interaction contract
+     * @return Base64-encoded SHA-256 hash of contract schema
+     */
+    private static String computeContractSchemaHash(ProductInteractionContract contract) {
+        // Hash the contract's policy-relevant fields
+        String contractSchema = String.format("%s::%s::%s::%s::%s::%s::%s::%s::%s::%s",
+                contract.contractId(),
+                contract.contractVersion(),
+                contract.providerProductId(),
+                contract.consumerProductIds(),
+                contract.requiresAuth(),
+                contract.requiresTenant(),
+                contract.requiresConsent(),
+                contract.piiClassification(),
+                contract.tenantScope(),
+                contract.allowedCallerRoles(),
+                contract.allowedPurposes());
+        
+        return CanonicalJsonHasher.hashString(contractSchema);
     }
 
     /**
@@ -456,7 +520,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
         private ProductInteractionPolicyEvaluator policyEvaluator = ProductInteractionPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEvidenceWriter evidenceWriter = ProductInteractionEvidenceWriter.noop();
         private ProductInteractionPolicyContextResolver policyContextResolver = ProductInteractionPolicyContextResolver.developmentResolver();
-        private BrokerMode brokerMode = BrokerMode.DEVELOPMENT;
+        // Phase 3: Default to TEST mode for safety - requires explicit mode selection for production/development
+        private BrokerMode brokerMode = BrokerMode.TEST;
         private Duration requestTimeout = Duration.ofSeconds(2);
         private Duration cacheTtl = Duration.ofMinutes(5); // Phase 1: Default 5-minute TTL
         private ProductInteractionHandlerRegistry handlerRegistry;

@@ -1,0 +1,89 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "flashit",
+  "description": "Domain invariant declarations for FlashIt product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "flash-001",
+      "name": "Message delivery guarantee",
+      "category": "data_integrity",
+      "description": "Messages must be delivered exactly once with no duplicates or loss",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-002",
+      "name": "Message flow state machine",
+      "category": "lifecycle_state_transitions",
+      "description": "Messages must follow valid state transitions (created -> queued -> processing -> delivered/failed)",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-003",
+      "name": "Message content integrity",
+      "category": "data_integrity",
+      "description": "Message content must not be corrupted during transmission or storage",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-004",
+      "name": "Message audit trail",
+      "category": "audit/evidence",
+      "description": "All message operations must be logged with sender, recipient, timestamp, and outcome",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-005",
+      "name": "Message encryption",
+      "category": "privacy/consent",
+      "description": "Sensitive message content must be encrypted at rest and in transit",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-006",
+      "name": "Message authorization",
+      "category": "identity/authorization",
+      "description": "Message senders and recipients must be authenticated and authorized",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-007",
+      "name": "Tenant message isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Messages must be isolated by tenant with no cross-tenant leakage",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "flash-008",
+      "name": "Message retry with backoff",
+      "category": "product_specific_business_correctness",
+      "description": "Failed message delivery must retry with exponential backoff",
+      "testId": null,
+      "testPath": null,
+      "severity": "high"
+    }
+  ]
+}

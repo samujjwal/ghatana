@@ -13,6 +13,7 @@ import {
   ObservabilityDashboard,
   HealthMetric,
   ObservabilityDashboardProps,
+  ReleaseGateEvidence,
 } from '../ObservabilityDashboard';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,18 @@ function renderDashboard(props: Partial<ObservabilityDashboardProps> = {}) {
       {...props}
     />
   );
+}
+
+function makeReleaseGate(overrides: Partial<ReleaseGateEvidence> = {}): ReleaseGateEvidence {
+  return {
+    id: 'product-slo-budgets',
+    label: 'Product SLO budgets',
+    status: 'healthy',
+    evidenceHref: '/release-evidence/product-slo-budgets.json',
+    refreshedAt: new Date().toISOString(),
+    summary: 'All YAPPC SLO budgets passed',
+    ...overrides,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -146,5 +159,25 @@ describe('ObservabilityDashboard', () => {
       metrics: [makeMetric({ previousValue: '18ms' })],
     });
     expect(screen.getByText(/previous: 18ms/i)).toBeInTheDocument();
+  });
+
+  it('renders release gate evidence cards', () => {
+    renderDashboard({
+      metrics: [makeMetric()],
+      releaseGates: [
+        makeReleaseGate(),
+        makeReleaseGate({
+          id: 'openapi-breaking-changes',
+          label: 'OpenAPI breaking changes',
+          status: 'degraded',
+          summary: 'One route requires review',
+        }),
+      ],
+    });
+
+    expect(screen.getByText('Release Gate Evidence')).toBeInTheDocument();
+    expect(screen.getByText('Product SLO budgets')).toBeInTheDocument();
+    expect(screen.getByText('OpenAPI breaking changes')).toBeInTheDocument();
+    expect(screen.getAllByText('Evidence')).toHaveLength(2);
   });
 });

@@ -43,6 +43,15 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
       - name: Spotless (Java format check)
         run: |
           ./gradlew \
@@ -479,6 +488,13 @@ jobs:
       - name: Doc-tag compliance
         run: ./gradlew checkDocTags --no-daemon
 
+      - name: YAPPC release gate evidence
+        run: |
+          pnpm check:product-slo-budgets
+          pnpm check:product-cost-budgets
+          pnpm check:product-domain-invariants
+          pnpm check:openapi-breaking-changes
+
       - name: Upload Quality Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -489,6 +505,18 @@ jobs:
             products/yappc/**/build/reports/pmd/**/*
             products/yappc/**/build/reports/spotbugs/**/*
           retention-days: 7
+
+      - name: Upload YAPPC release gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-release-gate-evidence
+          path: |
+            .kernel/evidence/product-slo-budgets.json
+            .kernel/evidence/product-cost-budgets.json
+            .kernel/evidence/product-domain-invariants.json
+            .kernel/evidence/openapi-breaking-changes.json
+          retention-days: 14
 
   # ─────────────────────────────────────────────
   # API Contract Tests (Schemathesis / OpenAPI)
@@ -704,6 +732,12 @@ jobs:
         with:
           name: yappc-contract-test-report
           path: artifacts/contract-report
+
+      - name: Download release gate evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-release-gate-evidence
+          path: artifacts/release-gate-evidence
 
       - name: Generate release evidence bundle
         run: |

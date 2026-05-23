@@ -9,6 +9,7 @@ It aligns with the active execution checklist in `products/yappc/docs/audits/yap
 
 - Plan details and acceptance gates: `products/yappc/docs/audits/yappc-todos.md`
 - Execution status by task: `products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md`
+- Current audit tracker: `products/yappc/docs/implementation/YAPPC_PRODUCTION_READINESS_AUDIT_TRACKER.md`
 
 ## Governance Rules (Non-Negotiable)
 
@@ -36,3 +37,4 @@ It aligns with the active execution checklist in `products/yappc/docs/audits/yap
 Track progress in:
 - `products/yappc/docs/audits/IMPLEMENTATION_TRACKER.md`
 - `products/yappc/docs/audits/yappc-todos.md` (Execution Progress section)
+- `products/yappc/docs/implementation/YAPPC_PRODUCTION_READINESS_AUDIT_TRACKER.md`

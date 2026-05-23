@@ -45,8 +45,8 @@ class PhrConsentBoundaryAccessGateTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("subject-record read is allowed when boundary and consent both allow")
-    void allowsSubjectRecordReadWithConsent() {
+    @DisplayName("phr-003: Consent grant lifecycle - subject-record read is allowed when boundary and consent both allow")
+    void phr003_consentGrantLifecycle_allowsSubjectRecordReadWithConsent() {
         consentStore.activeConsent = Optional.of(activeConsent(ConsentAction.PATIENT_READ, DataClassification.C3));
 
         PhrConsentBoundaryAccessGate.AccessOutcome outcome = runPromise(() -> gate.authorize(subjectRecordReadRequest(false)));
@@ -61,8 +61,8 @@ class PhrConsentBoundaryAccessGateTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("revoked consent fails closed even when boundary allows the subject-record read")
-    void deniesRevokedConsent() {
+    @DisplayName("phr-003: Consent grant lifecycle - revoked consent fails closed even when boundary allows the subject-record read")
+    void phr003_consentGrantLifecycle_deniesRevokedConsent() {
         consentStore.activeConsent = Optional.of(
             activeConsent(ConsentAction.PATIENT_READ, DataClassification.C3)
                 .revoked("Patient withdrew consent", Instant.now().minusSeconds(60))
@@ -77,8 +77,8 @@ class PhrConsentBoundaryAccessGateTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("expired consent is reported as GRANT_EXPIRED instead of generic system deny")
-    void deniesExpiredConsentExplicitly() {
+    @DisplayName("phr-003: Consent grant lifecycle - expired consent is reported as GRANT_EXPIRED instead of generic system deny")
+    void phr003_consentGrantLifecycle_deniesExpiredConsentExplicitly() {
         consentStore.activeConsent = Optional.of(activeConsent(
             ConsentAction.PATIENT_READ,
             DataClassification.C3,
@@ -95,8 +95,37 @@ class PhrConsentBoundaryAccessGateTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("emergency override allows subject-record read and emits audited access")
-    void allowsEmergencyOverride() {
+    @DisplayName("phr-006: Consent-based access control - subject-record read is allowed when boundary and consent both allow")
+    void phr006_consentBasedAccessControl_allowsSubjectRecordReadWithConsent() {
+        consentStore.activeConsent = Optional.of(activeConsent(ConsentAction.PATIENT_READ, DataClassification.C3));
+
+        PhrConsentBoundaryAccessGate.AccessOutcome outcome = runPromise(() -> gate.authorize(subjectRecordReadRequest(false)));
+
+        assertThat(outcome.allowed()).isTrue();
+        assertThat(outcome.reasonCode()).isEqualTo("EXPLICIT_GRANT");
+        assertThat(outcome.boundaryDecision().requiresConsent()).isTrue();
+        assertThat(outcome.consentDecision()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("phr-006: Consent-based access control - revoked consent fails closed even when boundary allows the subject-record read")
+    void phr006_consentBasedAccessControl_deniesRevokedConsent() {
+        consentStore.activeConsent = Optional.of(
+            activeConsent(ConsentAction.PATIENT_READ, DataClassification.C3)
+                .revoked("Patient withdrew consent", Instant.now().minusSeconds(60))
+        );
+
+        PhrConsentBoundaryAccessGate.AccessOutcome outcome = runPromise(() -> gate.authorize(subjectRecordReadRequest(false)));
+
+        assertThat(outcome.allowed()).isFalse();
+        assertThat(outcome.reasonCode()).isEqualTo("GRANT_REVOKED");
+        assertThat(auditEvents.get(0).allowed()).isFalse();
+        assertThat(auditEvents.get(0).auditRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("phr-008: Break-glass emergency access - emergency override allows subject-record read and emits audited access")
+    void phr008_breakGlassEmergencyAccess_allowsEmergencyOverride() {
         consentStore.activeConsent = Optional.empty();
 
         PhrConsentBoundaryAccessGate.AccessOutcome outcome = runPromise(() -> gate.authorize(subjectRecordReadRequest(true)));

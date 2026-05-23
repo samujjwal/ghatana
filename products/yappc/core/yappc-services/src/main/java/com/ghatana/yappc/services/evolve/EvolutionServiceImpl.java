@@ -5,6 +5,7 @@ import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.common.AiQualityTelemetry;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
@@ -34,14 +35,35 @@ public class EvolutionServiceImpl implements EvolutionService {
     private final CompletionService aiService;
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
+    private final EvolutionPlanRepository planRepository;
+    private final boolean persistPlan;
 
     public EvolutionServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics) {
+        this(aiService, auditLogger, metrics, EvolutionPlanRepository.noop(), false);
+    }
+
+    public EvolutionServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            EvolutionPlanRepository planRepository) {
+        this(aiService, auditLogger, metrics, planRepository, true);
+    }
+
+    private EvolutionServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            EvolutionPlanRepository planRepository,
+            boolean persistPlan) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
+        this.planRepository = planRepository;
+        this.persistPlan = persistPlan;
     }
 
     @Override
@@ -61,7 +83,10 @@ public class EvolutionServiceImpl implements EvolutionService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.evolve.propose", tags);
 
                     return auditLogger.log(ServiceObservability.auditEvent("evolve.propose", insights, plan))
-                            .map(v -> plan);
+                            .then(v -> persistPlan
+                                    ? planRepository.save(buildEvolutionProposal(insights, plan, constraints))
+                                            .map(ignored -> plan)
+                                    : Promise.of(plan));
                 })
                 .whenException(e -> {
                     log.error("Evolution planning failed", e);
@@ -92,6 +117,59 @@ public class EvolutionServiceImpl implements EvolutionService {
                     AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.evolve.propose", result, tags);
                     return Promise.of(parseEvolutionPlanFromAIResponse(result, insights));
                 });
+    }
+
+    private EvolutionPlanRepository.EvolutionProposal buildEvolutionProposal(
+            Insights insights,
+            EvolutionPlan plan,
+            ConstraintSpec constraints) {
+        String tenantId = resolveTenantId();
+        String projectId = extractProjectRef(insights.observationRef());
+        return new EvolutionPlanRepository.EvolutionProposal(
+                "evolve-" + plan.id(),
+                tenantId,
+                projectId,
+                insights,
+                plan,
+                constraints,
+                "PENDING_APPROVAL",
+                plan.newIntentRef(),
+                List.of(insights.id(), stableRef(insights.observationRef(), "observation-unavailable"), plan.id()),
+                Map.of(
+                        "taskCount", plan.tasks() == null ? 0 : plan.tasks().size(),
+                        "requiresApproval", true,
+                        "source", plan.metadata() == null ? "unknown" : plan.metadata().getOrDefault("source", "unknown")
+                ),
+                Instant.now()
+        );
+    }
+
+    private static String resolveTenantId() {
+        String tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new SecurityException(
+                    "EvolutionService requires an active tenant context. "
+                            + "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "EvolutionService does not allow default-tenant. "
+                            + "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
+        }
+        return tenantId;
+    }
+
+    private static String extractProjectRef(String observationRef) {
+        String stable = stableRef(observationRef, "project-unavailable");
+        int separator = stable.indexOf(':');
+        if (separator > 0) {
+            return stable.substring(0, separator);
+        }
+        return stable;
+    }
+
+    private static String stableRef(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     private String buildEvolutionPrompt(Insights insights, ConstraintSpec constraints) {

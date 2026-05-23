@@ -4,6 +4,7 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.domain.learn.Insights;
 import com.ghatana.yappc.domain.observe.Observation;
@@ -127,5 +128,51 @@ class LearningServiceTest extends EventloopTestBase {
                 assertEquals("obs-123", result.observationRef()); 
 
                 verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback"), any(Map.class));
+    }
+
+    @Test
+    void shouldPersistLearningEvidenceWhenRepositoryIsConfigured() {
+        // GIVEN
+        CompletionService aiService = mock(CompletionService.class);
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+        LearningEvidenceRepository repository = mock(LearningEvidenceRepository.class);
+
+        when(aiService.complete(any(CompletionRequest.class)))
+                .thenReturn(Promise.of(CompletionResult.builder()
+                        .text("Recommendation: Add run failure regression coverage")
+                        .modelUsed("gpt-4")
+                        .build()));
+        when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
+        when(repository.save(any(LearningEvidenceRepository.LearningEvidence.class)))
+                .thenReturn(Promise.complete());
+
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+        LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics, repository);
+        Observation observation = Observation.builder()
+                .id("obs-123")
+                .runRef("project-123:run-456")
+                .metrics(List.of())
+                .logs(List.of())
+                .traces(List.of())
+                .build();
+
+        try {
+            // WHEN
+            Insights result = runPromise(() -> service.analyze(observation));
+
+            // THEN
+            assertNotNull(result);
+            verify(repository).save(argThat(evidence ->
+                    evidence.tenantId().equals("tenant-alpha")
+                            && evidence.projectId().equals("project-123")
+                            && evidence.runId().equals("project-123:run-456")
+                            && evidence.provenance().contains("obs-123")
+                            && evidence.provenance().contains(result.id())));
+        } finally {
+            TenantContext.clear();
+            runBlocking(TenantContext::clear);
+        }
     }
 }

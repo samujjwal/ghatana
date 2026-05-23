@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product Metric Mapping Schema",
+  "description": "Schema for mapping product SLO budget items to actual runtime metrics",
+  "type": "object",
+  "required": ["version", "description", "products", "metricSources", "measurementIntervals"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "products": {
+      "type": "object",
+      "description": "Product-specific metric mappings",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["workflows"],
+        "properties": {
+          "workflows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "description", "sloMetrics"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "sloMetrics": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "type", "aggregation", "budgetRef"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": ["counter", "gauge", "histogram", "summary"]
+                      },
+                      "aggregation": {
+                        "type": "string",
+                        "enum": ["rate", "sum", "avg", "max", "min", "count"]
+                      },
+                      "budgetRef": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metricSources": {
+      "type": "object",
+      "required": ["prometheus", "grafana"],
+      "properties": {
+        "prometheus": {
+          "type": "object",
+          "required": ["type", "endpoint", "description"],
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "grafana": {
+          "type": "object",
+          "required": ["type", "endpoint", "description"],
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "measurementIntervals": {
+      "type": "object",
+      "required": ["realtime", "near-realtime", "standard", "historical"],
+      "properties": {
+        "realtime": {
+          "type": "string"
+        },
+        "near-realtime": {
+          "type": "string"
+        },
+        "standard": {
+          "type": "string"
+        },
+        "historical": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "digital-marketing",
+  "description": "Domain invariant declarations for Digital Marketing product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "dm-001",
+      "name": "Campaign lifecycle state machine",
+      "category": "lifecycle_state_transitions",
+      "description": "Campaigns must follow valid state transitions (draft -> planned -> active -> paused -> completed -> archived)",
+      "testId": "CampaignLifecycleStateMachineTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/campaign/CampaignLifecycleTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-002",
+      "name": "Consent-gated campaign activation",
+      "category": "privacy/consent",
+      "description": "Campaign activation must not proceed without valid consent status from PHR",
+      "testId": "ConsentGatedCampaignActivationTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/campaign/CampaignActivationConsentPreflightTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-003",
+      "name": "Lead capture data integrity",
+      "category": "data_integrity",
+      "description": "Lead data must maintain referential integrity with campaigns and consent records",
+      "testId": "LeadCaptureDataIntegrityTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/lead/LeadCaptureTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-004",
+      "name": "Campaign activity audit trail",
+      "category": "audit/evidence",
+      "description": "All campaign activations, modifications, and deactivations must be audited",
+      "testId": "CampaignActivityAuditTrailTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/audit/CampaignAuditTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-005",
+      "name": "Connector readiness state machine",
+      "category": "product_specific_business_correctness",
+      "description": "External connectors must have valid readiness states (not-configured -> configured -> validated -> active -> degraded -> blocked)",
+      "testId": "ConnectorReadinessStateMachineTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/connector/ConnectorReadinessTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-006",
+      "name": "Notification retry and DLQ",
+      "category": "product_specific_business_correctness",
+      "description": "Failed notifications must retry with exponential backoff and dead-letter queue after max retries",
+      "testId": "NotificationRetryDLQTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/notification/NotificationRetryTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-007",
+      "name": "Lead conversion tracking",
+      "category": "product_specific_business_correctness",
+      "description": "Lead conversion events must be tracked with source attribution and timestamp",
+      "testId": "LeadConversionTrackingTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/lead/LeadConversionTest.java",
+      "severity": "high"
+    },
+    {
+      "id": "dm-008",
+      "name": "Campaign budget enforcement",
+      "category": "product_specific_business_correctness",
+      "description": "Campaign spend must not exceed allocated budget with spend gates",
+      "testId": "CampaignBudgetEnforcementTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/campaign/CampaignBudgetTest.java",
+      "severity": "high"
+    },
+    {
+      "id": "dm-009",
+      "name": "Tenant-scoped campaign isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Campaigns and leads must be isolated by tenant with no cross-tenant visibility",
+      "testId": "TenantScopedCampaignIsolationTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/security/TenantIsolationTest.java",
+      "severity": "critical"
+    },
+    {
+      "id": "dm-010",
+      "name": "Notification preference handling",
+      "category": "privacy/consent",
+      "description": "Notification delivery must respect user preference settings and opt-out requests",
+      "testId": "NotificationPreferenceHandlingTest",
+      "testPath": "src/test/java/com/ghatana/digitalmarketing/notification/NotificationPreferenceTest.java",
+      "severity": "high"
+    }
+  ]
+}

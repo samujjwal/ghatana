@@ -32,7 +32,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * P1-016: Cross-tenant isolation verification for all DMOS API routes.
+ * dm-009: Cross-tenant isolation verification for all DMOS API routes.
  *
  * <p>Verifies that every servlet correctly propagates {@code SecurityException}
  * thrown by services to a 403 Forbidden response. This guarantees that when the
@@ -46,11 +46,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * returned, with no resource data in the body.</p>
  *
  * @doc.type test
- * @doc.purpose Cross-tenant isolation boundary verification (P1-016)
- * @doc.layer test
+ * @doc.purpose Cross-tenant isolation boundary verification
+ * @doc.layer product
  * @doc.pattern SecurityTest
  */
-@DisplayName("P1-016: Cross-Tenant Isolation")
+@DisplayName("dm-009: Cross-Tenant Isolation Tests")
 class CrossTenantIsolationTest extends EventloopTestBase {
 
     // Attacker controls this tenant and sends a forged request to the victim workspace

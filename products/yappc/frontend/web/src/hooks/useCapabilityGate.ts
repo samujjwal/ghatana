@@ -57,7 +57,8 @@ export type CapabilityName =
   | 'admin:teams'
   | 'admin:prompt-versions'
   | 'admin:ab-testing'
-  | 'admin:feature-flags';
+  | 'admin:feature-flags'
+  | 'admin:observability';
 
 /** Reason why a capability was denied, useful for rendering contextual messages. */
 export type DenialReason =
@@ -125,6 +126,7 @@ const CAPABILITY_REGISTRY: Readonly<Record<CapabilityName, CapabilityConfig>> = 
   'admin:ab-testing': { enabled: true, requiredRoles: ['OWNER', 'ADMIN'] },
   // Tenant-scoped feature flag management (F-Y047).
   'admin:feature-flags': { enabled: true, requiredRoles: ['OWNER', 'ADMIN'] },
+  'admin:observability': { enabled: true, requiredRoles: ['OWNER', 'ADMIN'] },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const DOC_SCOPE_FILE = path.join(repoRoot, 'config', 'documentation-truth-scope.json');
+const FRESHNESS_POLICY_FILE = path.join(repoRoot, 'config', 'evidence-freshness-policy.json');
 
 const CLAIM_PATTERN = /\b(fully implemented|production-ready|complete|enabled|executable|supports)\b/i;
 const CLASSIFICATION_PATTERN = /\b(Existing and executable|Existing but partial|Declared only|Target architecture|Anti-pattern)\b/i;
@@ -34,6 +35,15 @@ function loadDomainRegistry() {
   } catch (error) {
     console.warn('Warning: Failed to load domain registry:', error.message);
     return { domains: [] };
+  }
+}
+
+function loadFreshnessPolicy() {
+  try {
+    return JSON.parse(readFileSync(FRESHNESS_POLICY_FILE, 'utf8'));
+  } catch (error) {
+    console.warn('Warning: Failed to load freshness policy:', error.message);
+    return null;
   }
 }
 
@@ -94,6 +104,7 @@ function listFiles() {
 export function findCurrentStateClaimViolations(files, options = {}) {
   const violations = [];
   const domainRegistry = options.domainRegistry ?? loadDomainRegistry();
+  const freshnessPolicy = options.freshnessPolicy ?? loadFreshnessPolicy();
 
   for (const file of files) {
     const lines = file.source.split(/\r?\n/);
@@ -121,6 +132,12 @@ export function findCurrentStateClaimViolations(files, options = {}) {
         const hasEvidence = checkForEvidence(file.source, index, lines);
         if (!hasEvidence) {
           violations.push(`${file.path}:${index + 1}: executability claim '${line.trim()}' lacks evidence. Add evidence refs pointing to tests, CI gates, or implementation.`);
+        }
+
+        // If freshness policy is available, verify evidence freshness for critical claims
+        if (freshnessPolicy) {
+          const evidenceFreshnessViolations = checkEvidenceFreshnessForClaim(file.source, index, lines, freshnessPolicy, repoRoot);
+          violations.push(...evidenceFreshnessViolations);
         }
       }
     }
@@ -208,6 +225,53 @@ function checkForEvidence(source, lineIndex, lines) {
   ];
   
   return evidencePatterns.some(pattern => context.includes(pattern));
+}
+
+function checkEvidenceFreshnessForClaim(source, lineIndex, lines, freshnessPolicy, repoRoot) {
+  const violations = [];
+  const contextStart = Math.max(0, lineIndex - 5);
+  const contextEnd = Math.min(lines.length, lineIndex + 10);
+  const context = lines.slice(contextStart, contextEnd).join(' ');
+
+  // Extract evidence file references from context
+  const evidenceFilePattern = /\.kernel\/evidence\/([a-zA-Z0-9_.-]+\.json)/g;
+  const matches = [...context.matchAll(evidenceFilePattern)];
+
+  for (const match of matches) {
+    const evidenceFileName = match[1];
+    const evidenceType = freshnessPolicy.evidenceFileMappings?.[evidenceFileName];
+
+    if (evidenceType) {
+      const typeConfig = freshnessPolicy.evidenceTypes?.[evidenceType];
+      
+      // Check if this is critical evidence that must be fresh
+      if (typeConfig?.critical && typeConfig?.failOnStale) {
+        const evidencePath = path.join(repoRoot, '.kernel', 'evidence', evidenceFileName);
+        
+        if (existsSync(evidencePath)) {
+          const stats = require('fs').statSync(evidencePath);
+          const now = Date.now();
+          const evidenceAge = now - stats.mtimeMs;
+          const thresholdMs = typeConfig.thresholdHours * 60 * 60 * 1000;
+
+          if (evidenceAge > thresholdMs) {
+            violations.push(
+              `Evidence reference in claim at line ${lineIndex + 1} points to stale critical evidence: ${evidenceFileName} ` +
+              `(age: ${Math.round(evidenceAge / (1000 * 60 * 60))} hours, threshold: ${typeConfig.thresholdHours} hours). ` +
+              `Regenerate evidence before claiming executability.`
+            );
+          }
+        } else {
+          violations.push(
+            `Evidence reference in claim at line ${lineIndex + 1} points to missing evidence file: ${evidenceFileName}. ` +
+            `Generate evidence before claiming executability.`
+          );
+        }
+      }
+    }
+  }
+
+  return violations;
 }
 
 function loadTrackerFile() {

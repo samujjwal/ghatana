@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern ContractTest
  */
-@DisplayName("FHIR R4 Contract Tests")
+@DisplayName("phr-010: FHIR R4 Contract Tests")
 class FhirR4ContractTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

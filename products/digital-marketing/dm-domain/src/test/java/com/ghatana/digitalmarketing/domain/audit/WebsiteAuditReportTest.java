@@ -11,7 +11,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-@DisplayName("WebsiteAuditReport")
+/**
+ * @doc.type class
+ * @doc.purpose Validates campaign activity audit trail for activations, modifications, and deactivations
+ * @doc.layer product
+ * @doc.pattern AuditTest
+ */
+@DisplayName("dm-004: Campaign Activity Audit Trail Tests")
 class WebsiteAuditReportTest {
 
     @Test

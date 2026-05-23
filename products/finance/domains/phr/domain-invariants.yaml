@@ -1,0 +1,150 @@
+# PHR Domain Invariants
+# Defines critical healthcare invariants that must be preserved and tested
+
+version: "1.0.0"
+product: phr
+description: Domain invariants for Personal Health Record product workflows
+
+invariants:
+  - id: PHR-INV-001
+    name: consent-grant-lifecycle
+    category: consent
+    description: Consent grants must follow valid lifecycle with expiry, revocation, and audit trail
+    severity: critical
+    testId: ConsentGrantLifecycleTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/consent/ConsentGrantLifecycleTest.java
+    scenarios:
+      - valid: consent-grant-with-expiry
+      - valid: consent-revocation
+      - valid: consent-expiry-processing
+      - invalid: consent-without-purpose
+      - invalid: consent-without-subject
+      - invalid: consent-without-grantee
+
+  - id: PHR-INV-002
+    name: patient-data-access-matrix
+    category: authorization
+    description: Patient data access must respect role-based access matrix (patient, caregiver, clinician, admin)
+    severity: critical
+    testId: PatientDataAccessMatrixTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/access/PatientDataAccessMatrixTest.java
+    scenarios:
+      - valid: patient-access-own-data
+      - valid: caregiver-access-with-grant
+      - valid: clinician-access-with-authorization
+      - valid: admin-access-with-audit
+      - invalid: patient-access-other-patient-data
+      - invalid: caregiver-access-without-grant
+      - invalid: clinician-access-without-authorization
+
+  - id: PHR-INV-003
+    name: fhir-r4-resource-validation
+    category: data-integrity
+    description: FHIR R4 resources must conform to resource type and profile schemas
+    severity: critical
+    testId: FhirR4ResourceValidationTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/fhir/FhirR4ResourceValidationTest.java
+    scenarios:
+      - valid: patient-resource-validation
+      - valid: observation-resource-validation
+      - valid: medication-request-validation
+      - invalid: invalid-resource-type
+      - invalid: missing-required-fields
+      - invalid: invalid-profile-conformance
+
+  - id: PHR-INV-004
+    name: break-glass-emergency-access
+    category: emergency
+    description: Emergency break-glass access must be time-boxed, audited, and require post-review
+    severity: critical
+    testId: BreakGlassEmergencyAccessTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/emergency/BreakGlassEmergencyAccessTest.java
+    scenarios:
+      - valid: break-glass-with-reason
+      - valid: break-glass-with-timebox
+      - valid: break-glass-with-notification
+      - valid: break-glass-post-review
+      - invalid: break-glass-without-reason
+      - invalid: break-glass-without-audit
+      - invalid: break-glass-exceeds-timebox
+
+  - id: PHR-INV-005
+    name: data-sovereignty-compliance
+    category: privacy
+    description: Patient data must respect data sovereignty requirements based on storage region
+    severity: critical
+    testId: DataSovereigntyComplianceTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/sovereignty/DataSovereigntyComplianceTest.java
+    scenarios:
+      - valid: data-stored-in-compliant-region
+      - valid: data-transfer-with-consent
+      - valid: cross-border-with-approval
+      - invalid: data-stored-in-non-compliant-region
+      - invalid: cross-border-without-approval
+      - invalid: data-retention-beyond-policy
+
+  - id: PHR-INV-006
+    name: patient-record-timeline-consistency
+    category: data-integrity
+    description: Patient record timeline must be chronologically consistent and auditable
+    severity: high
+    testId: PatientRecordTimelineConsistencyTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/record/PatientRecordTimelineConsistencyTest.java
+    scenarios:
+      - valid: chronological-event-ordering
+      - valid: timeline-with-audit-trail
+      - invalid: out-of-order-events
+      - invalid: missing-timestamp-events
+      - invalid: duplicate-timeline-entries
+
+  - id: PHR-INV-007
+    name: medication-interaction-safety
+    category: clinical-safety
+    description: Medication records must check for drug-drug interactions and contraindications
+    severity: critical
+    testId: MedicationInteractionSafetyTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/medication/MedicationInteractionSafetyTest.java
+    scenarios:
+      - valid: safe-medication-combination
+      - valid: interaction-warning-displayed
+      - invalid: contraindicated-medication-combination
+      - invalid: interaction-without-warning
+
+  - id: PHR-INV-008
+    name: allergy-alert-propagation
+    category: clinical-safety
+    description: Patient allergies must be propagated to all relevant clinical workflows
+    severity: critical
+    testId: AllergyAlertPropagationTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/allergy/AllergyAlertPropagationTest.java
+    scenarios:
+      - valid: allergy-alert-on-medication-order
+      - valid: allergy-alert-on-procedure-order
+      - invalid: medication-order-without-allergy-check
+      - invalid: procedure-order-without-allergy-check
+
+  - id: PHR-INV-009
+    name: tenant-patient-isolation
+    category: tenant-isolation
+    description: Patient records must be strictly isolated to their tenant with no cross-tenant access
+    severity: critical
+    testId: TenantPatientIsolationTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/tenant/TenantPatientIsolationTest.java
+    scenarios:
+      - valid: tenant-access-own-patients
+      - invalid: tenant-access-other-tenant-patients
+      - invalid: cross-tenant-patient-modification
+
+  - id: PHR-INV-010
+    name: audit-trail-completeness
+    category: audit
+    description: All patient data access and modifications must have complete audit trail
+    severity: critical
+    testId: AuditTrailCompletenessTest
+    testPath: src/test/java/com/ghatana/products/finance/domains/phr/audit/AuditTrailCompletenessTest.java
+    scenarios:
+      - valid: access-with-audit-log
+      - valid: modification-with-audit-log
+      - invalid: access-without-audit-log
+      - invalid: modification-without-audit-log
+      - invalid: incomplete-audit-entries

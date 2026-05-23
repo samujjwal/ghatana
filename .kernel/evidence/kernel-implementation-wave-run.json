@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T02:05:30.174Z",
+  "generatedAt": "2026-05-23T03:07:23.160Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
@@ -11,10 +11,9 @@
     "pnpm:check:phase8:integration",
     "pnpm:check:phase8:e2e",
     "pnpm:check:cross-product-interaction-flows",
-    "pnpm:check:data-cloud-runbook-smoke",
     "pnpm:check:interaction-performance"
   ],
-  "commandCount": 12,
+  "commandCount": 14,
   "plannedCommands": [
     "pnpm:check:data-cloud-ui-a11y",
     "pnpm:check:product-a11y-route-matrix",
@@ -24,56 +23,73 @@
     "pnpm:check:product-domain-invariants",
     "pnpm:check:openapi-release-quality",
     "pnpm:check:openapi-breaking-changes",
-    "pnpm:check:validate-release-evidence",
+    "pnpm:check:data-cloud-runbook-smoke",
+    "pnpm:check:release-rollback-drill",
     "pnpm:check:affected-product-strict-release-profile",
     "pnpm:check:product-release-readiness",
+    "pnpm:check:validate-release-evidence",
     "pnpm:check:release-gate"
   ],
   "commandRuns": [
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 3506
+      "durationMs": 958
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 7101
+      "durationMs": 977
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 9051
+      "durationMs": 1146
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 6683
+      "durationMs": 1055
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 6306
+      "durationMs": 1384
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 23078
+      "durationMs": 5138
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 7611
+      "durationMs": 976
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 6074
+      "durationMs": 863
     },
     {
-      "command": "pnpm:check:validate-release-evidence",
+      "command": "pnpm:check:data-cloud-runbook-smoke",
+      "status": 0,
+      "durationMs": 2966
+    },
+    {
+      "command": "pnpm:check:release-rollback-drill",
+      "status": 0,
+      "durationMs": 1500
+    },
+    {
+      "command": "pnpm:check:affected-product-strict-release-profile",
+      "status": 0,
+      "durationMs": 1486
+    },
+    {
+      "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 4702
+      "durationMs": 118669
     }
   ],
   "taskMatrixSummary": {
@@ -88,7 +104,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-23T02:04:16.057Z",
+    "generatedAt": "2026-05-23T03:05:06.041Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 50,
     "deferredTaskIds": [

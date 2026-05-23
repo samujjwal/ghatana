@@ -13,12 +13,14 @@ import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
+import com.ghatana.yappc.services.evolve.DataCloudEvolutionPlanRepository;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.intent.IntentServiceImpl;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.learn.LearningServiceImpl;
+import com.ghatana.yappc.services.learn.DataCloudLearningEvidenceRepository;
 import com.ghatana.yappc.services.lifecycle.JdbcAuditLogger;
 import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
@@ -114,16 +116,26 @@ public class YappcApiModule extends AbstractModule {
     LearningService learningService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new LearningServiceImpl(aiService, auditLogger, metrics);
+            MetricsCollector metrics,
+            DataCloudClient dataCloudClient) {
+        return new LearningServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                new DataCloudLearningEvidenceRepository(dataCloudClient));
     }
 
     @Provides
     EvolutionService evolutionService(
             CompletionService aiService,
             AuditLogger auditLogger,
-            MetricsCollector metrics) {
-        return new EvolutionServiceImpl(aiService, auditLogger, metrics);
+            MetricsCollector metrics,
+            DataCloudClient dataCloudClient) {
+        return new EvolutionServiceImpl(
+                aiService,
+                auditLogger,
+                metrics,
+                new DataCloudEvolutionPlanRepository(dataCloudClient));
     }
 
     @Provides

@@ -9,7 +9,13 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("DmAttributionRecord domain entity")
+/**
+ * @doc.type class
+ * @doc.purpose Validates lead conversion tracking with source attribution and timestamp
+ * @doc.layer product
+ * @doc.pattern AttributionTest
+ */
+@DisplayName("dm-007: Lead Conversion Tracking Tests")
 class DmAttributionRecordTest {
 
     private DmAttributionRecord valid() {

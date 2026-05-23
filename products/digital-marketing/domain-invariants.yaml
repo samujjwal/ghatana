@@ -1,0 +1,114 @@
+# Digital Marketing Domain Invariants
+# Defines critical business invariants that must be preserved and tested
+
+version: "1.0.0"
+product: digital-marketing
+description: Domain invariants for Digital Marketing product workflows
+
+invariants:
+  - id: DM-INV-001
+    name: campaign-lifecycle-state-transitions
+    category: lifecycle-state
+    description: Campaign lifecycle must follow valid state transitions (draft → active → paused → archived)
+    severity: critical
+    testId: CampaignLifecycleStateTransitionTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/campaign/CampaignLifecycleStateTransitionTest.java
+    scenarios:
+      - valid: draft-to-active
+      - valid: active-to-paused
+      - valid: paused-to-active
+      - valid: paused-to-archived
+      - invalid: active-to-draft
+      - invalid: archived-to-active
+
+  - id: DM-INV-002
+    name: consent-gated-campaign-activation
+    category: consent
+    description: Campaign activation must verify and record consent status before proceeding
+    severity: critical
+    testId: ConsentGatedCampaignActivationTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/campaign/ConsentGatedCampaignActivationTest.java
+    scenarios:
+      - valid: consent-granted-activation
+      - invalid: consent-denied-activation
+      - invalid: consent-expired-activation
+      - invalid: consent-revoked-activation
+
+  - id: DM-INV-003
+    name: lead-capture-idempotency
+    category: data-integrity
+    description: Lead capture events must be idempotent to prevent duplicate leads
+    severity: critical
+    testId: LeadCaptureIdempotencyTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/lead/LeadCaptureIdempotencyTest.java
+    scenarios:
+      - valid: duplicate-lead-capture-same-id
+      - valid: unique-lead-capture
+      - invalid: duplicate-lead-different-id
+
+  - id: DM-INV-004
+    name: connector-readiness-state-machine
+    category: integration
+    description: External connectors must follow valid readiness state transitions
+    severity: critical
+    testId: ConnectorReadinessStateMachineTest
+    testPath: dm-connector-google-ads/src/test/java/com/ghatana/digitalmarketing/connector/ConnectorReadinessStateMachineTest.java
+    scenarios:
+      - valid: not-configured-to-configured
+      - valid: configured-to-validated
+      - valid: validated-to-active
+      - valid: active-to-degraded
+      - valid: degraded-to-blocked
+      - invalid: active-to-not-configured
+      - invalid: blocked-to-active-without-validation
+
+  - id: DM-INV-005
+    name: notification-retry-dlq-semantics
+    category: reliability
+    description: Failed notifications must follow retry policy with DLQ for exhausted retries
+    severity: critical
+    testId: NotificationRetryDLQTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/notification/NotificationRetryDLQTest.java
+    scenarios:
+      - valid: transient-failure-retry-success
+      - valid: permanent-failure-dlq
+      - valid: retry-exhaustion-dlq
+      - invalid: infinite-retry-loop
+
+  - id: DM-INV-006
+    name: tenant-scoped-campaign-isolation
+    category: tenant-isolation
+    description: Campaigns must be strictly scoped to their tenant with no cross-tenant access
+    severity: critical
+    testId: TenantScopedCampaignIsolationTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/tenant/TenantScopedCampaignIsolationTest.java
+    scenarios:
+      - valid: tenant-access-own-campaign
+      - invalid: tenant-access-other-tenant-campaign
+      - invalid: cross-tenant-campaign-modification
+
+  - id: DM-INV-007
+    name: audience-segment-consistency
+    category: data-integrity
+    description: Audience segment membership must be consistent and auditable
+    severity: high
+    testId: AudienceSegmentConsistencyTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/audience/AudienceSegmentConsistencyTest.java
+    scenarios:
+      - valid: segment-membership-addition
+      - valid: segment-membership-removal
+      - invalid: duplicate-segment-membership
+      - invalid: orphaned-segment-members
+
+  - id: DM-INV-008
+    name: conversion-tracking-attribution
+    category: audit
+    description: Conversion events must have accurate attribution to source campaign and touchpoint
+    severity: high
+    testId: ConversionTrackingAttributionTest
+    testPath: dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/conversion/ConversionTrackingAttributionTest.java
+    scenarios:
+      - valid: conversion-with-campaign-attribution
+      - valid: conversion-with-touchpoint-attribution
+      - invalid: conversion-without-attribution
+      - invalid: invalid-campaign-attribution

@@ -33,10 +33,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -97,6 +97,15 @@ public class CreateCommand implements Callable<Integer> {
 
     @Option(names = {"--lifecycle-profile"}, description = "Lifecycle profile for kernel-product-unit")
     private String lifecycleProfile;
+
+    @Option(names = {"--workspace-id"}, description = "Workspace ID for kernel-product-unit provenance")
+    private String workspaceId;
+
+    @Option(names = {"--project-id"}, description = "Project/ProductUnit ID for kernel-product-unit provenance")
+    private String projectId;
+
+    @Option(names = {"--surface"}, description = "Product surface for kernel-product-unit. Repeat or comma-separate.")
+    private List<String> surfaces;
 
     private PackEngine packEngine;
 
@@ -189,11 +198,25 @@ public class CreateCommand implements Callable<Integer> {
                 return 1;
             }
 
-            // Convert project name to kebab-case for ProductUnit ID
-            String productUnitId = toKebabCase(projectName);
+            if (workspaceId == null || workspaceId.isBlank()) {
+                log.error("❌ Error: --workspace-id is required for kernel-product-unit target.");
+                return 1;
+            }
+            if (projectId == null || projectId.isBlank()) {
+                log.error("❌ Error: --project-id is required for kernel-product-unit target.");
+                return 1;
+            }
+            if (lifecycleProfile == null || lifecycleProfile.isBlank()) {
+                log.error("❌ Error: --lifecycle-profile is required for kernel-product-unit target.");
+                return 1;
+            }
 
-            // Infer surfaces from variables or default to web-api
-            List<String> surfaces = inferSurfaces();
+            String productUnitId = toKebabCase(projectId);
+            List<String> requestedSurfaces = inferSurfaces();
+            if (requestedSurfaces.isEmpty()) {
+                log.error("❌ Error: at least one --surface is required for kernel-product-unit target.");
+                return 1;
+            }
 
             // Determine intent output path
             Path intentPath = resolveIntentOutputPath();
@@ -207,10 +230,10 @@ public class CreateCommand implements Callable<Integer> {
                     .projectId(productUnitId)
                     .projectName(projectName)
                     .targetType("kernel-product-unit")
-                    .surfaces(surfaces)
+                    .surfaces(requestedSurfaces)
                     .runtimeProvider(runtimeProvider)
                     .lifecycleProfile(lifecycleProfile)
-                    .workspaceId(UUID.randomUUID().toString())
+                    .workspaceId(workspaceId)
                     .sourcePhase("generate")
                     .build();
 
@@ -232,7 +255,7 @@ public class CreateCommand implements Callable<Integer> {
             log.info("\n✅ ProductUnitIntent generated successfully");
             log.info("   Intent file: {}", intentPath.toAbsolutePath());
             log.info("   ProductUnit ID: {}", productUnitId);
-            log.info("   Surfaces: {}", surfaces);
+            log.info("   Surfaces: {}", requestedSurfaces);
 
             // Print Kernel next command
             log.info("\n📋 Next steps:");
@@ -254,14 +277,24 @@ public class CreateCommand implements Callable<Integer> {
     }
 
     private List<String> inferSurfaces() {
-        // Try to infer surfaces from variables
-        String surfaceVar = variables.get("surface");
-        if (surfaceVar != null && !surfaceVar.isBlank()) {
-            return List.of(surfaceVar.split(","));
+        if (surfaces != null && !surfaces.isEmpty()) {
+            return surfaces.stream()
+                    .flatMap(value -> Arrays.stream(value.split(",")))
+                    .map(String::trim)
+                    .filter(value -> !value.isBlank())
+                    .distinct()
+                    .toList();
         }
-        
-        // Default to web-api if not specified
-        return List.of("web-api");
+
+        String surfaceVar = variables.get("surface");
+        if (surfaceVar == null || surfaceVar.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(surfaceVar.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
     }
 
     private Path resolveIntentOutputPath() {

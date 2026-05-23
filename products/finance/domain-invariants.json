@@ -1,0 +1,89 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "finance",
+  "description": "Domain invariant declarations for Finance product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "fin-001",
+      "name": "Transaction atomicity",
+      "category": "data_integrity",
+      "description": "Financial transactions must be atomic with no partial commits",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-002",
+      "name": "Transaction state machine",
+      "category": "lifecycle_state_transitions",
+      "description": "Transactions must follow valid state transitions (pending -> processing -> completed/failed)",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-003",
+      "name": "Financial audit trail",
+      "category": "audit/evidence",
+      "description": "All financial transactions must be logged with immutable audit trail",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-004",
+      "name": "Account balance consistency",
+      "category": "data_integrity",
+      "description": "Account balances must remain consistent across concurrent transactions",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-005",
+      "name": "Financial data encryption",
+      "category": "privacy/consent",
+      "description": "Sensitive financial data must be encrypted at rest and in transit",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-006",
+      "name": "Transaction authorization",
+      "category": "identity/authorization",
+      "description": "Transactions must be authorized by authenticated users with proper permissions",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-007",
+      "name": "Tenant financial isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Financial data must be isolated by tenant with no cross-tenant access",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "fin-008",
+      "name": "Regulatory compliance",
+      "category": "product_specific_business_correctness",
+      "description": "Financial operations must comply with regulatory requirements (SOX, PCI-DSS)",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    }
+  ]
+}

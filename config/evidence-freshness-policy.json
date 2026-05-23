@@ -1,0 +1,110 @@
+{
+  "$schema": "./evidence-freshness-policy.schema.json",
+  "version": "1.0.0",
+  "description": "Evidence freshness policy defining staleness thresholds and generation modes by evidence type. Critical runtime evidence must be fresh; static configuration evidence can be generated on-demand.",
+  "defaultThresholdHours": 24,
+  "evidenceTypes": {
+    "runtime-production": {
+      "description": "Evidence from actual runtime execution in production or staging environments",
+      "thresholdHours": 4,
+      "critical": true,
+      "failOnStale": true,
+      "requireSourceBacking": true,
+      "examples": [
+        "product-slo-budgets.json",
+        "product-cost-budgets.json",
+        "product-release-readiness.*.json"
+      ]
+    },
+    "runtime-executed": {
+      "description": "Evidence from executed tests, CI runs, or validation scripts",
+      "thresholdHours": 24,
+      "critical": true,
+      "failOnStale": true,
+      "requireSourceBacking": true,
+      "examples": [
+        "kernel-implementation-plan-progress.json",
+        "kernel-implementation-plan-coverage.json",
+        "atomic-workflow-posture.json",
+        "product-domain-invariants.json",
+        "product-interaction-coverage-matrix.json"
+      ]
+    },
+    "generated-on-demand": {
+      "description": "Evidence that can be safely regenerated from source without runtime execution",
+      "thresholdHours": 168,
+      "critical": false,
+      "failOnStale": false,
+      "requireSourceBacking": true,
+      "examples": [
+        "product-capability-matrix-validation.json",
+        "product-a11y-route-matrix.json",
+        "openapi-breaking-changes.json"
+      ]
+    },
+    "static-configuration": {
+      "description": "Evidence derived from static configuration files that rarely change",
+      "thresholdHours": 720,
+      "critical": false,
+      "failOnStale": false,
+      "requireSourceBacking": false,
+      "examples": [
+        "kernel-implementation-task-matrix.json",
+        "kernel-implementation-wave-run.json",
+        "affected-product-release-profile.json",
+        "data-cloud-release-runtime-profile.json"
+      ]
+    },
+    "release-summary": {
+      "description": "Release maturity and quality scorecards generated from multiple evidence sources",
+      "thresholdHours": 48,
+      "critical": true,
+      "failOnStale": true,
+      "requireSourceBacking": true,
+      "examples": [
+        "release-summary.json",
+        "wave2-product-quality-scorecard.json"
+      ]
+    }
+  },
+  "evidenceFileMappings": {
+    "kernel-implementation-plan-progress.json": "runtime-executed",
+    "kernel-implementation-plan-coverage.json": "runtime-executed",
+    "kernel-implementation-task-matrix.json": "static-configuration",
+    "kernel-implementation-wave-run.json": "static-configuration",
+    "product-release-readiness.json": "runtime-production",
+    "product-release-readiness.phr.json": "runtime-production",
+    "product-release-readiness.digital-marketing.json": "runtime-production",
+    "product-release-readiness.finance.json": "runtime-production",
+    "product-release-readiness.flashit.json": "runtime-production",
+    "product-release-readiness.tutorputor.json": "runtime-production",
+    "product-slo-budgets.json": "runtime-production",
+    "product-cost-budgets.json": "runtime-production",
+    "product-domain-invariants.json": "runtime-executed",
+    "product-interaction-coverage-matrix.json": "runtime-executed",
+    "product-capability-matrix-validation.json": "generated-on-demand",
+    "product-a11y-route-matrix.json": "generated-on-demand",
+    "atomic-workflow-posture.json": "runtime-executed",
+    "affected-product-release-profile.json": "static-configuration",
+    "data-cloud-release-runtime-profile.json": "static-configuration",
+    "openapi-breaking-changes.json": "generated-on-demand",
+    "release-summary.json": "release-summary",
+    "wave2-product-quality-scorecard.json": "release-summary"
+  },
+  "freshnessThresholds": {
+    "critical": 4,
+    "standard": 24,
+    "relaxed": 168,
+    "static": 720
+  },
+  "exemptions": {
+    "description": "Evidence files exempt from freshness checks (e.g., historical snapshots, archived evidence)",
+    "exemptedFiles": [],
+    "exemptedPatterns": [
+      "*/archived/*",
+      "*/history/*",
+      "*.bak",
+      "*.backup"
+    ]
+  }
+}

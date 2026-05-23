@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Domain Invariants Schema",
+  "description": "Schema for product domain invariant declarations with test mapping",
+  "type": "object",
+  "required": ["version", "product", "description", "invariantCategories", "invariants"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "product": {
+      "type": "string",
+      "description": "Product identifier"
+    },
+    "description": {
+      "type": "string",
+      "description": "Product invariant declaration description"
+    },
+    "invariantCategories": {
+      "type": "array",
+      "description": "List of invariant categories used by this product",
+      "items": {
+        "type": "string"
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "description": "Domain invariant declarations with test mappings",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "category", "description", "testId", "testPath", "severity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique invariant identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable invariant name"
+          },
+          "category": {
+            "type": "string",
+            "description": "Invariant category (must be in invariantCategories)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed invariant description"
+          },
+          "testId": {
+            "type": ["string", "null"],
+            "description": "Test class or function ID that validates this invariant (null if no test yet)"
+          },
+          "testPath": {
+            "type": ["string", "null"],
+            "description": "Relative path to the test file from product root (null if no test yet)"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "description": "Invariant severity level"
+          }
+        }
+      }
+    }
+  }
+}

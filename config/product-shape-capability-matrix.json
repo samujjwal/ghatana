@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-22T17:55:31.354Z",
+  "generated": "2026-05-23T04:09:40.157Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -586,6 +586,60 @@
       ],
       "validationCommands": [
         "node scripts/check-phr-lifecycle-pilot.mjs"
+      ]
+    },
+    {
+      "productId": "polyglot-fixture",
+      "kind": "demo/example",
+      "surfaces": [
+        "backend-api",
+        "web",
+        "worker",
+        "worker"
+      ],
+      "lifecycleStatus": "disabled",
+      "lifecycleExecutionAllowed": false,
+      "requiredKernelCapabilities": [
+        "gate:a11y",
+        "gate:i18n",
+        "gate:privacy",
+        "gate:security"
+      ],
+      "requiredToolchainAdapters": [],
+      "requiredArtifactManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-result"
+      ],
+      "requiredDeploymentTargets": [],
+      "requiredSecurityPrivacyGates": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "requiredDataCloudSupport": [],
+      "requiredYappcVisibility": [],
+      "requiredAgentRuntimeSupport": [],
+      "currentEvidenceRefs": [],
+      "missingEvidenceRefs": [
+        "manifest:artifact-manifest",
+        "manifest:deployment-manifest",
+        "manifest:lifecycle-plan",
+        "manifest:lifecycle-result"
+      ],
+      "blockers": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextActions": [
+        "Keep polyglot-fixture as demo/example without workspace wiring until Phase 4 polyglot fixture implementation",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "validationCommands": [
+        "pnpm check:product-shape-capability-matrix"
       ]
     },
     {

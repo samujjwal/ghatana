@@ -50,7 +50,7 @@ public final class CampaignActivationConsentPreflight {
 
         // Build interaction request for consent check
         ProductInteractionRequest<?> request = ProductInteractionRequest.builder()
-            .contractId("phr.consent-status.v1")
+            .contractId("kernel://interactions/phr.consent-status.v1")
             .contractVersion("1.0.0")
             .providerProductId("phr")
             .consumerProductId("digital-marketing")

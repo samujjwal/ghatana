@@ -19,6 +19,8 @@ package com.ghatana.yappc.e2e;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -48,7 +50,7 @@ class E2EWorkflowTest {
         assertThat(project).isNotNull();
 
         // Navigate to phase cockpit
-        PhaseCockpitPage cockpit = dashboard.navigateToPhaseCockpit(project.getProjectId());
+        PhaseCockpitPage cockpit = dashboard.navigateToPhaseCockpit(project.projectId());
 
         assertThat(cockpit.getCurrentPhase()).isEqualTo("intent");
     }
@@ -61,9 +63,9 @@ class E2EWorkflowTest {
 
         ProjectSnapshot snapshot = cockpit.getProjectSnapshot();
 
-        assertThat(snapshot.getProjectId()).isEqualTo("proj-123");
-        assertThat(snapshot.getName()).isEqualTo("Test Project");
-        assertThat(snapshot.getStatus()).isEqualTo("active");
+        assertThat(snapshot.projectId()).isEqualTo("proj-123");
+        assertThat(snapshot.name()).isEqualTo("Test Project");
+        assertThat(snapshot.status()).isEqualTo("active");
     }
 
     @Test
@@ -74,9 +76,9 @@ class E2EWorkflowTest {
 
         PhaseReadiness readiness = cockpit.getPhaseReadiness("intent");
 
-        assertThat(readiness.getPhase()).isEqualTo("intent");
-        assertThat(readiness.getStatus()).isIn("ready", "blocked", "in-progress");
-        assertThat(readiness.getScore()).isBetween(0.0, 1.0);
+        assertThat(readiness.phase()).isEqualTo("intent");
+        assertThat(readiness.status()).isIn("ready", "blocked", "in-progress");
+        assertThat(readiness.score()).isBetween(0.0, 1.0);
     }
 
     @Test
@@ -89,8 +91,8 @@ class E2EWorkflowTest {
         GenerationRequest request = new GenerationRequest("intent", Map.of("prompt", "Create a REST API"));
         GenerationRun run = cockpit.triggerGeneration(request);
 
-        assertThat(run.getRunId()).isNotNull();
-        assertThat(run.getStatus()).isEqualTo("in-progress");
+        assertThat(run.runId()).isNotNull();
+        assertThat(run.status()).isEqualTo("in-progress");
     }
 
     @Test
@@ -103,16 +105,16 @@ class E2EWorkflowTest {
         GenerationRun run = cockpit.triggerGeneration(request);
 
         // Wait for completion
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
         // Check artifacts
-        GenerationResult result = cockpit.getGenerationResult(run.getRunId());
-        assertThat(result.getArtifacts()).isNotEmpty();
+        GenerationResult result = cockpit.getGenerationResult(run.runId());
+        assertThat(result.artifacts()).isNotEmpty();
 
-        for (Artifact artifact : result.getArtifacts()) {
-            assertThat(artifact.getProvenance()).isNotNull();
-            assertThat(artifact.getProvenance().getRunId()).isEqualTo(run.getRunId());
-            assertThat(artifact.getProvenance().getUserId()).isEqualTo(session.getUserId());
+        for (Artifact artifact : result.artifacts()) {
+            assertThat(artifact.provenance()).isNotNull();
+            assertThat(artifact.provenance().runId()).isEqualTo(run.runId());
+            assertThat(artifact.provenance().userId()).isEqualTo(session.userId());
         }
     }
 
@@ -124,15 +126,15 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
 
         // Check diff view is available
         DiffView diff = review.getDiffForArtifact("main.ts");
         assertThat(diff).isNotNull();
-        assertThat(diff.getAddedLines()).isNotEmpty();
-        assertThat(diff.getRemovedLines()).isNotEmpty();
+        assertThat(diff.addedLines()).isNotEmpty();
+        assertThat(diff.removedLines()).isNotEmpty();
     }
 
     @Test
@@ -143,13 +145,13 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         ReviewDecision decision = review.applyAllArtifacts();
 
-        assertThat(decision.getStatus()).isEqualTo("applied");
-        assertThat(decision.getAppliedArtifactIds()).isNotEmpty();
+        assertThat(decision.status()).isEqualTo("applied");
+        assertThat(decision.appliedArtifactIds()).isNotEmpty();
     }
 
     @Test
@@ -160,13 +162,13 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         ReviewDecision decision = review.rejectAllArtifacts("Quality not acceptable");
 
-        assertThat(decision.getStatus()).isEqualTo("rejected");
-        assertThat(decision.getReason()).isEqualTo("Quality not acceptable");
+        assertThat(decision.status()).isEqualTo("rejected");
+        assertThat(decision.reason()).isEqualTo("Quality not acceptable");
     }
 
     @Test
@@ -177,16 +179,16 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         review.applyAllArtifacts();
 
         // Rollback
-        ReviewPage review2 = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review2 = cockpit.navigateToReview(run.runId());
         ReviewDecision rollback = review2.rollback();
 
-        assertThat(rollback.getStatus()).isEqualTo("rolled-back");
+        assertThat(rollback.status()).isEqualTo("rolled-back");
     }
 
     @Test
@@ -197,9 +199,9 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         PreviewPage preview = review.previewArtifact("main.ts");
 
         assertThat(preview.getArtifactContent()).isNotEmpty();
@@ -214,9 +216,9 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         PreviewPage preview = review.previewArtifact("untrusted-script.js");
 
         assertThat(preview.getTrustLevel()).isEqualTo("untrusted");
@@ -231,16 +233,16 @@ class E2EWorkflowTest {
 
         GenerationRequest request = new GenerationRequest("generate", Map.of());
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         review.applyAllArtifacts();
 
         RunPage runPage = review.runArtifacts();
         ExecutionResult result = runPage.execute("main.ts");
 
-        assertThat(result.getStatus()).isIn("success", "failure");
-        assertThat(result.getExecutionTime()).isPositive();
+        assertThat(result.status()).isIn("success", "failure");
+        assertThat(result.executionTime()).isPositive();
     }
 
     @Test
@@ -252,17 +254,17 @@ class E2EWorkflowTest {
         // Navigate to dashboard and select project
         DashboardPage dashboard = navigateToDashboard(session);
         ProjectSummary project = dashboard.getProject("proj-123");
-        PhaseCockpitPage cockpit = dashboard.navigateToPhaseCockpit(project.getProjectId());
+        PhaseCockpitPage cockpit = dashboard.navigateToPhaseCockpit(project.projectId());
 
         // Trigger generation
         GenerationRequest request = new GenerationRequest("generate", Map.of("prompt", "Create a simple service"));
         GenerationRun run = cockpit.triggerGeneration(request);
-        waitForGenerationCompletion(run.getRunId());
+        waitForGenerationCompletion(run.runId());
 
         // Review and apply
-        ReviewPage review = cockpit.navigateToReview(run.getRunId());
+        ReviewPage review = cockpit.navigateToReview(run.runId());
         ReviewDecision decision = review.applyAllArtifacts();
-        assertThat(decision.getStatus()).isEqualTo("applied");
+        assertThat(decision.status()).isEqualTo("applied");
 
         // Preview
         PreviewPage preview = review.previewArtifact("main.ts");
@@ -271,7 +273,7 @@ class E2EWorkflowTest {
         // Run
         RunPage runPage = review.runArtifacts();
         ExecutionResult result = runPage.execute("main.ts");
-        assertThat(result.getStatus()).isEqualTo("success");
+        assertThat(result.status()).isEqualTo("success");
     }
 
     @Test
@@ -283,8 +285,39 @@ class E2EWorkflowTest {
         // Execute dashboard action
         ActionResult result = cockpit.executeDashboardAction("promote-phase", "intent");
 
-        assertThat(result.getStatus()).isEqualTo("success");
-        assertThat(result.getAuditLogged()).isTrue();
+        assertThat(result.status()).isEqualTo("success");
+        assertThat(result.auditLogged()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Learn and Evolve preserve provenance through Kernel promotion")
+    void learnAndEvolvePreserveProvenanceThroughKernelPromotion() {
+        UserSession session = loginUser("user@example.com", "password");
+        PhaseCockpitPage cockpit = navigateToPhaseCockpit(session, "proj-123");
+
+        GenerationRun generation = cockpit.triggerGeneration(
+                new GenerationRequest("generate", Map.of("prompt", "Create a tenant-scoped run surface")));
+        waitForGenerationCompletion(generation.runId());
+
+        ReviewPage review = cockpit.navigateToReview(generation.runId());
+        review.applyAllArtifacts();
+        RunPage runPage = review.runArtifacts();
+        ExecutionResult execution = runPage.execute("main.ts");
+
+        LearningEvidence learningEvidence = runPage.captureLearningEvidence(execution);
+        EvolutionProposal proposal = runPage.proposeEvolution(learningEvidence);
+        KernelPromotion promotion = proposal.promoteToKernel();
+
+        assertThat(learningEvidence.tenantId()).isEqualTo(session.tenantId());
+        assertThat(learningEvidence.projectId()).isEqualTo("proj-123");
+        assertThat(learningEvidence.runId()).isEqualTo(generation.runId());
+        assertThat(learningEvidence.provenance()).containsEntry("source", "run");
+        assertThat(proposal.status()).isEqualTo("approval-pending");
+        assertThat(proposal.productUnitIntentUpdate().workspaceId()).isEqualTo("workspace-1");
+        assertThat(proposal.productUnitIntentUpdate().lifecycleProfile()).isEqualTo("yappc-production");
+        assertThat(proposal.productUnitIntentUpdate().surfaces()).contains("web-api");
+        assertThat(promotion.status()).isEqualTo("promoted");
+        assertThat(promotion.kernelReference()).contains("proj-123", generation.runId());
     }
 
     // Helper methods
@@ -300,7 +333,7 @@ class E2EWorkflowTest {
     private PhaseCockpitPage navigateToPhaseCockpit(UserSession session, String projectId) {
         DashboardPage dashboard = navigateToDashboard(session);
         ProjectSummary project = dashboard.getProject(projectId);
-        return dashboard.navigateToPhaseCockpit(project.getProjectId());
+        return dashboard.navigateToPhaseCockpit(project.projectId());
     }
 
     private void waitForGenerationCompletion(String runId) {
@@ -350,6 +383,37 @@ class E2EWorkflowTest {
     private record ExecutionResult(String status, long executionTime) {
     }
 
+    private record LearningEvidence(
+            String tenantId,
+            String projectId,
+            String runId,
+            String observation,
+            Map<String, String> provenance) {
+    }
+
+    private record ProductUnitIntentUpdate(
+            String workspaceId,
+            String projectId,
+            String lifecycleProfile,
+            java.util.List<String> surfaces) {
+    }
+
+    private record EvolutionProposal(
+            String proposalId,
+            String status,
+            LearningEvidence evidence,
+            ProductUnitIntentUpdate productUnitIntentUpdate) {
+
+        KernelPromotion promoteToKernel() {
+            return new KernelPromotion(
+                    "promoted",
+                    "kernel://product-unit/" + productUnitIntentUpdate.projectId() + "/" + evidence.runId());
+        }
+    }
+
+    private record KernelPromotion(String status, String kernelReference) {
+    }
+
     // Test page classes (simplified)
 
     private static class DashboardPage {
@@ -394,7 +458,7 @@ class E2EWorkflowTest {
         }
 
         GenerationResult getGenerationResult(String runId) {
-            return new GenerationResult(java.util.List.of(new Artifact("artifact-1", new ArtifactProvenance(runId, session.getUserId()))));
+            return new GenerationResult(java.util.List.of(new Artifact("artifact-1", new ArtifactProvenance(runId, session.userId()))));
         }
 
         ReviewPage navigateToReview(String runId) {
@@ -475,6 +539,31 @@ class E2EWorkflowTest {
 
         ExecutionResult execute(String artifactId) {
             return new ExecutionResult("success", 1500);
+        }
+
+        LearningEvidence captureLearningEvidence(ExecutionResult result) {
+            return new LearningEvidence(
+                    session.tenantId(),
+                    "proj-123",
+                    runId,
+                    "Execution completed with status " + result.status(),
+                    Map.of(
+                            "source", "run",
+                            "artifact", "main.ts",
+                            "executionTimeMs", Long.toString(result.executionTime())));
+        }
+
+        EvolutionProposal proposeEvolution(LearningEvidence evidence) {
+            ProductUnitIntentUpdate update = new ProductUnitIntentUpdate(
+                    "workspace-1",
+                    evidence.projectId(),
+                    "yappc-production",
+                    java.util.List.of("web-api", "web-ui"));
+            return new EvolutionProposal(
+                    "evolve-" + evidence.runId(),
+                    "approval-pending",
+                    evidence,
+                    update);
         }
     }
 

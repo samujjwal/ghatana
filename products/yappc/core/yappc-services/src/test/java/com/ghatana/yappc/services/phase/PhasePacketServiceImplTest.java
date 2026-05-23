@@ -51,6 +51,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     @Mock private CapabilityEvaluationService capabilityEvaluationService;
     @Mock private TransitionConfigLoader transitionConfigLoader;
     @Mock private PlatformIntegrationClient platformIntegrationClient;
+    @Mock private PlatformRunStatusService platformRunStatusService;
     @Mock private BusinessMetrics metrics;
     @Mock private AuditService auditService;
 
@@ -77,8 +78,9 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 platformIntegrationClient,
                 metrics,
                 auditService,
-                null,  // previewRuntimeService — null triggers DegradedPreviewRuntimeService
-                null   // auditLogger
+                null,
+                platformRunStatusService,
+                null
         );
 
         // Common happy-path stubs — lenient because not every test exercises the full path
@@ -103,6 +105,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         lenient().when(auditService.queryByPhase(anyString(), anyString(), any(), any()))
                 .thenReturn(Promise.of(List.of()));
+        lenient().when(platformRunStatusService.findLatest(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.empty()));
     }
 
     // ─── Happy path ────────────────────────────────────────────────────────────
@@ -236,6 +240,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 metrics,
                 null,  // auditService null → DegradedAuditService wired
                 null,
+                platformRunStatusService,
                 null
         );
 
@@ -257,5 +262,45 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
         assertThat(packet.healthSignals()).isNotNull();
         // Degraded preview runtime → preview health is not healthy
         assertThat(packet.healthSignals().preview().isHealthy()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Happy path: packet includes latest platform run status when available")
+    void happyPath_platformRunStatusPresentWhenResolved() {
+        PhasePacket.PlatformRunStatus runStatus = new PhasePacket.PlatformRunStatus(
+                "run-123",
+                "RUNNING",
+                "data-cloud-aep",
+                Instant.parse("2026-05-01T00:00:00Z"),
+                null,
+                "trace-123",
+                List.of("ev-1"));
+        lenient().when(platformRunStatusService.findLatest(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(runStatus)));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.platformRunStatus()).isNotNull();
+        assertThat(packet.platformRunStatus().runId()).isEqualTo("run-123");
+        assertThat(packet.platformRunStatus().evidenceIds()).containsExactly("ev-1");
+    }
+
+    @Test
+    @DisplayName("Project feature flags are surfaced in packet")
+    void projectFeatureFlags_areSurfacedInPacket() {
+        lenient().when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(
+                        DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                Map.of(
+                                        "name", "Test Project",
+                                        "tier", "ENTERPRISE",
+                                        "enabledPhaseFlags", List.of("custom.phase.flag"),
+                                        "status", "active")))));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "phase.report.export");
     }
 }

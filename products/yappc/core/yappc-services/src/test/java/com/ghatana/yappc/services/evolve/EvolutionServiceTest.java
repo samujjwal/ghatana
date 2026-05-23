@@ -4,6 +4,7 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.domain.learn.Insights;
@@ -127,5 +128,51 @@ class EvolutionServiceTest extends EventloopTestBase {
                 assertEquals("insights-123", result.insightsRef()); 
 
                 verify(metrics, times(1)).incrementCounter(eq("yappc.ai.evolve.propose.fallback"), any(Map.class));
+    }
+
+    @Test
+    void shouldPersistEvolutionProposalWhenRepositoryIsConfigured() {
+        // GIVEN
+        CompletionService aiService = mock(CompletionService.class);
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+        EvolutionPlanRepository repository = mock(EvolutionPlanRepository.class);
+
+        when(aiService.complete(any(CompletionRequest.class)))
+                .thenReturn(Promise.of(CompletionResult.builder()
+                        .text("Recommendation: Add rollback validation before promote")
+                        .modelUsed("gpt-4")
+                        .build()));
+        when(auditLogger.log(any(Map.class))).thenReturn(Promise.complete());
+        when(repository.save(any(EvolutionPlanRepository.EvolutionProposal.class)))
+                .thenReturn(Promise.complete());
+
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics, repository);
+        Insights insights = Insights.builder()
+                .id("insights-123")
+                .observationRef("project-123:obs-456")
+                .patterns(List.of())
+                .anomalies(List.of())
+                .recommendations(List.of())
+                .build();
+
+        try {
+            // WHEN
+            EvolutionPlan result = runPromise(() -> service.propose(insights));
+
+            // THEN
+            assertNotNull(result);
+            verify(repository).save(argThat(proposal ->
+                    proposal.tenantId().equals("tenant-alpha")
+                            && proposal.projectId().equals("project-123")
+                            && proposal.approvalState().equals("PENDING_APPROVAL")
+                            && proposal.productUnitIntentRef().equals(result.newIntentRef())
+                            && proposal.provenance().contains("insights-123")));
+        } finally {
+            TenantContext.clear();
+            runBlocking(TenantContext::clear);
+        }
     }
 }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.plugins.kafka.KafkaEventLogStore;
 import com.ghatana.datacloud.plugins.kafka.KafkaEventLogStoreConfig;
+import com.ghatana.datacloud.backpressure.BackpressureException;
+import com.ghatana.datacloud.backpressure.BackpressureManager;
 import com.ghatana.datacloud.plugins.postgres.PostgresEntityStore;
 import com.ghatana.datacloud.plugins.postgres.PostgresEntityStoreConfig;
 import com.ghatana.datacloud.spi.EntityStore;
@@ -12,6 +14,9 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
+import io.activej.promise.SettableCallback;
+import io.activej.promise.SettablePromise;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,6 +83,9 @@ class DurableMultiTenantLoadIntegrationTest {
     private static final long MAX_P99_QUERY_MS = Long.getLong("datacloud.load.maxP99QueryMs", 0L); 
     private static final int MIN_P99_SAMPLE_SIZE = Integer.getInteger("datacloud.load.minP99SampleSize", 100); 
     private static final int ITERATIONS = Integer.getInteger("datacloud.load.iterations", 1); 
+    private static final int BACKPRESSURE_MAX_CONCURRENT = Integer.getInteger("datacloud.load.backpressure.maxConcurrent", 2);
+    private static final int BACKPRESSURE_QUEUE_CAPACITY = Integer.getInteger("datacloud.load.backpressure.queueCapacity", 4);
+    private static final int BACKPRESSURE_REQUEST_COUNT = Integer.getInteger("datacloud.load.backpressure.requestCount", 12);
     private static final double MIN_THROUGHPUT_OPS_PER_SECOND = Double.parseDouble( 
         System.getProperty("datacloud.load.minThroughputOpsPerSecond", "0") 
     );
@@ -184,6 +192,54 @@ class DurableMultiTenantLoadIntegrationTest {
             bestThroughput,
             bestEventBurstThroughput
         );
+    }
+
+    @Test
+    @DisplayName("multi-tenant burst traffic triggers backpressure drops under load")
+    void multiTenantBurstTrafficTriggersBackpressureDropsUnderLoad() {
+        BackpressureManager manager = BackpressureManager.builder()
+            .maxConcurrent(BACKPRESSURE_MAX_CONCURRENT)
+            .queueCapacity(BACKPRESSURE_QUEUE_CAPACITY)
+            .strategy(BackpressureManager.BackpressureStrategy.DROP)
+            .build();
+
+        try {
+            List<SettableCallback<Void>> heldPromises = new ArrayList<>();
+            List<Promise<Void>> acceptedPromises = new ArrayList<>();
+            AtomicLong acceptedRequests = new AtomicLong();
+
+            for (int requestIndex = 0; requestIndex < BACKPRESSURE_REQUEST_COUNT; requestIndex++) {
+                final int currentIndex = requestIndex;
+                Promise<Void> submitted = manager.execute(BackpressureManager.Priority.NORMAL, () -> {
+                    acceptedRequests.incrementAndGet();
+                    return Promise.ofCallback(callback -> {
+                        if (currentIndex < BACKPRESSURE_MAX_CONCURRENT) {
+                            heldPromises.add(callback);
+                        } else {
+                            callback.set(null);
+                        }
+                    });
+                });
+
+                if (requestIndex < BACKPRESSURE_MAX_CONCURRENT) {
+                    acceptedPromises.add(submitted);
+                }
+            }
+
+            assertThat(acceptedRequests.get()).isEqualTo(BACKPRESSURE_MAX_CONCURRENT);
+            assertThat(manager.getMetrics().getDroppedRequests()).isEqualTo(BACKPRESSURE_REQUEST_COUNT - BACKPRESSURE_MAX_CONCURRENT);
+            assertThat(manager.getMetrics().getActiveRequests()).isEqualTo(BACKPRESSURE_MAX_CONCURRENT);
+            assertThat(manager.getStatus().queuedRequests()).isZero();
+            assertThat(manager.isUnderPressure()).isTrue();
+
+            heldPromises.forEach(promise -> promise.set(null));
+            runBlocking(() -> Promises.toList(acceptedPromises.stream()));
+
+            assertThat(manager.getMetrics().getActiveRequests()).isZero();
+            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(BACKPRESSURE_MAX_CONCURRENT);
+        } finally {
+            manager.shutdown();
+        }
     }
 
     private Map<String, Object> runSingleIteration(int iteration) throws InterruptedException { 
@@ -308,6 +364,9 @@ class DurableMultiTenantLoadIntegrationTest {
             Map.entry("entityOpsPerTenant", ENTITY_OPS_PER_TENANT), 
             Map.entry("eventOpsPerTenant", EVENT_OPS_PER_TENANT), 
             Map.entry("iterations", ITERATIONS), 
+            Map.entry("backpressureMaxConcurrent", BACKPRESSURE_MAX_CONCURRENT),
+            Map.entry("backpressureQueueCapacity", BACKPRESSURE_QUEUE_CAPACITY),
+            Map.entry("backpressureRequestCount", BACKPRESSURE_REQUEST_COUNT),
             Map.entry("aggregateEntityWrites", aggregateEntityWrites), 
             Map.entry("aggregateEventAppends", aggregateEventAppends), 
             Map.entry("aggregateQueries", aggregateQueries), 

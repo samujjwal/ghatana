@@ -11,7 +11,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-@DisplayName("Budget domain entity")
+/**
+ * @doc.type class
+ * @doc.purpose Validates campaign budget enforcement with spend gates
+ * @doc.layer product
+ * @doc.pattern BudgetTest
+ */
+@DisplayName("dm-008: Campaign Budget Enforcement Tests")
 class BudgetTest {
 
     private Budget validDraft() {

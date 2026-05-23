@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * P1-020: Notification retry and dead-letter queue (DLQ) behavior tests.
+ * dm-006: Notification retry and dead-letter queue (DLQ) behavior tests.
  *
  * <p>Verifies that notification failures are properly retried and eventually
  * sent to DLQ if they cannot be delivered. Tests cover:</p>
@@ -52,10 +52,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *   <li>Successful notification dispatch</li>
  *   <li>Retry on transient failures</li>
  *   <li>DLQ routing for permanent failures</li>
- *   <li>Production mode failure handling (P1-019)</li>
+ *   <li>Production mode failure handling</li>
  * </ul>
+ * 
+ * @doc.type class
+ * @doc.purpose Validates notification retry with exponential backoff and DLQ routing
+ * @doc.layer product
+ * @doc.pattern RetryTest
  */
-@DisplayName("P1-020: Notification Retry and DLQ Behavior Tests")
+@DisplayName("dm-006: Notification Retry and DLQ Behavior Tests")
 class NotificationRetryAndDlqTest {
 
     private CapturingNotificationPlugin capturingPlugin;

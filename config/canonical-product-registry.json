@@ -2220,6 +2220,68 @@
         "supported": []
       },
       "lifecycleExecutionAllowed": false
+    },
+    "polyglot-fixture": {
+      "id": "polyglot-fixture",
+      "name": "Polyglot Fixture",
+      "description": "Canonical fixture product demonstrating multi-language platform support with Java, TypeScript, Rust, and Python surfaces",
+      "type": "product",
+      "kind": "demo/example",
+      "surfaces": [
+        {
+          "type": "backend-api",
+          "path": "products/polyglot-fixture/surfaces/java",
+          "implementationStatus": "implemented"
+        },
+        {
+          "type": "web",
+          "path": "products/polyglot-fixture/surfaces/typescript",
+          "packagePath": "products/polyglot-fixture/surfaces/typescript/package.json",
+          "implementationStatus": "implemented"
+        },
+        {
+          "type": "worker",
+          "path": "products/polyglot-fixture/surfaces/rust",
+          "implementationStatus": "implemented"
+        },
+        {
+          "type": "worker",
+          "path": "products/polyglot-fixture/surfaces/python",
+          "implementationStatus": "implemented"
+        }
+      ],
+      "gradleModules": [],
+      "ci": {
+        "enabled": true,
+        "gates": ["build", "test"]
+      },
+      "conformance": {
+        "manifest": false,
+        "observability": false,
+        "security": false,
+        "dataAccess": false,
+        "bridge": false,
+        "agentDefinitions": false,
+        "masteryBindings": false,
+        "evaluationPacks": false
+      },
+      "metadata": {
+        "status": "active",
+        "owner": "platform-team",
+        "created": "2026-05-22"
+      },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "polyglot-fixture-not-workspace-wired",
+          "demo-example-drift-exemption"
+        ],
+        "requiredGates": [],
+        "nextRequiredWork": [
+          "Keep polyglot-fixture as demo/example without workspace wiring until Phase 4 polyglot fixture implementation"
+        ],
+        "evidenceRefs": []
+      },
+      "lifecycleExecutionAllowed": false
     }
   }
 }

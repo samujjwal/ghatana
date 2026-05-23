@@ -14,7 +14,19 @@
     "Data Cloud Launcher: Executable test run validated network timeout",
     "Data Cloud Launcher: Executable test run validated queue saturation",
     "Data Cloud Launcher: Executable test run validated retry implementation",
-    "Data Cloud Launcher: Executable test run validated backoff implementation"
+    "Data Cloud Launcher: Executable test run validated backoff implementation",
+    "Digital Marketing Kernel Bridge: Executed real dependency failure scenarios",
+    "Digital Marketing Kernel Bridge: Executable test run validated postgres unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated clickhouse unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated opensearch unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated s3 unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated audit sink unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated policy engine unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated ai completion unavailability",
+    "Digital Marketing Kernel Bridge: Executable test run validated network timeout",
+    "Digital Marketing Kernel Bridge: Executable test run validated queue saturation",
+    "Digital Marketing Kernel Bridge: Executable test run validated retry implementation",
+    "Digital Marketing Kernel Bridge: Executable test run validated backoff implementation"
   ],
   "scenarioCoverage": {
     "postgresDown": true,
@@ -31,8 +43,8 @@
   "summary": {
     "totalViolations": 0,
     "totalWarnings": 0,
-    "totalEvidence": 12,
+    "totalEvidence": 24,
     "missingScenarioCount": 0,
-    "executedTestProductCount": 1
+    "executedTestProductCount": 2
   }
 }

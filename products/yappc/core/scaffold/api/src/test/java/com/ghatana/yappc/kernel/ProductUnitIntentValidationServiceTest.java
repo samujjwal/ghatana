@@ -48,7 +48,7 @@ class ProductUnitIntentValidationServiceTest {
                         "name", "Digital Marketing Campaign",
                         "kind", "business-product",
                         "surfaces", List.of("web-api", "frontend"),
-                        "lifecycleProfile", "standard"
+                        "lifecycleProfile", "standard-web-api-product"
                 )
         );
 
@@ -345,11 +345,11 @@ class ProductUnitIntentValidationServiceTest {
     void isRecognizedLifecycleProfile() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
 
-        assertThat(validator.isRecognizedLifecycleProfile("standard")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("frontend-only")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("backend-only")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("minimal")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("full")).isTrue();
+        assertThat(validator.isRecognizedLifecycleProfile("standard-web-api-product")).isTrue();
+        assertThat(validator.isRecognizedLifecycleProfile("standard-polyglot-product")).isTrue();
+        assertThat(validator.isRecognizedLifecycleProfile("backend-only-java-service")).isTrue();
+        assertThat(validator.isRecognizedLifecycleProfile("mobile-plus-api-product")).isTrue();
+        assertThat(validator.isRecognizedLifecycleProfile("platform-provider-product")).isTrue();
         assertThat(validator.isRecognizedLifecycleProfile("unknown")).isFalse();
         assertThat(validator.isRecognizedLifecycleProfile(null)).isFalse();
     }
@@ -359,6 +359,11 @@ class ProductUnitIntentValidationServiceTest {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
 
         assertThat(validator.getRecognizedLifecycleProfiles())
-                .containsExactlyInAnyOrder("standard", "frontend-only", "backend-only", "minimal", "full");
+                .containsExactlyInAnyOrder(
+                        "standard-web-api-product",
+                        "standard-polyglot-product",
+                        "backend-only-java-service",
+                        "mobile-plus-api-product",
+                        "platform-provider-product");
     }
 }

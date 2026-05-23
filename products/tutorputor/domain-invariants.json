@@ -1,0 +1,80 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "tutorputor",
+  "description": "Domain invariant declarations for TutorPutor product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "tutor-001",
+      "name": "Learning session state machine",
+      "category": "lifecycle_state_transitions",
+      "description": "Learning sessions must follow valid state transitions (created -> active -> paused -> completed)",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-002",
+      "name": "Student progress tracking",
+      "category": "data_integrity",
+      "description": "Student progress must be accurately tracked and persisted",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-003",
+      "name": "Session audit trail",
+      "category": "audit/evidence",
+      "description": "All learning session activities must be logged with student, timestamp, and action",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-004",
+      "name": "Student data privacy",
+      "category": "privacy/consent",
+      "description": "Student data must be protected with encryption and access controls",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-005",
+      "name": "Student authorization",
+      "category": "identity/authorization",
+      "description": "Students must be authenticated and authorized for session access",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-006",
+      "name": "Tenant student isolation",
+      "category": "tenant/workspace_isolation",
+      "description": "Student data must be isolated by tenant with no cross-tenant access",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "tutor-007",
+      "name": "Content delivery integrity",
+      "category": "product_specific_business_correctness",
+      "description": "Learning content must be delivered without corruption or modification",
+      "testId": null,
+      "testPath": null,
+      "severity": "high"
+    }
+  ]
+}

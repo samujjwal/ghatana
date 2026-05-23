@@ -1,42 +1,53 @@
 {
-  "generatedAt": "2026-05-23T02:17:54.379Z",
+  "generatedAt": "2026-05-23T04:38:19.199Z",
   "status": "passed",
   "coverage": [
     {
       "productId": "dcmaar",
-      "javaTestCount": 2,
-      "tsTestCount": 216,
-      "invariantNamedTestCount": 2
+      "hasInvariantDeclaration": true,
+      "invariantCount": 6,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
     },
     {
       "productId": "digital-marketing",
-      "javaTestCount": 289,
+      "hasInvariantDeclaration": false,
+      "javaTestCount": 291,
       "tsTestCount": 49,
-      "invariantNamedTestCount": 103
+      "invariantNamedTestCount": 104
     },
     {
       "productId": "finance",
-      "javaTestCount": 179,
-      "tsTestCount": 0,
-      "invariantNamedTestCount": 118
+      "hasInvariantDeclaration": true,
+      "invariantCount": 8,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
     },
     {
       "productId": "flashit",
-      "javaTestCount": 6,
-      "tsTestCount": 79,
-      "invariantNamedTestCount": 1
+      "hasInvariantDeclaration": true,
+      "invariantCount": 8,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
     },
     {
       "productId": "phr",
-      "javaTestCount": 75,
-      "tsTestCount": 7,
-      "invariantNamedTestCount": 7
+      "hasInvariantDeclaration": true,
+      "invariantCount": 10,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
     },
     {
       "productId": "tutorputor",
-      "javaTestCount": 35,
-      "tsTestCount": 367,
-      "invariantNamedTestCount": 23
+      "hasInvariantDeclaration": true,
+      "invariantCount": 7,
+      "mappingViolations": 0,
+      "categoryViolations": 0,
+      "executionViolations": 0
     }
   ],
   "violations": []

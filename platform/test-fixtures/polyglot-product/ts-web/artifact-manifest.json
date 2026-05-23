@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "language": "typescript",
+  "buildTime": "2026-05-22T20:22:00Z",
+  "toolchain": "node",
+  "artifacts": [
+    {
+      "name": "ts-web",
+      "type": "bundle",
+      "path": "dist/index.js"
+    }
+  ],
+  "dependencies": [
+    "typescript@^5.0.0",
+    "vitest@^1.0.0"
+  ]
+}

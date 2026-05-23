@@ -3,13 +3,35 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { execSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const repoRoot = process.cwd();
+function resolveRepoRoot() {
+  const cliRootFlagIndex = process.argv.indexOf('--root');
+  const cliRoot = cliRootFlagIndex >= 0 ? process.argv[cliRootFlagIndex + 1] : null;
+  const envRoot = process.env.RELEASE_EVIDENCE_ROOT ?? null;
+  return path.resolve(cliRoot ?? envRoot ?? process.cwd());
+}
+
+const repoRoot = resolveRepoRoot();
 const releaseEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const releaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
 const smokeEvidencePath = 'release-evidence/smoke/smoke-e2e-report.json';
 const backupEvidencePath = 'release-evidence/backup/backup-drill-report.json';
 const summaryEvidencePath = 'release-evidence/release-summary.json';
+const freshnessPolicyPath = 'config/evidence-freshness-policy.json';
+
+const evidenceTypeByPath = new Map([
+  [smokeEvidencePath, 'runtime-executed'],
+  [backupEvidencePath, 'runtime-executed'],
+  ['.kernel/evidence/data-cloud-release-runtime-profile.json', 'static-configuration'],
+  ['.kernel/evidence/atomic-workflow-posture.json', 'runtime-executed'],
+  ['.kernel/evidence/kernel-implementation-plan-progress.json', 'runtime-executed'],
+  ['.kernel/evidence/product-slo-budgets.json', 'runtime-production'],
+  ['.kernel/evidence/product-cost-budgets.json', 'runtime-production'],
+  ['.kernel/evidence/product-domain-invariants.json', 'runtime-executed'],
+  ['.kernel/evidence/openapi-breaking-changes.json', 'generated-on-demand'],
+  [summaryEvidencePath, 'release-summary'],
+]);
 
 const requiredEvidenceFiles = [
   smokeEvidencePath,
@@ -23,6 +45,43 @@ const requiredEvidenceFiles = [
   '.kernel/evidence/openapi-breaking-changes.json',
   summaryEvidencePath,
 ];
+
+function loadFreshnessPolicy() {
+  const absolutePath = path.join(repoRoot, freshnessPolicyPath);
+  if (!existsSync(absolutePath)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(readFileSync(absolutePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+const freshnessPolicy = loadFreshnessPolicy();
+
+function getFreshnessProfile(relativePath) {
+  const evidenceType = evidenceTypeByPath.get(relativePath) ?? 'runtime-executed';
+  const policyEntry = freshnessPolicy?.evidenceTypes?.[evidenceType] ?? null;
+  const thresholdHours = Number(policyEntry?.thresholdHours ?? freshnessPolicy?.defaultThresholdHours ?? 24);
+
+  return {
+    evidenceType,
+    thresholdHours,
+    requireSourceBacking: Boolean(policyEntry?.requireSourceBacking),
+  };
+}
+
+function readEvidenceTimestamp(evidence) {
+  const candidate = evidence?.generatedAt ?? evidence?.timestamp ?? evidence?.drill_timestamp ?? null;
+  if (!candidate) {
+    return null;
+  }
+
+  const parsed = new Date(candidate).getTime();
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 function sleepMs(durationMs) {
   const signal = new Int32Array(new SharedArrayBuffer(4));
@@ -226,6 +285,22 @@ function readJson(relativePath, errors) {
   }
 }
 
+function evaluateEvidenceFreshness(relativePath, evidence, errors) {
+  const profile = getFreshnessProfile(relativePath);
+  const absolutePath = path.join(repoRoot, relativePath);
+  const timestamp = readEvidenceTimestamp(evidence) ?? (existsSync(absolutePath) ? statSync(absolutePath).mtimeMs : null);
+
+  if (timestamp === null) {
+    errors.push(`Evidence file is missing a freshness timestamp: ${relativePath}`);
+    return;
+  }
+
+  const ageHours = (Date.now() - timestamp) / (1000 * 60 * 60);
+  if (ageHours > profile.thresholdHours) {
+    errors.push(`Evidence file is stale (> ${profile.thresholdHours}h, ${profile.evidenceType}): ${relativePath}`);
+  }
+}
+
 function gitValue(command) {
   try {
     return execSync(command, { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -234,16 +309,12 @@ function gitValue(command) {
   }
 }
 
-function assertRecent(relativePath, maxHours, errors) {
-  const absolutePath = path.join(repoRoot, relativePath);
-  if (!existsSync(absolutePath)) {
+function assertRecent(relativePath, evidence, errors) {
+  if (!evidence) {
     return;
   }
-  const modifiedAt = statSync(absolutePath).mtimeMs;
-  const ageHours = (Date.now() - modifiedAt) / (1000 * 60 * 60);
-  if (ageHours > maxHours) {
-    errors.push(`Evidence file is stale (> ${maxHours}h): ${relativePath}`);
-  }
+
+  evaluateEvidenceFreshness(relativePath, evidence, errors);
 }
 
 function validateRequiredContent(evidenceByPath, errors) {
@@ -417,18 +488,22 @@ function validateRequiredContent(evidenceByPath, errors) {
   }
 }
 
-function validatePerProductScorecards(errors) {
+function validatePerProductScorecards(errors, expectedProductIds = []) {
   const evidenceDir = path.join(repoRoot, '.kernel/evidence');
   if (!existsSync(evidenceDir)) {
     errors.push('Missing evidence directory .kernel/evidence');
     return;
   }
 
+  const expectedProductSet = new Set(expectedProductIds);
   const scorecardFiles = [];
   const directoryEntries = readdirSync(evidenceDir).filter((entry) => /^product-release-readiness\.[^.]+\.json$/i.test(entry));
 
   for (const entry of directoryEntries) {
-    scorecardFiles.push(path.join(evidenceDir, entry));
+    const productId = entry.replace(/^product-release-readiness\./i, '').replace(/\.json$/i, '');
+    if (expectedProductSet.size === 0 || expectedProductSet.has(productId)) {
+      scorecardFiles.push(path.join(evidenceDir, entry));
+    }
   }
 
   if (scorecardFiles.length === 0) {
@@ -482,11 +557,14 @@ function main() {
     if (content) {
       evidenceByPath.set(relativePath, content);
     }
-    assertRecent(relativePath, 72, errors);
+    assertRecent(relativePath, content, errors);
   }
 
   validateRequiredContent(evidenceByPath, errors);
-  validatePerProductScorecards(errors);
+  const releaseSummary = evidenceByPath.get(summaryEvidencePath);
+  const productReadinessAggregate = readJson('.kernel/evidence/product-release-readiness.json', errors);
+  const scopedProductIds = productReadinessAggregate?.affectedProducts ?? releaseSummary?.productScope ?? [];
+  validatePerProductScorecards(errors, scopedProductIds);
   validateLatestScenarioReport({
     dirRelativePath: '.kernel/evidence/runtime-dependency-failure-injection',
     filePrefix: 'runtime-dependency-failure-injection-',
@@ -530,4 +608,13 @@ function main() {
   console.log('Release evidence validation passed.');
 }
 
-main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
+
+export {
+  evaluateEvidenceFreshness,
+  getFreshnessProfile,
+  loadFreshnessPolicy,
+  resolveRepoRoot,
+};

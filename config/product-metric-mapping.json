@@ -1,0 +1,201 @@
+{
+  "$schema": "./product-metric-mapping.schema.json",
+  "version": "1.0.0",
+  "description": "Maps product SLO budget items to actual runtime metrics for measurement and enforcement",
+  "products": {
+    "digital-marketing": {
+      "workflows": [
+        {
+          "name": "campaign-activation",
+          "description": "Campaign activation with consent check",
+          "sloMetrics": {
+            "latency_p50": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"campaign-activate\",le=\"0.5\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p50"
+            },
+            "latency_p95": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"campaign-activate\",le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "latency_p99": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"campaign-activate\",le=\"0.99\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p99"
+            },
+            "throughput": {
+              "metricName": "http_requests_total{operation=\"campaign-activate\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "throughput"
+            },
+            "error_rate": {
+              "metricName": "http_requests_total{operation=\"campaign-activate\",status=~\"5..\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "errorRate"
+            }
+          }
+        },
+        {
+          "name": "lead-capture",
+          "description": "Lead capture and conversion tracking",
+          "sloMetrics": {
+            "latency_p50": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"lead-capture\",le=\"0.5\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p50"
+            },
+            "latency_p95": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"lead-capture\",le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "throughput": {
+              "metricName": "http_requests_total{operation=\"lead-capture\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "throughput"
+            },
+            "error_rate": {
+              "metricName": "http_requests_total{operation=\"lead-capture\",status=~\"5..\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "errorRate"
+            }
+          }
+        },
+        {
+          "name": "notification-send",
+          "description": "Notification delivery with retry/DLQ",
+          "sloMetrics": {
+            "latency_p95": {
+              "metricName": "notification_delivery_duration_seconds{le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "delivery_success_rate": {
+              "metricName": "notification_delivered_total{status=\"success\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "backgroundJobSuccessRate"
+            }
+          }
+        }
+      ]
+    },
+    "phr": {
+      "workflows": [
+        {
+          "name": "patient-record-fetch",
+          "description": "Patient record summary and timeline fetch",
+          "sloMetrics": {
+            "latency_p50": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"patient-record-fetch\",le=\"0.5\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p50"
+            },
+            "latency_p95": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"patient-record-fetch\",le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "throughput": {
+              "metricName": "http_requests_total{operation=\"patient-record-fetch\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "throughput"
+            },
+            "error_rate": {
+              "metricName": "http_requests_total{operation=\"patient-record-fetch\",status=~\"5..\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "errorRate"
+            }
+          }
+        },
+        {
+          "name": "consent-check",
+          "description": "Consent status verification for data access",
+          "sloMetrics": {
+            "latency_p95": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"consent-check\",le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "cache_hit_rate": {
+              "metricName": "consent_cache_hits_total",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "cacheHitRate"
+            }
+          }
+        },
+        {
+          "name": "fhir-validation",
+          "description": "FHIR R4 resource validation",
+          "sloMetrics": {
+            "latency_p95": {
+              "metricName": "fhir_validation_duration_seconds{le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "validation_success_rate": {
+              "metricName": "fhir_validation_total{result=\"valid\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "backgroundJobSuccessRate"
+            }
+          }
+        },
+        {
+          "name": "break-glass-access",
+          "description": "Emergency break-glass access workflow",
+          "sloMetrics": {
+            "latency_p95": {
+              "metricName": "http_request_duration_seconds_bucket{operation=\"break-glass-access\",le=\"0.95\"}",
+              "type": "histogram",
+              "aggregation": "rate",
+              "budgetRef": "latency.p95"
+            },
+            "audit_log_success_rate": {
+              "metricName": "audit_log_entries_total{operation=\"break-glass\",status=\"success\"}",
+              "type": "counter",
+              "aggregation": "rate",
+              "budgetRef": "backgroundJobSuccessRate"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "metricSources": {
+    "prometheus": {
+      "type": "prometheus",
+      "endpoint": "http://localhost:9090/api/v1/query",
+      "description": "Prometheus metrics endpoint for runtime SLO measurement"
+    },
+    "grafana": {
+      "type": "grafana",
+      "endpoint": "http://localhost:3001",
+      "description": "Grafana dashboard for SLO visualization"
+    }
+  },
+  "measurementIntervals": {
+    "realtime": "1m",
+    "near-realtime": "5m",
+    "standard": "15m",
+    "historical": "1h"
+  }
+}

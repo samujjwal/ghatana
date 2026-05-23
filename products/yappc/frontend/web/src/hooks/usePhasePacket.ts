@@ -24,7 +24,8 @@
  * @doc.pattern Custom Hook
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
 import { LifecycleService } from '../clients/generated/api';
 import type {
   PhaseCockpitPacket,
@@ -43,7 +44,7 @@ export interface UsePhasePacketResult {
   /** Error that occurred during fetch */
   error: Error | null;
   /** Refetch the phase packet */
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 // ============================================================================
@@ -61,7 +62,7 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchPacket = async () => {
+  const fetchPacket = useCallback(async (): Promise<void> => {
     if (!request.projectId || !request.workspaceId) {
       setPacket(null);
       setIsLoading(false);
@@ -87,11 +88,11 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [request.correlationId, request.phase, request.projectId, request.workspaceId]);
 
   useEffect(() => {
     void fetchPacket();
-  }, [request.phase, request.projectId, request.workspaceId]);
+  }, [fetchPacket]);
 
   return {
     packet,
@@ -106,17 +107,14 @@ export function usePhasePacket(request: PhasePacketRequest): UsePhasePacketResul
 // ============================================================================
 
 /**
- * Checks if a phase action is enabled based on capabilities.
+ * Checks if a phase action is enabled by the backend action contract.
  */
 export function isActionEnabled(
-  action: { enabled: boolean; disabledReason?: string },
-  capabilities: { canRead: boolean; canCreate: boolean; canUpdate: boolean; canDelete: boolean }
+  action: { enabled: boolean; disabledReason?: string }
 ): boolean {
   if (!action.enabled) return false;
   if (action.disabledReason) return false;
-  
-  // Additional capability checks can be added here based on action type
-  return capabilities.canRead;
+  return true;
 }
 
 /**

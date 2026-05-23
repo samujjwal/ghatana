@@ -143,6 +143,11 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                     "YappcDataCloudRepository requires an active tenant context. "
                             + "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
         }
+        if ("default-tenant".equals(tenantId)) {
+            throw new SecurityException(
+                    "YappcDataCloudRepository does not allow default-tenant. "
+                            + "A valid tenant ID must be configured in YAPPC_API_KEY_TENANT_MAP.");
+        }
         return tenantId;
     }
 

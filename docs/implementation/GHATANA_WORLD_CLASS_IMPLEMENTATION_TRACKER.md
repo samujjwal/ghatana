@@ -1,640 +1,689 @@
-# Production-Ready Polyglot Kernel Deep/Wide Audit and Implementation Plan
+# Production-Ready Product Development Kernel — Deep/Wide Expert Audit and Implementation Plan
 
 **Repository:** `samujjwal/ghatana`  
-**Target commit:** `c240177a558fe2407419fae4f6ad489db130d0d2`  
-**Commit message:** `dafd fdsaf`  
-**Audit mode:** source-grounded expert audit, feature-completeness review, stability review, and implementation plan.  
-**Verification stance:** long-running validations are intentionally deferred. This report does **not** claim local execution. It uses committed source, manifests, contracts, scripts, and evidence artifacts to identify bugs, missing capabilities, feature gaps, stability issues, and production-readiness work.
+**Target commit:** `f302e89c8e7116e8821a7957b4a06a5d7dff81e7`  
+**Commit message:** `dd ff gg 1`  
+**Audit mode:** source-grounded deep/wide expert review; long-running validations intentionally deferred  
+**Primary goal:** progress toward a production-ready, extremely easy-to-use, highly effective, performant, polyglot Kernel platform that can develop/build/deploy products while products own only business logic.
 
 ---
 
-## 1. Executive Verdict
+## 1. Scope and Method
 
-The platform is making strong progress toward a production-grade Product Development Kernel. At this commit, the repository contains broad release-readiness evidence, multi-language adapter registrations, product-to-product interaction contracts, request/response and event brokers, interaction runtime truth checks, release-profile evidence, and coverage across 47 implementation-plan dimensions.
+This audit reviewed the current code snapshot and committed configuration/evidence at the target commit. I focused on bugs, incomplete capabilities, missing feature paths, stability risks, production-readiness risks, and feature-completeness gaps. I did **not** claim that full CI, long-running Gradle builds, Docker/Buildx flows, Playwright E2E, load tests, or release drills were executed in this session.
 
-However, the product is **not yet production-ready as a fully seamless “build/deploy any app in any supported language” platform**. The current state is best described as:
+The review covered:
 
-> **Production-readiness foundation is strong; production-grade feature completeness and operational hardening remain incomplete.**
-
-The most important progress since earlier snapshots:
-
-1. **Polyglot adapter foundation exists.** Java, TypeScript web, TypeScript Node API, Rust/Cargo, Python/pyproject, Docker Buildx, and Compose adapters are registered in the default toolchain registry.
-2. **Product interaction has moved from contract-only to broker-backed architecture.** Kernel now has request/response and event brokers with validation, policy hooks, timeout/metrics/evidence hooks, and handler discovery.
-3. **PHR and Digital Marketing product interaction handlers are no longer purely hardcoded examples.** The PHR consent handler depends on a `ConsentService`; DMOS notification preference handler depends on a `NotificationPreferenceService`.
-4. **Release-readiness evidence is broader.** The committed evidence indicates pass status for release readiness journeys, strict release gates, cross-product interaction flows, runtime failure injection, route entitlement, observability, i18n/a11y/AI/performance gates, and 47 implementation-plan dimensions.
-
-The most important remaining risks:
-
-1. **Evidence artifacts are not equivalent to real product completeness.** Several gates prove shape, coverage, scripts, or manifests, not full business workflow correctness.
-2. **Kernel platform mode is still not seamless enough.** The CLI still exposes provider mode and platform-mode wiring concerns. Product teams should not need to know provider internals.
-3. **Product interaction broker has production-hardening gaps.** Default no-op evidence writer, caller-supplied policy context, unbounded in-memory replay cache, incomplete manifest-policy enforcement, and limited circuit-breaker/backpressure posture are not production-grade defaults.
-4. **Rust/Python support exists, but needs deeper production proof.** The adapters are present and valuable, but require real product fixtures, language-specific output parsing, security/audit evidence, package provenance, and environment classification hardening.
-5. **PHR i18n is still a known gap.** Wave 2 scorecard marks PHR i18n as false.
-6. **Some root scripts may be portability fragile.** Several scripts use `gradlew` rather than `./gradlew`, which can fail outside environments where `gradlew` is on `PATH`.
+- Kernel lifecycle UX and CLI.
+- Product registry and lifecycle profiles.
+- Polyglot adapters: Java, TypeScript/Node/React, Rust, Python, Docker, Compose.
+- Product interaction brokers and product-to-product contracts.
+- Plugin interaction model.
+- Product pilots: Digital Marketing and PHR.
+- Product readiness gates: SLO budgets, cost budgets, domain invariants, OpenAPI release quality/breaking changes.
+- Data Cloud provider/evidence bridge.
+- Feature completeness and production-hardening gaps.
 
 ---
 
-## 2. Current-State Classification
+## 2. Executive Summary
 
-| Area                                     |                     Classification | Expert assessment                                                                                                                 |
-| ---------------------------------------- | ---------------------------------: | --------------------------------------------------------------------------------------------------------------------------------- |
-| Kernel CLI lifecycle commands            |               Existing but partial | Good command surface exists; explain/recover support exists, but UX still exposes provider details and internal modes.            |
-| Kernel lifecycle planner/executor        |               Existing but partial | Handles plan/explain and adapter steps; needs stronger phase recovery, affected-surface optimization, and production mode wiring. |
-| Product registry and release profiles    |            Existing and executable | Release profile evidence exists and shows affected products: Digital Marketing, Finance, FlashIt, PHR.                            |
-| Java adapter                             |            Existing and executable | Baseline adapter is registered and used by pilot backends. Needs richer parsing, failure classification, and service conventions. |
-| TypeScript React adapter                 |            Existing and executable | Web adapter is registered and used by PHR/DMOS. Needs stronger route/a11y/i18n/bundle evidence.                                   |
-| TypeScript Node API adapter              |            Existing and executable | Adapter exists; needs product fixture proof and production service conventions.                                                   |
-| Rust/Cargo adapter                       |                 Existing but early | Adapter exists and maps validate/test/build/package to Cargo. Needs real product fixture and output/test parsing.                 |
-| Python/pyproject adapter                 |                 Existing but early | Adapter exists and supports configured commands. Needs package manager/environment matrix and production fixtures.                |
-| Docker Buildx adapter                    | Existing but environment-sensitive | Must keep environment-blocked classification honest.                                                                              |
-| Compose adapter                          |            Existing and executable | Needs deployment topology, secrets, health checks, and rollback proof per product.                                                |
-| Product interaction contracts            |            Existing and executable | Manifest declarations and schema hashes exist for PHR/DMOS interactions.                                                          |
-| Product interaction broker               |               Existing but partial | Strong foundation; not yet production-hard due to default no-op evidence and manifest-policy enforcement gaps.                    |
-| Product interaction event broker         |               Existing but partial | Event path exists; needs durable provider, backpressure, timeout, retry, replay, idempotency, and subscriber isolation.           |
-| Data Cloud interaction evidence provider |               Existing but partial | Provider exists; needs end-to-end wiring and schema-level evidence validation.                                                    |
-| Plugin interaction                       |               Existing but partial | Plugin interaction checks exist; needs production broker parity with product interaction broker.                                  |
-| PHR product                              |               Existing but partial | Lifecycle-enabled, healthcare gates declared, interactions exist; needs complete healthcare workflow and i18n completion.         |
-| Digital Marketing product                |               Existing but partial | Lifecycle-enabled, interactions exist, platform bridge usage improving; needs full DMOS domain workflow completion.               |
-| Studio developer experience              |               Existing but partial | Good artifact workflow foundation; needs lifecycle/product interaction UX and production provider mode abstraction.               |
-| Common platform feature bridge           |               Existing but partial | Identity/audit/consent/risk/notification bridges exist in places; usage must become uniform, mandatory, and easy.                 |
-| Production evidence                      |  Existing but not sufficient alone | Pass artifacts exist; still need real behavior and domain workflow proofs.                                                        |
+The target commit shows real progress toward a production-grade Kernel platform. The platform is no longer only a lifecycle-manifest/checklist exercise. It now has:
+
+- Enabled lifecycle pilots for PHR and Digital Marketing.
+- Polyglot adapter registration for Java, TypeScript web, TypeScript Node API, Rust/Cargo, Python/pyproject, Docker Buildx, and Compose.
+- Product interaction contracts with schema hashes in Digital Marketing and PHR manifests.
+- Product interaction request/event brokers with policy, evidence, metrics, timeout, replay/cache, and handler registry support.
+- Additional production-readiness checks for product SLO budgets, cost budgets, domain invariants, OpenAPI breaking changes, interaction runtime truth, product interaction broker, interaction performance, lifecycle explain/recover, and run history.
+
+However, the platform is **not yet production-ready as a product development Kernel**. The biggest risks are:
+
+1. **Readiness gates are becoming broad but still over-indexed on static/config evidence.** SLO and cost budgets are declared and validated structurally, but not enforced or proven against runtime telemetry.
+2. **Domain invariant checks are too shallow.** The current check largely infers invariant coverage from file names and test existence, not from domain invariant semantics.
+3. **Product features are still incomplete.** PHR and Digital Marketing have good lifecycle and interaction scaffolding, but their full business workflows are not yet feature-complete.
+4. **Interaction broker is improving but still has correctness risks.** The broker now has production-mode evidence enforcement and trusted policy context, but payload hashing via `payload.toString()` is not canonical enough for idempotency, and default builder ergonomics can surprise developers by rejecting no-op evidence in development mode.
+5. **OpenAPI breaking-change detection is too narrow.** It detects removed method/path pairs, but not schema, parameter, auth, response, enum, nullability, or semantic breaking changes.
+6. **Polyglot adapters exist but need deeper production proof.** Rust and Python adapters are present, but they still need realistic product fixtures, output manifest hardening, dependency/cache controls, security scanning, and runtime packaging proof.
+7. **Easy-to-use Kernel UX is still not finished.** CLI aliases and explain/recover exist, but Studio-first guided workflows, “what failed / what to do next,” and product-team abstraction still need hardening.
+
+**Bottom line:** The repo is progressing in the right direction, but the next iteration should prioritize converting structural gates into real runtime-backed capability and completing end-to-end product features for PHR and Digital Marketing.
 
 ---
 
-## 3. Evidence-Based Observations
+## 3. Current-State Classification
 
-### 3.1 Release readiness evidence is broad but should not be over-trusted
-
-The committed release readiness artifact reports `pass: true` and includes journeys for vision/coherence, workflow/runtime proof, security/privacy/governance, quality/experience/release, and strict release coverage. It records several checks as status `0`, including product registry, cross-product interaction boundaries, cross-product interaction flows, interaction runtime truth, runtime failure injection, route entitlement, observability, i18n, AI governance, performance workflows, and affected product release profile.
-
-**Expert interpretation:** this is valuable regression evidence, but not full production readiness. Many scripts are static checks or evidence-shape checks. They do not necessarily prove every end-user journey, every product-specific workflow, every deployment topology, or every runtime data integrity rule.
-
-### 3.2 Wave 2 scorecard reveals at least one product quality gap
-
-The Wave 2 product quality scorecard marks all areas true for most products, but PHR has `i18n: false` and a score ratio of `0.8`.
-
-**Production implication:** PHR cannot be marked production-complete for regulated healthcare UX while i18n remains incomplete. This is especially important for patient-facing healthcare workflows.
-
-### 3.3 Atomic workflow posture is strong for Data Cloud mutating routes
-
-Atomic workflow evidence reports 155 mutating routes, 53 critical mutating routes, rollback and retry route presence, and zero violations. Critical mutating routes require policy and blocking audit.
-
-**Production implication:** good foundation for platform action-plane governance. Still, endpoint shape proof must be complemented by runtime tests proving rollback/retry semantics and domain state correctness.
-
-### 3.4 Product interaction architecture has matured
-
-Digital Marketing and PHR `kernel-product.yaml` files now declare explicit interaction contracts with request/response schema refs, schema hashes, policy blocks, lifecycle phases, evidence refs, and retention policies. This is a strong move toward safe product-to-product interaction.
-
-**Production implication:** contract declarations are strong, but runtime enforcement must be tied to the manifest policy, not only caller-supplied `policyContext`.
-
-### 3.5 Polyglot Kernel support is now real but early
-
-The default toolchain registry registers `GradleJavaServiceAdapter`, `PnpmViteReactAdapter`, `PnpmNodeApiAdapter`, `CargoRustAdapter`, `PythonPyprojectAdapter`, `DockerBuildxAdapter`, and `ComposeLocalAdapter`. Rust and Python adapters have real implementations.
-
-**Production implication:** this moves Rust/Python from “target architecture” to “early executable support.” The next step is real product fixture proof and production output validation.
+| Area | Current state | Classification | Production-readiness concern |
+|---|---|---:|---|
+| Kernel lifecycle scripts | Broad root scripts and `kernel-product.mjs` exist | Existing but partial | UX is improving, but still script-heavy and not fully Studio-guided |
+| PHR lifecycle | Enabled with backend/web surfaces and healthcare gates | Existing but partial | Rollback still target-partial; healthcare feature completeness remains incomplete |
+| Digital Marketing lifecycle | Enabled with backend/web surfaces | Existing but partial | Business workflows and connector readiness still need deeper implementation |
+| Java adapter | Registered and current pilot backend path uses Java | Existing and executable | Needs richer test/artifact/result parsing and production output proof |
+| TypeScript web adapter | Registered and used by PHR/DMOS web | Existing and executable | Needs route/a11y/i18n/runtime contract proof across products |
+| TypeScript Node API adapter | Registered | Existing but partial | Needs real product fixture and service runtime/deploy proof |
+| Rust/Cargo adapter | Registered and implemented | Existing but partial | Needs realistic fixture, security scan, packaging, and runtime proof |
+| Python/pyproject adapter | Registered and implemented | Existing but partial | Needs pyproject fixture, venv/dependency strategy, security scan, and service proof |
+| Product interaction contracts | PHR/DMOS manifests declare request/response and event contracts | Existing but partial | Needs broker-mediated product flows in actual application workflows |
+| Product interaction broker | Exists with evidence, policy, timeout, metrics, idempotency cache | Existing but partial | Payload hash and policy/evidence integration need hardening |
+| Product interaction event broker | Exists | Existing but partial | Durable event delivery, replay, DLQ, subscriber isolation need proof |
+| Data Cloud interaction evidence provider | Exists | Existing but partial | Needs full evidence record conformance and lifecycle integration |
+| SLO budgets | Config exists and static check exists | Declared/static only | Does not prove or enforce runtime SLOs |
+| Cost budgets | Config exists and static check exists | Declared/static only | Does not enforce usage or cost at runtime |
+| Domain invariant check | Exists | Partial/weak | Checks test existence/names, not invariant semantics |
+| OpenAPI breaking changes | Exists | Partial | Only path/method removals; misses most API-breaking changes |
+| Studio UX | Multiple Studio/artifact workflow gates exist | Partial | Needs seamless product lifecycle launch/explain/recover UI |
+| Feature completeness | PHR/DMOS scaffolding and routes exist | Partial | Need end-to-end business workflow completeness |
 
 ---
 
-## 4. P0 Findings — Must Fix Before Production Claims
+## 4. High-Priority Findings
 
-### P0-01 — Product interaction broker still allows no-op evidence by default
+### F-001 — Product SLO budgets are declared, not proven or enforced
 
-**Current state:** `ProductInteractionBroker.Builder` defaults to `ProductInteractionEvidenceWriter.noop()`.
+**Severity:** P0  
+**Area:** production readiness, performance, reliability  
+**Current state:** `config/product-slo-budgets.json` defines latency, throughput, memory, queue, and background job runtime targets per active product. The check validates structural presence and positive values.
 
-**Why this is a production blocker:** A product interaction can return a successful outcome and satisfy “evidenceRefs exist” while the broker persists no actual evidence record. For regulated interactions such as PHR consent or cross-product healthcare/marketing interactions, production must fail closed if evidence cannot be written.
+**Risk:** This creates a good readiness contract but does not prove that any product meets those SLOs. A product can pass while being slow, memory-heavy, or unstable under load.
 
-**Required fix:**
+**Required implementation:**
 
-- Replace default no-op writer in production/runtime broker factories.
-- Add explicit `BrokerMode` or environment/profile setting.
-- Allow no-op only in unit tests with a named test helper.
-- Add `ProductInteractionBrokerFactory` that requires a real evidence writer for non-test profiles.
-- Add a check that rejects production broker construction without evidence writer.
+- Add runtime telemetry mapping from each SLO budget to actual metrics.
+- Add local smoke performance tests for representative workflows.
+- Add CI-safe lightweight latency/throughput assertions for core workflows.
+- Add production/staging dashboard evidence for p50/p95/p99.
+- Add budget drift and regression reporting.
+- Extend evidence from “budget exists” to “budget measured and pass/fail computed.”
 
-**Likely files:**
+**Likely files/modules:**
 
-- `platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction/ProductInteractionBroker.java`
-- `platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction/ProductInteractionEvidenceWriter.java`
-- `products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudProductInteractionEvidenceProvider.java`
-- `platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ProductInteractionBrokerTest.java`
+- `config/product-slo-budgets.json`
+- `scripts/check-product-slo-budgets.mjs`
+- `platform/java/observability`
+- `platform/typescript/kernel-lifecycle`
+- `products/digital-marketing/**`
+- `products/phr/**`
+- `.kernel/evidence/product-slo-budgets.json`
 
 **Tests:**
 
-- broker construction fails in production profile without evidence writer
-- broker allows no-op only with explicit test profile
-- evidence writer failure blocks interaction
-- Data Cloud evidence provider validates full evidence schema
+- Unit tests for parsing and validating budgets.
+- Integration test mapping budgets to emitted metrics.
+- Lightweight benchmark test for one workflow per active product.
+
+**Done criteria:** SLO gate fails if no measured evidence exists for required workflows or if measured p95/p99 exceeds budget.
 
 ---
 
-### P0-02 — Product interaction policy evaluator relies too much on caller-supplied `policyContext`
+### F-002 — Product cost budgets are not runtime-enforced
 
-**Current state:** `ProductInteractionPolicyEvaluator.ComprehensivePolicyEvaluator` checks `actor`, `tenantId`, `workspaceId`, `purpose`, `authorized`, and `consentGranted` in the request `policyContext` map.
+**Severity:** P0  
+**Area:** cost governance, AI governance, platform economics  
+**Current state:** `config/product-cost-budgets.json` declares AI, query, export, stream, storage growth, and background compute budgets. The check validates positive values.
 
-**Why this is a production blocker:** A caller can claim `authorized=true` or `consentGranted=true` in request metadata unless the broker injects these fields from trusted providers. Policy must be evaluated from trusted identity, entitlement, consent, and product interaction contract metadata.
+**Risk:** The system can pass with declared budgets while no actual product usage is measured or enforced. This is risky for AI-native, query-heavy, or stream-heavy products.
 
-**Required fix:**
+**Required implementation:**
 
-- Introduce `ProductInteractionPolicyContextResolver` that builds policy context from trusted platform providers.
-- Attach manifest-declared `ProductInteractionContract` to broker execution.
-- Enforce `allowedCallerRoles`, `allowedPurposes`, `tenantScope`, `requiresConsent`, and `piiClassification` from manifest policy.
-- Reject request-supplied `authorized` and `consentGranted` as authoritative input.
-- Record policy decision source in evidence.
+- Add product-level cost meter contracts.
+- Track AI token use, model cost, export cost, query cost, stream cost, storage growth, and background compute.
+- Add budget status provider: `within-budget`, `warning`, `blocked`, `unknown`.
+- Add per-product budget dashboards in Studio.
+- Add enforcement policies for optional/expensive operations.
+- Add fail-closed behavior for production if budget evidence is unavailable for governed operations.
 
-**Likely files:**
-
-- `ProductInteractionPolicyEvaluator.java`
-- `ProductInteractionBroker.java`
-- `ProductInteractionContract` TS schema and Java mirror if present
-- `scripts/check-product-interaction-contracts.mjs`
-- `scripts/check-interaction-runtime-truth.mjs`
-
-**Tests:**
-
-- request with forged `authorized=true` is denied when platform auth provider denies
-- purpose outside manifest `allowedPurposes` is blocked
-- role outside `allowedCallerRoles` is blocked
-- consent-required interaction calls consent provider
-- evidence includes policy decision and trusted decision sources
+**Done criteria:** Costs are measured and visible per product/workflow, not only declared.
 
 ---
 
-### P0-03 — Product interaction replay key is too narrow
+### F-003 — Domain invariant check is too shallow for production correctness
 
-**Current state:** broker replay key is `contractId::interactionId::tenantId::workspaceId`.
+**Severity:** P0  
+**Area:** domain correctness, feature completeness  
+**Current state:** `check-product-domain-invariants.mjs` scans active business products and counts Java/TS tests whose file names contain `invariant`, `domain`, `workflow`, or `lifecycle`.
 
-**Risk:** If an interaction ID is reused with a different payload, provider, consumer, product unit, purpose, or actor in the same tenant/workspace, the cached outcome can be replayed incorrectly.
+**Risk:** This can pass based on file names without proving meaningful domain invariants. It does not inspect assertions, scenarios, fixtures, or business-critical workflows.
 
-**Required fix:**
+**Required implementation:**
 
-- Include provider product ID, consumer product ID, product unit ID, contract version, and payload hash in replay key.
-- Alternatively, treat `interactionId` as globally unique and reject same interaction ID with non-identical fingerprint.
-- Persist replay fingerprint in evidence.
+- Define a `product-domain-invariants.yaml` or JSON contract per product.
+- Require each invariant to map to executable tests by stable test ID.
+- Require invariant categories:
+  - identity/authorization
+  - tenant/workspace isolation
+  - lifecycle state transitions
+  - data integrity
+  - audit/evidence
+  - privacy/consent
+  - product-specific business correctness
+- Validate that tests execute and produce result artifacts.
+- For PHR, invariants must include consent, FHIR validation, patient data access, audit, and data sovereignty.
+- For Digital Marketing, invariants must include campaign lifecycle, consent gating, lead capture, connector failure behavior, notification retry/DLQ, and tenant scoping.
 
-**Tests:**
-
-- same interaction ID + different payload is blocked as idempotency conflict
-- same interaction ID + same fingerprint replays
-- same interaction ID + different consumer is blocked
-
----
-
-### P0-04 — Product interaction event broker needs production delivery semantics
-
-**Current state:** event broker dispatches subscribers sequentially and writes evidence. It has policy and basic metrics, but durable delivery/backpressure/retry/replay/idempotency are not visible as full production behavior.
-
-**Required fix:**
-
-- Add durable event provider abstraction.
-- Add per-subscriber timeout and retry policy.
-- Add backpressure handling.
-- Add idempotency key per event/subscriber.
-- Add dead-letter handling.
-- Add replay support.
-- Add event schema validation before publish.
-- Add subscriber isolation so one subscriber cannot block all others indefinitely.
-
-**Tests:**
-
-- one subscriber failure does not corrupt other subscriber evidence
-- duplicate event does not double-apply side effects
-- retry and DLQ produce auditable evidence
-- event schema mismatch is blocked
+**Done criteria:** The check validates declared invariant IDs against actual executed test results and evidence, not just filenames.
 
 ---
 
-### P0-05 — PHR i18n is incomplete
+### F-004 — OpenAPI breaking-change detection is incomplete
 
-**Current state:** scorecard marks PHR `i18n: false`.
+**Severity:** P0  
+**Area:** API contract stability, release safety  
+**Current state:** `check-openapi-breaking-changes.mjs` compares baseline vs current specs and flags removed method/path pairs.
 
-**Required fix:**
+**Risk:** Many breaking changes can pass undetected:
 
-- Complete all PHR route strings through i18n keys.
-- Add patient-facing and healthcare-specific glossary coverage.
-- Add missing translation namespaces.
-- Add i18n route matrix gate for PHR.
-- Add component tests for i18n fallback and missing-key failure behavior.
+- required request field added
+- response field removed
+- response type changed
+- enum value removed
+- status code removed
+- auth/security requirement changed
+- path parameter renamed
+- query parameter made required
+- request/response content type removed
+- nullability changed
+- schema `$ref` target changed
 
-**Done criteria:** PHR scorecard shows i18n true, and patient-facing workflows have no hardcoded strings outside accepted allowlists.
+**Required implementation:**
 
----
+- Add schema-aware OpenAPI diffing.
+- Track request/response schema changes.
+- Enforce semver/release waiver workflow.
+- Require migration notes for allowed breaking changes.
+- Emit evidence with per-operation diff severity.
 
-### P0-06 — Platform mode is still not seamless enough
-
-**Current state:** Kernel CLI supports bootstrap/platform mode, but platform provider bridge registration is still exposed as a concern to the caller in places.
-
-**Required fix:**
-
-- Product team should not know bootstrap vs platform provider details.
-- CLI and Studio should resolve provider mode from environment/profile.
-- Platform mode missing provider bridge should present one clear recovery action, not raw implementation detail.
-- Add `kernel doctor` or `product doctor` for provider readiness.
-
-**Done criteria:** product team can run one command and get actionable recovery if platform providers are unavailable.
-
----
-
-### P0-07 — Root scripts appear portable-risky with `gradlew` instead of `./gradlew`
-
-**Current state:** Some package scripts use `gradlew` directly. This can fail on Unix/macOS/CI unless `gradlew` is in PATH.
-
-**Required fix:**
-
-- Normalize scripts to `./gradlew` or a cross-platform wrapper that resolves the local Gradle wrapper.
-- Add a script governance check for accidental bare `gradlew` usage.
-
-**Tests:**
-
-- script lint rejects bare `gradlew` in root scripts unless explicitly allowlisted.
+**Done criteria:** Breaking-change gate catches operation, parameter, request, response, schema, enum, status code, and security changes.
 
 ---
 
-## 5. P1 Findings — Required for High-Confidence Production
+### F-005 — ProductInteractionBroker has idempotency/canonicalization risks
 
-### P1-01 — Rust adapter exists but needs production fixture coverage
+**Severity:** P0  
+**Area:** interaction correctness, reliability  
+**Current state:** The broker now includes contract metadata and payload hash in replay key. Payload hash is currently computed from `payload.toString()`.
 
-**Current state:** `CargoRustAdapter` supports validate/test/build/package and runs `cargo fmt --check`, `cargo check`, `cargo clippy -- -D warnings`, `cargo test`, and release build.
+**Risk:** Java `toString()` is not canonical serialization. Two semantically equal payloads can hash differently, and different payloads can hash the same if `toString()` is not implemented well. This weakens idempotency conflict detection.
 
-**Needed:**
+**Required implementation:**
 
-- Add real Rust fixture product with service, worker, library, and CLI variants.
-- Parse `cargo test` output into structured test results.
-- Add target triple and binary metadata to artifact manifest.
-- Add security/license/dependency audit hook if a repo-standard tool is chosen.
-- Add missing toolchain/environment blocked tests.
+- Require handlers/contracts to provide canonical payload serialization or schema-backed canonical JSON.
+- Use deterministic field order and UTF-8 canonical JSON hashing.
+- Include contract schema hash in idempotency key.
+- Add tests for record payloads, nested payloads, map ordering, nulls, and equivalent field ordering.
 
----
-
-### P1-02 — Python adapter exists but needs package-manager and runtime matrix
-
-**Current state:** `PythonPyprojectAdapter` supports pyproject, configured commands, compileall fallback, pytest fallback, and `python -m build`.
-
-**Needed:**
-
-- Support uv/poetry/pip modes through explicit config.
-- Add fixture products for FastAPI service, worker, and library.
-- Parse pytest output into structured test results.
-- Validate venv isolation and Python version requirements.
-- Add dependency vulnerability/license gate if repo-standard tool exists.
-- Add environment-blocked classifications for missing build/pytest modules.
+**Done criteria:** Idempotency key is stable across equivalent payloads and sensitive to real semantic changes.
 
 ---
 
-### P1-03 — Toolchain artifact fingerprinting is still too shallow in bridge conversion
+### F-006 — Broker default mode can harm developer ergonomics
 
-**Current state:** adapter bridge often uses artifact path as fingerprint.
+**Severity:** P1  
+**Area:** developer experience, testability  
+**Current state:** `BrokerMode` defines `PRODUCTION`, `DEVELOPMENT`, and `TEST`. No-op evidence is rejected in production and development, and allowed only in test mode.
 
-**Needed:**
+**Risk:** That is safe, but the builder default is development with no-op evidence unless overridden. A plain `ProductInteractionBroker.builder().build()` can throw unexpectedly. This protects production, but it is not easy to use.
 
-- Compute real file hashes for file artifacts.
-- Capture container digest for image artifacts.
-- Capture size, source ref, build command, runtime, target, and language.
-- Make fingerprint missing a warning or blocker depending artifact criticality.
+**Required implementation:**
 
----
+- Make the builder default explicit: either default to `TEST`, or require `brokerMode(...)` before build.
+- Add `developmentFactory(fileEvidenceWriter)` and `testFactory()` named constructors.
+- Improve error message with a concrete recovery command/example.
+- Ensure docs and tests use the right factory.
 
-### P1-04 — Evidence passes should include behavioral proof density, not just gate existence
-
-**Current state:** kernel implementation plan coverage reports 47/47 dimensions covered.
-
-**Needed:**
-
-- Distinguish “gate exists” from “gate proves meaningful runtime behavior.”
-- Add maturity levels: declared, static-checked, contract-tested, runtime-tested, failure-injected, production-observed.
-- Report dimensions with maturity, not boolean coverage only.
+**Done criteria:** Product teams can instantiate a safe broker without reading internals, and unsafe default construction is impossible or self-explanatory.
 
 ---
 
-### P1-05 — Product interaction handlers need full product workflow integration
+### F-007 — Polyglot adapters exist but need production-grade fixture proof
 
-**Current state:** PHR/DMOS handlers are service-backed boundaries, but full end-user workflows must invoke them consistently.
+**Severity:** P0  
+**Area:** polyglot platform completeness  
+**Current state:** The default registry registers Java, TypeScript web, TypeScript Node API, Rust/Cargo, Python/pyproject, Docker Buildx, and Compose. Rust/Python adapters exist.
 
-**Needed:**
+**Risk:** Adapter existence is not enough. Production readiness requires at least one canonical fixture/product surface for each language and phase with real outputs, evidence, failure classification, and package/deploy behavior.
 
-- DMOS campaign activation must call PHR consent interaction through the broker.
-- DMOS audience eligibility must respond to PHR consent revoke events.
-- PHR care-plan notification flow must call DMOS notification preference through the broker.
-- All such interactions must be visible in lifecycle/runtime evidence and Studio.
+**Required implementation:**
 
----
+- Create `examples/polyglot-product` or `platform/test-fixtures/polyglot-product` with:
+  - Java service
+  - TypeScript web
+  - TypeScript Node service
+  - Rust service/binary
+  - Python service/worker
+- Run validate/test/build/package/verify plan for each surface.
+- Validate missing toolchain behavior is `environment-blocked`.
+- Add artifact manifest assertions per language.
+- Add Docker packaging where applicable.
 
-### P1-06 — Studio needs product/interaction/lifecycle control-tower UX
-
-**Needed Studio capabilities:**
-
-- Product registry view with release-readiness score.
-- ProductUnit detail with surfaces, language/runtime, adapters, interactions, gates.
-- Lifecycle plan/explain/execute/recover UI.
-- Product interaction graph: provider, consumer, contract, status, evidence, failures.
-- Plugin interaction graph.
-- Runtime truth and evidence viewers.
-- PHR-specific healthcare gate evidence viewer.
-- DMOS consent/notification interaction evidence viewer.
-- Simple summaries first, advanced details on demand.
+**Done criteria:** `pnpm check:polyglot-product-fixture` proves all supported language surfaces through Kernel lifecycle without product-local runners.
 
 ---
 
-## 6. Feature Completeness Analysis
+### F-008 — Product feature completeness remains partial for PHR and Digital Marketing
 
-### 6.1 Kernel platform
+**Severity:** P0  
+**Area:** product readiness  
+**Current state:** PHR and Digital Marketing are enabled pilots with routes, manifests, lifecycle gates, and interactions.
 
-| Capability                 |          Status | Missing for production                                                 |
-| -------------------------- | --------------: | ---------------------------------------------------------------------- |
-| Product registry           |          Strong | registry generation UX and conflict recovery                           |
-| Product lifecycle CLI      | Good foundation | hide provider internals, better doctor/recover UX                      |
-| Product lifecycle Studio   |         Partial | full control tower UX                                                  |
-| Polyglot adapters          | Good foundation | real fixtures, structured output parsing, artifact hashes              |
-| Product interaction broker | Good foundation | trusted policy context, default real evidence, durable runtime truth   |
-| Product event broker       |         Partial | durable event provider, replay, DLQ, backpressure                      |
-| Plugin interaction         |         Partial | broker parity, graph/cycle controls, evidence                          |
-| Artifact manifests         |         Partial | strong hash/provenance, SBOM only when real                            |
-| Deployment                 |         Partial | environment topology, rollout strategy, rollback proof                 |
-| Release/promotion/rollback |         Partial | approval/risk integration, impact analysis, post-rollback verification |
-| Observability              |         Partial | product/interaction/plugin SLO dashboards                              |
-| Performance                |         Partial | affected-surface execution and caching proof                           |
+**Risk:** Enabled lifecycle does not mean product feature completeness. The pilots need full business workflow implementation, data correctness, UI coverage, API correctness, and degraded/error handling.
 
-### 6.2 Digital Marketing
+**Required implementation:**
 
-| Workflow                 |         Status | Missing                                               |
-| ------------------------ | -------------: | ----------------------------------------------------- |
-| Lifecycle surfaces       |       Existing | full workflow correctness proof                       |
-| Campaign activation      |        Partial | broker-backed PHR consent enforcement                 |
-| Lead capture event       |       Declared | durable event publish/subscribe workflow              |
-| Notification preferences | Handler exists | real persistence/domain integration proof             |
-| Google Ads connector     |        Partial | production connector readiness, retries, auth/secrets |
-| Reporting/dashboard      |        Partial | data correctness and E2E visual verification          |
-| Consent/privacy          |      Improving | full marketing consent lifecycle proof                |
+Digital Marketing must complete:
 
-### 6.3 PHR
+- customer/account management
+- campaign lifecycle
+- campaign activation with consent gates
+- lead capture and conversion tracking
+- audience/segment management
+- connector configuration and Google Ads readiness
+- notification retry/DLQ
+- reporting/dashboard workflows
+- operator/admin flows
 
-| Workflow                |           Status | Missing                                                     |
-| ----------------------- | ---------------: | ----------------------------------------------------------- |
-| Lifecycle surfaces      |         Existing | full healthcare workflow proof                              |
-| FHIR                    |          Partial | stricter R4 validation and provider conformance             |
-| Consent                 |        Improving | patient-facing consent workflow and broker usage everywhere |
-| PII classification      | Declared/partial | runtime enforcement and tests                               |
-| Audit evidence          | Declared/partial | complete user access history and evidence UX                |
-| Tenant data sovereignty | Declared/partial | runtime data placement/provenance proof                     |
-| i18n                    |       Incomplete | PHR scorecard shows i18n false                              |
-| Rollback                |   Target-partial | healthcare post-rollback gates and approval contract        |
+PHR must complete:
+
+- patient profile
+- record summary and timeline
+- encounters, medications, allergies, conditions, labs, immunizations, documents
+- consent management and sharing authorization
+- access audit history
+- FHIR R4 handling
+- data sovereignty evidence
+- emergency/break-glass workflow
+
+**Done criteria:** Each workflow has backend API, persistence, UI route, access rules, tests, audit/evidence, loading/error/degraded states, and lifecycle validation.
 
 ---
 
-## 7. Stability and Bug Risk Register
+## 5. Capability Completeness Analysis
 
-| ID      | Severity | Risk                                                               | Evidence / reason                                            | Fix                                                        |
-| ------- | -------: | ------------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
-| BUG-001 |       P0 | Product interaction evidence can be no-op by default               | Broker builder default writer is no-op                       | Require real writer outside tests                          |
-| BUG-002 |       P0 | Caller can influence policy result through `policyContext`         | Policy evaluator trusts map values                           | Resolve policy from trusted providers/contracts            |
-| BUG-003 |       P0 | Replay cache may return wrong result for reused interaction ID     | Replay key lacks payload hash/actor/provider/consumer detail | Add request fingerprint and idempotency conflict detection |
-| BUG-004 |       P1 | In-memory completed interaction cache can grow unbounded           | `ConcurrentHashMap` no retention visible                     | Add TTL/retention and persistent idempotency store         |
-| BUG-005 |       P1 | Event broker lacks durable delivery semantics                      | Sequential dispatch only                                     | Add durable event provider, retry/DLQ/replay               |
-| BUG-006 |       P1 | Some root scripts may fail without `gradlew` in PATH               | bare `gradlew` scripts                                       | Normalize wrapper invocation                               |
-| BUG-007 |       P1 | Evidence scorecards may hide shallow checks                        | Boolean dimension coverage                                   | Add maturity-weighted evidence scoring                     |
-| BUG-008 |       P1 | PHR i18n incomplete                                                | scorecard marks false                                        | Complete i18n and add gate                                 |
-| BUG-009 |       P1 | Rust/Python adapters may pass without deep artifact/test semantics | early adapters                                               | Add real fixtures and structured parsers                   |
-| BUG-010 |       P2 | CLI summaries still reveal implementation internals                | provider mode visible                                        | Introduce simple UX and advanced mode                      |
+### 5.1 Kernel lifecycle UX
+
+**Good progress:**
+
+- CLI supports plan, explain, recover/status patterns.
+- Lifecycle phases are broad.
+- Root scripts include lifecycle explain/recover and run-history checks.
+
+**Remaining gaps:**
+
+- Studio must become the primary “no-details-required” lifecycle launcher.
+- CLI output must consistently use product-team language, not adapter/provider internals.
+- Recover guidance must map to concrete commands and files.
+- Product registration wizard must detect surfaces and produce manifest diffs.
+- Dry-run/explain must show what Kernel will do, what product owns, and what platform owns.
+
+### 5.2 Product registration and shape model
+
+**Good progress:**
+
+- Product registry and generated wiring exist.
+- Multiple product kinds and surfaces are represented.
+
+**Remaining gaps:**
+
+- Language/runtime fields must be explicit and consistent across all products.
+- Surface model must distinguish `react-web`, `node-service`, `java-service`, `rust-service`, `python-worker`, `static-web`, `sdk`, etc.
+- Product shape matrix must be enforced against real fixtures.
+
+### 5.3 Platform feature bridge
+
+**Good progress:**
+
+- Plugins and providers exist for core concerns.
+- Digital Marketing bridge composes platform plugins and bridge ports.
+- PHR has healthcare gate packs and interaction contracts.
+
+**Remaining gaps:**
+
+- Common features need a single product consumption pattern.
+- Avoid product-specific adapters becoming common platform code accidentally.
+- Consent/audit/notification/risk must be platform capabilities with product-specific policy only.
+- Studio should show feature bridge status per product.
+
+### 5.4 Product-to-product interaction
+
+**Good progress:**
+
+- Manifest interactions include schema refs and SHA-256 hashes.
+- Broker exists with evidence, policy resolver, cache TTL, handler registry, metrics, and fail-closed behavior.
+- Data Cloud interaction evidence provider exists.
+
+**Remaining gaps:**
+
+- Wire the broker into real product workflows, not only tests.
+- Add broker-mediated flows for DMOS campaign activation and PHR care-plan notification.
+- Persist interaction evidence through Data Cloud in platform mode and file-backed provider in bootstrap mode.
+- Add UI visibility for cross-product dependency health.
+- Add async event flow proof for lead-captured and consent-revoked.
+
+### 5.5 Plugin-to-plugin interaction
+
+**Good progress:**
+
+- Plugin API ownership is established.
+- Plugin interaction bus exists.
+- Root scripts now include plugin interaction broker checks.
+
+**Remaining gaps:**
+
+- Plugin interaction should have the same rigor as product interaction:
+  - contract ID
+  - version
+  - caller identity
+  - tenant/workspace/correlation
+  - policy decision
+  - timeout/retry/circuit breaker
+  - evidence
+  - metrics/traces
+- Add plugin interaction graph and cycle detection.
+- Add durable pub/sub where needed.
 
 ---
 
-## 8. Expanded Scope Recommendations
+## 6. Product-Specific Expert Findings
 
-The user asked to expand scope if needed. Based on the current state, production readiness requires expanding beyond Kernel mechanics into these areas:
+### 6.1 Digital Marketing
 
-### 8.1 Product workflow correctness
+**Current strengths:**
 
-Add feature-completeness audits for:
+- Enabled lifecycle product.
+- Backend and web surfaces defined.
+- Product interactions declared with schema refs and hashes.
+- Required platform plugins declared.
+- Privacy/security policy packs declared.
 
-- DMOS campaign lifecycle from plan → consent → activation → performance → reporting.
-- PHR patient record lifecycle from data entry/import → consent → sharing → audit history.
-- Cross-product consent revoke → DMOS audience disable.
-- PHR care plan notification → DMOS preference lookup.
+**Top risks:**
 
-### 8.2 Data correctness and domain invariants
+1. Campaign activation must not proceed on stale/missing consent status.
+2. Google Ads connector readiness must not claim real activation if credentials/API calls are not real.
+3. Notification preference handler must be backed by real user/customer preference data.
+4. Lead-captured event flow needs durable eventing, idempotency, and retry/DLQ proof.
+5. UI must expose degraded/blocked states in simple language.
 
-Add product-specific invariant tests:
+**Implementation priorities:**
 
-- no campaign activation without required consent posture
-- no PHR sharing without consent and data sovereignty policy
-- no notification preference access across tenants/workspaces
-- no stale interaction evidence used for a new purpose
+- Wire campaign activation to `ProductInteractionBroker` for PHR consent status.
+- Add `CampaignActivationDomainInvariantTest` with consent allowed/denied/degraded paths.
+- Add connector readiness state machine: `not-configured`, `configured`, `validated`, `degraded`, `blocked`, `active`.
+- Add reporting dashboard backed by real API contract, not static cards.
+- Add end-to-end route tests for campaign plan → consent check → activation → audit evidence.
 
-### 8.3 Production operational readiness
+### 6.2 PHR
 
-Add operational tests:
+**Current strengths:**
 
-- broker evidence writer outage
-- Data Cloud provider unavailable
-- event subscriber failure
-- Docker unavailable
-- Rust/Python toolchain missing
-- partial deploy failure
-- rollback failure and post-rollback verification failure
+- Enabled lifecycle product.
+- Healthcare gate packs declared.
+- Consent-status interaction provider declared.
+- Record, consent, labs, medications, emergency, settings route contracts exist.
 
-### 8.4 Performance and scalability
+**Top risks:**
 
-Add metrics and budgets:
+1. Consent-status handler must be backed by real consent domain data, not simplified purpose checks.
+2. FHIR validation must be schema/profile-backed, not only structural/minimal validation.
+3. Break-glass emergency workflow must be fully audited and approval-aware.
+4. Tenant/data sovereignty evidence must be generated from real storage/provider decisions.
+5. PHR rollback remains target-partial.
 
-- lifecycle plan latency
-- adapter preflight latency
-- product interaction p95/p99 latency
-- event broker throughput
-- evidence persistence latency
-- affected-surface detection time
-- large repo registry generation time
+**Implementation priorities:**
+
+- Implement real consent grant model with expiry, purpose, subject, grantee, revocation, and audit.
+- Wire `phr.consent-status.v1` handler to real consent service.
+- Add FHIR R4 validation evidence with resource type/profile/status details.
+- Add patient access matrix tests for patient/caregiver/clinician/admin.
+- Add emergency access workflow with audit, reason, time-boxing, notification, and post-review.
 
 ---
 
-## 9. Prioritized Implementation Plan
+## 7. Production-Readiness Gap Matrix
 
-### Phase 0 — No new features; production truth hardening
+| ID | Area | Current state | Gap | Severity | Owner | Done criteria |
+|---|---|---|---|---:|---|---|
+| PR-001 | SLO budgets | Static config/check | No runtime measured proof | P0 | Kernel + Observability | SLO check consumes measured metrics |
+| PR-002 | Cost budgets | Static config/check | No usage/cost enforcement | P0 | Kernel + Cost provider | Cost budgets tied to metering and policy |
+| PR-003 | Domain invariants | Filename/test count heuristic | No invariant-to-test proof | P0 | Kernel + Products | Each invariant maps to executable evidence |
+| PR-004 | OpenAPI breaking changes | Path/method removals only | Schema/param/security breaks missed | P0 | API platform | Schema-aware diff gate |
+| PR-005 | Product broker idempotency | `payload.toString()` hash | Non-canonical | P0 | Kernel core | Canonical JSON/schema-based payload hash |
+| PR-006 | Broker evidence UX | Production rejects no-op | Builder default can surprise | P1 | Kernel core | Explicit safe factories and error guidance |
+| PR-007 | Product interaction runtime | Broker exists | Not wired into all workflows | P0 | Products + Kernel | Real workflow uses broker |
+| PR-008 | Async product events | Event broker exists | Durable/replay/DLQ not proven | P1 | Kernel + Data Cloud | Event flow evidence and replay tests |
+| PR-009 | Polyglot fixtures | Adapters exist | Need real fixture/product proof | P0 | Kernel toolchains | Java/TS/Rust/Python fixture lifecycle passes |
+| PR-010 | Rust adapter | Implemented | Needs security/package/runtime proof | P1 | Kernel toolchains | Cargo fixture build/test/package evidence |
+| PR-011 | Python adapter | Implemented | Needs env/dependency/security proof | P1 | Kernel toolchains | pyproject fixture build/test/package evidence |
+| PR-012 | Studio UX | Partial | Not yet no-cognitive-load lifecycle UX | P0 | Studio | One-click plan/execute/recover/run-history |
+| PR-013 | PHR rollback | Target-partial | Not enabled | P0 | PHR + Kernel release | Stable deploy history + post-rollback gates |
+| PR-014 | DMOS connector | Partial | Real connector readiness unclear | P0 | DMOS | No fake connector success; real degraded states |
+| PR-015 | Evidence freshness | Some evidence generated-on-demand/stale flags | Need freshness policy by evidence type | P1 | Kernel evidence | Gates fail stale critical evidence |
+| PR-016 | Product feature completeness | Routes/manifests present | Workflows incomplete | P0 | Product teams | Each workflow has API/UI/test/evidence |
+| PR-017 | Cost/SLO Studio UX | none/partial | Product teams cannot see budgets easily | P2 | Studio | Budget dashboard per product/workflow |
+| PR-018 | Product shape expansion | Many products registered | Not all lifecycle-enabled | P1 | Kernel | Clear planned vs executable product statuses |
+| PR-019 | Test authenticity | Checks exist | Need semantic test quality proof | P1 | Testing platform | Tests prove assertions, not names |
+| PR-020 | Release evidence | More evidence uploaded | Must avoid stale target-state claims | P0 | Governance | Evidence claim checker verifies freshness/source |
 
-**Goal:** make current “pass” evidence more trustworthy.
+---
 
-Tasks:
+## 8. Development Roadmap
 
-1. Add maturity levels to `kernel-implementation-plan-progress.json`.
-2. Add gate proof type: static, contract, runtime, failure-injected, production-observed.
-3. Normalize `gradlew` wrapper invocation.
-4. Add evidence freshness/staleness checks.
-5. Add “source changed but evidence not regenerated” detection.
+### Phase 0 — Stabilize truth and evidence semantics
 
-Validation:
+**Build/fix:**
 
-- `pnpm check:kernel-implementation-plan-coverage`
-- `pnpm check:product-release-readiness`
-- new `pnpm check:evidence-maturity`
-- new `pnpm check:script-portability`
+- Define evidence freshness policy by evidence type.
+- Mark generated-on-demand evidence separately from executed evidence.
+- Make current-state claim checker verify that “passed” evidence is fresh and source-backed.
+- Add fail conditions for stale runtime-production evidence for critical gates.
 
-### Phase 1 — Product interaction production hardening
+**Validation:**
 
-Tasks:
+- `pnpm check:doc-claims-evidence`
+- `pnpm check:current-state-claims`
+- `pnpm check:world-class-platform-readiness`
 
-1. Require real evidence writer in non-test broker profile.
-2. Add trusted policy context resolver.
-3. Enforce manifest policy at broker level.
-4. Add payload/request fingerprint to replay key.
-5. Add TTL and retention to completed interaction cache.
-6. Add Data Cloud-backed evidence writer integration.
-7. Add broker factory per environment.
+### Phase 1 — Turn static SLO/cost budgets into measured controls
 
-Validation:
+**Build/fix:**
+
+- Add product metric mapping file.
+- Add measured SLO evidence provider.
+- Add cost metering provider.
+- Add lightweight workflow performance tests for PHR and DMOS.
+- Add budget status to Studio.
+
+**Validation:**
+
+- `pnpm check:product-slo-budgets`
+- `pnpm check:product-cost-budgets`
+- new `pnpm check:product-slo-measurements`
+- new `pnpm check:product-cost-metering`
+
+### Phase 2 — Harden domain invariant proof
+
+**Build/fix:**
+
+- Add per-product invariant declaration files.
+- Require invariant IDs to map to test IDs.
+- Add PHR and DMOS domain invariant suites.
+- Include failed/edge/degraded paths.
+
+**Validation:**
+
+- `pnpm check:product-domain-invariants`
+- product-specific invariant tests
+
+### Phase 3 — Finish product interaction runtime integration
+
+**Build/fix:**
+
+- Canonicalize broker payload hashing.
+- Add broker factories for production/development/test.
+- Wire DMOS campaign activation to PHR consent through broker.
+- Wire PHR notification preference check to DMOS through broker.
+- Add interaction evidence persistence through Data Cloud provider.
+- Add async event flows.
+
+**Validation:**
 
 - `pnpm check:product-interaction-broker`
 - `pnpm check:interaction-runtime-truth`
 - `pnpm check:cross-product-interaction-flows`
-- new forged-policy-context tests
-- new idempotency conflict tests
+- `pnpm check:interaction-performance`
 
-### Phase 2 — Event interaction production hardening
+### Phase 4 — Prove polyglot platform support with real fixtures
 
-Tasks:
+**Build/fix:**
 
-1. Add durable event provider.
-2. Add topic registry and schema validation.
-3. Add event idempotency.
-4. Add retry/DLQ.
-5. Add per-subscriber timeout and isolation.
-6. Add replay proof.
-7. Add PHR consent-revoked → DMOS audience disabled flow.
+- Add canonical polyglot fixture product.
+- Add Java, React, Node, Rust, Python surfaces.
+- Validate/test/build/package/verify each surface.
+- Add output manifest and error classification assertions.
 
-Validation:
+**Validation:**
 
-- `pnpm check:cross-product-interaction-flows`
-- new `pnpm check:product-event-interaction-broker`
-- event replay/DLQ tests
-
-### Phase 3 — Polyglot production proof
-
-Tasks:
-
-1. Add four-language fixture product.
-2. Add Rust service, worker, SDK fixture.
-3. Add Python FastAPI service, worker, library fixture.
-4. Parse cargo/pytest outputs into normalized lifecycle test results.
-5. Add artifact hash/provenance for Rust/Python outputs.
-6. Add environment blocked tests for missing toolchains.
-
-Validation:
-
+- `pnpm check:java-adapter-conformance`
+- `pnpm check:typescript-web-adapter-conformance`
 - `pnpm check:rust-adapter-conformance`
 - `pnpm check:python-adapter-conformance`
 - `pnpm check:polyglot-product-fixture`
 
-### Phase 4 — Studio and CLI usability
+### Phase 5 — Complete PHR pilot workflows
 
-Tasks:
+**Build/fix:**
 
-1. Product control tower page.
-2. Lifecycle action launcher.
-3. Product interaction graph.
-4. Plugin interaction graph.
-5. Evidence and runtime-truth viewers.
-6. Recovery guidance view.
-7. Hide provider mode unless advanced mode is enabled.
+- Real consent domain model.
+- FHIR validation and evidence.
+- Patient/caregiver/clinician/admin access matrix.
+- Emergency break-glass workflow.
+- Record summary/timeline/labs/medications/documents backend + UI.
+- Healthcare rollback readiness.
 
-Validation:
+**Validation:**
 
-- Studio component tests
-- Studio Playwright lifecycle journey
-- Studio interaction graph E2E
+- PHR backend/domain tests.
+- PHR UI tests.
+- PHR Playwright healthcare journeys.
+- `pnpm check:phr-lifecycle-pilot`
 
-### Phase 5 — Product workflow feature completeness
+### Phase 6 — Complete Digital Marketing pilot workflows
 
-Tasks:
+**Build/fix:**
 
-1. DMOS campaign activation uses brokered PHR consent status.
-2. DMOS lead-captured event is durable and auditable.
-3. PHR consent revoke triggers governed event.
-4. PHR care-plan notification checks DMOS preference.
-5. PHR i18n completion.
-6. PHR rollback readiness: stable deployment history, artifact selection, healthcare verification gates, approval contract.
+- Campaign lifecycle domain workflow.
+- Consent-gated activation.
+- Google Ads connector readiness and no-fake-success model.
+- Lead capture/conversion tracking.
+- Notification retry/DLQ.
+- Reporting/dashboard and admin/operator UX.
 
-Validation:
+**Validation:**
 
-- DMOS E2E workflows
-- PHR healthcare workflows
-- cross-product interaction workflows
-- PHR i18n gate
-- rollback proof tests
+- DMOS backend/domain tests.
+- DMOS UI tests.
+- DMOS Playwright journeys.
+- `pnpm check:digital-marketing-lifecycle-pilot`
 
----
+### Phase 7 — Production hardening and release confidence
 
-## 10. Focused Validation Plan, Deferring Long-Running Work
+**Build/fix:**
 
-Do not run full `check:phase8` repeatedly during fix cycles. Use focused checks:
+- OpenAPI schema-aware breaking change detection.
+- Load/stress smoke tests for core workflows.
+- Data Cloud durability and failure injection coverage.
+- Production-mode provider wiring.
+- Studio production profile hardening.
+- Runbook and rollback drills.
 
-### For product interaction fixes
+**Validation:**
 
-```bash
-pnpm check:product-interaction-contracts
-pnpm check:product-interaction-broker
-pnpm check:interaction-runtime-truth
-pnpm check:cross-product-interaction-flows
-```
-
-### For polyglot adapter fixes
-
-```bash
-pnpm check:java-adapter-conformance
-pnpm check:typescript-web-adapter-conformance
-pnpm check:rust-adapter-conformance
-pnpm check:python-adapter-conformance
-pnpm check:polyglot-product-fixture
-```
-
-### For release evidence fixes
-
-```bash
-pnpm check:product-registry
-pnpm check:affected-product-strict-release-profile
-pnpm check:kernel-implementation-plan-coverage
-pnpm check:product-release-readiness
-```
-
-### For product UX/completeness fixes
-
-```bash
-pnpm check:product-ui-contracts
-pnpm check:product-a11y-route-matrix
-pnpm check:i18n-conformance
-pnpm check:audited-e2e-workflow
-```
-
-### Deferred until final stabilization
-
-```bash
-pnpm check:phase8
-pnpm check:world-class-platform-readiness
-```
-
-Run these only after focused failures are fixed.
+- `pnpm check:phase8`
+- `pnpm check:world-class-platform-readiness`
+- strict release workflow gates
 
 ---
 
-## 11. Definition of Production-Ready for This Platform
+## 9. Immediate Ticket List
 
-The platform can claim production-ready Kernel status only when:
+### Kernel/Core
 
-1. Product teams can register and run products without knowing platform internals.
-2. Java, TypeScript, Rust, and Python surfaces have real fixture products and lifecycle proofs.
-3. All critical product interactions go through the broker.
-4. Broker policy is resolved from trusted providers and manifest policy, not caller-supplied flags.
-5. Evidence persistence is mandatory in production.
-6. Product event interactions support durable delivery, retry, DLQ, replay, and idempotency.
-7. PHR i18n is complete.
-8. PHR rollback readiness is no longer target-partial.
-9. Release scorecards measure maturity and behavior, not only gate existence.
-10. Studio and CLI provide simple plan/explain/execute/recover flows.
-11. No product implements platform lifecycle code locally.
-12. No product imports another product’s internals.
-13. No environment-blocked action is reported as success.
-14. Performance budgets exist and are enforced for lifecycle, interaction, and adapter execution.
+1. Implement canonical JSON hashing for `ProductInteractionBroker` idempotency keys.
+2. Add `ProductInteractionBroker.testFactory()`, `developmentFactory(...)`, and `productionFactory(...)` examples.
+3. Add evidence writer implementations:
+   - file-backed bootstrap writer
+   - Data Cloud-backed platform writer adapter
+4. Add event broker durable provider and DLQ semantics.
+5. Add measured SLO evidence provider.
+6. Add cost metering provider.
+7. Expand product interaction metrics to include contract ID, provider, consumer, tenant, status, reason code.
+8. Add policy decision audit event for each broker execution.
+9. Add product interaction graph and run-history query APIs.
+10. Add product shape/language/runtime validation across Java/TS/Rust/Python.
+
+### Kernel Toolchains
+
+1. Add realistic polyglot fixture product.
+2. Harden Rust adapter output parsing and artifact manifest generation.
+3. Harden Python adapter env/dependency handling and artifact manifests.
+4. Add Node service runtime/deploy fixture.
+5. Add missing-toolchain environment-blocked tests.
+6. Add security scan hooks per package ecosystem.
+7. Add dependency cache strategy per language.
+
+### Governance / CI
+
+1. Replace filename-based domain invariant check with invariant manifest and executed test evidence.
+2. Expand OpenAPI breaking-change detection to schema-aware diff.
+3. Add evidence freshness policy and critical evidence expiration checks.
+4. Add runtime SLO measurement check.
+5. Add cost measurement/enforcement check.
+6. Add “no target-state as current-state” validation for product readiness docs.
+
+### Digital Marketing
+
+1. Implement consent-gated campaign activation with broker call to PHR.
+2. Replace notification preference handler with real preference service.
+3. Implement durable lead-captured event publish flow.
+4. Add Google Ads connector readiness state machine.
+5. Implement campaign lifecycle workflow tests.
+6. Implement dashboard/report data contracts and no-stub checks.
+7. Add UI degraded/blocked/consent-denied states.
+
+### PHR
+
+1. Implement real consent grant/revocation/expiry domain model.
+2. Back consent-status interaction handler by real consent service.
+3. Add FHIR R4 validation evidence per resource type/profile.
+4. Add patient data access matrix tests.
+5. Implement break-glass emergency workflow with audit and post-review.
+6. Implement data sovereignty evidence from actual storage/provider decisions.
+7. Enable rollback only after healthcare post-rollback gates are real.
+
+### Studio
+
+1. Add product readiness dashboard with:
+   - lifecycle status
+   - SLO budget status
+   - cost budget status
+   - interaction graph
+   - missing feature/workflow checklist
+2. Add one-click plan/execute/recover per product and phase.
+3. Add product interaction evidence viewer.
+4. Add polyglot surface detection wizard.
+5. Add “business logic only” onboarding flow.
 
 ---
 
-## 12. Final Expert Assessment
+## 10. Definition of Done
 
-This commit is a strong evidence refresh and shows the platform is converging. The Kernel is no longer just a lifecycle script layer: it now has polyglot adapters, product interaction brokers, event brokers, interaction evidence concepts, product manifests with schema hashes, and release readiness evidence.
+The platform is production-ready only when:
 
-The next phase must shift from “gate coverage” to “runtime production behavior.” The biggest production-readiness work is not adding more checklist scripts; it is hardening the broker/runtime paths, replacing trusted caller metadata with platform-resolved policy, making evidence persistence fail-closed, completing product workflows, finishing PHR i18n, and proving Rust/Python with real products.
+- PHR and Digital Marketing are feature-complete for their pilot workflows.
+- Java, TypeScript, Rust, and Python surfaces are proven through Kernel lifecycle fixtures.
+- Product teams can register and run products without knowing adapter internals.
+- SLO/cost budgets are measured and enforced, not just declared.
+- Domain invariants are semantically mapped to executed tests and evidence.
+- OpenAPI breaking changes are schema-aware and waiver-governed.
+- Product interactions are brokered, policy-checked, evidence-backed, observable, and used in real product workflows.
+- Plugin interactions are typed, observable, policy-aware, and cycle-safe.
+- Long-running/runtime validations are part of explicit release gates and never represented as passed unless actually executed.
+- Studio and CLI provide clear recovery guidance and hide platform complexity by default.
+

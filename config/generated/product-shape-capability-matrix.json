@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-22T17:55:31.354Z",
+  "generated": "2026-05-23T04:09:40.157Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -1275,6 +1275,142 @@
       ],
       "executionReadiness": "executable",
       "status": "Pilot"
+    },
+    {
+      "productId": "polyglot-fixture",
+      "name": "Polyglot Fixture",
+      "productKind": "demo/example",
+      "shape": "demo/example: backend-api + web + worker + worker (no-profile)",
+      "lifecycleStatus": "disabled",
+      "shapeValidationMode": "disabled-observed",
+      "profileStatus": "not-declared",
+      "requiredAdapters": [],
+      "adapterReadiness": [],
+      "missingManifests": [
+        "artifact-manifest",
+        "deployment-manifest",
+        "lifecycle-plan",
+        "lifecycle-result"
+      ],
+      "missingProviders": [],
+      "gatesNeeded": [
+        "a11y",
+        "i18n",
+        "privacy",
+        "security"
+      ],
+      "readinessDimensions": {
+        "contractReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
+        "apiReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-lifecycle-profile"
+          ],
+          "evidenceRefs": []
+        },
+        "uiReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "ui-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "providerReadiness": {
+          "status": "not-required",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "runtimeTruthReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "lifecycle-not-enabled"
+          ],
+          "evidenceRefs": []
+        },
+        "approvalReadiness": {
+          "status": "planned",
+          "reasonCodes": [
+            "approval-gate-planned"
+          ],
+          "evidenceRefs": []
+        },
+        "privacySecurityGateReadiness": {
+          "status": "declared",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        },
+        "artifactDeploymentManifestReadiness": {
+          "status": "blocked",
+          "reasonCodes": [
+            "missing-manifest:artifact-manifest",
+            "missing-manifest:deployment-manifest",
+            "missing-manifest:lifecycle-plan",
+            "missing-manifest:lifecycle-result"
+          ],
+          "evidenceRefs": []
+        },
+        "adapterExecutionReadiness": {
+          "status": "not-executable",
+          "reasonCodes": [
+            "adapter-execution-not-ready"
+          ],
+          "evidenceRefs": []
+        },
+        "platformModeReadiness": {
+          "status": "requires-data-cloud-bridge",
+          "reasonCodes": [
+            "data-cloud-bridge-required"
+          ],
+          "evidenceRefs": []
+        },
+        "studioUxReadiness": {
+          "status": "unproven",
+          "reasonCodes": [
+            "studio-ux-evidence-not-recorded"
+          ],
+          "evidenceRefs": []
+        },
+        "e2eReadiness": {
+          "status": "not-enabled",
+          "reasonCodes": [
+            "e2e-not-ready"
+          ],
+          "evidenceRefs": []
+        },
+        "enablementGuardrail": {
+          "status": "blocked",
+          "reasonCodes": [],
+          "evidenceRefs": []
+        }
+      },
+      "minimumReleaseToEnable": "future-readiness-gate",
+      "blockingGaps": [
+        "missing-manifest:artifact-manifest",
+        "missing-manifest:deployment-manifest",
+        "missing-manifest:lifecycle-plan",
+        "missing-manifest:lifecycle-result"
+      ],
+      "nextValidationCommand": "pnpm check:product-shape-capability-matrix",
+      "requiredCapabilities": [],
+      "capabilityGaps": [],
+      "reasonCodes": [
+        "demo-example-drift-exemption",
+        "disabled-observed",
+        "polyglot-fixture-not-workspace-wired"
+      ],
+      "nextActions": [
+        "Keep polyglot-fixture as demo/example without workspace wiring until Phase 4 polyglot fixture implementation",
+        "Keep disabled until lifecycle profile and ProductUnit evidence are ready"
+      ],
+      "readinessEvidence": [],
+      "executionReadiness": "disabled",
+      "status": "Disabled observed"
     },
     {
       "productId": "python-fixture",

@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product Metric Mappings Schema",
+  "description": "Schema for mapping SLO budget configurations to runtime metrics",
+  "type": "object",
+  "required": ["version", "description", "metricSources", "products"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "metricSources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["baseUrl", "description"],
+        "properties": {
+          "baseUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "products": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["workflows"],
+        "properties": {
+          "workflows": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["latencyMs", "throughputRps", "memoryMb", "queueDepth", "backgroundJobRuntimeMs"],
+              "properties": {
+                "latencyMs": {
+                  "type": "object",
+                  "required": ["p50", "p95", "p99"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "labels", "query"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "labels": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "query": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "throughputRps": {
+                  "type": "object",
+                  "required": ["min"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "labels", "query"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "labels": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "query": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "memoryMb": {
+                  "type": "object",
+                  "required": ["max"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "labels", "query"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "labels": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "query": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "queueDepth": {
+                  "type": "object",
+                  "required": ["max"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "labels", "query"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "labels": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "query": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "backgroundJobRuntimeMs": {
+                  "type": "object",
+                  "required": ["max"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "required": ["metricName", "labels", "query"],
+                    "properties": {
+                      "metricName": {
+                        "type": "string"
+                      },
+                      "labels": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "query": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

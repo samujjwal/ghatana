@@ -1,0 +1,71 @@
+{
+  "$schema": "../../config/domain-invariants.schema.json",
+  "version": "1.0.0",
+  "product": "polyglot-fixture",
+  "description": "Domain invariant declarations for Polyglot Fixture product",
+  "invariantCategories": [
+    "identity/authorization",
+    "tenant/workspace_isolation",
+    "lifecycle_state_transitions",
+    "data_integrity",
+    "audit/evidence",
+    "privacy/consent",
+    "product_specific_business_correctness"
+  ],
+  "invariants": [
+    {
+      "id": "poly-001",
+      "name": "Java surface builds successfully",
+      "category": "product_specific_business_correctness",
+      "description": "Java service surface must build and pass unit tests",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "poly-002",
+      "name": "TypeScript surface builds successfully",
+      "category": "product_specific_business_correctness",
+      "description": "TypeScript web surface must build and pass unit tests",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "poly-003",
+      "name": "Rust surface builds successfully",
+      "category": "product_specific_business_correctness",
+      "description": "Rust service surface must build and pass unit tests",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "poly-004",
+      "name": "Python surface builds successfully",
+      "category": "product_specific_business_correctness",
+      "description": "Python worker surface must build and pass unit tests",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "poly-005",
+      "name": "Cross-surface integration",
+      "category": "data_integrity",
+      "description": "All surfaces must communicate through the broker with consistent contracts",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    },
+    {
+      "id": "poly-006",
+      "name": "Tenant isolation across surfaces",
+      "category": "tenant/workspace_isolation",
+      "description": "All surfaces must respect tenant isolation boundaries",
+      "testId": null,
+      "testPath": null,
+      "severity": "critical"
+    }
+  ]
+}

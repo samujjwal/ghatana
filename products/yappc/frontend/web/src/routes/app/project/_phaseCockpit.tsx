@@ -1,15 +1,20 @@
-import React, { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
+import React, { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
+import { useTranslation } from '@ghatana/i18n';
+
+
 import { PhaseBlockerPanel } from '../../../components/phase/PhaseBlockerPanel';
+import type { Blocker } from '../../../components/phase/PhaseBlockerPanel';
 import { PhaseCockpitLayout } from '../../../components/phase/PhaseCockpitLayout';
 import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel';
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
 import { PhaseSuggestedNextStep, type SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
-import type { Blocker } from '../../../components/phase/PhaseBlockerPanel';
+import { Button } from '../../../components/ui/Button';
+import { usePhasePacket } from '../../../hooks/usePhasePacket';
 import {
   describePhaseActionError,
   executeGenerateReviewDecision,
@@ -20,60 +25,89 @@ import {
   type MountedPhase,
   type RunPostAction,
 } from '../../../services/phase';
-import { usePhasePacket } from '../../../hooks/usePhasePacket';
-import type { PhaseCockpitPacket, PhaseAction } from '../../../types/phasePacket';
-import type { GenerateReviewDecision } from '@/lib/api/client';
-import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
-import { PhaseStatusPanels } from './PhaseStatusPanels';
-import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
-import { currentUserAtom } from '../../../stores/user.store';
-import { Button } from '../../../components/ui/Button';
 import type {
   PhaseActionResult,
   PhaseActivityEvent,
   PhaseIconId,
   PhaseTransitionPreviewSnapshot,
 } from '../../../services/phase';
+import { currentUserAtom } from '../../../stores/user.store';
+import type { PhaseCockpitPacket, PhaseAction } from '../../../types/phasePacket';
+
+import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
+import { PhaseStatusPanels } from './PhaseStatusPanels';
+
+import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
+
 
 
 interface PhaseDetailCopy {
-  readonly label: string;
-  readonly description: string;
+  readonly labelKey: string;
+  readonly descriptionKey: string;
 }
 
-/** Human-readable disclosure copy for the supporting phase workspace. */
+interface PhaseCurrentUser {
+  readonly id: string;
+  readonly tenantId?: string;
+  readonly email?: string;
+}
+
+type GenerateReviewDecision = 'apply' | 'reject' | 'rollback';
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function toPhaseCurrentUser(value: unknown): PhaseCurrentUser | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const id = asString(candidate.id);
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    tenantId: asString(candidate.tenantId),
+    email: asString(candidate.email),
+  };
+}
+
 const PHASE_DETAIL_COPY: Record<MountedPhase, PhaseDetailCopy> = {
   intent: {
-    label: 'Open intent notes workspace',
-    description: 'Use this only when goals, users, or success criteria need more context than the cockpit summary shows.',
+    labelKey: 'phaseCockpit.detail.intent.label',
+    descriptionKey: 'phaseCockpit.detail.intent.description',
   },
   shape: {
-    label: 'Open canvas editing workspace',
-    description: 'Use this when you need direct canvas edits after reviewing shape readiness and blockers.',
+    labelKey: 'phaseCockpit.detail.shape.label',
+    descriptionKey: 'phaseCockpit.detail.shape.description',
   },
   validate: {
-    label: 'Open validation evidence workspace',
-    description: 'Use this when approval gates need deeper artifact, risk, or evidence review.',
+    labelKey: 'phaseCockpit.detail.validate.label',
+    descriptionKey: 'phaseCockpit.detail.validate.description',
   },
   generate: {
-    label: 'Open generation artifact workspace',
-    description: 'Use this when generated output needs artifact-level inspection or page-builder edits before review.',
+    labelKey: 'phaseCockpit.detail.generate.label',
+    descriptionKey: 'phaseCockpit.detail.generate.description',
   },
   run: {
-    label: 'Open run execution notes',
-    description: 'Use this when deployment posture or run handoff context needs more detail than the cockpit controls.',
+    labelKey: 'phaseCockpit.detail.run.label',
+    descriptionKey: 'phaseCockpit.detail.run.description',
   },
   observe: {
-    label: 'Open live preview verification',
-    description: 'Use this when preview behavior or runtime signals need direct visual verification.',
+    labelKey: 'phaseCockpit.detail.observe.label',
+    descriptionKey: 'phaseCockpit.detail.observe.description',
   },
   learn: {
-    label: 'Open retrospective notes workspace',
-    description: 'Use this when lessons, incidents, or reusable patterns need supporting notes.',
+    labelKey: 'phaseCockpit.detail.learn.label',
+    descriptionKey: 'phaseCockpit.detail.learn.description',
   },
   evolve: {
-    label: 'Open evolution planning workspace',
-    description: 'Use this when roadmap or backlog decisions need deeper planning context.',
+    labelKey: 'phaseCockpit.detail.evolve.label',
+    descriptionKey: 'phaseCockpit.detail.evolve.description',
   },
 };
 
@@ -127,6 +161,7 @@ function phasePacketToPreview(packet: PhaseCockpitPacket): PhaseTransitionPrevie
 }
 
 function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | null }) {
+  const { t } = useTranslation('common');
   if (!packet) {
     return null;
   }
@@ -141,34 +176,34 @@ function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | 
     <section
       className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
       data-testid="phase-packet-summary"
-      aria-label="Canonical phase packet summary"
+      aria-label={t('phaseCockpit.summary.aria')}
     >
       <div data-testid="phase-packet-context">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Context</p>
-        <p className="mt-2 font-medium text-fg">{packet.projectName ?? 'Project'}</p>
-        <p className="mt-1 text-xs text-fg-muted">{activityCount} activity event(s)</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">{t('phaseCockpit.summary.context')}</p>
+        <p className="mt-2 font-medium text-fg">{packet.projectName ?? t('phaseCockpit.fallback.project')}</p>
+        <p className="mt-1 text-xs text-fg-muted">{t('phaseCockpit.summary.activityCount', { count: activityCount })}</p>
       </div>
       <div data-testid="phase-packet-state">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">State</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">{t('phaseCockpit.summary.state')}</p>
         <p className="mt-2 font-medium text-fg">
-          {blockerCount} blocker(s), {evidenceCount} evidence item(s)
+          {t('phaseCockpit.summary.stateCounts', { blockers: blockerCount, evidence: evidenceCount })}
         </p>
-        <p className="mt-1 text-xs text-fg-muted">{governanceCount} governance record(s)</p>
+        <p className="mt-1 text-xs text-fg-muted">{t('phaseCockpit.summary.governanceCount', { count: governanceCount })}</p>
       </div>
       <div data-testid="phase-packet-actions">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Actions</p>
-        <p className="mt-2 font-medium text-fg">{actionCount} available action(s)</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">{t('phaseCockpit.summary.actions')}</p>
+        <p className="mt-2 font-medium text-fg">{t('phaseCockpit.summary.actionCount', { count: actionCount })}</p>
         <p className="mt-1 text-xs text-fg-muted">
-          {packet.dashboardActions.primaryAction ?? 'No primary action'}
+          {packet.dashboardActions.primaryAction ?? t('phaseCockpit.summary.noPrimaryAction')}
         </p>
       </div>
       <div data-testid="phase-packet-readiness">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">Readiness</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">{t('phaseCockpit.summary.readiness')}</p>
         <p className="mt-2 font-medium text-fg">
-          {packet.readiness.canAdvance ? 'Can advance' : 'Blocked'}
+          {packet.readiness.canAdvance ? t('phaseCockpit.summary.canAdvance') : t('phaseCockpit.summary.blocked')}
         </p>
         <p className="mt-1 text-xs text-fg-muted">
-          Score: {Math.round(packet.readiness.completenessScore * 100)}%
+          {t('phaseCockpit.summary.score', { score: Math.round(packet.readiness.completenessScore * 100) })}
         </p>
       </div>
     </section>
@@ -176,6 +211,7 @@ function PhasePacketSummary({ packet }: { readonly packet: PhaseCockpitPacket | 
 }
 
 function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | null; readonly onRetry: () => void }) {
+  const { t } = useTranslation('common');
   if (!error) {
     return null;
   }
@@ -184,9 +220,9 @@ function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | nul
     <section
       className="rounded-2xl border border-warning-border bg-warning-bg p-4 text-sm text-warning-color"
       data-testid="phase-packet-error"
-      aria-label="Phase packet error"
+      aria-label={t('phaseCockpit.error.aria')}
     >
-      <p className="font-semibold text-warning-color">Phase packet unavailable</p>
+      <p className="font-semibold text-warning-color">{t('phaseCockpit.error.title')}</p>
       <p className="mt-1 text-xs text-fg-muted">{error.message}</p>
       <Button
         type="button"
@@ -196,22 +232,24 @@ function PhasePacketErrorPanel({ error, onRetry }: { readonly error: Error | nul
         className="mt-2 border-warning-border bg-warning-bg text-warning-color"
         onClick={onRetry}
       >
-        Retry
+        {t('phaseCockpit.error.retry')}
       </Button>
     </section>
   );
 }
 
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
+  const { t } = useTranslation('common');
   const { projectId } = useParams<{ projectId: string }>();
-  const currentWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
+  const rawWorkspaceId = useAtomValue(currentWorkspaceIdAtom) as unknown;
+  const currentWorkspaceId = asString(rawWorkspaceId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const currentUser = useAtomValue(currentUserAtom);
+  const rawCurrentUser = useAtomValue(currentUserAtom) as unknown;
+  const currentUser = toPhaseCurrentUser(rawCurrentUser);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<PhaseActionResult | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [accessDenied, setAccessDenied] = useState<string | null>(null);
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
@@ -295,7 +333,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     }
 
     if (!projectId) {
-      setActionError('Missing project context for this phase action.');
+      setActionError(t('phaseCockpit.errors.missingProjectContext'));
       return;
     }
 
@@ -314,12 +352,13 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     phase,
     packet,
     projectId,
+    t,
   ]);
 
   const handleSecondaryAction = () => {
     setActionResult(null);
     setActionError(null);
-    setFeedback(`Reviewing phase details for ${phase}.`);
+    setFeedback(t('phaseCockpit.feedback.reviewingPhase', { phase }));
     scrollToSupportingSurface();
   };
 
@@ -329,17 +368,17 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       return;
     }
 
-    setFeedback(`Reviewing action: ${action.label}.`);
+    setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: action.label }));
     scrollToSupportingSurface();
-  }, [handlePrimaryAction, scrollToSupportingSurface]);
+  }, [handlePrimaryAction, scrollToSupportingSurface, t]);
 
   const handleGenerateReviewDecision = (decision: GenerateReviewDecision) => {
     if (!projectId || !actionResult?.runId) {
-      setActionError('Missing generation run context for review decision.');
+      setActionError(t('phaseCockpit.errors.missingGenerationRunContext'));
       return;
     }
     if (!currentUser?.id) {
-      setActionError('Generation review requires an authenticated reviewer.');
+      setActionError(t('phaseCockpit.errors.authenticatedReviewerRequired'));
       return;
     }
 
@@ -354,7 +393,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
 
   const handleRunPostAction = (action: RunPostAction) => {
     if (!projectId || !actionResult?.runId) {
-      setActionError('Missing run context for this action.');
+      setActionError(t('phaseCockpit.errors.missingRunContext'));
       return;
     }
 
@@ -366,6 +405,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   };
 
   const phaseDetailCopy = PHASE_DETAIL_COPY[phase];
+  const phaseDetailLabel = t(phaseDetailCopy.labelKey);
+  const phaseDetailDescription = t(phaseDetailCopy.descriptionKey);
 
   // TRACK-008: Verify scope and phase capability before allowing access.
   // Keep this after hooks so async workspace hydration cannot change hook order.
@@ -373,8 +414,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     return (
       <div className="p-6">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-          <h2 className="font-semibold">Project context required</h2>
-          <p className="mt-1 text-sm">Project ID is missing from the URL. Please navigate to a valid project page.</p>
+          <h2 className="font-semibold">{t('phaseCockpit.errors.projectContextTitle')}</h2>
+          <p className="mt-1 text-sm">{t('phaseCockpit.errors.projectContextBody')}</p>
         </div>
       </div>
     );
@@ -384,8 +425,8 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     return (
       <div className="p-6">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-          <h2 className="font-semibold">Workspace context required</h2>
-          <p className="mt-1 text-sm">Workspace context is required to access this phase. Please select a workspace first.</p>
+          <h2 className="font-semibold">{t('phaseCockpit.errors.workspaceContextTitle')}</h2>
+          <p className="mt-1 text-sm">{t('phaseCockpit.errors.workspaceContextBody')}</p>
         </div>
       </div>
     );
@@ -396,10 +437,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     return (
       <div className="p-6">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-4 text-destructive">
-          <h2 className="font-semibold">Phase access denied</h2>
+          <h2 className="font-semibold">{t('phaseCockpit.errors.accessDeniedTitle')}</h2>
           <p className="mt-1 text-sm">
-            You do not have permission to access the {phase} phase for this project.
-            Please contact your workspace administrator or project owner for access.
+            {t('phaseCockpit.errors.accessDeniedBody', { phase })}
           </p>
         </div>
       </div>
@@ -425,14 +465,16 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     return (
       <div className="p-6">
         <PhasePacketErrorPanel
-          error={error ?? new Error('Phase packet is unavailable.')}
-          onRetry={refetch}
+          error={error ?? new Error(t('phaseCockpit.error.unavailable'))}
+          onRetry={() => {
+            void refetch();
+          }}
         />
       </div>
     );
   }
 
-  const projectName = packet.projectName ?? 'this project';
+  const projectName = packet.projectName ?? t('phaseCockpit.fallback.thisProject');
   const preview = phasePacketToPreview(packet);
   
   // Map packet blockers to component format
@@ -501,6 +543,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       activity={activity}
     />
   );
+  const primaryPacketAction = packet.availableActions.find(
+    (action) => action.actionId === packet.dashboardActions.primaryAction
+  ) ?? packet.availableActions[0] ?? null;
   const advancedDetails = (
     <div
       id={`${phase}-supporting-surface`}
@@ -508,24 +553,22 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     >
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
-          {phaseDetailCopy.label}
+          {phaseDetailLabel}
         </p>
-        <h2 className="mt-2 text-lg font-semibold text-fg">Phase Details</h2>
+        <h2 className="mt-2 text-lg font-semibold text-fg">{t('phaseCockpit.detail.title')}</h2>
         <p className="mt-1 text-sm text-fg-muted">
-          Review the existing detailed surface below when you need deeper context beyond the phase-native cockpit.
+          {t('phaseCockpit.detail.body')}
         </p>
       </div>
       <div className="mb-4 text-xs text-fg-muted">
-        Last activity:{' '}
-        {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : 'No recent activity'}
+        {t('phaseCockpit.detail.lastActivity')}{' '}
+        {activity[0]?.timestamp ? formatTimestamp(activity[0].timestamp) : t('phaseCockpit.detail.noRecentActivity')}
       </div>
       <PhaseEmbeddedSurface phase={phase} />
     </div>
   );
 
-  const isCtaDisabled = !packet.readiness.canAdvance
-    || packet.blockers.length > 0
-    || !packet.capabilities.canUpdate
+  const isCtaDisabled = !primaryPacketAction?.enabled
     || actionMutation.isPending;
   const showGenerateReviewActions = phase === 'generate'
     && actionResult?.kind === 'generate-review'
@@ -537,28 +580,26 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
     && Boolean(actionResult.runId);
   const isRunPostActionPending = runPostActionMutation.isPending;
   const disabledReason = actionMutation.isPending
-    ? 'The phase action is running. Keep this page open while the backend responds.'
-    : !packet.capabilities.canUpdate
-      ? 'You have view-only access to this project.'
-    : packet.blockers.length > 0
-      ? `${packet.blockers.length} blocker${packet.blockers.length > 1 ? 's' : ''} must be resolved before continuing. Scroll down to review and resolve them.`
+    ? t('phaseCockpit.disabled.running')
+    : primaryPacketAction?.disabledReason
+      ? primaryPacketAction.disabledReason
+    : !primaryPacketAction
+      ? t('phaseCockpit.disabled.noBackendAction')
       : undefined;
 
   return (
     <div className="p-6 space-y-6">
       <PhaseCockpitLayout
         testId={`${phase}-cockpit`}
-        phaseName={phase.charAt(0).toUpperCase() + phase.slice(1)}
-        phaseDescription={`Phase cockpit for ${phase}. Project: ${projectName}.`}
+        phaseName={t(`phaseCockpit.phase.${phase}`)}
+        phaseDescription={t('phaseCockpit.layout.description', { phase, projectName })}
         primaryAction={(
           <PhasePrimaryActionCard
-            title={`Advance ${phase}`}
-            description={packet.readiness.canAdvance 
-              ? 'Proceed to the next phase of the lifecycle.' 
-              : 'Resolve blockers to advance to the next phase.'}
-            actionLabel={packet.readiness.canAdvance ? 'Advance' : 'View Blockers'}
-            onAction={packet.readiness.canAdvance ? handlePrimaryAction : scrollToBlockerPanel}
-            secondaryActionLabel="Review Details"
+            title={primaryPacketAction?.label ?? t('phaseCockpit.primary.title', { phase })}
+            description={primaryPacketAction?.description ?? t('phaseCockpit.primary.description')}
+            actionLabel={primaryPacketAction?.enabled ? primaryPacketAction.label : t('phaseCockpit.primary.viewBlockers')}
+            onAction={primaryPacketAction?.enabled ? handlePrimaryAction : scrollToBlockerPanel}
+            secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
             onSecondaryAction={handleSecondaryAction}
             icon={resolvePhaseIcon(PHASE_ICON_IDS[phase])}
             disabled={isCtaDisabled}
@@ -566,7 +607,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             testId={`${phase}-primary-action-card`}
             actionTestId={PRIMARY_ACTION_TEST_IDS[phase] ?? `${phase}-advance-action`}
             secondaryActionTestId={`${phase}-review-action`}
-            actionAriaLabel={`${phase} primary action`}
+            actionAriaLabel={t('phaseCockpit.primary.aria', { phase })}
           />
         )}
         blockers={<div id={`${phase}-blocker-panel`}><PhaseBlockerPanel blockers={blockers} /></div>}
@@ -574,11 +615,16 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         suggestedAutomation={<PhaseSuggestedNextStep steps={suggestions} />}
         governanceTrace={<PhaseGovernanceTrace records={governance} />}
         advancedTools={advancedDetails}
-        advancedToolsLabel={phaseDetailCopy.label}
-        advancedToolsDescription={phaseDetailCopy.description}
+        advancedToolsLabel={phaseDetailLabel}
+        advancedToolsDescription={phaseDetailDescription}
       >
         <div className="space-y-4" data-testid={`${phase}-native-summary`}>
-          <PhasePacketErrorPanel error={error} onRetry={refetch} />
+          <PhasePacketErrorPanel
+            error={error}
+            onRetry={() => {
+              void refetch();
+            }}
+          />
           <PhasePacketSummary packet={packet} />
           {feedback ? (
             <div className="rounded-xl border border-info-border bg-info-bg p-4 text-sm text-info-color">
@@ -588,15 +634,15 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
           <section
             className="grid gap-3 rounded-2xl border border-border bg-surface-raised p-4 text-sm shadow-sm md:grid-cols-4"
             data-testid="phase-contract-summary"
-            aria-label="Phase contract summary"
+            aria-label={t('phaseCockpit.contract.aria')}
           >
-            <div data-testid="phase-contract-persisted">{packet.projectName ?? 'Project'}</div>
-            <div data-testid="phase-contract-derived">{packet.evidence.length} evidence item(s)</div>
+            <div data-testid="phase-contract-persisted">{packet.projectName ?? t('phaseCockpit.fallback.project')}</div>
+            <div data-testid="phase-contract-derived">{t('phaseCockpit.contract.evidenceCount', { count: packet.evidence.length })}</div>
             <div data-testid="phase-contract-suggested">
-              {packet.availableActions[0]?.label ?? 'No suggested action'}
+              {packet.availableActions[0]?.label ?? t('phaseCockpit.contract.noSuggestedAction')}
             </div>
             <div data-testid="phase-contract-review">
-              {packet.governance[0]?.outcome ?? 'Ready without extra review'}
+              {packet.governance[0]?.outcome ?? t('phaseCockpit.contract.readyWithoutReview')}
             </div>
           </section>
           {actionResult ? (
@@ -612,9 +658,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
               className="rounded-xl border border-border bg-surface-raised p-4"
               data-testid="generate-review-actions"
             >
-              <p className="text-sm font-semibold text-fg">Review generated changes</p>
+              <p className="text-sm font-semibold text-fg">{t('phaseCockpit.generateReview.title')}</p>
               <p className="mt-1 text-xs text-fg-muted">
-                Apply approved diffs, reject unsafe changes, or roll back an already-applied generation run.
+                {t('phaseCockpit.generateReview.description')}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
@@ -627,7 +673,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('apply')}
                 >
-                  Apply
+                  {t('phaseCockpit.generateReview.apply')}
                 </Button>
                 <Button
                   type="button"
@@ -639,7 +685,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('reject')}
                 >
-                  Reject
+                  {t('phaseCockpit.generateReview.reject')}
                 </Button>
                 <Button
                   type="button"
@@ -651,7 +697,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isGenerateReviewPending}
                   onClick={() => handleGenerateReviewDecision('rollback')}
                 >
-                  Roll back
+                  {t('phaseCockpit.generateReview.rollback')}
                 </Button>
               </div>
             </div>
@@ -661,9 +707,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
               className="rounded-xl border border-border bg-surface-raised p-4"
               data-testid="run-post-actions"
             >
-              <p className="text-sm font-semibold text-fg">Post-run controls</p>
+              <p className="text-sm font-semibold text-fg">{t('phaseCockpit.runPost.title')}</p>
               <p className="mt-1 text-xs text-fg-muted">
-                Promote a healthy run, roll back an unsafe deployment, or hand off the run to Observe for live signal review.
+                {t('phaseCockpit.runPost.description')}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
@@ -676,7 +722,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('rollback')}
                 >
-                  Roll back
+                  {t('phaseCockpit.runPost.rollback')}
                 </Button>
                 <Button
                   type="button"
@@ -688,7 +734,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('promote')}
                 >
-                  Promote
+                  {t('phaseCockpit.runPost.promote')}
                 </Button>
                 <Button
                   type="button"
@@ -700,7 +746,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
                   disabled={isRunPostActionPending}
                   onClick={() => handleRunPostAction('observe')}
                 >
-                  Hand off to Observe
+                  {t('phaseCockpit.runPost.observe')}
                 </Button>
               </div>
             </div>

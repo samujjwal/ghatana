@@ -1,0 +1,455 @@
+{
+  "$schema": "./product-metric-mappings.schema.json",
+  "version": "1.0.0",
+  "description": "Maps SLO budget configurations to actual runtime metrics from observability systems",
+  "metricSources": {
+    "prometheus": {
+      "baseUrl": "http://localhost:9090",
+      "description": "Prometheus metrics endpoint for runtime telemetry"
+    },
+    "grafana": {
+      "baseUrl": "http://localhost:3001",
+      "description": "Grafana dashboard for SLO visualization"
+    }
+  },
+  "products": {
+    "digital-marketing": {
+      "workflows": {
+        "campaign-lifecycle": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "campaign-lifecycle",
+                "product": "digital-marketing",
+                "le": "0.2"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"campaign-lifecycle\",product=\"digital-marketing\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "campaign-lifecycle",
+                "product": "digital-marketing",
+                "le": "0.8"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"campaign-lifecycle\",product=\"digital-marketing\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "campaign-lifecycle",
+                "product": "digital-marketing",
+                "le": "1.4"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"campaign-lifecycle\",product=\"digital-marketing\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "campaign-lifecycle",
+                "product": "digital-marketing"
+              },
+              "query": "rate(http_requests_total{workflow=\"campaign-lifecycle\",product=\"digital-marketing\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "digital-marketing"
+              },
+              "query": "process_resident_memory_bytes{product=\"digital-marketing\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "campaign-lifecycle",
+                "product": "digital-marketing"
+              },
+              "query": "queue_depth{workflow=\"campaign-lifecycle\",product=\"digital-marketing\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "digital-marketing"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"digital-marketing\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    },
+    "phr": {
+      "workflows": {
+        "patient-record": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "patient-record",
+                "product": "phr",
+                "le": "0.2"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"patient-record\",product=\"phr\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "patient-record",
+                "product": "phr",
+                "le": "0.7"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"patient-record\",product=\"phr\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "patient-record",
+                "product": "phr",
+                "le": "1.2"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"patient-record\",product=\"phr\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "patient-record",
+                "product": "phr"
+              },
+              "query": "rate(http_requests_total{workflow=\"patient-record\",product=\"phr\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "phr"
+              },
+              "query": "process_resident_memory_bytes{product=\"phr\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "patient-record",
+                "product": "phr"
+              },
+              "query": "queue_depth{workflow=\"patient-record\",product=\"phr\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "phr"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"phr\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    },
+    "finance": {
+      "workflows": {
+        "transaction-processing": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "transaction-processing",
+                "product": "finance",
+                "le": "0.18"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"transaction-processing\",product=\"finance\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "transaction-processing",
+                "product": "finance",
+                "le": "0.6"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"transaction-processing\",product=\"finance\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "transaction-processing",
+                "product": "finance",
+                "le": "1.1"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"transaction-processing\",product=\"finance\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "transaction-processing",
+                "product": "finance"
+              },
+              "query": "rate(http_requests_total{workflow=\"transaction-processing\",product=\"finance\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "finance"
+              },
+              "query": "process_resident_memory_bytes{product=\"finance\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "transaction-processing",
+                "product": "finance"
+              },
+              "query": "queue_depth{workflow=\"transaction-processing\",product=\"finance\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "finance"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"finance\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    },
+    "flashit": {
+      "workflows": {
+        "message-flow": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "message-flow",
+                "product": "flashit",
+                "le": "0.22"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"message-flow\",product=\"flashit\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "message-flow",
+                "product": "flashit",
+                "le": "0.85"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"message-flow\",product=\"flashit\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "message-flow",
+                "product": "flashit",
+                "le": "1.45"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"message-flow\",product=\"flashit\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "message-flow",
+                "product": "flashit"
+              },
+              "query": "rate(http_requests_total{workflow=\"message-flow\",product=\"flashit\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "flashit"
+              },
+              "query": "process_resident_memory_bytes{product=\"flashit\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "message-flow",
+                "product": "flashit"
+              },
+              "query": "queue_depth{workflow=\"message-flow\",product=\"flashit\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "flashit"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"flashit\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    },
+    "dcmaar": {
+      "workflows": {
+        "default": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "default",
+                "product": "dcmaar",
+                "le": "0.25"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"default\",product=\"dcmaar\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "default",
+                "product": "dcmaar",
+                "le": "0.9"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"default\",product=\"dcmaar\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "default",
+                "product": "dcmaar",
+                "le": "1.5"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"default\",product=\"dcmaar\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "default",
+                "product": "dcmaar"
+              },
+              "query": "rate(http_requests_total{workflow=\"default\",product=\"dcmaar\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "dcmaar"
+              },
+              "query": "process_resident_memory_bytes{product=\"dcmaar\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "default",
+                "product": "dcmaar"
+              },
+              "query": "queue_depth{workflow=\"default\",product=\"dcmaar\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "dcmaar"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"dcmaar\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    },
+    "tutorputor": {
+      "workflows": {
+        "learning-session": {
+          "latencyMs": {
+            "p50": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "learning-session",
+                "product": "tutorputor",
+                "le": "0.25"
+              },
+              "query": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{workflow=\"learning-session\",product=\"tutorputor\"}[5m])) * 1000"
+            },
+            "p95": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "learning-session",
+                "product": "tutorputor",
+                "le": "0.9"
+              },
+              "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{workflow=\"learning-session\",product=\"tutorputor\"}[5m])) * 1000"
+            },
+            "p99": {
+              "metricName": "http_request_duration_seconds_bucket",
+              "labels": {
+                "workflow": "learning-session",
+                "product": "tutorputor",
+                "le": "1.5"
+              },
+              "query": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{workflow=\"learning-session\",product=\"tutorputor\"}[5m])) * 1000"
+            }
+          },
+          "throughputRps": {
+            "min": {
+              "metricName": "http_requests_total",
+              "labels": {
+                "workflow": "learning-session",
+                "product": "tutorputor"
+              },
+              "query": "rate(http_requests_total{workflow=\"learning-session\",product=\"tutorputor\"}[5m])"
+            }
+          },
+          "memoryMb": {
+            "max": {
+              "metricName": "process_resident_memory_bytes",
+              "labels": {
+                "product": "tutorputor"
+              },
+              "query": "process_resident_memory_bytes{product=\"tutorputor\"} / 1024 / 1024"
+            }
+          },
+          "queueDepth": {
+            "max": {
+              "metricName": "queue_depth",
+              "labels": {
+                "workflow": "learning-session",
+                "product": "tutorputor"
+              },
+              "query": "queue_depth{workflow=\"learning-session\",product=\"tutorputor\"}"
+            }
+          },
+          "backgroundJobRuntimeMs": {
+            "max": {
+              "metricName": "background_job_duration_seconds",
+              "labels": {
+                "product": "tutorputor"
+              },
+              "query": "histogram_quantile(0.99, rate(background_job_duration_seconds_bucket{product=\"tutorputor\"}[5m])) * 1000"
+            }
+          }
+        }
+      }
+    }
+  }
+}

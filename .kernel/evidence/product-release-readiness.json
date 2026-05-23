@@ -1,58 +1,48 @@
 {
-  "generatedAt": "2026-05-23T02:21:52.796Z",
+  "generatedAt": "2026-05-23T04:10:04.809Z",
   "pass": false,
   "reason": "script-failure",
-  "failedScript": "./scripts/check-data-cloud-release-runtime-profile.mjs",
+  "failedScript": "pnpm:check:cross-product-interaction-flows",
   "runs": [
     {
       "script": "./scripts/check-product-shape-capability-matrix.mjs",
       "status": 0,
-      "durationMs": 379
+      "durationMs": 79
     },
     {
       "script": "./scripts/check-product-registry-drift.mjs",
       "status": 0,
-      "durationMs": 508
+      "durationMs": 69
     },
     {
       "script": "pnpm:check:product-registry",
       "status": 0,
-      "durationMs": 32049
+      "durationMs": 6981
     },
     {
       "script": "./scripts/check-platform-product-boundaries.mjs",
       "status": 0,
-      "durationMs": 3688
+      "durationMs": 904
     },
     {
       "script": "./scripts/check-cross-product-interaction-boundaries.mjs",
       "status": 0,
-      "durationMs": 3312
+      "durationMs": 889
     },
     {
       "script": "./scripts/check-product-ui-contracts.mjs",
       "status": 0,
-      "durationMs": 1530
+      "durationMs": 282
     },
     {
       "script": "./scripts/check-audited-e2e-workflow.mjs",
       "status": 0,
-      "durationMs": 379
+      "durationMs": 63
     },
     {
       "script": "pnpm:check:cross-product-interaction-flows",
-      "status": 0,
-      "durationMs": 31786
-    },
-    {
-      "script": "./scripts/check-interaction-runtime-truth.mjs",
-      "status": 0,
-      "durationMs": 49504
-    },
-    {
-      "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
       "status": 1,
-      "durationMs": 922972
+      "durationMs": 13106
     }
   ],
   "journeyMatrix": [
@@ -209,8 +199,6 @@
   ],
   "affectedProducts": [
     "digital-marketing",
-    "finance",
-    "flashit",
     "phr"
   ]
 }

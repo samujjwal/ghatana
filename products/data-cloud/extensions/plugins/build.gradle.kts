@@ -80,6 +80,7 @@ dependencies {
     testImplementation(libs.flyway.core)
     testImplementation(libs.flyway.postgresql)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:data-cloud:delivery:runtime-composition"))
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.kafka)
     testImplementation(libs.testcontainers.postgresql)
@@ -114,6 +115,9 @@ tasks.test {
         "datacloud.load.maxP95QueryMs",
         "datacloud.load.maxP99EntitySaveMs",
         "datacloud.load.maxP99QueryMs",
+        "datacloud.load.backpressure.maxConcurrent",
+        "datacloud.load.backpressure.queueCapacity",
+        "datacloud.load.backpressure.requestCount",
         "datacloud.load.minP99SampleSize",
         "datacloud.load.iterations",
         "datacloud.load.minThroughputOpsPerSecond",
