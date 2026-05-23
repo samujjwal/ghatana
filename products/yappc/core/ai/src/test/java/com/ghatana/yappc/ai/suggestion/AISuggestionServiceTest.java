@@ -4,11 +4,14 @@
  */
 package com.ghatana.yappc.ai.suggestion;
 
+import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.router.AIRequest;
 import com.ghatana.yappc.ai.router.AIResponse;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,9 +44,18 @@ class AISuggestionServiceTest extends EventloopTestBase {
     private AISuggestionService  service;
 
     @BeforeEach
-    void setUp() { 
-        router  = mock(AIModelRouter.class); 
-        service = new AISuggestionService(router); 
+    void setUp() {
+        router  = mock(AIModelRouter.class);
+        service = new AISuggestionService(router);
+
+        // Set tenant context to avoid SecurityException from resolveTenantId()
+        // Use a non-default tenant since AISuggestionService rejects "default-tenant"
+        TenantContext.setCurrentTenantId("test-tenant");
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     // ── Constructor validation ────────────────────────────────────────────────
@@ -62,22 +74,28 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("routes request through AIModelRouter")
-        void routesRequestThroughRouter() { 
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); 
+        void routesRequestThroughRouter() {
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
 
-            runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); 
+            runPromise(() -> {
+                TenantContext.setCurrentTenantId("test-tenant");
+                return service.suggest("proj-1", "SHAPE", Map.of());
+            });
 
-            verify(router).route(any(AIRequest.class)); 
+            verify(router).route(any(AIRequest.class));
         }
 
         @Test
         @DisplayName("parses [ACTION] suggestion from well-formed response")
-        void parsesActionSuggestion() { 
+        void parsesActionSuggestion() {
             AIResponse response = responseWithContent("[ACTION] Define acceptance criteria for the new feature.");
-            when(router.route(any())).thenReturn(Promise.of(response)); 
+            when(router.route(any())).thenReturn(Promise.of(response));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "SHAPE", Map.of());
+                    }); 
 
             assertThat(suggestions).hasSize(1); 
             assertThat(suggestions.get(0).type()).isEqualTo(AISuggestionService.SuggestionType.ACTION); 
@@ -86,18 +104,21 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("parses all five suggestion types from multi-line response")
-        void parsesAllSuggestionTypes() { 
-            String content = String.join("\n", 
+        void parsesAllSuggestionTypes() {
+            String content = String.join("\n",
                     "[REQUIREMENT] Clarify non-functional requirements for latency.",
                     "[DESIGN] Extract authentication into a platform module.",
                     "[TEST] Add negative test cases for edge inputs.",
                     "[RISK] Dependency on external API may introduce production delays.",
                     "[ACTION] Schedule design review with architecture team."
             );
-            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content))); 
+            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content)));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "VALIDATE", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "VALIDATE", Map.of());
+                    }); 
 
             assertThat(suggestions).hasSize(5); 
             assertThat(suggestions.stream().map(AISuggestionService.Suggestion::type)) 
@@ -112,34 +133,43 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns empty list for empty model response")
-        void returnsEmptyListForEmptyResponse() { 
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); 
+        void returnsEmptyListForEmptyResponse() {
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "INTENT", Map.of());
+                    }); 
 
             assertThat(suggestions).isEmpty(); 
         }
 
         @Test
         @DisplayName("returns empty list for blank-whitespace-only response content")
-        void returnsEmptyListForBlankContent() { 
+        void returnsEmptyListForBlankContent() {
             when(router.route(any())).thenReturn(Promise.of(responseWithContent("   \n  ")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "INTENT", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "INTENT", Map.of());
+                    }); 
 
             assertThat(suggestions).isEmpty(); 
         }
 
         @Test
         @DisplayName("each suggestion carries the project ID and phase")
-        void suggestionsCarryProjectAndPhase() { 
-            when(router.route(any())).thenReturn( 
+        void suggestionsCarryProjectAndPhase() {
+            when(router.route(any())).thenReturn(
                     Promise.of(responseWithContent("[ACTION] Review tech stack choices.")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("project-42", "GENERATE", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("project-42", "GENERATE", Map.of());
+                    }); 
 
             assertThat(suggestions).hasSize(1); 
             assertThat(suggestions.get(0).projectId()).isEqualTo("project-42");
@@ -148,12 +178,15 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("each suggestion has a non-null unique ID and generatedAt timestamp")
-        void suggestionsHaveIdAndTimestamp() { 
-            when(router.route(any())).thenReturn( 
+        void suggestionsHaveIdAndTimestamp() {
+            when(router.route(any())).thenReturn(
                     Promise.of(responseWithContent("[RISK] Risk of scope creep is high.")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "SHAPE", Map.of());
+                    }); 
 
             assertThat(suggestions).hasSize(1); 
             assertThat(suggestions.get(0).id()).isNotBlank(); 
@@ -162,8 +195,8 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("caps suggestions at 5 regardless of model output length")
-        void capsAtFiveSuggestions() { 
-            String content = String.join("\n", 
+        void capsAtFiveSuggestions() {
+            String content = String.join("\n",
                     "[ACTION] Step one.",
                     "[ACTION] Step two.",
                     "[ACTION] Step three.",
@@ -172,33 +205,42 @@ class AISuggestionServiceTest extends EventloopTestBase {
                     "[ACTION] Step six — should be ignored.",
                     "[ACTION] Step seven — also ignored."
             );
-            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content))); 
+            when(router.route(any())).thenReturn(Promise.of(responseWithContent(content)));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "RUN", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "RUN", Map.of());
+                    }); 
 
             assertThat(suggestions).hasSize(5); 
         }
 
         @Test
         @DisplayName("null context is treated as empty context (no NPE)")
-        void nullContextIsToleratedGracefully() { 
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); 
+        void nullContextIsToleratedGracefully() {
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "OBSERVE", null)); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "OBSERVE", null);
+                    }); 
 
             assertThat(suggestions).isNotNull(); 
         }
 
         @Test
         @DisplayName("returned list is unmodifiable")
-        void returnedListIsUnmodifiable() { 
-            when(router.route(any())).thenReturn( 
+        void returnedListIsUnmodifiable() {
+            when(router.route(any())).thenReturn(
                     Promise.of(responseWithContent("[ACTION] Review architecture.")));
 
             List<AISuggestionService.Suggestion> suggestions =
-                    runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); 
+                    runPromise(() -> {
+                        TenantContext.setCurrentTenantId("test-tenant");
+                        return service.suggest("proj-1", "SHAPE", Map.of());
+                    }); 
 
             assertThrows(UnsupportedOperationException.class, () -> 
                     suggestions.add(null)); 
@@ -206,14 +248,17 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("router failure is propagated as a promise exception")
-        void routerFailurePropagatesAsException() { 
-            when(router.route(any())) 
+        void routerFailurePropagatesAsException() {
+            when(router.route(any()))
                     .thenReturn(Promise.ofException(new RuntimeException("LLM unavailable")));
 
             try {
-                runPromise(() -> service.suggest("proj-1", "SHAPE", Map.of())); 
+                runPromise(() -> {
+                    TenantContext.setCurrentTenantId("test-tenant");
+                    return service.suggest("proj-1", "SHAPE", Map.of());
+                });
                 assertThat(false).as("expected exception").isTrue();
-            } catch (Exception e) { 
+            } catch (Exception e) {
                 assertThat(e).hasMessageContaining("LLM unavailable");
             }
         }
@@ -227,11 +272,13 @@ class AISuggestionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delegates to suggest() with SHAPE phase + requirements context")
-        void delegatesToSuggestWithRequirementContext() { 
-            when(router.route(any())).thenReturn(Promise.of(emptyResponse())); 
+        void delegatesToSuggestWithRequirementContext() {
+            when(router.route(any())).thenReturn(Promise.of(emptyResponse()));
 
-            runPromise(() -> 
-                    service.suggestRequirementImprovements("proj-1", "As a user I want to login.")); 
+            runPromise(() -> {
+                TenantContext.setCurrentTenantId("test-tenant");
+                return service.suggestRequirementImprovements("proj-1", "As a user I want to login.");
+            }); 
 
             verify(router).route(any(AIRequest.class)); 
         }

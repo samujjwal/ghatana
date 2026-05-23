@@ -16,6 +16,7 @@
 
 package com.ghatana.yappc.kernelvisibility;
 
+import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,8 +34,8 @@ import java.util.Optional;
  * Provides health views for Kernel ProductUnits based on ingested lifecycle data.
  *
  * <p>This service transforms raw Kernel lifecycle data into structured health views
- * for YAPPC's visibility/control-plane layer. It relies on the KernelLifecycleEventIngestService
- * to provide the raw data, then normalizes it into health summaries, timelines, and detailed views.
+ * for YAPPC's visibility/control-plane layer. It relies on a {@link KernelLifecycleTruthSource}
+ * to provide raw lifecycle truth, then normalizes it into health summaries, timelines, and detailed views.
  *
  * <p><b>Initial Implementation (Local Filesystem)</b></p>
  * <ul>
@@ -52,22 +53,44 @@ public final class KernelHealthSnapshotService {
 
     private static final Logger log = LoggerFactory.getLogger(KernelHealthSnapshotService.class);
 
-    private final KernelLifecycleEventIngestService ingestService;
+    private final KernelLifecycleTruthSource truthSource;
 
     /**
-     * Constructs a new KernelHealthSnapshotService with default ingest service.
+     * Constructs a new KernelHealthSnapshotService with default local manifest truth source.
      */
     public KernelHealthSnapshotService() {
-        this(new KernelLifecycleEventIngestService());
+        this(new LocalKernelManifestTruthSource());
     }
 
     /**
-     * Constructs a new KernelHealthSnapshotService with custom ingest service.
+     * Constructs a new KernelHealthSnapshotService with explicit truth source.
      *
-     * @param ingestService the ingest service to use for reading Kernel data
+     * @param truthSource the truth source to use for reading Kernel lifecycle data
+     */
+    public KernelHealthSnapshotService(@NotNull KernelLifecycleTruthSource truthSource) {
+        this.truthSource = truthSource;
+    }
+
+    /**
+     * Constructs a new KernelHealthSnapshotService backed by Data Cloud lifecycle truth.
+     *
+     * @param dataCloudClient Data Cloud client
+     * @param tenantId tenant identifier
+     */
+    public KernelHealthSnapshotService(@NotNull DataCloudClient dataCloudClient, @NotNull String tenantId) {
+        this(new DataCloudKernelLifecycleTruthSource(dataCloudClient, tenantId));
+    }
+
+    /**
+     * Constructs a new KernelHealthSnapshotService from a local manifest ingest service.
+     *
+     * <p>This constructor is retained for compatibility with existing tests and
+     * local-dev wiring. Production code should prefer the truth-source constructor.
+     *
+     * @param ingestService local filesystem ingest service
      */
     public KernelHealthSnapshotService(@NotNull KernelLifecycleEventIngestService ingestService) {
-        this.ingestService = ingestService;
+        this(new LocalKernelManifestTruthSource(ingestService));
     }
 
     /**
@@ -77,7 +100,7 @@ public final class KernelHealthSnapshotService {
      * @return promise resolving to the ProductUnit health view
      */
     public Promise<ProductUnitHealthView> getProductUnitHealth(@NotNull String productUnitId) {
-        return ingestService.ingestProductUnitLifecycle(productUnitId)
+        return truthSource.getProductUnitLifecycleData(productUnitId)
                 .map(this::buildHealthView);
     }
 
@@ -87,7 +110,7 @@ public final class KernelHealthSnapshotService {
      * @return promise resolving to a list of ProductUnit health summaries
      */
     public Promise<List<ProductUnitHealthSummary>> listProductUnitHealth() {
-        return ingestService.ingestAllProductUnitLifecycles()
+        return truthSource.listAllProductUnitLifecycleData()
                 .map(this::buildHealthSummaries);
     }
 
@@ -98,7 +121,7 @@ public final class KernelHealthSnapshotService {
      * @return promise resolving to the lifecycle timeline view
      */
     public Promise<LifecycleTimelineView> getLifecycleTimeline(@NotNull String productUnitId) {
-        return ingestService.ingestProductUnitLifecycle(productUnitId)
+        return truthSource.getProductUnitLifecycleData(productUnitId)
                 .map(this::buildTimelineView);
     }
 

@@ -3,11 +3,13 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.domain.model.Dashboard;
 import com.ghatana.yappc.domain.repository.DashboardRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,40 +44,54 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     private DashboardRepository dashboardRepository;
 
     @BeforeEach
-    void setUp() { 
-        MockitoAnnotations.openMocks(this); 
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
 
-        ObjectMapper objectMapper = new ObjectMapper(); 
-        objectMapper.registerModule(new JavaTimeModule()); 
-        mapper = new YappcEntityMapper(objectMapper); 
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mapper = new YappcEntityMapper(objectMapper);
 
-        dashboardRepository = new DashboardDataCloudAdapter(client, mapper); 
+        dashboardRepository = new DashboardDataCloudAdapter(client, mapper);
+
+        // Set tenant context to avoid SecurityException from repository methods
+        TenantContext.setCurrentTenantId("test-tenant");
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     @Test
     @DisplayName("Should find dashboards by workspace ID")
-    void shouldFindByWorkspaceId() { 
-        UUID workspaceId = UUID.randomUUID(); 
+    void shouldFindByWorkspaceId() {
+        UUID workspaceId = UUID.randomUUID();
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
-            .thenReturn(Promise.of(List.of())); 
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of()));
 
-        List<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceId(workspaceId)); 
+        List<Dashboard> result = runPromise(() -> {
+            TenantContext.setCurrentTenantId("test-tenant");
+            return dashboardRepository.findByWorkspaceId(workspaceId);
+        });
 
-        assertThat(result).isNotNull(); 
-        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); 
+        assertThat(result).isNotNull();
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class));
     }
 
     @Test
     @DisplayName("Should find dashboard by workspace ID and name")
-    void shouldFindByWorkspaceIdAndName() { 
-        UUID workspaceId = UUID.randomUUID(); 
+    void shouldFindByWorkspaceIdAndName() {
+        UUID workspaceId = UUID.randomUUID();
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
-            .thenReturn(Promise.of(List.of())); 
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class)))
+            .thenReturn(Promise.of(List.of()));
 
-        Optional<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test")); 
+        Optional<Dashboard> result = runPromise(() -> {
+            TenantContext.setCurrentTenantId("test-tenant");
+            return dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test");
+        });
 
-        assertThat(result).isEmpty(); 
+        assertThat(result).isEmpty();
     }
 }

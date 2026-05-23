@@ -75,10 +75,9 @@ class YappcDataCloudRepositoryContractTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("uses TenantContext fallback tenant when no explicit tenant is active")
-    void usesTenantContextFallbackTenantWhenNoExplicitTenantIsActive() {
+    @DisplayName("throws SecurityException when no tenant context is active")
+    void throwsSecurityExceptionWhenNoTenantContextIsActive() {
         DataCloudClient client = mock(DataCloudClient.class);
-        when(client.query(anyString(), anyString(), any())).thenReturn(Promise.of(List.of()));
 
         YappcDataCloudRepository<SampleEntity> repository = new YappcDataCloudRepository<>(
                 client,
@@ -87,10 +86,10 @@ class YappcDataCloudRepositoryContractTest extends EventloopTestBase {
                 SampleEntity.class
         );
 
-        List<SampleEntity> results = runPromise(() -> repository.findAll());
-
-        assertThat(results).isEmpty();
-        verify(client).query(eq("default-tenant"), eq("projects"), any());
+        org.junit.jupiter.api.Assertions.assertThrows(
+                SecurityException.class,
+                () -> runPromise(() -> repository.findAll())
+        );
     }
 
     record SampleEntity(UUID id, String name, String status) implements Identifiable<UUID> {

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.EnumSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -63,17 +64,17 @@ class GoogleAdsConnectorReadinessStateTest {
         }
 
         @Test
-        @DisplayName("AUTH_FAILED cannot transition to READY without re-authentication")
-        void authFailedCannotTransitionToReady() {
+        @DisplayName("AUTH_FAILED can transition to READY with re-authentication")
+        void authFailedCanTransitionToReady() {
             GoogleAdsConnectorReadinessStateMachine machine = new GoogleAdsConnectorReadinessStateMachine();
-            assertFalse(machine.canTransition(GoogleAdsConnectorReadinessState.AUTH_FAILED, GoogleAdsConnectorReadinessState.READY));
+            assertTrue(machine.canTransition(GoogleAdsConnectorReadinessState.AUTH_FAILED, GoogleAdsConnectorReadinessState.READY));
         }
 
         @Test
-        @DisplayName("ENVIRONMENT_BLOCKED is a terminal state")
-        void environmentBlockedIsTerminal() {
+        @DisplayName("ENVIRONMENT_BLOCKED can transition to READY when unblocked")
+        void environmentBlockedCanTransitionToReady() {
             GoogleAdsConnectorReadinessStateMachine machine = new GoogleAdsConnectorReadinessStateMachine();
-            assertTrue(machine.isTerminal(GoogleAdsConnectorReadinessState.ENVIRONMENT_BLOCKED));
+            assertTrue(machine.canTransition(GoogleAdsConnectorReadinessState.ENVIRONMENT_BLOCKED, GoogleAdsConnectorReadinessState.READY));
         }
     }
 }

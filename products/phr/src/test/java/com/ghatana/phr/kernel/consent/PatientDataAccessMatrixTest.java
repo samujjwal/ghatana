@@ -301,7 +301,7 @@ class PatientDataAccessMatrixTest {
             ConsentService.ConsentCheckRequest request = new ConsentService.ConsentCheckRequest(
                 UUID.randomUUID().toString(),
                 TENANT_ID,
-                new ConsentService.ActorContext(FCHV_ID, ConsentService.ActorType.FCHV, null, null, null, Set.of("immunization.write")),
+                new ConsentService.ActorContext(FCHV_ID, ConsentService.ActorType.FCHV, null, null, null, Set.of("clinical.write")),
                 new ConsentService.TargetResource(PATIENT_ID, "Immunization", "imm-001", PhrDataClassification.C3),
                 ConsentService.ConsentAction.MEDICATION_WRITE,
                 ConsentService.PurposeOfUse.CARE_DELIVERY,
@@ -369,7 +369,11 @@ class PatientDataAccessMatrixTest {
             // Simplified access logic for matrix testing
             boolean allowed = evaluateAccess(request);
             ReasonCode reasonCode = determineReasonCode(request, allowed);
-            return Promise.of(ConsentAccessDecision.allow(reasonCode, "grant-001", CacheStatus.MISS, null));
+            if (allowed) {
+                return Promise.of(ConsentAccessDecision.allow(reasonCode, "grant-001", CacheStatus.MISS, null));
+            } else {
+                return Promise.of(ConsentAccessDecision.deny(reasonCode, CacheStatus.MISS));
+            }
         }
 
         @Override

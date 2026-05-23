@@ -62,6 +62,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private final AuditService auditService;
     private final PreviewRuntimeService previewRuntimeService;
     private final PlatformRunStatusService platformRunStatusService;
+    private final PhaseActionAuthorizationService phaseActionAuthorizationService;
     @Nullable
     private final com.ghatana.audit.AuditLogger auditLogger;
 
@@ -134,6 +135,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             ? previewRuntimeService
             : new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
         this.platformRunStatusService = new DataCloudPlatformRunStatusService(dataCloudClient);
+        this.phaseActionAuthorizationService = new PhaseActionAuthorizationService();
         this.auditLogger = auditLogger;
     }
 
@@ -165,6 +167,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             ? previewRuntimeService
             : new DegradedPreviewRuntimeService("PREVIEW_RUNTIME_SERVICE_UNAVAILABLE");
         this.platformRunStatusService = platformRunStatusService;
+        this.phaseActionAuthorizationService = new PhaseActionAuthorizationService();
         this.auditLogger = auditLogger;
     }
 
@@ -252,9 +255,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                                     projectId,
                                     phase
                             ).then(platformRunStatus -> {
-                List<PhasePacket.PhaseAction> actions = determineAvailableActions(
-                        phase,
-                        projectId,
+                List<PhasePacket.PhaseAction> actions = phaseActionAuthorizationService.determineAvailableActions(
                         capabilities,
                         tier,
                         enabledFlags,
@@ -689,89 +690,6 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     }
 
     /**
-     * Determines available actions based on phase, role, permissions, and tier.
-     */
-    private List<PhasePacket.PhaseAction> determineAvailableActions(
-            String phase,
-            String projectId,
-            CapabilityEvaluationService.CapabilityModel capabilities,
-            PhasePacket.TenantTier tier,
-            Set<String> enabledFlags,
-            PhasePacket.PhaseReadiness readiness,
-            List<PhasePacket.PhaseBlocker> blockers,
-            List<PhasePacket.GovernanceRecord> governance
-    ) {
-        try {
-            List<PhasePacket.PhaseAction> actions = new ArrayList<>();
-            boolean policyAllowed = governance.stream()
-                    .noneMatch(record -> "DENIED".equalsIgnoreCase(record.type()));
-            String blockerReason = blockers.isEmpty()
-                    ? null
-                    : blockers.size() + " blocker(s) must be resolved before continuing";
-
-            actions.add(new PhasePacket.PhaseAction(
-                "advance-phase",
-                "Advance to Next Phase",
-                "Move to the next lifecycle phase",
-                capabilities.canUpdate() && readiness.canAdvance() && policyAllowed && enabledFlags.contains("phase.advance"),
-                firstDisabledReason(
-                        capabilities.canUpdate() ? null : "Update capability is required",
-                        readiness.canAdvance() ? null : blockerReason,
-                        policyAllowed ? null : "Policy denied this phase transition",
-                        enabledFlags.contains("phase.advance") ? null : "Phase advance entitlement is not enabled"
-                ),
-                "phase:advance",
-                Map.of("nextPhase", Optional.ofNullable(readiness.nextPhase()).orElse(""))
-            ));
-
-            actions.add(new PhasePacket.PhaseAction(
-                "configure-phase",
-                "Configure Phase",
-                "Configure phase-specific settings",
-                capabilities.canApprove() && policyAllowed && enabledFlags.contains("phase.governance.configure"),
-                firstDisabledReason(
-                        capabilities.canApprove() ? null : "Approval capability is required",
-                        policyAllowed ? null : "Policy denied governance configuration",
-                        enabledFlags.contains("phase.governance.configure") ? null : "Governance configuration entitlement is not enabled"
-                ),
-                "phase:configure",
-                Map.of()
-            ));
-
-            boolean canExportReport = tier == PhasePacket.TenantTier.ENTERPRISE
-                    && capabilities.canRead()
-                    && enabledFlags.contains("phase.report.export");
-            actions.add(new PhasePacket.PhaseAction(
-                "export-report",
-                "Export Phase Report",
-                "Export detailed phase report",
-                canExportReport,
-                firstDisabledReason(
-                        tier == PhasePacket.TenantTier.ENTERPRISE ? null : "Enterprise tier is required",
-                        capabilities.canRead() ? null : "Read capability is required",
-                        enabledFlags.contains("phase.report.export") ? null : "Report export entitlement is not enabled"
-                ),
-                "report:export",
-                Map.of()
-            ));
-            
-            return actions;
-        } catch (Exception e) {
-            log.error("Error determining available actions: phase={}, projectId={}", phase, projectId, e);
-            return List.of();
-        }
-    }
-
-    private String firstDisabledReason(String... reasons) {
-        for (String reason : reasons) {
-            if (reason != null && !reason.isBlank()) {
-                return reason;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Calculates phase readiness based on blockers and project state.
      */
     private PhasePacket.PhaseReadiness calculatePhaseReadiness(
@@ -804,8 +722,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                         .forEach(missingPrerequisites::add);
             }
 
-            boolean policyAllowed = governance.stream()
-                    .noneMatch(record -> "DENIED".equalsIgnoreCase(record.type()));
+            boolean policyAllowed = governance.stream().noneMatch(this::isPolicyDenied);
             if (!policyAllowed) {
                 missingPrerequisites.add("Policy approval");
             }
@@ -869,6 +786,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
 
     private double roundScore(double score) {
         return Math.max(0.0, Math.min(1.0, Math.round(score * 100.0) / 100.0));
+    }
+
+    private boolean isPolicyDenied(PhasePacket.GovernanceRecord record) {
+        return "DENIED".equalsIgnoreCase(record.outcome())
+                || "POLICY_DENIAL".equalsIgnoreCase(record.type());
     }
 
     /**

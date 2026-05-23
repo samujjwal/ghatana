@@ -54,19 +54,22 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @BeforeEach
-    void setUp() { 
-        MockitoAnnotations.openMocks(this); 
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
 
-        ObjectMapper objectMapper = new ObjectMapper(); 
-        objectMapper.registerModule(new JavaTimeModule()); 
-        mapper = new YappcEntityMapper(objectMapper); 
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mapper = new YappcEntityMapper(objectMapper);
 
-        repository = new YappcDataCloudRepository<>( 
+        repository = new YappcDataCloudRepository<>(
             client,
             mapper,
             "test_collection",
             TestEntity.class
         );
+
+        // Set tenant context to avoid SecurityException from repository methods
+        TenantContext.setCurrentTenantId("test-tenant");
     }
 
     @Test

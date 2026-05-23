@@ -146,7 +146,7 @@ function phaseBlockerSeverity(severity: string): Blocker['severity'] {
 function phasePacketToPreview(packet: PhaseCockpitPacket): PhaseTransitionPreviewSnapshot {
   return {
     projectId: packet.projectId,
-    currentPhase: packet.lifecyclePhase ?? packet.phase.toUpperCase(),
+    currentPhase: packet.lifecyclePhase ?? '',
     nextPhase: packet.readiness.nextPhase ?? null,
     canAdvance: packet.readiness.canAdvance,
     readiness: Math.round(packet.readiness.completenessScore * 100),
@@ -337,6 +337,11 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       return;
     }
 
+    if (phase === 'validate' && packet && (!packet.lifecyclePhase || !packet.readiness.nextPhase)) {
+      setActionError(t('phaseCockpit.errors.lifecyclePreviewUnavailable'));
+      return;
+    }
+
     actionMutation.mutate({
       phase,
       projectId,
@@ -387,7 +392,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       runId: actionResult.runId,
       decision,
       actorId: currentUser.id,
-      reason: `Reviewed from mounted Generate cockpit by ${currentUser.email ?? currentUser.id}.`,
+      reason: t('phaseCockpit.generateReview.reason', { reviewer: currentUser.email ?? currentUser.id }),
     });
   };
 

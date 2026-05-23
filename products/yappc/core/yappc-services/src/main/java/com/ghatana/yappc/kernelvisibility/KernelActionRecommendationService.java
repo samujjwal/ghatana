@@ -16,6 +16,7 @@
 
 package com.ghatana.yappc.kernelvisibility;
 
+import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -71,6 +72,16 @@ public final class KernelActionRecommendationService {
      */
     public KernelActionRecommendationService(@NotNull KernelHealthSnapshotService healthService) {
         this.healthService = healthService;
+    }
+
+    /**
+     * Constructs a recommendation service using Data Cloud lifecycle truth.
+     *
+     * @param dataCloudClient Data Cloud client
+     * @param tenantId tenant identifier
+     */
+    public KernelActionRecommendationService(@NotNull DataCloudClient dataCloudClient, @NotNull String tenantId) {
+        this(new KernelHealthSnapshotService(dataCloudClient, tenantId));
     }
 
     /**

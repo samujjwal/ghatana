@@ -303,4 +303,5 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "phase.report.export");
     }
+
 }

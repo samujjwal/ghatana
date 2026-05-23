@@ -207,43 +207,46 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Repository uses retry policy and circuit breaker together")
-    void repository_usesRetryAndCircuitBreaker() { 
-        AtomicInteger attemptCount = new AtomicInteger(0); 
-        
-        when(mockClient.findById(anyString(), anyString(), anyString())) 
-                .thenAnswer(invocation -> { 
-                    int attempt = attemptCount.incrementAndGet(); 
-                    if (attempt == 1) { 
+    void repository_usesRetryAndCircuitBreaker() {
+        AtomicInteger attemptCount = new AtomicInteger(0);
+
+        when(mockClient.findById(anyString(), anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    int attempt = attemptCount.incrementAndGet();
+                    if (attempt == 1) {
                         return Promise.ofException(new RuntimeException("First failure"));
                     }
-                    if (attempt == 2) { 
+                    if (attempt == 2) {
                         return Promise.ofException(new RuntimeException("Second failure"));
                     }
-                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123")))); 
+                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123"))));
                 });
-        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); 
+        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity);
 
         CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
-                .failureThreshold(5) 
-                .successThreshold(2) 
-                .resetTimeout(Duration.ofSeconds(30)) 
-                .build(); 
+                .failureThreshold(5)
+                .successThreshold(2)
+                .resetTimeout(Duration.ofSeconds(30))
+                .build();
 
-        RetryPolicy retryPolicy = RetryPolicy.builder() 
-                .maxRetries(2) 
-                .initialDelay(Duration.ofMillis(10)) 
-                .maxDelay(Duration.ofMillis(50)) 
-                .build(); 
+        RetryPolicy retryPolicy = RetryPolicy.builder()
+                .maxRetries(2)
+                .initialDelay(Duration.ofMillis(10))
+                .maxDelay(Duration.ofMillis(50))
+                .build();
 
-        YappcDataCloudRepository<TestEntity> repository = new YappcDataCloudRepository<>( 
+        YappcDataCloudRepository<TestEntity> repository = new YappcDataCloudRepository<>(
             mockClient, mockMapper, COLLECTION, TestEntity.class, null, null, retryPolicy, circuitBreaker);
 
-        Eventloop eventloop = eventloop(); 
-        Optional<TestEntity> result = runPromise(() -> repository.findById(testEntity.getId())); 
+        Eventloop eventloop = eventloop();
+        Optional<TestEntity> result = runPromise(() -> {
+            TenantContext.setCurrentTenantId(TENANT_ID);
+            return repository.findById(testEntity.getId());
+        });
 
-        assertThat(result).isPresent(); 
-        assertThat(result.get().getId()).isEqualTo(testEntity.getId()); 
-        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries 
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(testEntity.getId());
+        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries
     }
 
     // Test entity implementation
