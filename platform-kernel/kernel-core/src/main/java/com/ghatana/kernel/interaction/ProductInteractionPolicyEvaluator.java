@@ -44,6 +44,10 @@ public interface ProductInteractionPolicyEvaluator {
     /**
      * Comprehensive policy evaluator with auth, tenant, workspace, purpose, actor, and consent checks.
      * All checks are enforced at the broker level before handler dispatch.
+     *
+     * <p>P0-02 hardening: This evaluator no longer trusts caller-supplied "authorized" or "consentGranted"
+     * flags. Those flags are removed by the ProductInteractionPolicyContextResolver before evaluation.
+     * Authorization and consent must be resolved by trusted platform providers.</p>
      */
     class ComprehensivePolicyEvaluator implements ProductInteractionPolicyEvaluator {
         @Override
@@ -87,16 +91,16 @@ public interface ProductInteractionPolicyEvaluator {
                 return ProductInteractionPolicyDecision.denied("product_interaction.purpose_required");
             }
 
-            // Authorization check - explicit authorization flag
+            // P0-02: Reject caller-supplied authorization flag - must be resolved by trusted provider
             String authorized = policyContext.get("authorized");
-            if (authorized != null && !Boolean.parseBoolean(authorized)) {
-                return ProductInteractionPolicyDecision.denied("product_interaction.unauthorized");
+            if (authorized != null) {
+                return ProductInteractionPolicyDecision.denied("product_interaction.caller_supplied_auth_not_trusted");
             }
 
-            // Consent check - required for healthcare and privacy-sensitive interactions
+            // P0-02: Reject caller-supplied consent flag - must be resolved by trusted provider
             String consentGranted = policyContext.get("consentGranted");
-            if (consentGranted != null && !Boolean.parseBoolean(consentGranted)) {
-                return ProductInteractionPolicyDecision.denied("product_interaction.consent_denied");
+            if (consentGranted != null) {
+                return ProductInteractionPolicyDecision.denied("product_interaction.caller_supplied_consent_not_trusted");
             }
 
             // All checks passed

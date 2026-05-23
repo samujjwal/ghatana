@@ -9,7 +9,7 @@
  * @doc.layer platform
  */
 
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { Typography, Input, Button, Card, CardContent, CardHeader, Badge } from '@ghatana/design-system';
 import type { ComponentInstance, NodeId } from '@ghatana/ui-builder';
@@ -21,16 +21,41 @@ export interface PropertyInspectorProps {
   onPropertyUpdate: (instanceId: NodeId, prop: string, value: unknown) => void;
 }
 
+interface PropertyParseResult {
+  readonly success: boolean;
+  readonly value?: unknown;
+  readonly error?: string;
+}
+
+function parsePropertyInput(input: string): PropertyParseResult {
+  const trimmed = input.trim();
+  const requiresJsonParse = /^[{["-]|\b(?:true|false|null)\b|-?\d/u.test(trimmed);
+  if (!requiresJsonParse) {
+    return { success: true, value: input };
+  }
+
+  try {
+    return { success: true, value: JSON.parse(trimmed) };
+  } catch {
+    return {
+      success: false,
+      error: 'Enter valid JSON, or use plain text without JSON delimiters.',
+    };
+  }
+}
+
 export function PropertyInspector({
   selectedInstance,
   onPropertyUpdate,
 }: PropertyInspectorProps): ReactElement {
   const [editingProp, setEditingProp] = useState<string | null>(null);
   const [propValue, setPropValue] = useState<string>('');
+  const [propError, setPropError] = useState<string | null>(null);
 
   useEffect(() => {
     setEditingProp(null);
     setPropValue('');
+    setPropError(null);
   }, [selectedInstance]);
 
   if (!selectedInstance) {
@@ -53,27 +78,28 @@ export function PropertyInspector({
 
   const startEdit = (prop: string, currentValue: unknown): void => {
     setEditingProp(prop);
-    setPropValue(String(currentValue ?? ''));
+    setPropValue(typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue ?? ''));
+    setPropError(null);
   };
 
   const saveEdit = (): void => {
     if (editingProp) {
-      // Try to parse as JSON, otherwise use as string
-      let value: unknown = propValue;
-      try {
-        value = JSON.parse(propValue);
-      } catch {
-        // Keep as string if not valid JSON
+      const parsed = parsePropertyInput(propValue);
+      if (!parsed.success) {
+        setPropError(parsed.error ?? 'Invalid property value.');
+        return;
       }
-      handlePropChange(editingProp, value);
+      handlePropChange(editingProp, parsed.value);
       setEditingProp(null);
       setPropValue('');
+      setPropError(null);
     }
   };
 
   const cancelEdit = (): void => {
     setEditingProp(null);
     setPropValue('');
+    setPropError(null);
   };
 
   return (
@@ -132,8 +158,13 @@ export function PropertyInspector({
                       <Input
                         data-testid={`builder-property-input-${prop}`}
                         value={propValue}
-                        onChange={(e) => setPropValue(e.target.value)}
+                        onChange={(e) => {
+                          setPropValue(e.target.value);
+                          setPropError(null);
+                        }}
                         className="flex-1"
+                        aria-invalid={propError !== null}
+                        aria-describedby={propError !== null ? `builder-property-error-${prop}` : undefined}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveEdit();
                           if (e.key === 'Escape') cancelEdit();
@@ -143,15 +174,33 @@ export function PropertyInspector({
                       <Button variant="primary" size="sm" onClick={saveEdit} data-testid={`builder-property-save-${prop}`}>
                         Save
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={cancelEdit}>
+                      <Button variant="secondary" size="sm" onClick={cancelEdit} data-testid={`builder-property-cancel-${prop}`}>
                         Cancel
                       </Button>
+                      {propError !== null && (
+                        <p
+                          id={`builder-property-error-${prop}`}
+                          role="alert"
+                          data-testid={`builder-property-validation-${prop}`}
+                          className="text-xs text-red-600"
+                        >
+                          {propError}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div
                       data-testid={`builder-property-value-${prop}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Edit ${prop}`}
                       className="p-2 bg-gray-50 rounded border cursor-pointer hover:bg-gray-100"
                       onClick={() => startEdit(prop, value)}
+                      onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        startEdit(prop, value);
+                      }}
                     >
                       <Typography variant="body1" className="font-mono text-sm">
                         {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}

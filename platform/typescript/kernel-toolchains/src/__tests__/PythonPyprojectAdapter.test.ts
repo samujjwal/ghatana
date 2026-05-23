@@ -49,7 +49,7 @@ describe('PythonPyprojectAdapter', () => {
     await fs.mkdir(path.join(repoRoot, 'products', 'python-service', 'dist'), { recursive: true });
     await fs.writeFile(path.join(repoRoot, 'products', 'python-service', 'dist', 'service-0.1.0.whl'), '');
     const commandRunner = new FakeCommandRunner([
-      { exitCode: 0, stdout: 'Successfully built', stderr: '', durationMs: 30 },
+      { exitCode: 0, stdout: 'Successfully built', stderr: '', durationMs: 30, pid: 9999 },
     ]);
     const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
     const context = createContext(repoRoot);
@@ -93,7 +93,7 @@ describe('PythonPyprojectAdapter', () => {
   it('fails closed when the Python package artifact is missing', async () => {
     await writePyproject(repoRoot);
     const commandRunner = new FakeCommandRunner([
-      { exitCode: 0, stdout: 'Successfully built', stderr: '', durationMs: 30 },
+      { exitCode: 0, stdout: 'Successfully built', stderr: '', durationMs: 30, pid: 9999 },
     ]);
     const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
     const context = createContext(repoRoot);
@@ -107,7 +107,7 @@ describe('PythonPyprojectAdapter', () => {
 
   it('preflight blocks when pyproject.toml is missing', async () => {
     const commandRunner = new FakeCommandRunner([
-      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1 },
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
     ]);
     const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
 
@@ -115,6 +115,148 @@ describe('PythonPyprojectAdapter', () => {
 
     expect(result.status).toBe('blocked');
     expect(result.blockingIssues.some((issue) => issue.includes('pyproject.toml'))).toBe(true);
+  });
+
+  it('P1-02: checks Python version requirements', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.pythonVersion = '>=3.10';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('ready');
+    const versionCheck = result.checks.find((c) => c.checkId === 'python-version');
+    expect(versionCheck?.status).toBe('passed');
+    expect(versionCheck?.message).toContain('3.12.0');
+    expect(versionCheck?.message).toContain('>=3.10');
+  });
+
+  it('P1-02: blocks when Python version does not meet requirements', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.8.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.pythonVersion = '>=3.10';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('blocked');
+    const versionCheck = result.checks.find((c) => c.checkId === 'python-version');
+    expect(versionCheck?.status).toBe('failed');
+    expect(versionCheck?.severity).toBe('critical');
+  });
+
+  it('P1-02: checks for Poetry when poetry environment is configured', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'Poetry 1.8.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.pythonEnvironment = 'poetry';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('ready');
+    const poetryCheck = result.checks.find((c) => c.checkId === 'poetry-version');
+    expect(poetryCheck?.status).toBe('passed');
+  });
+
+  it('P1-02: blocks when Poetry is missing for poetry environment', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 1, stdout: '', stderr: 'poetry not found', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.pythonEnvironment = 'poetry';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('blocked');
+    const poetryCheck = result.checks.find((c) => c.checkId === 'poetry-version');
+    expect(poetryCheck?.status).toBe('failed');
+    expect(poetryCheck?.severity).toBe('critical');
+  });
+
+  it('P1-02: checks for UV when uv environment is configured', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'uv 0.1.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.surfaceConfig.pythonEnvironment = 'uv';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('ready');
+    const uvCheck = result.checks.find((c) => c.checkId === 'uv-version');
+    expect(uvCheck?.status).toBe('passed');
+  });
+
+  it('P1-02: checks for pytest during test phase', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'mypy 1.8.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'ruff 0.1.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'pytest 8.0.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phase = 'test';
+
+    const result = await adapter.preflight(context);
+
+    expect(result.status).toBe('ready');
+    const pytestCheck = result.checks.find((c) => c.checkId === 'pytest-version');
+    expect(pytestCheck?.status).toBe('passed');
+  });
+
+  it('P1-02: uses poetry build commands when poetry environment is configured', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'Poetry 1.8.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phase = 'package';
+    context.surfaceConfig.pythonEnvironment = 'poetry';
+
+    // Call preflight to set environment cache
+    await adapter.preflight(context);
+    const plan = await adapter.plan(context);
+
+    expect(plan[0].command).toEqual(['poetry', 'build']);
+  });
+
+  it('P1-02: uses uv build commands when uv environment is configured', async () => {
+    await writePyproject(repoRoot);
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Python 3.12.0', stderr: '', durationMs: 1, pid: 9999 },
+      { exitCode: 0, stdout: 'uv 0.1.0', stderr: '', durationMs: 1, pid: 9999 },
+    ]);
+    const adapter = new PythonPyprojectAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phase = 'package';
+    context.surfaceConfig.pythonEnvironment = 'uv';
+
+    // Call preflight to set environment cache
+    await adapter.preflight(context);
+    const plan = await adapter.plan(context);
+
+    expect(plan[0].command).toEqual(['uv', 'build']);
   });
 });
 

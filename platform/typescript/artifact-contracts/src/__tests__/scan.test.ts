@@ -234,6 +234,38 @@ describe('ValidationFindingSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('parses generated workspace gate categories', () => {
+    const buildFinding = ValidationFindingSchema.parse({
+      code: 'stage/build',
+      message: 'Generated workspace build failed.',
+      severity: 'error',
+      category: 'build',
+    });
+    const testFinding = ValidationFindingSchema.parse({
+      code: 'stage/test',
+      message: 'Generated workspace tests passed.',
+      severity: 'info',
+      category: 'test',
+    });
+    const previewFinding = ValidationFindingSchema.parse({
+      code: 'stage/preview-render',
+      message: 'Preview smoke passed.',
+      severity: 'info',
+      category: 'preview',
+    });
+    const acquisitionFinding = ValidationFindingSchema.parse({
+      code: 'source-acquisition/archive-filtered',
+      message: 'Archive entry was filtered.',
+      severity: 'warning',
+      category: 'source-acquisition',
+    });
+
+    expect(buildFinding.category).toBe('build');
+    expect(testFinding.category).toBe('test');
+    expect(previewFinding.category).toBe('preview');
+    expect(acquisitionFinding.category).toBe('source-acquisition');
+  });
 });
 
 describe('ValidationPipelineResultSchema', () => {

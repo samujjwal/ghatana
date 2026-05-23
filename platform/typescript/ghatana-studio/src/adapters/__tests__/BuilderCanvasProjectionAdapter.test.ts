@@ -16,10 +16,18 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { builderToCanvas, canvasToBuilder } from '../BuilderCanvasProjectionAdapter.js';
-import type { BuilderCanvasNode } from '../BuilderCanvasProjectionAdapter.js';
+import {
+  builderToCanvas,
+  canvasToBuilder,
+  filterCanvasSelectionToNodeIds,
+  filterValidBuilderCanvasNodes,
+  isBuilderCanvasNode,
+  reconcileCanvasGeometryDeltas,
+} from '../BuilderCanvasProjectionAdapter.js';
+import type { BuilderCanvasNode, CanvasNodeGeometryDelta } from '../BuilderCanvasProjectionAdapter.js';
 import { createBuilderDocument, insertNode } from '@ghatana/ui-builder';
 import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
+import type { HybridCanvasNode } from '@ghatana/canvas';
 
 // ============================================================================
 // Helpers
@@ -154,6 +162,27 @@ describe('builderToCanvas', () => {
       expect(slotEdge).toBeDefined();
       expect((slotEdge?.data as { slotName?: string })?.slotName).toBe('content');
     });
+
+    it('skips stale slot child IDs instead of emitting invalid canvas edges', () => {
+      const base = makeDocumentWithTwoNodes();
+      const buttonId = Object.keys(base.nodes).find((id) => base.nodes[id]?.contractName === 'Button')!;
+      const corruptDoc: BuilderDocument = {
+        ...base,
+        nodes: {
+          ...base.nodes,
+          [buttonId]: {
+            ...base.nodes[buttonId]!,
+            slots: {
+              content: ['missing-child' as NodeId],
+            },
+          },
+        },
+      };
+
+      const { edges } = builderToCanvas(corruptDoc);
+
+      expect(edges.some((edge) => edge.target === 'missing-child')).toBe(false);
+    });
   });
 });
 
@@ -225,6 +254,21 @@ describe('canvasToBuilder', () => {
     );
     expect(cardDocNode).toBeDefined();
   });
+
+  it('ignores non-finite canvas positions instead of corrupting Builder metadata', () => {
+    const base = makeDocumentWithTwoNodes();
+    const { nodes: canvasNodes } = builderToCanvas(base);
+    const buttonNode = canvasNodes.find((node) => node.data.contractName === 'Button');
+    expect(buttonNode).toBeDefined();
+    const invalidNodes: BuilderCanvasNode[] = canvasNodes.map((node) =>
+      node.id === buttonNode!.id ? { ...node, position: { x: Number.NaN, y: 888 } } : node,
+    );
+
+    const updated = canvasToBuilder({ baseDocument: base, canvasNodes: invalidNodes });
+    const buttonDocNode = Object.values(updated.nodes).find((node) => node.contractName === 'Button');
+
+    expect((buttonDocNode?.metadata as { position?: { x: number; y: number } })?.position).toEqual({ x: 100, y: 200 });
+  });
 });
 
 // ============================================================================
@@ -255,5 +299,87 @@ describe('round-trip: builderToCanvas → canvasToBuilder', () => {
     for (const name of originalContracts) {
       expect(roundTrippedContracts).toContain(name);
     }
+  });
+});
+
+// ============================================================================
+// Negative validation
+// ============================================================================
+
+describe('adapter validation boundaries', () => {
+  it('rejects malformed canvas nodes and stale IDs without unsafe casts', () => {
+    const doc = makeDocumentWithTwoNodes();
+    const { nodes } = builderToCanvas(doc);
+    const valid = nodes[0]!;
+    const malformed: HybridCanvasNode<Record<string, unknown>>[] = [
+      {
+        ...valid,
+        id: 'stale-id',
+      },
+      {
+        ...valid,
+        position: { x: Number.POSITIVE_INFINITY, y: 10 },
+      },
+      {
+        ...valid,
+        data: {
+          ...valid.data,
+          nodeId: 'different-node',
+        },
+      },
+      {
+        ...valid,
+        data: {
+          ...valid.data,
+          props: 'not-an-object',
+        },
+      },
+    ];
+
+    expect(malformed.every((node) => !isBuilderCanvasNode(doc, node))).toBe(true);
+    expect(filterValidBuilderCanvasNodes(doc, [valid, ...malformed])).toEqual([valid]);
+  });
+
+  it('filters unknown canvas selections to known Builder node IDs', () => {
+    const doc = makeDocumentWithTwoNodes();
+    const { nodes } = builderToCanvas(doc);
+
+    const result = filterCanvasSelectionToNodeIds(doc, [nodes[0]!.id, 'missing-selection']);
+
+    expect(result).toEqual([nodes[0]!.id]);
+  });
+
+  it('drops geometry deltas with unknown nodes, non-finite positions, or negative sizes', () => {
+    const doc = makeDocumentWithTwoNodes();
+    const { nodes } = builderToCanvas(doc);
+    const validNode = nodes[0]!;
+    const deltas: CanvasNodeGeometryDelta[] = [
+      {
+        canvasNodeId: validNode.id,
+        position: { x: 150, y: 250 },
+      },
+      {
+        canvasNodeId: 'unknown-node',
+        position: { x: 300, y: 400 },
+      },
+      {
+        canvasNodeId: validNode.id,
+        position: { x: Number.NaN, y: 400 },
+      },
+      {
+        canvasNodeId: validNode.id,
+        size: { width: -1, height: 20 },
+      },
+    ];
+
+    const result = reconcileCanvasGeometryDeltas(doc, deltas);
+
+    expect(result).toEqual([
+      {
+        kind: 'update-node-geometry',
+        nodeId: validNode.id,
+        position: { x: 150, y: 250 },
+      },
+    ]);
   });
 });

@@ -1,6 +1,14 @@
 {
-  "generatedAt": "2026-05-22T21:46:48.433Z",
+  "generatedAt": "generated-on-demand",
   "checks": [
+    {
+      "check": "Runtime dependency failure-injection executable",
+      "ok": true
+    },
+    {
+      "check": "Atomic workflow failure-injection executable",
+      "ok": true
+    },
     {
       "check": "Runtime failure-injection posture",
       "ok": true

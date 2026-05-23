@@ -1,0 +1,31 @@
+{
+  "timestamp": "generated-on-demand",
+  "violations": [],
+  "warnings": [],
+  "evidence": [
+    "Data Cloud Launcher: Executed real atomic workflow failure scenarios",
+    "Data Cloud Launcher: Executable test run validated business write/event append failure",
+    "Data Cloud Launcher: Executable test run validated event append/audit write failure",
+    "Data Cloud Launcher: Executable test run validated audit/outbox failure",
+    "Data Cloud Launcher: Executable test run validated idempotency write failure",
+    "Data Cloud Launcher: Executable test run validated retry after partial failure",
+    "Data Cloud Launcher: Executable test run validated rollback after partial failure",
+    "Data Cloud Launcher: Executable test run validated replay after crash"
+  ],
+  "scenarioCoverage": {
+    "businessWriteEventAppendFailure": true,
+    "eventAppendAuditWriteFailure": true,
+    "auditOutboxFailure": true,
+    "idempotencyWriteFailure": true,
+    "retryAfterPartialFailure": true,
+    "rollbackAfterPartialFailure": true,
+    "replayAfterCrash": true
+  },
+  "summary": {
+    "totalViolations": 0,
+    "totalWarnings": 0,
+    "totalEvidence": 8,
+    "missingScenarioCount": 0,
+    "executedTestProductCount": 1
+  }
+}

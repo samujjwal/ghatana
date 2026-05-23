@@ -13,6 +13,7 @@ import type {
 import {
   FileSystemStudioSourceAcquisitionJobStore,
   FileSystemStudioSourceAcquisitionPayloadStore,
+  FileSystemStudioSourceInventoryStore,
   FileSystemStudioSourceWorkspaceWriter,
   HttpStudioRepositoryArchiveFetcher,
   InMemoryStudioSourceWorkspaceWriter,
@@ -428,6 +429,75 @@ describe("file-backed Studio source acquisition adapters", () => {
         fileCount: 1,
       });
       expect(writtenFile).toBe("export const App = true;");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("persists a materialized source inventory with hashes for API retrieval", async () => {
+    const root = await mkdtemp(join(tmpdir(), "ghatana-source-acquisition-"));
+    try {
+      const jobStore = new FileSystemStudioSourceAcquisitionJobStore(
+        join(root, "jobs"),
+      );
+      const inventoryStore = new FileSystemStudioSourceInventoryStore(
+        join(root, "inventory"),
+      );
+      const writer = new FileSystemStudioSourceWorkspaceWriter(
+        join(root, "workspaces"),
+        inventoryStore,
+        fixedClock(),
+      );
+      const jobId = "studio-acquisition:archive:inventory";
+      await jobStore.putJob(createJob(jobId, "archive"));
+      const worker = new StudioSourceAcquisitionWorker(
+        jobStore,
+        writer,
+        fixedClock(),
+      );
+
+      const result = await worker.executeArchive({
+        scope,
+        jobId,
+        fileName: "source.tar",
+        bytes: makeTar([
+          {
+            path: "src/App.tsx",
+            bytes: new TextEncoder().encode("export const App = true;"),
+          },
+          {
+            path: "src/theme.css",
+            bytes: new TextEncoder().encode(".app { color: red; }"),
+          },
+        ]),
+      });
+      const reloadedInventoryStore = new FileSystemStudioSourceInventoryStore(
+        join(root, "inventory"),
+      );
+      const inventory = await reloadedInventoryStore.getSourceInventory(
+        scope,
+        jobId,
+      );
+
+      expect(result.job).toMatchObject({ status: "complete", fileCount: 2 });
+      expect(inventory).toMatchObject({
+        jobId,
+        generatedAt: "2026-05-21T00:00:00.000Z",
+        localWorkspacePath: result.job.localWorkspacePath,
+        fileCount: 2,
+        files: [
+          {
+            relativePath: "src/App.tsx",
+            contentType: "text/tsx",
+            sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          },
+          {
+            relativePath: "src/theme.css",
+            contentType: "text/css",
+            sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          },
+        ],
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

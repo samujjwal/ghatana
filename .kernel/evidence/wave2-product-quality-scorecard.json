@@ -1,12 +1,38 @@
 {
-  "generatedAt": "2026-05-22T21:47:15.625Z",
+  "generatedAt": "generated-on-demand",
+  "artifactAuthoringGateScripts": {
+    "sourceAcquisition": [
+      "check:studio-source-acquisition-worker",
+      "check:studio-production-profile:strict"
+    ],
+    "compilerDecompilerFidelity": [
+      "check:artifact-roundtrip",
+      "check:kernel-authoring-pipeline"
+    ],
+    "studioWorkflow": [
+      "check:studio-artifact-workflow-e2e",
+      "check:studio-deep-interactions"
+    ],
+    "generatedValidation": [
+      "check:generated-artifact-validation-pipeline",
+      "check:artifact-roundtrip"
+    ],
+    "evidencePersistence": [
+      "check:studio-workflow-persistence-contracts"
+    ]
+  },
   "platformGateMap": {
     "a11y": true,
     "productA11yRouteMatrix": true,
     "i18n": true,
     "aiGovernance": true,
     "performanceSlo": true,
-    "runtimeTruth": true
+    "runtimeTruth": true,
+    "artifactSourceAcquisition": true,
+    "artifactCompilerDecompilerFidelity": true,
+    "artifactStudioWorkflow": true,
+    "artifactGeneratedValidation": true,
+    "artifactEvidencePersistence": true
   },
   "productCount": 6,
   "scoreRows": [
@@ -18,11 +44,23 @@
         "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 5,
-        "totalAreas": 5,
+        "passedAreas": 10,
+        "totalAreas": 10,
         "ratio": 1
       }
     },
@@ -34,11 +72,23 @@
         "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 5,
-        "totalAreas": 5,
+        "passedAreas": 10,
+        "totalAreas": 10,
         "ratio": 1
       }
     },
@@ -50,11 +100,23 @@
         "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 5,
-        "totalAreas": 5,
+        "passedAreas": 10,
+        "totalAreas": 10,
         "ratio": 1
       }
     },
@@ -66,11 +128,23 @@
         "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 5,
-        "totalAreas": 5,
+        "passedAreas": 10,
+        "totalAreas": 10,
         "ratio": 1
       }
     },
@@ -79,15 +153,27 @@
       "webSurface": true,
       "area": {
         "a11y": true,
-        "i18n": false,
+        "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 4,
-        "totalAreas": 5,
-        "ratio": 0.8
+        "passedAreas": 10,
+        "totalAreas": 10,
+        "ratio": 1
       }
     },
     {
@@ -98,11 +184,23 @@
         "i18n": true,
         "aiGovernance": true,
         "performanceSlo": true,
-        "runtimeTruth": true
+        "runtimeTruth": true,
+        "artifactSourceAcquisition": true,
+        "artifactCompilerDecompilerFidelity": true,
+        "artifactStudioWorkflow": true,
+        "artifactGeneratedValidation": true,
+        "artifactEvidencePersistence": true
+      },
+      "artifactAuthoring": {
+        "sourceAcquisition": true,
+        "compilerDecompilerFidelity": true,
+        "studioWorkflow": true,
+        "generatedValidation": true,
+        "evidencePersistence": true
       },
       "score": {
-        "passedAreas": 5,
-        "totalAreas": 5,
+        "passedAreas": 10,
+        "totalAreas": 10,
         "ratio": 1
       }
     }

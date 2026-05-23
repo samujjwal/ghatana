@@ -30,6 +30,10 @@
       "types": "./dist/hybrid/index.d.ts",
       "import": "./dist/hybrid/index.js"
     },
+    "./schema": {
+      "types": "./dist/schema/canvas-document.schema.d.ts",
+      "import": "./dist/schema/canvas-document.schema.js"
+    },
     "./topology": {
       "types": "./dist/topology/index.d.ts",
       "import": "./dist/topology/index.js"

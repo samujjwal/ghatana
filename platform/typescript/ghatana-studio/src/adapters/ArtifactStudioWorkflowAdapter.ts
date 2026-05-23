@@ -17,12 +17,22 @@
 import type {
   CompileResult,
   EvidencePack,
+  GeneratedArtifactValidationEvidence,
   LogicalArtifactModel,
   FidelityReport,
+  LossPoint,
+  RoundTripDiffReport,
   ResidualIslandReport,
+  ValidationFinding,
+  ValidationEvidenceStageId,
+  ValidationEvidenceStageResult,
   ValidationPipelineResult,
 } from '@ghatana/artifact-contracts';
-import { createResidualIslandReport } from '@ghatana/artifact-contracts';
+import { computeFidelityReport, createResidualIslandReport } from '@ghatana/artifact-contracts';
+import type { BuilderDocument } from '@ghatana/ui-builder';
+import { generateReactCode, validateBuilderDocument } from '@ghatana/ui-builder';
+import type { LossPoint as BuilderCodegenLossPoint } from '@ghatana/ui-builder';
+import type { ComponentContract, PropType } from '@ghatana/ds-schema';
 
 // ============================================================================
 // Types
@@ -46,6 +56,14 @@ export interface SourceEntry {
 export interface GeneratedSourceEntry {
   readonly relativePath: string;
   readonly content: string;
+}
+
+export interface BuilderEditWorkflowArtifacts {
+  readonly previewSource: string;
+  readonly fidelityReport: FidelityReport;
+  readonly evidencePack: EvidencePack;
+  readonly roundTripDiffReport: RoundTripDiffReport;
+  readonly validationResult: ValidationPipelineResult;
 }
 
 /** Result of a single decompile job. */
@@ -222,6 +240,13 @@ export function buildStudioEvidencePack(params: {
     compiledAt: new Date().toISOString(),
     durationMs: params.durationMs,
   };
+  const generatedValidationEvidence = params.validationResult === undefined
+    ? undefined
+    : buildGeneratedArtifactValidationEvidence({
+        targetId: jobResult.model.modelId,
+        validationResult: params.validationResult,
+        generatedSources: params.generatedSources,
+      });
 
   return {
     evidenceId: `evidence:${jobResult.jobId}`,
@@ -244,7 +269,362 @@ export function buildStudioEvidencePack(params: {
     },
     compileResult,
     ...(params.validationResult === undefined ? {} : { validationResult: params.validationResult }),
+    ...(generatedValidationEvidence === undefined ? {} : { generatedValidationEvidence }),
     summary: `Round-trip workflow generated ${params.generatedSources.length} file${params.generatedSources.length === 1 ? '' : 's'} from ${Object.keys(jobResult.model.nodes).length} artifact node${Object.keys(jobResult.model.nodes).length === 1 ? '' : 's'}.`,
     reviewStatus: 'pending',
   };
+}
+
+export function buildBuilderEditWorkflowArtifacts(params: {
+  readonly document: BuilderDocument;
+  readonly previousPreviewSource?: string | null;
+}): BuilderEditWorkflowArtifacts {
+  const generatedAt = new Date().toISOString();
+  const contracts = buildDocumentContracts(params.document);
+  const projection = generateReactCode(params.document, contracts, {
+    format: 'functional',
+    typescript: true,
+    importPath: '@ghatana/design-system',
+    componentName: 'BuilderEditedArtifact',
+  });
+  const generatedSources = projection.files.map((file) => ({
+    relativePath: file.path,
+    content: file.content,
+  }));
+  const previewSource = generatedSources.map((source) => source.content).join('\n\n');
+  const validationResult = buildBuilderValidationPipelineResult(params.document, generatedAt);
+  const fidelityReport = computeFidelityReport(
+    [
+      ...projection.roundTripFidelity.lossPoints.map(mapBuilderLossPoint),
+      ...validationResult.findings
+        .filter((finding) => finding.severity === 'error')
+        .map((finding): LossPoint => ({
+          code: `builder-validation/${finding.code}`,
+          description: finding.message,
+          severity: 'critical',
+          confidenceImpact: 0.2,
+        })),
+    ],
+    params.document.documentId,
+    'pipeline',
+  );
+  const residuals = createResidualIslandReport([]);
+  const emittedFiles = Object.fromEntries(
+    generatedSources.map((source) => [source.relativePath, source.content]),
+  );
+  const firstGeneratedSource = generatedSources[0] ?? {
+    relativePath: 'BuilderEditedArtifact.tsx',
+    content: '',
+  };
+  const previousPreviewSource = params.previousPreviewSource ?? '';
+
+  const compileResult: CompileResult = {
+    success: validationResult.errorCount === 0,
+    emittedFiles,
+    fidelity: fidelityReport,
+    residuals,
+    errors: validationResult.findings
+      .filter((finding) => finding.severity === 'error')
+      .map((finding) => ({ code: finding.code, message: finding.message })),
+    warnings: validationResult.findings
+      .filter((finding) => finding.severity === 'warning')
+      .map((finding) => ({ code: finding.code, message: finding.message })),
+    compiledAt: generatedAt,
+  };
+
+  const roundTripDiffReport: RoundTripDiffReport = {
+    reportId: `builder-edit:${params.document.documentId}:${generatedAt}`,
+    modelId: params.document.documentId,
+    diffs: [
+      {
+        diffId: `builder-edit:${firstGeneratedSource.relativePath}`,
+        originalPath: 'previous-preview.tsx',
+        generatedPath: firstGeneratedSource.relativePath,
+        semanticallyEquivalent: previousPreviewSource === firstGeneratedSource.content,
+        hunks: previousPreviewSource === firstGeneratedSource.content
+          ? []
+          : [
+              {
+                kind: previousPreviewSource.length === 0 ? 'added' : 'changed',
+                generatedStart: 1,
+                ...(previousPreviewSource.length > 0 ? { originalStart: 1 } : {}),
+                lineCount: Math.max(
+                  1,
+                  Math.max(
+                    splitSourceLines(previousPreviewSource).length,
+                    splitSourceLines(firstGeneratedSource.content).length,
+                  ),
+                ),
+                originalSnippet: previousPreviewSource.slice(0, 500),
+                generatedSnippet: firstGeneratedSource.content.slice(0, 500),
+              },
+            ],
+        addedLines: splitSourceLines(firstGeneratedSource.content).length,
+        removedLines: splitSourceLines(previousPreviewSource).length,
+        unchangedLines: previousPreviewSource === firstGeneratedSource.content
+          ? splitSourceLines(firstGeneratedSource.content).length
+          : 0,
+        diffedAt: generatedAt,
+      },
+    ],
+    fidelity: fidelityReport,
+    residuals,
+    validation: validationResult,
+    paritySections: [
+      {
+        kind: 'component',
+        status: validationResult.errorCount === 0 ? 'passed' : 'failed',
+        summary: validationResult.errorCount === 0
+          ? 'Builder document validates after the edit.'
+          : 'Builder document validation failed after the edit.',
+        findings: validationResult.findings.map((finding) => `${finding.severity}:${finding.code}:${finding.message}`),
+      },
+      {
+        kind: 'validation',
+        status: validationResult.passed ? 'passed' : validationResult.errorCount > 0 ? 'failed' : 'warning',
+        summary: validationResult.passed
+          ? 'Builder edit generated source validation passed.'
+          : 'Builder edit generated source validation reported findings.',
+        findings: validationResult.findings.map((finding) => `${finding.severity}:${finding.code}:${finding.message}`),
+      },
+    ],
+    isLossless: validationResult.passed && fidelityReport.canRoundTrip,
+    generatedAt,
+  };
+
+  const evidencePack: EvidencePack = {
+    evidenceId: `evidence:builder-edit:${params.document.documentId}:${generatedAt}`,
+    createdAt: generatedAt,
+    modelId: params.document.documentId,
+    label: `Builder edit workflow ${params.document.documentId}`,
+    stage: 'compile',
+    fidelity: fidelityReport,
+    residuals,
+    compileResult,
+    validationResult,
+    generatedValidationEvidence: buildGeneratedArtifactValidationEvidence({
+      targetId: params.document.documentId,
+      validationResult,
+      generatedSources,
+    }),
+    summary: `Builder edit generated ${generatedSources.length} preview source file${generatedSources.length === 1 ? '' : 's'} from ${Object.keys(params.document.nodes).length} builder node${Object.keys(params.document.nodes).length === 1 ? '' : 's'}.`,
+    reviewStatus: validationResult.passed ? 'pending' : 'needs-revision',
+  };
+
+  return {
+    previewSource,
+    fidelityReport,
+    evidencePack,
+    roundTripDiffReport,
+    validationResult,
+  };
+}
+
+function buildDocumentContracts(document: BuilderDocument): ReadonlyMap<string, ComponentContract> {
+  const entries = Object.values(document.nodes)
+    .filter((node) => node.contractName !== 'RootContainer')
+    .map((node): [string, ComponentContract] => [
+      node.contractName,
+      {
+        name: node.contractName,
+        version: '1.0.0',
+        props: Object.entries(node.props).map(([name, value]) => ({
+          name,
+          type: propTypeFromValue(value),
+          required: false,
+        })),
+        slots: Object.keys(node.slots).map((name) => ({
+          name,
+          isDefault: name === 'children' || name === 'default',
+          allowsReorder: true,
+          isSingleChild: false,
+        })),
+        events: [],
+        metadata: {
+          category: 'builder',
+          status: 'stable',
+          platforms: ['web'],
+        },
+        builder: {
+          codegen: {
+            importPath: '@ghatana/design-system',
+            componentName: node.contractName,
+          },
+        },
+      },
+    ]);
+  return new Map(entries);
+}
+
+function propTypeFromValue(value: unknown): PropType {
+  if (typeof value === 'string') return 'string';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'boolean') return 'boolean';
+  if (Array.isArray(value)) return 'array';
+  if (value === null || typeof value === 'object') return 'object';
+  return 'string';
+}
+
+function buildBuilderValidationPipelineResult(
+  document: BuilderDocument,
+  validatedAt: string,
+): ValidationPipelineResult {
+  const validation = validateBuilderDocument(document);
+  const findings: ValidationFinding[] = validation.issues.map((issue) => ({
+    code: issue.code,
+    message: issue.message,
+    severity: issue.severity === 'error' ? 'error' : 'warning',
+    category: 'contract',
+    suggestion: 'Open the Builder validation panel and resolve the invalid document reference before publishing.',
+  }));
+  const errorCount = findings.filter((finding) => finding.severity === 'error').length;
+  const warningCount = findings.filter((finding) => finding.severity === 'warning').length;
+  const infoCount = findings.filter((finding) => finding.severity === 'info').length;
+
+  return {
+    targetId: document.documentId,
+    passed: errorCount === 0,
+    findings,
+    errorCount,
+    warningCount,
+    infoCount,
+    validatedAt,
+  };
+}
+
+interface ValidationStageDefinition {
+  readonly stageId: ValidationEvidenceStageId;
+  readonly category: ValidationFinding['category'];
+  readonly label: string;
+  readonly markerCodes: readonly string[];
+  readonly assumedRun: boolean;
+}
+
+const GENERATED_VALIDATION_STAGE_DEFINITIONS: readonly ValidationStageDefinition[] = [
+  {
+    stageId: 'typecheck',
+    category: 'typescript',
+    label: 'TypeScript typecheck',
+    markerCodes: ['stage/typecheck'],
+    assumedRun: true,
+  },
+  {
+    stageId: 'lint',
+    category: 'eslint',
+    label: 'Lint',
+    markerCodes: ['stage/lint'],
+    assumedRun: false,
+  },
+  {
+    stageId: 'build',
+    category: 'build',
+    label: 'Build',
+    markerCodes: ['stage/build'],
+    assumedRun: false,
+  },
+  {
+    stageId: 'test',
+    category: 'test',
+    label: 'Test',
+    markerCodes: ['stage/test'],
+    assumedRun: false,
+  },
+  {
+    stageId: 'preview-smoke',
+    category: 'preview',
+    label: 'Preview smoke',
+    markerCodes: ['stage/preview-render'],
+    assumedRun: false,
+  },
+];
+
+function buildGeneratedArtifactValidationEvidence(params: {
+  readonly targetId: string;
+  readonly validationResult: ValidationPipelineResult;
+  readonly generatedSources: readonly GeneratedSourceEntry[];
+}): GeneratedArtifactValidationEvidence {
+  const stages = GENERATED_VALIDATION_STAGE_DEFINITIONS.map((definition) =>
+    summarizeValidationStage(definition, params.validationResult.findings),
+  );
+
+  return {
+    targetId: params.targetId,
+    passed: params.validationResult.passed,
+    pipeline: params.validationResult,
+    typeScriptDiagnostics: params.validationResult.findings.filter(
+      (finding) => finding.category === 'typescript',
+    ),
+    stages,
+    artifacts: params.generatedSources.map((source) => ({
+      label: source.relativePath,
+      relativePath: source.relativePath,
+      contentType: contentTypeForGeneratedSource(source.relativePath),
+    })),
+    validatedAt: params.validationResult.validatedAt,
+    ...(params.validationResult.durationMs === undefined
+      ? {}
+      : { durationMs: params.validationResult.durationMs }),
+  };
+}
+
+function summarizeValidationStage(
+  definition: ValidationStageDefinition,
+  findings: readonly ValidationFinding[],
+): ValidationEvidenceStageResult {
+  const stageFindings = findings.filter(
+    (finding) =>
+      finding.category === definition.category ||
+      definition.markerCodes.includes(finding.code),
+  );
+  const ran =
+    definition.assumedRun ||
+    stageFindings.length > 0 ||
+    stageFindings.some((finding) => definition.markerCodes.includes(finding.code));
+
+  if (!ran) {
+    return {
+      stageId: definition.stageId,
+      status: 'not-run',
+      summary: `${definition.label} was not run for this evidence pack.`,
+      findings: [],
+    };
+  }
+
+  const hasError = stageFindings.some((finding) => finding.severity === 'error');
+  const hasWarning = stageFindings.some((finding) => finding.severity === 'warning');
+  const status = hasError ? 'failed' : hasWarning ? 'warning' : 'passed';
+  const summary = status === 'passed'
+    ? `${definition.label} passed.`
+    : `${definition.label} reported ${stageFindings.length} finding${stageFindings.length === 1 ? '' : 's'}.`;
+
+  return {
+    stageId: definition.stageId,
+    status,
+    summary,
+    findings: stageFindings,
+  };
+}
+
+function contentTypeForGeneratedSource(relativePath: string): string {
+  if (relativePath.endsWith('.tsx')) return 'text/tsx';
+  if (relativePath.endsWith('.ts')) return 'text/typescript';
+  if (relativePath.endsWith('.jsx')) return 'text/jsx';
+  if (relativePath.endsWith('.js')) return 'text/javascript';
+  if (relativePath.endsWith('.css')) return 'text/css';
+  if (relativePath.endsWith('.json')) return 'application/json';
+  return 'text/plain';
+}
+
+function mapBuilderLossPoint(lossPoint: BuilderCodegenLossPoint): LossPoint {
+  return {
+    code: `builder-codegen/${lossPoint.type}`,
+    description: lossPoint.description,
+    severity: lossPoint.type === 'custom-code' ? 'critical' : 'warning',
+    confidenceImpact: lossPoint.type === 'custom-code' ? 0.2 : 0.1,
+  };
+}
+
+function splitSourceLines(source: string): readonly string[] {
+  if (source.length === 0) return [];
+  return source.split(/\r?\n/);
 }

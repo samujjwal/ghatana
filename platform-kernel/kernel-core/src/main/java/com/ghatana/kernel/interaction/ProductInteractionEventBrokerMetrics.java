@@ -16,7 +16,9 @@ public record ProductInteractionEventBrokerMetrics(
         long totalLatencyMs,
         long maxLatencyMs,
         long dlqCount,
-        long idempotencySkips
+        long idempotencySkips,
+        long subscriberTimeouts,
+        long subscriberRetries
 ) {
     public double averageLatencyMs() {
         return published == 0L ? 0.0D : (double) totalLatencyMs / (double) published;
@@ -28,5 +30,13 @@ public record ProductInteractionEventBrokerMetrics(
 
     public double idempotencySkipRate() {
         return published == 0L ? 0.0D : (double) idempotencySkips / (double) published;
+    }
+
+    public double subscriberTimeoutRate() {
+        return delivered == 0L ? 0.0D : (double) subscriberTimeouts / (double) delivered;
+    }
+
+    public double subscriberRetryRate() {
+        return delivered == 0L ? 0.0D : (double) subscriberRetries / (double) delivered;
     }
 }

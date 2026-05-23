@@ -11,6 +11,7 @@ import com.ghatana.kernel.interaction.ProductInteractionRequest;
 import com.ghatana.kernel.interaction.ProductInteractionStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,13 +33,20 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @TempDir
     Path tempDir;
 
+    private final ExecutorService evidenceExecutor = Executors.newSingleThreadExecutor();
+
+    @AfterEach
+    void tearDownEvidenceExecutor() {
+        evidenceExecutor.shutdownNow();
+    }
+
     @Test
     @DisplayName("DMOS can consume PHR consent status through Kernel interaction broker")
     void dmosConsumesPhrConsentStatusThroughKernelInteractionBroker() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(consentHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -73,7 +81,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(notificationPreferenceHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<NotificationPreferenceInteractionHandler.NotificationPreference> outcome;
@@ -108,7 +116,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(consentHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -149,7 +157,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
                     }
                     return ProductInteractionPolicyDecision.allow();
                 })
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -185,7 +193,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
                 .register(consentHandler())
                 .register(notificationPreferenceHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -219,6 +227,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     void crossProductInteractionBlocksMissingWorkspaceScope() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(consentHandler())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -253,7 +262,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(consentHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -285,7 +294,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
                     }
                     return ProductInteractionPolicyDecision.allow();
                 })
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -311,7 +320,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
                 .register(new HangingConsentHandler())
                 .requestTimeout(Duration.ofMillis(20))
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
-                .evidenceWriter(com.ghatana.kernel.interaction.ProductInteractionEvidenceWriter.noop())
+                .evidenceWriter(evidenceWriter())
                 .build();
 
         ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatus> outcome;
@@ -342,9 +351,8 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("cross-product interaction persists durable evidence with tenant workspace and correlation")
     void crossProductInteractionPersistsDurableEvidence() throws Exception {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         FileProductInteractionEvidenceWriter evidenceWriter =
-                new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), executor);
+                new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), evidenceExecutor);
 
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
             .register(consentHandler())
@@ -374,8 +382,11 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
             assertThat(evidence).contains("\"correlationId\" : \"corr-99\"");
         } finally {
             broker.close();
-            executor.shutdownNow();
         }
+    }
+
+    private FileProductInteractionEvidenceWriter evidenceWriter() {
+        return new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), evidenceExecutor);
     }
 
     private static ProductInteractionRequest<Object> baseConsentRequest(

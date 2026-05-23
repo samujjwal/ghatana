@@ -51,8 +51,9 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
     const pyprojectPath = this.resolvePyprojectPath(context);
     const manifestExists = await exists(pyprojectPath);
     
-    // Detect Python environment strategy
-    this.pythonEnvironmentCache = await this.detectPythonEnvironment(context);
+    // P1-02: Detect Python environment strategy (or use explicit config)
+    const explicitEnv = context.surfaceConfig.pythonEnvironment as PythonEnvironment | undefined;
+    this.pythonEnvironmentCache = explicitEnv ?? await this.detectPythonEnvironment(context);
     
     const checks: AdapterPreflightResult['checks'] = [
       {
@@ -64,19 +65,37 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
         checkedAt,
       },
     ];
+    
+    // P1-02: Check Python version requirements
+    const requiredPythonVersion = context.surfaceConfig.pythonVersion as string | undefined;
     try {
       const result = await this.commandRunner.run(this.pythonCommand(context), ['--version'], {
         cwd: this.repoRoot,
         timeoutMs: 10_000,
       });
-      checks.push({
-        checkId: 'python-version',
-        checkName: 'Python executable',
-        status: result.exitCode === 0 ? 'passed' : 'failed',
-        message: (result.stdout || result.stderr).trim(),
-        ...(result.exitCode === 0 ? {} : { severity: 'critical', remediation: ['Install Python 3'] }),
-        checkedAt,
-      });
+      const versionMatch = result.stdout.match(/Python\s+([\d.]+)/);
+      const installedVersion = versionMatch ? versionMatch[1] : 'unknown';
+      
+      if (requiredPythonVersion && installedVersion !== 'unknown') {
+        const versionCheck = this.checkPythonVersion(installedVersion, requiredPythonVersion);
+        checks.push({
+          checkId: 'python-version',
+          checkName: 'Python executable',
+          status: versionCheck ? 'passed' : 'failed',
+          message: `Python ${installedVersion} (required: ${requiredPythonVersion})`,
+          ...(versionCheck ? {} : { severity: 'critical', remediation: [`Install Python ${requiredPythonVersion}`] }),
+          checkedAt,
+        });
+      } else {
+        checks.push({
+          checkId: 'python-version',
+          checkName: 'Python executable',
+          status: result.exitCode === 0 ? 'passed' : 'failed',
+          message: (result.stdout || result.stderr).trim(),
+          ...(result.exitCode === 0 ? {} : { severity: 'critical', remediation: ['Install Python 3'] }),
+          checkedAt,
+        });
+      }
     } catch (error) {
       checks.push({
         checkId: 'python-version',
@@ -87,6 +106,60 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
         remediation: ['Install Python 3'],
         checkedAt,
       });
+    }
+
+    // P1-02: Check environment-specific tools
+    const env = this.pythonEnvironmentCache ?? 'system';
+    if (env === 'poetry') {
+      try {
+        const poetryResult = await this.commandRunner.run('poetry', ['--version'], {
+          cwd: this.repoRoot,
+          timeoutMs: 10_000,
+        });
+        checks.push({
+          checkId: 'poetry-version',
+          checkName: 'Poetry package manager',
+          status: poetryResult.exitCode === 0 ? 'passed' : 'failed',
+          message: poetryResult.exitCode === 0 ? poetryResult.stdout.trim() : poetryResult.stderr.trim(),
+          ...(poetryResult.exitCode === 0 ? {} : { severity: 'critical', remediation: ['Install Poetry'] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'poetry-version',
+          checkName: 'Poetry package manager',
+          status: 'failed',
+          message: 'Poetry not found',
+          severity: 'critical',
+          remediation: ['Install Poetry: curl -sSL https://install.python-poetry.org | python3 -'],
+          checkedAt,
+        });
+      }
+    } else if (env === 'uv') {
+      try {
+        const uvResult = await this.commandRunner.run('uv', ['--version'], {
+          cwd: this.repoRoot,
+          timeoutMs: 10_000,
+        });
+        checks.push({
+          checkId: 'uv-version',
+          checkName: 'UV package manager',
+          status: uvResult.exitCode === 0 ? 'passed' : 'failed',
+          message: uvResult.exitCode === 0 ? uvResult.stdout.trim() : uvResult.stderr.trim(),
+          ...(uvResult.exitCode === 0 ? {} : { severity: 'critical', remediation: ['Install UV: pip install uv'] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'uv-version',
+          checkName: 'UV package manager',
+          status: 'failed',
+          message: 'UV not found',
+          severity: 'critical',
+          remediation: ['Install UV: pip install uv'],
+          checkedAt,
+        });
+      }
     }
 
     // Check for mypy and ruff if configured
@@ -142,6 +215,34 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
       }
     }
 
+    // P1-02: Check for pytest if test phase
+    if (context.phase === 'test') {
+      try {
+        const pytestResult = await this.commandRunner.run(this.pythonCommand(context), ['-m', 'pytest', '--version'], {
+          cwd: this.repoRoot,
+          timeoutMs: 10_000,
+        });
+        checks.push({
+          checkId: 'pytest-version',
+          checkName: 'pytest test framework',
+          status: pytestResult.exitCode === 0 ? 'passed' : 'failed',
+          message: pytestResult.exitCode === 0 ? pytestResult.stdout.trim() : pytestResult.stderr.trim(),
+          ...(pytestResult.exitCode === 0 ? {} : { severity: 'critical', remediation: ['Install pytest: pip install pytest'] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'pytest-version',
+          checkName: 'pytest test framework',
+          status: 'failed',
+          message: 'pytest not found',
+          severity: 'critical',
+          remediation: ['Install pytest: pip install pytest'],
+          checkedAt,
+        });
+      }
+    }
+
     const blockingIssues = checks.filter((check) => check.status === 'failed' && check.severity === 'critical').map((check) => check.message);
     const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'low').map((check) => check.message);
     return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings };
@@ -163,7 +264,7 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {
     const steps = await this.plan(context);
-    return executePolyglotPlan({
+    const result = await executePolyglotPlan({
       adapterId: this.id,
       context,
       commandRunner: this.commandRunner,
@@ -179,6 +280,13 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
       ),
       timeoutMs: this.resolveTimeoutMs(context),
     });
+
+    // Parse pytest output for structured test results
+    if (context.phase === 'test' && result.stdout) {
+      result.testResults = this.parsePytestOutput(result.stdout);
+    }
+
+    return result;
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
@@ -193,7 +301,9 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
   private mapPhaseToCommands(context: ToolchainAdapterContext): readonly string[][] {
     const python = this.pythonCommand(context);
-    const env = this.pythonEnvironmentCache ?? 'system';
+    // P1-02: Use explicit config, cache, or detect environment
+    const explicitEnv = context.surfaceConfig.pythonEnvironment as PythonEnvironment | undefined;
+    const env = explicitEnv ?? this.pythonEnvironmentCache ?? 'system';
     switch (context.phase) {
       case 'validate':
         const validateCommands = this.configuredCommands(context, 'validateCommands');
@@ -356,5 +466,98 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
     // Default to system
     return 'system';
+  }
+
+  /**
+   * Parse pytest output into structured test results.
+   */
+  private parsePytestOutput(stdout: string): { tests: number; failures: number; skipped: number; durationMs: number } {
+    const result = {
+      tests: 0,
+      failures: 0,
+      skipped: 0,
+      durationMs: 0,
+    };
+
+    // Parse pytest output format
+    const lines = stdout.split('\n');
+    for (const line of lines) {
+      // Match summary line like "10 passed, 2 failed, 1 skipped in 5.23s"
+      const summaryMatch = line.match(/(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+skipped)?(?:\s+in\s+([\d.]+)s)?/);
+      if (summaryMatch) {
+        const [, passed, failed, skipped, duration] = summaryMatch;
+        result.tests = parseInt(passed, 10) + (failed ? parseInt(failed, 10) : 0) + (skipped ? parseInt(skipped, 10) : 0);
+        result.failures = failed ? parseInt(failed, 10) : 0;
+        result.skipped = skipped ? parseInt(skipped, 10) : 0;
+        if (duration) {
+          result.durationMs = Math.round(parseFloat(duration) * 1000);
+        }
+      }
+
+      // Match alternative summary format like "=== 10 passed, 2 failed, 1 skipped ==="
+      const altSummaryMatch = line.match(/===\s*(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+skipped)?\s*===/);
+      if (altSummaryMatch) {
+        const [, passed, failed, skipped] = altSummaryMatch;
+        result.tests = parseInt(passed, 10) + (failed ? parseInt(failed, 10) : 0) + (skipped ? parseInt(skipped, 10) : 0);
+        result.failures = failed ? parseInt(failed, 10) : 0;
+        result.skipped = skipped ? parseInt(skipped, 10) : 0;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * P1-02: Check if installed Python version meets requirements.
+   * Supports semantic version comparison (e.g., ">=3.8", "3.10", "~3.9").
+   */
+  private checkPythonVersion(installed: string, required: string): boolean {
+    const installedParts = installed.split('.').map(Number);
+
+    // Handle simple exact match
+    if (!required.startsWith('>=') && !required.startsWith('~') && !required.startsWith('>')) {
+      return installed === required;
+    }
+
+    // Handle >= operator
+    if (required.startsWith('>=')) {
+      const minParts = required.slice(2).split('.').map(Number);
+      for (let i = 0; i < 3; i++) {
+        const installedPart = installedParts[i] ?? 0;
+        const minPart = minParts[i] ?? 0;
+        if (installedPart > minPart) return true;
+        if (installedPart < minPart) return false;
+      }
+      return true;
+    }
+
+    // Handle ~ operator (compatible release, e.g., ~3.9 means >=3.9,<4.0)
+    if (required.startsWith('~')) {
+      const baseParts = required.slice(1).split('.').map(Number);
+      for (let i = 0; i < 3; i++) {
+        const installedPart = installedParts[i] ?? 0;
+        const basePart = baseParts[i] ?? 0;
+        if (i === 0) {
+          if (installedPart !== basePart) return false;
+        } else {
+          if (installedPart < basePart) return false;
+        }
+      }
+      return true;
+    }
+
+    // Handle > operator
+    if (required.startsWith('>')) {
+      const minParts = required.slice(1).split('.').map(Number);
+      for (let i = 0; i < 3; i++) {
+        const installedPart = installedParts[i] ?? 0;
+        const minPart = minParts[i] ?? 0;
+        if (installedPart > minPart) return true;
+        if (installedPart < minPart) return false;
+      }
+      return false;
+    }
+
+    return false;
   }
 }

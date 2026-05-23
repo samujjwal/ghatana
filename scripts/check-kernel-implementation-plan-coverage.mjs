@@ -49,6 +49,61 @@ function hasRuntimeProductionSignal(gates) {
   return gates.some((gate) => /runtime-profile|smoke|backup|disaster|production/i.test(gate));
 }
 
+// Phase 0: Evidence freshness check - verifies that evidence artifacts are recent
+function checkEvidenceFreshness(gates, evidenceDir) {
+  const FRESHNESS_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const now = Date.now();
+  let freshEvidenceCount = 0;
+  let staleEvidenceCount = 0;
+  let missingEvidenceCount = 0;
+
+  for (const gate of gates) {
+    if (!hasReleaseEvidenceSignal([gate]) && !hasRuntimeProductionSignal([gate])) {
+      continue;
+    }
+
+    // Map gate to expected evidence file
+    const evidenceFile = getEvidenceFileForGate(gate);
+    if (!evidenceFile) continue;
+
+    const evidencePath = path.join(evidenceDir, evidenceFile);
+    if (!existsSync(evidencePath)) {
+      missingEvidenceCount++;
+      continue;
+    }
+
+    const stats = readFileSync(evidencePath, 'utf8');
+    const evidence = JSON.parse(stats);
+    const evidenceTime = new Date(evidence.generatedAt || evidence.timestamp).getTime();
+    const age = now - evidenceTime;
+
+    if (age < FRESHNESS_THRESHOLD_MS) {
+      freshEvidenceCount++;
+    } else {
+      staleEvidenceCount++;
+    }
+  }
+
+  return {
+    freshEvidenceCount,
+    staleEvidenceCount,
+    missingEvidenceCount,
+    totalEvidenceCount: freshEvidenceCount + staleEvidenceCount + missingEvidenceCount,
+    isFresh: staleEvidenceCount === 0 && missingEvidenceCount === 0,
+  };
+}
+
+// Phase 0: Map gate names to expected evidence files
+function getEvidenceFileForGate(gate) {
+  const gateToFileMap = {
+    'check:data-cloud-release-runtime-profile': 'data-cloud-release-runtime-profile.json',
+    'check:interaction-runtime-truth': 'interaction-runtime-truth.json',
+    'check:kernel-lifecycle-truth': 'kernel-lifecycle-truth.json',
+    'check:atomic-workflow-proof': 'atomic-workflow-proof.json',
+  };
+  return gateToFileMap[gate] || null;
+}
+
 function toMaturityDepth({ covered, gates }) {
   const depth = {
     artifactExists: covered,
@@ -65,18 +120,26 @@ function toMaturityDepth({ covered, gates }) {
   if (depth.releaseEvidence) score = 4;
   if (depth.runtimeProductionEvidence) score = 5;
 
+  // Phase 0: Add gate proof type classification
+  const proofTypes = [];
+  if (depth.staticCheck) proofTypes.push('static-analysis');
+  if (depth.behaviorTest) proofTypes.push('behavioral-test');
+  if (depth.releaseEvidence) proofTypes.push('release-evidence');
+  if (depth.runtimeProductionEvidence) proofTypes.push('runtime-production-evidence');
+
   return {
     depth,
     score,
+    proofTypes,
   };
 }
 
 const dimensions = [
-  { id: 1, name: 'Vision alignment', gates: ['check:product-shape-capability-matrix', 'check:doc-claims-evidence', 'check:current-state-claims'] },
+  { id: 1, name: 'Vision alignment', gates: ['check:product-shape-capability-matrix', 'check:kernel-implementation-task-matrix', 'check:doc-claims-evidence', 'check:current-state-claims'] },
   { id: 2, name: 'Product coherence', gates: ['check:product-registry', 'check:product-registry-drift', 'check:platform-product-boundaries', 'check:cross-product-interaction-boundaries'] },
   { id: 3, name: 'Feature completeness', gates: ['check:product-ui-contracts', 'check:data-cloud-platform-provider-readiness', 'check:yappc-platform-provider-readiness', 'check:finance-lifecycle-readiness', 'check:phr-lifecycle-readiness'] },
   { id: 4, name: 'End-to-end workflow completeness', gates: ['check:audited-e2e-workflow', 'check:studio-artifact-workflow-e2e', 'check:cross-product-interaction-flows'] },
-  { id: 5, name: 'Runtime correctness', gates: ['check:data-cloud-release-runtime-profile', 'check:runtime-failure-injection'] },
+  { id: 5, name: 'Runtime correctness', gates: ['check:data-cloud-release-runtime-profile', 'check:runtime-dependency-failure-injection', 'check:runtime-failure-injection'] },
   { id: 6, name: 'Domain correctness', gates: ['check:finance-transaction-workflow-proof', 'check:phr-lifecycle-pilot', 'check:product-domain-invariants'] },
   { id: 7, name: 'Data model correctness', gates: ['check:product-artifact-contracts', 'check:product-deployment-contracts'] },
   { id: 8, name: 'Contract correctness', gates: ['check:openapi-release-quality', 'check:openapi-canonical'] },
@@ -94,9 +157,9 @@ const dimensions = [
   { id: 20, name: 'Implicit AI/ML maturity', gates: ['check:ai-governance-conformance'] },
   { id: 21, name: 'Human-in-the-loop and override control', gates: ['check:ai-governance-conformance', 'check:agentic-lifecycle-action-contracts'] },
   { id: 22, name: 'Observability', gates: ['check:observability-conformance'] },
-  { id: 23, name: 'Reliability and resilience', gates: ['check:runtime-failure-injection'] },
+  { id: 23, name: 'Reliability and resilience', gates: ['check:runtime-dependency-failure-injection', 'check:runtime-failure-injection'] },
   { id: 24, name: 'Error handling and degraded mode', gates: ['check:kernel-lifecycle-truth', 'check:interaction-runtime-truth'] },
-  { id: 25, name: 'Idempotency, retries, replay, rollback', gates: ['check:atomic-workflow-proof'] },
+  { id: 25, name: 'Idempotency, retries, replay, rollback', gates: ['check:atomic-workflow-failure-injection', 'check:atomic-workflow-proof'] },
   { id: 26, name: 'Performance', gates: ['check:interaction-performance', 'check:audited-performance-workflows', 'check:product-slo-budgets'] },
   { id: 27, name: 'Scalability', gates: ['check:cross-product-interaction-flows', 'check:interaction-performance'] },
   { id: 28, name: 'Extensibility and plugin model', gates: ['check:kernel-plugin-interactions', 'check:plugin-interaction-broker'] },
@@ -110,14 +173,14 @@ const dimensions = [
   { id: 36, name: 'Testing depth', gates: ['check:phase8'] },
   { id: 37, name: 'Test quality / no test theater', gates: ['check:test-authenticity'] },
   { id: 38, name: 'CI gate strength', gates: ['check:affected-product-strict-release-profile', 'check:product-release-readiness'] },
-  { id: 39, name: 'Release readiness', gates: ['check:product-release-readiness', 'check:openapi-breaking-changes'] },
+  { id: 39, name: 'Release readiness', gates: ['check:product-release-readiness', 'check:openapi-breaking-changes', 'check:validate-release-evidence'] },
   { id: 40, name: 'Deployment and operations readiness', gates: ['check:data-cloud-release-runtime-profile', 'check:product-environment-contracts'] },
   { id: 41, name: 'Backup, restore, and disaster recovery', gates: ['workflow:data-cloud-release.yml:backup-drill-strict'] },
   { id: 42, name: 'Configuration and secrets management', gates: ['workflow:data-cloud-release.yml:validate-release-config', 'check:secret-default-credentials'] },
-  { id: 43, name: 'Documentation truthfulness', gates: ['check:doc-claims-evidence', 'check:current-state-claims', 'check:doc-truth'] },
+  { id: 43, name: 'Documentation truthfulness', gates: ['check:doc-claims-evidence', 'check:current-state-claims', 'check:doc-truth', 'check:kernel-implementation-task-matrix'] },
   { id: 44, name: 'Migration and deprecation hygiene', gates: ['check:deprecated-imports', 'check:deprecated-packages'] },
   { id: 45, name: 'Cost and operational efficiency', gates: ['check:ai-governance-conformance', 'check:interaction-performance', 'check:product-cost-budgets'] },
-  { id: 46, name: 'Overall production readiness', gates: ['check:atomic-workflow-proof', 'check:affected-product-strict-release-profile', 'check:product-release-readiness'] },
+  { id: 46, name: 'Overall production readiness', gates: ['check:atomic-workflow-proof', 'check:affected-product-strict-release-profile', 'check:product-release-readiness', 'check:validate-release-evidence'] },
   { id: 47, name: 'Overall world-class maturity', gates: ['check:world-class-platform-readiness'] },
 ];
 
@@ -150,6 +213,8 @@ const releaseAreas = [
     requirements: [
       'check:affected-product-strict-release-profile',
       'check:product-release-readiness',
+      'check:kernel-implementation-task-matrix',
+      'check:validate-release-evidence',
       'workflow:product-release.yml:Dry-run release mode',
     ],
   },
@@ -184,6 +249,11 @@ const releaseAreas = [
       'check:product-a11y-route-matrix',
       'check:i18n-conformance',
       'check:audited-performance-workflows',
+      'check:product-slo-budgets',
+      'check:product-cost-budgets',
+      'check:product-domain-invariants',
+      'check:openapi-breaking-changes',
+      'check:validate-release-evidence',
     ],
   },
 ];
@@ -271,6 +341,9 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
 
     const maturity = toMaturityDepth({ covered, gates: dimension.gates });
 
+    // Phase 0: Add evidence freshness check
+    const evidenceFreshness = checkEvidenceFreshness(dimension.gates, evidenceDir);
+
     return {
       id: dimension.id,
       name: dimension.name,
@@ -279,6 +352,8 @@ export function runImplementationPlanCoverageCheck({ writeEvidence = true } = {}
       gateChecks: results,
       maturityDepth: maturity.depth,
       maturityScore: maturity.score,
+      proofTypes: maturity.proofTypes,
+      evidenceFreshness,
     };
   });
 

@@ -12,8 +12,12 @@
 
 import { z } from "zod";
 import { FidelityReportSchema, ResidualIslandReportSchema } from "./fidelity.js";
-import { ValidationPipelineResultSchema } from "./scan.js";
-import { SourceRefSchema } from "./source.js";
+import {
+  AcquisitionJobStatusSchema,
+  ValidationFindingSchema,
+  ValidationPipelineResultSchema,
+} from "./scan.js";
+import { SourceAcquisitionDescriptorSchema, SourceRefSchema } from "./source.js";
 
 // ============================================================================
 // COMPILE RESULT
@@ -100,6 +104,170 @@ export const DecompileResultSchema = z.object({
 export type DecompileResult = z.infer<typeof DecompileResultSchema>;
 
 // ============================================================================
+// VALIDATION AND ACQUISITION EVIDENCE
+// ============================================================================
+
+export const EvidenceGateStatusSchema = z.enum([
+  "passed",
+  "failed",
+  "warning",
+  "not-run",
+  "skipped",
+]);
+
+export type EvidenceGateStatus = z.infer<typeof EvidenceGateStatusSchema>;
+
+export const EvidenceArtifactRefSchema = z.object({
+  /** Human-readable label for this artifact or report. */
+  label: z.string().min(1),
+  /** Durable URI, if stored externally. */
+  uri: z.string().min(1).optional(),
+  /** Workspace-relative path, if materialized locally. */
+  relativePath: z.string().min(1).optional(),
+  /** Media/content type for display and retention policy. */
+  contentType: z.string().min(1).optional(),
+});
+
+export type EvidenceArtifactRef = z.infer<typeof EvidenceArtifactRefSchema>;
+
+export const ValidationEvidenceStageIdSchema = z.enum([
+  "typecheck",
+  "lint",
+  "build",
+  "test",
+  "preview-smoke",
+  "source-acquisition",
+]);
+
+export type ValidationEvidenceStageId = z.infer<typeof ValidationEvidenceStageIdSchema>;
+
+export const ValidationEvidenceStageResultSchema = z.object({
+  /** Stable stage identifier for UI grouping and release gates. */
+  stageId: ValidationEvidenceStageIdSchema,
+  /** Outcome of this validation stage. */
+  status: EvidenceGateStatusSchema,
+  /** Human-readable stage summary. */
+  summary: z.string().min(1),
+  /** Findings emitted by this stage. */
+  findings: z.array(ValidationFindingSchema).default([]),
+  /** Optional runner/tool version for auditability. */
+  runner: z.string().min(1).optional(),
+  /** Optional started timestamp. */
+  startedAt: z.string().datetime().optional(),
+  /** Optional completed timestamp. */
+  completedAt: z.string().datetime().optional(),
+  /** Duration in milliseconds. */
+  durationMs: z.number().nonnegative().optional(),
+  /** Durable report/log reference for this stage. */
+  report: EvidenceArtifactRefSchema.optional(),
+});
+
+export type ValidationEvidenceStageResult = z.infer<typeof ValidationEvidenceStageResultSchema>;
+
+/**
+ * Canonical evidence for generated workspace validation.
+ *
+ * The aggregate ValidationPipelineResult remains available for compatibility,
+ * while this record carries stage-level gate status and durable report refs for
+ * Studio, release gates, and persisted evidence packs.
+ */
+export const GeneratedArtifactValidationEvidenceSchema = z.object({
+  /** ID of the model/compile/round-trip target that was validated. */
+  targetId: z.string().min(1),
+  /** Overall validation outcome. */
+  passed: z.boolean(),
+  /** Aggregate validation pipeline output. */
+  pipeline: ValidationPipelineResultSchema,
+  /** TypeScript diagnostics surfaced separately for fast UI drill-down. */
+  typeScriptDiagnostics: z.array(ValidationFindingSchema).default([]),
+  /** Stage-level validation status for typecheck/lint/build/test/preview. */
+  stages: z.array(ValidationEvidenceStageResultSchema).default([]),
+  /** Generated workspace files and durable validation reports. */
+  artifacts: z.array(EvidenceArtifactRefSchema).default([]),
+  /** ISO-8601 timestamp when this validation evidence was finalized. */
+  validatedAt: z.string().datetime(),
+  /** Duration in milliseconds. */
+  durationMs: z.number().nonnegative().optional(),
+}).superRefine((value, ctx) => {
+  if (value.passed !== value.pipeline.passed) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["passed"],
+      message: "generated validation evidence must agree with pipeline.passed",
+    });
+  }
+
+  const failedStage = value.stages.find((stage) => stage.status === "failed");
+  if (value.passed && failedStage !== undefined) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["stages"],
+      message: `passed validation evidence cannot include failed stage ${failedStage.stageId}`,
+    });
+  }
+});
+
+export type GeneratedArtifactValidationEvidence = z.infer<typeof GeneratedArtifactValidationEvidenceSchema>;
+
+export const PreviewValidationEvidenceSchema = z.object({
+  /** ID of the preview target. */
+  targetId: z.string().min(1),
+  /** Preview execution mode. */
+  mode: z.enum(["safe-static", "isolated-runtime"]),
+  /** Preview smoke outcome. */
+  status: EvidenceGateStatusSchema,
+  /** Human-readable summary. */
+  summary: z.string().min(1),
+  /** Preview findings or captured errors. */
+  findings: z.array(ValidationFindingSchema).default([]),
+  /** Optional rendered preview/report reference. */
+  preview: EvidenceArtifactRefSchema.optional(),
+  /** Sandbox policy snapshot. */
+  sandboxPolicy: z.object({
+    allowScripts: z.boolean(),
+    allowSameOrigin: z.boolean(),
+    allowPopups: z.boolean(),
+    allowForms: z.boolean(),
+    contentSecurityPolicy: z.string().min(1).optional(),
+  }),
+  /** ISO-8601 timestamp when preview evidence was produced. */
+  renderedAt: z.string().datetime(),
+  /** Render duration in milliseconds. */
+  durationMs: z.number().nonnegative().optional(),
+});
+
+export type PreviewValidationEvidence = z.infer<typeof PreviewValidationEvidenceSchema>;
+
+export const SourceAcquisitionEvidenceSchema = z.object({
+  /** Stable acquisition evidence ID or job ID. */
+  acquisitionId: z.string().min(1),
+  /** Original source descriptor with credentials excluded/redacted. */
+  descriptor: SourceAcquisitionDescriptorSchema.optional(),
+  /** Durable acquisition job status. */
+  status: AcquisitionJobStatusSchema,
+  /** Tenant/workspace/project ownership scope. */
+  scope: z.object({
+    tenantId: z.string().min(1),
+    workspaceId: z.string().min(1),
+    projectId: z.string().min(1),
+  }).optional(),
+  /** Number of materialized files. */
+  fileCount: z.number().int().nonnegative().optional(),
+  /** Total accepted source bytes. */
+  totalBytes: z.number().int().nonnegative().optional(),
+  /** Inventory/report pointer for materialized source files. */
+  inventory: EvidenceArtifactRefSchema.optional(),
+  /** Acquisition findings, including safe error summaries. */
+  findings: z.array(ValidationFindingSchema).default([]),
+  /** ISO-8601 timestamp when acquisition evidence was recorded. */
+  recordedAt: z.string().datetime(),
+  /** Correlation ID propagated from API/worker execution. */
+  correlationId: z.string().min(1).optional(),
+});
+
+export type SourceAcquisitionEvidence = z.infer<typeof SourceAcquisitionEvidenceSchema>;
+
+// ============================================================================
 // EVIDENCE PACK
 // ============================================================================
 
@@ -136,6 +304,19 @@ export const EvidencePackSchema = z.object({
    * Generated artifact validation result, if build/typecheck/lint/test gates were run.
    */
   validationResult: ValidationPipelineResultSchema.optional(),
+  /**
+   * Stage-level generated workspace validation evidence, including durable
+   * typecheck/lint/build/test/preview report references.
+   */
+  generatedValidationEvidence: GeneratedArtifactValidationEvidenceSchema.optional(),
+  /**
+   * Preview smoke/runtime evidence for the generated artifact.
+   */
+  previewEvidence: PreviewValidationEvidenceSchema.optional(),
+  /**
+   * Source acquisition evidence for repository/archive-backed workflows.
+   */
+  sourceAcquisitionEvidence: SourceAcquisitionEvidenceSchema.optional(),
   /**
    * Human-readable summary of the overall pipeline outcome.
    */

@@ -15,7 +15,10 @@ public record ProductInteractionBrokerMetrics(
         long timedOut,
         long evidenceFailures,
         long totalLatencyMs,
-        long maxLatencyMs
+        long maxLatencyMs,
+        long cacheHits,
+        long cacheMisses,
+        long cacheEvictions
 ) {
     public double averageLatencyMs() {
         long completed = succeeded + blocked;
@@ -23,5 +26,13 @@ public record ProductInteractionBrokerMetrics(
             return 0.0D;
         }
         return (double) totalLatencyMs / (double) completed;
+    }
+
+    public double cacheHitRate() {
+        long totalCacheLookups = cacheHits + cacheMisses;
+        if (totalCacheLookups == 0L) {
+            return 0.0D;
+        }
+        return (double) cacheHits / (double) totalCacheLookups;
     }
 }

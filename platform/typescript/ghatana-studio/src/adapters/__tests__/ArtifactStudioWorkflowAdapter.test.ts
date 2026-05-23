@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createDecompileJobState,
+  buildBuilderEditWorkflowArtifacts,
   buildDecompileJobResult,
   buildStudioEvidencePack,
   fidelityTrafficLight,
@@ -29,6 +30,7 @@ import {
   createResidualIslandReport,
   computeFidelityReport,
 } from '@ghatana/artifact-contracts';
+import { createBuilderDocument, insertNode } from '@ghatana/ui-builder';
 
 // ============================================================================
 // createDecompileJobState
@@ -164,6 +166,10 @@ describe('buildStudioEvidencePack', () => {
     expect(pack?.decompileResult?.nodeCount).toBe(1);
     expect(pack?.compileResult?.emittedFiles['src/Button.tsx']).toContain('Button');
     expect(pack?.validationResult?.findings[0]?.code).toBe('validation/not-run');
+    expect(pack?.generatedValidationEvidence?.pipeline.targetId).toBe('model-1');
+    expect(pack?.generatedValidationEvidence?.stages.find((stage) => stage.stageId === 'typecheck')?.status).toBe('passed');
+    expect(pack?.generatedValidationEvidence?.stages.find((stage) => stage.stageId === 'build')?.status).toBe('not-run');
+    expect(pack?.generatedValidationEvidence?.artifacts[0]?.relativePath).toBe('src/Button.tsx');
   });
 
   it('returns null when required workflow pieces are absent', () => {
@@ -183,6 +189,43 @@ describe('buildStudioEvidencePack', () => {
     });
 
     expect(pack).toBeNull();
+  });
+});
+
+describe('buildBuilderEditWorkflowArtifacts', () => {
+  it('generates preview, validation, diff, and evidence from a real BuilderDocument edit', () => {
+    const emptyDocument = createBuilderDocument('builder-edit-test', {
+      designSystemId: 'default-design-system',
+      designSystemName: 'Default Design System',
+    });
+    const document = insertNode(
+      emptyDocument,
+      {
+        contractName: 'Button',
+        props: { label: 'Launch' },
+        slots: {},
+        bindings: [],
+        metadata: {
+          name: 'Button',
+          position: { x: 24, y: 48 },
+          size: { width: 160, height: 44 },
+        },
+      },
+      emptyDocument.layout.rootId,
+    );
+
+    const artifacts = buildBuilderEditWorkflowArtifacts({
+      document,
+      previousPreviewSource: 'export const Previous = () => <Button label="Before" />;',
+    });
+
+    expect(artifacts.previewSource).toContain('label="Launch"');
+    expect(artifacts.validationResult.passed).toBe(true);
+    expect(artifacts.fidelityReport.scopeId).toBe(document.documentId);
+    expect(artifacts.evidencePack.compileResult?.emittedFiles['BuilderEditedArtifact.tsx']).toContain('Launch');
+    expect(artifacts.evidencePack.generatedValidationEvidence?.stages.find((stage) => stage.stageId === 'typecheck')?.status).toBe('passed');
+    expect(artifacts.evidencePack.generatedValidationEvidence?.artifacts[0]?.contentType).toBe('text/tsx');
+    expect(artifacts.roundTripDiffReport.diffs[0]?.hunks[0]?.generatedSnippet).toContain('Launch');
   });
 });
 

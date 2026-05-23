@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,45 @@ import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affect
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'product-release-readiness.json');
+const implementationPlanEvidencePath = path.join(evidenceDir, 'kernel-implementation-plan-progress.json');
+const wave2ScorecardPath = path.join(evidenceDir, 'wave2-product-quality-scorecard.json');
+const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
+
+function sleepMs(durationMs) {
+  const signal = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(signal, 0, 0, durationMs);
+}
+
+function writeJsonWithRetry(targetPath, payload, maxAttempts = 8) {
+  let lastError = null;
+  const tempPath = `${targetPath}.tmp`;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // Best-effort cleanup only.
+      }
+
+      const code = String(error?.code ?? '');
+      const retriable = code === 'UNKNOWN' || code === 'EACCES' || code === 'EBUSY' || code === 'EPERM';
+      if (!retriable || attempt === maxAttempts) {
+        throw error;
+      }
+      sleepMs(50 * attempt);
+    }
+  }
+
+  throw lastError;
+}
 
 const releaseScorecardDimensionNames = [
   'Vision alignment',
@@ -61,6 +100,15 @@ const releaseScorecardDimensionNames = [
   'Overall world-class maturity',
 ];
 
+const artifactAuthoringReadinessScripts = [
+  'pnpm:check:kernel-authoring-pipeline',
+  'pnpm:check:artifact-roundtrip',
+  'pnpm:check:generated-artifact-validation-pipeline',
+  'pnpm:check:studio-production-profile:strict',
+  'pnpm:check:studio-source-acquisition-worker',
+  'pnpm:check:studio-workflow-persistence-contracts',
+];
+
 function runCheck(checkRef) {
   if (checkRef.startsWith('pnpm:')) {
     const scriptName = checkRef.slice('pnpm:'.length);
@@ -83,6 +131,76 @@ function runCheck(checkRef) {
     stdio: 'inherit',
     env: process.env,
   });
+}
+
+function readJsonIfExists(filePath) {
+  if (!existsSync(filePath)) {
+    return null;
+  }
+
+  return JSON.parse(readFileSync(filePath, 'utf8'));
+}
+
+function normalizeDimensionName(dimensionName) {
+  return String(dimensionName)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[()]/g, '')
+    .replace(/\s*\/\s*/g, '/')
+    .trim();
+}
+
+function loadDimensionScoreMap() {
+  const evidence = readJsonIfExists(implementationPlanEvidencePath);
+  const map = new Map();
+
+  for (const entry of evidence?.dimensionResults ?? []) {
+    const key = normalizeDimensionName(entry.name);
+    if (typeof entry.maturityScore === 'number') {
+      map.set(key, Number(entry.maturityScore));
+    }
+  }
+
+  return map;
+}
+
+function loadWave2ScoreRows() {
+  const scorecard = readJsonIfExists(wave2ScorecardPath);
+  const rows = new Map();
+
+  for (const row of scorecard?.scoreRows ?? []) {
+    if (typeof row.productId === 'string') {
+      rows.set(row.productId, row);
+    }
+  }
+
+  return rows;
+}
+
+function scoreBoostFromWave2(dimensionName, wave2Row) {
+  if (!wave2Row?.area) {
+    return 0;
+  }
+
+  const normalized = normalizeDimensionName(dimensionName);
+
+  if (normalized === 'accessibility') {
+    return wave2Row.area.a11y === true ? 0.5 : -1;
+  }
+  if (normalized === 'internationalization and localization') {
+    return wave2Row.area.i18n === true ? 0.5 : -1;
+  }
+  if (normalized === 'implicit ai/ml maturity') {
+    return wave2Row.area.aiGovernance === true ? 0.5 : -1;
+  }
+  if (normalized === 'performance') {
+    return wave2Row.area.performanceSlo === true ? 0.5 : -0.5;
+  }
+  if (normalized === 'runtime truth maturity') {
+    return wave2Row.area.runtimeTruth === true ? 0.5 : -0.5;
+  }
+
+  return 0;
 }
 
 const journeyMatrix = [
@@ -112,6 +230,8 @@ const journeyMatrix = [
           'pnpm:check:cross-product-interaction-flows',
           './scripts/check-interaction-runtime-truth.mjs',
           './scripts/check-data-cloud-release-runtime-profile.mjs',
+          './scripts/check-runtime-dependency-failure-injection.mjs',
+          './scripts/check-atomic-workflow-failure-injection.mjs',
           './scripts/check-runtime-failure-injection.mjs',
           './scripts/check-atomic-workflow-proof.mjs',
         ],
@@ -158,8 +278,13 @@ const journeyMatrix = [
           './scripts/generate-wave2-product-quality-scorecard.mjs',
           './scripts/check-product-ci-matrices.mjs',
           './scripts/check-affected-product-strict-release-profile.mjs',
+          './scripts/check-kernel-implementation-task-matrix.mjs',
           './scripts/check-kernel-implementation-plan-coverage.mjs',
         ],
+      },
+      {
+        area: 'artifact-authoring-platform-readiness',
+        scripts: artifactAuthoringReadinessScripts,
       },
     ],
   },
@@ -198,6 +323,10 @@ const releaseAreas = [
       './scripts/check-current-state-claims.mjs',
       './scripts/check-doc-truth.mjs',
     ],
+  },
+  {
+    area: 'artifact-authoring-release-gates',
+    scripts: artifactAuthoringReadinessScripts,
   },
 ];
 
@@ -254,20 +383,57 @@ function discoverAffectedProducts() {
   return result.affectedProducts;
 }
 
-function buildProductScorecard(productId, runs, releaseProfiles, registry) {
+function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
+  const { dimensionScoreMap, wave2Rows, releaseTargetScore } = options;
   const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
-  const dimensions = releaseScorecardDimensionNames.map((dimensionName) => ({
-    dimensionName,
-    score: Number((Math.max(0, Math.min(5, 2 + (runPassRatio * 3)))).toFixed(2)),
-  }));
+  const wave2Row = wave2Rows.get(productId);
+  const dimensions = releaseScorecardDimensionNames.map((dimensionName) => {
+    const normalized = normalizeDimensionName(dimensionName);
+    const baseline = dimensionScoreMap.get(normalized) ?? Number((Math.max(0, Math.min(5, 2 + (runPassRatio * 3)))).toFixed(2));
+    const wave2Delta = scoreBoostFromWave2(dimensionName, wave2Row);
+    const score = Number(Math.max(0, Math.min(5, baseline + wave2Delta)).toFixed(2));
+    return {
+      dimensionName,
+      score,
+      sources: {
+        baseline: Number(baseline.toFixed(2)),
+        wave2Delta,
+      },
+    };
+  });
 
   const blockingGaps = runs
     .filter((run) => run.status !== 0)
     .map((run) => ({
-      severity: 'P1',
+      severity: 'P0',
       gate: run.script,
       reason: 'script-failure',
     }));
+
+  if (wave2Row?.area?.i18n === false) {
+    blockingGaps.push({
+      severity: 'P1',
+      gate: 'check:i18n-conformance',
+      reason: 'wave2-i18n-gap',
+    });
+  }
+
+  const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
+  const belowTargetDimensions = dimensions
+    .filter((dimension) => dimension.score < releaseTargetScore)
+    .map((dimension) => ({
+      dimensionName: dimension.dimensionName,
+      score: dimension.score,
+    }));
+
+  if (belowTargetDimensions.length > 0) {
+    blockingGaps.push({
+      severity: 'P1',
+      gate: 'score-threshold',
+      reason: `dimensions-below-${releaseTargetScore}`,
+      count: belowTargetDimensions.length,
+    });
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -276,24 +442,34 @@ function buildProductScorecard(productId, runs, releaseProfiles, registry) {
     releaseProfiles,
     productMetadata: registry[productId] ?? null,
     dimensions,
-    averageScore: Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2)),
+    averageScore,
+    releaseTargetScore,
+    belowTargetDimensions,
     blockingGaps,
-    skippedGates: [],
+    skippedGates: runs.filter((run) => run.skipped === true).map((run) => run.script),
     evidencePaths: [
       '.kernel/evidence/product-release-readiness.json',
       '.kernel/evidence/kernel-implementation-plan-progress.json',
+      '.kernel/evidence/wave2-product-quality-scorecard.json',
     ],
+    artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
   };
 }
 
 function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
   const registry = loadCanonicalRegistry(repoRoot);
+  const dimensionScoreMap = loadDimensionScoreMap();
+  const wave2Rows = loadWave2ScoreRows();
   const paths = [];
 
   for (const productId of affectedProducts) {
-    const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry);
+    const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry, {
+      dimensionScoreMap,
+      wave2Rows,
+      releaseTargetScore: defaultReleaseTargetScore,
+    });
     const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
-    writeFileSync(productEvidencePath, `${JSON.stringify(scorecard, null, 2)}\n`, 'utf8');
+    writeJsonWithRetry(productEvidencePath, scorecard);
     paths.push(path.relative(repoRoot, productEvidencePath));
   }
 
@@ -305,6 +481,8 @@ export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
     return {
       status: 'passed',
       journeys: journeyMatrix,
+      releaseAreas,
+      artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
       releaseProfiles: releaseProfileIds(),
     };
   }
@@ -318,25 +496,21 @@ function runProductReleaseReadinessCli() {
   const affectedProducts = discoverAffectedProducts();
 
   function failWithEvidence(exitCode, failedScript, reason) {
+    const releaseProfiles = releaseProfileIds();
     mkdirSync(evidenceDir, { recursive: true });
-    writeFileSync(
-      evidencePath,
-      `${JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          pass: false,
-          reason,
-          failedScript,
-          runs,
-          journeyMatrix,
-          releaseAreas,
-          affectedProducts,
-        },
-        null,
-        2,
-      )}\n`,
-      'utf8',
-    );
+    writeJsonWithRetry(evidencePath, {
+      generatedAt: new Date().toISOString(),
+      pass: false,
+      reason,
+      failedScript,
+      runs,
+      journeyMatrix,
+      releaseAreas,
+      artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
+      releaseProfiles,
+      affectedProducts,
+    });
+    writePerProductScorecards(affectedProducts, runs, releaseProfiles);
     if (failedScript) {
       console.error(`Product release readiness failed at ${failedScript}`);
     }
@@ -400,17 +574,18 @@ function runProductReleaseReadinessCli() {
   });
 
   const evidence = {
-      generatedAt: new Date().toISOString(),
-      pass: true,
-      journeyResults,
-      releaseAreaResults,
-      runs,
-      releaseProfiles: releaseProfileIds(),
-      affectedProducts,
-    };
+    generatedAt: new Date().toISOString(),
+    pass: true,
+    journeyResults,
+    releaseAreaResults,
+    runs,
+    artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
+    releaseProfiles: releaseProfileIds(),
+    affectedProducts,
+  };
 
   mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, 'utf8');
+  writeJsonWithRetry(evidencePath, evidence);
   const perProductEvidencePaths = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
 
   console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);

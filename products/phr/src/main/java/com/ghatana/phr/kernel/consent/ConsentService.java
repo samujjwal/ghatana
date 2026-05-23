@@ -268,6 +268,46 @@ public interface ConsentService {
             String patientId,
             CacheInvalidationReason reason) {}
 
+    /**
+     * Request for consent revocation.
+     *
+     * @param requestId    unique correlation identifier
+     * @param tenantId     tenant that owns the patient record
+     * @param actor        the actor requesting revocation
+     * @param target       the target consent being revoked
+     * @param reasonCode   machine-readable reason for revocation
+     * @param effectiveDate when the revocation takes effect
+     */
+    record ConsentRevokeRequest(
+            String requestId,
+            String tenantId,
+            ActorContext actor,
+            TargetResource target,
+            String reasonCode,
+            String effectiveDate) {
+
+        public ConsentRevokeRequest {
+            if (requestId == null || requestId.isBlank())
+                throw new IllegalArgumentException("requestId must not be blank");
+            if (tenantId == null || tenantId.isBlank())
+                throw new IllegalArgumentException("tenantId must not be blank");
+            if (actor == null) throw new IllegalArgumentException("actor must not be null");
+            if (target == null) throw new IllegalArgumentException("target must not be null");
+            if (reasonCode == null || reasonCode.isBlank())
+                throw new IllegalArgumentException("reasonCode must not be blank");
+        }
+    }
+
+    /**
+     * Result of a consent revocation request.
+     *
+     * @param revoked whether the consent was successfully revoked
+     * @param consentId the consent that was revoked
+     */
+    record ConsentRevokeResult(
+            boolean revoked,
+            String consentId) {}
+
     // =========================================================================
     // Contract methods
     // =========================================================================
@@ -313,4 +353,15 @@ public interface ConsentService {
      * @return a Promise completing when the cache has been cleared
      */
     Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request);
+
+    /**
+     * Revokes a consent grant.
+     *
+     * <p>This method handles the revocation of a consent grant and returns
+     * a structured result indicating success or failure.</p>
+     *
+     * @param request the revocation request
+     * @return a Promise resolving to the revocation result
+     */
+    Promise<ConsentRevokeResult> revokeConsent(ConsentRevokeRequest request);
 }

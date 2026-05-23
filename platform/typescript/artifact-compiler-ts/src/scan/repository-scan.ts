@@ -153,6 +153,12 @@ export function scanRepositorySources(
       repositoryGraph: {
         resolvedImportCount: graph.resolvedImportCount,
         unresolvedImportCount: graph.unresolvedImportCount,
+        packageImportCount: graph.packageImportCount,
+        typeOnlyImportCount: graph.typeOnlyImportCount,
+        valueImportCount: graph.valueImportCount,
+        dynamicImportCount: graph.dynamicImportCount,
+        packageImportSpecifiers: graph.packageImportSpecifiers,
+        unresolvedImportSpecifiers: graph.unresolvedImportSpecifiers,
         routeDeclarationCount: intelligence.routeDeclarationCount,
         componentUsageCount: intelligence.componentUsageCount,
         apiCallCount: intelligence.apiCallCount,
@@ -186,6 +192,7 @@ interface ImportStatement {
   readonly fromPath: string;
   readonly moduleSpecifier: string;
   readonly isTypeOnly: boolean;
+  readonly isDynamic: boolean;
 }
 
 interface RepositoryIntelligenceRecord {
@@ -207,8 +214,31 @@ function collectImportStatements(relativePath: string, sourceFile: ts.SourceFile
       fromPath: relativePath,
       moduleSpecifier: statement.moduleSpecifier.text,
       isTypeOnly: statement.importClause?.isTypeOnly ?? false,
+      isDynamic: false,
     });
   }
+
+  const visit = (node: ts.Node): void => {
+    const firstArgument = ts.isCallExpression(node) ? node.arguments[0] : undefined;
+    if (
+      ts.isCallExpression(node) &&
+      firstArgument !== undefined &&
+      ts.isStringLiteralLike(firstArgument) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword
+    ) {
+      imports.push({
+        fromPath: relativePath,
+        moduleSpecifier: firstArgument.text,
+        isTypeOnly: false,
+        isDynamic: true,
+      });
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  ts.forEachChild(sourceFile, visit);
+
   return imports;
 }
 
@@ -389,11 +419,27 @@ function buildRepositoryImportGraph(options: {
   readonly model: LogicalArtifactModel;
   readonly sources: readonly RepositoryScanSourceEntry[];
   readonly imports: readonly ImportStatement[];
-}): { readonly edges: readonly ArtifactEdge[]; readonly resolvedImportCount: number; readonly unresolvedImportCount: number } {
+}): {
+  readonly edges: readonly ArtifactEdge[];
+  readonly resolvedImportCount: number;
+  readonly unresolvedImportCount: number;
+  readonly packageImportCount: number;
+  readonly typeOnlyImportCount: number;
+  readonly valueImportCount: number;
+  readonly dynamicImportCount: number;
+  readonly packageImportSpecifiers: readonly string[];
+  readonly unresolvedImportSpecifiers: readonly string[];
+} {
   const nodeIds = new Set(Object.keys(options.model.nodes));
   const absoluteSourcePaths = new Set(options.sources.map((source) => toAbsolutePath(source.relativePath)));
   let resolvedImportCount = 0;
   let unresolvedImportCount = 0;
+  let packageImportCount = 0;
+  let typeOnlyImportCount = 0;
+  let valueImportCount = 0;
+  let dynamicImportCount = 0;
+  const packageImportSpecifiers = new Set<string>();
+  const unresolvedImportSpecifiers = new Set<string>();
 
   const moduleResolutionHost: ts.ModuleResolutionHost = {
     fileExists: (fileName: string): boolean => absoluteSourcePaths.has(normalizeAbsolutePath(fileName)),
@@ -410,6 +456,19 @@ function buildRepositoryImportGraph(options: {
 
   const edges: ArtifactEdge[] = [];
   for (const importStatement of options.imports) {
+    if (importStatement.isDynamic) {
+      dynamicImportCount += 1;
+    } else if (importStatement.isTypeOnly) {
+      typeOnlyImportCount += 1;
+    } else {
+      valueImportCount += 1;
+    }
+
+    if (!importStatement.moduleSpecifier.startsWith(".")) {
+      packageImportCount += 1;
+      packageImportSpecifiers.add(importStatement.moduleSpecifier);
+    }
+
     const resolvedPath = resolveImportSpecifier(
       importStatement,
       compilerOptions,
@@ -418,20 +477,31 @@ function buildRepositoryImportGraph(options: {
     );
     if (resolvedPath === null || !nodeIds.has(resolvedPath)) {
       unresolvedImportCount += 1;
+      unresolvedImportSpecifiers.add(importStatement.moduleSpecifier);
       continue;
     }
 
     resolvedImportCount += 1;
     edges.push({
-      id: `${importStatement.fromPath}->${resolvedPath}:${importStatement.moduleSpecifier}:${importStatement.isTypeOnly ? "type" : "value"}`,
+      id: `${importStatement.fromPath}->${resolvedPath}:${importStatement.moduleSpecifier}:${importStatement.isDynamic ? "dynamic" : importStatement.isTypeOnly ? "type" : "value"}`,
       fromId: importStatement.fromPath,
       toId: resolvedPath,
-      kind: importStatement.isTypeOnly ? "type-only" : "import",
+      kind: importStatement.isDynamic ? "dynamic-import" : importStatement.isTypeOnly ? "type-only" : "import",
       importSpecifier: importStatement.moduleSpecifier,
     });
   }
 
-  return { edges, resolvedImportCount, unresolvedImportCount };
+  return {
+    edges,
+    resolvedImportCount,
+    unresolvedImportCount,
+    packageImportCount,
+    typeOnlyImportCount,
+    valueImportCount,
+    dynamicImportCount,
+    packageImportSpecifiers: [...packageImportSpecifiers].sort((left, right) => left.localeCompare(right)),
+    unresolvedImportSpecifiers: [...unresolvedImportSpecifiers].sort((left, right) => left.localeCompare(right)),
+  };
 }
 
 function resolveImportSpecifier(

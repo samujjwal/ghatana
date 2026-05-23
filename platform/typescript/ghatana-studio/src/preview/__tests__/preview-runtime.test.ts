@@ -219,6 +219,22 @@ export function Component(): ReactElement {
     expect(logMessages.some(m => m.includes('Test error'))).toBe(true);
   });
 
+  it('renders user-facing design-system placeholder props as preview text', async () => {
+    const source = `
+import { Button } from '@ghatana/design-system';
+
+export function Component(): JSX.Element {
+  return <Button label="Launch" />;
+}
+`.trim();
+
+    const result = await runtime.render(makeBaseRequest({ source }));
+
+    expect(result.success).toBe(true);
+    expect(result.html).toContain('data-ds-component=&quot;Button&quot;');
+    expect(result.html).toContain('Launch');
+  });
+
   it('includes log timestamps', async () => {
     const sourceWithLog = `
 import type { ReactElement } from 'react';

@@ -213,6 +213,10 @@ export const ValidationFindingSchema = z.object({
   category: z.enum([
     "typescript",    // TypeScript compiler error
     "eslint",        // ESLint rule violation
+    "build",         // Build/package gate failure
+    "test",          // Unit/integration/e2e test gate failure
+    "preview",       // Generated preview smoke/runtime finding
+    "source-acquisition", // Repository/archive acquisition finding
     "accessibility", // Accessibility audit finding
     "security",      // OWASP/security gate finding
     "bundle-size",   // Bundle size limit exceeded

@@ -127,7 +127,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
 
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {
     const steps = await this.plan(context);
-    return executePolyglotPlan({
+    const result = await executePolyglotPlan({
       adapterId: this.id,
       context,
       commandRunner: this.commandRunner,
@@ -143,6 +143,36 @@ export class CargoRustAdapter implements ToolchainAdapter {
       ),
       timeoutMs: this.resolveTimeoutMs(context),
     });
+
+    // Parse cargo test output for structured test results
+    if (context.phase === 'test' && result.stdout) {
+      result.testResults = this.parseCargoTestOutput(result.stdout);
+    }
+
+    // Add observability metadata for build/package phases
+    if ((context.phase === 'build' || context.phase === 'package') && result.artifacts.length > 0) {
+      // P1-01: Add target triple and binary metadata to result metadata
+      const targetTriple = await this.detectTargetTriple();
+      const rustVersion = await this.detectRustVersion();
+      result.observability = {
+        ...result.observability,
+        commandId: result.observability?.commandId ?? 'cargo-build',
+        durationMs: result.durationMs,
+        stdoutBytes: result.stdout?.length ?? 0,
+        stderrBytes: result.stderr?.length ?? 0,
+        stdoutTruncated: false,
+        stderrTruncated: false,
+        outputLimitBytes: 10_000_000,
+      };
+      result.metadata = {
+        ...result.metadata,
+        targetTriple,
+        rustVersion,
+        artifactType: this.artifactType(context),
+      };
+    }
+
+    return result;
   }
 
   async validateOutputs(context: ToolchainAdapterContext): Promise<ToolchainOutputValidationResult> {
@@ -266,5 +296,76 @@ export class CargoRustAdapter implements ToolchainAdapter {
     }
 
     return false;
+  }
+
+  /**
+   * Parse cargo test output into structured test results.
+   */
+  private parseCargoTestOutput(stdout: string): { tests: number; failures: number; skipped: number; durationMs: number } {
+    const result = {
+      tests: 0,
+      failures: 0,
+      skipped: 0,
+      durationMs: 0,
+    };
+
+    // Parse cargo test output format
+    const lines = stdout.split('\n');
+    for (const line of lines) {
+      // Match test result lines like "test test_name ... ok"
+      const testMatch = line.match(/^test\s+(.+?)\s+\.\.\.(\w+)$/);
+      if (testMatch) {
+        const [, _testName, status] = testMatch;
+        result.tests++;
+        if (status === 'FAILED') {
+          result.failures++;
+        } else if (status === 'ignored') {
+          result.skipped++;
+        }
+      }
+
+      // Match summary line like "test result: ok. 10 passed; 0 failed; 1 ignored"
+      const summaryMatch = line.match(/test result:\s+(\w+)\.\s+(\d+)\s+passed;\s+(\d+)\s+failed;\s+(\d+)\s+ignored/);
+      if (summaryMatch) {
+        const [, _overallStatus, passed, failed, ignored] = summaryMatch;
+        result.tests = parseInt(passed, 10) + parseInt(failed, 10) + parseInt(ignored, 10);
+        result.failures = parseInt(failed, 10);
+        result.skipped = parseInt(ignored, 10);
+      }
+
+      // Match duration line like "test result: ok. 0.001s"
+      const durationMatch = line.match(/test result:\s+\w+\.\s+([\d.]+)s/);
+      if (durationMatch) {
+        result.durationMs = Math.round(parseFloat(durationMatch[1]) * 1000);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * P1-01: Detect the target triple for the current build.
+   */
+  private async detectTargetTriple(): Promise<string> {
+    try {
+      const result = await this.commandRunner.run('rustc', ['-vV'], { cwd: this.repoRoot, timeoutMs: 10_000 });
+      const match = result.stdout.match(/host:\s+(.+)/);
+      return match ? match[1].trim() : 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  /**
+   * P1-01: Detect the Rust version.
+   */
+  private async detectRustVersion(): Promise<string> {
+    try {
+      const result = await this.commandRunner.run('rustc', ['--version'], { cwd: this.repoRoot, timeoutMs: 10_000 });
+      const match = result.stdout.match(/rustc\s+([\d.]+)/);
+      return match ? match[1] : 'unknown';
+    } catch {
+      return 'unknown';
+    }
   }
 }

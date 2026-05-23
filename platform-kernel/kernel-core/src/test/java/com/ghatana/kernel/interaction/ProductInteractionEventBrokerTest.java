@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(subscriber)
                 .evidenceWriter(evidenceWriter)
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-success")));
@@ -55,6 +57,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
                 .evidenceWriter(evidenceWriter)
+                .brokerMode(BrokerMode.TEST)
                 .build();
         ProductInteractionEventEnvelope<TestEvent> envelope = baseEnvelope("event-file-evidence");
 
@@ -95,6 +98,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     void blocksEventWhenTenantScopeIsMissing() {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(new ProductInteractionEventEnvelope<>(
@@ -127,6 +131,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
                 .policyEvaluator(envelope -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-denied")));
@@ -140,6 +145,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     void defaultPolicyRequiresEventPurpose() {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(new ProductInteractionEventEnvelope<>(
@@ -166,7 +172,9 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks event when no subscriber is registered")
     void blocksEventWhenNoSubscriberIsRegistered() {
-        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder().build();
+        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
+                .brokerMode(BrokerMode.TEST)
+                .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-no-subscriber")));
 
@@ -179,6 +187,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     void blocksEventWhenSubscriberDeliveryFails() {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new FailingSubscriber("consumer-a"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-failed")));
@@ -193,6 +202,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
                 .evidenceWriter((envelope, outcome) -> Promise.ofException(new IllegalStateException("evidence unavailable")))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-evidence-failed")));
@@ -207,6 +217,7 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     void recordsEventLatencyMetricsWithinLocalSlo() {
         ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
                 .subscribe(new RecordingSubscriber("consumer-a"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
 
         for (int index = 0; index < 20; index++) {
@@ -228,11 +239,89 @@ class ProductInteractionEventBrokerTest extends EventloopTestBase {
     @DisplayName("rejects duplicate subscriber registration for the same topic")
     void rejectsDuplicateSubscriberRegistrationForSameTopic() {
         ProductInteractionEventBroker.Builder builder = ProductInteractionEventBroker.builder()
-                .subscribe(new RecordingSubscriber("consumer-a"));
+                .subscribe(new RecordingSubscriber("consumer-a"))
+                .brokerMode(BrokerMode.TEST);
 
         assertThatThrownBy(() -> builder.subscribe(new RecordingSubscriber("consumer-a")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("consumer-a");
+    }
+
+    // P0-04: Parallel dispatch and retry tests
+    @Test
+    @DisplayName("P0-04: dispatches events to multiple subscribers in parallel")
+    void dispatchesEventsToMultipleSubscribersInParallel() {
+        RecordingSubscriber subscriberA = new RecordingSubscriber("consumer-a");
+        RecordingSubscriber subscriberB = new RecordingSubscriber("consumer-b");
+        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
+                .subscribe(subscriberA)
+                .subscribe(subscriberB)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+
+        ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-parallel")));
+
+        assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+        assertThat(outcome.deliveredSubscriberIds()).containsExactlyInAnyOrder("consumer-a", "consumer-b");
+        assertThat(subscriberA.events).hasSize(1);
+        assertThat(subscriberB.events).hasSize(1);
+        assertThat(broker.metrics().delivered()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("P0-04: tracks subscriber timeout metrics")
+    void tracksSubscriberTimeoutMetrics() {
+        RecordingSubscriber slowSubscriber = new RecordingSubscriber("consumer-a") {
+            @Override
+            public Promise<Void> handle(ProductInteractionEventEnvelope<TestEvent> envelope) {
+                return Promise.ofCallback(cb -> {
+                    // Simulate slow handler
+                });
+            }
+        };
+        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
+                .subscribe(slowSubscriber)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+
+        // The slow subscriber will timeout and be counted
+        ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-timeout")));
+
+        // Should fail due to timeout
+        assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+        assertThat(broker.metrics().subscriberTimeouts()).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("P0-04: configures max retries for failed subscribers")
+    void configuresMaxRetriesForFailedSubscribers() {
+        FailingSubscriber failingSubscriber = new FailingSubscriber("consumer-a");
+        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
+                .subscribe(failingSubscriber)
+                .maxRetries(2)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+
+        ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-retry")));
+
+        assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+        assertThat(broker.metrics().subscriberRetries()).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("P0-04: configures subscriber timeout")
+    void configuresSubscriberTimeout() {
+        RecordingSubscriber subscriber = new RecordingSubscriber("consumer-a");
+        ProductInteractionEventBroker broker = ProductInteractionEventBroker.builder()
+                .subscribe(subscriber)
+                .subscriberTimeout(Duration.ofSeconds(60))
+                .brokerMode(BrokerMode.TEST)
+                .build();
+
+        ProductInteractionEventOutcome outcome = runPromise(() -> broker.publish(baseEnvelope("event-timeout-config")));
+
+        assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+        assertThat(broker.metrics().delivered()).isEqualTo(1);
     }
 
     private static ProductInteractionEventEnvelope<TestEvent> baseEnvelope(String eventId) {

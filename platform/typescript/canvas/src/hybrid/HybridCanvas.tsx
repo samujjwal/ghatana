@@ -253,6 +253,139 @@ const HybridCanvasInner = React.memo(
         });
       }, [controller]);
 
+      const handleKeyboardMove = useCallback(
+        (delta: Point) => {
+          const selectedElementIds = new Set(selection.elementIds);
+          const selectedNodeIds = new Set(selection.nodeIds);
+          if (selectedElementIds.size === 0 && selectedNodeIds.size === 0) {
+            return;
+          }
+
+          setElements((current) =>
+            current.map((element) =>
+              selectedElementIds.has(element.id) && element.locked !== true
+                ? {
+                    ...element,
+                    position: {
+                      x: element.position.x + delta.x,
+                      y: element.position.y + delta.y,
+                    },
+                  }
+                : element,
+            ),
+          );
+          setNodes((current) =>
+            current.map((node) =>
+              selectedNodeIds.has(node.id)
+                ? {
+                    ...node,
+                    position: {
+                      x: node.position.x + delta.x,
+                      y: node.position.y + delta.y,
+                    },
+                  }
+                : node,
+            ),
+          );
+        },
+        [selection.elementIds, selection.nodeIds, setElements, setNodes],
+      );
+
+      const handleKeyboardDelete = useCallback(() => {
+        const selectedElementIds = new Set(selection.elementIds);
+        const selectedNodeIds = new Set(selection.nodeIds);
+        const selectedEdgeIds = new Set(selection.edgeIds);
+        if (
+          selectedElementIds.size === 0 &&
+          selectedNodeIds.size === 0 &&
+          selectedEdgeIds.size === 0
+        ) {
+          return;
+        }
+
+        setElements((current) =>
+          current.filter((element) => !selectedElementIds.has(element.id)),
+        );
+        setNodes((current) =>
+          current.filter((node) => !selectedNodeIds.has(node.id)),
+        );
+        setEdges((current) =>
+          current.filter(
+            (edge) =>
+              !selectedEdgeIds.has(edge.id) &&
+              !selectedNodeIds.has(edge.source) &&
+              !selectedNodeIds.has(edge.target),
+          ),
+        );
+        setSelection({
+          elementIds: [],
+          nodeIds: [],
+          edgeIds: [],
+          isMultiSelect: false,
+          bounds: null,
+        });
+      }, [selection, setEdges, setElements, setNodes, setSelection]);
+
+      const handleContainerKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+          if (readOnly || isEditableKeyboardTarget(event.target)) {
+            return;
+          }
+
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
+            event.preventDefault();
+            setSelection({
+              elementIds: elements.filter((element) => element.locked !== true).map((element) => element.id),
+              nodeIds: nodes.map((node) => node.id),
+              edgeIds: edges.map((edge) => edge.id),
+              isMultiSelect: true,
+              bounds: null,
+            });
+            return;
+          }
+
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setSelection({
+              elementIds: [],
+              nodeIds: [],
+              edgeIds: [],
+              isMultiSelect: false,
+              bounds: null,
+            });
+            return;
+          }
+
+          if (event.key === "Delete" || event.key === "Backspace") {
+            event.preventDefault();
+            handleKeyboardDelete();
+            return;
+          }
+
+          const step = event.shiftKey ? 10 : 1;
+          const deltaByKey: Partial<Record<string, Point>> = {
+            ArrowUp: { x: 0, y: -step },
+            ArrowDown: { x: 0, y: step },
+            ArrowLeft: { x: -step, y: 0 },
+            ArrowRight: { x: step, y: 0 },
+          };
+          const delta = deltaByKey[event.key];
+          if (delta !== undefined) {
+            event.preventDefault();
+            handleKeyboardMove(delta);
+          }
+        },
+        [
+          edges,
+          elements,
+          handleKeyboardDelete,
+          handleKeyboardMove,
+          nodes,
+          readOnly,
+          setSelection,
+        ],
+      );
+
       return (
         <LayerContainer
           ref={containerRef}
@@ -260,6 +393,8 @@ const HybridCanvasInner = React.memo(
           height={height}
           mode={mode}
           className={className}
+          ariaLabel="Hybrid canvas surface"
+          onKeyDown={handleContainerKeyDown}
           freeformLayer={
             <FreeformLayer
               ref={freeformRef}
@@ -323,5 +458,18 @@ export const HybridCanvas = forwardRef<HybridCanvasRef, HybridCanvasProps>(
     );
   },
 );
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  const tagName = target.tagName.toLowerCase();
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select" ||
+    target.isContentEditable
+  );
+}
 
 export default HybridCanvas;

@@ -94,5 +94,10 @@ class PHRSecurityConfigPersistenceTest {
         public Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request) {
             return Promise.complete();
         }
+
+        @Override
+        public Promise<ConsentRevokeResult> revokeConsent(ConsentRevokeRequest request) {
+            return Promise.of(new ConsentRevokeResult(true, request.target().resourceId()));
+        }
     }
 }

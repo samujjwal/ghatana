@@ -161,6 +161,93 @@ describe('ArtifactManifestGenerator', () => {
       expect(manifest.artifacts[0].metadata.sizeBytes).toBeTypeOf('number');
       expect(manifest.artifacts[0].metadata.sizeBytes).toBeGreaterThanOrEqual(0);
     });
+
+    it('P1-03: should include build command metadata when provided', async () => {
+      const contextWithBuildCommand: ToolchainAdapterContext = {
+        ...context,
+        surfaceConfig: {
+          ...context.surfaceConfig,
+          buildCommand: 'pnpm build',
+        },
+      };
+
+      const manifest = await ArtifactManifestGenerator.generateManifest(contextWithBuildCommand, [
+        { path: 'dist/index.html', type: 'static-web-bundle' },
+      ]);
+
+      expect(manifest.artifacts[0].metadata.buildCommand).toBe('pnpm build');
+    });
+
+    it('P1-03: should include runtime metadata when provided', async () => {
+      const contextWithRuntime: ToolchainAdapterContext = {
+        ...context,
+        surfaceConfig: {
+          ...context.surfaceConfig,
+          runtime: 'node18',
+        },
+      };
+
+      const manifest = await ArtifactManifestGenerator.generateManifest(contextWithRuntime, [
+        { path: 'dist/index.html', type: 'static-web-bundle' },
+      ]);
+
+      expect(manifest.artifacts[0].metadata.runtime).toBe('node18');
+    });
+
+    it('P1-03: should include target metadata when provided', async () => {
+      const contextWithTarget: ToolchainAdapterContext = {
+        ...context,
+        surfaceConfig: {
+          ...context.surfaceConfig,
+          target: 'esnext',
+        },
+      };
+
+      const manifest = await ArtifactManifestGenerator.generateManifest(contextWithTarget, [
+        { path: 'dist/index.html', type: 'static-web-bundle' },
+      ]);
+
+      expect(manifest.artifacts[0].metadata.target).toBe('esnext');
+    });
+
+    it('P1-03: should include language metadata when provided', async () => {
+      const contextWithLanguage: ToolchainAdapterContext = {
+        ...context,
+        surfaceConfig: {
+          ...context.surfaceConfig,
+          language: 'typescript',
+        },
+      };
+
+      const manifest = await ArtifactManifestGenerator.generateManifest(contextWithLanguage, [
+        { path: 'dist/index.html', type: 'static-web-bundle' },
+      ]);
+
+      expect(manifest.artifacts[0].metadata.language).toBe('typescript');
+    });
+
+    it('P1-03: should include all enhanced metadata fields when provided', async () => {
+      const contextWithAllMetadata: ToolchainAdapterContext = {
+        ...context,
+        surfaceConfig: {
+          ...context.surfaceConfig,
+          buildCommand: 'cargo build --release',
+          runtime: 'rustc 1.75.0',
+          target: 'x86_64-unknown-linux-gnu',
+          language: 'rust',
+        },
+      };
+
+      const manifest = await ArtifactManifestGenerator.generateManifest(contextWithAllMetadata, [
+        { path: 'target/release/service', type: 'jar' },
+      ]);
+
+      const artifact = manifest.artifacts[0];
+      expect(artifact.metadata.buildCommand).toBe('cargo build --release');
+      expect(artifact.metadata.runtime).toBe('rustc 1.75.0');
+      expect(artifact.metadata.target).toBe('x86_64-unknown-linux-gnu');
+      expect(artifact.metadata.language).toBe('rust');
+    });
   });
 
   describe('manifest structure validation', () => {

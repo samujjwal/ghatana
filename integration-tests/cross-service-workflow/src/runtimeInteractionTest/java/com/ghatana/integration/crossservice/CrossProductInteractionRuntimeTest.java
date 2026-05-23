@@ -1,6 +1,7 @@
 package com.ghatana.integration.crossservice;
 
 import com.ghatana.digitalmarketing.bridge.NotificationPreferenceInteractionHandler;
+import com.ghatana.kernel.interaction.BrokerMode;
 import com.ghatana.kernel.interaction.ProductInteractionBroker;
 import com.ghatana.kernel.interaction.ProductInteractionOutcome;
 import com.ghatana.kernel.interaction.ProductInteractionPolicyDecision;
@@ -28,7 +29,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("routes valid request through registered provider handler")
     void routesValidRequestThroughRegisteredHandler() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(consentHandler())
                 .build();
         try {
@@ -46,7 +47,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks unsupported contract version before dispatch")
     void blocksUnsupportedContractVersion() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(consentHandler())
                 .build();
         try {
@@ -77,7 +78,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks request when workspace scope is missing")
     void blocksMissingWorkspace() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(consentHandler())
                 .build();
         try {
@@ -108,7 +109,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks request when tenant scope is missing")
     void blocksMissingTenant() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(consentHandler())
                 .build();
         try {
@@ -139,7 +140,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks on policy evaluator denial")
     void blocksOnPolicyDenial() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
                 .build();
@@ -157,7 +158,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("fails closed when no handler is registered for contract")
     void failsClosedWhenHandlerUnavailable() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder().build();
+        ProductInteractionBroker broker = runtimeBrokerBuilder().build();
         try {
             ProductInteractionOutcome<ConsentStatusInteractionHandler.ConsentStatusResponse> outcome = runPromise(() ->
                     broker.execute(baseConsentRequest("broker-handler-missing", "campaign-activation")));
@@ -172,7 +173,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("times out long-running handler and returns timeout reason")
     void timesOutLongRunningHandler() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(new HangingHandler())
                 .requestTimeout(Duration.ofMillis(20))
                 .build();
@@ -205,7 +206,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("retries with same interaction id are idempotent")
     void retriesWithSameInteractionIdAreIdempotent() {
         CountingNotificationHandler handler = new CountingNotificationHandler();
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = runtimeBrokerBuilder()
                 .register(handler)
                 .build();
         try {
@@ -269,6 +270,10 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                 "workspaceId", "workspace-1",
                 "authorized", "true",
                 "consentGranted", "true");
+    }
+
+    private static ProductInteractionBroker.Builder runtimeBrokerBuilder() {
+        return ProductInteractionBroker.builder().brokerMode(BrokerMode.TEST);
     }
 
     private static ConsentStatusInteractionHandler consentHandler() {
@@ -377,6 +382,11 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         @Override
         public Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request) {
             return Promise.complete();
+        }
+
+        @Override
+        public Promise<ConsentRevokeResult> revokeConsent(ConsentRevokeRequest request) {
+            return Promise.of(new ConsentRevokeResult(true, request.target().resourceId()));
         }
     }
 }

@@ -107,7 +107,7 @@ describe("validateGeneratedArtifacts", () => {
       expect.objectContaining({
         code: "stage/build",
         severity: "info",
-        category: "other",
+        category: "build",
       }),
     );
   });

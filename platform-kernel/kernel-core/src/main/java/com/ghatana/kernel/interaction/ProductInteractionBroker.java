@@ -1,8 +1,14 @@
 package com.ghatana.kernel.interaction;
 
+import io.activej.async.exception.AsyncTimeoutException;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,7 +19,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -23,6 +28,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * evaluation, handler dispatch, timeout handling, idempotent replay, evidence
  * persistence, and execution counters. Product code registers handlers through the
  * public SPI and consumers never call another product's implementation directly.</p>
+ *
+ * <p>P0 hardening:</p>
+ * <ul>
+ *   <li>Requires real evidence writer in production mode (no no-op)</li>
+ *   <li>Resolves policy context from trusted providers, not caller-supplied flags</li>
+ *   <li>Includes payload hash and contract metadata in replay key for idempotency</li>
+ * </ul>
  *
  * @doc.type class
  * @doc.purpose Broker product interaction requests through Kernel policy and evidence controls
@@ -35,11 +47,15 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private static final Set<String> DEFAULT_SUPPORTED_CONTRACT_VERSIONS = Set.of("1.0.0");
 
     private final Map<String, ProductInteractionHandler<?, ?>> handlersByContractId;
-    private final Map<String, ProductInteractionOutcome<?>> completedByInteraction;
+    private final Map<String, CachedOutcome> completedByInteraction;
     private final Set<String> supportedContractVersions;
     private final ProductInteractionPolicyEvaluator policyEvaluator;
     private final ProductInteractionEvidenceWriter evidenceWriter;
+    private final ProductInteractionPolicyContextResolver policyContextResolver;
+    private final Map<String, ProductInteractionContract> contractsByContractId;
+    private final BrokerMode brokerMode;
     private final Duration requestTimeout;
+    private final Duration cacheTtl;
     private final ScheduledExecutorService scheduler;
     private final AtomicLong requested;
     private final AtomicLong succeeded;
@@ -48,6 +64,9 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private final AtomicLong evidenceFailures;
     private final AtomicLong totalLatencyMs;
     private final AtomicLong maxLatencyMs;
+    private final AtomicLong cacheHits;
+    private final AtomicLong cacheMisses;
+    private final AtomicLong cacheEvictions;
     private final ProductInteractionHandlerRegistry handlerRegistry;
 
     private ProductInteractionBroker(Builder builder) {
@@ -56,7 +75,11 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.supportedContractVersions = Set.copyOf(builder.supportedContractVersions);
         this.policyEvaluator = builder.policyEvaluator;
         this.evidenceWriter = builder.evidenceWriter;
+        this.policyContextResolver = builder.policyContextResolver;
+        this.contractsByContractId = Map.copyOf(builder.contractsByContractId);
+        this.brokerMode = builder.brokerMode;
         this.requestTimeout = builder.requestTimeout;
+        this.cacheTtl = builder.cacheTtl;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new BrokerThreadFactory());
         this.requested = new AtomicLong();
         this.succeeded = new AtomicLong();
@@ -65,11 +88,42 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.evidenceFailures = new AtomicLong();
         this.totalLatencyMs = new AtomicLong();
         this.maxLatencyMs = new AtomicLong();
+        this.cacheHits = new AtomicLong();
+        this.cacheMisses = new AtomicLong();
+        this.cacheEvictions = new AtomicLong();
         this.handlerRegistry = builder.handlerRegistry;
+
+        // P0-01: Validate evidence writer in production and development modes
+        if ((brokerMode == BrokerMode.PRODUCTION || brokerMode == BrokerMode.DEVELOPMENT)
+            && evidenceWriter.isNoop()) {
+            throw new IllegalStateException(
+                    "Production mode requires a real evidence writer. No-op evidence writer is not allowed.");
+        }
+
+        // Phase 1: Start cache eviction task if TTL is configured
+        if (cacheTtl != null && !cacheTtl.isZero() && !cacheTtl.isNegative()) {
+            startCacheEvictionTask();
+        }
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a production-mode broker factory with mandatory evidence writer and trusted policy context.
+     *
+     * @param evidenceWriter the evidence writer (must not be no-op)
+     * @param policyContextResolver the trusted policy context resolver
+     * @return a builder configured for production mode
+     */
+    public static Builder productionFactory(
+            ProductInteractionEvidenceWriter evidenceWriter,
+            ProductInteractionPolicyContextResolver policyContextResolver) {
+        return builder()
+                .evidenceWriter(evidenceWriter)
+                .policyContextResolver(policyContextResolver)
+                .brokerMode(BrokerMode.PRODUCTION);
     }
 
     public <Req, Res> Promise<ProductInteractionOutcome<Res>> execute(ProductInteractionRequest<Req> request) {
@@ -77,87 +131,110 @@ public final class ProductInteractionBroker implements AutoCloseable {
         requested.incrementAndGet();
         long startedNanos = System.nanoTime();
 
-        String interactionKey = interactionKey(request);
-        @SuppressWarnings("unchecked")
-        ProductInteractionOutcome<Res> cached = (ProductInteractionOutcome<Res>) completedByInteraction.get(interactionKey);
-        if (cached != null) {
-            return Promise.of(cached);
+        // P0-02: Resolve trusted policy context before validation
+        ProductInteractionContract contract = contractsByContractId.get(request.contractId());
+        Map<String, String> trustedPolicyContext = policyContextResolver.resolve(request, contract);
+        ProductInteractionRequest<Req> requestWithTrustedContext = new ProductInteractionRequest<>(
+                request.schemaVersion(),
+                request.interactionId(),
+                request.contractId(),
+                request.contractVersion(),
+                request.providerProductId(),
+                request.consumerProductId(),
+                request.productUnitId(),
+                request.tenantId(),
+                request.workspaceId(),
+                request.runId(),
+                request.correlationId(),
+                request.requestedAt(),
+                trustedPolicyContext,
+                request.payload());
+
+        // P0-03: Include payload hash and contract metadata in replay key
+        String interactionKey = interactionKey(requestWithTrustedContext, contract);
+        CachedOutcome cached = completedByInteraction.get(interactionKey);
+        if (cached != null && !cached.isExpired(cacheTtl)) {
+            cacheHits.incrementAndGet();
+            @SuppressWarnings("unchecked")
+            ProductInteractionOutcome<Res> outcome = (ProductInteractionOutcome<Res>) cached.outcome;
+            return Promise.of(outcome);
         }
 
-        Optional<ProductInteractionOutcome<Res>> preflightFailure = validatePreflight(request);
+        // P0-03: Idempotency conflict detection - check if same interaction ID exists with different payload
+        for (Map.Entry<String, CachedOutcome> entry : completedByInteraction.entrySet()) {
+            if (entry.getValue().isExpired(cacheTtl)) {
+                continue;
+            }
+            String existingKey = entry.getKey();
+            if (isSameInteractionIdDifferentPayload(existingKey, interactionKey)) {
+                // Same interaction ID with different payload - block as idempotency conflict
+                return complete(requestWithTrustedContext, interactionKey,
+                        blocked(requestWithTrustedContext, "product_interaction.idempotency_conflict"),
+                        startedNanos);
+            }
+        }
+
+        cacheMisses.incrementAndGet();
+
+        Optional<ProductInteractionOutcome<Res>> preflightFailure = validatePreflight(requestWithTrustedContext, contract);
         if (preflightFailure.isPresent()) {
-            return complete(request, interactionKey, preflightFailure.get(), startedNanos);
+            return complete(requestWithTrustedContext, interactionKey, preflightFailure.get(), startedNanos);
         }
 
         @SuppressWarnings("unchecked")
-        ProductInteractionHandler<Req, Res> handler = (ProductInteractionHandler<Req, Res>) handlersByContractId.get(request.contractId());
+        ProductInteractionHandler<Req, Res> handler = (ProductInteractionHandler<Req, Res>) handlersByContractId.get(requestWithTrustedContext.contractId());
         if (handler == null && handlerRegistry != null) {
-            ProductInteractionHandler<?, ?> discovered = handlerRegistry.getHandler(request.contractId());
+            ProductInteractionHandler<?, ?> discovered = handlerRegistry.getHandler(requestWithTrustedContext.contractId());
             if (discovered != null) {
                 @SuppressWarnings("unchecked")
                 ProductInteractionHandler<Req, Res> typedDiscovered = (ProductInteractionHandler<Req, Res>) discovered;
                 handler = typedDiscovered;
-                handlersByContractId.put(request.contractId(), handler);
+                handlersByContractId.put(requestWithTrustedContext.contractId(), handler);
             }
         }
         if (handler == null) {
-            return complete(request, interactionKey, blocked(request, "product_interaction.handler_unavailable"), startedNanos);
+            return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.handler_unavailable"), startedNanos);
         }
-        if (!Objects.equals(handler.schemaVersion(), request.contractVersion())) {
-            return complete(request, interactionKey, blocked(request, "product_interaction.handler_version_mismatch"), startedNanos);
+        if (!Objects.equals(handler.schemaVersion(), requestWithTrustedContext.contractVersion())) {
+            return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.handler_version_mismatch"), startedNanos);
         }
-        if (!handler.requestType().isInstance(request.payload())) {
-            return complete(request, interactionKey, blocked(request, "product_interaction.invalid_payload"), startedNanos);
+        if (!handler.requestType().isInstance(requestWithTrustedContext.payload())) {
+            return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.invalid_payload"), startedNanos);
         }
 
         final ProductInteractionHandler<Req, Res> executionHandler = handler;
+        Promise<ProductInteractionOutcome<Res>> handlerOutcome;
+        try {
+            handlerOutcome = Promises.timeout(requestTimeout, executionHandler.handle(requestWithTrustedContext));
+        } catch (Exception error) {
+            handlerOutcome = Promise.ofException(error);
+        }
 
-        return Promise.ofCallback(cb -> {
-            AtomicBoolean completed = new AtomicBoolean(false);
-            long timeoutMs = Math.max(1L, requestTimeout.toMillis());
-
-            scheduler.schedule(() -> {
-                if (completed.compareAndSet(false, true)) {
-                    ProductInteractionOutcome<Res> timeoutOutcome = blocked(request, "product_interaction.timeout");
-                    timedOut.incrementAndGet();
-                    complete(request, interactionKey, timeoutOutcome, startedNanos).whenComplete((outcome, error) -> {
-                        if (error != null) {
-                            cb.setException(error);
-                            return;
-                        }
-                        cb.set(outcome);
-                    });
-                }
-            }, timeoutMs, TimeUnit.MILLISECONDS);
-
-            executionHandler.handle(request).whenComplete((outcome, error) -> {
-                if (!completed.compareAndSet(false, true)) {
-                    return;
-                }
-                if (error != null) {
-                    complete(request, interactionKey, ProductInteractionBroker.<Req, Res>blocked(
-                                    request,
+        return handlerOutcome.then(
+                outcome -> complete(
+                        requestWithTrustedContext,
+                        interactionKey,
+                        normalizeProviderOutcome(requestWithTrustedContext, outcome),
+                        startedNanos),
+                error -> {
+                    if (isTimeout(error)) {
+                        timedOut.incrementAndGet();
+                        return complete(
+                                requestWithTrustedContext,
+                                interactionKey,
+                                ProductInteractionBroker.<Req, Res>blocked(
+                                        requestWithTrustedContext,
+                                        "product_interaction.timeout"),
+                                startedNanos);
+                    }
+                    return complete(
+                            requestWithTrustedContext,
+                            interactionKey,
+                            ProductInteractionBroker.<Req, Res>blocked(
+                                    requestWithTrustedContext,
                                     "product_interaction.runtime_error"),
-                            startedNanos)
-                            .whenComplete((failedOutcome, evidenceError) -> {
-                                if (evidenceError != null) {
-                                    cb.setException(evidenceError);
-                                    return;
-                                }
-                                cb.set(failedOutcome);
-                            });
-                    return;
-                }
-                complete(request, interactionKey, normalizeProviderOutcome(request, outcome), startedNanos)
-                        .whenComplete((finalOutcome, evidenceError) -> {
-                            if (evidenceError != null) {
-                                cb.setException(evidenceError);
-                                return;
-                            }
-                            cb.set(finalOutcome);
-                        });
-            });
-        });
+                            startedNanos);
+                });
     }
 
     public ProductInteractionBrokerMetrics metrics() {
@@ -168,7 +245,10 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 timedOut.get(),
                 evidenceFailures.get(),
                 totalLatencyMs.get(),
-                maxLatencyMs.get());
+                maxLatencyMs.get(),
+                cacheHits.get(),
+                cacheMisses.get(),
+                cacheEvictions.get());
     }
 
     @Override
@@ -176,7 +256,9 @@ public final class ProductInteractionBroker implements AutoCloseable {
         scheduler.shutdownNow();
     }
 
-    private <Req, Res> Optional<ProductInteractionOutcome<Res>> validatePreflight(ProductInteractionRequest<Req> request) {
+    private <Req, Res> Optional<ProductInteractionOutcome<Res>> validatePreflight(
+            ProductInteractionRequest<Req> request,
+            ProductInteractionContract contract) {
         if (!SUPPORTED_SCHEMA_VERSION.equals(request.schemaVersion())) {
             return Optional.of(blocked(request, "product_interaction.schema_version_unsupported"));
         }
@@ -236,7 +318,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 evidenceFailures.incrementAndGet();
                 finalOutcome = blocked(request, "product_interaction.evidence_persistence_failed");
             }
-            completedByInteraction.put(interactionKey, finalOutcome);
+            // Phase 1: Store outcome with timestamp for TTL-based eviction
+            completedByInteraction.put(interactionKey, new CachedOutcome(finalOutcome));
             recordMetrics(finalOutcome, startedNanos);
             cb.set(finalOutcome);
         }));
@@ -290,16 +373,92 @@ public final class ProductInteractionBroker implements AutoCloseable {
         return value == null || value.isBlank();
     }
 
-    private static String interactionKey(ProductInteractionRequest<?> request) {
-        return request.contractId() + "::" + request.interactionId() + "::" + request.tenantId() + "::" + request.workspaceId();
+    private static boolean isTimeout(Throwable error) {
+        Throwable cursor = error;
+        while (cursor != null) {
+            if (cursor instanceof AsyncTimeoutException) {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
+    }
+
+    // P0-03: Include payload hash and contract metadata in replay key for idempotency
+    private static String interactionKey(ProductInteractionRequest<?> request, ProductInteractionContract contract) {
+        String payloadHash = computePayloadHash(request.payload());
+        String contractVersion = request.contractVersion();
+        String providerId = request.providerProductId();
+        String consumerId = request.consumerProductId();
+        String productUnitId = request.productUnitId();
+        
+        return String.format("%s::%s::%s::%s::%s::%s::%s::%s::%s",
+                request.contractId(),
+                request.interactionId(),
+                request.tenantId(),
+                request.workspaceId(),
+                payloadHash,
+                contractVersion,
+                providerId,
+                consumerId,
+                productUnitId);
+    }
+
+    private static String computePayloadHash(Object payload) {
+        if (payload == null) {
+            return "null";
+        }
+        try {
+            String payloadString = payload.toString();
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(payloadString.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            // Fallback to string hash if SHA-256 is not available
+            return String.valueOf(payload.hashCode());
+        }
+    }
+
+    /**
+     * P0-03: Checks if two interaction keys have the same interaction ID but different payload hash.
+     * This detects idempotency conflicts where the same interaction ID is reused with different payloads.
+     *
+     * @param existingKey the existing interaction key
+     * @param newKey the new interaction key
+     * @return true if same interaction ID with different payload
+     */
+    private static boolean isSameInteractionIdDifferentPayload(String existingKey, String newKey) {
+        String[] existingParts = existingKey.split("::");
+        String[] newParts = newKey.split("::");
+
+        // Keys must have at least 3 parts: contractId, interactionId, tenantId
+        if (existingParts.length < 3 || newParts.length < 3) {
+            return false;
+        }
+
+        // Check if interaction ID (index 1) is the same
+        if (!existingParts[1].equals(newParts[1])) {
+            return false;
+        }
+
+        // Check if payload hash (index 4) is different
+        if (existingParts.length > 4 && newParts.length > 4) {
+            return !existingParts[4].equals(newParts[4]);
+        }
+
+        return false;
     }
 
     public static final class Builder {
         private final Map<String, ProductInteractionHandler<?, ?>> handlersByContractId = new ConcurrentHashMap<>();
+        private final Map<String, ProductInteractionContract> contractsByContractId = new ConcurrentHashMap<>();
         private Set<String> supportedContractVersions = DEFAULT_SUPPORTED_CONTRACT_VERSIONS;
         private ProductInteractionPolicyEvaluator policyEvaluator = ProductInteractionPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEvidenceWriter evidenceWriter = ProductInteractionEvidenceWriter.noop();
+        private ProductInteractionPolicyContextResolver policyContextResolver = ProductInteractionPolicyContextResolver.developmentResolver();
+        private BrokerMode brokerMode = BrokerMode.DEVELOPMENT;
         private Duration requestTimeout = Duration.ofSeconds(2);
+        private Duration cacheTtl = Duration.ofMinutes(5); // Phase 1: Default 5-minute TTL
         private ProductInteractionHandlerRegistry handlerRegistry;
 
         public Builder register(ProductInteractionHandler<?, ?> handler) {
@@ -312,6 +471,12 @@ public final class ProductInteractionBroker implements AutoCloseable {
             if (previous != null) {
                 throw new IllegalArgumentException("handler already registered for contractId " + contractId);
             }
+            return this;
+        }
+
+        public Builder registerContract(ProductInteractionContract contract) {
+            Objects.requireNonNull(contract, "contract must not be null");
+            contractsByContractId.put(contract.contractId(), contract);
             return this;
         }
 
@@ -334,12 +499,32 @@ public final class ProductInteractionBroker implements AutoCloseable {
             return this;
         }
 
+        public Builder policyContextResolver(ProductInteractionPolicyContextResolver resolver) {
+            this.policyContextResolver = Objects.requireNonNull(resolver, "resolver must not be null");
+            return this;
+        }
+
+        public Builder brokerMode(BrokerMode mode) {
+            this.brokerMode = Objects.requireNonNull(mode, "mode must not be null");
+            return this;
+        }
+
         public Builder requestTimeout(Duration timeout) {
             Objects.requireNonNull(timeout, "timeout must not be null");
             if (timeout.isZero() || timeout.isNegative()) {
                 throw new IllegalArgumentException("request timeout must be positive");
             }
             this.requestTimeout = timeout;
+            return this;
+        }
+
+        /**
+         * Phase 1: Set cache TTL for idempotency cache.
+         * Set to null or zero to disable TTL-based eviction (unbounded cache).
+         * Default is 5 minutes.
+         */
+        public Builder cacheTtl(Duration ttl) {
+            this.cacheTtl = ttl;
             return this;
         }
 
@@ -359,6 +544,56 @@ public final class ProductInteractionBroker implements AutoCloseable {
             Thread thread = new Thread(runnable, "product-interaction-broker-timeout");
             thread.setDaemon(true);
             return thread;
+        }
+    }
+
+    /**
+     * Cached outcome with timestamp for TTL-based eviction.
+     * Phase 1: Production hardening for bounded cache.
+     */
+    private static final class CachedOutcome {
+        private final ProductInteractionOutcome<?> outcome;
+        private final long cachedAtMs;
+
+        CachedOutcome(ProductInteractionOutcome<?> outcome) {
+            this.outcome = outcome;
+            this.cachedAtMs = System.currentTimeMillis();
+        }
+
+        boolean isExpired(Duration ttl) {
+            if (ttl == null || ttl.isZero() || ttl.isNegative()) {
+                return false;
+            }
+            long ageMs = System.currentTimeMillis() - cachedAtMs;
+            return ageMs > ttl.toMillis();
+        }
+    }
+
+    /**
+     * Phase 1: Start periodic cache eviction task.
+     * Removes expired entries from the cache based on TTL.
+     */
+    private void startCacheEvictionTask() {
+        scheduler.scheduleAtFixedRate(
+                this::evictExpiredCacheEntries,
+                cacheTtl.toMillis(),
+                cacheTtl.toMillis() / 2,
+                TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Phase 1: Evict expired cache entries.
+     */
+    private void evictExpiredCacheEntries() {
+        long evictedCount = 0;
+        for (Map.Entry<String, CachedOutcome> entry : completedByInteraction.entrySet()) {
+            if (entry.getValue().isExpired(cacheTtl)) {
+                completedByInteraction.remove(entry.getKey());
+                evictedCount++;
+            }
+        }
+        if (evictedCount > 0) {
+            cacheEvictions.addAndGet(evictedCount);
         }
     }
 }

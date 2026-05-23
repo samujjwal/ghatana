@@ -1,0 +1,748 @@
+{
+  "generatedAt": "2026-05-23T02:21:52.809Z",
+  "productId": "phr",
+  "releaseVerdict": "fail",
+  "releaseProfiles": [
+    "standard-web-api-release",
+    "backend-only-release",
+    "polyglot-service-release"
+  ],
+  "productMetadata": {
+    "id": "phr",
+    "name": "Personal Health Records",
+    "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
+    "type": "product",
+    "kind": "business-product",
+    "manifestPath": "products/phr/domain-pack-manifest.yaml",
+    "manifestFormat": "yaml",
+    "buildFile": "products/phr/build.gradle.kts",
+    "gradleModules": [
+      ":products:phr",
+      ":products:phr:launcher"
+    ],
+    "surfaces": [
+      {
+        "type": "backend-api",
+        "path": "products/phr",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "web",
+        "path": "products/phr/apps/web",
+        "packagePath": "products/phr/apps/web/package.json",
+        "implementationStatus": "implemented"
+      }
+    ],
+    "pnpmPackages": [
+      "products/phr/apps/*"
+    ],
+    "ci": {
+      "enabled": true,
+      "gates": [
+        "build",
+        "test",
+        "manifest-validation",
+        "security-scan"
+      ]
+    },
+    "conformance": {
+      "manifest": true,
+      "observability": true,
+      "security": true,
+      "dataAccess": true,
+      "bridge": false,
+      "agentDefinitions": false,
+      "masteryBindings": false,
+      "evaluationPacks": false,
+      "runtimeModule": false
+    },
+    "metadata": {
+      "owner": "PHR Team",
+      "pilot": true,
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "validated-phr-lifecycle-pilot",
+          "healthcare-gates-active",
+          "local-package-deploy-verify-ready",
+          "phr-rollback-after-stable-deploy-verify"
+        ],
+        "requiredGates": [
+          "consent",
+          "pii-classification",
+          "audit-evidence",
+          "fhir-contract-validation",
+          "tenant-data-sovereignty"
+        ],
+        "nextRequiredWork": [
+          "Keep healthcare gate packs evidence-backed across validate, build, and deploy phases",
+          "Keep generated lifecycle evidence packs current for validate, test, build, package, deploy, and verify",
+          "Enable PHR rollback only after stable deployment manifest history, artifact selection policy, healthcare post-rollback gates, and approval contract are in place"
+        ],
+        "evidenceRefs": [
+          "products/phr/kernel-product.yaml",
+          "products/phr/schema-packs/schema-registry.yaml",
+          "products/phr/lifecycle/readiness-evidence.yaml",
+          ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
+        ]
+      },
+      "created": "2026-03-19",
+      "documentation": "products/phr/README.md",
+      "status": "active",
+      "displayName": "Personal Health Records",
+      "description": "Healthcare patient record management with FHIR R4 and Nepal Directive 2081 support",
+      "category": "healthcare"
+    },
+    "lifecycleProfile": "standard-web-api-product",
+    "lifecycleStatus": "enabled",
+    "lifecycleMigration": {
+      "status": "ready",
+      "readinessReasonCode": "validated-phr-lifecycle-pilot",
+      "notes": "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare-specific gates are active and enforced at execution time."
+    },
+    "lifecycleReadiness": {
+      "reasonCodes": [
+        "healthcare-pilot-enabled",
+        "fhir-r4-pilot-surfaces-validated",
+        "consent-gate-active",
+        "pii-classification-active",
+        "phr-rollback-after-stable-deploy-verify"
+      ],
+      "requiredGates": [
+        "consent",
+        "pii-classification",
+        "audit-evidence",
+        "fhir-contract-validation",
+        "tenant-data-sovereignty"
+      ],
+      "nextRequiredWork": [
+        "Develop PHR features in parallel with Digital Marketing under kernel lifecycle",
+        "Validate healthcare-specific gate-packs against real FHIR evidence as features mature"
+      ],
+      "evidenceRefs": [
+        "products/phr/kernel-product.yaml",
+        "products/phr/schema-packs/schema-registry.yaml",
+        "products/phr/lifecycle/readiness-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/consent.yaml",
+        "products/phr/lifecycle/gate-packs/pii-classification.yaml",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+      ],
+      "blockerGateAdapterMatrix": {
+        "blockers": [
+          "missing-fhir-contract-validation",
+          "missing-consent-gate",
+          "missing-pii-classification",
+          "missing-audit-evidence",
+          "missing-data-sovereignty-gate"
+        ],
+        "gates": [
+          {
+            "gateId": "consent",
+            "description": "Patient consent management and tracking"
+          },
+          {
+            "gateId": "pii-classification",
+            "description": "PII data classification and handling"
+          },
+          {
+            "gateId": "audit-evidence",
+            "description": "Audit trail and evidence logging"
+          },
+          {
+            "gateId": "fhir-contract-validation",
+            "description": "FHIR R4 contract validation"
+          },
+          {
+            "gateId": "tenant-data-sovereignty",
+            "description": "Tenant data sovereignty compliance"
+          }
+        ],
+        "adapters": [
+          {
+            "adapterId": "backend-api",
+            "readiness": "ready"
+          },
+          {
+            "adapterId": "web",
+            "readiness": "ready"
+          }
+        ]
+      },
+      "status": "enabled"
+    },
+    "rollbackReadiness": {
+      "status": "target-partial",
+      "classification": "target/partial",
+      "reasonCode": "phr-rollback-after-stable-deploy-verify",
+      "requiredBeforeEnablement": [
+        "stable-deployment-manifest-history",
+        "previous-artifact-selection-policy",
+        "healthcare-post-rollback-verification-gates",
+        "rollback-approval-contract"
+      ],
+      "evidenceRefs": [
+        "products/phr/kernel-product.yaml",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
+      ]
+    },
+    "lifecycleConfigPath": "products/phr/kernel-product.yaml",
+    "lifecycle": {
+      "enabled": true,
+      "phases": {
+        "dev": {
+          "defaultSurfaces": [
+            "backend-api",
+            "web"
+          ],
+          "mode": "parallel"
+        },
+        "build": {
+          "defaultSurfaces": [
+            "backend-api",
+            "web"
+          ],
+          "mode": "sequential"
+        }
+      },
+      "toolchain": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react"
+      }
+    },
+    "toolchain": {
+      "profile": "standard",
+      "adapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react"
+      }
+    },
+    "artifacts": {
+      "backend-api": {
+        "type": "jvm-service",
+        "packaging": "jar",
+        "required": true
+      },
+      "web": {
+        "type": "static-web-bundle",
+        "packaging": "static-files",
+        "required": true
+      }
+    },
+    "deployment": {
+      "targets": [
+        "compose-local"
+      ],
+      "defaultEnvironment": "local",
+      "healthChecks": [
+        "standard-http"
+      ],
+      "rollback": {
+        "strategy": "previous-artifact"
+      }
+    },
+    "environments": {
+      "supported": [
+        "local"
+      ]
+    },
+    "lifecycleExecutionAllowed": true
+  },
+  "dimensions": [
+    {
+      "dimensionName": "Vision alignment",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Product coherence",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Feature completeness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "End-to-end workflow completeness",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Domain correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Data model correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Contract correctness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Route/API correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/API/runtime coherence",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime Truth maturity",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "Security",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Privacy",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Tenant isolation",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Authorization/RBAC/ABAC/scope",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Governance/policy/compliance",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Audit durability/evidence quality",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Event correctness",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Action Plane / automation correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Implicit AI/ML maturity",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "HITL/override control",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Observability",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Reliability/resilience",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Error/degraded mode",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Idempotency/retry/replay/rollback",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Performance",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "Scalability",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Extensibility/plugin model",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Shared-library reuse",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Dependency hygiene",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Architecture boundaries",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Simplicity/maintainability",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/UX simplicity/consistency",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Accessibility",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "i18n/l10n readiness",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Testing depth",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Test quality/no-theater",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "CI gate strength",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Release readiness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Deployment/ops readiness",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Backup/restore/DR",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Config/secrets management",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Documentation truthfulness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Migration/deprecation hygiene",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Cost/operational efficiency",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall production readiness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall world-class maturity",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    }
+  ],
+  "averageScore": 3.58,
+  "releaseTargetScore": 4,
+  "belowTargetDimensions": [
+    {
+      "dimensionName": "Vision alignment",
+      "score": 2
+    },
+    {
+      "dimensionName": "Product coherence",
+      "score": 3
+    },
+    {
+      "dimensionName": "Feature completeness",
+      "score": 2
+    },
+    {
+      "dimensionName": "End-to-end workflow completeness",
+      "score": 3
+    },
+    {
+      "dimensionName": "Domain correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Data model correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "UI/API/runtime coherence",
+      "score": 2
+    },
+    {
+      "dimensionName": "Security",
+      "score": 2
+    },
+    {
+      "dimensionName": "Privacy",
+      "score": 2
+    },
+    {
+      "dimensionName": "Tenant isolation",
+      "score": 2
+    },
+    {
+      "dimensionName": "Event correctness",
+      "score": 3
+    },
+    {
+      "dimensionName": "Action Plane / automation correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Implicit AI/ML maturity",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Observability",
+      "score": 2
+    },
+    {
+      "dimensionName": "Performance",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Scalability",
+      "score": 3
+    },
+    {
+      "dimensionName": "Shared-library reuse",
+      "score": 2
+    },
+    {
+      "dimensionName": "Architecture boundaries",
+      "score": 2
+    },
+    {
+      "dimensionName": "Accessibility",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Testing depth",
+      "score": 2
+    },
+    {
+      "dimensionName": "Documentation truthfulness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Overall world-class maturity",
+      "score": 2
+    }
+  ],
+  "blockingGaps": [
+    {
+      "severity": "P0",
+      "gate": "./scripts/check-data-cloud-release-runtime-profile.mjs",
+      "reason": "script-failure"
+    },
+    {
+      "severity": "P1",
+      "gate": "score-threshold",
+      "reason": "dimensions-below-4",
+      "count": 22
+    }
+  ],
+  "skippedGates": [],
+  "evidencePaths": [
+    ".kernel/evidence/product-release-readiness.json",
+    ".kernel/evidence/kernel-implementation-plan-progress.json",
+    ".kernel/evidence/wave2-product-quality-scorecard.json"
+  ],
+  "artifactAuthoringGateScripts": [
+    "pnpm:check:kernel-authoring-pipeline",
+    "pnpm:check:artifact-roundtrip",
+    "pnpm:check:generated-artifact-validation-pipeline",
+    "pnpm:check:studio-production-profile:strict",
+    "pnpm:check:studio-source-acquisition-worker",
+    "pnpm:check:studio-workflow-persistence-contracts"
+  ]
+}

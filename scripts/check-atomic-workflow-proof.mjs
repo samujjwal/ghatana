@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -14,11 +14,89 @@ const invariantTestPath = path.join(
 );
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'atomic-workflow-posture.json');
+const failureEvidenceDir = path.join(repoRoot, '.kernel/evidence/atomic-workflow-failure-injection');
+const failureReportPrefix = 'atomic-workflow-failure-injection-';
 
 const routePattern = /route\(map,\s*"([A-Z]+)",\s*"([^"]+)",\s*EndpointSensitivity\.([A-Z_]+),\s*(true|false),\s*(true|false),\s*(true|false),\s*(true|false),/g;
 const mutatingMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const requiredAtomicScenarioEvidence = [
+  { key: 'businessWriteEventAppendFailure', patterns: ['business write/event append failure'] },
+  { key: 'eventAppendAuditWriteFailure', patterns: ['event append/audit write failure'] },
+  { key: 'auditOutboxFailure', patterns: ['audit/outbox failure'] },
+  { key: 'idempotencyWriteFailure', patterns: ['idempotency write failure'] },
+  { key: 'retryAfterPartialFailure', patterns: ['retry after partial failure'] },
+  { key: 'rollbackAfterPartialFailure', patterns: ['rollback after partial failure'] },
+  { key: 'replayAfterCrash', patterns: ['replay after crash'] },
+];
 
 const violations = [];
+
+function findLatestFailureReport() {
+  if (!existsSync(failureEvidenceDir)) {
+    return null;
+  }
+
+  const candidates = readdirSync(failureEvidenceDir)
+    .filter((entry) => entry.startsWith(failureReportPrefix) && entry.endsWith('.json'))
+    .map((entry) => ({
+      entry,
+      absolutePath: path.join(failureEvidenceDir, entry),
+      modifiedAt: statSync(path.join(failureEvidenceDir, entry)).mtimeMs,
+    }))
+    .sort((left, right) => right.modifiedAt - left.modifiedAt);
+
+  return candidates[0] ?? null;
+}
+
+function validateFailureInjectionReport() {
+  const latest = findLatestFailureReport();
+  if (!latest) {
+    violations.push('Missing atomic workflow failure-injection evidence report in .kernel/evidence/atomic-workflow-failure-injection');
+    return {
+      report: null,
+      source: null,
+    };
+  }
+
+  let report;
+  try {
+    report = JSON.parse(readFileSync(latest.absolutePath, 'utf8'));
+  } catch (error) {
+    violations.push(`Invalid atomic workflow failure-injection report JSON: ${latest.entry} (${error.message})`);
+    return {
+      report: null,
+      source: latest.entry,
+    };
+  }
+
+  const ageHours = (Date.now() - latest.modifiedAt) / (1000 * 60 * 60);
+  if (ageHours > 168) {
+    violations.push(`Atomic workflow failure-injection report is stale (> 168h): ${latest.entry}`);
+  }
+
+  if (!Array.isArray(report.violations)) {
+    violations.push('Atomic workflow failure-injection report missing violations array');
+  } else if (report.violations.length > 0) {
+    violations.push(`Atomic workflow failure-injection report has ${report.violations.length} violation(s)`);
+  }
+
+  if (!Array.isArray(report.evidence)) {
+    violations.push('Atomic workflow failure-injection report missing evidence array');
+  } else {
+    const evidenceText = report.evidence.join(' | ').toLowerCase();
+    for (const scenario of requiredAtomicScenarioEvidence) {
+      const satisfied = scenario.patterns.every((pattern) => evidenceText.includes(pattern));
+      if (!satisfied) {
+        violations.push(`Atomic workflow failure-injection report missing scenario evidence for ${scenario.key}`);
+      }
+    }
+  }
+
+  return {
+    report,
+    source: latest.entry,
+  };
+}
 
 function readRequiredFile(filePath) {
   try {
@@ -93,7 +171,7 @@ if (!hasRetryRoute) {
 }
 
 const evidence = {
-  generatedAt: new Date().toISOString(),
+  generatedAt: 'generated-on-demand',
   summary: {
     mutatingRouteCount: mutatingRoutes.length,
     criticalMutatingRouteCount: criticalMutatingRoutes.length,
@@ -106,6 +184,15 @@ const evidence = {
     requiresPolicy: route.requiresPolicy,
     requiresBlockingAudit: route.requiresBlockingAudit,
   })),
+  failureInjectionEvidence: (() => {
+    const validated = validateFailureInjectionReport();
+    return {
+      reportSource: validated.source,
+      hasReport: validated.report !== null,
+      violationCount: Array.isArray(validated.report?.violations) ? validated.report.violations.length : null,
+      warningCount: Array.isArray(validated.report?.warnings) ? validated.report.warnings.length : null,
+    };
+  })(),
 };
 
 mkdirSync(evidenceDir, { recursive: true });

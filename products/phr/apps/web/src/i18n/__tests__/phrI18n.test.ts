@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import enMessages from '../../locales/en/common.json';
 import neMessages from '../../locales/ne/common.json';
-import { formatPhrDate, pseudoLocalize, t, type PhrMessageKey } from '../phrI18n';
+import { formatPhrDate, pseudoLocalize, resolvePhrLocale, t, type PhrMessageKey } from '../phrI18n';
 
 describe('PHR i18n', () => {
   it('keeps Nepali locale keys aligned with the English source locale', () => {
@@ -9,6 +9,15 @@ describe('PHR i18n', () => {
     const nepaliKeys = Object.keys(neMessages).sort();
 
     expect(nepaliKeys).toEqual(englishKeys);
+  });
+
+  it('resolves supported locales correctly', () => {
+    expect(resolvePhrLocale('en')).toBe('en');
+    expect(resolvePhrLocale('ne')).toBe('ne');
+    expect(resolvePhrLocale('en-XA')).toBe('en-XA');
+    expect(resolvePhrLocale('invalid')).toBe('en');
+    expect(resolvePhrLocale(null)).toBe('en');
+    expect(resolvePhrLocale(undefined)).toBe('en');
   });
 
   it('interpolates localized patient metadata', () => {

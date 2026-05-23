@@ -44,4 +44,27 @@ public interface AudienceRepository {
      * @return promise resolving to an optional audience
      */
     Promise<Optional<Audience>> findByCampaign(DmWorkspaceId workspaceId, String campaignId);
+
+    /**
+     * Finds all audiences that contain a specific contact ID.
+     *
+     * <p>This is used for consent revocation workflows - when a patient revokes consent,
+     * all audiences containing that patient's contact ID must be disabled.</p>
+     *
+     * @param contactId the contact ID to search for; must not be null
+     * @return promise resolving to a list of audiences containing the contact ID
+     */
+    Promise<java.util.List<Audience>> findByContactId(String contactId);
+
+    /**
+     * Disables an audience with a specified reason.
+     *
+     * <p>Disabled audiences cannot be used for campaign targeting. This is used when
+     * consent is revoked or when compliance rules require audience deactivation.</p>
+     *
+     * @param audienceId the audience ID to disable; must not be null
+     * @param reason the reason for disabling; must not be null
+     * @return promise completing when the audience is disabled
+     */
+    Promise<Void> disableAudience(String audienceId, String reason);
 }

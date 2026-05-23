@@ -90,12 +90,28 @@ export const CanvasEdgeSchema = CanvasElementBaseSchema.extend({
 export type CanvasEdge = z.infer<typeof CanvasEdgeSchema>;
 
 // ============================================================================
+// Canvas Group
+// ============================================================================
+
+export const CanvasGroupSchema = CanvasElementBaseSchema.extend({
+  type: z.literal('group'),
+  children: z.array(z.string()),
+  collapsed: z.boolean().default(false),
+  data: z.object({
+    label: z.string(),
+  }),
+});
+
+export type CanvasGroup = z.infer<typeof CanvasGroupSchema>;
+
+// ============================================================================
 // Canvas Element Union
 // ============================================================================
 
 export const CanvasElementSchema = z.union([
   CanvasNodeSchema,
   CanvasEdgeSchema,
+  CanvasGroupSchema,
 ]);
 
 export type CanvasElement = z.infer<typeof CanvasElementSchema>;
@@ -113,22 +129,161 @@ export const CanvasViewportSchema = z.object({
 export type CanvasViewport = z.infer<typeof CanvasViewportSchema>;
 
 // ============================================================================
+// Canvas Selection and Layers
+// ============================================================================
+
+export const CanvasSelectionSchema = z.object({
+  elementIds: z.array(z.string()).default([]),
+  nodeIds: z.array(z.string()).default([]),
+  edgeIds: z.array(z.string()).default([]),
+  groupIds: z.array(z.string()).default([]),
+});
+
+export type CanvasSelection = z.infer<typeof CanvasSelectionSchema>;
+
+export const CanvasLayerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  visible: z.boolean().default(true),
+  locked: z.boolean().default(false),
+  zIndex: z.number().int().default(0),
+  elementIds: z.array(z.string()).default([]),
+});
+
+export type CanvasLayer = z.infer<typeof CanvasLayerSchema>;
+
+// ============================================================================
 // Canvas Document
 // ============================================================================
 
-export const CanvasDocumentSchema = z.object({
+const CanvasDocumentBaseSchema = z.object({
   schemaVersion: z.string().default('1.0.0'),
   documentId: z.string(),
   name: z.string(),
   description: z.string().optional(),
   elements: z.record(z.string(), CanvasElementSchema),
   viewport: CanvasViewportSchema,
+  selection: CanvasSelectionSchema.default({
+    elementIds: [],
+    nodeIds: [],
+    edgeIds: [],
+    groupIds: [],
+  }),
+  layers: z.record(z.string(), CanvasLayerSchema).default({}),
   metadata: z.object({
     createdAt: z.string(),
     updatedAt: z.string(),
     author: z.string().optional(),
     tags: z.array(z.string()).optional(),
   }),
+});
+
+export const CanvasDocumentSchema = CanvasDocumentBaseSchema.superRefine((doc, ctx) => {
+  const elementIds = new Set(Object.keys(doc.elements));
+  const nodeIds = new Set<string>();
+  const edgeIds = new Set<string>();
+  const groupIds = new Set<string>();
+
+  for (const [elementKey, element] of Object.entries(doc.elements)) {
+    if (element.id !== elementKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['elements', elementKey, 'id'],
+        message: 'Element id must match its record key',
+      });
+    }
+
+    if (element.type === 'node') nodeIds.add(element.id);
+    if (element.type === 'edge') edgeIds.add(element.id);
+    if (element.type === 'group') groupIds.add(element.id);
+  }
+
+  for (const [elementKey, element] of Object.entries(doc.elements)) {
+    if (element.type === 'edge') {
+      if (!nodeIds.has(element.source)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['elements', elementKey, 'source'],
+          message: `Edge source "${element.source}" does not reference a node`,
+        });
+      }
+      if (!nodeIds.has(element.target)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['elements', elementKey, 'target'],
+          message: `Edge target "${element.target}" does not reference a node`,
+        });
+      }
+    }
+
+    if (element.type === 'group') {
+      for (const childId of element.children) {
+        if (!elementIds.has(childId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['elements', elementKey, 'children'],
+            message: `Group child "${childId}" does not reference an element`,
+          });
+        }
+      }
+    }
+  }
+
+  for (const [layerKey, layer] of Object.entries(doc.layers)) {
+    if (layer.id !== layerKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['layers', layerKey, 'id'],
+        message: 'Layer id must match its record key',
+      });
+    }
+    for (const elementId of layer.elementIds) {
+      if (!elementIds.has(elementId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['layers', layerKey, 'elementIds'],
+          message: `Layer element "${elementId}" does not reference an element`,
+        });
+      }
+    }
+  }
+
+  for (const selectedId of doc.selection.elementIds) {
+    if (!elementIds.has(selectedId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'elementIds'],
+        message: `Selected element "${selectedId}" does not reference an element`,
+      });
+    }
+  }
+  for (const selectedId of doc.selection.nodeIds) {
+    if (!nodeIds.has(selectedId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'nodeIds'],
+        message: `Selected node "${selectedId}" does not reference a node`,
+      });
+    }
+  }
+  for (const selectedId of doc.selection.edgeIds) {
+    if (!edgeIds.has(selectedId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'edgeIds'],
+        message: `Selected edge "${selectedId}" does not reference an edge`,
+      });
+    }
+  }
+  for (const selectedId of doc.selection.groupIds) {
+    if (!groupIds.has(selectedId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'groupIds'],
+        message: `Selected group "${selectedId}" does not reference a group`,
+      });
+    }
+  }
 });
 
 export type CanvasDocument = z.infer<typeof CanvasDocumentSchema>;
@@ -138,19 +293,33 @@ export type CanvasDocument = z.infer<typeof CanvasDocumentSchema>;
 // ============================================================================
 
 export interface Migration {
-  version: string;
-  migrate: (doc: unknown) => CanvasDocument;
+  fromVersion: string;
+  toVersion: string;
+  migrate: (doc: unknown) => unknown;
 }
 
-const migrations: Record<string, Migration> = {
-  '1.0.0': {
-    version: '1.0.0',
-    migrate: (doc: unknown): CanvasDocument => {
-      // Identity migration for current version
-      return CanvasDocumentSchema.parse(doc);
+const migrations: readonly Migration[] = [
+  {
+    fromVersion: '0.0.0',
+    toVersion: '1.0.0',
+    migrate: (doc: unknown): unknown => {
+      if (typeof doc !== 'object' || doc === null) {
+        throw new Error('Invalid document structure');
+      }
+      return {
+        ...doc,
+        schemaVersion: '1.0.0',
+        selection: {
+          elementIds: [],
+          nodeIds: [],
+          edgeIds: [],
+          groupIds: [],
+        },
+        layers: {},
+      };
     },
   },
-};
+];
 
 export function migrateCanvasDocument(doc: unknown, targetVersion: string = '1.0.0'): CanvasDocument {
   const parsed = z.object({
@@ -167,12 +336,16 @@ export function migrateCanvasDocument(doc: unknown, targetVersion: string = '1.0
     return CanvasDocumentSchema.parse(doc);
   }
 
-  // Apply migrations in order
   let migrated = doc;
-  for (const version of Object.keys(migrations).sort()) {
-    if (version > currentVersion && version <= targetVersion) {
-      migrated = migrations[version].migrate(migrated);
+  let version = currentVersion;
+
+  while (version !== targetVersion) {
+    const migration = migrations.find((candidate) => candidate.fromVersion === version);
+    if (migration === undefined) {
+      throw new Error(`No canvas document migration from ${version} to ${targetVersion}`);
     }
+    migrated = migration.migrate(migrated);
+    version = migration.toVersion;
   }
 
   return CanvasDocumentSchema.parse(migrated);
@@ -243,6 +416,13 @@ export function createCanvasDocument(
     name,
     elements: {},
     viewport: { x: 0, y: 0, zoom: 1 },
+    selection: {
+      elementIds: [],
+      nodeIds: [],
+      edgeIds: [],
+      groupIds: [],
+    },
+    layers: {},
     metadata: {
       createdAt: now,
       updatedAt: now,

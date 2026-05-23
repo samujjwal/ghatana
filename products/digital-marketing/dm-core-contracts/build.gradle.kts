@@ -44,6 +44,7 @@ tasks.jacocoTestReport {
 }
 
 tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test, tasks.compileJava, tasks.processResources)
     classDirectories.setFrom(
         files(classDirectories.files.map {
             fileTree(it) {

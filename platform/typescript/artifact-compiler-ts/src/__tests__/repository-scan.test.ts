@@ -112,6 +112,12 @@ describe("scanRepositorySources", () => {
     expect(scan.model.metadata.repositoryGraph).toEqual({
       resolvedImportCount: 1,
       unresolvedImportCount: 1,
+      packageImportCount: 0,
+      typeOnlyImportCount: 0,
+      valueImportCount: 2,
+      dynamicImportCount: 0,
+      packageImportSpecifiers: [],
+      unresolvedImportSpecifiers: ['./missing'],
       routeDeclarationCount: 0,
       componentUsageCount: 1,
       apiCallCount: 0,
@@ -161,6 +167,12 @@ describe("scanRepositorySources", () => {
     expect(scan.model.metadata.repositoryGraph).toEqual({
       resolvedImportCount: 0,
       unresolvedImportCount: 0,
+      packageImportCount: 0,
+      typeOnlyImportCount: 0,
+      valueImportCount: 0,
+      dynamicImportCount: 0,
+      packageImportSpecifiers: [],
+      unresolvedImportSpecifiers: [],
       routeDeclarationCount: 1,
       componentUsageCount: 3,
       apiCallCount: 1,
@@ -214,6 +226,12 @@ describe("scanRepositorySources", () => {
     expect(scan.model.metadata.repositoryGraph).toEqual({
       resolvedImportCount: 0,
       unresolvedImportCount: 1,
+      packageImportCount: 1,
+      typeOnlyImportCount: 0,
+      valueImportCount: 1,
+      dynamicImportCount: 0,
+      packageImportSpecifiers: ['react-router-dom'],
+      unresolvedImportSpecifiers: ['react-router-dom'],
       routeDeclarationCount: 0,
       componentUsageCount: 0,
       apiCallCount: 0,
@@ -224,5 +242,67 @@ describe("scanRepositorySources", () => {
       workspaceDependencyCount: 2,
       workspaceScriptCount: 2,
     });
+  });
+
+  it('separates package imports, type-only edges, value edges, and dynamic imports', () => {
+    const scan = scanRepositorySources(
+      [
+        {
+          relativePath: 'src/App.tsx',
+          content: `
+            import type { ButtonProps } from './components/Button';
+            import { Button } from './components/Button';
+            import React from 'react';
+            export async function App() {
+              const lazy = await import('./lazy/Widget');
+              return <Button label={lazy.name} />;
+            }
+          `,
+        },
+        {
+          relativePath: 'src/components/Button.tsx',
+          content: 'export interface ButtonProps { readonly label: string; } export function Button() { return <button />; }',
+        },
+        {
+          relativePath: 'src/lazy/Widget.tsx',
+          content: 'export const name = "Widget";',
+        },
+      ],
+      {
+        scanJobId: 'scan-7',
+        modelId: 'model-7',
+        label: 'Typed + Dynamic Graph Repo',
+      },
+    );
+
+    expect(scan.model.metadata.repositoryGraph).toMatchObject({
+      resolvedImportCount: 3,
+      unresolvedImportCount: 1,
+      packageImportCount: 1,
+      typeOnlyImportCount: 1,
+      valueImportCount: 2,
+      dynamicImportCount: 1,
+      packageImportSpecifiers: ['react'],
+      unresolvedImportSpecifiers: ['react'],
+    });
+    expect(scan.model.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fromId: 'src/App.tsx',
+          toId: 'src/components/Button.tsx',
+          kind: 'type-only',
+        }),
+        expect.objectContaining({
+          fromId: 'src/App.tsx',
+          toId: 'src/components/Button.tsx',
+          kind: 'import',
+        }),
+        expect.objectContaining({
+          fromId: 'src/App.tsx',
+          toId: 'src/lazy/Widget.tsx',
+          kind: 'dynamic-import',
+        }),
+      ]),
+    );
   });
 });

@@ -8,6 +8,7 @@
  */
 
 import { gunzipSync, inflateRawSync } from "node:zlib";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   readFile,
@@ -23,6 +24,8 @@ import type {
   StudioSourceAcquisitionJob,
   StudioSourceAcquisitionJobStore,
   StudioSourceAcquisitionPayloadStore,
+  StudioSourceInventoryRecord,
+  StudioSourceInventoryStore,
   StudioWorkflowStoreScope,
 } from "../api/KernelLifecycleApiHandlers.js";
 
@@ -530,20 +533,32 @@ export class InMemoryStudioSourceWorkspaceWriter implements StudioSourceWorkspac
     readonly StudioMaterializedSourceFile[]
   >();
 
+  constructor(private readonly inventoryStore?: StudioSourceInventoryStore) {}
+
   async writeFiles(request: {
     readonly scope: StudioWorkflowStoreScope;
     readonly jobId: string;
     readonly files: readonly StudioMaterializedSourceFile[];
   }): Promise<{ readonly localWorkspacePath: string }> {
     this.filesByJob.set(request.jobId, request.files);
-    return {
-      localWorkspacePath: `.kernel/source-acquisition/${request.scope.tenantId}/${request.scope.workspaceId}/${request.scope.projectId}/${request.jobId}`,
-    };
+    const localWorkspacePath = `.kernel/source-acquisition/${request.scope.tenantId}/${request.scope.workspaceId}/${request.scope.projectId}/${request.jobId}`;
+    await this.inventoryStore?.putSourceInventory(
+      buildSourceInventory({
+        ...request,
+        localWorkspacePath,
+        generatedAt: new Date().toISOString(),
+      }),
+    );
+    return { localWorkspacePath };
   }
 }
 
 export class FileSystemStudioSourceWorkspaceWriter implements StudioSourceWorkspaceWriter {
-  constructor(private readonly rootDirectory: string) {}
+  constructor(
+    private readonly rootDirectory: string,
+    private readonly inventoryStore?: StudioSourceInventoryStore,
+    private readonly clock: () => string = () => new Date().toISOString(),
+  ) {}
 
   async writeFiles(request: {
     readonly scope: StudioWorkflowStoreScope;
@@ -561,6 +576,13 @@ export class FileSystemStudioSourceWorkspaceWriter implements StudioSourceWorksp
       await mkdir(dirname(targetPath), { recursive: true });
       await writeFile(targetPath, file.bytes);
     }
+    await this.inventoryStore?.putSourceInventory(
+      buildSourceInventory({
+        ...request,
+        localWorkspacePath: workspaceRoot,
+        generatedAt: this.clock(),
+      }),
+    );
     return { localWorkspacePath: workspaceRoot };
   }
 }
@@ -759,6 +781,40 @@ export class FileSystemStudioSourceAcquisitionPayloadStore implements StudioSour
   }
 }
 
+export class FileSystemStudioSourceInventoryStore implements StudioSourceInventoryStore {
+  constructor(private readonly rootDirectory: string) {}
+
+  async putSourceInventory(
+    record: StudioSourceInventoryRecord,
+  ): Promise<StudioSourceInventoryRecord> {
+    const targetPath = this.inventoryPath(record.scope, record.jobId);
+    await mkdir(dirname(targetPath), { recursive: true });
+    const tempPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
+    await writeFile(tempPath, `${JSON.stringify(record, null, 2)}\n`, "utf8");
+    await rename(tempPath, targetPath);
+    return record;
+  }
+
+  async getSourceInventory(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceInventoryRecord | null> {
+    try {
+      const content = await readFile(this.inventoryPath(scope, jobId), "utf8");
+      return JSON.parse(content) as StudioSourceInventoryRecord;
+    } catch (error) {
+      if (isFileNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private inventoryPath(scope: StudioWorkflowStoreScope, jobId: string): string {
+    return join(scopedJobDirectory(this.rootDirectory, scope, jobId), "source-inventory.json");
+  }
+}
+
 function assertWorkerAllowedAcquisitionJobTransition(
   currentStatus: StudioSourceAcquisitionJob["status"],
   nextStatus: Parameters<
@@ -863,6 +919,41 @@ function parseRepositoryArchiveRequest(
     repo,
     ref: ref ?? "main",
   };
+}
+
+function buildSourceInventory(request: {
+  readonly scope: StudioWorkflowStoreScope;
+  readonly jobId: string;
+  readonly files: readonly StudioMaterializedSourceFile[];
+  readonly localWorkspacePath: string;
+  readonly generatedAt: string;
+}): StudioSourceInventoryRecord {
+  const files = request.files
+    .map((file) => ({
+      relativePath: file.relativePath,
+      size: file.bytes.byteLength,
+      contentType: contentTypeForPath(file.relativePath),
+      sha256: createHash("sha256").update(file.bytes).digest("hex"),
+    }))
+    .sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+  return {
+    jobId: request.jobId,
+    scope: request.scope,
+    generatedAt: request.generatedAt,
+    localWorkspacePath: request.localWorkspacePath,
+    fileCount: files.length,
+    totalBytes: files.reduce((sum, file) => sum + file.size, 0),
+    files,
+  };
+}
+
+function contentTypeForPath(relativePath: string): string {
+  if (relativePath.endsWith(".tsx")) return "text/tsx";
+  if (relativePath.endsWith(".ts")) return "text/typescript";
+  if (relativePath.endsWith(".jsx") || relativePath.endsWith(".js")) return "text/javascript";
+  if (relativePath.endsWith(".css")) return "text/css";
+  if (relativePath.endsWith(".json")) return "application/json";
+  return "text/plain";
 }
 
 function scopedJobDirectory(

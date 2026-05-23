@@ -343,6 +343,34 @@ describe("KernelLifecycleApiHandlers — authorization enforcement", () => {
     );
   });
 
+  it("uses authorizeProductUnitRead for Studio source acquisition inventory lookup", async () => {
+    const authorizer = createAuthorizer({
+      authenticate: vi.fn().mockResolvedValue(createActor()),
+      authorizeProductUnitRead: vi.fn().mockResolvedValue(false),
+    });
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      authorizer,
+      requireScopeHeaders: false,
+    });
+
+    const response = await handlers.getStudioSourceAcquisitionInventory({
+      headers: {
+        "X-Correlation-Id": "corr-source-inventory-auth",
+        "X-Ghatana-Tenant-Id": "tenant-1",
+        "X-Ghatana-Workspace-Id": "workspace-1",
+        "X-Ghatana-Project-Id": "project-1",
+      },
+      params: { jobId: "studio-acquisition:github:missing" },
+    });
+
+    expect(response.statusCode).toBe(403);
+    expect(authorizer.authorizeProductUnitRead).toHaveBeenCalledWith(
+      expect.objectContaining({ actorId: "actor-1" }),
+      expect.objectContaining({ correlationId: "corr-source-inventory-auth" }),
+    );
+  });
+
   it("uses authorizeProductUnitRead for Studio workflow evidence lookup", async () => {
     const authorizer = createAuthorizer({
       authenticate: vi.fn().mockResolvedValue(createActor()),

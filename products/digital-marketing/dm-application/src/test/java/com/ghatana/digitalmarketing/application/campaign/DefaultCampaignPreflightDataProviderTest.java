@@ -259,6 +259,16 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         public Promise<Optional<Audience>> findByCampaign(DmWorkspaceId workspaceId, String campaignId) {
             return Promise.of(Optional.ofNullable(audience));
         }
+
+        @Override
+        public Promise<List<Audience>> findByContactId(String contactId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<Void> disableAudience(String audienceId, String reason) {
+            return Promise.complete();
+        }
     }
 
     private static final class InMemoryContentAssetRepository implements ContentAssetRepository {

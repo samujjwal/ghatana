@@ -69,6 +69,7 @@ const MARGIN_Y = 40;
 export function builderToCanvas(doc: BuilderDocument): BuilderToCanvasResult {
   const nodes: BuilderCanvasNode[] = [];
   const edges: BuilderCanvasEdge[] = [];
+  const knownNodeIds = new Set(Object.keys(doc.nodes));
 
   let index = 0;
   for (const [nodeId, instance] of Object.entries(doc.nodes)) {
@@ -101,6 +102,8 @@ export function builderToCanvas(doc: BuilderDocument): BuilderToCanvasResult {
     // Create edges for slot relationships
     for (const [slotName, childIds] of Object.entries(instance.slots)) {
       for (const childId of childIds) {
+        if (!knownNodeIds.has(childId)) continue;
+
         const canvasEdge: BuilderCanvasEdge = {
           id: `${nodeId}__${slotName}__${childId}`,
           source: nodeId,
@@ -127,7 +130,24 @@ function isCanvasPosition(value: unknown): value is { x: number; y: number } {
     'x' in value &&
     'y' in value &&
     typeof value.x === 'number' &&
-    typeof value.y === 'number'
+    Number.isFinite(value.x) &&
+    typeof value.y === 'number' &&
+    Number.isFinite(value.y)
+  );
+}
+
+function isCanvasSize(value: unknown): value is { width: number; height: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'width' in value &&
+    'height' in value &&
+    typeof value.width === 'number' &&
+    Number.isFinite(value.width) &&
+    value.width >= 0 &&
+    typeof value.height === 'number' &&
+    Number.isFinite(value.height) &&
+    value.height >= 0
   );
 }
 
@@ -187,7 +207,7 @@ export function canvasToBuilder(options: CanvasToBuilderOptions): BuilderDocumen
   // Build a position map from the canvas node list
   const positionMap = new Map<string, { x: number; y: number }>();
   for (const cn of canvasNodes) {
-    if (cn.position) {
+    if (isCanvasPosition(cn.position)) {
       positionMap.set(cn.id, cn.position);
     }
   }
@@ -294,13 +314,15 @@ export function reconcileCanvasGeometryDeltas(
       kind: 'update-node-geometry',
       nodeId,
     };
-    if (delta.position !== undefined) {
+    if (isCanvasPosition(delta.position)) {
       op.position = delta.position;
     }
-    if (delta.size !== undefined) {
+    if (isCanvasSize(delta.size)) {
       op.size = delta.size;
     }
-    ops.push(op);
+    if (op.position !== undefined || op.size !== undefined) {
+      ops.push(op);
+    }
   }
 
   return ops;

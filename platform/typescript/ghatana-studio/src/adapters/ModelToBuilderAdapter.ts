@@ -45,15 +45,43 @@ export function projectModelToBuilderDocument(
     includeKinds: ['component', 'page', 'layout'],
   });
 
-  return materializeProjectedBuilderDocument(projected, {
+  const document = materializeProjectedBuilderDocument(projected, {
     owner: model.modelId,
     description: model.label,
   });
+
+  return attachInferredSourceProps(document, model);
 }
 
 export interface MaterializeProjectedBuilderDocumentOptions {
   readonly owner: string;
   readonly description?: string;
+}
+
+function attachInferredSourceProps(
+  document: BuilderDocument,
+  model: LogicalArtifactModel,
+): BuilderDocument {
+  const nodes: Record<string, ComponentInstance> = {};
+  for (const [nodeId, node] of Object.entries(document.nodes)) {
+    const artifactNode = model.nodes[nodeId];
+    const inferredProps = artifactNode?.inferredProps ?? {};
+    const inferredBuilderProps = Object.fromEntries(
+      Object.entries(inferredProps).map(([propName, propType]) => [propName, propType]),
+    );
+    nodes[nodeId] = {
+      ...node,
+      props: {
+        ...inferredBuilderProps,
+        ...node.props,
+      },
+    };
+  }
+
+  return {
+    ...document,
+    nodes,
+  };
 }
 
 export function materializeProjectedBuilderDocument(

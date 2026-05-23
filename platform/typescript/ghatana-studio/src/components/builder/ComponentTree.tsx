@@ -9,7 +9,7 @@
  * @doc.layer platform
  */
 
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { useEffect, useState, useMemo } from 'react';
 import { Typography } from '@ghatana/design-system';
 import type { ComponentInstance, NodeId } from '@ghatana/ui-builder';
@@ -120,15 +120,26 @@ export function ComponentTree({
         {/* Node Row */}
         <div
           data-testid={`builder-tree-node-${node.instance.contractName}`}
+          role="button"
+          tabIndex={0}
+          aria-label={`Select ${node.instance.contractName}`}
+          aria-pressed={isSelected}
           className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-gray-100 rounded ${
             isSelected ? 'bg-blue-50 border-l-2 border-blue-500' : ''
           }`}
           style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
           onClick={() => onNodeSelect(node.instance.id)}
+          onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            onNodeSelect(node.instance.id);
+          }}
         >
           {/* Expand/Collapse Button */}
           {hasChildren ? (
             <button
+              type="button"
+              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.instance.contractName}`}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleNode(node.instance.id);

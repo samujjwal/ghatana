@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
 const releaseWorkflowPath = path.join(repoRoot, '.github/workflows/data-cloud-release.yml');
+const failureEvidenceDir = path.join(repoRoot, '.kernel/evidence/runtime-dependency-failure-injection');
+const reportPrefix = 'runtime-dependency-failure-injection-';
 
 const requiredFiles = [
   'products/data-cloud/scripts/run-smoke-e2e.sh',
@@ -29,7 +31,81 @@ const requiredCiTokens = [
   'run-durable-load-suite.sh',
 ];
 
+const requiredScenarioEvidence = [
+  { key: 'postgresDown', patterns: ['postgres unavailability'] },
+  { key: 'clickhouseDown', patterns: ['clickhouse unavailability'] },
+  { key: 'openSearchDown', patterns: ['opensearch unavailability'] },
+  { key: 's3Down', patterns: ['s3 unavailability'] },
+  { key: 'auditSinkUnavailable', patterns: ['audit sink unavailability'] },
+  { key: 'policyEngineUnavailable', patterns: ['policy engine unavailability'] },
+  { key: 'aiCompletionUnavailable', patterns: ['ai completion unavailability'] },
+  { key: 'networkTimeout', patterns: ['network timeout'] },
+  { key: 'queueSaturation', patterns: ['queue saturation'] },
+  { key: 'retryBackoff', patterns: ['retry implementation', 'backoff implementation'] },
+];
+
 const violations = [];
+
+function findLatestReportFile() {
+  if (!existsSync(failureEvidenceDir)) {
+    return null;
+  }
+
+  const candidates = readdirSync(failureEvidenceDir)
+    .filter((entry) => entry.startsWith(reportPrefix) && entry.endsWith('.json'))
+    .map((entry) => ({
+      entry,
+      absolutePath: path.join(failureEvidenceDir, entry),
+      modifiedAt: statSync(path.join(failureEvidenceDir, entry)).mtimeMs,
+    }))
+    .sort((left, right) => right.modifiedAt - left.modifiedAt);
+
+  return candidates[0] ?? null;
+}
+
+function validateFailureInjectionReport() {
+  const latestReport = findLatestReportFile();
+  if (!latestReport) {
+    violations.push('Missing runtime dependency failure-injection evidence report in .kernel/evidence/runtime-dependency-failure-injection');
+    return;
+  }
+
+  let report;
+  try {
+    report = JSON.parse(readFileSync(latestReport.absolutePath, 'utf8'));
+  } catch (error) {
+    violations.push(`Invalid runtime dependency failure-injection report JSON: ${latestReport.entry} (${error.message})`);
+    return;
+  }
+
+  const ageHours = (Date.now() - latestReport.modifiedAt) / (1000 * 60 * 60);
+  if (ageHours > 168) {
+    violations.push(`Runtime dependency failure-injection report is stale (> 168h): ${latestReport.entry}`);
+  }
+
+  if (!Array.isArray(report.violations)) {
+    violations.push('Runtime dependency failure-injection report missing violations array');
+  } else if (report.violations.length > 0) {
+    violations.push(`Runtime dependency failure-injection report has ${report.violations.length} violation(s)`);
+  }
+
+  if (!Array.isArray(report.evidence)) {
+    violations.push('Runtime dependency failure-injection report missing evidence array');
+    return;
+  }
+
+  const evidenceText = report.evidence.join(' | ').toLowerCase();
+  for (const scenario of requiredScenarioEvidence) {
+    const satisfied = scenario.patterns.every((pattern) => evidenceText.includes(pattern));
+    if (!satisfied) {
+      violations.push(`Runtime dependency failure-injection report missing scenario evidence for ${scenario.key}`);
+    }
+  }
+
+  if (!report.summary || typeof report.summary.totalViolations !== 'number') {
+    violations.push('Runtime dependency failure-injection report missing summary.totalViolations');
+  }
+}
 
 for (const relativePath of requiredFiles) {
   const absolutePath = path.join(repoRoot, relativePath);
@@ -52,6 +128,8 @@ if (!existsSync(releaseWorkflowPath)) {
     violations.push('Strict release jobs must not use continue-on-error: true');
   }
 }
+
+validateFailureInjectionReport();
 
 const ciWorkflowPath = path.join(repoRoot, '.github/workflows/data-cloud-ci.yml');
 if (!existsSync(ciWorkflowPath)) {

@@ -2,6 +2,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
@@ -31,33 +32,81 @@ const specs = [
   },
 ];
 
-function extractPathMethodKeys(source) {
+export function extractPathMethodKeys(source) {
   const normalized = source.replace(/\r\n/g, '\n');
   const keys = new Set();
+  const methodNames = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options']);
 
-  const yamlRegex = /^\s{2}(\/[^:\n]+):\n([\s\S]*?)(?=^\s{2}\/|^\S|\Z)/gm;
-  for (const match of normalized.matchAll(yamlRegex)) {
-    const routePath = match[1].trim();
-    const block = match[2];
-    for (const method of ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']) {
-      if (new RegExp(`^\\s{4}${method}:`, 'm').test(block)) {
-        keys.add(`${method.toUpperCase()} ${routePath}`);
+  const trimmed = normalized.trimStart();
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(normalized);
+      const paths = parsed?.paths;
+      if (paths && typeof paths === 'object') {
+        for (const [routePath, operations] of Object.entries(paths)) {
+          if (!operations || typeof operations !== 'object') {
+            continue;
+          }
+          for (const [methodName] of Object.entries(operations)) {
+            const loweredMethod = String(methodName).toLowerCase();
+            if (methodNames.has(loweredMethod)) {
+              keys.add(`${loweredMethod.toUpperCase()} ${routePath}`);
+            }
+          }
+        }
       }
+      return keys;
+    } catch {
+      // Fall through to YAML scanning if JSON parse fails.
     }
   }
 
-  const jsonRegex = /"(\/[^"\n]+)"\s*:\s*\{([\s\S]*?)(?=\n\s*"\/|\n\s*\}|\Z)/g;
-  for (const match of normalized.matchAll(jsonRegex)) {
-    const routePath = match[1].trim();
-    const block = match[2];
-    for (const method of ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']) {
-      if (new RegExp(`"${method}"\\s*:`).test(block)) {
-        keys.add(`${method.toUpperCase()} ${routePath}`);
+  let inPathsBlock = false;
+  let currentPath = null;
+
+  for (const line of normalized.split('\n')) {
+    if (!inPathsBlock) {
+      if (/^paths:\s*$/.test(line.trim())) {
+        inPathsBlock = true;
       }
+      continue;
+    }
+
+    if (/^\S/.test(line) && line.trim() !== 'paths:') {
+      inPathsBlock = false;
+      currentPath = null;
+      continue;
+    }
+
+    const pathMatch = line.match(/^\s{2}(\/[^\s]+):\s*$/);
+    if (pathMatch) {
+      currentPath = pathMatch[1];
+      continue;
+    }
+
+    if (!currentPath) {
+      continue;
+    }
+
+    const methodMatch = line.match(/^\s{4}(get|post|put|patch|delete|head|options):\s*$/i);
+    if (methodMatch) {
+      keys.add(`${methodMatch[1].toUpperCase()} ${currentPath}`);
     }
   }
 
   return keys;
+}
+
+export function detectRemovedOperations({ baselineKeys, currentKeys, waivers, specId }) {
+  const removed = [...baselineKeys].filter((entry) => !currentKeys.has(entry)).sort();
+  const waivedRemoved = removed.filter((entry) => waivers.has(`${specId}:${entry}`));
+  const unwaivedRemoved = removed.filter((entry) => !waivers.has(`${specId}:${entry}`));
+
+  return {
+    removed,
+    waivedRemoved,
+    unwaivedRemoved,
+  };
 }
 
 function loadWaivers() {
@@ -90,9 +139,12 @@ export function runOpenApiBreakingChangeCheck() {
     const currentKeys = extractPathMethodKeys(readFileSync(currentPath, 'utf8'));
     const baselineKeys = extractPathMethodKeys(readFileSync(baselinePath, 'utf8'));
 
-    const removed = [...baselineKeys].filter((entry) => !currentKeys.has(entry)).sort();
-    const waivedRemoved = removed.filter((entry) => waivers.has(`${spec.id}:${entry}`));
-    const unwaivedRemoved = removed.filter((entry) => !waivers.has(`${spec.id}:${entry}`));
+    const { removed, waivedRemoved, unwaivedRemoved } = detectRemovedOperations({
+      baselineKeys,
+      currentKeys,
+      waivers,
+      specId: spec.id,
+    });
 
     if (unwaivedRemoved.length > 0) {
       violations.push(
@@ -141,4 +193,7 @@ function main() {
   console.log('OpenAPI breaking-change check passed.');
 }
 
-main();
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  main();
+}

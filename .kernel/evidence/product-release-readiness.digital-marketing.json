@@ -1,0 +1,653 @@
+{
+  "generatedAt": "2026-05-23T02:21:52.803Z",
+  "productId": "digital-marketing",
+  "releaseVerdict": "fail",
+  "releaseProfiles": [
+    "standard-web-api-release",
+    "backend-only-release",
+    "polyglot-service-release"
+  ],
+  "productMetadata": {
+    "id": "digital-marketing",
+    "name": "Digital Marketing Operating System",
+    "description": "Digital marketing campaign management for non-regulated local services and B2B businesses",
+    "type": "product",
+    "kind": "business-product",
+    "manifestPath": "products/digital-marketing/dm-domain-packs/domain-pack.json",
+    "manifestFormat": "json",
+    "buildFile": "products/digital-marketing/dm-domain-packs/build.gradle.kts",
+    "gradleModules": [
+      ":products:digital-marketing:dm-core-contracts",
+      ":products:digital-marketing:dm-domain-packs",
+      ":products:digital-marketing:dm-kernel-bridge",
+      ":products:digital-marketing:dm-domain",
+      ":products:digital-marketing:dm-application",
+      ":products:digital-marketing:dm-infra",
+      ":products:digital-marketing:dm-persistence",
+      ":products:digital-marketing:dm-connector-google-ads",
+      ":products:digital-marketing:dm-api",
+      ":products:digital-marketing:dm-integration-tests"
+    ],
+    "surfaces": [
+      {
+        "type": "backend-api",
+        "path": "products/digital-marketing/dm-api",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "web",
+        "path": "products/digital-marketing/ui",
+        "packagePath": "products/digital-marketing/ui/package.json",
+        "implementationStatus": "implemented"
+      }
+    ],
+    "pnpmPackages": [
+      "products/digital-marketing/ui"
+    ],
+    "ci": {
+      "enabled": true,
+      "gates": [
+        "build",
+        "test",
+        "manifest-validation",
+        "security-scan"
+      ]
+    },
+    "conformance": {
+      "manifest": true,
+      "observability": true,
+      "security": true,
+      "dataAccess": true,
+      "bridge": true,
+      "bridgeAdapters": [
+        {
+          "file": "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java",
+          "tests": [
+            {
+              "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java"
+            },
+            {
+              "file": "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java"
+            }
+          ]
+        }
+      ],
+      "agentDefinitions": true,
+      "masteryBindings": true,
+      "evaluationPacks": true,
+      "runtimeModule": false
+    },
+    "metadata": {
+      "owner": "Digital Marketing Team",
+      "created": "2026-03-19",
+      "documentation": "products/digital-marketing/README.md",
+      "status": "active",
+      "pilot": true
+    },
+    "lifecycleProfile": "standard-web-api-product",
+    "lifecycleStatus": "enabled",
+    "lifecycleMigration": {
+      "status": "ready",
+      "readinessReasonCode": "validated-digital-marketing-lifecycle-pilot",
+      "notes": "Digital Marketing is the validated lifecycle pilot."
+    },
+    "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
+    "lifecycle": {
+      "enabled": true,
+      "phases": {
+        "dev": {
+          "defaultSurfaces": [
+            "backend-api",
+            "web"
+          ],
+          "mode": "parallel"
+        },
+        "build": {
+          "defaultSurfaces": [
+            "backend-api",
+            "web"
+          ],
+          "mode": "sequential"
+        }
+      },
+      "toolchain": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react"
+      }
+    },
+    "toolchain": {
+      "profile": "standard",
+      "adapters": {
+        "backend-api": "gradle-java-service",
+        "web": "pnpm-vite-react"
+      }
+    },
+    "artifacts": {
+      "backend-api": {
+        "type": "jvm-service",
+        "packaging": "jar",
+        "required": true
+      },
+      "web": {
+        "type": "static-web-bundle",
+        "packaging": "static-files",
+        "required": true
+      }
+    },
+    "deployment": {
+      "targets": [
+        "compose-local"
+      ],
+      "defaultEnvironment": "local",
+      "healthChecks": [
+        "standard-http"
+      ],
+      "rollback": {
+        "strategy": "previous-artifact"
+      }
+    },
+    "environments": {
+      "supported": [
+        "local"
+      ]
+    },
+    "lifecycleExecutionAllowed": true
+  },
+  "dimensions": [
+    {
+      "dimensionName": "Vision alignment",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Product coherence",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Feature completeness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "End-to-end workflow completeness",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Domain correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Data model correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Contract correctness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Route/API correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/API/runtime coherence",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime Truth maturity",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "Security",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Privacy",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Tenant isolation",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Authorization/RBAC/ABAC/scope",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Governance/policy/compliance",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Audit durability/evidence quality",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Event correctness",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Action Plane / automation correctness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Implicit AI/ML maturity",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "HITL/override control",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Observability",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Reliability/resilience",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Error/degraded mode",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Idempotency/retry/replay/rollback",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Performance",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "Scalability",
+      "score": 3,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Extensibility/plugin model",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Shared-library reuse",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Dependency hygiene",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Architecture boundaries",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Simplicity/maintainability",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/UX simplicity/consistency",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Accessibility",
+      "score": 3.5,
+      "sources": {
+        "baseline": 3,
+        "wave2Delta": 0.5
+      }
+    },
+    {
+      "dimensionName": "i18n/l10n readiness",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Testing depth",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Test quality/no-theater",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "CI gate strength",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Release readiness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Deployment/ops readiness",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Backup/restore/DR",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Config/secrets management",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Documentation truthfulness",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Migration/deprecation hygiene",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Cost/operational efficiency",
+      "score": 4.7,
+      "sources": {
+        "baseline": 4.7,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall production readiness",
+      "score": 4,
+      "sources": {
+        "baseline": 4,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall world-class maturity",
+      "score": 2,
+      "sources": {
+        "baseline": 2,
+        "wave2Delta": 0
+      }
+    }
+  ],
+  "averageScore": 3.58,
+  "releaseTargetScore": 4,
+  "belowTargetDimensions": [
+    {
+      "dimensionName": "Vision alignment",
+      "score": 2
+    },
+    {
+      "dimensionName": "Product coherence",
+      "score": 3
+    },
+    {
+      "dimensionName": "Feature completeness",
+      "score": 2
+    },
+    {
+      "dimensionName": "End-to-end workflow completeness",
+      "score": 3
+    },
+    {
+      "dimensionName": "Domain correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Data model correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "UI/API/runtime coherence",
+      "score": 2
+    },
+    {
+      "dimensionName": "Security",
+      "score": 2
+    },
+    {
+      "dimensionName": "Privacy",
+      "score": 2
+    },
+    {
+      "dimensionName": "Tenant isolation",
+      "score": 2
+    },
+    {
+      "dimensionName": "Event correctness",
+      "score": 3
+    },
+    {
+      "dimensionName": "Action Plane / automation correctness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Implicit AI/ML maturity",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Observability",
+      "score": 2
+    },
+    {
+      "dimensionName": "Performance",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Scalability",
+      "score": 3
+    },
+    {
+      "dimensionName": "Shared-library reuse",
+      "score": 2
+    },
+    {
+      "dimensionName": "Architecture boundaries",
+      "score": 2
+    },
+    {
+      "dimensionName": "Accessibility",
+      "score": 3.5
+    },
+    {
+      "dimensionName": "Testing depth",
+      "score": 2
+    },
+    {
+      "dimensionName": "Documentation truthfulness",
+      "score": 2
+    },
+    {
+      "dimensionName": "Overall world-class maturity",
+      "score": 2
+    }
+  ],
+  "blockingGaps": [
+    {
+      "severity": "P0",
+      "gate": "./scripts/check-data-cloud-release-runtime-profile.mjs",
+      "reason": "script-failure"
+    },
+    {
+      "severity": "P1",
+      "gate": "score-threshold",
+      "reason": "dimensions-below-4",
+      "count": 22
+    }
+  ],
+  "skippedGates": [],
+  "evidencePaths": [
+    ".kernel/evidence/product-release-readiness.json",
+    ".kernel/evidence/kernel-implementation-plan-progress.json",
+    ".kernel/evidence/wave2-product-quality-scorecard.json"
+  ],
+  "artifactAuthoringGateScripts": [
+    "pnpm:check:kernel-authoring-pipeline",
+    "pnpm:check:artifact-roundtrip",
+    "pnpm:check:generated-artifact-validation-pipeline",
+    "pnpm:check:studio-production-profile:strict",
+    "pnpm:check:studio-source-acquisition-worker",
+    "pnpm:check:studio-workflow-persistence-contracts"
+  ]
+}

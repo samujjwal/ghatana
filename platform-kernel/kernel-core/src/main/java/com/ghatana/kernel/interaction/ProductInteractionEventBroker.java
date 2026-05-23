@@ -2,6 +2,7 @@ package com.ghatana.kernel.interaction;
 
 import io.activej.promise.Promise;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,10 +10,23 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Governed broker for product-to-product event interactions.
+ *
+ * <p>P0-04 hardening:</p>
+ * <ul>
+ *   <li>Parallel subscriber dispatch with per-subscriber timeout and isolation</li>
+ *   <li>Retry policy for failed subscribers with configurable max attempts</li>
+ *   <li>Backpressure handling through bounded subscriber execution</li>
+ *   <li>Per-subscriber idempotency keys to prevent duplicate processing</li>
+ * </ul>
  *
  * @doc.type class
  * @doc.purpose Publish product interaction events through Kernel policy, subscriber dispatch, and evidence controls
@@ -23,12 +37,23 @@ public final class ProductInteractionEventBroker {
 
     private static final String SUPPORTED_SCHEMA_VERSION = "1.0.0";
     private static final Set<String> DEFAULT_SUPPORTED_CONTRACT_VERSIONS = Set.of("1.0.0");
+    private static final int DEFAULT_MAX_RETRIES = 3;
+    private static final Duration DEFAULT_SUBSCRIBER_TIMEOUT = Duration.ofSeconds(1);
+    private static final ScheduledExecutorService SUBSCRIBER_TIMEOUT_SCHEDULER =
+            Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "product-interaction-event-timeouts");
+                thread.setDaemon(true);
+                return thread;
+            });
 
     private final Map<String, List<ProductInteractionEventHandler<?>>> subscribersByTopic;
     private final Set<String> supportedContractVersions;
     private final ProductInteractionEventPolicyEvaluator policyEvaluator;
     private final ProductInteractionEventEvidenceWriter evidenceWriter;
     private final ProductInteractionEventProvider eventProvider;
+    private final int maxRetries;
+    private final Duration subscriberTimeout;
+    private final BrokerMode brokerMode;
     private final AtomicLong published;
     private final AtomicLong delivered;
     private final AtomicLong blocked;
@@ -37,6 +62,13 @@ public final class ProductInteractionEventBroker {
     private final AtomicLong evidenceFailures;
     private final AtomicLong totalLatencyMs;
     private final AtomicLong maxLatencyMs;
+    private final AtomicLong subscriberTimeouts;
+    private final AtomicLong subscriberRetries;
+
+        private record DispatchAttemptResult(
+            List<String> deliveredSubscriberIds,
+            List<ProductInteractionEventHandler<?>> failedSubscribers) {
+        }
 
     private ProductInteractionEventBroker(Builder builder) {
         this.subscribersByTopic = copySubscribers(builder.subscribersByTopic);
@@ -44,6 +76,9 @@ public final class ProductInteractionEventBroker {
         this.policyEvaluator = builder.policyEvaluator;
         this.evidenceWriter = builder.evidenceWriter;
         this.eventProvider = builder.eventProvider;
+        this.maxRetries = builder.maxRetries;
+        this.subscriberTimeout = builder.subscriberTimeout;
+        this.brokerMode = builder.brokerMode;
         this.published = new AtomicLong();
         this.delivered = new AtomicLong();
         this.blocked = new AtomicLong();
@@ -52,10 +87,35 @@ public final class ProductInteractionEventBroker {
         this.evidenceFailures = new AtomicLong();
         this.totalLatencyMs = new AtomicLong();
         this.maxLatencyMs = new AtomicLong();
+        this.subscriberTimeouts = new AtomicLong();
+        this.subscriberRetries = new AtomicLong();
+
+        // P0-04: Validate evidence writer in production and development modes
+        if ((brokerMode == BrokerMode.PRODUCTION || brokerMode == BrokerMode.DEVELOPMENT)
+            && evidenceWriter.isNoop()) {
+            throw new IllegalStateException(
+                    "Production mode requires a real evidence writer. No-op evidence writer is not allowed.");
+        }
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a production-mode event broker factory with mandatory evidence writer and event provider.
+     *
+     * @param evidenceWriter the evidence writer (must not be no-op)
+     * @param eventProvider the durable event provider
+     * @return a builder configured for production mode
+     */
+    public static Builder productionFactory(
+            ProductInteractionEventEvidenceWriter evidenceWriter,
+            ProductInteractionEventProvider eventProvider) {
+        return builder()
+                .evidenceWriter(evidenceWriter)
+                .eventProvider(eventProvider)
+                .brokerMode(BrokerMode.PRODUCTION);
     }
 
     public <Event> Promise<ProductInteractionEventOutcome> publish(ProductInteractionEventEnvelope<Event> envelope) {
@@ -102,7 +162,7 @@ public final class ProductInteractionEventBroker {
             eventProvider.store(envelope, ProductInteractionStatus.ALLOWED);
         }
 
-        return Promise.ofCallback(cb -> dispatchSequentially(envelope, subscribers, 0, new ArrayList<>())
+        return Promise.ofCallback(cb -> dispatchParallelWithRetry(envelope, subscribers, 0, new ArrayList<>())
                 .whenComplete((subscriberIds, error) -> {
                     ProductInteractionEventOutcome outcome;
                     if (error != null) {
@@ -145,7 +205,9 @@ public final class ProductInteractionEventBroker {
                 totalLatencyMs.get(),
                 maxLatencyMs.get(),
                 dlqCount.get(),
-                idempotencySkips.get());
+                idempotencySkips.get(),
+                subscriberTimeouts.get(),
+                subscriberRetries.get());
     }
 
     /**
@@ -192,27 +254,89 @@ public final class ProductInteractionEventBroker {
         return eventProvider.getDlqEvents(topic, limit);
     }
 
-    private <Event> Promise<List<String>> dispatchSequentially(
+    // P0-04: Parallel dispatch with per-subscriber timeout and retry
+    private <Event> Promise<List<String>> dispatchParallelWithRetry(
             ProductInteractionEventEnvelope<Event> envelope,
             List<ProductInteractionEventHandler<?>> subscribers,
-            int index,
+            int retryCount,
             List<String> deliveredSubscriberIds) {
-        if (index >= subscribers.size()) {
+        if (subscribers.isEmpty()) {
             return Promise.of(deliveredSubscriberIds);
         }
 
-        @SuppressWarnings("unchecked")
-        ProductInteractionEventHandler<Event> subscriber = (ProductInteractionEventHandler<Event>) subscribers.get(index);
-        if (!subscriber.eventType().isInstance(envelope.payload())) {
-            return Promise.ofException(new IllegalArgumentException("event payload does not match subscriber type"));
+        // Dispatch to subscribers and isolate failures so retries can target only failed handlers.
+        Promise<DispatchAttemptResult> dispatchPromise = Promise.of(
+                new DispatchAttemptResult(new ArrayList<>(deliveredSubscriberIds), new ArrayList<>()));
+
+        for (ProductInteractionEventHandler<?> subscriber : subscribers) {
+            @SuppressWarnings("unchecked")
+            ProductInteractionEventHandler<Event> typedSubscriber = (ProductInteractionEventHandler<Event>) subscriber;
+            if (!typedSubscriber.eventType().isInstance(envelope.payload())) {
+                continue;
+            }
+
+            dispatchPromise = dispatchPromise.then(result -> Promise.ofCallback(cb ->
+                    invokeSubscriberWithTimeout(typedSubscriber, envelope)
+                            .whenComplete(($, error) -> {
+                                if (error == null) {
+                                    delivered.incrementAndGet();
+                                    result.deliveredSubscriberIds().add(typedSubscriber.subscriberId());
+                                } else {
+                                    if (isTimeout(error)) {
+                                        subscriberTimeouts.incrementAndGet();
+                                    }
+                                    result.failedSubscribers().add(typedSubscriber);
+                                }
+                                cb.set(result);
+                            })));
         }
-        return subscriber.handle(envelope)
-                .map($ -> {
-                    delivered.incrementAndGet();
-                    deliveredSubscriberIds.add(subscriber.subscriberId());
-                    return deliveredSubscriberIds;
-                })
-                .then(ids -> dispatchSequentially(envelope, subscribers, index + 1, ids));
+
+        return dispatchPromise.then(result -> {
+            if (!result.failedSubscribers().isEmpty()) {
+                if (retryCount < maxRetries) {
+                    subscriberRetries.incrementAndGet();
+                    return dispatchParallelWithRetry(
+                            envelope,
+                            result.failedSubscribers(),
+                            retryCount + 1,
+                            result.deliveredSubscriberIds());
+                }
+                return Promise.ofException(new IllegalStateException("one or more subscribers failed"));
+            }
+            return Promise.of(result.deliveredSubscriberIds());
+        });
+    }
+
+    private <Event> Promise<Void> invokeSubscriberWithTimeout(
+            ProductInteractionEventHandler<Event> subscriber,
+            ProductInteractionEventEnvelope<Event> envelope) {
+        return Promise.ofCallback(cb -> {
+            long timeoutMs = Math.max(1L, subscriberTimeout.toMillis());
+            ScheduledFuture<?> timeoutTask = SUBSCRIBER_TIMEOUT_SCHEDULER.schedule(
+                    () -> cb.setException(new TimeoutException("subscriber timed out: " + subscriber.subscriberId())),
+                    timeoutMs,
+                    TimeUnit.MILLISECONDS);
+
+            subscriber.handle(envelope).whenComplete(($, error) -> {
+                timeoutTask.cancel(false);
+                if (error != null) {
+                    cb.setException(error);
+                    return;
+                }
+                cb.set(null);
+            });
+        });
+    }
+
+    private static boolean isTimeout(Throwable error) {
+        Throwable cursor = error;
+        while (cursor != null) {
+            if (cursor instanceof TimeoutException) {
+                return true;
+            }
+            cursor = cursor.getCause();
+        }
+        return false;
     }
 
     private <Event> Optional<ProductInteractionEventOutcome> validatePreflight(ProductInteractionEventEnvelope<Event> envelope) {
@@ -320,6 +444,9 @@ public final class ProductInteractionEventBroker {
         private ProductInteractionEventPolicyEvaluator policyEvaluator = ProductInteractionEventPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEventEvidenceWriter evidenceWriter = ProductInteractionEventEvidenceWriter.noop();
         private ProductInteractionEventProvider eventProvider;
+        private int maxRetries = DEFAULT_MAX_RETRIES;
+        private Duration subscriberTimeout = DEFAULT_SUBSCRIBER_TIMEOUT;
+        private BrokerMode brokerMode = BrokerMode.DEVELOPMENT;
 
         public Builder subscribe(ProductInteractionEventHandler<?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -362,6 +489,28 @@ public final class ProductInteractionEventBroker {
 
         public Builder eventProvider(ProductInteractionEventProvider provider) {
             this.eventProvider = provider;
+            return this;
+        }
+
+        public Builder maxRetries(int maxRetries) {
+            if (maxRetries < 0) {
+                throw new IllegalArgumentException("maxRetries must be non-negative");
+            }
+            this.maxRetries = maxRetries;
+            return this;
+        }
+
+        public Builder subscriberTimeout(Duration timeout) {
+            Objects.requireNonNull(timeout, "timeout must not be null");
+            if (timeout.isZero() || timeout.isNegative()) {
+                throw new IllegalArgumentException("subscriber timeout must be positive");
+            }
+            this.subscriberTimeout = timeout;
+            return this;
+        }
+
+        public Builder brokerMode(BrokerMode mode) {
+            this.brokerMode = Objects.requireNonNull(mode, "mode must not be null");
             return this;
         }
 

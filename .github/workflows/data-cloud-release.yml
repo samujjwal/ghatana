@@ -220,7 +220,11 @@ jobs:
           pnpm check:product-a11y-route-matrix
           pnpm check:i18n-conformance
           pnpm check:ai-governance-conformance
+          pnpm check:product-slo-budgets
+          pnpm check:product-cost-budgets
+          pnpm check:product-domain-invariants
           pnpm check:openapi-release-quality
+          pnpm check:openapi-breaking-changes
 
       - name: Upload runtime profile evidence
         uses: actions/upload-artifact@v4
@@ -231,6 +235,10 @@ jobs:
             .kernel/evidence/atomic-workflow-posture.json
             .kernel/evidence/kernel-implementation-plan-progress.json
             .kernel/evidence/product-a11y-route-matrix.json
+            .kernel/evidence/product-slo-budgets.json
+            .kernel/evidence/product-cost-budgets.json
+            .kernel/evidence/product-domain-invariants.json
+            .kernel/evidence/openapi-breaking-changes.json
           retention-days: 90
 
   smoke-e2e-strict:
@@ -417,6 +425,10 @@ jobs:
           test -s release-evidence/backup/backup-drill-report.json
           test -s .kernel/evidence/data-cloud-release-runtime-profile.json
           test -s .kernel/evidence/atomic-workflow-posture.json
+          test -s .kernel/evidence/product-slo-budgets.json
+          test -s .kernel/evidence/product-cost-budgets.json
+          test -s .kernel/evidence/product-domain-invariants.json
+          test -s .kernel/evidence/openapi-breaking-changes.json
           echo "Data Cloud strict release gate passed with required evidence artifacts."
 
       - name: Generate typed release summary
@@ -441,6 +453,10 @@ jobs:
             release-evidence/wave2-product-quality-scorecard.md
             .kernel/evidence/wave2-product-quality-scorecard.json
             .kernel/evidence/product-a11y-route-matrix.json
+            .kernel/evidence/product-slo-budgets.json
+            .kernel/evidence/product-cost-budgets.json
+            .kernel/evidence/product-domain-invariants.json
+            .kernel/evidence/openapi-breaking-changes.json
           retention-days: 90
 
       - name: Append release summary to workflow summary

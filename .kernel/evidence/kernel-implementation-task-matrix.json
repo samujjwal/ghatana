@@ -1,0 +1,1568 @@
+{
+  "generatedAt": "2026-05-23T02:17:30.955Z",
+  "status": "passed",
+  "summary": {
+    "requiredTaskCount": 50,
+    "parsedTaskCount": 50,
+    "statusCounts": {
+      "Partial": 49,
+      "Deferred": 1
+    },
+    "averageMaturityDepth": 2.16,
+    "warningCount": 32,
+    "violationCount": 0
+  },
+  "incrementalRoadmap": {
+    "generatedAt": "2026-05-23T02:17:30.957Z",
+    "targetMaturityDepth": 5,
+    "remainingTaskCount": 50,
+    "deferredTaskIds": [
+      34
+    ],
+    "waveBuckets": {
+      "wave-1-foundation": [
+        1,
+        4,
+        5,
+        6,
+        9,
+        10,
+        2,
+        3,
+        7,
+        8
+      ],
+      "wave-2-runtime-governance": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "wave-3-quality-performance": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "wave-4-release-ops": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        50,
+        46,
+        47,
+        48,
+        49
+      ]
+    },
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Create a canonical product capability traceability matrix.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 4,
+        "title": "Replace atomic-workflow posture proof with executable failure-injection tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 5,
+        "title": "Add atomic workflow tests for all critical route families.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 6,
+        "title": "Replace runtime-failure posture check with executable dependency-failure scenarios.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 9,
+        "title": "Add domain invariant suites per product.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 10,
+        "title": "Add data model ownership and lifecycle metadata.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 11,
+        "title": "Add privacy behavior proof.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 12,
+        "title": "Add data-subject control workflow tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 13,
+        "title": "Generate full route-role-scope authorization matrix.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 14,
+        "title": "Add cross-product tenant isolation runtime tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 15,
+        "title": "Strengthen event-envelope replay and bridge proof.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 16,
+        "title": "Add Action Plane lifecycle tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 17,
+        "title": "Add human-in-the-loop control tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 18,
+        "title": "Deepen AI governance from token checks to behavior tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 19,
+        "title": "Add AI cost and usage budgets.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 20,
+        "title": "Add degraded-mode behavior matrix.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 21,
+        "title": "Add UI degraded-state tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 22,
+        "title": "Add standardized error-envelope enforcement.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 23,
+        "title": "Make OpenAPI release quality method-level and multi-contract.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-2-runtime-governance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 24,
+        "title": "Add OpenAPI breaking-change detection.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 25,
+        "title": "Add compatibility-route lifecycle enforcement.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 26,
+        "title": "Add product-wide i18n extraction and missing-key checks.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 27,
+        "title": "Add pseudo-locale UI behavior tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 28,
+        "title": "Add locale formatting tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 29,
+        "title": "Deepen product a11y route matrix into behavior assertions.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 30,
+        "title": "Add chart and data-grid accessibility tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 31,
+        "title": "Add product UX quality gate.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 32,
+        "title": "Add command/search integration checks for product actions.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 33,
+        "title": "Add product SLO budgets.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 34,
+        "title": "Add multi-tenant load and backpressure tests.",
+        "status": "Deferred",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Data Cloud Runtime",
+        "ownerModule": "products/data-cloud",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Track explicit defer reason and keep evidence current until execution resumes.",
+        "deferred": true,
+        "deferReason": "Load and backpressure suites are deferred for later session execution per implementation plan note."
+      },
+      {
+        "id": 35,
+        "title": "Add product cost budget gates.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-3-quality-performance",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 36,
+        "title": "Add observability dashboard and alert conformance.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 37,
+        "title": "Add trace propagation tests across product interactions.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 38,
+        "title": "Add plugin lifecycle runtime tests.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 39,
+        "title": "Add shared-library overuse/semantic leakage checks.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 40,
+        "title": "Add maintainability and complexity budgets.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 41,
+        "title": "Separate generated run evidence from source-controlled baseline evidence.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 42,
+        "title": "Add evidence freshness validation.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 43,
+        "title": "Upgrade implementation-plan coverage from boolean to maturity depth.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 44,
+        "title": "Add per-dimension owners.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 45,
+        "title": "Add release score threshold policy.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 50,
+        "title": "Add world-class UX/product review checklist.",
+        "status": "Partial",
+        "maturityDepth": 2,
+        "targetDepth": 5,
+        "depthGap": 3,
+        "ownerTeam": "Frontend Experience",
+        "ownerModule": "release-evidence",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Upgrade from posture/static checks to behavioral tests with executable failure scenarios.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 2,
+        "title": "Add product-specific release scorecards for every affected product.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 3,
+        "title": "Strengthen affected-product resolution for shared/platform changes.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 7,
+        "title": "Validate release evidence content, not just file presence.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 8,
+        "title": "Expand strict release gates to every production-intended product.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-1-foundation",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 46,
+        "title": "Add disaster recovery RPO/RTO assertions.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Data Cloud Runtime",
+        "ownerModule": "products/data-cloud",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 47,
+        "title": "Add secret rotation readiness tests.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Security and Compliance",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 48,
+        "title": "Add environment-specific production profile tests.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      },
+      {
+        "id": 49,
+        "title": "Add product-specific documentation truth checks.",
+        "status": "Partial",
+        "maturityDepth": 3,
+        "targetDepth": 5,
+        "depthGap": 2,
+        "ownerTeam": "Kernel Release Engineering",
+        "ownerModule": "scripts",
+        "requiredForRelease": true,
+        "executionWave": "wave-4-release-ops",
+        "nextAction": "Add release-grade evidence linkage and strict pass/fail coverage thresholds.",
+        "deferred": false,
+        "deferReason": null
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 1,
+      "title": "Create a canonical product capability traceability matrix.",
+      "whereRefs": [
+        "config/product-capability-matrix.json",
+        "scripts/check-product-shape-capability-matrix.mjs",
+        ".kernel/evidence/product-release-readiness.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 2,
+      "title": "Add product-specific release scorecards for every affected product.",
+      "whereRefs": [
+        "scripts/check-product-release-readiness.mjs",
+        ".github/workflows/product-release.yml",
+        ".kernel/evidence/product-release-readiness.<product>.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 3,
+      "title": "Strengthen affected-product resolution for shared/platform changes.",
+      "whereRefs": [
+        "scripts/resolve-affected-products.mjs",
+        ".github/workflows/product-release.yml"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 4,
+      "title": "Replace atomic-workflow posture proof with executable failure-injection tests.",
+      "whereRefs": [
+        "scripts/check-atomic-workflow-proof.mjs",
+        "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandlerAtomicFailureTest.java"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 5,
+      "title": "Add atomic workflow tests for all critical route families.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/test/java/...",
+        "RouteSecurityRegistry.java",
+        "scripts/check-atomic-workflow-proof.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 6,
+      "title": "Replace runtime-failure posture check with executable dependency-failure scenarios.",
+      "whereRefs": [
+        "scripts/check-runtime-failure-injection.mjs",
+        "products/data-cloud/scripts/run-runtime-failure-injection.sh"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 7,
+      "title": "Validate release evidence content, not just file presence.",
+      "whereRefs": [
+        ".github/workflows/data-cloud-release.yml",
+        "scripts/validate-release-evidence.mjs",
+        "scripts/generate-release-maturity-summary.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 8,
+      "title": "Expand strict release gates to every production-intended product.",
+      "whereRefs": [
+        ".github/workflows/product-release.yml",
+        "scripts/check-affected-product-strict-release-profile.mjs",
+        "scripts/check-product-release-readiness.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 9,
+      "title": "Add domain invariant suites per product.",
+      "whereRefs": [
+        "products/data-cloud/**/src/test",
+        "products/finance/**",
+        "products/phr/**",
+        "products/digital-marketing/**",
+        "scripts/check-product-domain-invariants.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 10,
+      "title": "Add data model ownership and lifecycle metadata.",
+      "whereRefs": [
+        "config/product-data-model-registry.json",
+        "scripts/check-data-model-lifecycle.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 11,
+      "title": "Add privacy behavior proof.",
+      "whereRefs": [
+        "products/data-cloud/delivery/launcher/src/test",
+        "products/data-cloud/contracts/openapi/data-cloud.yaml",
+        "scripts/check-privacy-conformance.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 12,
+      "title": "Add data-subject control workflow tests.",
+      "whereRefs": [
+        "scripts/check-privacy-conformance.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 13,
+      "title": "Generate full route-role-scope authorization matrix.",
+      "whereRefs": [
+        "RouteSecurityRegistry.java",
+        "scripts/check-route-entitlement-contracts.mjs",
+        ".kernel/evidence/route-entitlement-matrix.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 14,
+      "title": "Add cross-product tenant isolation runtime tests.",
+      "whereRefs": [
+        "integration-tests/cross-service-workflow",
+        "scripts/check-cross-product-interaction-boundaries.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 15,
+      "title": "Strengthen event-envelope replay and bridge proof.",
+      "whereRefs": [
+        "Event handlers",
+        "event replay service",
+        "Action Plane bridge tests"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 16,
+      "title": "Add Action Plane lifecycle tests.",
+      "whereRefs": [
+        "products/data-cloud/planes/action/**"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 17,
+      "title": "Add human-in-the-loop control tests.",
+      "whereRefs": [
+        "scripts/check-hitl-control.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 18,
+      "title": "Deepen AI governance from token checks to behavior tests.",
+      "whereRefs": [
+        "scripts/check-ai-governance-conformance.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 19,
+      "title": "Add AI cost and usage budgets.",
+      "whereRefs": [
+        "config/product-cost-budgets.json",
+        "scripts/check-product-cost-budgets.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 20,
+      "title": "Add degraded-mode behavior matrix.",
+      "whereRefs": [
+        "scripts/check-degraded-mode-matrix.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 21,
+      "title": "Add UI degraded-state tests.",
+      "whereRefs": [
+        "products/data-cloud/delivery/ui"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 22,
+      "title": "Add standardized error-envelope enforcement.",
+      "whereRefs": [
+        "scripts/check-openapi-release-quality.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 23,
+      "title": "Make OpenAPI release quality method-level and multi-contract.",
+      "whereRefs": [
+        "scripts/check-openapi-release-quality.mjs",
+        "data-cloud.yaml",
+        "action-plane.yaml",
+        "config/openapi-generic-schema-waivers.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 24,
+      "title": "Add OpenAPI breaking-change detection.",
+      "whereRefs": [
+        "scripts/check-openapi-breaking-changes.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 25,
+      "title": "Add compatibility-route lifecycle enforcement.",
+      "whereRefs": [
+        "route-compatibility-registry.yaml",
+        "scripts/check-deprecation-lifecycle.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 26,
+      "title": "Add product-wide i18n extraction and missing-key checks.",
+      "whereRefs": [
+        "scripts/extract-i18n-keys.mjs",
+        "scripts/check-i18n-missing-keys.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 27,
+      "title": "Add pseudo-locale UI behavior tests.",
+      "whereRefs": [
+        "Data Cloud UI",
+        "Digital Marketing UI",
+        "PHR UI",
+        "Flashit UI",
+        "shared testing utilities"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 28,
+      "title": "Add locale formatting tests.",
+      "whereRefs": [
+        "scripts/check-i18n-conformance.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 29,
+      "title": "Deepen product a11y route matrix into behavior assertions.",
+      "whereRefs": [
+        "scripts/check-product-a11y-route-matrix.mjs",
+        "platform/typescript/testing-a11y"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 30,
+      "title": "Add chart and data-grid accessibility tests.",
+      "whereRefs": [
+        "Data Cloud UI reports/analytics pages",
+        "shared chart/table components"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 31,
+      "title": "Add product UX quality gate.",
+      "whereRefs": [
+        "scripts/check-product-ux-quality.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 32,
+      "title": "Add command/search integration checks for product actions.",
+      "whereRefs": [
+        "scripts/check-product-ux-quality.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 33,
+      "title": "Add product SLO budgets.",
+      "whereRefs": [
+        "config/product-slo-budgets.json",
+        "scripts/check-product-slo-budgets.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Data Cloud Runtime",
+      "ownerModule": "products/data-cloud",
+      "status": "Deferred",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "deferReason": "Load and backpressure suites are deferred for later session execution per implementation plan note.",
+      "id": 34,
+      "title": "Add multi-tenant load and backpressure tests.",
+      "whereRefs": [
+        "products/data-cloud/scripts/run-durable-load-suite.sh"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 35,
+      "title": "Add product cost budget gates.",
+      "whereRefs": [
+        "config/product-cost-budgets.json",
+        "scripts/check-product-cost-budgets.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 36,
+      "title": "Add observability dashboard and alert conformance.",
+      "whereRefs": [
+        "scripts/check-observability-conformance.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 37,
+      "title": "Add trace propagation tests across product interactions.",
+      "whereRefs": [
+        "cross-service integration tests",
+        "product interaction broker tests"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 38,
+      "title": "Add plugin lifecycle runtime tests.",
+      "whereRefs": [
+        "platform-kernel:kernel-plugin"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 39,
+      "title": "Add shared-library overuse/semantic leakage checks.",
+      "whereRefs": [
+        "scripts/check-platform-product-boundaries.mjs",
+        "scripts/check-kernel-boundaries.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 40,
+      "title": "Add maintainability and complexity budgets.",
+      "whereRefs": [
+        "scripts/check-maintainability-budgets.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 41,
+      "title": "Separate generated run evidence from source-controlled baseline evidence.",
+      "whereRefs": [
+        ".kernel/evidence/",
+        "release-evidence/"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 42,
+      "title": "Add evidence freshness validation.",
+      "whereRefs": [
+        "scripts/validate-release-evidence.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 43,
+      "title": "Upgrade implementation-plan coverage from boolean to maturity depth.",
+      "whereRefs": [
+        "scripts/check-kernel-implementation-plan-coverage.mjs",
+        ".kernel/evidence/kernel-implementation-plan-progress.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 44,
+      "title": "Add per-dimension owners.",
+      "whereRefs": [
+        "config/production-readiness-dimension-owners.json"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 45,
+      "title": "Add release score threshold policy.",
+      "whereRefs": [
+        "scripts/generate-release-maturity-summary.mjs",
+        "scripts/validate-release-evidence.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Data Cloud Runtime",
+      "ownerModule": "products/data-cloud",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 46,
+      "title": "Add disaster recovery RPO/RTO assertions.",
+      "whereRefs": [
+        "products/data-cloud/scripts/run-backup-drill.sh"
+      ]
+    },
+    {
+      "ownerTeam": "Security and Compliance",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 47,
+      "title": "Add secret rotation readiness tests.",
+      "whereRefs": [
+        "scripts/check-secret-default-credentials.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 48,
+      "title": "Add environment-specific production profile tests.",
+      "whereRefs": [
+        "scripts/check-data-cloud-release-runtime-profile.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Kernel Release Engineering",
+      "ownerModule": "scripts",
+      "status": "Partial",
+      "maturityDepth": 3,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 49,
+      "title": "Add product-specific documentation truth checks.",
+      "whereRefs": [
+        "scripts/check-doc-claims-evidence.mjs"
+      ]
+    },
+    {
+      "ownerTeam": "Frontend Experience",
+      "ownerModule": "release-evidence",
+      "status": "Partial",
+      "maturityDepth": 2,
+      "requiredForRelease": true,
+      "evidenceRefs": [],
+      "id": 50,
+      "title": "Add world-class UX/product review checklist.",
+      "whereRefs": [
+        "release-evidence/world-class-product-review.md",
+        "scripts/check-world-class-product-review.mjs"
+      ]
+    }
+  ],
+  "warnings": [
+    "Task 2 references non-existing path \".kernel/evidence/product-release-readiness.<product>.json\"",
+    "Task 4 references non-existing path \"products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandlerAtomicFailureTest.java\"",
+    "Task 5 references non-existing path \"products/data-cloud/delivery/launcher/src/test/java/...\"",
+    "Task 5 references non-existing path \"RouteSecurityRegistry.java\"",
+    "Task 6 references non-existing path \"products/data-cloud/scripts/run-runtime-failure-injection.sh\"",
+    "Task 9 references non-existing path \"products/data-cloud/**/src/test\"",
+    "Task 9 references non-existing path \"products/finance/**\"",
+    "Task 9 references non-existing path \"products/phr/**\"",
+    "Task 9 references non-existing path \"products/digital-marketing/**\"",
+    "Task 10 references non-existing path \"config/product-data-model-registry.json\"",
+    "Task 10 references non-existing path \"scripts/check-data-model-lifecycle.mjs\"",
+    "Task 11 references non-existing path \"scripts/check-privacy-conformance.mjs\"",
+    "Task 12 references non-existing path \"scripts/check-privacy-conformance.mjs\"",
+    "Task 13 references non-existing path \"RouteSecurityRegistry.java\"",
+    "Task 13 references non-existing path \".kernel/evidence/route-entitlement-matrix.json\"",
+    "Task 16 references non-existing path \"products/data-cloud/planes/action/**\"",
+    "Task 17 references non-existing path \"scripts/check-hitl-control.mjs\"",
+    "Task 20 references non-existing path \"scripts/check-degraded-mode-matrix.mjs\"",
+    "Task 23 references non-existing path \"data-cloud.yaml\"",
+    "Task 23 references non-existing path \"action-plane.yaml\"",
+    "Task 25 references non-existing path \"route-compatibility-registry.yaml\"",
+    "Task 25 references non-existing path \"scripts/check-deprecation-lifecycle.mjs\"",
+    "Task 26 references non-existing path \"scripts/extract-i18n-keys.mjs\"",
+    "Task 26 references non-existing path \"scripts/check-i18n-missing-keys.mjs\"",
+    "Task 29 references non-existing path \"platform/typescript/testing-a11y\"",
+    "Task 30 references non-existing path \"Data Cloud UI reports/analytics pages\"",
+    "Task 30 references non-existing path \"shared chart/table components\"",
+    "Task 31 references non-existing path \"scripts/check-product-ux-quality.mjs\"",
+    "Task 32 references non-existing path \"scripts/check-product-ux-quality.mjs\"",
+    "Task 40 references non-existing path \"scripts/check-maintainability-budgets.mjs\"",
+    "Task 50 references non-existing path \"release-evidence/world-class-product-review.md\"",
+    "Task 50 references non-existing path \"scripts/check-world-class-product-review.mjs\""
+  ],
+  "violations": []
+}

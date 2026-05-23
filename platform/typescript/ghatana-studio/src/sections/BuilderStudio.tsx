@@ -10,7 +10,7 @@
  */
 
 import type { ReactElement } from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button, Typography, Card, CardContent, CardHeader } from '@ghatana/design-system';
 
 // Import public APIs from ui-builder platform
@@ -34,7 +34,12 @@ import {
   type BuilderPaletteEntry,
 } from '@ghatana/ds-registry';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { projectedBuilderDocumentAtom, setArtifactWorkflowAtom } from '../state/artifactWorkflowStore.js';
+import {
+  artifactPreviewSourceAtom,
+  projectedBuilderDocumentAtom,
+  setArtifactWorkflowAtom,
+} from '../state/artifactWorkflowStore.js';
+import { buildBuilderEditWorkflowArtifacts } from '../adapters/ArtifactStudioWorkflowAdapter.js';
 import { studioLogger } from '../logging/studioLogger';
 
 // Import visual builder components
@@ -164,6 +169,7 @@ export default function BuilderStudio(): ReactElement {
 
   // Workflow store integration: read the artifact projected document and sync into builder.
   const projectedDocument = useAtomValue(projectedBuilderDocumentAtom);
+  const previousPreviewSource = useAtomValue(artifactPreviewSourceAtom);
   const setWorkflow = useSetAtom(setArtifactWorkflowAtom);
   const [isUsingImportedDocument, setIsUsingImportedDocument] = useState(false);
 
@@ -253,6 +259,28 @@ export default function BuilderStudio(): ReactElement {
       setValidationResult(result);
     }
   };
+
+  const syncImportedDocumentToWorkflow = useCallback(
+    (updatedDoc: BuilderDocument): void => {
+      const artifacts = buildBuilderEditWorkflowArtifacts({
+        document: updatedDoc,
+        previousPreviewSource,
+      });
+
+      void Promise.resolve(setWorkflow({
+        projectedBuilderDocument: updatedDoc,
+        previewSource: artifacts.previewSource,
+        fidelityReport: artifacts.fidelityReport,
+        evidencePack: artifacts.evidencePack,
+        roundTripDiffReport: artifacts.roundTripDiffReport,
+        lastDecompileAt: new Date().toISOString(),
+      })).catch((err: unknown) => {
+        studioLogger.error('Failed to sync Builder edit workflow artifacts', { error: err });
+        setError('Failed to sync Builder edit workflow artifacts');
+      });
+    },
+    [previousPreviewSource, setWorkflow],
+  );
 
   // Re-validate when document selection changes
   useEffect(() => {
@@ -349,10 +377,10 @@ export default function BuilderStudio(): ReactElement {
       
       setSelectedDocument(updatedListItem);
       setSelectedInstance(updatedDoc.nodes[instanceId] || null);
-      validateCurrentDocument();
+      setValidationResult(validateBuilderDocument(updatedDoc));
       // Sync edits back to the workflow store so Canvas and Preview routes see the change.
       if (isUsingImportedDocument) {
-        setWorkflow({ projectedBuilderDocument: updatedDoc });
+        syncImportedDocumentToWorkflow(updatedDoc);
       }
     } catch (err) {
       studioLogger.error('Failed to update property', { error: err });
@@ -384,10 +412,10 @@ export default function BuilderStudio(): ReactElement {
       };
       
       setSelectedDocument(updatedListItem);
-      validateCurrentDocument();
+      setValidationResult(validateBuilderDocument(updatedDoc));
       // Sync edits back to the workflow store so Canvas and Preview routes see the change.
       if (isUsingImportedDocument) {
-        setWorkflow({ projectedBuilderDocument: updatedDoc });
+        syncImportedDocumentToWorkflow(updatedDoc);
       }
     } catch (err) {
       studioLogger.error('Failed to add component', { error: err });

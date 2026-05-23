@@ -247,6 +247,38 @@ async function artifactManifestEntry(
   const fingerprint = stats.isDirectory()
     ? await hashDirectory(absoluteArtifact)
     : await hashFile(absoluteArtifact);
+  
+  // P1-03: Enhanced metadata for production-grade fingerprinting
+  const metadata: Record<string, unknown> = {
+    type: artifactType,
+    productId: context.productId,
+    phase: context.phase,
+    surfaceType: context.surface.type,
+    adapter: adapterId,
+    generatedAt,
+    sourcePath: context.surface.path,
+  };
+  
+  // Add build command from surfaceConfig if available
+  if (typeof context.surfaceConfig.buildCommand === 'string') {
+    metadata.buildCommand = context.surfaceConfig.buildCommand;
+  }
+  
+  // Add runtime metadata from surfaceConfig if available
+  if (typeof context.surfaceConfig.runtime === 'string') {
+    metadata.runtime = context.surfaceConfig.runtime;
+  }
+  
+  // Add target metadata from surfaceConfig if available
+  if (typeof context.surfaceConfig.target === 'string') {
+    metadata.target = context.surfaceConfig.target;
+  }
+  
+  // Add language metadata from surfaceConfig if available
+  if (typeof context.surfaceConfig.language === 'string') {
+    metadata.language = context.surfaceConfig.language;
+  }
+  
   return {
     id: artifactId(context.productId, context.surface.type, artifact),
     path: artifact,
@@ -259,15 +291,7 @@ async function artifactManifestEntry(
       algorithm: 'sha256',
       hash: fingerprint,
     },
-    metadata: {
-      type: artifactType,
-      productId: context.productId,
-      phase: context.phase,
-      surfaceType: context.surface.type,
-      adapter: adapterId,
-      generatedAt,
-      sourcePath: context.surface.path,
-    },
+    metadata,
   };
 }
 

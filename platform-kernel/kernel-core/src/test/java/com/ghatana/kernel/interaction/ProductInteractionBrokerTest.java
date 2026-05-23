@@ -37,6 +37,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
                 .evidenceWriter(evidenceWriter)
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -57,6 +58,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     void blocksMissingTenantScope() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -96,6 +98,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -113,6 +116,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     void defaultPolicyRequiresInteractionPurpose() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -149,6 +153,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     void requiresEvidenceForSuccessfulProviderOutcome() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new MissingEvidenceHandler())
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -167,6 +172,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
                 .evidenceWriter((request, outcome) -> Promise.ofException(new IllegalStateException("evidence unavailable")))
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -190,6 +196,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
                 .evidenceWriter(evidenceWriter)
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() -> broker.execute(request));
@@ -233,6 +240,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         CountingEchoHandler handler = new CountingEchoHandler();
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(handler)
+                .brokerMode(BrokerMode.TEST)
                 .build();
         ProductInteractionRequest<EchoRequest> request = baseRequest("broker-idempotent", new EchoRequest("hello"));
         try {
@@ -252,6 +260,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     void recordsLatencyMetricsWithinLocalSlo() {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new EchoHandler())
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             for (int index = 0; index < 20; index++) {
@@ -278,6 +287,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = ProductInteractionBroker.builder()
                 .register(new HangingHandler())
                 .requestTimeout(Duration.ofMillis(20))
+                .brokerMode(BrokerMode.TEST)
                 .build();
         try {
             ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
@@ -294,11 +304,178 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("rejects duplicate handler registration")
     void rejectsDuplicateHandlerRegistration() {
-        ProductInteractionBroker.Builder builder = ProductInteractionBroker.builder().register(new EchoHandler());
+        ProductInteractionBroker.Builder builder = ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .brokerMode(BrokerMode.TEST);
 
         assertThatThrownBy(() -> builder.register(new EchoHandler()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(EchoHandler.CONTRACT_ID);
+    }
+
+    // P0-01: Production mode requires real evidence writer
+    @Test
+    @DisplayName("P0-01: production mode rejects no-op evidence writer")
+    void productionModeRejectsNoopEvidenceWriter() {
+        assertThatThrownBy(() -> ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .brokerMode(BrokerMode.PRODUCTION)
+                .build())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Production mode requires a real evidence writer");
+    }
+
+    @Test
+    @DisplayName("P0-01: test mode allows no-op evidence writer")
+    void testModeAllowsNoopEvidenceWriter() {
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            assertThat(broker).isNotNull();
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("P0-01: development mode requires real evidence writer")
+    void developmentModeRequiresRealEvidenceWriter() {
+        assertThatThrownBy(() -> ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .brokerMode(BrokerMode.DEVELOPMENT)
+                .build())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Production mode requires a real evidence writer");
+    }
+
+    // P0-02: Reject caller-supplied authorization and consent flags
+    @Test
+    @DisplayName("P0-02: rejects caller-supplied authorized flag")
+    void rejectsCallerSuppliedAuthorizedFlag() {
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
+                    broker.execute(new ProductInteractionRequest<>(
+                            "1.0.0",
+                            "broker-forged-auth",
+                            EchoHandler.CONTRACT_ID,
+                            "1.0.0",
+                            "provider-product",
+                            "consumer-product",
+                            "consumer-product",
+                            "tenant-1",
+                            "workspace-1",
+                            "run-1",
+                            "corr-1",
+                            Instant.parse("2026-05-21T00:00:00Z"),
+                            Map.of(
+                                "actor", "kernel-test-runner",
+                                "tenantId", "tenant-1",
+                                "workspaceId", "workspace-1",
+                                "purpose", "test",
+                                "authorized", "true"),  // Caller-supplied - should be rejected
+                            new EchoRequest("hello"))));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.caller_supplied_auth_not_trusted");
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("P0-02: rejects caller-supplied consent flag")
+    void rejectsCallerSuppliedConsentFlag() {
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
+                    broker.execute(new ProductInteractionRequest<>(
+                            "1.0.0",
+                            "broker-forged-consent",
+                            EchoHandler.CONTRACT_ID,
+                            "1.0.0",
+                            "provider-product",
+                            "consumer-product",
+                            "consumer-product",
+                            "tenant-1",
+                            "workspace-1",
+                            "run-1",
+                            "corr-1",
+                            Instant.parse("2026-05-21T00:00:00Z"),
+                            Map.of(
+                                "actor", "kernel-test-runner",
+                                "tenantId", "tenant-1",
+                                "workspaceId", "workspace-1",
+                                "purpose", "test",
+                                "consentGranted", "true"),  // Caller-supplied - should be rejected
+                            new EchoRequest("hello"))));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.caller_supplied_consent_not_trusted");
+        } finally {
+            broker.close();
+        }
+    }
+
+    // P0-03: Replay key includes payload hash and contract metadata
+    @Test
+    @DisplayName("P0-03: different payload creates different replay key")
+    void differentPayloadCreatesDifferentReplayKey() {
+        CountingEchoHandler handler = new CountingEchoHandler();
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(handler)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request1 = baseRequest("broker-payload-1", new EchoRequest("hello"));
+            ProductInteractionRequest<EchoRequest> request2 = baseRequest("broker-payload-2", new EchoRequest("world"));
+
+            ProductInteractionOutcome<EchoResponse> outcome1 = runPromise(() -> broker.execute(request1));
+            ProductInteractionOutcome<EchoResponse> outcome2 = runPromise(() -> broker.execute(request2));
+
+            assertThat(outcome1.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+            assertThat(outcome2.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+            // Different payloads should not replay - handler should be called twice
+            assertThat(handler.invocations.get()).isEqualTo(2);
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("P0-03: same payload replays from cache")
+    void samePayloadReplaysFromCache() {
+        CountingEchoHandler handler = new CountingEchoHandler();
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(handler)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request = baseRequest("broker-same-payload", new EchoRequest("hello"));
+
+            ProductInteractionOutcome<EchoResponse> first = runPromise(() -> broker.execute(request));
+            ProductInteractionOutcome<EchoResponse> second = runPromise(() -> broker.execute(request));
+
+            assertThat(first.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+            assertThat(second.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+            // Same payload should replay - handler called only once
+            assertThat(handler.invocations.get()).isEqualTo(1);
+        } finally {
+            broker.close();
+        }
     }
 
     private static ProductInteractionRequest<EchoRequest> baseRequest(String interactionId, EchoRequest payload) {
@@ -319,9 +496,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                     "actor", "kernel-test-runner",
                     "tenantId", "tenant-1",
                     "workspaceId", "workspace-1",
-                    "purpose", "test",
-                    "authorized", "true",
-                    "consentGranted", "true"),
+                    "purpose", "test"),
                 payload);
     }
 

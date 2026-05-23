@@ -176,7 +176,11 @@ function categoryForStage(
     case "lint":
       return "eslint";
     case "preview-render":
-      return "accessibility";
+      return "preview";
+    case "build":
+      return "build";
+    case "test":
+      return "test";
     default:
       return "other";
   }

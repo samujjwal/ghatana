@@ -1,5 +1,5 @@
-import type { ReactElement } from 'react';
-import { useCallback } from 'react';
+import type { ComponentType, ReactElement } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Badge } from '@ghatana/design-system';
 import { HybridCanvas } from '@ghatana/canvas/hybrid';
 import type { CanvasNode } from '@ghatana/canvas/hybrid';
@@ -27,6 +27,51 @@ function canvasRiskLevelLabel(riskLevel: string, t: TranslateFn): string {
     return t(`studio.route.canvas.riskLevel.${riskLevel}`);
   }
   return t('studio.route.canvas.riskLevel.unknown');
+}
+
+function formatCanvasDocumentPositionState(document: BuilderDocument): string {
+  return Object.entries(document.nodes)
+    .map(([nodeId, node]) => {
+      const position = node.metadata.position;
+      const x = typeof position?.x === 'number' ? Math.round(position.x) : 0;
+      const y = typeof position?.y === 'number' ? Math.round(position.y) : 0;
+      return `${nodeId}:${x},${y}`;
+    })
+    .sort((left, right) => left.localeCompare(right))
+    .join('|');
+}
+
+function formatCanvasNodeTestId(contractName: string): string {
+  return `artifact-canvas-node-${contractName.replace(/[^A-Za-z0-9_-]/gu, '-')}`;
+}
+
+function hasRecordProperty<Key extends string>(
+  value: unknown,
+  key: Key,
+): value is Record<Key, Record<string, unknown>> {
+  return typeof value === 'object' && value !== null && key in value && typeof value[key] === 'object' && value[key] !== null;
+}
+
+function ArtifactCanvasNode(props: unknown): ReactElement {
+  const data = hasRecordProperty(props, 'data') ? props.data : {};
+  const label = typeof data.label === 'string' ? data.label : 'Artifact node';
+  const testId =
+    typeof data.testId === 'string'
+      ? data.testId
+      : typeof data.contractName === 'string'
+        ? formatCanvasNodeTestId(data.contractName)
+        : 'artifact-canvas-node';
+
+  return (
+    <div
+      className="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm"
+      data-testid={testId}
+      role="group"
+      aria-label={label}
+    >
+      {label}
+    </div>
+  );
 }
 
 /**
@@ -97,10 +142,30 @@ export default function CanvasPage(): ReactElement {
   // Create canvas document from artifact data (static fallback)
   const staticCanvasDocument = createArtifactCanvasDocument();
   const canvasDocument = workflowDocument ?? staticCanvasDocument;
+  const canvasDocumentPositionState = useMemo(
+    () => formatCanvasDocumentPositionState(canvasDocument),
+    [canvasDocument],
+  );
 
   // Project BuilderDocument → canvas nodes + edges using the typed adapter.
   // This replaces the manual node-building code and correctly emits slot edges.
   const { nodes: canvasNodes, edges: canvasEdges } = builderToCanvas(canvasDocument);
+  const artifactNodeTypes = useMemo<Record<string, ComponentType<unknown>>>(
+    () => ({ artifact: ArtifactCanvasNode }),
+    [],
+  );
+  const canvasNodesWithTestHooks = useMemo(
+    () =>
+      canvasNodes.map((node) => ({
+        ...node,
+        type: 'artifact',
+        data: {
+          ...node.data,
+          testId: formatCanvasNodeTestId(node.data.contractName),
+        },
+      })),
+    [canvasNodes],
+  );
 
   // Write position changes back to the workflow store.
   // The `onNodesChange` callback receives the full node list after any drag/resize.
@@ -142,12 +207,20 @@ export default function CanvasPage(): ReactElement {
       <div className="border rounded-lg overflow-hidden" data-testid="artifact-graph-canvas">
         <div className="bg-gray-100 p-2 text-sm text-gray-600 flex items-center justify-between">
           <span>Artifact Graph Canvas</span>
+          <span
+            data-testid="artifact-canvas-state-position"
+            className="sr-only"
+            aria-live="polite"
+          >
+            {canvasDocumentPositionState}
+          </span>
           <Badge tone="success" variant="soft" className="text-xs">Live</Badge>
         </div>
         <HybridCanvas
-          nodes={[...canvasNodes]}
+          nodes={canvasNodesWithTestHooks}
           edges={[...canvasEdges]}
           mode="hybrid-graph"
+          nodeTypes={artifactNodeTypes}
           width="100%"
           height="600px"
           readOnly={false}

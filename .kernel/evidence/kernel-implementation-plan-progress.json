@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-22T22:49:25.306Z",
+  "generatedAt": "2026-05-23T01:52:26.237Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
@@ -227,6 +227,10 @@
           "exists": true
         },
         {
+          "gate": "check:kernel-implementation-task-matrix",
+          "exists": true
+        },
+        {
           "gate": "check:doc-claims-evidence",
           "exists": true
         },
@@ -242,7 +246,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 2,
@@ -280,7 +294,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 3,
@@ -322,7 +347,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 4,
@@ -356,7 +391,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 5,
@@ -375,6 +421,10 @@
           "exists": true
         },
         {
+          "gate": "check:runtime-dependency-failure-injection",
+          "exists": true
+        },
+        {
           "gate": "check:runtime-failure-injection",
           "exists": true
         }
@@ -386,7 +436,20 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test",
+        "release-evidence",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 1,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 1,
+        "isFresh": false
+      }
     },
     {
       "id": 6,
@@ -420,7 +483,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 7,
@@ -450,7 +523,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 8,
@@ -480,7 +563,18 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 4
+      "maturityScore": 4,
+      "proofTypes": [
+        "static-analysis",
+        "release-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 9,
@@ -510,7 +604,20 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test",
+        "release-evidence",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 1,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 1,
+        "isFresh": false
+      }
     },
     {
       "id": 10,
@@ -540,7 +647,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 11,
@@ -570,7 +687,20 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test",
+        "release-evidence",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 1,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 1,
+        "isFresh": false
+      }
     },
     {
       "id": 12,
@@ -600,7 +730,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 13,
@@ -630,7 +770,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 14,
@@ -660,7 +810,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 15,
@@ -686,7 +846,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 16,
@@ -716,7 +886,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 17,
@@ -750,7 +930,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 18,
@@ -780,7 +971,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 19,
@@ -810,7 +1012,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 20,
@@ -836,7 +1048,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 21,
@@ -866,7 +1089,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 22,
@@ -892,7 +1126,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 23,
@@ -907,6 +1151,10 @@
       "covered": true,
       "gateChecks": [
         {
+          "gate": "check:runtime-dependency-failure-injection",
+          "exists": true
+        },
+        {
           "gate": "check:runtime-failure-injection",
           "exists": true
         }
@@ -918,7 +1166,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 24,
@@ -948,7 +1207,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 25,
@@ -963,6 +1233,10 @@
       "covered": true,
       "gateChecks": [
         {
+          "gate": "check:atomic-workflow-failure-injection",
+          "exists": true
+        },
+        {
           "gate": "check:atomic-workflow-proof",
           "exists": true
         }
@@ -974,7 +1248,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 26,
@@ -1008,7 +1293,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 27,
@@ -1038,7 +1334,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 28,
@@ -1068,7 +1375,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 29,
@@ -1098,7 +1416,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 30,
@@ -1124,7 +1452,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 31,
@@ -1150,7 +1489,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 32,
@@ -1188,7 +1537,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 33,
@@ -1222,7 +1581,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 34,
@@ -1252,7 +1621,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 35,
@@ -1278,7 +1658,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 36,
@@ -1304,7 +1695,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 37,
@@ -1330,7 +1731,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 38,
@@ -1360,7 +1771,18 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 4
+      "maturityScore": 4,
+      "proofTypes": [
+        "static-analysis",
+        "release-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 39,
@@ -1381,6 +1803,10 @@
         {
           "gate": "check:openapi-breaking-changes",
           "exists": true
+        },
+        {
+          "gate": "check:validate-release-evidence",
+          "exists": true
         }
       ],
       "maturityDepth": {
@@ -1390,7 +1816,18 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 4
+      "maturityScore": 4,
+      "proofTypes": [
+        "static-analysis",
+        "release-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 40,
@@ -1420,7 +1857,20 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test",
+        "release-evidence",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 1,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 1,
+        "isFresh": false
+      }
     },
     {
       "id": 41,
@@ -1446,7 +1896,19 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": true
       },
-      "maturityScore": 5
+      "maturityScore": 5,
+      "proofTypes": [
+        "static-analysis",
+        "release-evidence",
+        "runtime-production-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 42,
@@ -1476,7 +1938,18 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 4
+      "maturityScore": 4,
+      "proofTypes": [
+        "static-analysis",
+        "release-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 43,
@@ -1501,6 +1974,10 @@
         {
           "gate": "check:doc-truth",
           "exists": true
+        },
+        {
+          "gate": "check:kernel-implementation-task-matrix",
+          "exists": true
         }
       ],
       "maturityDepth": {
@@ -1510,7 +1987,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 44,
@@ -1540,7 +2027,17 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 45,
@@ -1574,7 +2071,18 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 3
+      "maturityScore": 3,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 46,
@@ -1599,6 +2107,10 @@
         {
           "gate": "check:product-release-readiness",
           "exists": true
+        },
+        {
+          "gate": "check:validate-release-evidence",
+          "exists": true
         }
       ],
       "maturityDepth": {
@@ -1608,7 +2120,19 @@
         "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 4
+      "maturityScore": 4,
+      "proofTypes": [
+        "static-analysis",
+        "behavioral-test",
+        "release-evidence"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     },
     {
       "id": 47,
@@ -1634,29 +2158,91 @@
         "releaseEvidence": false,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2
+      "maturityScore": 2,
+      "proofTypes": [
+        "static-analysis"
+      ],
+      "evidenceFreshness": {
+        "freshEvidenceCount": 0,
+        "staleEvidenceCount": 0,
+        "missingEvidenceCount": 0,
+        "totalEvidenceCount": 0,
+        "isFresh": true
+      }
     }
   ],
   "journeyAreas": [
     {
       "journey": "vision-and-coherence",
-      "dimensions": [1, 2, 29, 31, 32, 43, 44]
+      "dimensions": [
+        1,
+        2,
+        29,
+        31,
+        32,
+        43,
+        44
+      ]
     },
     {
       "journey": "feature-workflow-and-runtime-proof",
-      "dimensions": [3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 23, 24, 25, 36, 37]
+      "dimensions": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        18,
+        19,
+        23,
+        24,
+        25,
+        36,
+        37
+      ]
     },
     {
       "journey": "security-privacy-tenant-governance-audit",
-      "dimensions": [12, 13, 14, 15, 16, 17, 22]
+      "dimensions": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        22
+      ]
     },
     {
       "journey": "quality-experience-and-world-class",
-      "dimensions": [20, 21, 26, 27, 28, 30, 33, 34, 35, 45, 47]
+      "dimensions": [
+        20,
+        21,
+        26,
+        27,
+        28,
+        30,
+        33,
+        34,
+        35,
+        45,
+        47
+      ]
     },
     {
       "journey": "ci-release-and-operations",
-      "dimensions": [38, 39, 40, 41, 42, 46]
+      "dimensions": [
+        38,
+        39,
+        40,
+        41,
+        42,
+        46
+      ]
     }
   ],
   "releaseAreas": [
@@ -1669,6 +2255,14 @@
         },
         {
           "gate": "check:product-release-readiness",
+          "exists": true
+        },
+        {
+          "gate": "check:kernel-implementation-task-matrix",
+          "exists": true
+        },
+        {
+          "gate": "check:validate-release-evidence",
           "exists": true
         },
         {
@@ -1749,6 +2343,26 @@
         },
         {
           "gate": "check:audited-performance-workflows",
+          "exists": true
+        },
+        {
+          "gate": "check:product-slo-budgets",
+          "exists": true
+        },
+        {
+          "gate": "check:product-cost-budgets",
+          "exists": true
+        },
+        {
+          "gate": "check:product-domain-invariants",
+          "exists": true
+        },
+        {
+          "gate": "check:openapi-breaking-changes",
+          "exists": true
+        },
+        {
+          "gate": "check:validate-release-evidence",
           "exists": true
         }
       ],

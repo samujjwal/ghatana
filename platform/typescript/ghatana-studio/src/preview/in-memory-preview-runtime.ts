@@ -258,7 +258,10 @@ function renderJsxElement(element: ts.JsxElement, request: PreviewRequest): stri
   const tagName = element.openingElement.tagName.getText();
   const tag = resolveTagName(tagName, request);
   const attrs = renderAttributes(element.openingElement.attributes, request, tagName);
-  const children = element.children.map((child) => renderJsxChild(child, request)).join('');
+  const renderedChildren = element.children.map((child) => renderJsxChild(child, request)).join('');
+  const children = renderedChildren.trim().length > 0
+    ? renderedChildren
+    : renderComponentPlaceholderText(element.openingElement.attributes, tagName);
   return `<${tag}${attrs}>${children}</${tag}>`;
 }
 
@@ -266,7 +269,8 @@ function renderJsxSelfClosingElement(element: ts.JsxSelfClosingElement, request:
   const tagName = element.tagName.getText();
   const tag = resolveTagName(tagName, request);
   const attrs = renderAttributes(element.attributes, request, tagName);
-  return `<${tag}${attrs}></${tag}>`;
+  const children = renderComponentPlaceholderText(element.attributes, tagName);
+  return `<${tag}${attrs}>${children}</${tag}>`;
 }
 
 function resolveTagName(tagName: string, request: PreviewRequest): string {
@@ -302,6 +306,26 @@ function renderAttributes(attributes: ts.JsxAttributes, request: PreviewRequest,
   }
 
   return rendered.length > 0 ? ` ${rendered.join(' ')}` : '';
+}
+
+function renderComponentPlaceholderText(attributes: ts.JsxAttributes, tagName: string): string {
+  if (!/^[A-Z]/.test(tagName)) return '';
+
+  const displayPropNames = new Set(['children', 'label', 'title', 'text', 'content', 'aria-label', 'placeholder', 'value']);
+  for (const prop of attributes.properties) {
+    if (!ts.isJsxAttribute(prop)) continue;
+    const name = ts.isIdentifier(prop.name) ? prop.name.text : prop.name.getText();
+    if (!displayPropNames.has(name) || prop.initializer === undefined) continue;
+    if (ts.isStringLiteral(prop.initializer)) {
+      return escapeHtml(prop.initializer.text);
+    }
+    if (ts.isJsxExpression(prop.initializer) && prop.initializer.expression !== undefined) {
+      const value = staticExpressionValue(prop.initializer.expression);
+      if (value !== null) return escapeHtml(value);
+    }
+  }
+
+  return '';
 }
 
 function staticExpressionValue(expression: ts.Expression): string | null {

@@ -100,6 +100,18 @@ describe('projectModelToBuilderDocument', () => {
       expect(contractNames).toContain('Button');
     });
 
+    it('carries inferred source props into projected Builder nodes for editing', () => {
+      const buttonNode = {
+        ...makeNode('src/Button.tsx', 'component', 'Button'),
+        inferredProps: { label: 'string' },
+      };
+      const model = makeModel('m1', 'Test', [buttonNode]);
+
+      const doc = projectModelToBuilderDocument(model);
+
+      expect(doc.nodes['src/Button.tsx']?.props).toHaveProperty('label');
+    });
+
     it('includes page-kind nodes', () => {
       const model = makeModel('m1', 'Test', [
         makeNode('home', 'page', 'HomePage'),

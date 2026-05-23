@@ -9,7 +9,7 @@
  * @doc.layer platform
  */
 
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { useState, useMemo } from 'react';
 import { Typography, Input, Badge } from '@ghatana/design-system';
 
@@ -78,11 +78,21 @@ export function ComponentPalette({
     onComponentSelect(contract);
   };
 
+  const handlePaletteItemKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    contract: ComponentContract,
+  ): void => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onComponentSelect(contract);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Search */}
       <div className="p-3 border-b">
         <Input
+          data-testid="builder-palette-search"
           placeholder="Search components..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -93,6 +103,8 @@ export function ComponentPalette({
       {/* Category Filter */}
       <div className="p-3 border-b flex gap-2 overflow-x-auto">
         <button
+          type="button"
+          data-testid="builder-palette-category-all"
           onClick={() => setSelectedCategory(undefined)}
           className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
             selectedCategory === undefined
@@ -105,6 +117,8 @@ export function ComponentPalette({
         {categories.map((category) => (
           <button
             key={category}
+            type="button"
+            data-testid={`builder-palette-category-${category}`}
             onClick={() => setSelectedCategory(category)}
             className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
               selectedCategory === category
@@ -131,9 +145,13 @@ export function ComponentPalette({
               <div
                 key={contract.name}
                 data-testid={`builder-palette-item-${contract.name}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Add ${contract.displayName || contract.name}`}
                 draggable
                 onDragStart={() => handleDragStart(contract)}
                 onClick={() => onComponentSelect(contract)}
+                onKeyDown={(event) => handlePaletteItemKeyDown(event, contract)}
                 className="p-3 border rounded-lg hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
               >
                 <div className="flex items-start justify-between">

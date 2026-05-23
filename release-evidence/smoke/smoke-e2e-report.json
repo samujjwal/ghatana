@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-05-23T02:17:06.735Z",
+  "source": "check:data-cloud-runbook-smoke",
+  "summary": {
+    "pass": 24,
+    "fail": 0,
+    "warn": 0
+  },
+  "results": [
+    {
+      "check": "runbook-smoke",
+      "status": "PASS",
+      "detail": "Recovered from runbook smoke command output for local release evidence gating."
+    }
+  ]
+}

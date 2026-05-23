@@ -269,6 +269,11 @@ export interface ToolchainExecutionResult {
   evidenceRefs?: string[];
 
   observability?: ToolchainExecutionObservability;
+
+  /**
+   * Additional adapter-specific metadata for production evidence.
+   */
+  metadata?: Record<string, unknown>;
 }
 
 /**

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T21:46:48.553Z",
+  "generatedAt": "generated-on-demand",
   "summary": {
     "mutatingRouteCount": 155,
     "criticalMutatingRouteCount": 53,
@@ -273,5 +273,11 @@
       "requiresPolicy": true,
       "requiresBlockingAudit": true
     }
-  ]
+  ],
+  "failureInjectionEvidence": {
+    "reportSource": "atomic-workflow-failure-injection-latest.json",
+    "hasReport": true,
+    "violationCount": 0,
+    "warningCount": 0
+  }
 }

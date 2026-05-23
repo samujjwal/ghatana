@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affected-products.mjs';
@@ -12,6 +12,43 @@ const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'affected-product-release-profile.json');
 const productReleaseWorkflowPath = path.join(repoRoot, '.github/workflows/product-release.yml');
 const affectedWorkflowPath = path.join(repoRoot, '.github/workflows/affected-products.yml');
+const strictTargetProducts = ['data-cloud', 'digital-marketing', 'finance', 'flashit', 'phr', 'yappc'];
+
+function sleepMs(durationMs) {
+  const signal = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(signal, 0, 0, durationMs);
+}
+
+function writeJsonWithRetry(targetPath, payload, maxAttempts = 8) {
+  let lastError = null;
+  const tempPath = `${targetPath}.tmp`;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // Best-effort cleanup only.
+      }
+
+      const code = String(error?.code ?? '');
+      const retriable = code === 'UNKNOWN' || code === 'EACCES' || code === 'EBUSY' || code === 'EPERM';
+      if (!retriable || attempt === maxAttempts) {
+        throw error;
+      }
+      sleepMs(50 * attempt);
+    }
+  }
+
+  throw lastError;
+}
 
 function parseArg(flag) {
   const index = process.argv.indexOf(flag);
@@ -74,6 +111,37 @@ const strictWorkflowTokens = [
 ];
 
 const perProductCoverage = [];
+const strictTargetCoverage = [];
+
+for (const productId of strictTargetProducts) {
+  const product = registry[productId];
+  if (!product) {
+    violations.push(`Strict target product ${productId} is missing from canonical-product-registry.json`);
+    continue;
+  }
+
+  const lifecycleStatus = product.lifecycleStatus ?? 'unknown';
+  const isActive = product.metadata?.status === 'active';
+  const ciEnabled = product.ci?.enabled === true;
+
+  if (!isActive) {
+    violations.push(`Strict target product ${productId} must be active in canonical product registry`);
+  }
+
+  if (['enabled', 'planned', 'partial'].includes(lifecycleStatus) && !ciEnabled) {
+    violations.push(
+      `Strict target product ${productId} must have ci.enabled=true when lifecycleStatus is ${lifecycleStatus}`,
+    );
+  }
+
+  strictTargetCoverage.push({
+    productId,
+    kind: product.kind,
+    lifecycleStatus,
+    active: isActive,
+    ciEnabled,
+  });
+}
 
 for (const workflowPath of [productReleaseWorkflowPath, affectedWorkflowPath]) {
   if (!existsSync(workflowPath)) {
@@ -156,20 +224,13 @@ for (const productId of affectedProducts) {
 violations.push(...workflowViolations);
 
 mkdirSync(evidenceDir, { recursive: true });
-writeFileSync(
-  evidencePath,
-  `${JSON.stringify(
-    {
-      generatedAt: new Date().toISOString(),
-      affectedProducts,
-      perProductCoverage,
-      violations,
-    },
-    null,
-    2,
-  )}\n`,
-  'utf8',
-);
+writeJsonWithRetry(evidencePath, {
+  generatedAt: new Date().toISOString(),
+  affectedProducts,
+  strictTargetCoverage,
+  perProductCoverage,
+  violations,
+});
 
 if (violations.length > 0) {
   console.error('Affected product strict release profile failed:\n');

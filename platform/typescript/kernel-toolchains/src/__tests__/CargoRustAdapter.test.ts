@@ -113,6 +113,72 @@ describe('CargoRustAdapter', () => {
     expect(classification.relatedFailureCodes).toContain('cargo-rust-toolchain-missing');
     expect(classification.requiresHumanIntervention).toBe(true);
   });
+
+  it('P1-01: parses cargo test output with duration', async () => {
+    const adapter = new CargoRustAdapter({ repoRoot });
+    const testOutput = `
+test test_module::test_one ... ok
+test test_module::test_two ... FAILED
+test test_module::test_three ... ignored
+test result: ok. 1 passed; 1 failed; 1 ignored
+    `.trim();
+
+    // Access private method via type assertion for testing
+    const parseMethod = (adapter as any).parseCargoTestOutput.bind(adapter);
+    const result = parseMethod(testOutput);
+
+    expect(result.tests).toBe(3);
+    expect(result.failures).toBe(1);
+    expect(result.skipped).toBe(1);
+    // Duration is 0 if not found in output
+    expect(result.durationMs).toBe(0);
+  });
+
+  it('P1-01: includes target triple and Rust version in build metadata', async () => {
+    await writeCargoToml(repoRoot);
+    await fs.mkdir(path.join(repoRoot, 'products', 'rust-service', 'target', 'release'), { recursive: true });
+    await fs.writeFile(path.join(repoRoot, 'products', 'rust-service', 'target', 'release', 'service-bin'), '');
+    
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Finished release', stderr: '', durationMs: 25 },
+      { exitCode: 1, stdout: '', stderr: 'rustc not found', durationMs: 5 },
+      { exitCode: 1, stdout: '', stderr: 'rustc not found', durationMs: 5 },
+    ]);
+    const adapter = new CargoRustAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phase = 'build';
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('succeeded');
+    expect(result.metadata).toBeDefined();
+    expect(result.metadata).toHaveProperty('targetTriple');
+    expect(result.metadata).toHaveProperty('rustVersion');
+    expect(result.metadata).toHaveProperty('artifactType');
+    expect(result.metadata?.artifactType).toBe('rust-binary');
+  });
+
+  it('P1-01: handles missing rustc gracefully when detecting target triple', async () => {
+    await writeCargoToml(repoRoot);
+    await fs.mkdir(path.join(repoRoot, 'products', 'rust-service', 'target', 'release'), { recursive: true });
+    await fs.writeFile(path.join(repoRoot, 'products', 'rust-service', 'target', 'release', 'service-bin'), '');
+    
+    const commandRunner = new FakeCommandRunner([
+      { exitCode: 0, stdout: 'Finished release', stderr: '', durationMs: 25 },
+      { exitCode: 1, stdout: '', stderr: 'rustc not found', durationMs: 5 },
+      { exitCode: 1, stdout: '', stderr: 'rustc not found', durationMs: 5 },
+    ]);
+    const adapter = new CargoRustAdapter({ repoRoot, commandRunner });
+    const context = createContext(repoRoot);
+    context.phase = 'build';
+
+    const result = await adapter.execute(context);
+
+    expect(result.status).toBe('succeeded');
+    expect(result.metadata).toBeDefined();
+    expect(result.metadata?.targetTriple).toBe('unknown');
+    expect(result.metadata?.rustVersion).toBe('unknown');
+  });
 });
 
 function createContext(repoRoot: string): ToolchainAdapterContext {

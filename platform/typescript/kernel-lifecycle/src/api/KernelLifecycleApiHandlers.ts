@@ -373,6 +373,23 @@ export interface StudioSourceAcquisitionJob {
   readonly scope: StudioWorkflowStoreScope;
 }
 
+export interface StudioSourceInventoryEntry {
+  readonly relativePath: string;
+  readonly size: number;
+  readonly contentType: string;
+  readonly sha256: string;
+}
+
+export interface StudioSourceInventoryRecord {
+  readonly jobId: string;
+  readonly scope: StudioWorkflowStoreScope;
+  readonly generatedAt: string;
+  readonly localWorkspacePath: string;
+  readonly fileCount: number;
+  readonly totalBytes: number;
+  readonly files: readonly StudioSourceInventoryEntry[];
+}
+
 export interface StudioWorkflowPersistenceStore {
   putWorkflowState(
     record: StudioWorkflowStateRecord,
@@ -401,6 +418,14 @@ export interface StudioSourceAcquisitionJobStore {
     jobId: string,
     patch: StudioSourceAcquisitionJobUpdate,
   ): Promise<StudioSourceAcquisitionJob | null>;
+}
+
+export interface StudioSourceInventoryStore {
+  putSourceInventory(record: StudioSourceInventoryRecord): Promise<StudioSourceInventoryRecord>;
+  getSourceInventory(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceInventoryRecord | null>;
 }
 
 export interface StudioSourceAcquisitionArchivePayload {
@@ -442,6 +467,7 @@ export interface KernelLifecycleApiHandlersOptions {
   readonly studioWorkflowStore?: StudioWorkflowPersistenceStore;
   readonly studioSourceAcquisitionJobStore?: StudioSourceAcquisitionJobStore;
   readonly studioSourceAcquisitionPayloadStore?: StudioSourceAcquisitionPayloadStore;
+  readonly studioSourceInventoryStore?: StudioSourceInventoryStore;
   readonly requireScopeHeaders?: boolean;
   readonly allowUnscopedLocalDevelopment?: boolean;
   readonly authorizer?: KernelLifecycleAuthorizer;
@@ -596,6 +622,12 @@ export class KernelLifecycleApiHandlers {
       handler: "getStudioSourceAcquisitionJob",
     },
     {
+      routeId: "kernel.studio.sourceAcquisition.inventory.get",
+      method: "GET",
+      path: "/api/v1/studio/source-acquisition/jobs/:jobId/inventory",
+      handler: "getStudioSourceAcquisitionInventory",
+    },
+    {
       routeId: "kernel.studio.sourceAcquisition.job.patch",
       method: "PATCH",
       path: "/api/v1/studio/source-acquisition/jobs/:jobId",
@@ -607,6 +639,7 @@ export class KernelLifecycleApiHandlers {
   private readonly studioWorkflowStore: StudioWorkflowPersistenceStore;
   private readonly studioSourceAcquisitionJobStore: StudioSourceAcquisitionJobStore;
   private readonly studioSourceAcquisitionPayloadStore: StudioSourceAcquisitionPayloadStore;
+  private readonly studioSourceInventoryStore: StudioSourceInventoryStore;
   private readonly requireScopeHeaders: boolean;
   private readonly allowUnscopedLocalDevelopment: boolean;
   private readonly authorizer: KernelLifecycleAuthorizer | undefined;
@@ -623,6 +656,8 @@ export class KernelLifecycleApiHandlers {
     this.studioSourceAcquisitionPayloadStore =
       options.studioSourceAcquisitionPayloadStore ??
       new InMemoryStudioSourceAcquisitionPayloadStore();
+    this.studioSourceInventoryStore =
+      options.studioSourceInventoryStore ?? new InMemoryStudioSourceInventoryStore();
     this.requireScopeHeaders = options.requireScopeHeaders ?? true;
     this.allowUnscopedLocalDevelopment =
       options.allowUnscopedLocalDevelopment ?? false;
@@ -1133,6 +1168,39 @@ export class KernelLifecycleApiHandlers {
     });
   }
 
+  async getStudioSourceAcquisitionInventory(
+    request: KernelLifecycleApiRequest,
+  ): Promise<KernelLifecycleApiResponse> {
+    return this.handle(request, async (context) => {
+      const scope = this.requireScope(context);
+      const jobId = requireParam(context.params, "jobId");
+      await this.enforceAuth(request, context, "authorizeProductUnitRead", {
+        correlationId: context.correlationId,
+      });
+      const job = await this.studioSourceAcquisitionJobStore.getJob(scope, jobId);
+      if (job === null) {
+        throw new KernelLifecycleError({
+          reasonCode: "studio-source-acquisition-job-not-found",
+          message: "Studio source acquisition job was not found for this scope",
+          correlationId: context.correlationId,
+        });
+      }
+      const inventory = await this.studioSourceInventoryStore.getSourceInventory(
+        scope,
+        jobId,
+      );
+      if (inventory === null) {
+        throw new KernelLifecycleError({
+          reasonCode: "studio-source-acquisition-inventory-not-found",
+          message:
+            "Studio source acquisition inventory is not available for this job",
+          correlationId: context.correlationId,
+        });
+      }
+      return this.ok(inventory, context.correlationId);
+    });
+  }
+
   async patchStudioSourceAcquisitionJob(
     request: KernelLifecycleApiRequest,
   ): Promise<KernelLifecycleApiResponse> {
@@ -1494,7 +1562,8 @@ function statusCodeForReason(reasonCode: string): number {
     reasonCode === "manifest-not-found" ||
     reasonCode === "studio-workflow-state-not-found" ||
     reasonCode === "studio-workflow-evidence-not-found" ||
-    reasonCode === "studio-source-acquisition-job-not-found"
+    reasonCode === "studio-source-acquisition-job-not-found" ||
+    reasonCode === "studio-source-acquisition-inventory-not-found"
   ) {
     return 404;
   }
@@ -1791,6 +1860,28 @@ class InMemoryStudioSourceAcquisitionJobStore implements StudioSourceAcquisition
     };
     this.jobs.set(key, updated);
     return updated;
+  }
+
+  private key(scope: StudioWorkflowStoreScope, jobId: string): string {
+    return `${scopeKey(scope)}:${jobId}`;
+  }
+}
+
+class InMemoryStudioSourceInventoryStore implements StudioSourceInventoryStore {
+  private readonly inventories = new Map<string, StudioSourceInventoryRecord>();
+
+  async putSourceInventory(
+    record: StudioSourceInventoryRecord,
+  ): Promise<StudioSourceInventoryRecord> {
+    this.inventories.set(this.key(record.scope, record.jobId), record);
+    return record;
+  }
+
+  async getSourceInventory(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceInventoryRecord | null> {
+    return this.inventories.get(this.key(scope, jobId)) ?? null;
   }
 
   private key(scope: StudioWorkflowStoreScope, jobId: string): string {

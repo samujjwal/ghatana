@@ -20,6 +20,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { useAtomValue } from 'jotai';
 import type { FidelityReport, LossPoint } from '@ghatana/artifact-contracts';
 import {
+  artifactEvidencePackAtom,
   artifactFidelityReportAtom,
   artifactRoundTripDiffReportAtom,
 } from '../state/artifactWorkflowStore.js';
@@ -49,8 +50,10 @@ export default function FidelityReportPage(): ReactElement {
   // Prefer workflow store report (from decompile job); fall back to router state (legacy)
   const storeReport = useAtomValue(artifactFidelityReportAtom);
   const diffReport = useAtomValue(artifactRoundTripDiffReportAtom);
+  const evidencePack = useAtomValue(artifactEvidencePackAtom);
   const report = storeReport ?? state.report ?? null;
   const [triageByDiffId, setTriageByDiffId] = useState<Record<string, 'pending' | 'accepted' | 'escalated'>>({});
+  const generatedValidationEvidence = evidencePack?.generatedValidationEvidence ?? null;
 
   if (report === null) {
     return (
@@ -113,10 +116,19 @@ export default function FidelityReportPage(): ReactElement {
 
       {/* Score summary */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <p className="text-4xl font-bold tabular-nums" aria-label={`Overall fidelity score: ${pct} percent`}>
+        <p
+          className="text-4xl font-bold tabular-nums"
+          aria-label={`Overall fidelity score: ${pct} percent`}
+          data-testid="fidelity-score"
+        >
           <span className={scoreColorClass}>{pct}%</span>
         </p>
         <p className="mt-1 text-sm text-gray-500">Overall fidelity score</p>
+        {evidencePack !== null && (
+          <p className="mt-2 text-xs text-gray-500" data-testid="workflow-evidence-id">
+            Evidence: <code className="font-mono">{evidencePack.evidenceId}</code>
+          </p>
+        )}
         <dl className="mt-4 grid grid-cols-3 gap-4 text-sm">
           <div>
             <dt className="text-gray-500">Critical</dt>
@@ -168,6 +180,62 @@ export default function FidelityReportPage(): ReactElement {
         </div>
       )}
 
+      {generatedValidationEvidence !== null && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4" data-testid="evidence-validation-results">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-base font-semibold text-gray-900">
+              Generated validation evidence
+            </h3>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                generatedValidationEvidence.passed
+                  ? 'border-green-200 bg-green-50 text-green-700'
+                  : generatedValidationEvidence.pipeline.errorCount > 0
+                  ? 'border-red-200 bg-red-50 text-red-700'
+                  : 'border-yellow-200 bg-yellow-50 text-yellow-700'
+              }`}
+            >
+              {generatedValidationEvidence.passed ? 'Passed' : 'Requires review'}
+            </span>
+          </div>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-gray-500">Errors</dt>
+              <dd className="font-semibold text-gray-900">{generatedValidationEvidence.pipeline.errorCount}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Warnings</dt>
+              <dd className="font-semibold text-gray-900">{generatedValidationEvidence.pipeline.warningCount}</dd>
+            </div>
+            <div>
+              <dt className="text-gray-500">Artifacts</dt>
+              <dd className="font-semibold text-gray-900">{generatedValidationEvidence.artifacts.length}</dd>
+            </div>
+          </dl>
+          <ul className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+            {generatedValidationEvidence.stages.map((stage) => (
+              <li
+                key={stage.stageId}
+                className="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2"
+              >
+                <span className="font-medium text-gray-900">{stage.stageId}</span>
+                <span className="text-xs font-medium uppercase text-gray-600">{stage.status}</span>
+              </li>
+            ))}
+          </ul>
+          {generatedValidationEvidence.typeScriptDiagnostics.length > 0 && (
+            <ul className="mt-3 space-y-2 text-sm">
+              {generatedValidationEvidence.typeScriptDiagnostics.map((finding, index) => (
+                <li key={`${finding.code}-${index}`} className="rounded-md border border-red-100 bg-red-50 p-2 text-red-800">
+                  <span className="font-mono text-xs">{finding.code}</span>
+                  <span className="ml-2">{finding.message}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {diffReport !== null && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <h3 className="text-base font-semibold text-gray-900">
@@ -186,9 +254,30 @@ export default function FidelityReportPage(): ReactElement {
             </div>
             <div>
               <dt className="text-gray-500">Lossless</dt>
-              <dd className="font-semibold text-gray-900">{diffReport.isLossless ? 'Yes' : 'No'}</dd>
+              <dd className="font-semibold text-gray-900" data-testid="round-trip-lossless">
+                {diffReport.isLossless ? 'Yes' : 'No'}
+              </dd>
             </div>
           </dl>
+          {diffReport.validation !== undefined && (
+            <div
+              className={`mt-4 rounded-md border p-3 text-sm ${
+                diffReport.validation.passed
+                  ? 'border-green-200 bg-green-50 text-green-800'
+                  : diffReport.validation.errorCount > 0
+                  ? 'border-red-200 bg-red-50 text-red-800'
+                  : 'border-yellow-200 bg-yellow-50 text-yellow-800'
+              }`}
+              data-testid="generated-validation-summary"
+            >
+              <p className="font-medium">
+                Generated validation: {diffReport.validation.passed ? 'passed' : 'requires review'}
+              </p>
+              <p className="mt-1 text-xs">
+                {diffReport.validation.errorCount} error(s), {diffReport.validation.warningCount} warning(s), {diffReport.validation.infoCount} info item(s)
+              </p>
+            </div>
+          )}
           {diffReport.diffs.length > 0 && (
             <ul className="mt-3 space-y-2">
               {diffReport.diffs.map((diff) => {

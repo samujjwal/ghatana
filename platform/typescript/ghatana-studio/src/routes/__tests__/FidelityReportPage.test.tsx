@@ -17,7 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'jotai';
 import { createStore } from 'jotai';
-import type { FidelityReport } from '@ghatana/artifact-contracts';
+import type { EvidencePack, FidelityReport } from '@ghatana/artifact-contracts';
 import {
   createPerfectFidelityReport,
   computeFidelityReport,
@@ -59,6 +59,70 @@ function makeReport(score: number): FidelityReport {
     ],
     'test-scope',
   );
+}
+
+function makeEvidencePackWithGeneratedValidation(report: FidelityReport): EvidencePack {
+  const validationResult = {
+    targetId: 'model-1',
+    passed: false,
+    findings: [
+      {
+        code: 'TS2304',
+        message: "Cannot find name 'Button'.",
+        severity: 'error' as const,
+        category: 'typescript' as const,
+      },
+    ],
+    errorCount: 1,
+    warningCount: 0,
+    infoCount: 0,
+    validatedAt: '2024-01-01T00:00:00.000Z',
+  };
+
+  return {
+    evidenceId: 'evidence-validation',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    modelId: 'model-1',
+    label: 'Generated validation evidence',
+    stage: 'round-trip',
+    fidelity: report,
+    residuals: {
+      totalCount: 0,
+      blockingCount: 0,
+      islands: [],
+      canCompileWithResiduals: true,
+    },
+    validationResult,
+    generatedValidationEvidence: {
+      targetId: 'model-1',
+      passed: false,
+      pipeline: validationResult,
+      typeScriptDiagnostics: validationResult.findings,
+      stages: [
+        {
+          stageId: 'typecheck',
+          status: 'failed',
+          summary: 'TypeScript typecheck reported one finding.',
+          findings: validationResult.findings,
+        },
+        {
+          stageId: 'build',
+          status: 'not-run',
+          summary: 'Build was not run for this evidence pack.',
+          findings: [],
+        },
+      ],
+      artifacts: [
+        {
+          label: 'src/App.tsx',
+          relativePath: 'src/App.tsx',
+          contentType: 'text/tsx',
+        },
+      ],
+      validatedAt: '2024-01-01T00:00:00.000Z',
+    },
+    reviewStatus: 'needs-revision',
+  };
 }
 
 // ============================================================================
@@ -223,6 +287,24 @@ describe('FidelityReportPage', () => {
       fireEvent.click(screen.getByText('View diff hunks (1)'));
       expect(screen.getByText('return <button>{label}</button>;')).toBeInTheDocument();
       expect(screen.getByText('return <button type="button">{label}</button>;')).toBeInTheDocument();
+    });
+
+    it('renders generated validation evidence from the evidence pack', () => {
+      const store = createStore();
+      const report = createPerfectFidelityReport('validation-scope');
+      store.set(setArtifactWorkflowAtom, {
+        fidelityReport: report,
+        evidencePack: makeEvidencePackWithGeneratedValidation(report),
+      });
+
+      renderWithStore(store);
+
+      expect(screen.getByTestId('evidence-validation-results')).toBeInTheDocument();
+      expect(screen.getByText('Generated validation evidence')).toBeInTheDocument();
+      expect(screen.getByText('Requires review')).toBeInTheDocument();
+      expect(screen.getByText('typecheck')).toBeInTheDocument();
+      expect(screen.getByText('build')).toBeInTheDocument();
+      expect(screen.getByText('TS2304')).toBeInTheDocument();
     });
   });
 

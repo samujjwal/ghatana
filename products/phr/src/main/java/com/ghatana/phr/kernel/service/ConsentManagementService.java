@@ -377,6 +377,34 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         return consentCache.invalidateAll();
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public Promise<ConsentRevokeResult> revokeConsent(ConsentRevokeRequest request) {
+        ensureRunning();
+
+        // Find the consent grant by target resource identifier (consentId)
+        return getGrant(request.target().resourceId())
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(new ConsentRevokeResult(false, request.target().resourceId()));
+                }
+                ConsentGrant grant = opt.get();
+                if (!"ACTIVE".equals(grant.getStatus())) {
+                    return Promise.of(new ConsentRevokeResult(false, grant.getId()));
+                }
+
+                ConsentGrant revoked = grant.withStatus("REVOKED").withRevokedAt(Instant.now());
+                return updateGrantInternal(revoked)
+                    .then($ -> invalidatePatientAccessCache(
+                            new CacheInvalidationRequest(request.tenantId(), request.target().patientId(),
+                                    CacheInvalidationReason.GRANT_REVOKED)))
+                    .then($ -> notifyConsentChange(revoked, PhrNotificationSender.ConsentChangeType.GRANT_REVOKED))
+                    .then($ -> audit("CONSENT_REVOKE", request.target().patientId(),
+                        "Consent revoked by " + request.actor().actorId()))
+                    .map($ -> new ConsentRevokeResult(true, grant.getId()));
+            });
+    }
+
     /**
      * Gets all grants for a patient.
      *

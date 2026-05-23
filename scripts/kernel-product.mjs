@@ -13,6 +13,11 @@ import { createDefaultToolchainAdapterRegistry } from '../platform/typescript/ke
 import {
   ProductReleaseManifestManager,
 } from '../platform/typescript/kernel-release/dist/ProductReleaseManifest.js';
+import {
+  runDoctorCheck,
+  runAllDoctorChecks,
+  DOCTOR_CHECK_TYPES,
+} from '../platform/typescript/kernel-lifecycle/dist/api/KernelDoctorApiHandlers.js';
 
 const VALID_PHASES = new Set([
   'create',
@@ -42,6 +47,10 @@ function isLifecycleIntent(value) {
     LIFECYCLE_ALIASES.has(value) ||
     value === 'status' ||
     value === 'recover';
+}
+
+function isDoctorIntent(value) {
+  return value === 'doctor';
 }
 
 function parseArgs(argv) {
@@ -138,8 +147,12 @@ function parseArgs(argv) {
   let mode = 'execute';
   let productId;
   let phase;
+  let checkType;
 
-  if (positional[0] === 'release' && ['create', 'manifest'].includes(positional[1])) {
+  if (positional[0] === 'doctor') {
+    mode = 'doctor';
+    checkType = positional[1];
+  } else if (positional[0] === 'release' && ['create', 'manifest'].includes(positional[1])) {
     mode = `release-${positional[1]}`;
     productId = positional[2];
     phase = 'release';
@@ -181,6 +194,9 @@ function parseArgs(argv) {
     }
     if (positional[0] === 'product' && (positional[1] === 'recover' || positional[2] === 'recover')) {
       return { mode: 'recover', productId: positional[2] === 'recover' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
+    }
+    if (mode === 'doctor') {
+      return { mode, checkType, options };
     }
     throw new Error('Usage: product plan <productId> <phase> [options]');
   }
@@ -620,8 +636,62 @@ function recoverPlan(plan) {
 }
 
 async function main() {
-  const { mode: commandMode, productId, phase, options } = parseArgs(process.argv.slice(2));
+  const { mode: commandMode, productId, phase, options, checkType } = parseArgs(process.argv.slice(2));
   const repoRoot = resolve('.');
+
+  if (commandMode === 'doctor') {
+    // P0-06: Kernel doctor command for provider readiness and diagnostics
+    const providerContext = createBootstrapKernelProviders({ repoRoot });
+    const planner = new ProductLifecyclePlanner(repoRoot, undefined, providerContext);
+    const service = new KernelLifecycleService({
+      repoRoot,
+      providerContext,
+      planner,
+      logger: {
+        info: () => undefined,
+        warn: () => undefined,
+        error: () => undefined,
+      },
+    });
+
+    if (checkType) {
+      // Run specific check
+      const result = await runDoctorCheck(service, checkType, productId, options.env);
+      if (options.json) {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(`\n[kernel] doctor / ${checkType} - ${result.status.toUpperCase()}`);
+        console.log(`  timestamp: ${result.timestamp}`);
+        if (result.recommendations && result.recommendations.length > 0) {
+          console.log(`  recommendations:`);
+          for (const rec of result.recommendations) {
+            console.log(`    - ${rec}`);
+          }
+        }
+        console.log('');
+      }
+    } else {
+      // Run all checks
+      const results = await runAllDoctorChecks(service, productId, options.env);
+      if (options.json) {
+        console.log(JSON.stringify(results, null, 2));
+      } else {
+        console.log('\n[kernel] doctor - KERNEL DIAGNOSTICS');
+        console.log(`  timestamp: ${new Date().toISOString()}`);
+        console.log(`  environment: ${options.env ?? 'default'}\n`);
+        for (const result of results) {
+          console.log(`  ${result.checkType}: ${result.status.toUpperCase()}`);
+          if (result.recommendations && result.recommendations.length > 0) {
+            for (const rec of result.recommendations) {
+              console.log(`    - ${rec}`);
+            }
+          }
+        }
+        console.log('');
+      }
+    }
+    return;
+  }
 
   if (commandMode === 'release-create') {
     const release = createRelease(repoRoot, productId, options);

@@ -10,6 +10,8 @@ import {
   KernelLifecycleApiHandlers,
   type StudioSourceAcquisitionArchivePayload,
   type StudioSourceAcquisitionPayloadStore,
+  type StudioSourceInventoryRecord,
+  type StudioSourceInventoryStore,
   type StudioWorkflowStoreScope,
 } from "../KernelLifecycleApiHandlers.js";
 
@@ -69,6 +71,12 @@ describe("KernelLifecycleApiHandlers", () => {
       method: "GET",
       path: "/api/v1/studio/source-acquisition/jobs/:jobId",
       handler: "getStudioSourceAcquisitionJob",
+    });
+    expect(handlers.routeMetadata).toContainEqual({
+      routeId: "kernel.studio.sourceAcquisition.inventory.get",
+      method: "GET",
+      path: "/api/v1/studio/source-acquisition/jobs/:jobId/inventory",
+      handler: "getStudioSourceAcquisitionInventory",
     });
     expect(handlers.routeMetadata).toContainEqual({
       routeId: "kernel.studio.sourceAcquisition.job.patch",
@@ -677,6 +685,107 @@ describe("KernelLifecycleApiHandlers", () => {
     });
   });
 
+  it("retrieves scoped Studio source acquisition inventory after materialization", async () => {
+    const inventoryStore = new TestInventoryStore();
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      requireAuthentication: false,
+      studioSourceInventoryStore: inventoryStore,
+    });
+
+    const createResponse = await handlers.createStudioRepositorySourceAcquisition({
+      headers: scopedHeaders("corr-source-inventory-create"),
+      body: {
+        input: {
+          kind: "github-repository",
+          repositoryUrl: "https://github.com/samujjwal/ghatana",
+        },
+      },
+    });
+    const jobId = (
+      createResponse.body as { readonly acquisitionJob: { readonly jobId: string } }
+    ).acquisitionJob.jobId;
+    await inventoryStore.putSourceInventory({
+      jobId,
+      scope: {
+        tenantId: "tenant-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+      },
+      generatedAt: "2026-05-21T00:05:00.000Z",
+      localWorkspacePath: ".kernel/source-acquisition/job",
+      fileCount: 1,
+      totalBytes: 24,
+      files: [
+        {
+          relativePath: "src/App.tsx",
+          size: 24,
+          contentType: "text/tsx",
+          sha256: "a".repeat(64),
+        },
+      ],
+    });
+
+    const response = await handlers.getStudioSourceAcquisitionInventory({
+      headers: scopedHeaders("corr-source-inventory-get"),
+      params: { jobId },
+    });
+    const crossTenant = await handlers.getStudioSourceAcquisitionInventory({
+      headers: {
+        ...scopedHeaders("corr-source-inventory-cross"),
+        "X-Ghatana-Tenant-Id": "tenant-2",
+      },
+      params: { jobId },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      jobId,
+      fileCount: 1,
+      totalBytes: 24,
+      files: [
+        {
+          relativePath: "src/App.tsx",
+          contentType: "text/tsx",
+        },
+      ],
+    });
+    expect(crossTenant.statusCode).toBe(404);
+    expect(crossTenant.body).toMatchObject({
+      reasonCode: "studio-source-acquisition-job-not-found",
+    });
+  });
+
+  it("returns not found when source acquisition inventory is not materialized yet", async () => {
+    const handlers = new KernelLifecycleApiHandlers({
+      service: createService(),
+      requireAuthentication: false,
+    });
+
+    const createResponse = await handlers.createStudioRepositorySourceAcquisition({
+      headers: scopedHeaders("corr-source-inventory-pending"),
+      body: {
+        input: {
+          kind: "github-repository",
+          repositoryUrl: "https://github.com/samujjwal/ghatana",
+        },
+      },
+    });
+    const jobId = (
+      createResponse.body as { readonly acquisitionJob: { readonly jobId: string } }
+    ).acquisitionJob.jobId;
+    const response = await handlers.getStudioSourceAcquisitionInventory({
+      headers: scopedHeaders("corr-source-inventory-missing"),
+      params: { jobId },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toMatchObject({
+      reasonCode: "studio-source-acquisition-inventory-not-found",
+      correlationId: "corr-source-inventory-missing",
+    });
+  });
+
   it("rejects repository source acquisition for mismatched or credentialed hosts", async () => {
     const handlers = new KernelLifecycleApiHandlers({
       service: createService(),
@@ -1006,6 +1115,28 @@ class TestPayloadStore implements StudioSourceAcquisitionPayloadStore {
     jobId: string,
   ): Promise<void> {
     this.payloads.delete(this.key(scope, jobId));
+  }
+
+  private key(scope: StudioWorkflowStoreScope, jobId: string): string {
+    return `${scope.tenantId}:${scope.workspaceId}:${scope.projectId}:${jobId}`;
+  }
+}
+
+class TestInventoryStore implements StudioSourceInventoryStore {
+  private readonly inventories = new Map<string, StudioSourceInventoryRecord>();
+
+  async putSourceInventory(
+    record: StudioSourceInventoryRecord,
+  ): Promise<StudioSourceInventoryRecord> {
+    this.inventories.set(this.key(record.scope, record.jobId), record);
+    return record;
+  }
+
+  async getSourceInventory(
+    scope: StudioWorkflowStoreScope,
+    jobId: string,
+  ): Promise<StudioSourceInventoryRecord | null> {
+    return this.inventories.get(this.key(scope, jobId)) ?? null;
   }
 
   private key(scope: StudioWorkflowStoreScope, jobId: string): string {

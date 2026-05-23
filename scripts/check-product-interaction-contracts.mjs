@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
@@ -10,8 +10,10 @@ import YAML from 'yaml';
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const registryPath = join(repoRoot, 'config', 'canonical-product-registry.json');
+const evidencePath = join(repoRoot, '.kernel', 'evidence', 'product-interaction-coverage-matrix.json');
 const registryDocument = JSON.parse(readFileSync(registryPath, 'utf8'));
 const registry = registryDocument.registry ?? registryDocument;
+const stableGeneratedAt = 'generated-on-demand';
 
 const VALID_MODES = new Set([
   'request-response',
@@ -31,7 +33,9 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
   const errors = [];
   const providedContracts = new Map();
   const consumedContracts = [];
+  const contractDeclarations = [];
   const schemaDigests = new Map();
+  const sourceRefs = options.sourceRefs ?? collectInteractionSourceRefs(options.repoRoot ?? repoRoot);
   const loadKernelProduct =
     options.loadKernelProduct ??
     ((productId) => {
@@ -66,6 +70,11 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
         schemaDigests,
         readSchemaFile: options.readSchemaFile,
       }));
+      contracts.forEach((contract, index) => {
+        if (typeof contract?.contractId === 'string') {
+          contractDeclarations.push({ productId, bucket, contract, index });
+        }
+      });
       if (bucket === 'publishes' || bucket === 'provides') {
         for (const contract of contracts) {
           if (typeof contract?.contractId === 'string') {
@@ -101,7 +110,22 @@ export function checkProductInteractionContracts(registryInput, options = {}) {
     validateBridgeHandlers(errors);
   }
 
-  return { errors, consumedContractCount: consumedContracts.length };
+  const coverageMatrix = buildInteractionCoverageMatrix(contractDeclarations, sourceRefs);
+  for (const row of coverageMatrix) {
+    if (row.handler.required && row.handler.status !== 'covered') {
+      errors.push(`${row.declaringProductId}.interactions.${row.declarationKind} ${row.contractId} is missing ProductInteractionHandler coverage`);
+    }
+    if (row.tests.status !== 'covered') {
+      errors.push(`${row.declaringProductId}.interactions.${row.declarationKind} ${row.contractId} is missing test coverage`);
+    }
+  }
+
+  return {
+    errors,
+    consumedContractCount: consumedContracts.length,
+    coverageMatrix,
+    coverageSummary: summarizeCoverageMatrix(coverageMatrix),
+  };
 }
 
 function collectJavaFiles(directory) {
@@ -122,6 +146,162 @@ function collectJavaFiles(directory) {
     }
   }
   return files;
+}
+
+function collectSourceFiles(directory, extensions) {
+  if (!existsSync(directory)) {
+    return [];
+  }
+  const files = [];
+  for (const entry of readdirSync(directory)) {
+    const absolutePath = join(directory, entry);
+    const stat = statSync(absolutePath);
+    if (stat.isDirectory()) {
+      if (['build', 'dist', 'node_modules', '.gradle', '.turbo'].includes(entry)) {
+        continue;
+      }
+      files.push(...collectSourceFiles(absolutePath, extensions));
+    } else if (stat.isFile() && extensions.some((extension) => entry.endsWith(extension))) {
+      files.push(absolutePath);
+    }
+  }
+  return files;
+}
+
+function collectInteractionSourceRefs(root) {
+  const extensions = ['.java', '.kt', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.yaml', '.yml', '.json'];
+  const files = [
+    ...collectSourceFiles(join(root, 'products'), extensions),
+    ...collectSourceFiles(join(root, 'integration-tests'), extensions),
+    ...collectSourceFiles(join(root, 'platform-kernel'), extensions),
+  ];
+
+  return files.map((filePath) => {
+    const normalizedPath = filePath.replace(root, '').replace(/^[/\\]/, '').replaceAll('\\', '/');
+    const source = readFileSync(filePath, 'utf8');
+    return {
+      path: normalizedPath,
+      source,
+      isTest: /(?:^|\/)(?:src\/test|__tests__|tests?|integration-tests)(?:\/|$)|\.test\./.test(normalizedPath),
+      isHandler: source.includes('ProductInteractionHandler'),
+    };
+  });
+}
+
+function schemaRefsForContract(contract) {
+  return [
+    ['request', contract.requestSchemaRef, contract.requestSchemaSha256],
+    ['response', contract.responseSchemaRef, contract.responseSchemaSha256],
+    ['event', contract.eventSchemaRef, contract.eventSchemaSha256],
+  ]
+    .filter(([, ref]) => typeof ref === 'string' && ref.length > 0)
+    .map(([kind, ref, sha256]) => ({ kind, ref, sha256 }));
+}
+
+function coverageSearchTokens(contract) {
+  const schemaBasenames = schemaRefsForContract(contract)
+    .map((schemaRef) => schemaRef.ref?.split('/').pop())
+    .filter((token) => typeof token === 'string' && token.length > 0);
+  const evidenceBasenames = Array.isArray(contract.evidence?.evidenceRefs)
+    ? contract.evidence.evidenceRefs.map((ref) => ref.split('/').pop())
+    : [];
+  const contractTail = typeof contract.contractId === 'string'
+    ? contract.contractId.replace(/^kernel:\/\/interactions\//, '')
+    : undefined;
+  const semanticAliases = [
+    contractTail,
+    contractTail?.replace(/\.v\d+$/, ''),
+    contractTail?.replace(/\.v\d+$/, '').split('.').slice(1).join('-'),
+    ...schemaBasenames.map((basename) => basename?.replace(/\.v\d+\.json$/, '')),
+    ...evidenceBasenames.map((basename) => basename?.replace(/\.(?:ya?ml|json)$/, '')),
+  ];
+
+  return [
+    contract.contractId,
+    contract.topic,
+    ...schemaBasenames,
+    ...evidenceBasenames,
+    ...semanticAliases,
+  ].filter((token) => typeof token === 'string' && token.length > 0);
+}
+
+function matchingFiles(sourceRefs, tokens, predicate = () => true) {
+  return sourceRefs
+    .filter(predicate)
+    .filter((sourceRef) => tokens.some((token) => sourceRef.source.includes(token)))
+    .map((sourceRef) => sourceRef.path)
+    .sort();
+}
+
+function buildInteractionCoverageMatrix(contractDeclarations, sourceRefs) {
+  return contractDeclarations.flatMap(({ productId, bucket, contract, index }) => {
+    const schemaRefs = schemaRefsForContract(contract);
+    const tokens = coverageSearchTokens(contract);
+    const handlerFiles = matchingFiles(
+      sourceRefs,
+      [contract.contractId],
+      (sourceRef) => sourceRef.isHandler && !sourceRef.isTest,
+    );
+    const testFiles = matchingFiles(sourceRefs, tokens, (sourceRef) => sourceRef.isTest);
+    const handlerRequired = bucket === 'provides' && contract.mode === 'request-response';
+    const consumers = Array.isArray(contract.consumerProductIds) ? contract.consumerProductIds : [];
+
+    return consumers.map((consumerProductId) => ({
+      contractId: contract.contractId,
+      schemaVersion: contract.schemaVersion,
+      declaringProductId: productId,
+      declarationKind: bucket,
+      declarationIndex: index,
+      providerProductId: contract.providerProductId,
+      consumerProductId,
+      mode: contract.mode,
+      topic: contract.topic,
+      schemaRefs,
+      policy: {
+        requiresAuth: contract.policy?.requiresAuth === true,
+        requiresTenant: contract.policy?.requiresTenant === true,
+        requiresConsent: contract.policy?.requiresConsent === true,
+        piiClassification: contract.policy?.piiClassification ?? null,
+        tenantScope: contract.policy?.tenantScope ?? null,
+      },
+      evidence: {
+        required: contract.evidence?.required === true,
+        manifestType: contract.evidence?.manifestType ?? null,
+        evidenceRefs: Array.isArray(contract.evidence?.evidenceRefs)
+          ? [...contract.evidence.evidenceRefs].sort()
+          : [],
+        retentionPolicyId: contract.evidence?.retentionPolicyId ?? null,
+      },
+      handler: {
+        required: handlerRequired,
+        status: handlerRequired ? (handlerFiles.length > 0 ? 'covered' : 'missing') : 'not-required',
+        files: handlerFiles,
+      },
+      tests: {
+        required: true,
+        status: testFiles.length > 0 ? 'covered' : 'missing',
+        files: testFiles,
+      },
+    }));
+  }).sort((left, right) =>
+    `${left.contractId}:${left.declaringProductId}:${left.consumerProductId}:${left.declarationKind}`
+      .localeCompare(`${right.contractId}:${right.declaringProductId}:${right.consumerProductId}:${right.declarationKind}`),
+  );
+}
+
+function summarizeCoverageMatrix(coverageMatrix) {
+  const handlerRequired = coverageMatrix.filter((row) => row.handler.required).length;
+  const handlerCovered = coverageMatrix.filter((row) => row.handler.required && row.handler.status === 'covered').length;
+  const testsRequired = coverageMatrix.filter((row) => row.tests.required).length;
+  const testsCovered = coverageMatrix.filter((row) => row.tests.required && row.tests.status === 'covered').length;
+  return {
+    interactionRows: coverageMatrix.length,
+    handlerRequired,
+    handlerCovered,
+    testsRequired,
+    testsCovered,
+    passed: handlerRequired === handlerCovered && testsRequired === testsCovered,
+  };
 }
 
 function validateBridgeHandlers(errors) {
@@ -286,7 +466,14 @@ function main() {
     process.exit(1);
   }
 
+  mkdirSync(join(repoRoot, '.kernel', 'evidence'), { recursive: true });
+  writeFileSync(evidencePath, `${JSON.stringify({
+    generatedAt: stableGeneratedAt,
+    coverageSummary: result.coverageSummary,
+    coverageMatrix: result.coverageMatrix,
+  }, null, 2)}\n`, 'utf8');
   console.log(`Product interaction contract validation passed for ${result.consumedContractCount} consumed contracts.`);
+  console.log(`Generated interaction coverage matrix: ${evidencePath.replace(`${repoRoot}\\`, '').replaceAll('\\', '/')}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === __filename) {

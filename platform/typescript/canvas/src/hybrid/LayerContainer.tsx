@@ -9,7 +9,12 @@
  * @doc.pattern Component
  */
 
-import React, { forwardRef, type CSSProperties, type ReactNode } from "react";
+import React, {
+  forwardRef,
+  type CSSProperties,
+  type KeyboardEventHandler,
+  type ReactNode,
+} from "react";
 import { useAtomValue } from "jotai";
 import { layersAtom, viewportAtom, gridAtom } from "./state";
 import type { RenderingMode } from "./types";
@@ -31,6 +36,10 @@ export interface LayerContainerProps {
   overlayLayer?: ReactNode;
   /** Children (custom overlays) */
   children?: ReactNode;
+  /** Keyboard handler for the focusable canvas surface. */
+  onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
+  /** Accessible label for the canvas surface. */
+  ariaLabel?: string;
 }
 
 /**
@@ -130,6 +139,8 @@ export const LayerContainer = forwardRef<HTMLDivElement, LayerContainerProps>(
       graphLayer,
       overlayLayer,
       children,
+      onKeyDown,
+      ariaLabel = "Hybrid canvas",
     },
     ref,
   ) {
@@ -162,6 +173,10 @@ export const LayerContainer = forwardRef<HTMLDivElement, LayerContainerProps>(
         className={`ghatana-canvas-container ${className}`}
         style={containerStyle}
         data-mode={mode}
+        role="application"
+        tabIndex={0}
+        aria-label={ariaLabel}
+        onKeyDown={onKeyDown}
       >
         {/* Grid Background */}
         <GridBackground />

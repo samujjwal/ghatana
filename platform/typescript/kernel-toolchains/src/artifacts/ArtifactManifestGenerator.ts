@@ -31,6 +31,11 @@ export interface ArtifactEntry {
     gitBranch?: string;
     timestamp: string;
     sizeBytes: number;
+    // P1-03: Enhanced metadata for production-grade fingerprinting
+    buildCommand?: string;
+    runtime?: string;
+    target?: string;
+    language?: string;
   };
   fingerprint: {
     algorithm: 'sha256' | 'sha512' | 'md5';
@@ -96,6 +101,20 @@ export class ArtifactManifestGenerator {
       }
       if (context.metadata?.gitBranch) {
         metadata.gitBranch = context.metadata.gitBranch;
+      }
+
+      // P1-03: Add enhanced metadata from surfaceConfig
+      if (typeof context.surfaceConfig.buildCommand === 'string') {
+        metadata.buildCommand = context.surfaceConfig.buildCommand;
+      }
+      if (typeof context.surfaceConfig.runtime === 'string') {
+        metadata.runtime = context.surfaceConfig.runtime;
+      }
+      if (typeof context.surfaceConfig.target === 'string') {
+        metadata.target = context.surfaceConfig.target;
+      }
+      if (typeof context.surfaceConfig.language === 'string') {
+        metadata.language = context.surfaceConfig.language;
       }
 
       manifestEntries.push({

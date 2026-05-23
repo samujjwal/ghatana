@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { loadCanonicalRegistry } from './resolve-affected-products.mjs';
@@ -10,6 +10,41 @@ const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'product-a11y-route-matrix.json');
 
 const violations = [];
+
+function sleepMs(durationMs) {
+  const shared = new SharedArrayBuffer(4);
+  const view = new Int32Array(shared);
+  Atomics.wait(view, 0, 0, durationMs);
+}
+
+function writeEvidenceWithRetry(targetPath, payload, maxAttempts = 8) {
+  const retriableCodes = new Set(['UNKNOWN', 'EPERM', 'EBUSY']);
+  const tempPath = `${targetPath}.tmp`;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, payload, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        rmSync(tempPath, { force: true });
+      } catch {
+        // Ignore temp cleanup failures.
+      }
+
+      if (!retriableCodes.has(error?.code) || attempt === maxAttempts) {
+        throw error;
+      }
+
+      sleepMs(50 * attempt);
+    }
+  }
+
+  throw lastError;
+}
 
 function readJson(relativePath) {
   const absolutePath = path.join(repoRoot, relativePath);
@@ -125,7 +160,7 @@ for (const scopedProduct of scopedProducts) {
 }
 
 mkdirSync(evidenceDir, { recursive: true });
-writeFileSync(
+writeEvidenceWithRetry(
   evidencePath,
   `${JSON.stringify(
     {
@@ -137,7 +172,6 @@ writeFileSync(
     null,
     2,
   )}\n`,
-  'utf8',
 );
 
 if (violations.length > 0) {

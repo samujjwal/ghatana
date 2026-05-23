@@ -7,6 +7,7 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const releaseEnv = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceRoot = path.join(repoRoot, 'release-evidence');
+const releaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
 
 function gitValue(command) {
   try {
@@ -31,6 +32,14 @@ const atomicPosture = readJsonIfExists('.kernel/evidence/atomic-workflow-posture
 const implementationPlanProgress = readJsonIfExists('.kernel/evidence/kernel-implementation-plan-progress.json');
 const wave2Scorecard = readJsonIfExists('.kernel/evidence/wave2-product-quality-scorecard.json');
 const productReleaseReadiness = readJsonIfExists('.kernel/evidence/product-release-readiness.json');
+const productSloBudgets = readJsonIfExists('.kernel/evidence/product-slo-budgets.json');
+const productCostBudgets = readJsonIfExists('.kernel/evidence/product-cost-budgets.json');
+const productDomainInvariants = readJsonIfExists('.kernel/evidence/product-domain-invariants.json');
+const openApiBreakingChanges = readJsonIfExists('.kernel/evidence/openapi-breaking-changes.json');
+
+function isPassingEvidence(evidence) {
+  return Boolean(evidence && evidence.status === 'passed' && (evidence.violations?.length ?? 0) === 0);
+}
 
 function readPerProductReleaseScorecards() {
   const evidenceDir = path.join(repoRoot, '.kernel/evidence');
@@ -45,16 +54,37 @@ function readPerProductReleaseScorecards() {
 }
 
 const perProductReleaseScorecards = readPerProductReleaseScorecards();
+const perProductFailedScorecards = perProductReleaseScorecards.filter((scorecard) => {
+  const verdictPass = scorecard.releaseVerdict === 'pass';
+  const averageScore = Number(scorecard.averageScore ?? 0);
+  return !verdictPass || averageScore < releaseTargetScore;
+});
 const unresolvedP0P1Blockers = perProductReleaseScorecards
   .flatMap((scorecard) => scorecard.blockingGaps ?? [])
   .filter((gap) => gap.severity === 'P0' || gap.severity === 'P1');
 const implementationAverageScore = implementationPlanProgress?.summary?.averageMaturityScore ?? null;
 const criticalDimensionsBelowThreshold = implementationPlanProgress?.summary?.criticalDimensionsBelowThresholdCount ?? null;
+const productSloBudgetsPass = isPassingEvidence(productSloBudgets);
+const productCostBudgetsPass = isPassingEvidence(productCostBudgets);
+const productDomainInvariantsPass = isPassingEvidence(productDomainInvariants);
+const openApiBreakingChangesPass = isPassingEvidence(openApiBreakingChanges);
+const thresholdPolicyAvailable = Boolean(
+  implementationPlanProgress
+  && productSloBudgets
+  && productCostBudgets
+  && productDomainInvariants
+  && openApiBreakingChanges,
+);
 const thresholdPolicyPassed =
-  implementationAverageScore !== null
+  thresholdPolicyAvailable
+  && implementationAverageScore !== null
   && implementationAverageScore >= 4.0
   && criticalDimensionsBelowThreshold === 0
-  && unresolvedP0P1Blockers.length === 0;
+  && unresolvedP0P1Blockers.length === 0
+  && productSloBudgetsPass
+  && productCostBudgetsPass
+  && productDomainInvariantsPass
+  && openApiBreakingChangesPass;
 
 const summary = {
   generatedAt: new Date().toISOString(),
@@ -107,18 +137,75 @@ const summary = {
         )
         : null,
     },
+    productSloBudgets: {
+      available: Boolean(productSloBudgets),
+      pass: productSloBudgetsPass,
+      violationCount: productSloBudgets?.violations?.length ?? 0,
+    },
+    productCostBudgets: {
+      available: Boolean(productCostBudgets),
+      pass: productCostBudgetsPass,
+      violationCount: productCostBudgets?.violations?.length ?? 0,
+    },
+    productDomainInvariants: {
+      available: Boolean(productDomainInvariants),
+      pass: productDomainInvariantsPass,
+      violationCount: productDomainInvariants?.violations?.length ?? 0,
+    },
+    openApiBreakingChanges: {
+      available: Boolean(openApiBreakingChanges),
+      pass: openApiBreakingChangesPass,
+      violationCount: openApiBreakingChanges?.violations?.length ?? 0,
+    },
     releaseScoreThresholdPolicy: {
-      available: Boolean(implementationPlanProgress),
+      available: thresholdPolicyAvailable,
       pass: thresholdPolicyPassed,
       implementationAverageScore,
+      releaseTargetScore,
       criticalDimensionsBelowThreshold,
       unresolvedP0P1Blockers: unresolvedP0P1Blockers.length,
+      productSloBudgetsPass,
+      productCostBudgetsPass,
+      productDomainInvariantsPass,
+      openApiBreakingChangesPass,
       affectedProductCount: productReleaseReadiness?.affectedProducts?.length ?? perProductReleaseScorecards.length,
+    },
+    perProductReleaseReadiness: {
+      available: perProductReleaseScorecards.length > 0,
+      pass: perProductReleaseScorecards.length > 0 && perProductFailedScorecards.length === 0,
+      productCount: perProductReleaseScorecards.length,
+      failedProductCount: perProductFailedScorecards.length,
+      releaseTargetScore,
+      failedProducts: perProductFailedScorecards.map((scorecard) => ({
+        productId: scorecard.productId,
+        releaseVerdict: scorecard.releaseVerdict,
+        averageScore: scorecard.averageScore,
+      })),
     },
   },
 };
 
-summary.pass = Object.values(summary.releaseGate).every((entry) => entry.pass === true || entry.available === false);
+const requiredGateKeys = [
+  'smoke',
+  'backup',
+  'runtimeProfile',
+  'atomicWorkflow',
+  'implementationPlanCoverage',
+  'releaseScoreThresholdPolicy',
+  'perProductReleaseReadiness',
+];
+
+const requiredGateResults = requiredGateKeys.map((gateKey) => {
+  const gate = summary.releaseGate?.[gateKey];
+  return {
+    gateKey,
+    available: gate?.available === true,
+    pass: gate?.pass === true,
+  };
+});
+
+summary.releaseGate.requiredGates = requiredGateResults;
+summary.pass = requiredGateResults.every((entry) => entry.available === true && entry.pass === true);
 
 mkdirSync(evidenceRoot, { recursive: true });
 
@@ -142,7 +229,12 @@ const markdownLines = [
   `| Atomic workflow posture | ${summary.releaseGate.atomicWorkflow.available} | ${summary.releaseGate.atomicWorkflow.pass} | critical routes=${summary.releaseGate.atomicWorkflow.criticalMutatingRouteCount} |`,
   `| Implementation plan coverage | ${summary.releaseGate.implementationPlanCoverage.available} | ${summary.releaseGate.implementationPlanCoverage.pass} | covered=${summary.releaseGate.implementationPlanCoverage.coveredDimensions ?? 'n/a'}, uncovered=${summary.releaseGate.implementationPlanCoverage.uncoveredDimensions ?? 'n/a'}, wave1=${summary.releaseGate.implementationPlanCoverage.wave1Complete ?? 'n/a'} |`,
   `| Wave 2 product quality scorecard | ${summary.releaseGate.wave2ProductQuality.available} | n/a | products=${summary.releaseGate.wave2ProductQuality.productCount}, avgScore=${summary.releaseGate.wave2ProductQuality.avgScoreRatio ?? 'n/a'} |`,
-  `| Release score threshold policy | ${summary.releaseGate.releaseScoreThresholdPolicy.available} | ${summary.releaseGate.releaseScoreThresholdPolicy.pass} | avg=${summary.releaseGate.releaseScoreThresholdPolicy.implementationAverageScore ?? 'n/a'}, critical<4=${summary.releaseGate.releaseScoreThresholdPolicy.criticalDimensionsBelowThreshold ?? 'n/a'}, blockers=${summary.releaseGate.releaseScoreThresholdPolicy.unresolvedP0P1Blockers} |`,
+  `| Product SLO budgets | ${summary.releaseGate.productSloBudgets.available} | ${summary.releaseGate.productSloBudgets.pass} | violations=${summary.releaseGate.productSloBudgets.violationCount} |`,
+  `| Product cost budgets | ${summary.releaseGate.productCostBudgets.available} | ${summary.releaseGate.productCostBudgets.pass} | violations=${summary.releaseGate.productCostBudgets.violationCount} |`,
+  `| Product domain invariants | ${summary.releaseGate.productDomainInvariants.available} | ${summary.releaseGate.productDomainInvariants.pass} | violations=${summary.releaseGate.productDomainInvariants.violationCount} |`,
+  `| OpenAPI breaking changes | ${summary.releaseGate.openApiBreakingChanges.available} | ${summary.releaseGate.openApiBreakingChanges.pass} | violations=${summary.releaseGate.openApiBreakingChanges.violationCount} |`,
+  `| Release score threshold policy | ${summary.releaseGate.releaseScoreThresholdPolicy.available} | ${summary.releaseGate.releaseScoreThresholdPolicy.pass} | avg=${summary.releaseGate.releaseScoreThresholdPolicy.implementationAverageScore ?? 'n/a'}, critical<4=${summary.releaseGate.releaseScoreThresholdPolicy.criticalDimensionsBelowThreshold ?? 'n/a'}, blockers=${summary.releaseGate.releaseScoreThresholdPolicy.unresolvedP0P1Blockers}, slo=${summary.releaseGate.releaseScoreThresholdPolicy.productSloBudgetsPass}, cost=${summary.releaseGate.releaseScoreThresholdPolicy.productCostBudgetsPass}, domain=${summary.releaseGate.releaseScoreThresholdPolicy.productDomainInvariantsPass}, openapi=${summary.releaseGate.releaseScoreThresholdPolicy.openApiBreakingChangesPass} |`,
+  `| Per-product release readiness | ${summary.releaseGate.perProductReleaseReadiness.available} | ${summary.releaseGate.perProductReleaseReadiness.pass} | products=${summary.releaseGate.perProductReleaseReadiness.productCount}, failed=${summary.releaseGate.perProductReleaseReadiness.failedProductCount}, targetScore=${summary.releaseGate.perProductReleaseReadiness.releaseTargetScore} |`,
   '',
 ];
 

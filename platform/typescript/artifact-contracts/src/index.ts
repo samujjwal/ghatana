@@ -53,13 +53,17 @@ export type {
   DetectedRoute,
   ComponentUsageRecord,
   ExtractedProtectedRegion,
+  ExtractedStructureEnvelope,
   SourceImportRecord,
 } from "./structure.js";
 export {
+  EXTRACTED_STRUCTURE_SCHEMA_VERSION,
   JsxTreeNodeSchema,
   DetectedRouteSchema,
   ComponentUsageRecordSchema,
   ExtractedProtectedRegionSchema,
+  ExtractedStructureEnvelopeSchema,
+  migrateExtractedStructureEnvelope,
   SourceImportRecordSchema,
 } from "./structure.js";
 
@@ -108,11 +112,25 @@ export type {
   CompileResult,
   DecompileResult,
   EvidencePack,
+  EvidenceArtifactRef,
+  EvidenceGateStatus,
+  GeneratedArtifactValidationEvidence,
+  PreviewValidationEvidence,
+  SourceAcquisitionEvidence,
+  ValidationEvidenceStageId,
+  ValidationEvidenceStageResult,
 } from "./evidence.js";
 export {
   CompileResultSchema,
   DecompileResultSchema,
   EvidencePackSchema,
+  EvidenceArtifactRefSchema,
+  EvidenceGateStatusSchema,
+  GeneratedArtifactValidationEvidenceSchema,
+  PreviewValidationEvidenceSchema,
+  SourceAcquisitionEvidenceSchema,
+  ValidationEvidenceStageIdSchema,
+  ValidationEvidenceStageResultSchema,
 } from "./evidence.js";
 
 // Scan / Acquisition / Validation / Diff

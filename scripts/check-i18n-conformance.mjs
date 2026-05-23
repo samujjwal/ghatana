@@ -53,6 +53,50 @@ if (digitalMarketingI18nTests && !digitalMarketingI18nTests.includes("describe('
   violations.push('Digital Marketing i18n tests are missing the formatting helper suite');
 }
 
+// P0-05: PHR i18n conformance check
+const phrI18n = requireFile('products/phr/apps/web/src/i18n/phrI18n.ts');
+if (phrI18n) {
+  for (const token of [
+    'resolvePhrLocale',
+    'formatPhrDate',
+    'formatPhrDateTime',
+    'formatPhrPercent',
+    'pseudoLocalize',
+    "'en-XA'",
+  ]) {
+    if (!phrI18n.includes(token)) {
+      violations.push(`PHR i18n config missing token ${JSON.stringify(token)}`);
+    }
+  }
+}
+
+const phrI18nTest = requireFile('products/phr/apps/web/src/i18n/__tests__/phrI18n.test.ts');
+if (phrI18nTest) {
+  for (const token of ['resolvePhrLocale', 'formatPhrDate', 'pseudoLocalize']) {
+    if (!phrI18nTest.includes(token)) {
+      violations.push(`PHR i18n test missing token ${JSON.stringify(token)}`);
+    }
+  }
+}
+
+const phrEnLocale = requireFile('products/phr/apps/web/src/locales/en/common.json');
+if (phrEnLocale) {
+  for (const token of ['dashboard.', 'login.', 'consents.', 'appointments.', 'labs.', 'medications.', 'records.', 'emergency.', 'settings.', 'validation.', 'error.', 'route.', 'role.', 'shell.', 'audit.']) {
+    if (!phrEnLocale.includes(token)) {
+      violations.push(`PHR English locale missing namespace ${JSON.stringify(token)}`);
+    }
+  }
+}
+
+const phrNeLocale = requireFile('products/phr/apps/web/src/locales/ne/common.json');
+if (phrNeLocale) {
+  for (const token of ['dashboard.', 'login.', 'consents.', 'appointments.', 'labs.', 'medications.', 'records.', 'emergency.', 'settings.', 'validation.', 'error.', 'route.', 'role.', 'shell.', 'audit.']) {
+    if (!phrNeLocale.includes(token)) {
+      violations.push(`PHR Nepali locale missing namespace ${JSON.stringify(token)}`);
+    }
+  }
+}
+
 const releaseWorkflow = requireFile('.github/workflows/data-cloud-release.yml');
 if (releaseWorkflow && !releaseWorkflow.includes('pnpm check:i18n-conformance')) {
   violations.push('Data Cloud release workflow must execute check:i18n-conformance');

@@ -39,6 +39,19 @@ test('resolves shared Java platform changes to Gradle-backed active entries', ()
   assert(!products.includes('aura'));
 });
 
+test('resolves platform contract changes to active Gradle-backed business products', () => {
+  const products = affected(
+    ['platform/contracts/src/main/java/com/ghatana/contracts/ProductInteractionContract.java'],
+    { businessProductsOnly: true },
+  );
+
+  assert(products.includes('phr'));
+  assert(products.includes('finance'));
+  assert(products.includes('digital-marketing'));
+  assert(products.includes('flashit'));
+  assert(!products.includes('data-cloud'));
+});
+
 test('resolves shared UI platform changes to pnpm-backed active entries', () => {
   const products = affected(['platform/typescript/product-shell/src/components/ProductShell.tsx']);
 
@@ -83,6 +96,44 @@ test('treats platform-kernel changes as shared impact for all active business pr
 
   assert.deepEqual(
     affected(['platform-kernel/kernel-core/build.gradle.kts'], { businessProductsOnly: true }),
+    expected,
+  );
+});
+
+test('treats shared-services changes as shared impact for all active business products', () => {
+  const expected = Object.entries(registry)
+    .filter(([, product]) => product.kind === 'business-product')
+    .filter(([, product]) => product.metadata?.status === 'active')
+    .filter(([, product]) => product.ci?.enabled === true)
+    .map(([productId]) => productId)
+    .sort();
+
+  assert.deepEqual(
+    affected(['shared-services/tenant-bridge/src/main/java/com/ghatana/shared/TenantBridge.java'], { businessProductsOnly: true }),
+    expected,
+  );
+});
+
+test('treats design-system package changes as shared impact for active pnpm-backed products', () => {
+  const products = affected(['platform/typescript/design-system/src/atoms/Button.tsx']);
+
+  assert(products.includes('phr'));
+  assert(products.includes('digital-marketing'));
+  assert(products.includes('flashit'));
+  assert(products.includes('data-cloud'));
+  assert(products.includes('yappc'));
+});
+
+test('treats shared release script changes as global impact for active CI products', () => {
+  const expected = Object.entries(registry)
+    .filter(([, product]) => product.metadata?.status === 'active')
+    .filter(([, product]) => product.ci?.enabled === true)
+    .filter(([, product]) => product.kind !== 'demo/example')
+    .map(([productId]) => productId)
+    .sort();
+
+  assert.deepEqual(
+    affected(['scripts/check-product-release-readiness.mjs']),
     expected,
   );
 });
