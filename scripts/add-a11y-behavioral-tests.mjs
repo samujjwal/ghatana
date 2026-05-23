@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * Wave 3: Add Keyboard/Screen-Reader/Table/Chart/Modal a11y Behavior Tests
+ * P2-14: Expanded Accessibility Behavioral Proof
  *
- * Adds comprehensive a11y behavioral tests:
+ * Expands a11y behavioral proof beyond route matrix to include:
  * - Keyboard-only journey tests
  * - Screen-reader landmark/label assertions
  * - Table accessibility tests
  * - Chart/visualization accessibility tests
  * - Modal/toast/error accessibility tests
- *
- * This extends the existing a11y behavioral proof with specific component-level tests.
+ * - Focus management tests
+ * - Color contrast validation
+ * - ARIA attribute validation
+ * - Form accessibility tests
+ * - Dynamic content announcements
  *
  * Usage: node scripts/add-a11y-behavioral-tests.mjs [--product <product>]
  */
@@ -19,14 +22,19 @@ import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, mkdirSy
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getReleaseMode, processValidationResults, logValidationResults } from './lib/release-evidence-policy.mjs';
+import { getPnpmProducts, resolveProductForProof } from './lib/product-registry-helper.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
+const RELEASE_MODE = getReleaseMode();
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
 
 const violations = [];
 const warnings = [];
 const evidence = [];
+const stableGeneratedAt = process.env.GITHUB_SHA ? `commit:${process.env.GITHUB_SHA}` : 'generated-on-demand';
 
 function logError(message) {
   violations.push(message);
@@ -305,6 +313,138 @@ function checkModalAccessibilityTests(productPath, productName) {
 }
 
 /**
+ * Check for focus management tests
+ */
+function checkFocusManagementTests(productPath, productName) {
+  const testDirs = [
+    path.join(productPath, 'e2e'),
+    path.join(productPath, 'tests'),
+    path.join(productPath, 'src/__tests__'),
+  ];
+
+  let hasFocusTests = false;
+
+  for (const testDir of testDirs) {
+    if (!existsSync(testDir)) continue;
+
+    function searchDir(dir) {
+      try {
+        const items = readdirSync(dir);
+        
+        for (const item of items) {
+          const itemPath = path.join(dir, item);
+          const stat = statSync(itemPath);
+          
+          if (stat.isDirectory() && !item.includes('node_modules') && !item.includes('.git')) {
+            searchDir(itemPath);
+          } else if (item.endsWith('.ts') || item.endsWith('.tsx') || item.endsWith('.js') || item.endsWith('.spec.ts')) {
+            const content = readFileSync(itemPath, 'utf8');
+            
+            if (content.includes('focus') && (content.includes('management') || content.includes('trap') || content.includes('restore'))) {
+              hasFocusTests = true;
+              logEvidence(`${productName}: Has focus management tests`);
+            }
+          }
+        }
+      } catch (e) {
+        // Skip directories we can't read
+      }
+    }
+
+    searchDir(testDir);
+  }
+
+  if (hasFocusTests) {
+    logSuccess(`${productName}: Has focus management tests`);
+  } else {
+    logWarning(`${productName}: Missing focus management tests`);
+  }
+
+  return hasFocusTests;
+}
+
+/**
+ * Check for color contrast validation
+ */
+function checkColorContrastValidation(productPath, productName) {
+  const configFiles = [
+    path.join(productPath, 'lighthouserc.js'),
+    path.join(productPath, '.lighthouserc.js'),
+    path.join(productPath, 'config/accessibility.json'),
+  ];
+
+  let hasContrastCheck = false;
+  for (const file of configFiles) {
+    if (existsSync(file)) {
+      const content = readFileSync(file, 'utf8');
+      if (content.includes('contrast') || content.includes('color-contrast')) {
+        hasContrastCheck = true;
+        logEvidence(`${productName}: Has color contrast validation in ${path.relative(repoRoot, file)}`);
+      }
+    }
+  }
+
+  if (hasContrastCheck) {
+    logSuccess(`${productName}: Has color contrast validation`);
+  } else {
+    logWarning(`${productName}: Missing color contrast validation`);
+  }
+
+  return hasContrastCheck;
+}
+
+/**
+ * Check for ARIA attribute validation
+ */
+function checkAriaValidation(productPath, productName) {
+  const testDirs = [
+    path.join(productPath, 'e2e'),
+    path.join(productPath, 'tests'),
+    path.join(productPath, 'src/__tests__'),
+  ];
+
+  let hasAriaTests = false;
+
+  for (const testDir of testDirs) {
+    if (!existsSync(testDir)) continue;
+
+    function searchDir(dir) {
+      try {
+        const items = readdirSync(dir);
+        
+        for (const item of items) {
+          const itemPath = path.join(dir, item);
+          const stat = statSync(itemPath);
+          
+          if (stat.isDirectory() && !item.includes('node_modules') && !item.includes('.git')) {
+            searchDir(itemPath);
+          } else if (item.endsWith('.ts') || item.endsWith('.tsx') || item.endsWith('.js') || item.endsWith('.spec.ts')) {
+            const content = readFileSync(itemPath, 'utf8');
+            
+            if (content.includes('aria') && (content.includes('label') || content.includes('role') || content.includes('describedby'))) {
+              hasAriaTests = true;
+              logEvidence(`${productName}: Has ARIA attribute validation`);
+            }
+          }
+        }
+      } catch (e) {
+        // Skip directories we can't read
+      }
+    }
+
+    searchDir(testDir);
+  }
+
+  if (hasAriaTests) {
+    logSuccess(`${productName}: Has ARIA attribute validation`);
+  } else {
+    logWarning(`${productName}: Missing ARIA attribute validation`);
+  }
+
+  return hasAriaTests;
+}
+
+/**
  * Generate a11y behavioral test report
  */
 function generateA11yBehavioralTestReport() {
@@ -315,7 +455,7 @@ function generateA11yBehavioralTestReport() {
   }
 
   const report = {
-    timestamp: new Date().toISOString(),
+    timestamp: stableGeneratedAt,
     violations,
     warnings,
     evidence,
@@ -326,7 +466,7 @@ function generateA11yBehavioralTestReport() {
     }
   };
 
-  const reportPath = path.join(evidenceDir, `a11y-behavioral-tests-${Date.now()}.json`);
+  const reportPath = path.join(evidenceDir, 'a11y-behavioral-tests-latest.json');
   writeFileSync(reportPath, JSON.stringify(report, null, 2));
   
   console.log(`\n📄 a11y behavioral test report generated: ${reportPath}`);
@@ -336,16 +476,15 @@ function generateA11yBehavioralTestReport() {
  * Main validation
  */
 function main() {
-  console.log('Adding keyboard/screen-reader/table/chart/modal a11y behavior tests...\n');
+  console.log('Checking expanded a11y behavioral proof...\n');
 
-  // Products to check
-  const products = [
-    { path: 'frontend/apps/studio', name: 'Studio' },
-    { path: 'frontend/apps/api', name: 'Frontend API' },
-    { path: 'products/data-cloud/delivery/launcher', name: 'Data Cloud Launcher' },
-    { path: 'products/aep', name: 'AEP' },
-    { path: 'products/digital-marketing', name: 'Digital Marketing' },
-  ];
+  // Resolve pnpm products (web apps) from canonical product registry
+  const registryProducts = getPnpmProducts();
+  
+  // Resolve product information for proof
+  const products = registryProducts
+    .map(({ productId }) => resolveProductForProof(productId))
+    .filter(p => p !== null);
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
@@ -356,7 +495,7 @@ function main() {
     const productPath = path.join(repoRoot, product.path);
     
     if (!existsSync(productPath)) {
-      logWarning(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product path not found at ${product.path}`);
       continue;
     }
 
@@ -367,6 +506,9 @@ function main() {
     checkTableAccessibilityTests(productPath, product.name);
     checkChartAccessibilityTests(productPath, product.name);
     checkModalAccessibilityTests(productPath, product.name);
+    checkFocusManagementTests(productPath, product.name);
+    checkColorContrastValidation(productPath, product.name);
+    checkAriaValidation(productPath, product.name);
   }
 
   console.log('\n--- Summary ---');
@@ -376,18 +518,15 @@ function main() {
 
   generateA11yBehavioralTestReport();
 
-  if (violations.length > 0) {
-    console.log('\na11y behavioral test addition failed with errors:');
-    violations.forEach(v => console.log(`  - ${v}`));
+  // Process validation results with release evidence policy
+  const validationResults = processValidationResults(violations, warnings, evidence, RELEASE_MODE);
+  logValidationResults(validationResults, 'A11y Behavioral Proof Validation');
+
+  if (validationResults.shouldFail) {
     process.exit(1);
   }
 
-  if (warnings.length > 0) {
-    console.log('\na11y behavioral test addition passed with warnings:');
-    warnings.forEach(w => console.log(`  - ${w}`));
-  }
-
-  console.log('\na11y behavioral test addition passed.');
+  console.log('\nA11y behavioral proof check passed.');
 }
 
 main();

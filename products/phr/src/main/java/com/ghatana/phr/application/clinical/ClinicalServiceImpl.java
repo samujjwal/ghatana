@@ -44,12 +44,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             null
         );
         encounters.put(encounterId, encounter);
-        return Promise.complete(encounter);
+        return Promise.of(encounter);
     }
 
     @Override
     public Promise<Optional<Encounter>> getEncounter(PatientOperationContext ctx, String encounterId) {
-        return Promise.complete(Optional.ofNullable(encounters.get(encounterId)));
+        return Promise.of(Optional.ofNullable(encounters.get(encounterId)));
     }
 
     @Override
@@ -69,7 +69,7 @@ public class ClinicalServiceImpl implements ClinicalService {
             existing.completedAt()
         );
         encounters.put(encounterId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
@@ -89,12 +89,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             Instant.now().toString()
         );
         encounters.put(encounterId, completed);
-        return Promise.complete(completed);
+        return Promise.of(completed);
     }
 
     @Override
     public Promise<List<Encounter>> listEncounters(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(encounters.values().stream()
+        return Promise.of(encounters.values().stream()
             .filter(e -> e.patientId().equals(patientId))
             .toList());
     }
@@ -113,12 +113,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             Instant.now().toString()
         );
         medications.put(medicationId, medication);
-        return Promise.complete(medication);
+        return Promise.of(medication);
     }
 
     @Override
     public Promise<Optional<Medication>> getMedication(PatientOperationContext ctx, String medicationId) {
-        return Promise.complete(Optional.ofNullable(medications.get(medicationId)));
+        return Promise.of(Optional.ofNullable(medications.get(medicationId)));
     }
 
     @Override
@@ -128,12 +128,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             return Promise.ofException(new IllegalArgumentException("Medication not found: " + medicationId));
         }
         // In a real implementation, this would record the administration
-        return Promise.complete(existing);
+        return Promise.of(existing);
     }
 
     @Override
     public Promise<List<Medication>> listMedications(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(medications.values().stream()
+        return Promise.of(medications.values().stream()
             .filter(m -> m.patientId().equals(patientId))
             .toList());
     }
@@ -145,7 +145,7 @@ public class ClinicalServiceImpl implements ClinicalService {
             return Promise.ofException(new IllegalArgumentException("Medication not found: " + medicationId));
         }
         // In a real implementation, this would process the refill request
-        return Promise.complete(existing);
+        return Promise.of(existing);
     }
 
     @Override
@@ -160,17 +160,17 @@ public class ClinicalServiceImpl implements ClinicalService {
             Instant.now().toString()
         );
         allergies.put(allergyId, allergy);
-        return Promise.complete(allergy);
+        return Promise.of(allergy);
     }
 
     @Override
     public Promise<Optional<Allergy>> getAllergy(PatientOperationContext ctx, String allergyId) {
-        return Promise.complete(Optional.ofNullable(allergies.get(allergyId)));
+        return Promise.of(Optional.ofNullable(allergies.get(allergyId)));
     }
 
     @Override
     public Promise<List<Allergy>> listAllergies(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(allergies.values().stream()
+        return Promise.of(allergies.values().stream()
             .filter(a -> a.patientId().equals(patientId))
             .toList());
     }
@@ -182,7 +182,7 @@ public class ClinicalServiceImpl implements ClinicalService {
             List.of("Penicillin", "Sulfa"),
             List.of("Aspirin - mild interaction")
         );
-        return Promise.complete(crossCheck);
+        return Promise.of(crossCheck);
     }
 
     @Override
@@ -199,12 +199,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             null
         );
         conditions.put(conditionId, condition);
-        return Promise.complete(condition);
+        return Promise.of(condition);
     }
 
     @Override
     public Promise<Optional<Condition>> getCondition(PatientOperationContext ctx, String conditionId) {
-        return Promise.complete(Optional.ofNullable(conditions.get(conditionId)));
+        return Promise.of(Optional.ofNullable(conditions.get(conditionId)));
     }
 
     @Override
@@ -224,12 +224,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             Instant.now().toString()
         );
         conditions.put(conditionId, resolved);
-        return Promise.complete(resolved);
+        return Promise.of(resolved);
     }
 
     @Override
     public Promise<List<Condition>> listConditions(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(conditions.values().stream()
+        return Promise.of(conditions.values().stream()
             .filter(c -> c.patientId().equals(patientId))
             .toList());
     }
@@ -247,28 +247,28 @@ public class ClinicalServiceImpl implements ClinicalService {
             request.orderedBy()
         );
         labOrders.put(labId, labOrder);
-        return Promise.complete(labOrder);
+        return Promise.of(labOrder);
     }
 
     @Override
     public Promise<Optional<LabOrder>> getLabOrder(PatientOperationContext ctx, String labId) {
-        return Promise.complete(Optional.ofNullable(labOrders.get(labId)));
+        return Promise.of(Optional.ofNullable(labOrders.get(labId)));
     }
 
     @Override
     public Promise<LabResult> recordLabResult(PatientOperationContext ctx, String labId, LabResult result) {
         labResults.put(labId, result);
-        return Promise.complete(result);
+        return Promise.of(result);
     }
 
     @Override
     public Promise<Optional<LabResult>> getLabResult(PatientOperationContext ctx, String labId) {
-        return Promise.complete(Optional.ofNullable(labResults.get(labId)));
+        return Promise.of(Optional.ofNullable(labResults.get(labId)));
     }
 
     @Override
     public Promise<List<LabOrder>> listLabOrders(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(labOrders.values().stream()
+        return Promise.of(labOrders.values().stream()
             .filter(l -> l.patientId().equals(patientId))
             .toList());
     }
@@ -286,17 +286,17 @@ public class ClinicalServiceImpl implements ClinicalService {
             Instant.now().toString()
         );
         immunizations.put(immunizationId, immunization);
-        return Promise.complete(immunization);
+        return Promise.of(immunization);
     }
 
     @Override
     public Promise<Optional<Immunization>> getImmunization(PatientOperationContext ctx, String immunizationId) {
-        return Promise.complete(Optional.ofNullable(immunizations.get(immunizationId)));
+        return Promise.of(Optional.ofNullable(immunizations.get(immunizationId)));
     }
 
     @Override
     public Promise<List<Immunization>> listImmunizations(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(immunizations.values().stream()
+        return Promise.of(immunizations.values().stream()
             .filter(i -> i.patientId().equals(patientId))
             .toList());
     }
@@ -310,12 +310,12 @@ public class ClinicalServiceImpl implements ClinicalService {
                 new ScheduledImmunization("Tetanus", java.time.LocalDate.now().plusYears(1), "DUE")
             )
         );
-        return Promise.complete(schedule);
+        return Promise.of(schedule);
     }
 
     @Override
     public Promise<String> generateCertificate(PatientOperationContext ctx, String patientId) {
-        return Promise.complete("CERT-" + UUID.randomUUID().toString());
+        return Promise.of("CERT-" + UUID.randomUUID().toString());
     }
 
     @Override
@@ -331,12 +331,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             ctx.userId()
         );
         documents.put(documentId, document);
-        return Promise.complete(document);
+        return Promise.of(document);
     }
 
     @Override
     public Promise<Optional<Document>> getDocument(PatientOperationContext ctx, String documentId) {
-        return Promise.complete(Optional.ofNullable(documents.get(documentId)));
+        return Promise.of(Optional.ofNullable(documents.get(documentId)));
     }
 
     @Override
@@ -346,12 +346,12 @@ public class ClinicalServiceImpl implements ClinicalService {
             return Promise.ofException(new IllegalArgumentException("Document not found: " + documentId));
         }
         // In a real implementation, this would update the metadata
-        return Promise.complete(existing);
+        return Promise.of(existing);
     }
 
     @Override
     public Promise<List<Document>> listDocuments(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(documents.values().stream()
+        return Promise.of(documents.values().stream()
             .filter(d -> d.patientId().equals(patientId))
             .toList());
     }

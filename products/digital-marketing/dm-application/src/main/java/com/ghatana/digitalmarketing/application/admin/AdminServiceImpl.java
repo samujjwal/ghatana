@@ -38,7 +38,7 @@ public class AdminServiceImpl implements AdminService {
         );
 
         tenants.put(tenantId, tenant);
-        return Promise.complete(tenant);
+        return Promise.of(tenant);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class AdminServiceImpl implements AdminService {
         if (tenant == null) {
             return Promise.ofException(new IllegalArgumentException("Tenant not found: " + tenantId));
         }
-        return Promise.complete(tenant);
+        return Promise.of(tenant);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class AdminServiceImpl implements AdminService {
         );
 
         tenants.put(tenantId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class AdminServiceImpl implements AdminService {
         );
 
         users.put(userId, user);
-        return Promise.complete(user);
+        return Promise.of(user);
     }
 
     @Override
@@ -104,12 +104,12 @@ public class AdminServiceImpl implements AdminService {
         );
 
         users.put(userId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
     public Promise<List<AuditLogEntry>> fetchAuditLog(DmOperationContext ctx, int limit) {
-        return Promise.complete(auditLog.stream().limit(limit).toList());
+        return Promise.of(auditLog.stream().limit(limit).toList());
     }
 
     @Override
@@ -123,6 +123,6 @@ public class AdminServiceImpl implements AdminService {
             ),
             Instant.now().toString()
         );
-        return Promise.complete(health);
+        return Promise.of(health);
     }
 }

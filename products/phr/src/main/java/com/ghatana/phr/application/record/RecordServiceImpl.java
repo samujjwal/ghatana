@@ -38,7 +38,7 @@ public class RecordServiceImpl implements RecordService {
             ),
             Instant.now().toString()
         );
-        return Promise.complete(summary);
+        return Promise.of(summary);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class RecordServiceImpl implements RecordService {
             Instant.now().toString()
         );
 
-        return Promise.complete(timeline);
+        return Promise.of(timeline);
     }
 
     @Override
@@ -85,6 +85,6 @@ public class RecordServiceImpl implements RecordService {
         List<TimelineEntry> filtered = timeline.entries().stream()
             .filter(e -> e.category().equals(category))
             .toList();
-        return Promise.complete(filtered);
+        return Promise.of(filtered);
     }
 }

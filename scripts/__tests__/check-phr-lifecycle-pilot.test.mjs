@@ -87,6 +87,13 @@ function rollbackReadiness(overrides = {}) {
       'healthcare-post-rollback-verification-gates',
       'rollback-approval-contract',
     ],
+    evidenceRefs: [
+      'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml',
+      'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
+      'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml',
+      'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
+      'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
+    ],
     ...overrides,
   };
 }
@@ -123,6 +130,20 @@ function runWith(kernelProduct) {
     'products/phr/lifecycle/gate-packs/audit-evidence.yaml',
     'products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml',
     'products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml',
+    'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml',
+    'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
+    'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml',
+    'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
+    'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
+    'platform/typescript/kernel-release/src/ProductRollbackPlan.ts',
+    'platform/typescript/kernel-release/src/__tests__/PromotionRollbackGate.test.ts',
+    'products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java',
+    'products/phr/src/main/java/com/ghatana/phr/kernel/consent/ConsentService.java',
+    'products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrDataClassification.java',
+    'products/phr/src/main/java/com/ghatana/phr/observability/PHRAuditTrailServiceImpl.java',
+    'products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidator.java',
+    'products/phr/policy-packs/healthcare-boundary-policy.yaml',
+    '.kernel/evidence/product-release-readiness.phr.json',
   ]);
 
   return validatePhrLifecyclePilot({
@@ -135,6 +156,9 @@ function runWith(kernelProduct) {
       if (relativePath.startsWith('products/phr/lifecycle/gate-packs/')) {
         const gateId = relativePath.split('/').pop().replace('.yaml', '');
         return gatePack(gateId);
+      }
+      if (relativePath.startsWith('products/phr/lifecycle/rollback/')) {
+        return rollbackEvidenceFile(relativePath);
       }
       return kernelProduct;
     },
@@ -160,6 +184,124 @@ function gatePack(gateId, overrides = {}) {
     blockingReasonCodes: [`requires-${gateId}`, `missing-${gateId}`],
     lifecyclePhases,
     validationCommands: ['./gradlew :products:phr:build'],
+    ...overrides,
+  };
+}
+
+function readYamlFixture(relativePath, kernelProduct = baseKernelProduct()) {
+  if (relativePath.startsWith('products/phr/lifecycle/gate-packs/')) {
+    const gateId = relativePath.split('/').pop().replace('.yaml', '');
+    return gatePack(gateId);
+  }
+  if (relativePath.startsWith('products/phr/lifecycle/rollback/')) {
+    return rollbackEvidenceFile(relativePath);
+  }
+  return kernelProduct;
+}
+
+function rollbackEvidenceFile(relativePath, overrides = {}) {
+  const byPath = {
+    'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml': {
+      schemaVersion: '1.0.0',
+      productId: 'phr',
+      status: 'target-partial',
+      classification: 'target/partial',
+      reasonCode: 'phr-rollback-after-stable-deploy-verify',
+      promotionBlocked: true,
+      requirements: [
+        {
+          requirementId: 'stable-deployment-manifest-history',
+          status: 'blocked',
+          evidenceRef: 'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
+        },
+        {
+          requirementId: 'previous-artifact-selection-policy',
+          status: 'active',
+          evidenceRef: 'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml',
+        },
+        {
+          requirementId: 'healthcare-post-rollback-verification-gates',
+          status: 'active',
+          evidenceRef: 'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
+        },
+        {
+          requirementId: 'rollback-approval-contract',
+          status: 'active',
+          evidenceRef: 'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
+        },
+      ],
+      evidenceRefs: [
+        'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
+        'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml',
+        'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
+        'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
+      ],
+    },
+    'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml': {
+      schemaVersion: '1.0.0',
+      productId: 'phr',
+      requirementId: 'stable-deployment-manifest-history',
+      title: 'Stable history',
+      status: 'blocked',
+      description: 'Stable deployment history policy',
+      requiredManifestTypes: ['artifact-manifest', 'deployment-manifest', 'verify-health-report', 'lifecycle-health-snapshot'],
+      evidenceRefs: ['.kernel/evidence/product-release-readiness.phr.json'],
+    },
+    'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml': {
+      schemaVersion: '1.0.0',
+      productId: 'phr',
+      requirementId: 'previous-artifact-selection-policy',
+      title: 'Previous artifact selection',
+      status: 'active',
+      strategy: 'previous-artifact',
+      description: 'Previous artifact selection policy',
+      failureMode: 'block-rollback-plan',
+      requiresStableDeploymentHistory: true,
+      disallowUnverifiedArtifact: true,
+      evidenceRefs: [
+        'platform/typescript/kernel-release/src/ProductRollbackPlan.ts',
+        'platform/typescript/kernel-release/src/__tests__/PromotionRollbackGate.test.ts',
+      ],
+    },
+    'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml': {
+      schemaVersion: '1.0.0',
+      productId: 'phr',
+      requirementId: 'healthcare-post-rollback-verification-gates',
+      title: 'Healthcare post rollback gates',
+      status: 'active',
+      description: 'Healthcare gates',
+      requiredGates: ['consent', 'pii-classification', 'audit-evidence', 'fhir-contract-validation', 'tenant-data-sovereignty'],
+      requiredGateEvidenceRefs: {
+        consent: ['products/phr/lifecycle/gate-packs/consent.yaml'],
+        'pii-classification': ['products/phr/lifecycle/gate-packs/pii-classification.yaml'],
+        'audit-evidence': ['products/phr/lifecycle/gate-packs/audit-evidence.yaml'],
+        'fhir-contract-validation': ['products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml'],
+        'tenant-data-sovereignty': ['products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml'],
+      },
+    },
+    'products/phr/lifecycle/rollback/rollback-approval-contract.yaml': {
+      schemaVersion: '1.0.0',
+      productId: 'phr',
+      requirementId: 'rollback-approval-contract',
+      title: 'Rollback approval',
+      status: 'active',
+      description: 'Rollback approval contract',
+      approvalRequired: true,
+      approvalMode: 'explicit-recorded-approval',
+      requiredApprovalFields: [
+        'approvalGateRef',
+        'approverId',
+        'approverRole',
+        'approvedAt',
+        'reasonCode',
+        'rollbackTargetArtifact',
+        'healthcareRiskAcknowledgement',
+      ],
+    },
+  };
+
+  return {
+    ...byPath[relativePath],
     ...overrides,
   };
 }
@@ -205,13 +347,7 @@ test('PHR lifecycle pilot check rejects stale disabled readiness metadata', () =
     },
     kernelProduct: baseKernelProduct(),
     pathExists: () => true,
-    readYaml: (relativePath) => {
-      if (relativePath.startsWith('products/phr/lifecycle/gate-packs/')) {
-        const gateId = relativePath.split('/').pop().replace('.yaml', '');
-        return gatePack(gateId);
-      }
-      return baseKernelProduct();
-    },
+    readYaml: (relativePath) => readYamlFixture(relativePath),
     readText: () => '',
     listFiles: () => [],
   });
@@ -233,13 +369,7 @@ test('PHR lifecycle pilot check requires healthcare gate readiness metadata', ()
     },
     kernelProduct: baseKernelProduct(),
     pathExists: () => true,
-    readYaml: (relativePath) => {
-      if (relativePath.startsWith('products/phr/lifecycle/gate-packs/')) {
-        const gateId = relativePath.split('/').pop().replace('.yaml', '');
-        return gatePack(gateId);
-      }
-      return baseKernelProduct();
-    },
+    readYaml: (relativePath) => readYamlFixture(relativePath),
     readText: () => '',
     listFiles: () => [],
   });
@@ -258,13 +388,7 @@ test('PHR lifecycle pilot check requires explicit target-partial rollback readin
     },
     kernelProduct: baseKernelProduct(),
     pathExists: () => true,
-    readYaml: (relativePath) => {
-      if (relativePath.startsWith('products/phr/lifecycle/gate-packs/')) {
-        const gateId = relativePath.split('/').pop().replace('.yaml', '');
-        return gatePack(gateId);
-      }
-      return baseKernelProduct();
-    },
+    readYaml: (relativePath) => readYamlFixture(relativePath),
     readText: () => '',
     listFiles: () => [],
   });
@@ -279,6 +403,45 @@ test('PHR lifecycle pilot check rejects rollback phase before readiness promotio
   const errors = runWith(config);
 
   assert(errors.some((error) => error.includes('rollback phase/manifests must remain absent')));
+});
+
+test('PHR lifecycle pilot check requires rollback readiness evidence refs', () => {
+  const errors = validatePhrLifecyclePilot({
+    registry: {
+      phr: registryPhr({ rollbackReadiness: rollbackReadiness({ evidenceRefs: [] }) }),
+    },
+    kernelProduct: baseKernelProduct(),
+    pathExists: () => true,
+    readYaml: (relativePath) => readYamlFixture(relativePath),
+    readText: () => '',
+    listFiles: () => [],
+  });
+
+  assert(
+    errors.some((error) =>
+      error.includes('PHR registry rollbackReadiness.evidenceRefs missing required entry: products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml'),
+    ),
+  );
+});
+
+test('PHR lifecycle pilot check keeps stable rollback history blocked until real deploy evidence exists', () => {
+  const errors = validatePhrLifecyclePilot({
+    registry: {
+      phr: registryPhr(),
+    },
+    kernelProduct: baseKernelProduct(),
+    pathExists: () => true,
+    readYaml: (relativePath) => {
+      if (relativePath === 'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml') {
+        return rollbackEvidenceFile(relativePath, { status: 'active' });
+      }
+      return readYamlFixture(relativePath);
+    },
+    readText: () => '',
+    listFiles: () => [],
+  });
+
+  assert(errors.some((error) => error.includes('stable deployment manifest history policy must remain blocked')));
 });
 
 test('PHR lifecycle pilot check fails if a healthcare gate pack is missing evidence metadata', () => {
@@ -296,7 +459,7 @@ test('PHR lifecycle pilot check fails if a healthcare gate pack is missing evide
         const gateId = relativePath.split('/').pop().replace('.yaml', '');
         return gatePack(gateId);
       }
-      return baseKernelProduct();
+      return readYamlFixture(relativePath);
     },
     readText: () => '',
     listFiles: () => [],
@@ -320,7 +483,7 @@ test('PHR lifecycle pilot check fails if deploy gate pack omits deploy phase map
         const gateId = relativePath.split('/').pop().replace('.yaml', '');
         return gatePack(gateId);
       }
-      return baseKernelProduct();
+      return readYamlFixture(relativePath);
     },
     readText: () => '',
     listFiles: () => [],

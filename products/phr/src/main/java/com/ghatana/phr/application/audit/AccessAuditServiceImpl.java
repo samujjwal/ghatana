@@ -26,7 +26,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
     public Promise<AccessLog> getAccessLog(PatientOperationContext ctx, String patientId) {
         List<AccessEvent> events = accessLogs.getOrDefault(patientId, List.of());
         AccessLog log = new AccessLog(patientId, events, Instant.now().toString());
-        return Promise.complete(log);
+        return Promise.of(log);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             lastAccessAt
         );
         
-        return Promise.complete(summary);
+        return Promise.of(summary);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class AccessAuditServiceImpl implements AccessAuditService {
                 "MEDIUM"
             )
         );
-        return Promise.complete(anomalies);
+        return Promise.of(anomalies);
     }
 
     @Override
@@ -92,6 +92,6 @@ public class AccessAuditServiceImpl implements AccessAuditService {
             anomalies
         );
         
-        return Promise.complete(report);
+        return Promise.of(report);
     }
 }

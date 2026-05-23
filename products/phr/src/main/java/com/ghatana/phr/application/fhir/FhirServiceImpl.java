@@ -48,12 +48,12 @@ public class FhirServiceImpl implements FhirService {
         );
         resourceHistory.put(resourceId, List.of(version));
         
-        return Promise.complete(fhirResource);
+        return Promise.of(fhirResource);
     }
 
     @Override
     public Promise<Optional<FhirResource>> getResource(PatientOperationContext ctx, String resourceType, String resourceId) {
-        return Promise.complete(Optional.ofNullable(resources.get(resourceId)));
+        return Promise.of(Optional.ofNullable(resources.get(resourceId)));
     }
 
     @Override
@@ -88,12 +88,12 @@ public class FhirServiceImpl implements FhirService {
         history.add(version);
         resourceHistory.put(resourceId, history);
         
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
     public Promise<List<FhirResource>> searchResources(PatientOperationContext ctx, String resourceType, Map<String, String> parameters) {
-        return Promise.complete(resources.values().stream()
+        return Promise.of(resources.values().stream()
             .filter(r -> r.resourceType().equals(resourceType))
             .toList());
     }
@@ -102,6 +102,6 @@ public class FhirServiceImpl implements FhirService {
     public Promise<FhirResourceHistory> getResourceHistory(PatientOperationContext ctx, String resourceType, String resourceId) {
         List<FhirResourceVersion> versions = resourceHistory.getOrDefault(resourceId, List.of());
         FhirResourceHistory history = new FhirResourceHistory(resourceId, resourceType, versions);
-        return Promise.complete(history);
+        return Promise.of(history);
     }
 }

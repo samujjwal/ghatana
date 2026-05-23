@@ -1,0 +1,37 @@
+schemaVersion: 1.0.0
+productId: phr
+requirementId: stable-deployment-manifest-history
+title: PHR stable deployment manifest history policy
+status: blocked
+currentStatus: awaiting-first-successful-package-deploy-verify-run
+blockerReasonCode: phr-package-deploy-verify-evidence-blocked-by-local-docker-buildx
+description: Policy for the stable deployment history required before PHR rollback can be promoted from target-partial.
+requiredHistoryCount: 2
+requiredManifestTypes:
+  - artifact-manifest
+  - deployment-manifest
+  - verify-health-report
+  - lifecycle-health-snapshot
+requiredManifestProperties:
+  - productUnitId
+  - environment
+  - artifactDigest
+  - runId
+  - correlationId
+  - completedAt
+  - status
+promotionRule:
+  allowedWhen: all required manifest types exist for two successful, ordered PHR deployments in the same environment.
+  disallowedWhen:
+    - package deploy or verify evidence is synthetic
+    - artifact digest is missing
+    - verify health report is missing healthcare gate evidence refs
+    - deployment environment or tenant scope is ambiguous
+evidenceRefs:
+  - products/phr/kernel-product.yaml
+  - .kernel/evidence/product-release-readiness.phr.json
+validationCommands:
+  - pnpm check:product-release-readiness
+notes:
+  - This file is a policy contract, not proof of a successful deployment history.
+  - PHR rollback must stay target-partial until real package, deploy, and verify manifests satisfy this policy.

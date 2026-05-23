@@ -3,6 +3,7 @@ package com.ghatana.integration.crossservice;
 import com.ghatana.digitalmarketing.bridge.NotificationPreferenceInteractionHandler;
 import com.ghatana.kernel.interaction.BrokerMode;
 import com.ghatana.kernel.interaction.ProductInteractionBroker;
+import com.ghatana.kernel.interaction.ProductInteractionContract;
 import com.ghatana.kernel.interaction.ProductInteractionOutcome;
 import com.ghatana.kernel.interaction.ProductInteractionPolicyDecision;
 import com.ghatana.kernel.interaction.ProductInteractionRequest;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -273,7 +275,62 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     }
 
     private static ProductInteractionBroker.Builder runtimeBrokerBuilder() {
-        return ProductInteractionBroker.builder().brokerMode(BrokerMode.TEST);
+        return ProductInteractionBroker.builder()
+                .brokerMode(BrokerMode.TEST)
+                .registerContract(phrConsentContract())
+                .registerContract(dmosNotificationPreferenceContract())
+                .registerContract(hangingContract());
+    }
+
+    private static ProductInteractionContract phrConsentContract() {
+        return new ProductInteractionContract(
+                ConsentStatusInteractionHandler.CONTRACT_ID,
+                "1.0.0",
+                "phr",
+                Set.of("digital-marketing"),
+                true,
+                true,
+                true,
+                "healthcare-contact",
+                "same-tenant",
+                Set.of("lifecycle-runner"),
+                Set.of("campaign-activation"),
+                Set.of("validate", "test", "deploy", "verify"),
+                false);
+    }
+
+    private static ProductInteractionContract dmosNotificationPreferenceContract() {
+        return new ProductInteractionContract(
+                NotificationPreferenceInteractionHandler.CONTRACT_ID,
+                "1.0.0",
+                "digital-marketing",
+                Set.of("phr"),
+                true,
+                true,
+                true,
+                "customer-contact",
+                "same-tenant",
+                Set.of("lifecycle-runner"),
+                Set.of("care-plan-notification"),
+                Set.of("validate", "test", "deploy", "verify"),
+                true);
+    }
+
+    private static ProductInteractionContract hangingContract() {
+        return new ProductInteractionContract(
+                HangingHandler.CONTRACT_ID,
+                "1.0.0",
+                "phr",
+                Set.of("digital-marketing"),
+                true,
+                true,
+                true,
+                "healthcare-contact",
+                "same-tenant",
+                Set.of("lifecycle-runner"),
+                Set.of("campaign-activation"),
+                Set.of("test"),
+                false);
     }
 
     private static ConsentStatusInteractionHandler consentHandler() {

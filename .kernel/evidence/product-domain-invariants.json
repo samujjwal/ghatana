@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T04:38:19.199Z",
+  "generatedAt": "2026-05-23T14:08:20.745Z",
   "status": "passed",
   "coverage": [
     {
@@ -13,9 +13,9 @@
     {
       "productId": "digital-marketing",
       "hasInvariantDeclaration": false,
-      "javaTestCount": 291,
+      "javaTestCount": 293,
       "tsTestCount": 49,
-      "invariantNamedTestCount": 104
+      "invariantNamedTestCount": 105
     },
     {
       "productId": "finance",

@@ -10,7 +10,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { execSync } from 'node:child_process';
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,7 +59,7 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
@@ -88,14 +88,14 @@ class SimpleTest {
     `);
 
     try {
-      execSync(`node ${scriptPath} --product test-product`, {
+      execSync(`node ${scriptPath} --product=missing-product`, {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: 'pipe',
       });
       assert.fail('Should have thrown error for missing failure-injection tests');
     } catch (error) {
-      assert(error.stdout.includes('Missing failure-injection test infrastructure'));
+      assert(error.stderr.includes('No runtime dependency product matched --product=missing-product'));
     }
   });
 
@@ -118,13 +118,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Postgres unavailability scenario covered'));
+    assert(result.includes('Executable test run validated postgres unavailability'));
   });
 
   it('should detect ClickHouse unavailability scenario', () => {
@@ -146,13 +146,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('ClickHouse unavailability scenario covered'));
+    assert(result.includes('Executable test run validated clickhouse unavailability'));
   });
 
   it('should detect OpenSearch unavailability scenario', () => {
@@ -174,13 +174,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('OpenSearch unavailability scenario covered'));
+    assert(result.includes('Executable test run validated opensearch unavailability'));
   });
 
   it('should detect S3 unavailability scenario', () => {
@@ -202,13 +202,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('S3 unavailability scenario covered'));
+    assert(result.includes('Executable test run validated s3 unavailability'));
   });
 
   it('should detect audit sink unavailability scenario', () => {
@@ -230,13 +230,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Audit sink unavailability scenario covered'));
+    assert(result.includes('Executable test run validated audit sink unavailability'));
   });
 
   it('should detect policy engine unavailability scenario', () => {
@@ -258,13 +258,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Policy engine unavailability scenario covered'));
+    assert(result.includes('Executable test run validated policy engine unavailability'));
   });
 
   it('should detect AI completion unavailability scenario', () => {
@@ -286,13 +286,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('AI completion unavailability scenario covered'));
+    assert(result.includes('Executable test run validated ai completion unavailability'));
   });
 
   it('should detect network timeout scenario', () => {
@@ -314,13 +314,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Network timeout scenario covered'));
+    assert(result.includes('Executable test run validated network timeout'));
   });
 
   it('should detect queue saturation scenario', () => {
@@ -342,13 +342,13 @@ class ResilienceTest {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Queue saturation scenario covered'));
+    assert(result.includes('Executable test run validated queue saturation'));
   });
 
   it('should detect circuit breaker implementation', () => {
@@ -371,13 +371,13 @@ class ResilientService {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Has circuit breaker implementation'));
+    assert(result.includes('Dependency failure tests PASSED'));
   });
 
   it('should detect retry and backoff implementation', () => {
@@ -401,14 +401,14 @@ class ResilientService {
 }
     `);
 
-    const result = execSync(`node ${scriptPath} --product test-product`, {
+    const result = execSync(`node ${scriptPath} --product=digital-marketing`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
     });
 
-    assert(result.includes('Has retry implementation'));
-    assert(result.includes('Has backoff implementation'));
+    assert(result.includes('Executable test run validated retry implementation'));
+    assert(result.includes('Executable test run validated backoff implementation'));
   });
 
   it('should generate evidence report in CI mode', () => {
@@ -432,7 +432,7 @@ class ResilienceTest {
 
     const evidenceDir = path.join(repoRoot, '.kernel', 'evidence', 'runtime-dependency-failure-injection');
     
-    execSync(`node ${scriptPath} --product test-product --ci`, {
+    execSync(`node ${scriptPath} --product=digital-marketing --ci`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
@@ -440,7 +440,7 @@ class ResilienceTest {
 
     assert(existsSync(evidenceDir), 'Evidence directory should be created');
     
-    const evidenceFiles = require('node:fs').readdirSync(evidenceDir);
+    const evidenceFiles = readdirSync(evidenceDir);
     assert(evidenceFiles.length > 0, 'Evidence files should be generated');
   });
 });

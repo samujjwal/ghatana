@@ -1,0 +1,397 @@
+{
+  "generatedAt": "2026-05-23T14:07:43.067Z",
+  "status": "partial-source-grounded-behavioral-proof-required",
+  "coverageDimensions": [
+    "source implementation",
+    "behavioral unit/integration/API/UI proof",
+    "lifecycle evidence ref",
+    "blocker owner",
+    "current status"
+  ],
+  "workflowCount": 19,
+  "workflows": [
+    {
+      "productId": "digital-marketing",
+      "workflowId": "customer-account-management",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-domain/src/main/java/com/ghatana/digitalmarketing/domain/preference/CustomerPreference.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/lead/LeadServiceImplTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "campaign-lifecycle",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-domain/src/main/java/com/ghatana/digitalmarketing/domain/campaign/CampaignTransitionService.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/CampaignLifecycleIT.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "lead-capture",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/lead/DmLeadCaptureServiceImpl.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/lead/DmLeadCaptureServiceImplTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "conversion-tracking",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-domain/src/main/java/com/ghatana/digitalmarketing/domain/performance/DmCampaignPerformanceSnapshot.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/performance/DmCampaignPerformanceSnapshotTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "audience-segments",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/audience/AudienceRepository.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/ui/src/pages/__tests__/CampaignsPage.test.tsx"
+      ],
+      "testTiers": [
+        "ui-or-contract-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "google-ads-connector",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/googleads/DmGoogleAdsCampaignConnectorServiceImpl.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-connector-google-ads/src/test/java/com/ghatana/digitalmarketing/connector/googleads/HttpDmGoogleAdsCampaignApiClientAdapterTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "notification-retry-dlq",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/event/DmOutboxServiceImpl.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/event/DmOutboxServiceImplTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "reporting-dashboard",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/report/DmPerformanceReportServiceImpl.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-domain/src/test/java/com/ghatana/digitalmarketing/domain/report/DmPerformanceReportTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "digital-marketing",
+      "workflowId": "consent-gated-phr-activation",
+      "sourceImplementation": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/campaign/ConsentInteractionBroker.java"
+      ],
+      "behavioralProof": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/campaign/CampaignServiceImplTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/digital-marketing.md",
+        ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.digital-marketing.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/digital-marketing"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "patient-profile",
+      "sourceImplementation": [
+        "products/phr/src/main/java/com/ghatana/phr/api/PatientController.java"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/api/PatientControllerTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "health-summary",
+      "sourceImplementation": [
+        "products/phr/apps/web/src/pages/DashboardPage.tsx"
+      ],
+      "behavioralProof": [
+        "products/phr/apps/web/src/__tests__/phrApp.test.tsx"
+      ],
+      "testTiers": [
+        "ui-or-contract-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "clinical-resources",
+      "sourceImplementation": [
+        "products/phr/src/main/java/com/ghatana/phr/fhir/server/MedicationRequestFhirResourceProvider.java"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/fhir/FhirR4ContractTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "documents",
+      "sourceImplementation": [
+        "products/phr/domain-pack-manifest.yaml"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/fhir/FhirR4TransformationEngineTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "consent-management",
+      "sourceImplementation": [
+        "products/phr/src/main/java/com/ghatana/phr/kernel/service/ConsentManagementService.java"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "data-sharing-authorization",
+      "sourceImplementation": [
+        "products/phr/policy-packs/healthcare-boundary-policy.yaml"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/policy/PhrConsentBoundaryAccessGateTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "audit-access-history",
+      "sourceImplementation": [
+        "products/phr/src/main/java/com/ghatana/phr/observability/PHRAuditTrailServiceImpl.java"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/observability/PHRAuditTrailServiceTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "fhir-r4-validation",
+      "sourceImplementation": [
+        "products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidator.java"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/fhir/server/PhrFhirR4ServerTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "tenant-data-sovereignty",
+      "sourceImplementation": [
+        "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
+      ],
+      "behavioralProof": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelBoundaryContractTest.java"
+      ],
+      "testTiers": [
+        "behavioral-unit-or-integration-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    },
+    {
+      "productId": "phr",
+      "workflowId": "i18n-a11y",
+      "sourceImplementation": [
+        "products/phr/apps/web/src/i18n/phrI18n.ts",
+        "products/phr/apps/web/src/locales/ne/common.json"
+      ],
+      "behavioralProof": [
+        "products/phr/apps/web/src/i18n/__tests__/phrI18n.test.ts",
+        "products/phr/apps/web/tests/e2e/phr-a11y.spec.ts"
+      ],
+      "testTiers": [
+        "e2e-journey-proof",
+        "ui-or-contract-proof"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/product-scorecards/phr.md",
+        ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+        ".kernel/evidence/product-release-readiness.phr.json"
+      ],
+      "currentStatus": "partial-until-focused-suite-executes",
+      "blockerOwner": "products/phr"
+    }
+  ]
+}

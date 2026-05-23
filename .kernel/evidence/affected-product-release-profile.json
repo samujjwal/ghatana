@@ -1,11 +1,6 @@
 {
-  "generatedAt": "2026-05-23T03:22:14.271Z",
-  "affectedProducts": [
-    "digital-marketing",
-    "finance",
-    "flashit",
-    "phr"
-  ],
+  "generatedAt": "2026-05-23T14:08:21.045Z",
+  "affectedProducts": [],
   "strictTargetCoverage": [
     {
       "productId": "data-cloud",
@@ -50,63 +45,6 @@
       "ciEnabled": true
     }
   ],
-  "perProductCoverage": [
-    {
-      "productId": "digital-marketing",
-      "requiredScripts": [
-        "build:digital-marketing",
-        "test:digital-marketing"
-      ],
-      "optionalCore": [
-        "validate:digital-marketing",
-        "package:digital-marketing"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": true,
-      "hasBackendSurface": true
-    },
-    {
-      "productId": "finance",
-      "requiredScripts": [
-        "build:finance",
-        "test:finance"
-      ],
-      "optionalCore": [
-        "validate:finance",
-        "package:finance"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": false,
-      "hasBackendSurface": true
-    },
-    {
-      "productId": "flashit",
-      "requiredScripts": [
-        "build:flashit",
-        "test:flashit"
-      ],
-      "optionalCore": [
-        "validate:flashit",
-        "package:flashit"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": true,
-      "hasBackendSurface": true
-    },
-    {
-      "productId": "phr",
-      "requiredScripts": [
-        "build:phr",
-        "test:phr"
-      ],
-      "optionalCore": [
-        "validate:phr",
-        "package:phr"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": true,
-      "hasBackendSurface": true
-    }
-  ],
+  "perProductCoverage": [],
   "violations": []
 }

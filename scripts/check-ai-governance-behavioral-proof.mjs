@@ -20,19 +20,23 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { getReleaseMode, processValidationResults, logValidationResults } from './lib/release-evidence-policy.mjs';
+import { getAIGovernanceProducts, resolveProductForProof, getProductLifecycleTestCommand } from './lib/product-registry-helper.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const CI_MODE = process.argv.includes('--ci');
+const RELEASE_MODE = getReleaseMode();
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
 
 const violations = [];
 const warnings = [];
 const evidence = [];
+const stableGeneratedAt = process.env.GITHUB_SHA ? `commit:${process.env.GITHUB_SHA}` : 'generated-on-demand';
 
 function logError(message) {
   violations.push(message);
@@ -56,7 +60,7 @@ function logEvidence(message) {
 /**
  * Execute AI governance behavioral tests
  */
-function executeAIGovernanceTests(productPath, productName) {
+function executeAIGovernanceTests(productPath, productName, testCommand) {
   // Look for AI governance tests
   const testDirs = [
     path.join(productPath, 'src/test/java'),
@@ -80,23 +84,37 @@ function executeAIGovernanceTests(productPath, productName) {
           } else if (item.endsWith('.java') && (item.includes('AIGovernance') || item.includes('ModelGovernance'))) {
             testFound = true;
             const className = item.replace('.java', '');
+            const content = readFileSync(itemPath, 'utf8');
+            const packageMatch = content.match(/^\s*package\s+([\w.]+);/m);
+            const testPattern = packageMatch ? `${packageMatch[1]}.${className}` : `*${className}`;
             
             try {
-              // Execute the test using Gradle
-              const gradleCommand = process.platform === 'win32'
-                ? `gradlew.bat :products:aep:test --tests ${className}`
-                : `./gradlew :products:aep:test --tests ${className}`;
-              
-              console.log(`  Executing: ${gradleCommand}`);
-              const output = execSync(gradleCommand, {
+              // Execute the test using product-specific test command
+              let args;
+              if (testCommand.startsWith('pnpm')) {
+                // For pnpm products
+                args = ['pnpm', 'test', '--', className];
+              } else {
+                // For Gradle products
+                args = [
+                  './scripts/run-gradle-wrapper.mjs',
+                  testCommand,
+                  '--tests',
+                  testPattern,
+                  '--no-daemon',
+                  '--max-workers=1',
+                ];
+              }
+
+              console.log(`  Executing: ${testCommand.startsWith('pnpm') ? 'pnpm' : 'node'} ${args.join(' ')}`);
+              const output = execFileSync(testCommand.startsWith('pnpm') ? 'pnpm' : process.execPath, args, {
                 cwd: repoRoot,
                 encoding: 'utf8',
-                stdio: CI_MODE ? 'pipe' : 'inherit',
                 timeout: 120000
               });
 
-              const testPassed = output.includes('BUILD SUCCESSFUL') || output.includes('PASSED');
-              const testFailed = output.includes('FAILED') || output.includes('BUILD FAILED');
+              const testPassed = output.includes('BUILD SUCCESSFUL') || output.includes('PASSED') || output.includes('PASS');
+              const testFailed = output.includes('FAILED') || output.includes('BUILD FAILED') || output.includes('FAIL');
 
               if (testPassed) {
                 logSuccess(`${productName}: AI governance tests PASSED`);
@@ -667,7 +685,7 @@ function generateEvidenceReport() {
   }
 
   const report = {
-    timestamp: new Date().toISOString(),
+    timestamp: stableGeneratedAt,
     violations,
     warnings,
     evidence,
@@ -678,7 +696,7 @@ function generateEvidenceReport() {
     }
   };
 
-  const reportPath = path.join(evidenceDir, `ai-governance-behavioral-proof-${Date.now()}.json`);
+  const reportPath = path.join(evidenceDir, 'ai-governance-behavioral-proof-latest.json');
   writeFileSync(reportPath, JSON.stringify(report, null, 2));
   
   console.log(`\n📄 Evidence report generated: ${reportPath}`);
@@ -690,13 +708,13 @@ function generateEvidenceReport() {
 function main() {
   console.log('Checking AI governance behavioral proof across products...\n');
 
-  // Products to check
-  const products = [
-    { path: 'products/data-cloud/delivery/launcher', name: 'Data Cloud Launcher' },
-    { path: 'products/data-cloud/delivery/sdk', name: 'Data Cloud SDK' },
-    { path: 'products/aep', name: 'AEP' },
-    { path: 'products/digital-marketing/dm-api', name: 'Digital Marketing API' },
-  ];
+  // Resolve AI-enabled products from canonical product registry
+  const registryProducts = getAIGovernanceProducts();
+  
+  // Resolve product information for proof
+  const products = registryProducts
+    .map(({ productId }) => resolveProductForProof(productId))
+    .filter(p => p !== null);
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
@@ -707,28 +725,36 @@ function main() {
     const productPath = path.join(repoRoot, product.path);
     
     if (!existsSync(productPath)) {
-      logWarning(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product path not found at ${product.path}`);
       continue;
     }
 
     console.log(`\n--- Checking ${product.name} ---`);
     
+    // Determine test command for this product
+    const testCommand = getProductLifecycleTestCommand(product.productId) || `${product.productId}:test`;
+    
     // Execute real tests instead of posture checks
-    const testsPassed = executeAIGovernanceTests(productPath, product.name);
+    const testsPassed = executeAIGovernanceTests(productPath, product.name, testCommand);
     
     if (!testsPassed) {
-      // Fall back to posture checks if test execution fails
-      logWarning(`${product.name}: Test execution failed, falling back to posture checks`);
-      checkAIGovernanceInfrastructure(productPath, product.name);
-      checkModelAvailability(productPath, product.name);
-      checkFallbackPrevention(productPath, product.name);
-      checkPrivacyRedaction(productPath, product.name);
-      checkProvenanceTracking(productPath, product.name);
-      checkCostBudgetEnforcement(productPath, product.name);
-      checkEvaluationQualityThresholds(productPath, product.name);
-      checkHumanApproval(productPath, product.name);
-      checkAIAuditEvidence(productPath, product.name);
-      checkAISafetyGuardrails(productPath, product.name);
+      // In release mode, fail if no executable test is found
+      if (RELEASE_MODE === 'release') {
+        logError(`${product.name}: No executable AI governance test found - required in release mode`);
+      } else {
+        // Fall back to posture checks in local mode
+        logWarning(`${product.name}: Test execution failed, falling back to posture checks`);
+        checkAIGovernanceInfrastructure(productPath, product.name);
+        checkModelAvailability(productPath, product.name);
+        checkFallbackPrevention(productPath, product.name);
+        checkPrivacyRedaction(productPath, product.name);
+        checkProvenanceTracking(productPath, product.name);
+        checkCostBudgetEnforcement(productPath, product.name);
+        checkEvaluationQualityThresholds(productPath, product.name);
+        checkHumanApproval(productPath, product.name);
+        checkAIAuditEvidence(productPath, product.name);
+        checkAISafetyGuardrails(productPath, product.name);
+      }
     }
   }
 
@@ -737,19 +763,14 @@ function main() {
   console.log(`Warnings: ${warnings.length}`);
   console.log(`Evidence items: ${evidence.length}`);
 
-  if (CI_MODE) {
-    generateEvidenceReport();
-  }
+  generateEvidenceReport();
 
-  if (violations.length > 0) {
-    console.log('\nAI governance behavioral proof check failed with errors:');
-    violations.forEach(v => console.log(`  - ${v}`));
+  // Process validation results with release evidence policy
+  const validationResults = processValidationResults(violations, warnings, evidence, RELEASE_MODE);
+  logValidationResults(validationResults, 'AI Governance Behavioral Proof Validation');
+
+  if (validationResults.shouldFail) {
     process.exit(1);
-  }
-
-  if (warnings.length > 0 && CI_MODE) {
-    console.log('\nAI governance behavioral proof check passed with warnings:');
-    warnings.forEach(w => console.log(`  - ${w}`));
   }
 
   console.log('\nAI governance behavioral proof check passed.');

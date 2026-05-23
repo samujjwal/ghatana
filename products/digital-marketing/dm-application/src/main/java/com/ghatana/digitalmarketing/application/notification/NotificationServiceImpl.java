@@ -41,7 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
             .build();
 
         notifications.put(notificationId, notification);
-        return Promise.complete(notification);
+        return Promise.of(notification);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class NotificationServiceImpl implements NotificationService {
             notification.errorMessage()
         );
 
-        return Promise.complete(status);
+        return Promise.of(status);
     }
 
     @Override
@@ -88,12 +88,12 @@ public class NotificationServiceImpl implements NotificationService {
             .build();
 
         notifications.put(notificationId, replayed);
-        return Promise.complete(replayed);
+        return Promise.of(replayed);
     }
 
     @Override
     public Promise<List<Notification>> listDlqMessages(DmOperationContext ctx, int limit) {
-        return Promise.complete(
+        return Promise.of(
             notifications.values().stream()
                 .filter(n -> n.inDlq())
                 .limit(limit)
@@ -126,7 +126,7 @@ public class NotificationServiceImpl implements NotificationService {
             .build();
 
         notifications.put(notificationId, delivered);
-        return Promise.complete(delivered);
+        return Promise.of(delivered);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
             notifications.put(notificationId, failed);
-            return Promise.complete(failed);
+            return Promise.of(failed);
         } catch (IllegalStateException e) {
             // Max retries exceeded, move to DLQ
             notification.moveToDlq();
@@ -180,7 +180,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
             notifications.put(notificationId, dlq);
-            return Promise.complete(dlq);
+            return Promise.of(dlq);
         }
     }
 }

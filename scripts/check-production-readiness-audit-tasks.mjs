@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -133,6 +133,58 @@ function assertFile(relativePath, label) {
   }
 }
 
+function classifyTestTier(file) {
+  if (file.includes('/tests/e2e/') || file.includes('.e2e.') || file.includes('/integration-tests/')) {
+    return 'e2e-journey-proof';
+  }
+  if (file.includes('/src/test/') || file.includes('/dm-integration-tests/')) {
+    return 'behavioral-unit-or-integration-proof';
+  }
+  if (file.includes('/__tests__/') || file.endsWith('.test.ts') || file.endsWith('.test.tsx')) {
+    return 'ui-or-contract-proof';
+  }
+  return 'behavioral-proof';
+}
+
+function evidenceRefsFor(productId) {
+  const refs = [`.kernel/evidence/product-scorecards/${productId}.md`];
+  if (productId === 'digital-marketing') {
+    refs.push('.kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json');
+    refs.push('.kernel/evidence/product-release-readiness.digital-marketing.json');
+  }
+  if (productId === 'phr') {
+    refs.push('.kernel/evidence/phr/phr-lifecycle-evidence-pack.json');
+    refs.push('.kernel/evidence/product-release-readiness.phr.json');
+  }
+  return refs;
+}
+
+function workflowCoverageRow(productId, workflow) {
+  const testTiers = [...new Set(workflow.tests.map(classifyTestTier))].sort();
+  return {
+    productId,
+    workflowId: workflow.id,
+    sourceImplementation: workflow.source,
+    behavioralProof: workflow.tests,
+    testTiers,
+    evidenceRefs: evidenceRefsFor(productId),
+    currentStatus: 'partial-until-focused-suite-executes',
+    blockerOwner: productId === 'phr' ? 'products/phr' : 'products/digital-marketing',
+  };
+}
+
+function validateWorkflowRow(row) {
+  if (row.sourceImplementation.length === 0) {
+    fail(`${row.productId}/${row.workflowId} is missing source implementation proof`);
+  }
+  if (row.behavioralProof.length === 0 || row.testTiers.length === 0) {
+    fail(`${row.productId}/${row.workflowId} must include behavioral test proof, not file presence only`);
+  }
+  for (const evidenceRef of row.evidenceRefs) {
+    assertFile(evidenceRef, `${row.productId}/${row.workflowId} evidence ref`);
+  }
+}
+
 function validateWorkflowProduct(productId) {
   const workflows = workflowMatrix[productId] ?? fail(`Unknown workflow product: ${productId}`);
   for (const workflow of workflows) {
@@ -145,7 +197,33 @@ function validateWorkflowProduct(productId) {
         fail(`${productId}/${workflow.id} does not contain required token: ${workflow.token}`);
       }
     }
+    validateWorkflowRow(workflowCoverageRow(productId, workflow));
   }
+}
+
+function writeWorkflowCoverageReport(rows) {
+  const reportPath = abs('.kernel/evidence/product-feature-completeness-report.json');
+  mkdirSync(path.dirname(reportPath), { recursive: true });
+  writeFileSync(
+    reportPath,
+    `${JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        status: 'partial-source-grounded-behavioral-proof-required',
+        coverageDimensions: [
+          'source implementation',
+          'behavioral unit/integration/API/UI proof',
+          'lifecycle evidence ref',
+          'blocker owner',
+          'current status',
+        ],
+        workflowCount: rows.length,
+        workflows: rows,
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 function validateProductFeatureCompleteness() {
@@ -163,6 +241,12 @@ function validateProductFeatureCompleteness() {
       }
     }
   }
+
+  writeWorkflowCoverageReport(
+    Object.entries(workflowMatrix).flatMap(([productId, workflows]) =>
+      workflows.map((workflow) => workflowCoverageRow(productId, workflow)),
+    ),
+  );
 }
 
 function validateReleaseRollbackDrill() {
@@ -201,16 +285,33 @@ function validateStudioLifecycleControlPlane() {
 }
 
 function validateDurableEventProvider() {
+  const eventProviderInterface = read('platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction/ProductInteractionEventProvider.java');
   const provider = read('platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction/DataCloudProductInteractionEventProvider.java');
-  for (const token of ['store', 'isDelivered', 'sendToDlq', 'getDlqEvents', 'getEventsForReplay', 'deleteEventsBefore']) {
-    if (!provider.includes(token)) {
-      fail(`Durable event provider is missing ${token}`);
+  for (const token of [
+    'get(BridgeContext context, String eventId)',
+    'updateStatus(BridgeContext context, String eventId',
+    'isDelivered(BridgeContext context, String eventId)',
+    'getDlqEvents(BridgeContext context, String topic',
+    'getEventsForReplay(',
+    'deleteEventsBefore(BridgeContext context',
+  ]) {
+    if (!eventProviderInterface.includes(token)) {
+      fail(`Durable event provider interface must keep scoped signature: ${token}`);
     }
   }
-  assertFile(
-    'platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/DataCloudProductInteractionEventProviderTest.java',
-    'durable event provider test',
-  );
+  for (const token of ['context.getTenantId()', 'requireWorkspace(context)', 'matchesScope(context', 'queryEventsForReplay', 'deleteEventsBefore']) {
+    if (!provider.includes(token)) {
+      fail(`Durable event provider is missing tenant/workspace scoped implementation token: ${token}`);
+    }
+  }
+  const testFile = 'platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/DataCloudProductInteractionEventProviderTest.java';
+  assertFile(testFile, 'durable event provider test');
+  const testSource = read(testFile);
+  for (const token of ['Cross-tenant get returns empty', 'Replay and DLQ queries filter out records outside scope']) {
+    if (!testSource.includes(token)) {
+      fail(`Durable event provider tests must prove scoped isolation: ${token}`);
+    }
+  }
 }
 
 function validateEvidenceRetentionPolicy() {

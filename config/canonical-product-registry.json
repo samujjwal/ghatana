@@ -177,6 +177,11 @@
         ],
         "evidenceRefs": [
           "products/phr/kernel-product.yaml",
+          "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
+          "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+          "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+          "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+          "products/phr/lifecycle/rollback/rollback-approval-contract.yaml",
           ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
         ]
       },

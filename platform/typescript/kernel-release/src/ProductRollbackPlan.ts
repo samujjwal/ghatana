@@ -11,6 +11,16 @@ export const ProductRollbackPlanSchema = z.object({
   currentVersion: z.string(),
   targetVersion: z.string(),
   strategy: z.enum(['previous-artifact', 'last-known-good', 'manual']),
+  previousArtifactSelection: z
+    .object({
+      artifactRef: z.string().trim().min(1),
+      deploymentManifestRef: z.string().trim().min(1),
+      selectedBy: z.string().trim().min(1),
+      selectedAt: z.string().trim().min(1),
+      selectionReason: z.string().trim().min(1),
+    })
+    .optional(),
+  approvalGateRef: z.string().trim().min(1).optional(),
   reason: z.string(),
   rollbackBy: z.string(),
   timestamp: z.string(),
@@ -20,6 +30,15 @@ export const ProductRollbackPlanSchema = z.object({
     smokeTests: z.boolean(),
     metrics: z.boolean(),
   }),
+  healthcareVerificationPlan: z
+    .object({
+      consent: z.boolean(),
+      piiClassification: z.boolean(),
+      auditEvidence: z.boolean(),
+      fhirValidation: z.boolean(),
+      tenantDataSovereignty: z.boolean(),
+    })
+    .optional(),
 });
 
 export type ProductRollbackPlan = z.infer<typeof ProductRollbackPlanSchema>;
@@ -63,6 +82,30 @@ export class ProductRollbackPlanManager {
 
     if (plan.strategy === 'previous-artifact' && !plan.currentVersion) {
       errors.push('Current version is required for previous-artifact rollback strategy');
+    }
+    if (plan.strategy === 'previous-artifact' && !plan.previousArtifactSelection) {
+      errors.push('Previous artifact selection is required for previous-artifact rollback strategy');
+    }
+    if (plan.productId === 'phr') {
+      if (!plan.approvalGateRef) {
+        errors.push('PHR rollback requires rollback approval contract evidence');
+      }
+      if (!plan.healthcareVerificationPlan) {
+        errors.push('PHR rollback requires healthcare post-rollback verification gates');
+      } else {
+        const healthcareGates = [
+          ['consent', plan.healthcareVerificationPlan.consent],
+          ['piiClassification', plan.healthcareVerificationPlan.piiClassification],
+          ['auditEvidence', plan.healthcareVerificationPlan.auditEvidence],
+          ['fhirValidation', plan.healthcareVerificationPlan.fhirValidation],
+          ['tenantDataSovereignty', plan.healthcareVerificationPlan.tenantDataSovereignty],
+        ] as const;
+        for (const [gate, enabled] of healthcareGates) {
+          if (!enabled) {
+            errors.push(`PHR rollback healthcare gate is required: ${gate}`);
+          }
+        }
+      }
     }
 
     // Validate manifest exists if path provided

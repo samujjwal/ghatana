@@ -1,28 +1,41 @@
 {
-  "timestamp": "generated-on-demand",
+  "timestamp": "commit:367ce916067282d257852cc29649281e80cd56a1",
   "violations": [],
-  "warnings": [
-    "Data Cloud SDK: No atomic workflow failure-injection test found, falling back to posture checks",
-    "Data Cloud SDK: Test execution failed, falling back to posture checks",
-    "Data Cloud SDK: Missing business write/event append failure scenario",
-    "Data Cloud SDK: Missing event append/audit write failure scenario",
-    "Data Cloud SDK: Missing audit/outbox failure scenario",
-    "Data Cloud SDK: Missing idempotency write failure scenario",
-    "Data Cloud SDK: Missing retry after partial failure scenario",
-    "Data Cloud SDK: Missing rollback after partial failure scenario",
-    "Data Cloud SDK: Missing replay after crash scenario",
-    "Finance Gateway: Product path not found at products/finance/gateway",
-    "PHR Gateway: Product path not found at products/phr/gateway"
-  ],
+  "warnings": [],
   "evidence": [
-    "Data Cloud Launcher: Executed real atomic workflow failure scenarios",
-    "Data Cloud Launcher: Executable test run validated business write/event append failure",
-    "Data Cloud Launcher: Executable test run validated event append/audit write failure",
-    "Data Cloud Launcher: Executable test run validated audit/outbox failure",
-    "Data Cloud Launcher: Executable test run validated idempotency write failure",
-    "Data Cloud Launcher: Executable test run validated retry after partial failure",
-    "Data Cloud Launcher: Executable test run validated rollback after partial failure",
-    "Data Cloud Launcher: Executable test run validated replay after crash"
+    "Personal Health Records: Executed real atomic workflow failure scenarios",
+    "Personal Health Records: Executable test run validated business write/event append failure",
+    "Personal Health Records: Executable test run validated event append/audit write failure",
+    "Personal Health Records: Executable test run validated audit/outbox failure",
+    "Personal Health Records: Executable test run validated idempotency write failure",
+    "Personal Health Records: Executable test run validated retry after partial failure",
+    "Personal Health Records: Executable test run validated rollback after partial failure",
+    "Personal Health Records: Executable test run validated replay after crash",
+    "Personal Health Records: Executable test run validated side effect rollback",
+    "Personal Health Records: Executable test run validated rollback verification",
+    "Personal Health Records: Executable test run validated cleanup after failure",
+    "Digital Marketing Operating System: Executed real atomic workflow failure scenarios",
+    "Digital Marketing Operating System: Executable test run validated business write/event append failure",
+    "Digital Marketing Operating System: Executable test run validated event append/audit write failure",
+    "Digital Marketing Operating System: Executable test run validated audit/outbox failure",
+    "Digital Marketing Operating System: Executable test run validated idempotency write failure",
+    "Digital Marketing Operating System: Executable test run validated retry after partial failure",
+    "Digital Marketing Operating System: Executable test run validated rollback after partial failure",
+    "Digital Marketing Operating System: Executable test run validated replay after crash",
+    "Digital Marketing Operating System: Executable test run validated side effect rollback",
+    "Digital Marketing Operating System: Executable test run validated rollback verification",
+    "Digital Marketing Operating System: Executable test run validated cleanup after failure",
+    "Data Cloud: Executed real atomic workflow failure scenarios",
+    "Data Cloud: Executable test run validated business write/event append failure",
+    "Data Cloud: Executable test run validated event append/audit write failure",
+    "Data Cloud: Executable test run validated audit/outbox failure",
+    "Data Cloud: Executable test run validated idempotency write failure",
+    "Data Cloud: Executable test run validated retry after partial failure",
+    "Data Cloud: Executable test run validated rollback after partial failure",
+    "Data Cloud: Executable test run validated replay after crash",
+    "Data Cloud: Executable test run validated side effect rollback",
+    "Data Cloud: Executable test run validated rollback verification",
+    "Data Cloud: Executable test run validated cleanup after failure"
   ],
   "scenarioCoverage": {
     "businessWriteEventAppendFailure": true,
@@ -31,13 +44,15 @@
     "idempotencyWriteFailure": true,
     "retryAfterPartialFailure": true,
     "rollbackAfterPartialFailure": true,
-    "replayAfterCrash": true
+    "replayAfterCrash": true,
+    "sideEffectRollback": true
   },
   "summary": {
     "totalViolations": 0,
-    "totalWarnings": 11,
-    "totalEvidence": 8,
+    "totalWarnings": 0,
+    "totalEvidence": 33,
     "missingScenarioCount": 0,
-    "executedTestProductCount": 1
+    "executedTestProductCount": 3,
+    "expectedProductCount": 3
   }
 }

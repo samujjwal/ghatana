@@ -25,17 +25,23 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getReleaseMode, shouldFailOnWarning, processValidationResults, logValidationResults, validateProductCoverage } from './lib/release-evidence-policy.mjs';
+import { getRuntimeDependencyProducts, resolveProductForProof } from './lib/product-registry-helper.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const CI_MODE = process.argv.includes('--ci');
-const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
+const RELEASE_MODE = getReleaseMode();
+const productArgIndex = process.argv.indexOf('--product');
+const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1]
+  ?? (productArgIndex >= 0 ? process.argv[productArgIndex + 1] : undefined);
 
 const violations = [];
 const warnings = [];
 const evidence = [];
 let executedTestProductCount = 0;
-const stableGeneratedAt = 'generated-on-demand';
+let currentExpectedProductCount = 0;
+const stableGeneratedAt = resolveEvidenceIdentity();
 
 const requiredScenarioPatterns = {
   postgresDown: ['postgres unavailability'],
@@ -59,6 +65,21 @@ const excludedTestClasses = new Map([
   ],
 ]);
 
+function resolveEvidenceIdentity() {
+  if (process.env.GITHUB_SHA) {
+    return `commit:${process.env.GITHUB_SHA}`;
+  }
+  try {
+    return `commit:${execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()}`;
+  } catch {
+    return 'generated-on-demand';
+  }
+}
+
 function logError(message) {
   violations.push(message);
   console.error(`❌ ERROR: ${message}`);
@@ -76,6 +97,12 @@ function logSuccess(message) {
 function logEvidence(message) {
   evidence.push(message);
   console.log(`  📋 ${message}`);
+}
+
+function hasRequiredScenarioCoverage(content) {
+  const normalized = content.toLowerCase();
+  return Object.values(requiredScenarioPatterns)
+    .every((patterns) => patterns.every((pattern) => normalized.includes(pattern)));
 }
 
 /**
@@ -123,6 +150,9 @@ function executeDependencyFailureTests(productPath, productName, gradleTask) {
               continue;
             }
             const content = readFileSync(itemPath, 'utf8');
+            if (!hasRequiredScenarioCoverage(content)) {
+              continue;
+            }
             const packageMatch = content.match(/^\s*package\s+([\w.]+);/m);
             const testPattern = packageMatch ? `${packageMatch[1]}.${className}` : `*${className}`;
             
@@ -860,6 +890,7 @@ function generateEvidenceReport() {
       totalEvidence: evidence.length,
       missingScenarioCount: missingScenarios.length,
       executedTestProductCount,
+      expectedProductCount: currentExpectedProductCount,
     }
   };
 
@@ -875,53 +906,67 @@ function generateEvidenceReport() {
 function main() {
   console.log('Checking runtime dependency failure-injection proof across products...\n');
 
-  // Products to check
-  const products = [
-    {
-      path: 'products/data-cloud/delivery/launcher',
-      name: 'Data Cloud Launcher',
-      gradleTask: ':products:data-cloud:delivery:launcher:test',
-    },
-    {
-      path: 'products/digital-marketing/dm-kernel-bridge',
-      name: 'Digital Marketing Kernel Bridge',
-      gradleTask: ':products:digital-marketing:dm-kernel-bridge:test',
-    },
-  ];
+  // Resolve products from canonical product registry
+  const registryProducts = getRuntimeDependencyProducts();
+  
+  // Resolve product information for proof
+  const products = registryProducts
+    .map(({ productId }) => resolveProductForProof(productId))
+    .filter(p => p !== null);
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
-    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
+    ? products.filter(p => {
+        const query = PRODUCT_ARG.toLowerCase();
+        return p.productId.toLowerCase().includes(query) ||
+          p.name.toLowerCase().includes(query) ||
+          p.path.toLowerCase().includes(query);
+      })
     : products;
+
+  if (PRODUCT_ARG && filteredProducts.length === 0) {
+    logError(`No runtime dependency product matched --product=${PRODUCT_ARG}`);
+  }
+  currentExpectedProductCount = filteredProducts.length;
 
   for (const product of filteredProducts) {
     const productPath = path.join(repoRoot, product.path);
     
     if (!existsSync(productPath)) {
-      logWarning(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product path not found at ${product.path}`);
       continue;
     }
 
     console.log(`\n--- Checking ${product.name} ---`);
     
+    // Determine Gradle task for this product
+    const gradleTask = product.gradleTask || `${product.productId}:test`;
+    
     // Execute real tests instead of posture checks
-    const testsPassed = executeDependencyFailureTests(productPath, product.name, product.gradleTask);
+    const testsPassed = executeDependencyFailureTests(productPath, product.name, gradleTask);
     
     if (!testsPassed) {
-      // Fall back to posture checks if test execution fails
-      logWarning(`${product.name}: Test execution failed, falling back to posture checks`);
-      checkFailureInjectionInfrastructure(productPath, product.name);
-      checkPostgresUnavailability(productPath, product.name);
-      checkClickHouseUnavailability(productPath, product.name);
-      checkOpenSearchUnavailability(productPath, product.name);
-      checkS3Unavailability(productPath, product.name);
-      checkAuditSinkUnavailability(productPath, product.name);
-      checkPolicyEngineUnavailability(productPath, product.name);
-      checkAICompletionUnavailability(productPath, product.name);
-      checkNetworkTimeout(productPath, product.name);
-      checkQueueSaturation(productPath, product.name);
-      checkCircuitBreakerImplementation(productPath, product.name);
-      checkRetryBackoffImplementation(productPath, product.name);
+      // In release mode, fail if no executable test is found - no fallback posture checks allowed
+      if (RELEASE_MODE === 'release') {
+        logError(`${product.name}: No executable runtime dependency failure-injection test found - required in release mode`);
+        logError(`${product.name}: Fallback posture checks are not allowed in release mode`);
+        logError(`${product.name}: Add explicit waiver in config/release-proof-waivers.json if this product has no external dependencies`);
+      } else {
+        // Fall back to posture checks in local mode only
+        logWarning(`${product.name}: Test execution failed, falling back to posture checks (local mode only)`);
+        checkFailureInjectionInfrastructure(productPath, product.name);
+        checkPostgresUnavailability(productPath, product.name);
+        checkClickHouseUnavailability(productPath, product.name);
+        checkOpenSearchUnavailability(productPath, product.name);
+        checkS3Unavailability(productPath, product.name);
+        checkAuditSinkUnavailability(productPath, product.name);
+        checkPolicyEngineUnavailability(productPath, product.name);
+        checkAICompletionUnavailability(productPath, product.name);
+        checkNetworkTimeout(productPath, product.name);
+        checkQueueSaturation(productPath, product.name);
+        checkCircuitBreakerImplementation(productPath, product.name);
+        checkRetryBackoffImplementation(productPath, product.name);
+      }
     } else {
       executedTestProductCount += 1;
       for (const patterns of Object.values(requiredScenarioPatterns)) {
@@ -936,18 +981,27 @@ function main() {
   console.log(`Errors: ${violations.length}`);
   console.log(`Warnings: ${warnings.length}`);
   console.log(`Evidence items: ${evidence.length}`);
+  console.log(`Products with executed tests: ${executedTestProductCount}`);
 
   generateEvidenceReport();
 
-  if (violations.length > 0) {
-    console.log('\nRuntime dependency failure-injection check failed with errors:');
-    violations.forEach(v => console.log(`  - ${v}`));
-    process.exit(1);
-  }
+  // Validate product coverage in release mode
+  const expectedProductCount = filteredProducts.length;
+  const coverageIssues = validateProductCoverage(executedTestProductCount, expectedProductCount, RELEASE_MODE);
+  coverageIssues.forEach(issue => {
+    if (issue.severity === 'error') {
+      logError(issue.message);
+    } else {
+      logWarning(issue.message);
+    }
+  });
 
-  if (warnings.length > 0 && CI_MODE) {
-    console.log('\nRuntime dependency failure-injection check passed with warnings:');
-    warnings.forEach(w => console.log(`  - ${w}`));
+  // Process validation results with release evidence policy
+  const validationResults = processValidationResults(violations, warnings, evidence, RELEASE_MODE);
+  logValidationResults(validationResults, 'Runtime Dependency Failure-Injection Validation');
+
+  if (validationResults.shouldFail) {
+    process.exit(1);
   }
 
   console.log('\nRuntime dependency failure-injection check passed.');

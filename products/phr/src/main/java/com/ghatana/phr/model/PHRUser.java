@@ -16,6 +16,7 @@ public class PHRUser {
     private String userId;
     private String username;
     private String email;
+    private String tenantId;
     private String providerId;
     private String accessLevel;
     private Set<String> roles = new HashSet<>();
@@ -57,6 +58,14 @@ public class PHRUser {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getProviderId() {

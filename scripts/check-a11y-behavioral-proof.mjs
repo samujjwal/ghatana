@@ -22,15 +22,19 @@ import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { getReleaseMode, processValidationResults, logValidationResults } from './lib/release-evidence-policy.mjs';
+import { getPnpmProducts, resolveProductForProof } from './lib/product-registry-helper.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const CI_MODE = process.argv.includes('--ci');
+const RELEASE_MODE = getReleaseMode();
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
 
 const violations = [];
 const warnings = [];
 const evidence = [];
+const stableGeneratedAt = process.env.GITHUB_SHA ? `commit:${process.env.GITHUB_SHA}` : 'generated-on-demand';
 
 function logError(message) {
   violations.push(message);
@@ -205,6 +209,7 @@ function checkKeyboardJourneyTests(productPath, productName) {
   let hasKeyboardTests = false;
   let hasTabNavigation = false;
   let hasKeyboardShortcuts = false;
+  let hasEscapeKeyTests = false;
 
   for (const testDir of testDirs) {
     if (!existsSync(testDir)) continue;
@@ -234,6 +239,10 @@ function checkKeyboardJourneyTests(productPath, productName) {
             if (content.includes('shortcut') || content.includes('hotkey') || content.includes('Ctrl+') || content.includes('Cmd+')) {
               hasKeyboardShortcuts = true;
             }
+            
+            if (content.includes('escape') || content.includes('Escape') || content.includes('Esc') || content.includes('ESC')) {
+              hasEscapeKeyTests = true;
+            }
           }
         }
       } catch (e) {
@@ -262,7 +271,13 @@ function checkKeyboardJourneyTests(productPath, productName) {
     logWarning(`${productName}: Missing keyboard shortcut tests`);
   }
 
-  return hasKeyboardTests && hasTabNavigation;
+  if (hasEscapeKeyTests) {
+    logSuccess(`${productName}: Has escape key tests`);
+  } else {
+    logWarning(`${productName}: Missing escape key tests`);
+  }
+
+  return hasKeyboardTests && hasTabNavigation && hasEscapeKeyTests;
 }
 
 /**
@@ -588,7 +603,7 @@ function generateEvidenceReport() {
   }
 
   const report = {
-    timestamp: new Date().toISOString(),
+    timestamp: stableGeneratedAt,
     violations,
     warnings,
     evidence,
@@ -599,7 +614,7 @@ function generateEvidenceReport() {
     }
   };
 
-  const reportPath = path.join(evidenceDir, `a11y-behavioral-proof-${Date.now()}.json`);
+  const reportPath = path.join(evidenceDir, 'a11y-behavioral-proof-latest.json');
   writeFileSync(reportPath, JSON.stringify(report, null, 2));
   
   console.log(`\n📄 Evidence report generated: ${reportPath}`);
@@ -611,12 +626,13 @@ function generateEvidenceReport() {
 function main() {
   console.log('Checking a11y behavioral proof across products...\n');
 
-  // Products to check
-  const products = [
-    { path: 'frontend/apps/studio', name: 'Studio' },
-    { path: 'frontend/apps/api', name: 'Frontend API' },
-    { path: 'products/data-cloud/delivery/launcher', name: 'Data Cloud Launcher' },
-  ];
+  // Resolve pnpm products (web products) from canonical product registry
+  const registryProducts = getPnpmProducts();
+  
+  // Resolve product information for proof
+  const products = registryProducts
+    .map(({ productId }) => resolveProductForProof(productId))
+    .filter(p => p !== null);
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
@@ -627,7 +643,7 @@ function main() {
     const productPath = path.join(repoRoot, product.path);
     
     if (!existsSync(productPath)) {
-      logWarning(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product path not found at ${product.path}`);
       continue;
     }
 
@@ -637,15 +653,20 @@ function main() {
     const testsPassed = executeA11yTests(productPath, product.name);
     
     if (!testsPassed) {
-      // Fall back to posture checks if test execution fails
-      logWarning(`${product.name}: Test execution failed, falling back to posture checks`);
-      checkA11yTestInfrastructure(productPath, product.name);
-      checkKeyboardJourneyTests(productPath, product.name);
-      checkFocusTrapTests(productPath, product.name);
-      checkScreenReaderTests(productPath, product.name);
-      checkTableGridAccessibility(productPath, product.name);
-      checkChartVisualizationAccessibility(productPath, product.name);
-      checkModalToastErrorAccessibility(productPath, product.name);
+      // In release mode, fail if no executable test is found
+      if (RELEASE_MODE === 'release') {
+        logError(`${product.name}: No executable a11y test found - required in release mode`);
+      } else {
+        // Fall back to posture checks in local mode
+        logWarning(`${product.name}: Test execution failed, falling back to posture checks`);
+        checkA11yTestInfrastructure(productPath, product.name);
+        checkKeyboardJourneyTests(productPath, product.name);
+        checkFocusTrapTests(productPath, product.name);
+        checkScreenReaderTests(productPath, product.name);
+        checkTableGridAccessibility(productPath, product.name);
+        checkChartVisualizationAccessibility(productPath, product.name);
+        checkModalToastErrorAccessibility(productPath, product.name);
+      }
     }
   }
 
@@ -654,19 +675,14 @@ function main() {
   console.log(`Warnings: ${warnings.length}`);
   console.log(`Evidence items: ${evidence.length}`);
 
-  if (CI_MODE) {
-    generateEvidenceReport();
-  }
+  generateEvidenceReport();
 
-  if (violations.length > 0) {
-    console.log('\nA11y behavioral proof check failed with errors:');
-    violations.forEach(v => console.log(`  - ${v}`));
+  // Process validation results with release evidence policy
+  const validationResults = processValidationResults(violations, warnings, evidence, RELEASE_MODE);
+  logValidationResults(validationResults, 'A11y Behavioral Proof Validation');
+
+  if (validationResults.shouldFail) {
     process.exit(1);
-  }
-
-  if (warnings.length > 0 && CI_MODE) {
-    console.log('\nA11y behavioral proof check passed with warnings:');
-    warnings.forEach(w => console.log(`  - ${w}`));
   }
 
   console.log('\nA11y behavioral proof check passed.');

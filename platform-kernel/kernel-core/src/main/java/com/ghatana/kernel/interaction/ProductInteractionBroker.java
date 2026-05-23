@@ -4,11 +4,11 @@ import io.activej.async.exception.AsyncTimeoutException;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Base64;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,19 +68,25 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private final AtomicLong cacheMisses;
     private final AtomicLong cacheEvictions;
     private final ProductInteractionHandlerRegistry handlerRegistry;
+    private final ScheduledExecutorService developmentEvidenceExecutor;
 
     private ProductInteractionBroker(Builder builder) {
         this.handlersByContractId = new ConcurrentHashMap<>(builder.handlersByContractId);
         this.completedByInteraction = new ConcurrentHashMap<>();
         this.supportedContractVersions = Set.copyOf(builder.supportedContractVersions);
         this.policyEvaluator = builder.policyEvaluator;
-        this.evidenceWriter = builder.evidenceWriter;
         this.policyContextResolver = builder.policyContextResolver;
         this.contractsByContractId = Map.copyOf(builder.contractsByContractId);
         this.brokerMode = builder.brokerMode;
         this.requestTimeout = builder.requestTimeout;
         this.cacheTtl = builder.cacheTtl;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new BrokerThreadFactory());
+        this.developmentEvidenceExecutor = brokerMode == BrokerMode.DEVELOPMENT && builder.evidenceWriter.isNoop()
+                ? Executors.newSingleThreadScheduledExecutor(new DevelopmentEvidenceThreadFactory())
+                : null;
+        this.evidenceWriter = developmentEvidenceExecutor == null
+                ? builder.evidenceWriter
+                : new FileProductInteractionEvidenceWriter(builder.developmentEvidenceRoot, developmentEvidenceExecutor);
         this.requested = new AtomicLong();
         this.succeeded = new AtomicLong();
         this.blocked = new AtomicLong();
@@ -93,12 +99,13 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.cacheEvictions = new AtomicLong();
         this.handlerRegistry = builder.handlerRegistry;
 
-        // P0-01: Validate evidence writer in production and development modes
-        // Phase 3: TEST mode allows no-op evidence writer for test convenience
-        if ((brokerMode == BrokerMode.PRODUCTION || brokerMode == BrokerMode.DEVELOPMENT)
-            && evidenceWriter.isNoop()) {
+        // P0-01: Validate evidence writer in production mode.
+        // DEVELOPMENT mode resolves an omitted writer to a local file-backed writer.
+        // TEST mode allows no-op evidence writer for test convenience.
+        if (brokerMode == BrokerMode.PRODUCTION && evidenceWriter.isNoop()) {
             throw new IllegalStateException(
-                    "Production and development modes require a real evidence writer. No-op evidence writer is not allowed.");
+                    "Production mode requires a real evidence writer. No-op evidence writer is not allowed. "
+                            + "Use FileProductInteractionEvidenceWriter for local development or BrokerMode.TEST for tests.");
         }
 
         // Phase 1: Start cache eviction task if TTL is configured
@@ -128,8 +135,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
     }
 
     /**
-     * Phase 3: Creates a development-mode broker factory with optional evidence writer.
-     * Development mode allows no-op evidence writer for local development convenience.
+     * Creates a development-mode broker factory with local file-backed evidence by default.
      *
      * @param evidenceWriter the evidence writer (can be no-op in development)
      * @param policyContextResolver the policy context resolver
@@ -177,8 +183,21 @@ public final class ProductInteractionBroker implements AutoCloseable {
         requested.incrementAndGet();
         long startedNanos = System.nanoTime();
 
-        // P0-02: Resolve trusted policy context before validation
+        Optional<ProductInteractionOutcome<Res>> basicFailure = validateBasicPreflight(request);
+        if (basicFailure.isPresent()) {
+            return complete(request, fallbackInteractionKey(request, basicFailure.get().reasonCode()), basicFailure.get(), startedNanos);
+        }
+
         ProductInteractionContract contract = contractsByContractId.get(request.contractId());
+        if (contract == null) {
+            return complete(
+                    request,
+                    fallbackInteractionKey(request, "product_interaction.contract_missing"),
+                    blocked(request, "product_interaction.contract_missing"),
+                    startedNanos);
+        }
+
+        // P0-02: Resolve trusted policy context only after the contract exists.
         Map<String, String> trustedPolicyContext = policyContextResolver.resolve(request, contract);
         ProductInteractionRequest<Req> requestWithTrustedContext = new ProductInteractionRequest<>(
                 request.schemaVersion(),
@@ -222,7 +241,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         cacheMisses.incrementAndGet();
 
-        Optional<ProductInteractionOutcome<Res>> preflightFailure = validatePreflight(requestWithTrustedContext, contract);
+        Optional<ProductInteractionOutcome<Res>> preflightFailure = validatePolicyPreflight(requestWithTrustedContext);
         if (preflightFailure.isPresent()) {
             return complete(requestWithTrustedContext, interactionKey, preflightFailure.get(), startedNanos);
         }
@@ -300,11 +319,13 @@ public final class ProductInteractionBroker implements AutoCloseable {
     @Override
     public void close() {
         scheduler.shutdownNow();
+        if (developmentEvidenceExecutor != null) {
+            developmentEvidenceExecutor.shutdownNow();
+        }
     }
 
-    private <Req, Res> Optional<ProductInteractionOutcome<Res>> validatePreflight(
-            ProductInteractionRequest<Req> request,
-            ProductInteractionContract contract) {
+    private <Req, Res> Optional<ProductInteractionOutcome<Res>> validateBasicPreflight(
+            ProductInteractionRequest<Req> request) {
         if (!SUPPORTED_SCHEMA_VERSION.equals(request.schemaVersion())) {
             return Optional.of(blocked(request, "product_interaction.schema_version_unsupported"));
         }
@@ -344,7 +365,11 @@ public final class ProductInteractionBroker implements AutoCloseable {
         if (request.policyContext() == null) {
             return Optional.of(blocked(request, "product_interaction.policy_context_required"));
         }
+        return Optional.empty();
+    }
 
+    private <Req, Res> Optional<ProductInteractionOutcome<Res>> validatePolicyPreflight(
+            ProductInteractionRequest<Req> request) {
         ProductInteractionPolicyDecision policyDecision = policyEvaluator.evaluate(request);
         if (!policyDecision.allowed()) {
             return Optional.of(blocked(request, policyDecision.reasonCode()));
@@ -466,21 +491,44 @@ public final class ProductInteractionBroker implements AutoCloseable {
      * @return Base64-encoded SHA-256 hash of contract schema
      */
     private static String computeContractSchemaHash(ProductInteractionContract contract) {
-        // Hash the contract's policy-relevant fields
-        String contractSchema = String.format("%s::%s::%s::%s::%s::%s::%s::%s::%s::%s",
-                contract.contractId(),
-                contract.contractVersion(),
-                contract.providerProductId(),
-                contract.consumerProductIds(),
-                contract.requiresAuth(),
-                contract.requiresTenant(),
-                contract.requiresConsent(),
-                contract.piiClassification(),
-                contract.tenantScope(),
-                contract.allowedCallerRoles(),
-                contract.allowedPurposes());
-        
-        return CanonicalJsonHasher.hashString(contractSchema);
+        Map<String, Object> canonicalContract = new LinkedHashMap<>();
+        canonicalContract.put("contractId", contract.contractId());
+        canonicalContract.put("contractVersion", contract.contractVersion());
+        canonicalContract.put("providerProductId", contract.providerProductId());
+        canonicalContract.put("consumerProductIds", sorted(contract.consumerProductIds()));
+        canonicalContract.put("requiresAuth", contract.requiresAuth());
+        canonicalContract.put("requiresTenant", contract.requiresTenant());
+        canonicalContract.put("requiresConsent", contract.requiresConsent());
+        canonicalContract.put("piiClassification", contract.piiClassification());
+        canonicalContract.put("tenantScope", contract.tenantScope());
+        canonicalContract.put("allowedCallerRoles", sorted(contract.allowedCallerRoles()));
+        canonicalContract.put("allowedPurposes", sorted(contract.allowedPurposes()));
+        canonicalContract.put("allowedLifecyclePhases", sorted(contract.allowedLifecyclePhases()));
+        canonicalContract.put("degradedModeAllowed", contract.degradedModeAllowed());
+
+        return CanonicalJsonHasher.hash(canonicalContract);
+    }
+
+    private static List<String> sorted(Set<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        List<String> sortedValues = new ArrayList<>(values);
+        sortedValues.sort(Comparator.naturalOrder());
+        return List.copyOf(sortedValues);
+    }
+
+    private static String fallbackInteractionKey(ProductInteractionRequest<?> request, String reasonCode) {
+        return String.format("%s::%s::%s::%s::%s",
+                nullSafe(request.contractId()),
+                nullSafe(request.interactionId()),
+                nullSafe(request.tenantId()),
+                nullSafe(request.workspaceId()),
+                nullSafe(reasonCode));
+    }
+
+    private static String nullSafe(String value) {
+        return value == null ? "missing" : value;
     }
 
     /**
@@ -525,6 +573,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
         private Duration requestTimeout = Duration.ofSeconds(2);
         private Duration cacheTtl = Duration.ofMinutes(5); // Phase 1: Default 5-minute TTL
         private ProductInteractionHandlerRegistry handlerRegistry;
+        private Path developmentEvidenceRoot = Path.of(".kernel", "evidence", "product-interactions");
 
         public Builder register(ProductInteractionHandler<?, ?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -561,6 +610,11 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         public Builder evidenceWriter(ProductInteractionEvidenceWriter writer) {
             this.evidenceWriter = Objects.requireNonNull(writer, "writer must not be null");
+            return this;
+        }
+
+        public Builder developmentEvidenceRoot(Path evidenceRoot) {
+            this.developmentEvidenceRoot = Objects.requireNonNull(evidenceRoot, "evidenceRoot must not be null");
             return this;
         }
 
@@ -607,6 +661,15 @@ public final class ProductInteractionBroker implements AutoCloseable {
         @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable, "product-interaction-broker-timeout");
+            thread.setDaemon(true);
+            return thread;
+        }
+    }
+
+    private static final class DevelopmentEvidenceThreadFactory implements ThreadFactory {
+        @Override
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable, "product-interaction-development-evidence");
             thread.setDaemon(true);
             return thread;
         }

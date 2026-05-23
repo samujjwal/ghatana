@@ -52,6 +52,11 @@ public final class DmOperationContext {
         return tenantId;
     }
 
+    /** Convenience accessor for legacy application services that need the raw tenant ID. */
+    public String tenantId() {
+        return tenantId.getValue();
+    }
+
     /** The workspace this operation is scoped to. Never {@code null}. */
     public DmWorkspaceId getWorkspaceId() {
         return workspaceId;
@@ -60,6 +65,11 @@ public final class DmOperationContext {
     /** The actor performing this operation. Never {@code null}. */
     public ActorRef getActor() {
         return actor;
+    }
+
+    /** Convenience accessor for legacy application services that need the raw actor principal. */
+    public String userId() {
+        return actor.getPrincipalId();
     }
 
     /** The correlation ID for distributed tracing. Never {@code null}. */

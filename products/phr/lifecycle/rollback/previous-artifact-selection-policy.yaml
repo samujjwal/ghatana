@@ -1,0 +1,36 @@
+schemaVersion: 1.0.0
+productId: phr
+requirementId: previous-artifact-selection-policy
+title: PHR previous artifact selection policy
+status: active
+strategy: previous-artifact
+description: Fail-closed policy for selecting the last known good PHR artifact during rollback planning.
+currentVersionRequired: true
+requiresSignedArtifactManifest: true
+requiresStableDeploymentHistory: true
+disallowUnverifiedArtifact: true
+selectionOrder:
+  - latest-stable-verified-deployment
+  - matching-environment-artifact
+  - matching-tenant-scope-artifact
+  - artifact-with-healthcare-gate-evidence
+requiredArtifactEvidence:
+  - artifact-manifest
+  - deployment-manifest
+  - verify-health-report
+  - lifecycle-health-snapshot
+runtimeContract:
+  validator: platform/typescript/kernel-release/src/ProductRollbackPlan.ts
+  requiredFields:
+    - currentVersion
+    - previousArtifactSelection.strategy
+    - previousArtifactSelection.artifactRef
+    - previousArtifactSelection.artifactDigest
+    - previousArtifactSelection.selectedFromRunId
+    - previousArtifactSelection.reasonCode
+failureMode: block-rollback-plan
+evidenceRefs:
+  - platform/typescript/kernel-release/src/ProductRollbackPlan.ts
+  - platform/typescript/kernel-release/src/__tests__/PromotionRollbackGate.test.ts
+validationCommands:
+  - pnpm --filter @ghatana/kernel-release test

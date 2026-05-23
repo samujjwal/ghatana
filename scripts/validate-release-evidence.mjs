@@ -5,6 +5,9 @@ import { execSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { getReleaseMode, validateEvidenceQuality, validateProductCoverage, checkWaiver } from './lib/release-evidence-policy.mjs';
+import { getActiveProducts, loadRegistry } from './lib/product-registry-helper.mjs';
+
 function resolveRepoRoot() {
   const cliRootFlagIndex = process.argv.indexOf('--root');
   const cliRoot = cliRootFlagIndex >= 0 ? process.argv[cliRootFlagIndex + 1] : null;
@@ -15,6 +18,7 @@ function resolveRepoRoot() {
 const repoRoot = resolveRepoRoot();
 const releaseEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const releaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
+const RELEASE_MODE = getReleaseMode();
 const smokeEvidencePath = 'release-evidence/smoke/smoke-e2e-report.json';
 const backupEvidencePath = 'release-evidence/backup/backup-drill-report.json';
 const summaryEvidencePath = 'release-evidence/release-summary.json';
@@ -244,6 +248,11 @@ function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredSce
     return;
   }
 
+  // Validate evidence quality
+  const evidenceText = JSON.stringify(report);
+  const qualityIssues = validateEvidenceQuality(evidenceText, RELEASE_MODE);
+  qualityIssues.forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
+
   if (!Array.isArray(report.violations) || report.violations.length > 0) {
     errors.push(`Failure-injection report has violations: ${latest.relativePath}`);
   }
@@ -262,6 +271,14 @@ function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredSce
   if (typeof report.summary?.executedTestProductCount !== 'number' || report.summary.executedTestProductCount < 1) {
     errors.push(`Failure-injection report must include executedTestProductCount >= 1: ${latest.relativePath}`);
   }
+
+  // Validate product coverage
+  const activeProducts = getActiveProducts();
+  const expectedProductCount = typeof report.summary?.expectedProductCount === 'number'
+    ? report.summary.expectedProductCount
+    : activeProducts.length;
+  const coverageIssues = validateProductCoverage(report.summary.executedTestProductCount, expectedProductCount, RELEASE_MODE);
+  coverageIssues.forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
 }
 
 function readJson(relativePath, errors) {
@@ -511,9 +528,24 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
     return;
   }
 
+  // Validate product coverage
+  const activeProducts = getActiveProducts();
+  const activeProductIds = activeProducts.map(p => p.productId);
+  const expectedProductCount = expectedProductIds.length > 0 ? expectedProductIds.length : activeProductIds.length;
+  const coverageIssues = validateProductCoverage(scorecardFiles.length, expectedProductCount, RELEASE_MODE);
+  coverageIssues.forEach(issue => errors.push(issue.message));
+
   for (const scorecardPath of scorecardFiles) {
+    const productId = path.basename(scorecardPath).replace(/^product-release-readiness\./i, '').replace(/\.json$/i, '');
     const content = readJson(path.relative(repoRoot, scorecardPath).replace(/\\/g, '/'), errors);
     if (!content) {
+      continue;
+    }
+
+    // Check for waivers
+    const waiver = checkWaiver(productId, 'release-readiness', 'scorecard');
+    if (waiver) {
+      console.log(`Waiver found for ${productId}/release-readiness/scorecard: ${waiver.reason}`);
       continue;
     }
 
@@ -542,6 +574,11 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
         errors.push(`Per-product scorecard contains dimensions without numeric score: ${path.basename(scorecardPath)}`);
       }
     }
+
+    // Validate evidence quality
+    const evidenceText = JSON.stringify(content);
+    const qualityIssues = validateEvidenceQuality(evidenceText, RELEASE_MODE);
+    qualityIssues.forEach(issue => errors.push(`${path.basename(scorecardPath)}: ${issue.message}`));
   }
 }
 

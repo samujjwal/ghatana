@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T03:49:22.864Z",
-  "sourceCommit": "f302e89c8e7116e8821a7957b4a06a5d7dff81e7",
+  "generatedAt": "2026-05-23T14:07:56.501Z",
+  "sourceCommit": "367ce916067282d257852cc29649281e80cd56a1",
   "sourceBranch": "main",
   "productScope": [
     "digital-marketing",
@@ -80,6 +80,13 @@
       "productCount": 2,
       "failedProductCount": 0,
       "releaseTargetScore": 4,
+      "dimensionValidation": {
+        "requiredDimensionCount": 47,
+        "productsWithMissingDimensions": 0,
+        "productsWithUnscoredDimensions": 0,
+        "allProductsHaveAllDimensions": true,
+        "allDimensionsScored": true
+      },
       "failedProducts": []
     },
     "requiredGates": [

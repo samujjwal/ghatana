@@ -1,0 +1,28 @@
+schemaVersion: 1.0.0
+productId: phr
+requirementId: rollback-approval-contract
+title: PHR rollback approval contract
+status: active
+description: Approval requirements for regulated PHR rollback execution.
+approvalRequired: true
+approvalMode: explicit-recorded-approval
+requiredApproverRoles:
+  - healthcare-product-owner
+  - sre-lead
+  - security-reviewer
+requiredApprovalFields:
+  - approvalGateRef
+  - approverId
+  - approverRole
+  - approvedAt
+  - reasonCode
+  - rollbackTargetArtifact
+  - healthcareRiskAcknowledgement
+runtimeContract:
+  validator: platform/typescript/kernel-release/src/ProductRollbackPlan.ts
+  failureMode: block-rollback-plan
+evidenceRefs:
+  - platform/typescript/kernel-release/src/ProductRollbackPlan.ts
+  - platform/typescript/kernel-release/src/__tests__/PromotionRollbackGate.test.ts
+validationCommands:
+  - pnpm --filter @ghatana/kernel-release test

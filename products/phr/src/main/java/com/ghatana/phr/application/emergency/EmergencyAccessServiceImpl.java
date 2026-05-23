@@ -47,12 +47,12 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
         );
 
         emergencyAccesses.put(emergencyAccessId, emergencyAccess);
-        return Promise.complete(emergencyAccess);
+        return Promise.of(emergencyAccess);
     }
 
     @Override
     public Promise<Optional<EmergencyAccess>> getEmergencyAccess(PatientOperationContext ctx, String emergencyAccessId) {
-        return Promise.complete(Optional.ofNullable(emergencyAccesses.get(emergencyAccessId)));
+        return Promise.of(Optional.ofNullable(emergencyAccesses.get(emergencyAccessId)));
     }
 
     @Override
@@ -78,12 +78,12 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
         );
 
         emergencyAccesses.put(emergencyAccessId, extended);
-        return Promise.complete(extended);
+        return Promise.of(extended);
     }
 
     @Override
     public Promise<List<EmergencyAccess>> listEmergencyAccess(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(emergencyAccesses.values().stream()
+        return Promise.of(emergencyAccesses.values().stream()
             .filter(e -> e.patientId().equals(patientId))
             .toList());
     }
@@ -113,6 +113,6 @@ public class EmergencyAccessServiceImpl implements EmergencyAccessService {
         );
 
         emergencyAccesses.put(emergencyAccessId, reviewed);
-        return Promise.complete(reviewed);
+        return Promise.of(reviewed);
     }
 }

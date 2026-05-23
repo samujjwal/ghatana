@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T03:22:14.369Z",
+  "generatedAt": "2026-05-23T14:08:21.096Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 50,
@@ -13,7 +13,7 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-23T03:22:14.371Z",
+    "generatedAt": "2026-05-23T14:08:21.096Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 50,
     "deferredTaskIds": [

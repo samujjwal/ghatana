@@ -58,6 +58,13 @@ const REQUIRED_ROLLBACK_ENABLEMENT_ITEMS = [
   'healthcare-post-rollback-verification-gates',
   'rollback-approval-contract',
 ];
+const REQUIRED_ROLLBACK_EVIDENCE_REFS = [
+  'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml',
+  'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
+  'products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml',
+  'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
+  'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
+];
 const REQUIRED_MANIFEST_SCHEMA_VERSIONS = [
   'lifecycle-result',
   'artifact-manifest',
@@ -207,6 +214,107 @@ function validateRollbackReadiness(label, rollbackReadiness, errors) {
     REQUIRED_ROLLBACK_ENABLEMENT_ITEMS,
     errors,
   );
+  includesAll(`${label}.evidenceRefs`, rollbackReadiness.evidenceRefs, REQUIRED_ROLLBACK_EVIDENCE_REFS, errors);
+}
+
+function validateRollbackEvidenceFile(relativePath, expectedRequirementId, loadYaml, exists, errors) {
+  if (!exists(relativePath)) {
+    errors.push(`PHR rollback evidence file is missing: ${relativePath}`);
+    return;
+  }
+
+  const evidence = loadYaml(relativePath);
+  if (evidence.productId !== PRODUCT_ID) {
+    errors.push(`${relativePath} must declare productId: phr`);
+  }
+  if (evidence.requirementId !== expectedRequirementId) {
+    errors.push(`${relativePath} must declare requirementId: ${expectedRequirementId}`);
+  }
+  requireNonEmptyString(`${relativePath}.schemaVersion`, evidence.schemaVersion, errors);
+  requireNonEmptyString(`${relativePath}.title`, evidence.title, errors);
+  requireNonEmptyString(`${relativePath}.description`, evidence.description, errors);
+  requireNonEmptyString(`${relativePath}.status`, evidence.status, errors);
+  for (const evidenceRef of asArray(evidence.evidenceRefs)) {
+    if (!exists(evidenceRef)) {
+      errors.push(`${relativePath} references missing evidence file ${evidenceRef}`);
+    }
+  }
+}
+
+function validateRollbackEvidence(loadYaml, exists, errors) {
+  const readinessPath = 'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml';
+  if (!exists(readinessPath)) {
+    errors.push(`PHR rollback readiness evidence index is missing: ${readinessPath}`);
+    return;
+  }
+
+  const readiness = loadYaml(readinessPath);
+  if (readiness.productId !== PRODUCT_ID) {
+    errors.push(`${readinessPath} must declare productId: phr`);
+  }
+  if (readiness.status !== 'target-partial' || readiness.classification !== 'target/partial') {
+    errors.push(`${readinessPath} must preserve target-partial classification until stable deploy history exists`);
+  }
+  if (readiness.promotionBlocked !== true) {
+    errors.push(`${readinessPath} must declare promotionBlocked: true`);
+  }
+  includesAll(
+    `${readinessPath}.evidenceRefs`,
+    readiness.evidenceRefs,
+    REQUIRED_ROLLBACK_EVIDENCE_REFS.filter((ref) => ref !== readinessPath),
+    errors,
+  );
+
+  const requirements = new Map(asArray(readiness.requirements).map((requirement) => [requirement.requirementId, requirement]));
+  for (const requirementId of REQUIRED_ROLLBACK_ENABLEMENT_ITEMS) {
+    const requirement = requirements.get(requirementId);
+    if (!requirement?.evidenceRef) {
+      errors.push(`${readinessPath} missing requirement evidenceRef for ${requirementId}`);
+      continue;
+    }
+    validateRollbackEvidenceFile(requirement.evidenceRef, requirementId, loadYaml, exists, errors);
+  }
+
+  const stablePolicy = loadYaml('products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml');
+  if (stablePolicy.status !== 'blocked') {
+    errors.push('PHR stable deployment manifest history policy must remain blocked until real deploy/verify evidence exists');
+  }
+  includesAll(
+    'PHR stable deployment manifest history required manifests',
+    stablePolicy.requiredManifestTypes,
+    ['artifact-manifest', 'deployment-manifest', 'verify-health-report', 'lifecycle-health-snapshot'],
+    errors,
+  );
+
+  const previousArtifactPolicy = loadYaml('products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml');
+  if (previousArtifactPolicy.strategy !== 'previous-artifact' || previousArtifactPolicy.failureMode !== 'block-rollback-plan') {
+    errors.push('PHR previous artifact policy must use previous-artifact strategy and block invalid rollback plans');
+  }
+  if (previousArtifactPolicy.requiresStableDeploymentHistory !== true || previousArtifactPolicy.disallowUnverifiedArtifact !== true) {
+    errors.push('PHR previous artifact policy must require stable history and disallow unverified artifacts');
+  }
+
+  const healthcareGates = loadYaml('products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml');
+  includesAll('PHR rollback healthcare verification gates', healthcareGates.requiredGates, REQUIRED_HEALTHCARE_GATES, errors);
+  for (const gateId of REQUIRED_HEALTHCARE_GATES) {
+    if (!healthcareGates.requiredGateEvidenceRefs?.[gateId]) {
+      errors.push(`PHR rollback healthcare verification gates missing evidence refs for ${gateId}`);
+    }
+  }
+
+  const approval = loadYaml('products/phr/lifecycle/rollback/rollback-approval-contract.yaml');
+  if (approval.approvalRequired !== true || approval.approvalMode !== 'explicit-recorded-approval') {
+    errors.push('PHR rollback approval contract must require explicit recorded approval');
+  }
+  includesAll('PHR rollback approval fields', approval.requiredApprovalFields, [
+    'approvalGateRef',
+    'approverId',
+    'approverRole',
+    'approvedAt',
+    'reasonCode',
+    'rollbackTargetArtifact',
+    'healthcareRiskAcknowledgement',
+  ], errors);
 }
 
 function checkUnsafeSecretDefaults(envExampleContent) {
@@ -451,6 +559,7 @@ export function validatePhrLifecyclePilot(options = {}) {
     errors.push('PHR kernel-product.yaml executionEnabled must be true');
   }
   validateRollbackReadiness('PHR kernel rollbackReadiness', config.rollbackReadiness, errors);
+  validateRollbackEvidence(loadYaml, exists, errors);
   if (config.phases?.rollback || config.requiredManifests?.rollback) {
     errors.push('PHR rollback phase/manifests must remain absent until rollbackReadiness is promoted from target-partial');
   }

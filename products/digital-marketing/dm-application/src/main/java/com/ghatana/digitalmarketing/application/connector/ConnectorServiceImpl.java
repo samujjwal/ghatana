@@ -4,6 +4,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.connector.ExternalConnector;
 import io.activej.promise.Promise;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -30,18 +31,18 @@ public class ConnectorServiceImpl implements ConnectorService {
             .tenantId(ctx.tenantId())
             .name(request.name())
             .connectorType(ExternalConnector.ConnectorType.valueOf(request.connectorType()))
-            .config(request.config())
+            .config(toDomainConfig(request.config()))
             .status(ExternalConnector.ConnectorStatus.PENDING)
             .createdBy(ctx.userId())
             .build();
 
         connectors.put(connectorId, connector);
-        return Promise.complete(connector);
+        return Promise.of(connector);
     }
 
     @Override
     public Promise<Optional<ExternalConnector>> getConnector(DmOperationContext ctx, String connectorId) {
-        return Promise.complete(Optional.ofNullable(connectors.get(connectorId)));
+        return Promise.of(Optional.ofNullable(connectors.get(connectorId)));
     }
 
     @Override
@@ -56,7 +57,7 @@ public class ConnectorServiceImpl implements ConnectorService {
             .tenantId(connector.tenantId())
             .name(connector.name())
             .connectorType(connector.connectorType())
-            .config(config)
+            .config(toDomainConfig(config))
             .status(ExternalConnector.ConnectorStatus.PENDING)
             .googleAdsAccountId(connector.googleAdsAccountId())
             .createdAt(connector.createdAt())
@@ -64,7 +65,7 @@ public class ConnectorServiceImpl implements ConnectorService {
             .build();
         
         connectors.put(connectorId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
@@ -100,7 +101,7 @@ public class ConnectorServiceImpl implements ConnectorService {
             Instant.now().toString()
         );
 
-        return Promise.complete(result);
+        return Promise.of(result);
     }
 
     @Override
@@ -126,7 +127,7 @@ public class ConnectorServiceImpl implements ConnectorService {
             .build();
 
         connectors.put(connectorId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
@@ -140,17 +141,27 @@ public class ConnectorServiceImpl implements ConnectorService {
         GoogleAdsSyncHealth health = new GoogleAdsSyncHealth(
             true,
             Instant.now().toString(),
-            Instant.now().plusMinutes(15).toString(),
+            Instant.now().plus(Duration.ofMinutes(15)).toString(),
             0,
             0,
             "within_limits"
         );
 
-        return Promise.complete(health);
+        return Promise.of(health);
     }
 
     @Override
     public Promise<List<ExternalConnector>> listConnectors(DmOperationContext ctx, int limit) {
-        return Promise.complete(connectors.values().stream().limit(limit).toList());
+        return Promise.of(connectors.values().stream().limit(limit).toList());
+    }
+
+    private static ExternalConnector.ConnectorConfig toDomainConfig(ConnectorConfig config) {
+        return new ExternalConnector.ConnectorConfig(
+            config.endpoint(),
+            config.apiKey(),
+            config.apiSecret(),
+            config.region(),
+            config.additionalConfig()
+        );
     }
 }

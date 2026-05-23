@@ -1,8 +1,11 @@
 package com.ghatana.kernel.interaction;
 
+import com.ghatana.kernel.bridge.port.BridgeContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,19 +31,19 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
     @Override
     public boolean store(ProductInteractionEventEnvelope<?> envelope, ProductInteractionStatus status) {
         StoredEvent stored = new StoredEvent(envelope, status, System.currentTimeMillis());
-        eventsByEventId.put(envelope.eventId(), stored);
+        eventsByEventId.put(eventKey(envelope.tenantId(), envelope.workspaceId(), envelope.eventId()), stored);
         return true;
     }
 
     @Override
-    public Optional<ProductInteractionEventEnvelope<?>> get(String eventId) {
-        StoredEvent stored = eventsByEventId.get(eventId);
+    public Optional<ProductInteractionEventEnvelope<?>> get(BridgeContext context, String eventId) {
+        StoredEvent stored = eventsByEventId.get(eventKey(context, eventId));
         return Optional.ofNullable(stored).map(e -> e.envelope);
     }
 
     @Override
-    public boolean updateStatus(String eventId, ProductInteractionStatus status) {
-        StoredEvent stored = eventsByEventId.get(eventId);
+    public boolean updateStatus(BridgeContext context, String eventId, ProductInteractionStatus status) {
+        StoredEvent stored = eventsByEventId.get(eventKey(context, eventId));
         if (stored != null) {
             stored.status = status;
             return true;
@@ -49,8 +52,8 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
     }
 
     @Override
-    public boolean isDelivered(String eventId) {
-        StoredEvent stored = eventsByEventId.get(eventId);
+    public boolean isDelivered(BridgeContext context, String eventId) {
+        StoredEvent stored = eventsByEventId.get(eventKey(context, eventId));
         return stored != null && stored.status == ProductInteractionStatus.SUCCEEDED;
     }
 
@@ -63,10 +66,10 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
     }
 
     @Override
-    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(String topic, int limit) {
+    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(BridgeContext context, String topic, int limit) {
         List<ProductInteractionEventEnvelope<?>> events = new ArrayList<>();
         for (StoredEvent event : dlqEvents) {
-            if (event.envelope.topic().equals(topic)) {
+            if (matchesScope(context, event.envelope) && event.envelope.topic().equals(topic)) {
                 events.add(event.envelope);
                 if (events.size() >= limit) {
                     break;
@@ -77,10 +80,15 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
     }
 
     @Override
-    public List<ProductInteractionEventEnvelope<?>> getEventsForReplay(String topic, long fromTimestampMs, long toTimestampMs, int limit) {
+    public List<ProductInteractionEventEnvelope<?>> getEventsForReplay(
+            BridgeContext context,
+            String topic,
+            long fromTimestampMs,
+            long toTimestampMs,
+            int limit) {
         List<ProductInteractionEventEnvelope<?>> events = new ArrayList<>();
         for (StoredEvent event : eventsByEventId.values()) {
-            if (!event.envelope.topic().equals(topic)) {
+            if (!matchesScope(context, event.envelope) || !event.envelope.topic().equals(topic)) {
                 continue;
             }
             if (event.timestampMs < fromTimestampMs || event.timestampMs > toTimestampMs) {
@@ -95,11 +103,14 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
     }
 
     @Override
-    public long deleteEventsBefore(long beforeTimestampMs) {
+    public long deleteEventsBefore(BridgeContext context, long beforeTimestampMs) {
         long count = eventsByEventId.values().stream()
+            .filter(e -> matchesScope(context, e.envelope))
             .filter(e -> e.timestampMs < beforeTimestampMs)
             .count();
-        eventsByEventId.entrySet().removeIf(entry -> entry.getValue().timestampMs < beforeTimestampMs);
+        eventsByEventId.entrySet().removeIf(entry ->
+                matchesScope(context, entry.getValue().envelope)
+                        && entry.getValue().timestampMs < beforeTimestampMs);
         return count;
     }
 
@@ -140,5 +151,28 @@ public final class InMemoryProductInteractionEventProvider implements ProductInt
             this.status = status;
             this.timestampMs = timestampMs;
         }
+    }
+
+    private static String eventKey(BridgeContext context, String eventId) {
+        Objects.requireNonNull(context, "context must not be null");
+        return eventKey(context.getTenantId(), requireWorkspace(context), eventId);
+    }
+
+    private static String eventKey(String tenantId, String workspaceId, String eventId) {
+        return tenantId + "::" + workspaceId + "::" + eventId;
+    }
+
+    private static boolean matchesScope(BridgeContext context, ProductInteractionEventEnvelope<?> envelope) {
+        Objects.requireNonNull(context, "context must not be null");
+        return Objects.equals(context.getTenantId(), envelope.tenantId())
+                && Objects.equals(requireWorkspace(context), envelope.workspaceId());
+    }
+
+    private static String requireWorkspace(BridgeContext context) {
+        String workspaceId = context.getWorkspaceId();
+        if (workspaceId == null || workspaceId.isBlank()) {
+            throw new IllegalArgumentException("context workspaceId must not be blank");
+        }
+        return workspaceId;
     }
 }

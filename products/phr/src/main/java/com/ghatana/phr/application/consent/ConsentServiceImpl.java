@@ -35,12 +35,12 @@ public class ConsentServiceImpl implements ConsentService {
             "PENDING",
             Instant.now().toString()
         );
-        return Promise.complete(consentRequest);
+        return Promise.of(consentRequest);
     }
 
     @Override
     public Promise<Optional<Consent>> getConsent(PatientOperationContext ctx, String consentId) {
-        return Promise.complete(Optional.ofNullable(consents.get(consentId)));
+        return Promise.of(Optional.ofNullable(consents.get(consentId)));
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ConsentServiceImpl implements ConsentService {
             existing.revokedAt()
         );
         consents.put(consentId, updated);
-        return Promise.complete(updated);
+        return Promise.of(updated);
     }
 
     @Override
@@ -76,18 +76,18 @@ public class ConsentServiceImpl implements ConsentService {
             existing.consentType(),
             existing.scope(),
             existing.purpose(),
-            Consent.ConsentStatus.REVOKED,
+            ConsentStatus.REVOKED,
             existing.grantedAt(),
             existing.expiresAt(),
             Instant.now().toString()
         );
         consents.put(consentId, revoked);
-        return Promise.complete(revoked);
+        return Promise.of(revoked);
     }
 
     @Override
     public Promise<List<Consent>> listConsents(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(consents.values().stream()
+        return Promise.of(consents.values().stream()
             .filter(c -> c.patientId().equals(patientId))
             .toList());
     }
@@ -96,6 +96,6 @@ public class ConsentServiceImpl implements ConsentService {
     public Promise<ConsentAuditTrail> getConsentAuditTrail(PatientOperationContext ctx, String patientId) {
         List<ConsentAuditEntry> entries = auditTrails.getOrDefault(patientId, List.of());
         ConsentAuditTrail trail = new ConsentAuditTrail(patientId, entries);
-        return Promise.complete(trail);
+        return Promise.of(trail);
     }
 }

@@ -45,8 +45,8 @@ function writeJsonWithRetry(targetPath, payload, maxAttempts = 8) {
 }
 
 const checks = [
-  { name: 'Runtime dependency failure-injection executable', command: ['node', './scripts/check-runtime-dependency-failure-injection.mjs', '--ci', '--product=Data Cloud Launcher'] },
-  { name: 'Atomic workflow failure-injection executable', command: ['node', './scripts/check-atomic-workflow-failure-injection.mjs', '--ci', '--product=Data Cloud Launcher'] },
+  { name: 'Runtime dependency failure-injection executable', command: ['node', './scripts/check-runtime-dependency-failure-injection.mjs', '--ci', '--product=data-cloud'] },
+  { name: 'Atomic workflow failure-injection executable', command: ['node', './scripts/check-atomic-workflow-failure-injection.mjs', '--ci', '--product=data-cloud'] },
   { name: 'Runtime failure-injection posture', command: ['node', './scripts/check-runtime-failure-injection.mjs'] },
   { name: 'Atomic workflow proof', command: ['node', './scripts/check-atomic-workflow-proof.mjs'] },
   { name: 'AI governance conformance', command: ['node', './scripts/check-ai-governance-conformance.mjs'] },

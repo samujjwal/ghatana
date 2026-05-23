@@ -30,7 +30,7 @@ public class DataSovereigntyServiceImpl implements DataSovereigntyService {
                 "backup", "us-west-2"
             )
         );
-        return Promise.complete(status);
+        return Promise.of(status);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class DataSovereigntyServiceImpl implements DataSovereigntyService {
             List.of(),
             Instant.now().toString()
         );
-        return Promise.complete(validation);
+        return Promise.of(validation);
     }
 
     @Override
@@ -78,6 +78,6 @@ public class DataSovereigntyServiceImpl implements DataSovereigntyService {
             items
         );
 
-        return Promise.complete(report);
+        return Promise.of(report);
     }
 }

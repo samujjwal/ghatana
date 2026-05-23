@@ -34,12 +34,12 @@ public class CustomerServiceImpl implements CustomerService {
             .build();
 
         customers.put(customerId, customer);
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 
     @Override
     public Promise<Optional<Customer>> getCustomer(DmOperationContext ctx, String customerId) {
-        return Promise.complete(Optional.ofNullable(customers.get(customerId)));
+        return Promise.of(Optional.ofNullable(customers.get(customerId)));
     }
 
     @Override
@@ -49,7 +49,7 @@ public class CustomerServiceImpl implements CustomerService {
             return Promise.ofException(new IllegalArgumentException("Customer not found: " + customerId));
         }
         customer.updateProfile(profile);
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class CustomerServiceImpl implements CustomerService {
             return Promise.ofException(new IllegalArgumentException("Customer not found: " + customerId));
         }
         customer.activate();
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class CustomerServiceImpl implements CustomerService {
             return Promise.ofException(new IllegalArgumentException("Customer not found: " + customerId));
         }
         customer.deactivate(deactivatedBy);
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class CustomerServiceImpl implements CustomerService {
             return Promise.ofException(new IllegalArgumentException("Customer not found: " + customerId));
         }
         // In a real implementation, this would update the consent status
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 
     @Override
@@ -89,6 +89,6 @@ public class CustomerServiceImpl implements CustomerService {
             return Promise.ofException(new IllegalArgumentException("Customer not found: " + customerId));
         }
         // In a real implementation, this would update the consent status
-        return Promise.complete(customer);
+        return Promise.of(customer);
     }
 }

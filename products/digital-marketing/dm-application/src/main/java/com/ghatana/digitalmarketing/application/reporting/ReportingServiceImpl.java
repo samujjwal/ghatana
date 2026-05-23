@@ -31,7 +31,7 @@ public class ReportingServiceImpl implements ReportingService {
             request.reportType(),
             Instant.now().toString(),
             Map.of("status", "generating", "request", request),
-            Report.ReportStatus.GENERATING
+            ReportStatus.GENERATING
         );
 
         reports.put(reportId, report);
@@ -42,11 +42,11 @@ public class ReportingServiceImpl implements ReportingService {
             request.reportType(),
             Instant.now().toString(),
             Map.of("status", "completed", "data", "sample_report_data"),
-            Report.ReportStatus.COMPLETED
+            ReportStatus.COMPLETED
         );
 
         reports.put(reportId, completed);
-        return Promise.complete(completed);
+        return Promise.of(completed);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class ReportingServiceImpl implements ReportingService {
         if (report == null) {
             return Promise.ofException(new IllegalArgumentException("Report not found: " + reportId));
         }
-        return Promise.complete(report);
+        return Promise.of(report);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ReportingServiceImpl implements ReportingService {
         if (dashboard == null) {
             return Promise.ofException(new IllegalArgumentException("Dashboard not found: " + dashboardId));
         }
-        return Promise.complete(dashboard);
+        return Promise.of(dashboard);
     }
 
     @Override
@@ -77,6 +77,6 @@ public class ReportingServiceImpl implements ReportingService {
         );
 
         dashboards.put(dashboardId, refreshed);
-        return Promise.complete(refreshed);
+        return Promise.of(refreshed);
     }
 }

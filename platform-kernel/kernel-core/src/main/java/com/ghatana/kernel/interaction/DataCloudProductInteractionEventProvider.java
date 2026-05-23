@@ -1,6 +1,7 @@
 package com.ghatana.kernel.interaction;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.bridge.port.BridgeContext;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -60,49 +61,77 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
     }
 
     @Override
-    public Optional<ProductInteractionEventEnvelope<?>> get(String eventId) {
+    public Optional<ProductInteractionEventEnvelope<?>> get(BridgeContext context, String eventId) {
+        Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(eventId, "eventId must not be null");
         
         try {
-            Map<String, Object> eventRecord = dataCloudClient.getEvent(EVENT_COLLECTION, eventId);
+            Map<String, Object> eventRecord = dataCloudClient.getEvent(
+                context.getTenantId(),
+                requireWorkspace(context),
+                EVENT_COLLECTION,
+                eventId
+            );
             if (eventRecord == null) {
+                return Optional.empty();
+            }
+            if (!matchesScope(context, eventRecord)) {
                 return Optional.empty();
             }
             return Optional.of(fromEventRecord(eventRecord));
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to retrieve event %s from Data Cloud", eventId), error);
+                String.format("Failed to retrieve event %s from Data Cloud for tenant=%s workspace=%s",
+                    eventId, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
     @Override
-    public boolean updateStatus(String eventId, ProductInteractionStatus status) {
+    public boolean updateStatus(BridgeContext context, String eventId, ProductInteractionStatus status) {
+        Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(eventId, "eventId must not be null");
         Objects.requireNonNull(status, "status must not be null");
         
         try {
-            dataCloudClient.updateEventStatus(EVENT_COLLECTION, eventId, status.name());
+            dataCloudClient.updateEventStatus(
+                context.getTenantId(),
+                requireWorkspace(context),
+                EVENT_COLLECTION,
+                eventId,
+                status.name()
+            );
             return true;
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to update status for event %s in Data Cloud", eventId), error);
+                String.format("Failed to update status for event %s in Data Cloud for tenant=%s workspace=%s",
+                    eventId, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
     @Override
-    public boolean isDelivered(String eventId) {
+    public boolean isDelivered(BridgeContext context, String eventId) {
+        Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(eventId, "eventId must not be null");
         
         try {
-            Map<String, Object> eventRecord = dataCloudClient.getEvent(EVENT_COLLECTION, eventId);
+            Map<String, Object> eventRecord = dataCloudClient.getEvent(
+                context.getTenantId(),
+                requireWorkspace(context),
+                EVENT_COLLECTION,
+                eventId
+            );
             if (eventRecord == null) {
+                return false;
+            }
+            if (!matchesScope(context, eventRecord)) {
                 return false;
             }
             String status = (String) eventRecord.get("status");
             return ProductInteractionStatus.SUCCEEDED.name().equals(status);
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to check delivery status for event %s in Data Cloud", eventId), error);
+                String.format("Failed to check delivery status for event %s in Data Cloud for tenant=%s workspace=%s",
+                    eventId, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
@@ -129,7 +158,8 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
     }
 
     @Override
-    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(String topic, int limit) {
+    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(BridgeContext context, String topic, int limit) {
+        Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(topic, "topic must not be null");
         if (limit <= 0) {
             throw new IllegalArgumentException("limit must be positive");
@@ -137,6 +167,8 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
         
         try {
             List<Map<String, Object>> dlqRecords = dataCloudClient.queryDlqEvents(
+                context.getTenantId(),
+                requireWorkspace(context),
                 DLQ_COLLECTION,
                 topic,
                 limit
@@ -144,21 +176,26 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
             
             List<ProductInteractionEventEnvelope<?>> events = new ArrayList<>();
             for (Map<String, Object> record : dlqRecords) {
-                events.add(fromEventRecord(record));
+                if (matchesScope(context, record)) {
+                    events.add(fromEventRecord(record));
+                }
             }
             return events;
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to retrieve DLQ events for topic %s from Data Cloud", topic), error);
+                String.format("Failed to retrieve DLQ events for topic %s from Data Cloud for tenant=%s workspace=%s",
+                    topic, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
     @Override
     public List<ProductInteractionEventEnvelope<?>> getEventsForReplay(
+            BridgeContext context,
             String topic,
             long fromTimestampMs,
             long toTimestampMs,
             int limit) {
+        Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(topic, "topic must not be null");
         if (limit <= 0) {
             throw new IllegalArgumentException("limit must be positive");
@@ -172,6 +209,8 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
         
         try {
             List<Map<String, Object>> eventRecords = dataCloudClient.queryEventsForReplay(
+                context.getTenantId(),
+                requireWorkspace(context),
                 EVENT_COLLECTION,
                 topic,
                 fromTimestampMs,
@@ -181,26 +220,36 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
             
             List<ProductInteractionEventEnvelope<?>> events = new ArrayList<>();
             for (Map<String, Object> record : eventRecords) {
-                events.add(fromEventRecord(record));
+                if (matchesScope(context, record)) {
+                    events.add(fromEventRecord(record));
+                }
             }
             return events;
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to retrieve events for replay for topic %s from Data Cloud", topic), error);
+                String.format("Failed to retrieve events for replay for topic %s from Data Cloud for tenant=%s workspace=%s",
+                    topic, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
     @Override
-    public long deleteEventsBefore(long beforeTimestampMs) {
+    public long deleteEventsBefore(BridgeContext context, long beforeTimestampMs) {
+        Objects.requireNonNull(context, "context must not be null");
         if (beforeTimestampMs < 0) {
             throw new IllegalArgumentException("timestamp must be non-negative");
         }
         
         try {
-            return dataCloudClient.deleteEventsBefore(EVENT_COLLECTION, beforeTimestampMs);
+            return dataCloudClient.deleteEventsBefore(
+                context.getTenantId(),
+                requireWorkspace(context),
+                EVENT_COLLECTION,
+                beforeTimestampMs
+            );
         } catch (Exception error) {
             throw new RuntimeException(
-                String.format("Failed to delete events before %d from Data Cloud", beforeTimestampMs), error);
+                String.format("Failed to delete events before %d from Data Cloud for tenant=%s workspace=%s",
+                    beforeTimestampMs, context.getTenantId(), requireWorkspace(context)), error);
         }
     }
 
@@ -273,6 +322,19 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
         );
     }
 
+    private static String requireWorkspace(BridgeContext context) {
+        String workspaceId = context.getWorkspaceId();
+        if (workspaceId == null || workspaceId.isBlank()) {
+            throw new IllegalArgumentException("context workspaceId must not be blank");
+        }
+        return workspaceId;
+    }
+
+    private static boolean matchesScope(BridgeContext context, Map<String, Object> record) {
+        return Objects.equals(context.getTenantId(), record.get("tenantId"))
+            && Objects.equals(requireWorkspace(context), record.get("workspaceId"));
+    }
+
     /**
      * Data Cloud client interface for event storage operations.
      */
@@ -291,17 +353,30 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
         /**
          * Retrieves an event record by ID.
          */
-        Map<String, Object> getEvent(String collection, String eventId);
+        Map<String, Object> getEvent(
+            String tenantId,
+            String workspaceId,
+            String collection,
+            String eventId
+        );
 
         /**
          * Updates the status of an event.
          */
-        void updateEventStatus(String collection, String eventId, String status);
+        void updateEventStatus(
+            String tenantId,
+            String workspaceId,
+            String collection,
+            String eventId,
+            String status
+        );
 
         /**
          * Queries DLQ events for a topic.
          */
         List<Map<String, Object>> queryDlqEvents(
+            String tenantId,
+            String workspaceId,
             String collection,
             String topic,
             int limit
@@ -311,6 +386,8 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
          * Queries events for replay within a time range.
          */
         List<Map<String, Object>> queryEventsForReplay(
+            String tenantId,
+            String workspaceId,
             String collection,
             String topic,
             long fromTimestampMs,
@@ -321,6 +398,11 @@ public final class DataCloudProductInteractionEventProvider implements ProductIn
         /**
          * Deletes events older than a timestamp.
          */
-        long deleteEventsBefore(String collection, long beforeTimestampMs);
+        long deleteEventsBefore(
+            String tenantId,
+            String workspaceId,
+            String collection,
+            long beforeTimestampMs
+        );
     }
 }

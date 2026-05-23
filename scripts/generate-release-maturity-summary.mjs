@@ -68,7 +68,18 @@ const perProductReleaseScorecards = readPerProductReleaseScorecards();
 const perProductFailedScorecards = perProductReleaseScorecards.filter((scorecard) => {
   const verdictPass = scorecard.releaseVerdict === 'pass';
   const averageScore = Number(scorecard.averageScore ?? 0);
-  return !verdictPass || averageScore < releaseTargetScore;
+  const hasAllDimensions = Array.isArray(scorecard.dimensions) && scorecard.dimensions.length === 47;
+  const allDimensionsScored = hasAllDimensions && scorecard.dimensions.every(d => typeof d?.score === 'number');
+  return !verdictPass || averageScore < releaseTargetScore || !hasAllDimensions || !allDimensionsScored;
+});
+
+// Validate that all scorecards have 47 dimensions
+const scorecardsWithMissingDimensions = perProductReleaseScorecards.filter((scorecard) => {
+  return !Array.isArray(scorecard.dimensions) || scorecard.dimensions.length !== 47;
+});
+
+const scorecardsWithUnscoredDimensions = perProductReleaseScorecards.filter((scorecard) => {
+  return Array.isArray(scorecard.dimensions) && scorecard.dimensions.some(d => typeof d?.score !== 'number');
 });
 const unresolvedP0P1Blockers = perProductReleaseScorecards
   .flatMap((scorecard) => scorecard.blockingGaps ?? [])
@@ -188,14 +199,22 @@ const summary = {
     },
     perProductReleaseReadiness: {
       available: perProductReleaseScorecards.length > 0,
-      pass: perProductReleaseScorecards.length > 0 && perProductFailedScorecards.length === 0,
+      pass: perProductReleaseScorecards.length > 0 && perProductFailedScorecards.length === 0 && scorecardsWithMissingDimensions.length === 0 && scorecardsWithUnscoredDimensions.length === 0,
       productCount: perProductReleaseScorecards.length,
       failedProductCount: perProductFailedScorecards.length,
       releaseTargetScore,
+      dimensionValidation: {
+        requiredDimensionCount: 47,
+        productsWithMissingDimensions: scorecardsWithMissingDimensions.length,
+        productsWithUnscoredDimensions: scorecardsWithUnscoredDimensions.length,
+        allProductsHaveAllDimensions: scorecardsWithMissingDimensions.length === 0,
+        allDimensionsScored: scorecardsWithUnscoredDimensions.length === 0,
+      },
       failedProducts: perProductFailedScorecards.map((scorecard) => ({
         productId: scorecard.productId,
         releaseVerdict: scorecard.releaseVerdict,
         averageScore: scorecard.averageScore,
+        dimensionCount: scorecard.dimensions?.length ?? 0,
       })),
     },
   },

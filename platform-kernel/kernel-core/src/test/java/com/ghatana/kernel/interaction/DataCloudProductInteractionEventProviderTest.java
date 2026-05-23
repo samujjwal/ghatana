@@ -1,5 +1,6 @@
 package com.ghatana.kernel.interaction;
 
+import com.ghatana.kernel.bridge.port.BridgeContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,13 @@ import static org.mockito.Mockito.*;
  */
 @DisplayName("DataCloudProductInteractionEventProvider Tests")
 class DataCloudProductInteractionEventProviderTest {
+
+    private static final BridgeContext TENANT_1_CONTEXT = BridgeContext.builder()
+        .tenantId("tenant-1")
+        .workspaceId("workspace-1")
+        .principalId("principal-1")
+        .correlationId("correlation-1")
+        .build();
 
     @Test
     @DisplayName("Store event successfully")
@@ -55,9 +63,10 @@ class DataCloudProductInteractionEventProviderTest {
             new DataCloudProductInteractionEventProvider(mockClient);
         
         Map<String, Object> eventRecord = createTestEventRecord();
-        when(mockClient.getEvent("product-interaction-events", "event-1")).thenReturn(eventRecord);
+        when(mockClient.getEvent("tenant-1", "workspace-1", "product-interaction-events", "event-1"))
+            .thenReturn(eventRecord);
         
-        Optional<ProductInteractionEventEnvelope<?>> result = provider.get("event-1");
+        Optional<ProductInteractionEventEnvelope<?>> result = provider.get(TENANT_1_CONTEXT, "event-1");
         
         assertTrue(result.isPresent());
         assertEquals("event-1", result.get().eventId());
@@ -72,9 +81,10 @@ class DataCloudProductInteractionEventProviderTest {
         DataCloudProductInteractionEventProvider provider = 
             new DataCloudProductInteractionEventProvider(mockClient);
         
-        when(mockClient.getEvent("product-interaction-events", "event-1")).thenReturn(null);
+        when(mockClient.getEvent("tenant-1", "workspace-1", "product-interaction-events", "event-1"))
+            .thenReturn(null);
         
-        Optional<ProductInteractionEventEnvelope<?>> result = provider.get("event-1");
+        Optional<ProductInteractionEventEnvelope<?>> result = provider.get(TENANT_1_CONTEXT, "event-1");
         
         assertFalse(result.isPresent());
     }
@@ -88,12 +98,14 @@ class DataCloudProductInteractionEventProviderTest {
         DataCloudProductInteractionEventProvider provider = 
             new DataCloudProductInteractionEventProvider(mockClient);
         
-        doNothing().when(mockClient).updateEventStatus("product-interaction-events", "event-1", "SUCCEEDED");
+        doNothing().when(mockClient).updateEventStatus(
+            "tenant-1", "workspace-1", "product-interaction-events", "event-1", "SUCCEEDED");
         
-        boolean result = provider.updateStatus("event-1", ProductInteractionStatus.SUCCEEDED);
+        boolean result = provider.updateStatus(TENANT_1_CONTEXT, "event-1", ProductInteractionStatus.SUCCEEDED);
         
         assertTrue(result);
-        verify(mockClient).updateEventStatus("product-interaction-events", "event-1", "SUCCEEDED");
+        verify(mockClient).updateEventStatus(
+            "tenant-1", "workspace-1", "product-interaction-events", "event-1", "SUCCEEDED");
     }
 
     @Test
@@ -107,9 +119,10 @@ class DataCloudProductInteractionEventProviderTest {
         
         Map<String, Object> eventRecord = createTestEventRecord();
         eventRecord.put("status", "SUCCEEDED");
-        when(mockClient.getEvent("product-interaction-events", "event-1")).thenReturn(eventRecord);
+        when(mockClient.getEvent("tenant-1", "workspace-1", "product-interaction-events", "event-1"))
+            .thenReturn(eventRecord);
         
-        boolean result = provider.isDelivered("event-1");
+        boolean result = provider.isDelivered(TENANT_1_CONTEXT, "event-1");
         
         assertTrue(result);
     }
@@ -125,9 +138,10 @@ class DataCloudProductInteractionEventProviderTest {
         
         Map<String, Object> eventRecord = createTestEventRecord();
         eventRecord.put("status", "BLOCKED");
-        when(mockClient.getEvent("product-interaction-events", "event-1")).thenReturn(eventRecord);
+        when(mockClient.getEvent("tenant-1", "workspace-1", "product-interaction-events", "event-1"))
+            .thenReturn(eventRecord);
         
-        boolean result = provider.isDelivered("event-1");
+        boolean result = provider.isDelivered(TENANT_1_CONTEXT, "event-1");
         
         assertFalse(result);
     }
@@ -166,10 +180,10 @@ class DataCloudProductInteractionEventProviderTest {
             new DataCloudProductInteractionEventProvider(mockClient);
         
         List<Map<String, Object>> dlqRecords = List.of(createTestEventRecord());
-        when(mockClient.queryDlqEvents("product-interaction-dlq", "test-topic", 10))
+        when(mockClient.queryDlqEvents("tenant-1", "workspace-1", "product-interaction-dlq", "test-topic", 10))
             .thenReturn(dlqRecords);
         
-        List<ProductInteractionEventEnvelope<?>> result = provider.getDlqEvents("test-topic", 10);
+        List<ProductInteractionEventEnvelope<?>> result = provider.getDlqEvents(TENANT_1_CONTEXT, "test-topic", 10);
         
         assertEquals(1, result.size());
         assertEquals("event-1", result.get(0).eventId());
@@ -186,11 +200,11 @@ class DataCloudProductInteractionEventProviderTest {
         
         List<Map<String, Object>> eventRecords = List.of(createTestEventRecord());
         when(mockClient.queryEventsForReplay(
-            "product-interaction-events", "test-topic", 0L, 1000L, 10
+            "tenant-1", "workspace-1", "product-interaction-events", "test-topic", 0L, 1000L, 10
         )).thenReturn(eventRecords);
         
         List<ProductInteractionEventEnvelope<?>> result = provider.getEventsForReplay(
-            "test-topic", 0L, 1000L, 10
+            TENANT_1_CONTEXT, "test-topic", 0L, 1000L, 10
         );
         
         assertEquals(1, result.size());
@@ -206,9 +220,10 @@ class DataCloudProductInteractionEventProviderTest {
         DataCloudProductInteractionEventProvider provider = 
             new DataCloudProductInteractionEventProvider(mockClient);
         
-        when(mockClient.deleteEventsBefore("product-interaction-events", 1000L)).thenReturn(5L);
+        when(mockClient.deleteEventsBefore("tenant-1", "workspace-1", "product-interaction-events", 1000L))
+            .thenReturn(5L);
         
-        long result = provider.deleteEventsBefore(1000L);
+        long result = provider.deleteEventsBefore(TENANT_1_CONTEXT, 1000L);
         
         assertEquals(5L, result);
     }
@@ -251,7 +266,7 @@ class DataCloudProductInteractionEventProviderTest {
             new DataCloudProductInteractionEventProvider(mockClient);
         
         assertThrows(IllegalArgumentException.class, () -> {
-            provider.getDlqEvents("test-topic", -1);
+            provider.getDlqEvents(TENANT_1_CONTEXT, "test-topic", -1);
         });
     }
 
@@ -265,8 +280,50 @@ class DataCloudProductInteractionEventProviderTest {
             new DataCloudProductInteractionEventProvider(mockClient);
         
         assertThrows(IllegalArgumentException.class, () -> {
-            provider.getEventsForReplay("test-topic", 1000L, 500L, 10);
+            provider.getEventsForReplay(TENANT_1_CONTEXT, "test-topic", 1000L, 500L, 10);
         });
+    }
+
+    @Test
+    @DisplayName("Cross-tenant get returns empty even when client returns a record")
+    void crossTenantGetReturnsEmpty() {
+        DataCloudProductInteractionEventProvider.DataCloudEventClient mockClient =
+            mock(DataCloudProductInteractionEventProvider.DataCloudEventClient.class);
+        DataCloudProductInteractionEventProvider provider =
+            new DataCloudProductInteractionEventProvider(mockClient);
+        BridgeContext tenant2Context = BridgeContext.builder()
+            .tenantId("tenant-2")
+            .workspaceId("workspace-1")
+            .principalId("principal-2")
+            .correlationId("correlation-2")
+            .build();
+
+        when(mockClient.getEvent("tenant-2", "workspace-1", "product-interaction-events", "event-1"))
+            .thenReturn(createTestEventRecord());
+
+        Optional<ProductInteractionEventEnvelope<?>> result = provider.get(tenant2Context, "event-1");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Replay and DLQ queries filter out records outside scope")
+    void replayAndDlqQueriesFilterOutRecordsOutsideScope() {
+        DataCloudProductInteractionEventProvider.DataCloudEventClient mockClient =
+            mock(DataCloudProductInteractionEventProvider.DataCloudEventClient.class);
+        DataCloudProductInteractionEventProvider provider =
+            new DataCloudProductInteractionEventProvider(mockClient);
+        Map<String, Object> otherTenantRecord = createTestEventRecord();
+        otherTenantRecord.put("tenantId", "tenant-2");
+
+        when(mockClient.queryDlqEvents("tenant-1", "workspace-1", "product-interaction-dlq", "test-topic", 10))
+            .thenReturn(List.of(createTestEventRecord(), otherTenantRecord));
+        when(mockClient.queryEventsForReplay(
+            "tenant-1", "workspace-1", "product-interaction-events", "test-topic", 0L, 1000L, 10))
+            .thenReturn(List.of(createTestEventRecord(), otherTenantRecord));
+
+        assertEquals(1, provider.getDlqEvents(TENANT_1_CONTEXT, "test-topic", 10).size());
+        assertEquals(1, provider.getEventsForReplay(TENANT_1_CONTEXT, "test-topic", 0L, 1000L, 10).size());
     }
 
     @Test

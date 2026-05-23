@@ -391,40 +391,15 @@ describe("DockerBuildxAdapter", () => {
     it("fails before build when configured buildx builder is unavailable", async () => {
       commandRunner = new FakeCommandRunner([
         { exitCode: 1, stdout: "", stderr: "EOF", durationMs: 20 },
-      ]);
-      adapter = new DockerBuildxAdapter({ repoRoot, commandRunner });
-
-      const result = await adapter.execute(
-        makeContext({
-          surfaceConfig: {
-            dockerfile: "products/digital-marketing/dm-api/Dockerfile",
-            context: "products/digital-marketing/dm-api",
-            image: "ghatana/digital-marketing-api",
-            tag: "local",
-            builder: "desktop-linux",
-          },
-        }),
-      );
-
-      expect(result.status).toBe("failed");
-      expect(result.failure?.message).toContain(
-        "docker-buildx-builder-unavailable",
-      );
-      expect(commandRunner.invocations).toHaveLength(1);
-      expect(commandRunner.invocations[0].args).toEqual([
-        "buildx",
-        "inspect",
-        "desktop-linux",
-        "--bootstrap",
-      ]);
-    });
-
-    it("fails before build when buildx inspect exits zero but reports an error", async () => {
-      commandRunner = new FakeCommandRunner([
+        {
+          exitCode: 1,
+          stdout: "",
+          stderr: "Cannot connect to the Docker daemon",
+          durationMs: 20,
+        },
         {
           exitCode: 0,
-          stdout:
-            "Name: desktop-linux\nError: Cannot connect to the Docker daemon\n",
+          stdout: "NAME/NODE DRIVER/ENDPOINT STATUS\n",
           stderr: "",
           durationMs: 20,
         },
@@ -447,7 +422,64 @@ describe("DockerBuildxAdapter", () => {
       expect(result.failure?.message).toContain(
         "docker-buildx-builder-unavailable",
       );
-      expect(commandRunner.invocations).toHaveLength(1);
+      expect(result.failure?.message).toContain(
+        "environment-blocked-remediation",
+      );
+      expect(result.failure?.message).toContain("docker info");
+      expect(result.failure?.message).toContain("docker buildx ls");
+      expect(commandRunner.invocations).toHaveLength(3);
+      expect(commandRunner.invocations[0].args).toEqual([
+        "buildx",
+        "inspect",
+        "desktop-linux",
+        "--bootstrap",
+      ]);
+    });
+
+    it("fails before build when buildx inspect exits zero but reports an error", async () => {
+      commandRunner = new FakeCommandRunner([
+        {
+          exitCode: 0,
+          stdout:
+            "Name: desktop-linux\nError: Cannot connect to the Docker daemon\n",
+          stderr: "",
+          durationMs: 20,
+        },
+        {
+          exitCode: 1,
+          stdout: "",
+          stderr: "Cannot connect to the Docker daemon",
+          durationMs: 20,
+        },
+        {
+          exitCode: 1,
+          stdout: "",
+          stderr: "EOF",
+          durationMs: 20,
+        },
+      ]);
+      adapter = new DockerBuildxAdapter({ repoRoot, commandRunner });
+
+      const result = await adapter.execute(
+        makeContext({
+          surfaceConfig: {
+            dockerfile: "products/digital-marketing/dm-api/Dockerfile",
+            context: "products/digital-marketing/dm-api",
+            image: "ghatana/digital-marketing-api",
+            tag: "local",
+            builder: "desktop-linux",
+          },
+        }),
+      );
+
+      expect(result.status).toBe("failed");
+      expect(result.failure?.message).toContain(
+        "docker-buildx-builder-unavailable",
+      );
+      expect(result.failure?.message).toContain(
+        "environment-blocked-remediation",
+      );
+      expect(commandRunner.invocations).toHaveLength(3);
     });
 
     it("redacts build arg values in logs and command runner options", async () => {

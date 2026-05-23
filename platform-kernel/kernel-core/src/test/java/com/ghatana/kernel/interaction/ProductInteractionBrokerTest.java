@@ -10,10 +10,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,7 +36,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("routes valid requests through handler and writes evidence")
     void routesValidRequestThroughHandlerAndWritesEvidence() {
         RecordingEvidenceWriter evidenceWriter = new RecordingEvidenceWriter();
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter(evidenceWriter)
                 .brokerMode(BrokerMode.TEST)
@@ -56,7 +58,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks request when required tenant scope is missing")
     void blocksMissingTenantScope() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -95,7 +97,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("blocks request when policy evaluator denies it")
     void blocksPolicyDenial() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
                 .brokerMode(BrokerMode.TEST)
@@ -114,7 +116,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("default policy requires interaction purpose")
     void defaultPolicyRequiresInteractionPurpose() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -151,7 +153,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("requires successful provider outcomes to include evidence refs")
     void requiresEvidenceForSuccessfulProviderOutcome() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new MissingEvidenceHandler())
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -169,7 +171,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("converts evidence writer failures into blocked outcomes")
     void convertsEvidenceWriterFailuresIntoBlockedOutcome() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter((request, outcome) -> Promise.ofException(new IllegalStateException("evidence unavailable")))
                 .brokerMode(BrokerMode.TEST)
@@ -187,13 +189,101 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("fails closed with evidence when contract is missing")
+    void failsClosedWithEvidenceWhenContractIsMissing() {
+        RecordingEvidenceWriter evidenceWriter = new RecordingEvidenceWriter();
+        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+                .register(new EchoHandler())
+                .evidenceWriter(evidenceWriter)
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
+                    broker.execute(baseRequest("broker-missing-contract", new EchoRequest("hello"))));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.contract_missing");
+            assertThat(evidenceWriter.records).hasSize(1);
+            assertThat(broker.metrics().blocked()).isEqualTo(1);
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("contract hash changes when allowed purposes change")
+    void contractHashChangesWhenAllowedPurposesChange() throws Exception {
+        String baseline = contractHash(echoContract());
+        String changed = contractHash(new ProductInteractionContract(
+                EchoHandler.CONTRACT_ID,
+                "1.0.0",
+                "provider-product",
+                Set.of("consumer-product"),
+                true,
+                true,
+                false,
+                "none",
+                "same-tenant",
+                Set.of("tester"),
+                Set.of("test", "support"),
+                Set.of("test"),
+                false));
+
+        assertThat(changed).isNotEqualTo(baseline);
+    }
+
+    @Test
+    @DisplayName("contract hash changes when lifecycle phases change")
+    void contractHashChangesWhenLifecyclePhasesChange() throws Exception {
+        String baseline = contractHash(echoContract());
+        String changed = contractHash(new ProductInteractionContract(
+                EchoHandler.CONTRACT_ID,
+                "1.0.0",
+                "provider-product",
+                Set.of("consumer-product"),
+                true,
+                true,
+                false,
+                "none",
+                "same-tenant",
+                Set.of("tester"),
+                Set.of("test"),
+                Set.of("test", "validate"),
+                false));
+
+        assertThat(changed).isNotEqualTo(baseline);
+    }
+
+    @Test
+    @DisplayName("contract hash changes when degraded mode changes")
+    void contractHashChangesWhenDegradedModeChanges() throws Exception {
+        String baseline = contractHash(echoContract());
+        String changed = contractHash(new ProductInteractionContract(
+                EchoHandler.CONTRACT_ID,
+                "1.0.0",
+                "provider-product",
+                Set.of("consumer-product"),
+                true,
+                true,
+                false,
+                "none",
+                "same-tenant",
+                Set.of("tester"),
+                Set.of("test"),
+                Set.of("test"),
+                true));
+
+        assertThat(changed).isNotEqualTo(baseline);
+    }
+
+    @Test
     @DisplayName("persists canonical interaction evidence records to files")
     void persistsCanonicalInteractionEvidenceRecordsToFiles() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         ProductInteractionRequest<EchoRequest> request = baseRequest("broker-file-evidence", new EchoRequest("hello"));
         FileProductInteractionEvidenceWriter evidenceWriter =
                 new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), executor);
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter(evidenceWriter)
                 .brokerMode(BrokerMode.TEST)
@@ -238,7 +328,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("replays completed interactions by interaction id and scope")
     void replaysCompletedInteractionsByInteractionIdAndScope() {
         CountingEchoHandler handler = new CountingEchoHandler();
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(handler)
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -258,7 +348,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("records latency metrics within the local interaction SLO")
     void recordsLatencyMetricsWithinLocalSlo() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -284,7 +374,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("times out handlers that do not complete")
     void timesOutHandlersThatDoNotComplete() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new HangingHandler())
                 .requestTimeout(Duration.ofMillis(20))
                 .brokerMode(BrokerMode.TEST)
@@ -304,7 +394,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("rejects duplicate handler registration")
     void rejectsDuplicateHandlerRegistration() {
-        ProductInteractionBroker.Builder builder = ProductInteractionBroker.builder()
+        ProductInteractionBroker.Builder builder = brokerBuilder()
                 .register(new EchoHandler())
                 .brokerMode(BrokerMode.TEST);
 
@@ -317,7 +407,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("P0-01: production mode rejects no-op evidence writer")
     void productionModeRejectsNoopEvidenceWriter() {
-        assertThatThrownBy(() -> ProductInteractionBroker.builder()
+        assertThatThrownBy(() -> brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter(ProductInteractionEvidenceWriter.noop())
                 .brokerMode(BrokerMode.PRODUCTION)
@@ -329,7 +419,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("P0-01: test mode allows no-op evidence writer")
     void testModeAllowsNoopEvidenceWriter() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter(ProductInteractionEvidenceWriter.noop())
                 .brokerMode(BrokerMode.TEST)
@@ -342,22 +432,30 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("P0-01: development mode requires real evidence writer")
-    void developmentModeRequiresRealEvidenceWriter() {
-        assertThatThrownBy(() -> ProductInteractionBroker.builder()
+    @DisplayName("P0-01: development mode defaults to local file-backed evidence")
+    void developmentModeDefaultsToLocalFileBackedEvidence() {
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .evidenceWriter(ProductInteractionEvidenceWriter.noop())
+                .developmentEvidenceRoot(tempDir.resolve("development-evidence"))
                 .brokerMode(BrokerMode.DEVELOPMENT)
-                .build())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Production mode requires a real evidence writer");
+                .build();
+        try {
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() ->
+                    broker.execute(baseRequest("broker-development-evidence", new EchoRequest("hello"))));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+            assertThat(tempDir.resolve("development-evidence")).exists();
+        } finally {
+            broker.close();
+        }
     }
 
     // P0-02: Reject caller-supplied authorization and consent flags
     @Test
     @DisplayName("P0-02: rejects caller-supplied authorized flag")
     void rejectsCallerSuppliedAuthorizedFlag() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
                 .brokerMode(BrokerMode.TEST)
@@ -395,7 +493,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @Test
     @DisplayName("P0-02: rejects caller-supplied consent flag")
     void rejectsCallerSuppliedConsentFlag() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver(ProductInteractionPolicyContextResolver.testResolver())
                 .brokerMode(BrokerMode.TEST)
@@ -435,7 +533,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("P0-03: different payload creates different replay key")
     void differentPayloadCreatesDifferentReplayKey() {
         CountingEchoHandler handler = new CountingEchoHandler();
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(handler)
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -459,7 +557,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
     @DisplayName("P0-03: same payload replays from cache")
     void samePayloadReplaysFromCache() {
         CountingEchoHandler handler = new CountingEchoHandler();
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(handler)
                 .brokerMode(BrokerMode.TEST)
                 .build();
@@ -498,6 +596,35 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
                     "workspaceId", "workspace-1",
                     "purpose", "test"),
                 payload);
+    }
+
+    private static ProductInteractionBroker.Builder brokerBuilder() {
+        return ProductInteractionBroker.builder().registerContract(echoContract());
+    }
+
+    private static ProductInteractionContract echoContract() {
+        return new ProductInteractionContract(
+                EchoHandler.CONTRACT_ID,
+                "1.0.0",
+                "provider-product",
+                Set.of("consumer-product"),
+                true,
+                true,
+                false,
+                "none",
+                "same-tenant",
+                Set.of("tester"),
+                Set.of("test"),
+                Set.of("test"),
+                false);
+    }
+
+    private static String contractHash(ProductInteractionContract contract) throws Exception {
+        Method method = ProductInteractionBroker.class.getDeclaredMethod(
+                "computeContractSchemaHash",
+                ProductInteractionContract.class);
+        method.setAccessible(true);
+        return (String) method.invoke(null, contract);
     }
 
     private record EchoRequest(String value) {

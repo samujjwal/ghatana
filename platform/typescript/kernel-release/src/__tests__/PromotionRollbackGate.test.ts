@@ -207,6 +207,13 @@ describe("§2.6 — rollback manifest validation", () => {
       currentVersion: "1.0.0",
       targetVersion: "0.9.0",
       strategy: "previous-artifact",
+      previousArtifactSelection: {
+        artifactRef: "container-image:digital-marketing-api@sha256:previous",
+        deploymentManifestRef: "deployment-manifest:deploy-previous",
+        selectedBy: "release-manager",
+        selectedAt: "2026-05-14T10:59:00.000Z",
+        selectionReason: "previous successful deployment",
+      },
       reason: "Deployment health check failed",
       rollbackBy: "release-manager",
       timestamp: "2026-05-14T11:00:00.000Z",
@@ -230,6 +237,13 @@ describe("§2.6 — rollback manifest validation", () => {
       currentVersion: "1.0.0",
       targetVersion: "0.9.0",
       strategy: "previous-artifact",
+      previousArtifactSelection: {
+        artifactRef: "container-image:digital-marketing-api@sha256:previous",
+        deploymentManifestRef: "deployment-manifest:deploy-previous",
+        selectedBy: "release-manager",
+        selectedAt: "2026-05-14T10:59:00.000Z",
+        selectionReason: "previous successful deployment",
+      },
       reason: "Deployment failed",
       rollbackBy: "release-manager",
       timestamp: "2026-05-14T11:00:00.000Z",
@@ -275,6 +289,13 @@ describe("§2.6 — rollback manifest validation", () => {
       currentVersion: "1.0.0",
       targetVersion: "0.9.0",
       strategy: "previous-artifact",
+      previousArtifactSelection: {
+        artifactRef: "container-image:digital-marketing-api@sha256:previous",
+        deploymentManifestRef: "deployment-manifest:deploy-previous",
+        selectedBy: "release-manager",
+        selectedAt: "2026-05-14T10:59:00.000Z",
+        selectionReason: "previous successful deployment",
+      },
       reason: "Test",
       rollbackBy: "user",
       timestamp: new Date().toISOString(),
@@ -289,6 +310,71 @@ describe("§2.6 — rollback manifest validation", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
+  });
+
+  it("PHR rollback fails closed without healthcare gates and approval evidence", async () => {
+    const plan = ProductRollbackPlanSchema.parse({
+      productId: "phr",
+      environment: "local",
+      currentVersion: "1.0.0",
+      targetVersion: "0.9.0",
+      strategy: "previous-artifact",
+      previousArtifactSelection: {
+        artifactRef: "container-image:phr-api@sha256:previous",
+        deploymentManifestRef: "deployment-manifest:phr-previous",
+        selectedBy: "release-manager",
+        selectedAt: "2026-05-14T10:59:00.000Z",
+        selectionReason: "previous successful healthcare deployment",
+      },
+      reason: "Healthcare verification failed",
+      rollbackBy: "release-manager",
+      timestamp: "2026-05-14T12:00:00.000Z",
+      verificationPlan: { healthChecks: true, smokeTests: true, metrics: true },
+    });
+
+    const result = await rollbackManager.validateRollbackPlan(plan);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain(
+      "PHR rollback requires rollback approval contract evidence",
+    );
+    expect(result.errors).toContain(
+      "PHR rollback requires healthcare post-rollback verification gates",
+    );
+  });
+
+  it("PHR rollback validates previous artifact, approval, and healthcare gates", async () => {
+    const plan = ProductRollbackPlanSchema.parse({
+      productId: "phr",
+      environment: "local",
+      currentVersion: "1.0.0",
+      targetVersion: "0.9.0",
+      strategy: "previous-artifact",
+      previousArtifactSelection: {
+        artifactRef: "container-image:phr-api@sha256:previous",
+        deploymentManifestRef: "deployment-manifest:phr-previous",
+        selectedBy: "release-manager",
+        selectedAt: "2026-05-14T10:59:00.000Z",
+        selectionReason: "previous successful healthcare deployment",
+      },
+      approvalGateRef: "approval-gate:phr-rollback-001",
+      reason: "Healthcare verification failed",
+      rollbackBy: "release-manager",
+      timestamp: "2026-05-14T12:00:00.000Z",
+      verificationPlan: { healthChecks: true, smokeTests: true, metrics: true },
+      healthcareVerificationPlan: {
+        consent: true,
+        piiClassification: true,
+        auditEvidence: true,
+        fhirValidation: true,
+        tenantDataSovereignty: true,
+      },
+    });
+
+    const result = await rollbackManager.validateRollbackPlan(plan);
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
   });
 });
 

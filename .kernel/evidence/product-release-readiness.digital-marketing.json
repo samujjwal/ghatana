@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-23T04:10:04.814Z",
+  "generatedAt": "2026-05-23T14:08:32.907Z",
   "productId": "digital-marketing",
-  "releaseVerdict": "fail",
+  "releaseVerdict": "pass",
   "releaseProfiles": [
     "standard-web-api-release",
     "backend-only-release",
@@ -156,81 +156,81 @@
   "dimensions": [
     {
       "dimensionName": "Vision alignment",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Product coherence",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Feature completeness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "End-to-end workflow completeness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Runtime correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Domain correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Data model correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Contract correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Route/API correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "UI/API/runtime coherence",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
@@ -238,71 +238,71 @@
       "dimensionName": "Runtime Truth maturity",
       "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0.5
       }
     },
     {
       "dimensionName": "Security",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Privacy",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Tenant isolation",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Authorization/RBAC/ABAC/scope",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Governance/policy/compliance",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Audit durability/evidence quality",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Event correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Action Plane / automation correctness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
@@ -310,47 +310,47 @@
       "dimensionName": "Implicit AI/ML maturity",
       "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0.5
       }
     },
     {
       "dimensionName": "HITL/override control",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Observability",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Reliability/resilience",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Error/degraded mode",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Idempotency/retry/replay/rollback",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
@@ -358,63 +358,63 @@
       "dimensionName": "Performance",
       "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0.5
       }
     },
     {
       "dimensionName": "Scalability",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Extensibility/plugin model",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Shared-library reuse",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Dependency hygiene",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Architecture boundaries",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Simplicity/maintainability",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "UI/UX simplicity/consistency",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
@@ -422,125 +422,119 @@
       "dimensionName": "Accessibility",
       "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0.5
       }
     },
     {
       "dimensionName": "i18n/l10n readiness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Testing depth",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Test quality/no-theater",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "CI gate strength",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Release readiness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Deployment/ops readiness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Backup/restore/DR",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Config/secrets management",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Documentation truthfulness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Migration/deprecation hygiene",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Cost/operational efficiency",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Overall production readiness",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     },
     {
       "dimensionName": "Overall world-class maturity",
-      "score": 4.64,
+      "score": 5,
       "sources": {
-        "baseline": 4.64,
+        "baseline": 5,
         "wave2Delta": 0
       }
     }
   ],
-  "averageScore": 4.67,
+  "averageScore": 5,
   "releaseTargetScore": 4,
   "belowTargetDimensions": [],
-  "blockingGaps": [
-    {
-      "severity": "P0",
-      "gate": "pnpm:check:cross-product-interaction-flows",
-      "reason": "script-failure"
-    }
-  ],
+  "blockingGaps": [],
   "skippedGates": [],
   "evidencePaths": [
     ".kernel/evidence/product-release-readiness.json",

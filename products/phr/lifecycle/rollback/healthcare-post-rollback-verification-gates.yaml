@@ -1,0 +1,43 @@
+schemaVersion: 1.0.0
+productId: phr
+requirementId: healthcare-post-rollback-verification-gates
+title: PHR healthcare post-rollback verification gates
+status: active
+description: Healthcare checks that must pass after a PHR rollback before the environment can be considered restored.
+requiredGates:
+  - consent
+  - pii-classification
+  - audit-evidence
+  - fhir-contract-validation
+  - tenant-data-sovereignty
+requiredGateEvidenceRefs:
+  consent:
+    - products/phr/lifecycle/gate-packs/consent.yaml
+    - products/phr/src/main/java/com/ghatana/phr/kernel/consent/ConsentService.java
+  pii-classification:
+    - products/phr/lifecycle/gate-packs/pii-classification.yaml
+    - products/phr/src/main/java/com/ghatana/phr/kernel/policy/PhrDataClassification.java
+  audit-evidence:
+    - products/phr/lifecycle/gate-packs/audit-evidence.yaml
+    - products/phr/src/main/java/com/ghatana/phr/observability/PHRAuditTrailServiceImpl.java
+  fhir-contract-validation:
+    - products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml
+    - products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidator.java
+  tenant-data-sovereignty:
+    - products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
+    - products/phr/policy-packs/healthcare-boundary-policy.yaml
+runtimeContract:
+  validator: products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java
+  failureMode: block-rollback-completion
+requiredReportFields:
+  - runId
+  - correlationId
+  - productUnitId
+  - environment
+  - rollbackTargetArtifact
+  - gates
+  - evidenceRefs
+  - checkedAt
+validationCommands:
+  - ./gradlew :products:phr:test
+  - ./gradlew :products:phr:domains:healthcare:test

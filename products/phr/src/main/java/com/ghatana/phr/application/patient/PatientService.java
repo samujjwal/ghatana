@@ -73,9 +73,4 @@ public interface PatientService {
         }
     }
 
-    record PatientOperationContext(
-        String tenantId,
-        String userId,
-        String patientId
-    ) {}
 }

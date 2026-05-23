@@ -32,12 +32,12 @@ public class PatientServiceImpl implements PatientService {
             .build();
 
         patients.put(patientId, patient);
-        return Promise.complete(patient);
+        return Promise.of(patient);
     }
 
     @Override
     public Promise<Optional<Patient>> getPatient(PatientOperationContext ctx, String patientId) {
-        return Promise.complete(Optional.ofNullable(patients.get(patientId)));
+        return Promise.of(Optional.ofNullable(patients.get(patientId)));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class PatientServiceImpl implements PatientService {
             return Promise.ofException(new IllegalArgumentException("Patient not found: " + patientId));
         }
         patient.updateProfile(profile);
-        return Promise.complete(patient);
+        return Promise.of(patient);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class PatientServiceImpl implements PatientService {
             return Promise.ofException(new IllegalArgumentException("Patient not found: " + patientId));
         }
         patient.verify();
-        return Promise.complete(patient);
+        return Promise.of(patient);
     }
 
     @Override
@@ -66,6 +66,6 @@ public class PatientServiceImpl implements PatientService {
         if (patient == null) {
             return Promise.ofException(new IllegalArgumentException("Patient not found: " + patientId));
         }
-        return Promise.complete(patient.profile());
+        return Promise.of(patient.profile());
     }
 }

@@ -206,6 +206,18 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         assertThat(data.approvedContentCount()).isEqualTo(3);
     }
 
+    @Test
+    @DisplayName("campaign activation preflight is blocked when PHR consent is denied")
+    void shouldSurfaceDeniedPhrConsentForCampaignActivation() {
+        consentBroker.setConsentGranted(false);
+
+        CampaignPreflightDataProvider.CampaignPreflightData data =
+            runPromise(() -> provider.resolve(ctx, campaign));
+
+        assertThat(data.consentGranted()).isFalse();
+        assertThat(data.consentPurpose()).isEqualTo("campaign-activation");
+    }
+
     // -----------------------------------------------------------------------
     // Deterministic in-memory repository fixtures
     // -----------------------------------------------------------------------

@@ -1,0 +1,5 @@
+{
+  "version": "1.0.0",
+  "description": "Waiver registry for release proof gates that are not applicable to specific products",
+  "waivers": []
+}

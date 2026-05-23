@@ -173,5 +173,6 @@ tasks.register<Test>("productInteractionBrokerTest") {
     filter {
         includeTestsMatching("com.ghatana.kernel.interaction.ProductInteractionBrokerTest")
         includeTestsMatching("com.ghatana.kernel.interaction.ProductInteractionEventBrokerTest")
+        includeTestsMatching("com.ghatana.kernel.interaction.DataCloudProductInteractionEventProviderTest")
     }
 }

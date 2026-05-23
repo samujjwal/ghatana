@@ -239,7 +239,7 @@ public final class PrivacyServiceImpl implements PrivacyService {
                 // P0-006: Aggregate personal data
                 Map<String, Object> personalData = new HashMap<>();
                 personalData.put("contactId", contact.getId());
-                personalData.put("email", contact.getEmail() != null ? "***@***.***" : null); // Masked for privacy
+                personalData.put("email", contact.getEncryptedEmail() != null ? "***@***.***" : null); // Masked for privacy
                 personalData.put("createdAt", contact.getCreatedAt());
                 personalData.put("updatedAt", contact.getUpdatedAt());
                 
@@ -255,7 +255,7 @@ public final class PrivacyServiceImpl implements PrivacyService {
                 );
                 
                 // P0-006: Check suppression status
-                String hashedEmail = hashIdentifier(contact.getEmail());
+                String hashedEmail = contact.getEmailHash();
                 return suppressionRepository.findActiveByContactPointHash(ctx.getWorkspaceId(), hashedEmail)
                     .then(suppressed -> {
                         List<String> suppressionStatus = suppressed.isPresent() 

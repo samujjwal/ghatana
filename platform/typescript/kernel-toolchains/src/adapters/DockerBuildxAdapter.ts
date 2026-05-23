@@ -409,6 +409,7 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
           builderCheck.exitCode !== 0 ||
           hasBuildxInspectError(builderCheckOutput)
         ) {
+          const remediation = await this.buildBuildxRemediation(builderName);
           errors.push({
             path: "surfaceConfig.builder",
             message:
@@ -417,7 +418,8 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
                 builderCheck.stderr ||
                   builderCheck.stdout ||
                   "docker buildx inspect failed",
-              ),
+              ) +
+              ` ${remediation}`,
           });
         }
       }
@@ -456,6 +458,41 @@ export class DockerBuildxAdapter implements ToolchainAdapter {
         message: `${field}-not-found: ${filePath}`,
       });
     }
+  }
+
+  private async buildBuildxRemediation(builderName: string): Promise<string> {
+    const dockerInfo = await this.commandRunner.run("docker", ["info"], {
+      cwd: this.repoRoot,
+      env: { ...process.env },
+      timeoutMs: 10_000,
+      commandId: "docker-buildx-remediation-docker-info",
+    });
+    const builderList = await this.commandRunner.run("docker", ["buildx", "ls"], {
+      cwd: this.repoRoot,
+      env: { ...process.env },
+      timeoutMs: 10_000,
+      commandId: "docker-buildx-remediation-builder-list",
+    });
+
+    const daemonStatus =
+      dockerInfo.exitCode === 0 ? "docker-daemon-reachable" : "docker-daemon-unreachable";
+    const builderListStatus =
+      builderList.exitCode === 0 ? "buildx-list-available" : "buildx-list-unavailable";
+    const infoSummary = truncateToolchainOutput(
+      dockerInfo.stderr || dockerInfo.stdout || "docker info produced no output",
+    );
+    const builderSummary = truncateToolchainOutput(
+      builderList.stderr || builderList.stdout || "docker buildx ls produced no output",
+    );
+
+    return [
+      "environment-blocked-remediation:",
+      `classification=${daemonStatus}/${builderListStatus};`,
+      `dockerInfo="${infoSummary}";`,
+      `builderList="${builderSummary}";`,
+      `inspectCommand="docker buildx inspect ${builderName} --bootstrap";`,
+      `suggestedCommands="docker info && docker buildx ls && docker buildx inspect ${builderName} --bootstrap; restart Docker Desktop if the daemon is unreachable; recreate or select a healthy builder with docker buildx create --use";`,
+    ].join(" ");
   }
 
   private requireConfigString(

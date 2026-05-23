@@ -14,6 +14,7 @@ const affectedProductProfilePath = path.join(evidenceDir, 'affected-product-rele
 const implementationPlanEvidencePath = path.join(evidenceDir, 'kernel-implementation-plan-progress.json');
 const wave2ScorecardPath = path.join(evidenceDir, 'wave2-product-quality-scorecard.json');
 const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
+const platformLifecycleBuildScript = 'pnpm:build:kernel-lifecycle-platform';
 
 function sleepMs(durationMs) {
   const signal = new Int32Array(new SharedArrayBuffer(4));
@@ -555,9 +556,23 @@ function runProductReleaseReadinessCli() {
     }
     for (const area of journey.areas) {
       if (!area.scripts || area.scripts.length === 0) {
-        failWithEvidence(1, null, `Area ${journey.journey}/${area.area} must define at least one script`);
+      failWithEvidence(1, null, `Area ${journey.journey}/${area.area} must define at least one script`);
       }
     }
+  }
+
+  const buildStartedAt = Date.now();
+  const buildResult = runCheck(platformLifecycleBuildScript);
+  const buildStatus = buildResult.status ?? 1;
+  const buildRunRecord = {
+    script: platformLifecycleBuildScript,
+    status: buildStatus,
+    durationMs: Date.now() - buildStartedAt,
+  };
+  runByScript.set(platformLifecycleBuildScript, buildRunRecord);
+  runs.push(buildRunRecord);
+  if (buildStatus !== 0) {
+    failWithEvidence(buildStatus, platformLifecycleBuildScript, 'platform-lifecycle-build-failure');
   }
 
   for (const scriptPath of executionOrder) {

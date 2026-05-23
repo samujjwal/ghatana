@@ -1,5 +1,6 @@
 package com.ghatana.kernel.interaction;
 
+import com.ghatana.kernel.bridge.port.BridgeContext;
 import io.activej.promise.Promise;
 
 import java.time.Duration;
@@ -123,15 +124,6 @@ public final class ProductInteractionEventBroker {
         long startedAtNanos = System.nanoTime();
         published.incrementAndGet();
 
-        // Idempotency check: skip if already delivered
-        if (eventProvider != null && eventProvider.isDelivered(envelope.eventId())) {
-            idempotencySkips.incrementAndGet();
-            return complete(envelope, ProductInteractionEventOutcome.succeeded(
-                    envelope.eventId(),
-                    List.of("kernel://interaction-events/" + envelope.eventId()),
-                    List.of()), startedAtNanos);
-        }
-
         Optional<ProductInteractionEventOutcome> preflightFailure = validatePreflight(envelope);
         if (preflightFailure.isPresent()) {
             ProductInteractionEventOutcome outcome = preflightFailure.get();
@@ -141,6 +133,17 @@ public final class ProductInteractionEventBroker {
                 dlqCount.incrementAndGet();
             }
             return complete(envelope, outcome, startedAtNanos);
+        }
+
+        BridgeContext eventContext = contextFor(envelope);
+
+        // Idempotency check: skip if already delivered
+        if (eventProvider != null && eventProvider.isDelivered(eventContext, envelope.eventId())) {
+            idempotencySkips.incrementAndGet();
+            return complete(envelope, ProductInteractionEventOutcome.succeeded(
+                    envelope.eventId(),
+                    List.of("kernel://interaction-events/" + envelope.eventId()),
+                    List.of()), startedAtNanos);
         }
 
         List<ProductInteractionEventHandler<?>> subscribers = subscribersByTopic.getOrDefault(envelope.topic(), List.of());
@@ -173,7 +176,7 @@ public final class ProductInteractionEventBroker {
                         // Send to DLQ on delivery failure
                         if (eventProvider != null) {
                             eventProvider.sendToDlq(envelope, "event_delivery_failed");
-                            eventProvider.updateStatus(envelope.eventId(), ProductInteractionStatus.BLOCKED);
+                            eventProvider.updateStatus(eventContext, envelope.eventId(), ProductInteractionStatus.BLOCKED);
                             dlqCount.incrementAndGet();
                         }
                     } else {
@@ -183,7 +186,7 @@ public final class ProductInteractionEventBroker {
                                 subscriberIds);
                         // Update status to delivered
                         if (eventProvider != null) {
-                            eventProvider.updateStatus(envelope.eventId(), ProductInteractionStatus.SUCCEEDED);
+                            eventProvider.updateStatus(eventContext, envelope.eventId(), ProductInteractionStatus.SUCCEEDED);
                         }
                     }
                     complete(envelope, outcome, startedAtNanos).whenComplete((finalOutcome, evidenceError) -> {
@@ -219,11 +222,13 @@ public final class ProductInteractionEventBroker {
      * @param limit maximum number of events to replay
      * @return number of events replayed
      */
-    public int replay(String topic, long fromTimestampMs, long toTimestampMs, int limit) {
+    public int replay(BridgeContext context, String topic, long fromTimestampMs, long toTimestampMs, int limit) {
+        Objects.requireNonNull(context, "context must not be null");
         if (eventProvider == null) {
             throw new IllegalStateException("eventProvider not configured - cannot replay events");
         }
-        List<ProductInteractionEventEnvelope<?>> events = eventProvider.getEventsForReplay(topic, fromTimestampMs, toTimestampMs, limit);
+        List<ProductInteractionEventEnvelope<?>> events =
+                eventProvider.getEventsForReplay(context, topic, fromTimestampMs, toTimestampMs, limit);
         int replayed = 0;
         for (ProductInteractionEventEnvelope<?> event : events) {
             try {
@@ -247,11 +252,12 @@ public final class ProductInteractionEventBroker {
      * @param limit maximum number of events to retrieve
      * @return list of DLQ events
      */
-    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(String topic, int limit) {
+    public List<ProductInteractionEventEnvelope<?>> getDlqEvents(BridgeContext context, String topic, int limit) {
+        Objects.requireNonNull(context, "context must not be null");
         if (eventProvider == null) {
             throw new IllegalStateException("eventProvider not configured - cannot retrieve DLQ events");
         }
-        return eventProvider.getDlqEvents(topic, limit);
+        return eventProvider.getDlqEvents(context, topic, limit);
     }
 
     // P0-04: Parallel dispatch with per-subscriber timeout and retry
@@ -421,6 +427,16 @@ public final class ProductInteractionEventBroker {
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private static BridgeContext contextFor(ProductInteractionEventEnvelope<?> envelope) {
+        return BridgeContext.builder()
+                .tenantId(envelope.tenantId())
+                .workspaceId(envelope.workspaceId())
+                .principalId(envelope.policyContext().getOrDefault("actor", "product-interaction-event-broker"))
+                .correlationId(envelope.correlationId())
+                .idempotencyKey(envelope.eventId())
+                .build();
     }
 
     private void recordLatency(long startedAtNanos) {

@@ -92,6 +92,13 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
             return ValidationResult.failure("User account is inactive");
         }
 
+        String requestedTenantId = credentials.getMfaToken();
+        if (requestedTenantId != null && !requestedTenantId.isBlank()
+                && user.getTenantId() != null && !user.getTenantId().isBlank()
+                && !user.getTenantId().equals(requestedTenantId)) {
+            return ValidationResult.failure("Tenant mismatch");
+        }
+
         Instant now = Instant.now();
         if (user.isLockedAt(now)) {
             return ValidationResult.failure("Account locked");

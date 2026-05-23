@@ -278,6 +278,6 @@
     "reportSource": "atomic-workflow-failure-injection-latest.json",
     "hasReport": true,
     "violationCount": 0,
-    "warningCount": 11
+    "warningCount": 0
   }
 }

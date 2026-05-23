@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "description": "Policy for managing release evidence file storage and repository hygiene",
+  "storageStrategy": {
+    "evidenceDirectory": ".kernel/evidence",
+    "latestFilePattern": "-latest.json",
+    "timestampedFilePattern": "-{timestamp}.json",
+    "maxHistoricalFiles": 5,
+    "compressionEnabled": false,
+    "gitIgnorePattern": ".kernel/evidence/*.json"
+  },
+  "retentionPolicy": {
+    "keepLatest": true,
+    "keepHistorical": true,
+    "maxHistoricalAgeDays": 30,
+    "autoCleanup": false,
+    "cleanupOnRelease": true
+  },
+  "commitPolicy": {
+    "commitLatest": true,
+    "commitHistorical": false,
+    "commitOnRelease": true,
+    "commitOnCI": true,
+    "gitIgnoreHistorical": true
+  },
+  "namingConvention": {
+    "atomic-workflow-failure-injection": "atomic-workflow-failure-injection-latest.json",
+    "runtime-dependency-failure-injection": "runtime-dependency-failure-injection-latest.json",
+    "ai-governance-behavioral-proof": "ai-governance-behavioral-proof-latest.json",
+    "a11y-behavioral-proof": "a11y-behavioral-proof-latest.json",
+    "i18n-behavioral-proof": "i18n-behavioral-proof-latest.json",
+    "domain-invariants": "domain-invariants-latest.json",
+    "feature-completeness-matrix": "feature-completeness-matrix-latest.json"
+  }
+}

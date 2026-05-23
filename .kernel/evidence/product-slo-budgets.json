@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T03:22:08.948Z",
+  "timestamp": "generated-on-demand",
   "status": "passed",
   "activeBusinessProducts": [
     "dcmaar",
@@ -9,5 +9,13 @@
     "phr",
     "tutorputor"
   ],
-  "violations": []
+  "violations": [],
+  "warnings": [
+    "Product dcmaar/default: Missing measured latency thresholds",
+    "Product digital-marketing/campaign-lifecycle: Missing measured latency thresholds",
+    "Product finance/transaction-processing: Missing measured latency thresholds",
+    "Product flashit/message-flow: Missing measured latency thresholds",
+    "Product phr/patient-record: Missing measured latency thresholds",
+    "Product tutorputor/learning-session: Missing measured latency thresholds"
+  ]
 }

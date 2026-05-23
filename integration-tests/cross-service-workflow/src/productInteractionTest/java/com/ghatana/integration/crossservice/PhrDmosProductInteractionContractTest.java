@@ -4,6 +4,7 @@ import com.ghatana.kernel.interaction.ConsentStatusInteractionHandler;
 import com.ghatana.kernel.interaction.FileProductInteractionEvidenceWriter;
 import com.ghatana.kernel.interaction.NotificationPreferenceInteractionHandler;
 import com.ghatana.kernel.interaction.ProductInteractionBroker;
+import com.ghatana.kernel.interaction.ProductInteractionContract;
 import com.ghatana.kernel.interaction.ProductInteractionHandler;
 import com.ghatana.kernel.interaction.ProductInteractionOutcome;
 import com.ghatana.kernel.interaction.ProductInteractionPolicyDecision;
@@ -22,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,7 +45,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("DMOS can consume PHR consent status through Kernel interaction broker")
     void dmosConsumesPhrConsentStatusThroughKernelInteractionBroker() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
                 .evidenceWriter(evidenceWriter())
@@ -78,7 +80,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("PHR can consume DMOS notification preferences through Kernel interaction broker")
     void phrConsumesDmosNotificationPreferencesThroughKernelInteractionBroker() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(notificationPreferenceHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
                 .evidenceWriter(evidenceWriter())
@@ -113,7 +115,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("unscoped cross-product interaction fails closed without tenant scope")
     void unscopedCrossProductInteractionFailsClosedWithoutTenantScope() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
                 .evidenceWriter(evidenceWriter())
@@ -148,7 +150,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("wrong tenant scope is denied by policy before dispatch")
     void wrongTenantScopeIsDeniedByPolicyBeforeDispatch() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(request -> {
                     Object requestedTenant = request.policyContext().get("tenantId");
@@ -189,7 +191,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("PHR and DMOS interaction blocks unsupported contract version")
     void blocksUnsupportedContractVersion() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .register(notificationPreferenceHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
@@ -225,7 +227,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("cross-product interaction blocks missing workspace scope")
     void crossProductInteractionBlocksMissingWorkspaceScope() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .evidenceWriter(evidenceWriter())
                 .build();
@@ -259,7 +261,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("cross-product interaction blocks when policy evaluator denies")
     void crossProductInteractionBlocksOnPolicyDenial() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(request -> ProductInteractionPolicyDecision.denied("product_interaction.policy_denied"))
                 .evidenceWriter(evidenceWriter())
@@ -285,7 +287,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("cross-product interaction blocks unsupported purpose")
     void crossProductInteractionBlocksUnsupportedPurpose() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(consentHandler())
                 .policyEvaluator(request -> {
                     String purpose = request.policyContext().get("consentType");
@@ -316,7 +318,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
     @Test
     @DisplayName("cross-product interaction times out long-running handler")
     void crossProductInteractionTimesOutLongRunningHandler() {
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
                 .register(new HangingConsentHandler())
                 .requestTimeout(Duration.ofMillis(20))
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
@@ -354,7 +356,7 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
         FileProductInteractionEvidenceWriter evidenceWriter =
                 new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), evidenceExecutor);
 
-        ProductInteractionBroker broker = ProductInteractionBroker.builder()
+        ProductInteractionBroker broker = brokerBuilder()
             .register(consentHandler())
                 .policyEvaluator(com.ghatana.kernel.interaction.ProductInteractionPolicyEvaluator.allowAll())
                 .evidenceWriter(evidenceWriter)
@@ -387,6 +389,46 @@ class PhrDmosProductInteractionContractTest extends EventloopTestBase {
 
     private FileProductInteractionEvidenceWriter evidenceWriter() {
         return new FileProductInteractionEvidenceWriter(tempDir.resolve("interaction-evidence"), evidenceExecutor);
+    }
+
+    private static ProductInteractionBroker.Builder brokerBuilder() {
+        return ProductInteractionBroker.builder()
+                .registerContract(platformConsentContract())
+                .registerContract(platformNotificationPreferenceContract());
+    }
+
+    private static ProductInteractionContract platformConsentContract() {
+        return new ProductInteractionContract(
+                "kernel.consent-status.v1",
+                "1.0.0",
+                "phr",
+                Set.of("digital-marketing"),
+                true,
+                true,
+                true,
+                "healthcare-contact",
+                "same-tenant",
+                Set.of("lifecycle-runner"),
+                Set.of("campaign-activation"),
+                Set.of("validate", "test", "deploy", "verify"),
+                false);
+    }
+
+    private static ProductInteractionContract platformNotificationPreferenceContract() {
+        return new ProductInteractionContract(
+                "kernel.notification-preference.v1",
+                "1.0.0",
+                "digital-marketing",
+                Set.of("phr"),
+                true,
+                true,
+                true,
+                "customer-contact",
+                "same-tenant",
+                Set.of("lifecycle-runner"),
+                Set.of("care-plan-notification"),
+                Set.of("validate", "test", "deploy", "verify"),
+                true);
     }
 
     private static ProductInteractionRequest<Object> baseConsentRequest(

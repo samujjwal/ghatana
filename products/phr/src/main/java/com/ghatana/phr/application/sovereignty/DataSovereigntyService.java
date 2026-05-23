@@ -3,6 +3,7 @@ package com.ghatana.phr.application.sovereignty;
 import com.ghatana.phr.application.patient.PatientOperationContext;
 import io.activej.promise.Promise;
 
+import java.util.List;
 import java.util.Map;
 
 /**

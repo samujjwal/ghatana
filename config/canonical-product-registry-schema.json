@@ -106,6 +106,10 @@
           "$ref": "#/definitions/ConformanceConfiguration",
           "description": "Conformance check configuration"
         },
+        "featureCompleteness": {
+          "$ref": "#/definitions/FeatureCompletenessConfiguration",
+          "description": "Feature-level completeness gate configuration (P2-11)"
+        },
         "metadata": {
           "type": "object",
           "required": ["owner", "status"],
@@ -730,6 +734,66 @@
           "type": "string",
           "enum": ["previous-artifact", "blue-green", "canary"],
           "description": "Rollback strategy"
+        }
+      }
+    },
+    "FeatureCompletenessConfiguration": {
+      "type": "object",
+      "description": "Feature-level completeness gate configuration (P2-11)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether feature-level completeness gates are enabled for this product"
+        },
+        "features": {
+          "type": "array",
+          "description": "List of features with completeness requirements",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "status"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Feature identifier"
+              },
+              "name": {
+                "type": "string",
+                "description": "Feature name"
+              },
+              "description": {
+                "type": "string",
+                "description": "Feature description"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["not-started", "in-progress", "complete", "waived"],
+                "description": "Feature implementation status"
+              },
+              "requiredForRelease": {
+                "type": "boolean",
+                "description": "Whether this feature is required for release"
+              },
+              "evidenceRequired": {
+                "type": "boolean",
+                "description": "Whether evidence is required for this feature"
+              },
+              "testCoverageThreshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Test coverage percentage threshold (0-100)"
+              },
+              "waiverReason": {
+                "type": "string",
+                "description": "Reason for waiver if status is waived"
+              },
+              "waiverExpiry": {
+                "type": "string",
+                "format": "date",
+                "description": "Waiver expiry date if status is waived"
+              }
+            }
+          }
         }
       }
     },
