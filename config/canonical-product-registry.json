@@ -230,9 +230,12 @@
       },
       "deployment": {
         "targets": [
-          "compose-local"
+          "compose-local",
+          "dev",
+          "staging",
+          "prod"
         ],
-        "defaultEnvironment": "local",
+        "defaultEnvironment": "dev",
         "healthChecks": [
           "standard-http"
         ],
@@ -242,7 +245,10 @@
       },
       "environments": {
         "supported": [
-          "local"
+          "local",
+          "dev",
+          "staging",
+          "prod"
         ]
       },
       "lifecycleExecutionAllowed": true
@@ -483,9 +489,12 @@
       },
       "deployment": {
         "targets": [
-          "compose-local"
+          "compose-local",
+          "dev",
+          "staging",
+          "prod"
         ],
-        "defaultEnvironment": "local",
+        "defaultEnvironment": "dev",
         "healthChecks": [
           "standard-http"
         ],
@@ -587,6 +596,36 @@
         "readinessReasonCode": "validated-digital-marketing-lifecycle-pilot",
         "notes": "Digital Marketing is the validated lifecycle pilot."
       },
+      "lifecycleReadiness": {
+        "reasonCodes": [
+          "validated-digital-marketing-lifecycle-pilot",
+          "bridge-compliance-active",
+          "marketing-consent-boundary-active"
+        ],
+        "requiredGates": [
+          "registry-validation",
+          "manifest-validation",
+          "lifecycle-contract-validation",
+          "bridge-compliance",
+          "marketing-consent-boundary",
+          "persistence-proof",
+          "connector-google-ads-proof"
+        ],
+        "nextRequiredWork": [
+          "Promote non-local deployment profiles after staging/prod adapter evidence gates pass",
+          "Keep migration and persistence evidence packs current for release validation"
+        ],
+        "evidenceRefs": [
+          "products/digital-marketing/kernel-product.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/registry-validation.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/manifest-validation.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/lifecycle-contract-validation.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml",
+          "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+        ]
+      },
       "lifecycleConfigPath": "products/digital-marketing/kernel-product.yaml",
       "lifecycle": {
         "enabled": true,
@@ -632,9 +671,12 @@
       },
       "deployment": {
         "targets": [
-          "compose-local"
+          "compose-local",
+          "dev",
+          "staging",
+          "prod"
         ],
-        "defaultEnvironment": "local",
+        "defaultEnvironment": "dev",
         "healthChecks": [
           "standard-http"
         ],
@@ -644,7 +686,10 @@
       },
       "environments": {
         "supported": [
-          "local"
+          "local",
+          "dev",
+          "staging",
+          "prod"
         ]
       },
       "lifecycleExecutionAllowed": true

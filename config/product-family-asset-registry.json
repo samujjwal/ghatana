@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "assets": [
+    {
+      "id": "phr-consent-panel",
+      "name": "PHR Consent Panel",
+      "sourceProduct": "phr",
+      "status": "candidate",
+      "maturity": "validated",
+      "targetPromotion": "shared-package",
+      "owner": "PHR Team",
+      "description": "Patient-facing consent management UI + state transitions with audit visibility.",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/consent.yaml",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java"
+      ]
+    },
+    {
+      "id": "phr-emergency-access-workflow",
+      "name": "PHR Emergency Access Workflow",
+      "sourceProduct": "phr",
+      "status": "candidate",
+      "maturity": "validated",
+      "targetPromotion": "template",
+      "owner": "PHR Team",
+      "description": "Break-glass access with review workflow, notification, and immutable evidence hooks.",
+      "evidenceRefs": [
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewWorkflowContextTest.java"
+      ]
+    },
+    {
+      "id": "dmos-approval-queue",
+      "name": "DMOS Approval Queue",
+      "sourceProduct": "digital-marketing",
+      "status": "candidate",
+      "maturity": "validated",
+      "targetPromotion": "shared-package",
+      "owner": "Digital Marketing Team",
+      "description": "Approval queue workflow with snapshot persistence and enforcement boundaries.",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml",
+        "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java"
+      ]
+    },
+    {
+      "id": "dmos-connector-retry-dlq",
+      "name": "DMOS Connector Retry + DLQ Pattern",
+      "sourceProduct": "digital-marketing",
+      "status": "candidate",
+      "maturity": "validated",
+      "targetPromotion": "kernel-plugin",
+      "owner": "Digital Marketing Team",
+      "description": "Connector retry and dead-letter handling pattern for external campaign systems.",
+      "evidenceRefs": [
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
+        "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java"
+      ]
+    }
+  ]
+}

@@ -26,6 +26,7 @@ import {
   Command,
   HelpCircle,
   MessageSquare,
+  Boxes,
 } from 'lucide-react';
 
 import { cn } from '../utils/cn';
@@ -81,6 +82,7 @@ const notificationsStateAtom = notificationsAtom as Atom<LayoutNotification[]>;
 const mainNavItems: NavItem[] = [
   { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: <Home className="w-5 h-5" /> },
   { label: 'Projects', path: ROUTES.PROJECTS, icon: <FolderKanban className="w-5 h-5" /> },
+  { label: 'Product Family', path: '/product-family', icon: <Boxes className="w-5 h-5" /> },
 ];
 
 const bottomNavItems: NavItem[] = [

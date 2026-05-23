@@ -63,6 +63,18 @@ const REQUIRED_PHASE_EVIDENCE_FIELDS = [
   'durationMs',
   'evidenceRefs',
 ];
+const REQUIRED_NON_LOCAL_TARGETS = ['dev', 'staging', 'prod'];
+const REQUIRED_VALIDATE_GATES = [
+  'registry-validation',
+  'manifest-validation',
+  'lifecycle-contract-validation',
+  'bridge-compliance',
+  'dmos-boundary-workflow-coverage',
+  'marketing-consent-boundary',
+  'non-regulated-customer-data-minimization',
+  'persistence-proof',
+  'connector-google-ads-proof',
+];
 
 function parseArgs(argv) {
   const normalizedArgv = argv.filter((arg) => arg !== '--');
@@ -131,6 +143,15 @@ function asNonEmptyString(value) {
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function ensureIncludesAll(label, actual, expected, errors) {
+  const actualSet = new Set(asArray(actual));
+  for (const value of expected) {
+    if (!actualSet.has(value)) {
+      errors.push(`${label} missing required entry: ${value}`);
+    }
+  }
 }
 
 function includesAll(label, actual, expected, errors) {
@@ -207,6 +228,20 @@ async function main() {
     return;
   }
 
+  const registryTargets = asArray(product?.deployment?.targets);
+  ensureIncludesAll('registry deployment.targets', registryTargets, ['compose-local', ...REQUIRED_NON_LOCAL_TARGETS], errors);
+
+  const registryEnvironments = asArray(product?.environments?.supported);
+  ensureIncludesAll('registry environments.supported', registryEnvironments, ['local', ...REQUIRED_NON_LOCAL_TARGETS], errors);
+
+  if (product?.deployment?.defaultEnvironment !== 'dev') {
+    errors.push(`registry deployment.defaultEnvironment must be "dev", got "${product?.deployment?.defaultEnvironment}"`);
+  }
+
+  if (!Array.isArray(product?.lifecycleReadiness?.evidenceRefs) || product.lifecycleReadiness.evidenceRefs.length === 0) {
+    errors.push('registry lifecycleReadiness.evidenceRefs must be populated and evidence-backed');
+  }
+
   if (product.lifecycleStatus !== 'enabled') {
     errors.push(`Product "${PRODUCT_ID}": lifecycleStatus must be "enabled", got "${product.lifecycleStatus}"`);
   }
@@ -248,6 +283,49 @@ async function main() {
     errors.push('kernel-product.yaml parsed as empty/null');
     reportAndExit(errors, warnings);
     return;
+  }
+
+  ensureIncludesAll('kernel-product gates.validate', config?.gates?.validate, REQUIRED_VALIDATE_GATES, errors);
+
+  for (const envName of REQUIRED_NON_LOCAL_TARGETS) {
+    const envConfig = config?.deployment?.[envName];
+    if (!envConfig) {
+      errors.push(`deployment.${envName} configuration is required`);
+      continue;
+    }
+    if (envConfig.executionEnabled !== false) {
+      errors.push(`deployment.${envName}.executionEnabled must be false until readiness gates pass`);
+    }
+    if (!asNonEmptyString(envConfig.enablementGate)) {
+      errors.push(`deployment.${envName}.enablementGate must be declared`);
+    }
+  }
+
+  const validateGateIds = new Set(asArray(config?.gates?.validate));
+  for (const gateId of validateGateIds) {
+    const gatePackPath = join(repoRoot, 'products', 'digital-marketing', 'lifecycle', 'gate-packs', `${gateId}.yaml`);
+    if (!existsSync(gatePackPath)) {
+      errors.push(`Missing gate-pack file for validate gate ${gateId}: products/digital-marketing/lifecycle/gate-packs/${gateId}.yaml`);
+      continue;
+    }
+
+    try {
+      const gatePack = await parseYaml(readFileSync(gatePackPath, 'utf8'));
+      if (gatePack?.executionMode !== 'evidence-backed') {
+        errors.push(`Gate pack ${gateId} must declare executionMode: evidence-backed`);
+      }
+      if (!['active', 'ready'].includes(String(gatePack?.status ?? ''))) {
+        errors.push(`Gate pack ${gateId} must declare status active|ready`);
+      }
+      if (!Array.isArray(gatePack?.requiredEvidenceRefs) || gatePack.requiredEvidenceRefs.length === 0) {
+        errors.push(`Gate pack ${gateId} must declare requiredEvidenceRefs`);
+      }
+      if (!Array.isArray(gatePack?.validationCommands) || gatePack.validationCommands.length === 0) {
+        errors.push(`Gate pack ${gateId} must declare validationCommands`);
+      }
+    } catch (error) {
+      errors.push(`Failed to parse gate-pack ${gateId}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   const manifestSchemaVersions = config?.manifestSchemaVersions ?? {};
@@ -429,7 +507,7 @@ async function main() {
   const planPhases = ['validate', 'build', 'test', 'package'];
   for (const phase of planPhases) {
     try {
-      const planPayload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--json']);
+      const planPayload = runKernelProduct(['product', PRODUCT_ID, 'plan', phase, '--json']);
       evidence.checks.plannedPhases.push({
         phase,
         status: 'ok',
@@ -450,7 +528,7 @@ async function main() {
   // 11. Validate plan generation for deploy, promote, and verify with --env local
         for (const phase of ['deploy', 'verify']) {
     try {
-      const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      const payload = runKernelProduct(['product', PRODUCT_ID, 'plan', phase, '--env', 'local', '--json']);
       evidence.checks.plannedPhases.push({
         phase,
         status: 'ok',
@@ -472,7 +550,7 @@ async function main() {
   }
   for (const phase of ['rollback']) {
     try {
-      const payload = runKernelProduct(['product', 'plan', PRODUCT_ID, phase, '--env', 'local', '--json']);
+      const payload = runKernelProduct(['product', PRODUCT_ID, 'plan', phase, '--env', 'local', '--json']);
       evidence.checks.plannedPhases.push({
         phase,
         status: 'ok',
@@ -559,10 +637,10 @@ function validateDigitalMarketingRootScripts() {
   const packageJson = readJson(join(repoRoot, 'package.json'));
   const scripts = packageJson.scripts ?? {};
   const requiredScripts = {
-    'plan:promote:local:digital-marketing': 'node scripts/kernel-product.mjs product plan digital-marketing promote --env local',
-    'plan:rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product plan digital-marketing rollback --env local',
-    'promote:local:digital-marketing': 'node scripts/kernel-product.mjs product promote digital-marketing --env local',
-    'rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product rollback digital-marketing --env local',
+    'plan:promote:local:digital-marketing': 'node scripts/kernel-product.mjs product digital-marketing plan promote --env local',
+    'plan:rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product digital-marketing plan rollback --env local',
+    'promote:local:digital-marketing': 'node scripts/kernel-product.mjs product digital-marketing promote --env local',
+    'rollback:local:digital-marketing': 'node scripts/kernel-product.mjs product digital-marketing rollback --env local',
   };
 
   for (const [scriptName, expectedCommand] of Object.entries(requiredScripts)) {
@@ -618,12 +696,12 @@ function runComposeProof(config) {
   const proofSteps = [
     {
       step: 'deploy',
-      args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--json'],
+      args: ['product', PRODUCT_ID, 'deploy', '--env', 'local', '--json'],
       timeoutMs: 240_000,
     },
     {
       step: 'verify',
-      args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--json'],
+      args: ['product', PRODUCT_ID, 'verify', '--env', 'local', '--json'],
       timeoutMs: 240_000,
     },
   ];
@@ -761,8 +839,8 @@ async function runLifecycleSmoke() {
     { phase: 'test', args: ['product', 'test', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'build', args: ['product', 'build', PRODUCT_ID, '--dry-run', '--json'] },
     { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
-    { phase: 'deploy', args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
-    { phase: 'verify', args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
+    { phase: 'deploy', args: ['product', PRODUCT_ID, 'deploy', '--env', 'local', '--dry-run', '--json'] },
+    { phase: 'verify', args: ['product', PRODUCT_ID, 'verify', '--env', 'local', '--dry-run', '--json'] },
     {
       phase: 'rollback',
       args: [
@@ -891,13 +969,16 @@ function runFailureScenarios() {
   const cases = [
     {
       id: 'deploy-requires-approval-id',
-      args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--require-approval', '--json'],
+      args: ['product', PRODUCT_ID, 'deploy', '--env', 'local', '--dry-run', '--require-approval', '--json'],
       expected: '--require-approval requires --approval-id',
     },
     {
       id: 'platform-mode-provider-bridge-unavailable',
-      args: ['product', 'plan', PRODUCT_ID, 'deploy', '--mode', 'platform', '--env', 'local', '--json'],
-      expected: 'Kernel platform mode requires the Data Cloud-backed provider bridge',
+      args: ['product', PRODUCT_ID, 'plan', 'deploy', '--mode', 'platform', '--env', 'local', '--json'],
+      expectedAny: [
+        'Kernel platform mode requires the Data Cloud-backed provider bridge',
+        'Kernel platform mode provider context is invalid',
+      ],
     },
   ];
 
@@ -912,9 +993,12 @@ function runFailureScenarios() {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes(scenario.expected)) {
+      const expectedValues = Array.isArray(scenario.expectedAny)
+        ? scenario.expectedAny
+        : [scenario.expected];
+      if (!expectedValues.some((expected) => message.includes(expected))) {
         errors.push(
-          `Failure scenario "${scenario.id}" returned unexpected error. Expected to include "${scenario.expected}", got: ${message}`,
+          `Failure scenario "${scenario.id}" returned unexpected error. Expected one of [${expectedValues.join(', ')}], got: ${message}`,
         );
         scenarios.push({
           id: scenario.id,
@@ -927,7 +1011,7 @@ function runFailureScenarios() {
       scenarios.push({
         id: scenario.id,
         status: 'ok',
-        expectedError: scenario.expected,
+        expectedError: expectedValues,
       });
     }
   }

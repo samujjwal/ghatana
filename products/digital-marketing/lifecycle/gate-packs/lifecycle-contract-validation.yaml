@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: digital-marketing
 gateId: lifecycle-contract-validation
 title: Digital Marketing lifecycle contract validation gate
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: Digital Marketing Platform Team
-status: planned
+status: active
 description: |
   Validates that the digital-marketing product satisfies its declared kernel
   lifecycle contract: required plugins are bound, adapter assignments are
@@ -17,5 +17,6 @@ blockingReasonCodes:
   - missing-lifecycle-contract-validation
 validationCommands:
   - node scripts/check-digital-marketing-lifecycle-pilot.mjs
+  - node scripts/check-release-profile-local-targets.mjs --products digital-marketing
 notes:
   - Lifecycle contract validation is enforced by the kernel planning and execution pipeline.

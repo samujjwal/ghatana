@@ -1,0 +1,22 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: persistence-proof
+title: Digital Marketing persistence proof gate
+executionMode: evidence-backed
+owner: Digital Marketing Platform Team
+status: active
+description: |
+  Validates production persistence behavior for Digital Marketing: PostgreSQL + Flyway
+  migration validity, tenant/workspace isolation, idempotency constraints, and repository
+  integration tests against real database containers.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-persistence/src/test/java
+  - products/digital-marketing/dm-persistence/build.gradle.kts
+blockingReasonCodes:
+  - requires-persistence-proof
+  - missing-persistence-proof
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-persistence:test
+  - ./gradlew :products:digital-marketing:dm-persistence:validateFlywayMigrations
+notes:
+  - Persistence proof must execute integration tests with real PostgreSQL containers.

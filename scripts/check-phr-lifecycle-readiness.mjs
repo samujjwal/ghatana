@@ -44,6 +44,7 @@ const REQUIRED_ROLLBACK_EVIDENCE_REFS = [
   'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
   'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
 ];
+const REQUIRED_NON_LOCAL_TARGETS = ['dev', 'staging', 'prod'];
 
 function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), 'utf8'));
@@ -70,6 +71,14 @@ function assertIncludesAll(label, actual, expected) {
   const missing = expected.filter((item) => !actualSet.has(item));
   if (missing.length > 0) {
     fail(`${label} missing required entries: ${missing.join(', ')}`);
+  }
+}
+
+function assertTargetCoverage(label, targets, expectedTargets) {
+  const normalized = new Set(asArray(targets).map((target) => String(target).trim().toLowerCase()));
+  const missing = expectedTargets.filter((target) => !normalized.has(target));
+  if (missing.length > 0) {
+    fail(`${label} missing deployment targets: ${missing.join(', ')}`);
   }
 }
 
@@ -282,10 +291,27 @@ function main() {
   if (phr.lifecycleExecutionAllowed !== true || phr.lifecycle?.enabled !== true || phr.lifecycleStatus !== 'enabled') {
     fail('PHR lifecycle must be enabled as a regulated executable pilot');
   }
+  assertTargetCoverage('PHR registry deployment.targets', phr.deployment?.targets, ['compose-local', ...REQUIRED_NON_LOCAL_TARGETS]);
+  assertIncludesAll('PHR registry environments.supported', phr.environments?.supported, ['local', ...REQUIRED_NON_LOCAL_TARGETS]);
+  if (phr.deployment?.defaultEnvironment !== 'dev') {
+    fail(`PHR registry deployment.defaultEnvironment must be "dev", got "${phr.deployment?.defaultEnvironment}"`);
+  }
 
   const kernelProduct = readYaml('products/phr/kernel-product.yaml');
   if (kernelProduct.executionEnabled !== true || kernelProduct.status !== 'enabled') {
     fail('products/phr/kernel-product.yaml must set status: enabled and executionEnabled: true');
+  }
+  for (const envName of REQUIRED_NON_LOCAL_TARGETS) {
+    const envConfig = kernelProduct.deployment?.[envName];
+    if (!envConfig) {
+      fail(`products/phr/kernel-product.yaml missing deployment.${envName} configuration`);
+    }
+    if (envConfig.executionEnabled !== false) {
+      fail(`products/phr/kernel-product.yaml deployment.${envName}.executionEnabled must be false until gate promotion`);
+    }
+    if (!envConfig.enablementGate) {
+      fail(`products/phr/kernel-product.yaml deployment.${envName}.enablementGate is required`);
+    }
   }
   assertIncludesAll('PHR kernel readiness gates', kernelProduct.readiness?.requiredGates, REQUIRED_GATES);
   assertIncludesAll('PHR registry readiness gates', phr.lifecycleReadiness?.requiredGates, REQUIRED_GATES);

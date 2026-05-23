@@ -517,6 +517,8 @@ gates:
     - dmos-boundary-workflow-coverage
     - marketing-consent-boundary
     - non-regulated-customer-data-minimization
+    - persistence-proof
+    - connector-google-ads-proof
   build:
     - backend-check
     - web-route-contract
@@ -569,6 +571,29 @@ deployment:
         url: http://localhost:${DMOS_WEB_PORT:-5173}/
         retries: 5
         intervalMs: 2000
+  dev:
+    adapter: compose-local
+    target: dev
+    composeFile: products/digital-marketing/deploy/local.compose.yaml
+    envFile: products/digital-marketing/deploy/local.env
+    envExampleFile: products/digital-marketing/deploy/local.env.example
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: dmos-dev-release-readiness
+  staging:
+    adapter: kubernetes-manifest
+    target: staging
+    manifestPath: products/digital-marketing/deploy/staging/
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: dmos-staging-release-readiness
+  prod:
+    adapter: kubernetes-manifest
+    target: prod
+    manifestPath: products/digital-marketing/deploy/prod/
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: dmos-prod-release-readiness
 
 providerModes:
   bootstrap:

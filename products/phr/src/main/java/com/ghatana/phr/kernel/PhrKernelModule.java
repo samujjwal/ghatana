@@ -9,6 +9,7 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.IdentityAwareBoundedCache;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.http.security.RoleEvaluator;
@@ -233,11 +234,12 @@ public class PhrKernelModule implements KernelModule {
             context,
             PhrNotificationDeliveryChannelsFactory.fromContext(context)
         );
+        DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> consentCache = resolveConsentCache(context);
         context.registerService(PhrNotificationSender.class, notificationSender);
         context.registerService(PhrNotificationOutboxDispatcher.class, notificationDispatcher);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
-        ConsentManagementService consent = new ConsentManagementService(context);
+        ConsentManagementService consent = new ConsentManagementService(context, consentCache);
         DocumentService documents = new DocumentService(context);
         AppointmentService appointments = new AppointmentService(context);
         MedicationService medications = new MedicationService(context);
@@ -314,6 +316,22 @@ public class PhrKernelModule implements KernelModule {
         services.add(telemedicine);
         services.add(caregivers);
         services.add(emergencyAccess);
+    }
+
+    @SuppressWarnings("unchecked")
+    private DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> resolveConsentCache(KernelContext context) {
+        if (!context.hasDependency(DistributedCachePort.class)) {
+            throw new IllegalStateException(
+                "DistributedCachePort dependency not available for ConsentManagementService; in-memory consent cache is not allowed in production wiring"
+            );
+        }
+
+        Object cache = context.getDependency(DistributedCachePort.class);
+        if (!(cache instanceof DistributedCachePort<?, ?>)) {
+            throw new IllegalStateException("DistributedCachePort dependency has invalid type");
+        }
+
+        return (DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry>) cache;
     }
 
     private void registerModuleContract(KernelContext context) {

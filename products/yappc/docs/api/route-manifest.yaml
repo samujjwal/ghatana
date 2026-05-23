@@ -211,6 +211,51 @@ yappc-services:
     operationId: serviceInfo
     auditEventType: SERVICE_INFO_READ
     privacyClassification: PUBLIC
+  - method: GET
+    path: /api/v1/yappc/product-family/releases/{productKey}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getProductFamilyReleaseReadiness
+    auditEventType: PRODUCT_FAMILY_RELEASE_READ
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/v1/yappc/product-family/assets
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listProductFamilyAssets
+    auditEventType: PRODUCT_FAMILY_ASSETS_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/v1/yappc/product-family/doc-truth
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listProductFamilyDocTruthWarnings
+    auditEventType: PRODUCT_FAMILY_DOC_TRUTH_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/v1/yappc/product-family/reuse-recommendations/{targetProduct}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: listProductFamilyReuseRecommendations
+    auditEventType: PRODUCT_FAMILY_REUSE_RECOMMENDATIONS_LIST
+    privacyClassification: CONFIDENTIAL
+  - method: GET
+    path: /api/v1/yappc/product-family/kernel-timeline/{productUnitId}
+    auth: required
+    scopes: [project:read]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: getProductFamilyKernelTimeline
+    auditEventType: PRODUCT_FAMILY_KERNEL_TIMELINE_READ
+    privacyClassification: CONFIDENTIAL
   - method: POST
     path: /api/v1/yappc/intent/capture
     auth: required

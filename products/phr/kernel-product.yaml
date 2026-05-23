@@ -208,6 +208,29 @@ deployment:
         url: http://localhost:${PHR_WEB_PORT:-5178}/
         retries: 5
         intervalMs: 2000
+  dev:
+    adapter: compose-local
+    target: dev
+    composeFile: products/phr/deploy/local.compose.yaml
+    envFile: products/phr/deploy/local.env
+    envExampleFile: products/phr/deploy/local.env.example
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: phr-dev-release-readiness
+  staging:
+    adapter: kubernetes-manifest
+    target: staging
+    manifestPath: products/phr/deploy/staging/
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: phr-staging-release-readiness
+  prod:
+    adapter: kubernetes-manifest
+    target: prod
+    manifestPath: products/phr/deploy/prod/
+    requireEnvFile: true
+    executionEnabled: false
+    enablementGate: phr-prod-release-readiness
 
 requiredManifests:
   build:

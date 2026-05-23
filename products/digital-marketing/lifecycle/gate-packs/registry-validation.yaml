@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: digital-marketing
 gateId: registry-validation
 title: Digital Marketing registry validation gate
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: Digital Marketing Platform Team
-status: planned
+status: active
 description: |
   Validates that the digital-marketing product is correctly registered in the
   canonical product registry with all required metadata, lifecycle profile, and
@@ -16,6 +16,7 @@ blockingReasonCodes:
   - requires-registry-validation
   - missing-registry-validation
 validationCommands:
-  - node scripts/check-digital-marketing-lifecycle-pilot.mjs
+  - node scripts/check-digital-marketing-lifecycle-pilot.mjs --smoke
+  - node scripts/check-affected-product-strict-release-profile.mjs --products digital-marketing
 notes:
   - Registry validation confirms the product is a known, canonically-registered lifecycle participant.

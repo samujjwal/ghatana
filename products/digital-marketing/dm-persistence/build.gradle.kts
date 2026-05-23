@@ -44,12 +44,7 @@ tasks.jacocoTestReport {
     }
 }
 
-val dmPersistenceCoverageEnabled = providers.environmentVariable("CI")
-    .map { it.equals("true", ignoreCase = true) }
-    .orElse(false)
-
 tasks.jacocoTestCoverageVerification {
-    enabled = dmPersistenceCoverageEnabled.get()
     violationRules {
         rule {
             limit {
@@ -66,7 +61,19 @@ tasks.jacocoTestCoverageVerification {
     }
 }
 
+tasks.register<Test>("validateFlywayMigrations") {
+    group = "verification"
+    description = "Runs deterministic Flyway/PostgreSQL migration validation tests for release readiness"
+    useJUnitPlatform()
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    filter {
+        includeTestsMatching("com.ghatana.digitalmarketing.persistence.migration.FlywayMigrationValidationTest")
+        includeTestsMatching("com.ghatana.digitalmarketing.persistence.FlywayMigrationValidationTest")
+    }
+}
+
 tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
-    // Migration validation is enforced via MigrationValidationIT
+    dependsOn("validateFlywayMigrations")
 }

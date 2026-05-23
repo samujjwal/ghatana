@@ -6,7 +6,6 @@ import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.OllamaCompletionService;
 import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
 import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
-import com.ghatana.audit.AuditLogger;
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -17,6 +16,7 @@ import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.LearnApiController;
 import com.ghatana.yappc.api.ObserveApiController;
+import com.ghatana.yappc.api.ProductFamilyControlPlaneController;
 import com.ghatana.yappc.api.RunApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
@@ -99,18 +99,6 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         MetricsCollector metrics = new SimpleMetricsCollector(prometheusRegistry);
         builder.bind(MetricsCollector.class).toInstance(metrics);
         builder.bind(PrometheusMeterRegistry.class).toInstance(prometheusRegistry);
-
-        // Durable JDBC audit logger — persists all lifecycle phase events.
-        // DataSource is resolved later by LifecycleServiceModule; we bind the
-        // AuditLogger factory so the injector can create the JdbcAuditLogger at
-        // startup once the DataSource is available.  Falls back to SLF4J-only if
-        // the DB connection fails at startup-time (prevents hard crash on misconfiguration).
-        // NOTE: LifecycleServiceModule provides a @Provides AuditLogger method that
-        // supersedes this binding when the DataSource is successfully initialised.
-        builder.bind(AuditLogger.class).toInstance(event -> {
-            logger.info("[AUDIT-FALLBACK] {}", event);
-            return io.activej.promise.Promise.complete();
-        });
 
         // CompletionService — resolved from env-driven provider; fail-fast if none configured.
         String anthropicKey  = System.getenv("ANTHROPIC_API_KEY");
@@ -208,6 +196,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(com.ghatana.yappc.services.security.LifecycleLoginController.class);
         com.ghatana.yappc.services.lifecycle.gdpr.GdprController gdprController =
                 injector.getInstance(com.ghatana.yappc.services.lifecycle.gdpr.GdprController.class);
+        ProductFamilyControlPlaneController productFamilyControlPlaneController =
+                injector.getInstance(ProductFamilyControlPlaneController.class);
 
         // ── Distributed Tracing (Dimension 7.1) ──────────────────────────
         // Eagerly instantiate LifecycleTracingConfig so the TracingManager is ready
@@ -230,7 +220,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 intentController, shapeController, generationController,
                 validationController, runController, observeController,
                 learnController, evolveController, advancePhaseUseCase, aepPublisher,
-                humanApprovalService, workflowService);
+                humanApprovalService, workflowService, productFamilyControlPlaneController);
         com.ghatana.platform.security.rbac.PolicyRepository policyRepository =
                 injector.getInstance(com.ghatana.platform.security.rbac.PolicyRepository.class);
         YappcApiSecurity.SecurityRoutes securedApi =
@@ -329,7 +319,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             AdvancePhaseUseCase advancePhaseUseCase,
             AepEventPublisher aepPublisher,
             HumanApprovalService humanApprovalService,
-            LifecycleWorkflowService workflowService) {
+            LifecycleWorkflowService workflowService,
+            ProductFamilyControlPlaneController productFamilyControlPlaneController) {
 
         ObjectMapper objectMapper = new ObjectMapper();
         DataSource dataSource = injector.getInstance(DataSource.class);
@@ -452,6 +443,18 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         + "\"phases\":[\"intent\",\"shape\",\"generate\",\"run\","
                                         + "\"observe\",\"evolve\",\"learn\",\"validate\"]}")
                                 .toPromise())
+
+                // Product-family control plane: release readiness, reusable assets, doc truth, and Kernel visibility.
+                .with(GET, "/api/v1/yappc/product-family/releases/:productKey",
+                        productFamilyControlPlaneController::getReleaseReadiness)
+                .with(GET, "/api/v1/yappc/product-family/assets",
+                        productFamilyControlPlaneController::listAssets)
+                .with(GET, "/api/v1/yappc/product-family/doc-truth",
+                        productFamilyControlPlaneController::listDocTruthWarnings)
+                .with(GET, "/api/v1/yappc/product-family/reuse-recommendations/:targetProduct",
+                        productFamilyControlPlaneController::listGuidedReuse)
+                .with(GET, "/api/v1/yappc/product-family/kernel-timeline/:productUnitId",
+                        productFamilyControlPlaneController::getKernelTimeline)
 
                 // ── Canonical Workflow Routes (YAPPC-Ph9) ────────────────────
                 // GET  /api/v1/workflows/templates        — list registered template IDs

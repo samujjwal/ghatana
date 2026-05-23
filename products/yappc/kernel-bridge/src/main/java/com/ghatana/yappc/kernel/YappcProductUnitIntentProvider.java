@@ -14,4 +14,17 @@ import java.util.Map;
  */
 public interface YappcProductUnitIntentProvider {
     Promise<Map<String, Object>> exportProductUnitIntent(String candidateId, Map<String, Object> request);
+
+    /**
+     * Exports a typed ProductUnitIntent contract for Kernel handoff.
+     *
+     * <p>The default implementation preserves compatibility with older providers
+     * while new providers can override it to avoid map-shaped handoff internally.</p>
+     */
+    default Promise<ProductUnitIntentContract> exportTypedProductUnitIntent(
+            String candidateId,
+            Map<String, Object> request) {
+        return exportProductUnitIntent(candidateId, request)
+                .map(intent -> ProductUnitIntentContract.fromRequest(candidateId, intent, "yappc-product-unit-intent-provider"));
+    }
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T19:50:47.097Z",
+  "generatedAt": "2026-05-23T21:29:03.748Z",
   "affectedProducts": [
     "digital-marketing",
     "phr"
@@ -61,7 +61,14 @@
       ],
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,
-      "hasBackendSurface": true
+      "hasBackendSurface": true,
+      "deploymentTargets": [
+        "compose-local",
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "hasFoundationUsageProfile": true
     },
     {
       "productId": "phr",
@@ -75,7 +82,14 @@
       ],
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,
-      "hasBackendSurface": true
+      "hasBackendSurface": true,
+      "deploymentTargets": [
+        "compose-local",
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "hasFoundationUsageProfile": true
     }
   ],
   "violations": []

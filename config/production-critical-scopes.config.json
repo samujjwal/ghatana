@@ -201,6 +201,24 @@
       "severity": "critical",
       "pattern": "//\\s*(TODO.*replace.*durable|replace.*with.*durable.*storage|placeholder.*storage|stub.*storage)",
       "description": "Comment indicates in-memory or placeholder storage that must be replaced with durable storage"
+    },
+    {
+      "id": "PRODUCTION_FALLBACK_IDENTITIES",
+      "severity": "critical",
+      "pattern": "\\b(test-tenant|test-user)\\b",
+      "description": "Production source must not hardcode fallback tenant/principal identifiers",
+      "includePaths": [
+        "(^|/)products/(phr|digital-marketing)/.*src/main/"
+      ]
+    },
+    {
+      "id": "PRODUCTION_FALLBACK_INMEMORY_OR_NOOP",
+      "severity": "critical",
+      "pattern": "\\b(InMemory[A-Za-z0-9_]*|Noop[A-Za-z0-9_]*|local-only)\\b",
+      "description": "Production source must not rely on in-memory/no-op/local-only fallback implementations",
+      "includePaths": [
+        "(^|/)products/(phr|digital-marketing)/.*src/main/"
+      ]
     }
   ]
 }

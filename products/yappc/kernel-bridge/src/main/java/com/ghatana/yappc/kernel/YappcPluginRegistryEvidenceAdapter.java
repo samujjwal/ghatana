@@ -30,7 +30,29 @@ public final class YappcPluginRegistryEvidenceAdapter implements
 
     @Override
     public Promise<Map<String, Object>> exportProductUnitIntent(String candidateId, Map<String, Object> request) {
-        return Promise.of(evidence("product-unit-intent", candidateId, request));
+        return exportTypedProductUnitIntent(candidateId, request)
+                .map(ProductUnitIntentContract::toMap);
+    }
+
+    @Override
+    public Promise<ProductUnitIntentContract> exportTypedProductUnitIntent(String candidateId, Map<String, Object> request) {
+        ProductUnitIntentContract contract = ProductUnitIntentContract.fromRequest(
+                candidateId,
+                request,
+                "yappc-plugin-registry-adapter");
+        Map<String, Object> metadata = new java.util.LinkedHashMap<>(contract.metadata());
+        metadata.put("pluginCount", pluginRegistry.getPluginCount());
+        metadata.put("handoffBoundary", "public-kernel-contract");
+        return Promise.of(new ProductUnitIntentContract(
+                contract.schemaVersion(),
+                contract.candidateId(),
+                contract.productUnitId(),
+                contract.source(),
+                contract.registryProvider(),
+                contract.surfaces(),
+                contract.capabilities(),
+                metadata,
+                contract.createdAt()));
     }
 
     @Override

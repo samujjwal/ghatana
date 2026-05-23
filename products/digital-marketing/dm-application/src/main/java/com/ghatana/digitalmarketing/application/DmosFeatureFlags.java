@@ -18,64 +18,64 @@ package com.ghatana.digitalmarketing.application;
 public final class DmosFeatureFlags {
 
     /**
-     * Enables AI-powered generation features: strategy, ad-copy, SOW generation.
+     * Enables AI-powered generation features: strategy, ad-copy, SOW generation
      * Env-var fallback: {@code DMOS_AI_ENABLED} (default {@code false} in production).
      */
     public static final String AI_ENABLED = "dmos.ai.enabled";
 
     /**
-     * Enables the Google Ads connector runtime.
+     * Enables the Google Ads connector runtime
      * Env-var fallback: {@code DMOS_GOOGLE_ADS_CONNECTOR_ENABLED} (default {@code false} in production).
      */
     public static final String GOOGLE_ADS_CONNECTOR_ENABLED = "dmos.google_ads_connector.enabled";
 
     /**
-     * Enables kill-switch enforcement. Must always be {@code true} in production.
-     * Env-var fallback: {@code DMOS_KILL_SWITCH_ENABLED} (default {@code true}).
+     * Enables kill-switch enforcement. Must always be true in production
+     * Env-var fallback: {@code DMOS_KILL_SWITCH_ENABLED} (default {@code true} in production).
      */
     public static final String KILL_SWITCH_ENABLED = "dmos.kill_switch.enabled";
 
     /**
-     * Enables the rollback and compensating-action workflow.
-     * Env-var fallback: {@code DMOS_ROLLBACK_WORKFLOW_ENABLED} (default {@code true}).
+     * Enables the rollback and compensating-action workflow
+     * Env-var fallback: {@code DMOS_ROLLBACK_WORKFLOW_ENABLED} (default {@code true} in production).
      */
     public static final String ROLLBACK_WORKFLOW_ENABLED = "dmos.rollback_workflow.enabled";
 
     /**
-     * Enables rollback functionality.
-     * Env-var fallback: {@code DMOS_ROLLBACK_ENABLED} (default {@code true}).
-     */
-    public static final String ROLLBACK_ENABLED = "dmos.rollback.enabled";
-
-    /**
-     * Enables observability features.
-     * Env-var fallback: {@code DMOS_OBSERVABILITY_ENABLED} (default {@code true}).
-     */
-    public static final String OBSERVABILITY_ENABLED = "dmos.observability.enabled";
-
-    /**
-     * Enables dashboard growth metrics widget.
-     * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED} (default {@code false}).
+     * Enables the growth metrics widget on the dashboard
+     * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED} (default {@code false} in production).
      */
     public static final String DASHBOARD_GROWTH_METRICS = "dmos.dashboard_growth_metrics";
 
     /**
-     * Enables the budget management page UI (requires full implementation before enabling in production).
-     * Env-var fallback: {@code DMOS_BUDGET_PAGE_ENABLED} (default {@code false}).
+     * Enables the budget recommendation, review, submission, and approval workflow UI
+     * Env-var fallback: {@code DMOS_BUDGET_PAGE_ENABLED} (default {@code false} in production).
      */
     public static final String BUDGET_PAGE_ENABLED = "dmos.budget_page_enabled";
 
     /**
-     * Enables the strategy generation page UI (requires full implementation before enabling in production).
-     * Env-var fallback: {@code DMOS_STRATEGY_PAGE_ENABLED} (default {@code false}).
+     * Enables the strategy generation, review, submission, and approval workflow UI
+     * Env-var fallback: {@code DMOS_STRATEGY_PAGE_ENABLED} (default {@code false} in production).
      */
     public static final String STRATEGY_PAGE_ENABLED = "dmos.strategy_page_enabled";
 
     /**
-     * Enables the campaign management page UI (requires full implementation before enabling in production).
-     * Env-var fallback: {@code DMOS_CAMPAIGNS_PAGE_ENABLED} (default {@code false}).
+     * Enables the campaign management workflow UI for campaign planning, state transitions, and performance review
+     * Env-var fallback: {@code DMOS_CAMPAIGNS_PAGE_ENABLED} (default {@code false} in production).
      */
     public static final String CAMPAIGNS_PAGE_ENABLED = "dmos.campaigns_page_enabled";
+
+    /**
+     * Enables rollback functionality
+     * Env-var fallback: {@code DMOS_ROLLBACK_ENABLED} (default {@code true} in production).
+     */
+    public static final String ROLLBACK_ENABLED = "dmos.rollback.enabled";
+
+    /**
+     * Enables observability features
+     * Env-var fallback: {@code DMOS_OBSERVABILITY_ENABLED} (default {@code true} in production).
+     */
+    public static final String OBSERVABILITY_ENABLED = "dmos.observability.enabled";
 
     private DmosFeatureFlags() {
         // Utility class - prevent instantiation

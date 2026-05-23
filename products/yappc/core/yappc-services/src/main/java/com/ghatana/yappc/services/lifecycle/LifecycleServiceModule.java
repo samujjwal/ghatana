@@ -24,6 +24,7 @@ import com.ghatana.yappc.api.EvolveApiController;
 import com.ghatana.yappc.api.LifecycleApiController;
 import com.ghatana.yappc.api.LifecycleExecutionRepository;
 import com.ghatana.yappc.api.GenerationRunRepository;
+import com.ghatana.yappc.api.ProductFamilyControlPlaneController;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
 import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
@@ -623,6 +624,15 @@ public class LifecycleServiceModule extends AbstractModule {
     EvolveApiController evolveApiController(EvolutionService evolutionService) {
         logger.info("Creating EvolveApiController");
         return new EvolveApiController(evolutionService);
+    }
+
+    /** Provides product-family release, asset, doc-truth, and reuse read APIs. */
+    @Provides
+    ProductFamilyControlPlaneController productFamilyControlPlaneController(
+            DataCloudClient dataCloudClient,
+            ObjectMapper objectMapper) {
+        logger.info("Creating ProductFamilyControlPlaneController");
+        return new ProductFamilyControlPlaneController(dataCloudClient, objectMapper);
     }
 
     // ========== Artifact Compiler (YAPPC-ArtifactCompiler) ==========

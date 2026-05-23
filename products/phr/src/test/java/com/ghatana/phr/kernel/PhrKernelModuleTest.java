@@ -12,6 +12,8 @@ import com.ghatana.phr.hie.NepalHieIntegrationService;
 import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
+import com.ghatana.platform.cache.DistributedCachePort;
+import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -291,6 +294,12 @@ class PhrKernelModuleTest extends EventloopTestBase {
                         @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataStream> openStream(com.ghatana.kernel.adapter.datacloud.DataStreamRequest r) { return Promise.of(null); }
                     });
                 }
+                if (type == DistributedCachePort.class) {
+                    return type.cast(new InMemoryCacheAdapter<String, com.ghatana.phr.kernel.service.ConsentManagementService.ConsentCacheEntry>(
+                        50_000,
+                        Duration.ofMinutes(5)
+                    ));
+                }
                 throw new IllegalStateException("Dependency not found: " + type);
             }
             @Override public <T> java.util.Optional<T> getOptionalDependency(Class<T> type) {
@@ -303,7 +312,8 @@ class PhrKernelModuleTest extends EventloopTestBase {
             @Override public <T> boolean hasDependency(Class<T> type) {
                 return registeredServices.containsKey(type)
                     || type == KernelConfigResolver.class
-                    || type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class;
+                    || type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class
+                    || type == DistributedCachePort.class;
             }
             @Override public <T> T getDependency(String name, Class<T> type) { return null; }
             @Override public <E> void registerEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {}

@@ -44,6 +44,61 @@ public final class GeneratedRouteRegistry {
             PrivacyClassification.PUBLIC
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/v1/yappc/product-family/releases/{productKey}",
+            AuthMode.REQUIRED,
+            Set.of("project:read"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "getProductFamilyReleaseReadiness",
+            "PRODUCT_FAMILY_RELEASE_READ",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/v1/yappc/product-family/assets",
+            AuthMode.REQUIRED,
+            Set.of("project:read"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listProductFamilyAssets",
+            "PRODUCT_FAMILY_ASSETS_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/v1/yappc/product-family/doc-truth",
+            AuthMode.REQUIRED,
+            Set.of("project:read"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listProductFamilyDocTruthWarnings",
+            "PRODUCT_FAMILY_DOC_TRUTH_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/v1/yappc/product-family/reuse-recommendations/{targetProduct}",
+            AuthMode.REQUIRED,
+            Set.of("project:read"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "listProductFamilyReuseRecommendations",
+            "PRODUCT_FAMILY_REUSE_RECOMMENDATIONS_LIST",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "GET",
+            "/api/v1/yappc/product-family/kernel-timeline/{productUnitId}",
+            AuthMode.REQUIRED,
+            Set.of("project:read"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "getProductFamilyKernelTimeline",
+            "PRODUCT_FAMILY_KERNEL_TIMELINE_READ",
+            PrivacyClassification.CONFIDENTIAL
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
             "/api/v1/yappc/intent/capture",
             AuthMode.REQUIRED,

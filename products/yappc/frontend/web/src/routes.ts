@@ -73,6 +73,7 @@ export default [
       // Kernel Health visibility (OWNER/ADMIN only — capability-gated via useCapabilityGate)
       route('kernel-health', 'routes/app/kernel-health.tsx'),
       route('kernel-health/products/:productUnitId', 'routes/app/kernel-health-product.tsx'),
+      route('product-family', 'routes/app/product-family.tsx'),
 
       // Admin routes (OWNER/ADMIN only — capability-gated via useCapabilityGate)
       route('admin/prompt-versions', 'routes/app/admin/prompt-versions.tsx'),

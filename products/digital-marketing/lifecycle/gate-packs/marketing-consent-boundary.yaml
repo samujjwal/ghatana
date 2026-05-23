@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: digital-marketing
 gateId: marketing-consent-boundary
 title: Digital Marketing marketing consent boundary gate
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: Digital Marketing Platform Team
-status: planned
+status: active
 description: |
   Validates that all marketing audience targeting, campaign automation, and
   data pipeline operations respect declared consent boundaries. Marketing contact
@@ -17,6 +17,7 @@ blockingReasonCodes:
   - missing-marketing-consent-boundary
 validationCommands:
   - ./gradlew :products:digital-marketing:dm-domain:check
+  - node scripts/check-dmos-boundary-workflow-coverage.mjs
 notes:
   - This gate is declared via the kernel://policy-packs/marketing-consent-boundary policy pack.
   - Consent enforcement is a product policy concern; kernel only evaluates evidence.

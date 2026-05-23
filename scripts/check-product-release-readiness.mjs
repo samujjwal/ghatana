@@ -262,6 +262,7 @@ const journeyMatrix = [
         area: 'secure-routes-observability-and-doc-truth',
         scripts: [
           './scripts/check-secret-default-credentials.mjs',
+          './scripts/check-production-stubs.mjs',
           './scripts/check-route-entitlement-contracts.mjs',
           './scripts/check-observability-conformance.mjs',
           './scripts/check-doc-claims-evidence.mjs',
@@ -290,6 +291,7 @@ const journeyMatrix = [
       {
         area: 'strict-release-and-coverage',
         scripts: [
+          './scripts/check-release-profile-local-targets.mjs',
           './scripts/check-openapi-release-quality.mjs',
           './scripts/check-openapi-breaking-changes.mjs',
           './scripts/generate-wave2-product-quality-scorecard.mjs',
@@ -311,6 +313,8 @@ const releaseAreas = [
   {
     area: 'strict-release-gate-evidence',
     scripts: [
+      './scripts/check-product-family-asset-registry.mjs',
+      './scripts/check-release-profile-local-targets.mjs',
       './scripts/check-data-cloud-release-runtime-profile.mjs',
       './scripts/check-affected-product-strict-release-profile.mjs',
       './scripts/check-kernel-implementation-plan-coverage.mjs',
@@ -335,6 +339,7 @@ const releaseAreas = [
     area: 'security-and-doc-truth-gates',
     scripts: [
       './scripts/check-secret-default-credentials.mjs',
+      './scripts/check-production-stubs.mjs',
       './scripts/check-route-entitlement-contracts.mjs',
       './scripts/check-doc-claims-evidence.mjs',
       './scripts/check-current-state-claims.mjs',

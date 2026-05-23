@@ -77,6 +77,8 @@ tags:
     description: Scaffold dependency analysis and conflict detection
   - name: refactorer
     description: Automated refactoring job management
+  - name: product-family
+    description: YAPPC product-family release readiness, reusable assets, doc-truth, and Kernel visibility
 
 # ─────────────────────────────────────────────────────────────────────────────
 paths:
@@ -268,6 +270,145 @@ paths:
                 name: YAPPC Lifecycle API
                 version: "2.0.0"
                 status: operational
+
+  /api/v1/yappc/product-family/releases/{productKey}:
+    get:
+      tags: [product-family]
+      summary: Get product release readiness
+      operationId: getProductFamilyReleaseReadiness
+      parameters:
+        - name: productKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Data Cloud-backed release readiness read model
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Data Cloud read model unavailable
+
+  /api/v1/yappc/product-family/assets:
+    get:
+      tags: [product-family]
+      summary: List reusable product-family assets
+      operationId: listProductFamilyAssets
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: product
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: domain
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: maturity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: reuseMode
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: compatibility
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product-family asset registry read model
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Data Cloud read model unavailable
+
+  /api/v1/yappc/product-family/doc-truth:
+    get:
+      tags: [product-family]
+      summary: List doc, registry, and code truth warnings
+      operationId: listProductFamilyDocTruthWarnings
+      responses:
+        "200":
+          description: Doc-truth warning read model
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Data Cloud read model unavailable
+
+  /api/v1/yappc/product-family/reuse-recommendations/{targetProduct}:
+    get:
+      tags: [product-family]
+      summary: List guided reusable-asset recommendations
+      operationId: listProductFamilyReuseRecommendations
+      parameters:
+        - name: targetProduct
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Guided reuse recommendations for a target product
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Data Cloud read model unavailable
+
+  /api/v1/yappc/product-family/kernel-timeline/{productUnitId}:
+    get:
+      tags: [product-family]
+      summary: Get Kernel lifecycle timeline and rollback visibility
+      operationId: getProductFamilyKernelTimeline
+      parameters:
+        - name: productUnitId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Kernel public-event lifecycle timeline read model
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          description: Data Cloud read model unavailable
 
   # ── Capabilities ─────────────────────────────────────────────────────────────
 

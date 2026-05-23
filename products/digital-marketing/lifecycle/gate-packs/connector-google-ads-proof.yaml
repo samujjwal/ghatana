@@ -1,0 +1,21 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+gateId: connector-google-ads-proof
+title: Digital Marketing Google Ads connector proof gate
+executionMode: evidence-backed
+owner: Digital Marketing Platform Team
+status: active
+description: |
+  Validates Google Ads connector execution readiness including credential validation,
+  idempotency behavior, retry/dead-letter handling, external-id persistence, and audit traceability.
+requiredEvidenceRefs:
+  - products/digital-marketing/dm-connector-google-ads/src/test/java
+  - products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java
+blockingReasonCodes:
+  - requires-connector-google-ads-proof
+  - missing-connector-google-ads-proof
+validationCommands:
+  - ./gradlew :products:digital-marketing:dm-connector-google-ads:test
+  - ./gradlew :products:digital-marketing:dm-kernel-bridge:test --tests com.ghatana.digitalmarketing.bridge.NotificationRetryAndDlqTest
+notes:
+  - Connector proof must remain fail-closed when connector credentials or policy approvals are missing.

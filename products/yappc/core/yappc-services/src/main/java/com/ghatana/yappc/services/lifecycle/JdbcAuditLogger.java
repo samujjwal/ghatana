@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -59,9 +60,15 @@ public class JdbcAuditLogger implements AuditLogger {
             VALUES (?, ?, ?, ?, ?::jsonb)
             ON CONFLICT (id) DO NOTHING
             """;
+    private static final String HEALTHCHECK_SQL = """
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_name = 'lifecycle_audit_events'
+            """;
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
+    private final boolean failClosed;
 
     /**
      * Constructs a {@code JdbcAuditLogger}.
@@ -72,14 +79,19 @@ public class JdbcAuditLogger implements AuditLogger {
     public JdbcAuditLogger(DataSource dataSource, ObjectMapper objectMapper) {
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
+        this.failClosed = isProductionProfile();
+        if (failClosed) {
+            verifyDurableAuditStore();
+        }
     }
 
     /**
      * Persists the audit event asynchronously.
      *
      * @param event audit event fields; must contain at least {@code "type"}
-     * @return {@link Promise} that completes when the event is persisted,
-     *         or resolved normally even on {@link SQLException} (error is logged)
+     * @return {@link Promise} that completes when the event is persisted. In production
+     *         mode, durable audit failures complete exceptionally so lifecycle writes
+     *         fail closed instead of continuing without an audit trail.
      */
     @Override
     public Promise<Void> log(Map<String, Object> event) {
@@ -103,9 +115,12 @@ public class JdbcAuditLogger implements AuditLogger {
                 ps.executeUpdate();
                 log.debug("Audit event persisted: id={} type={} tenant={}", id, type, tenantId);
             } catch (SQLException e) {
-                // Log and continue — audit failures must never block lifecycle operations
                 log.error("Failed to persist audit event (type={} tenant={}): {}",
                         type, tenantId, e.getMessage());
+                if (failClosed) {
+                    throw new IllegalStateException(
+                            "Durable audit persistence failed in production mode", e);
+                }
             }
         });
     }
@@ -126,5 +141,28 @@ public class JdbcAuditLogger implements AuditLogger {
             log.warn("Failed to serialize audit event to JSON; storing empty object: {}", e.getMessage());
             return "{}";
         }
+    }
+
+    private void verifyDurableAuditStore() {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(HEALTHCHECK_SQL);
+             ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) {
+                throw new IllegalStateException(
+                        "PRODUCTION STARTUP GUARD FAILED: lifecycle_audit_events table is required");
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "PRODUCTION STARTUP GUARD FAILED: durable audit store cannot be initialized", e);
+        }
+    }
+
+    private static boolean isProductionProfile() {
+        String profile = System.getProperty(
+                "yappc.profile",
+                System.getenv().getOrDefault("YAPPC_PROFILE", "dev"));
+        return !profile.equalsIgnoreCase("dev")
+                && !profile.equalsIgnoreCase("development")
+                && !profile.equalsIgnoreCase("test");
     }
 }

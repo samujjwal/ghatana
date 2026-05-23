@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
 
 import com.ghatana.platform.cache.DistributedCachePort;
-import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
@@ -93,18 +92,6 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                 .windowDuration(RATE_LIMIT_WINDOW)
                 .build()
         );
-    }
-
-    /**
-     * Convenience constructor for tests and single-node deployments.
-     * Creates an in-memory cache with 50,000 entry capacity and 5-minute TTL.
-     */
-    public ConsentManagementService(KernelContext context) {
-        this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)));
-    }
-
-    ConsentManagementService(KernelContext context, PhrNotificationSender notificationSender) {
-        this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)), notificationSender);
     }
 
     @Override
@@ -805,7 +792,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         public Map<String, Object> getMetadata() { return metadata; }
     }
 
-    private static class ConsentCacheEntry {
+    public static class ConsentCacheEntry {
         private final String grantId;
         private final boolean allowed;
         private final Instant expiresAt;

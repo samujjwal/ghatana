@@ -1,433 +1,136 @@
-# YAPPC Production Readiness Audit — `samujjwal/ghatana`
+# Doc 1 — PHR + Digital Marketing release-readiness review with Kernel/Data Cloud/foundations
 
-Target commit audited: `f302e89c8e7116e8821a7957b4a06a5d7dff81e` — verified as commit message `dd ff gg 1`. 
+## 1. Release strategy decision
 
-This is a static code-and-doc audit based on repository files accessible through GitHub at the target commit. I did not execute tests locally because the container could not clone GitHub due DNS/network resolution failure; the report therefore marks runtime/test execution as unverified.
+Use **PHR as the first production-release hardening driver**, then **Digital Marketing as the second production-release hardening driver**.
+
+The rule should be:
+
+> A product release is allowed only when every Kernel, Data Cloud, plugin, shared library, contract, UI foundation, and runtime capability used by that product’s production path is production-ready for that product’s usage profile. Unused foundation capabilities may remain incomplete only if they are disabled, hidden, and not advertised as live.
+
+This avoids blocking PHR on all future platform capabilities, while also preventing PHR from shipping on top of non-production Kernel/Data Cloud/foundation slices.
+
+## 2. Current maturity scorecard
+
+| Area                                    |  Score | Current state                                                                                                                                                                                                                                                                                    |
+| --------------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PHR product readiness                   | 6.4/10 | Strong product architecture, Kernel composition, schema contracts, release gate tasks, consent/break-glass flow. Blocked by production-safety gaps such as default `test-tenant`/`test-user`, in-memory consent cache defaults, local-only deployment target, and incomplete rollback readiness. |
+| Digital Marketing readiness             | 6.8/10 | Cleaner modular architecture and stronger Kernel bridge adapter. Still local-only deployment target, coverage threshold reductions, disabled feature-flag generation, runtime module false, and unproven full UI→API→domain→persistence→connector→audit flow.                                    |
+| Kernel usage readiness for PHR/DMOS     | 6.2/10 | Correct layered architecture and plugin boundary intent, but product releases need stricter evidence that used lifecycle/plugin slices are production-ready.                                                                                                                                     |
+| Data Cloud usage readiness for PHR/DMOS | 6.1/10 | Correct product-family positioning: Data Cloud is the customer-facing operational data fabric and AEP is Action Plane runtime. Need stronger proof that product-used durable state, policy, evidence, and runtime truth are production-grade.                                                    |
+| Foundation/platform library readiness   | 6.3/10 | Platform modules and plugin model are directionally right. Must harden only the slices used by PHR/DMOS releases first.                                                                                                                                                                          |
+| Release evidence maturity               | 5.8/10 | There are release gate scripts and product registry metadata, but local-only deployment and partial rollback evidence prevent production confidence.                                                                                                                                             |
+| Reusable asset inventory maturity       | 3.5/10 | Conceptually needed; not yet a first-class inventory with maturity, usage, tests, promotion path, and product lineage.                                                                                                                                                                           |
+
+## 3. PHR findings
+
+### What is strong
+
+PHR is clearly intended as a Kernel-backed healthcare product. Its architecture describes FHIR R4 interoperability, Nepal healthcare compliance, consent, emergency break-glass, patient/provider/admin surfaces, AI clinical decision support, audit, and Kernel/DataCloud integration. 
+
+The registry marks PHR as an active business product with backend and web surfaces implemented, lifecycle enabled, required healthcare gates, and lifecycle execution allowed. It also records required gates such as consent, PII classification, audit evidence, FHIR contract validation, and tenant data sovereignty. 
+
+`PhrKernelModule` is a real composition root: it declares PHR capabilities, Kernel dependencies, optional FHIR/HL7 external dependencies, creates domain services, starts/stops lifecycle-aware services, registers HTTP/FHIR/HIE routes, and registers schema contracts for patient records, consent, medications, labs, immunizations, notes, imaging, referrals, billing, telemedicine, caregivers, and emergency access.  
+
+The PHR Gradle build has explicit Kernel/platform/plugin dependencies and release-oriented tasks: `phrReleaseGate`, `checkApiContractConformance`, benchmark task, product-pack validation, and policy pack test patterns. 
+
+### Production blockers
+
+The biggest PHR blocker is that `PhrServiceBase` silently injects default `tenantId = test-tenant` and `principalId = test-user` when metadata is absent. That is acceptable only in isolated tests, not production product code. It directly conflicts with the product-family rule that production foundations must fail closed on missing tenant/principal. 
+
+`ConsentManagementService` has strong consent behavior: distributed-cache constructor, rate limiting, grant creation/revocation, access decisions, emergency access, notifications, and audit calls. But the public convenience constructor still defaults to `InMemoryCacheAdapter`, and `PhrKernelModule` uses `new ConsentManagementService(context)` instead of explicitly requiring a production distributed cache.  
+
+PHR’s registry deployment target is only `compose-local`, supported environment is only `local`, and rollback readiness is `target-partial`. That means PHR is not yet production-deployable even if many functional components exist. 
+
+PHR’s build file says OpenAPI validation task was removed because the plugin is unavailable. There is a contract conformance test task, which is good, but release readiness should not depend on a removed OpenAPI gate without an equivalent enforced replacement. 
+
+### PHR implementation plan
+
+| Priority | Area                            | What to change                                                                                                                                                                             | Where                                                                           |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| P0       | Tenant/principal fail-closed    | Remove production fallback to `test-tenant` and `test-user`. Move test defaults into test fixtures only. Production mutations must require explicit tenant/principal from trusted context. | `products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java` |
+| P0       | Consent cache production wiring | Require distributed cache for production. Make in-memory cache available only through test/dev profile with explicit flag and health warning.                                              | `ConsentManagementService`, `PhrKernelModule`                                   |
+| P0       | PHR release profile             | Replace registry `local`-only deployment with staged targets: local, dev, staging, prod. Keep prod disabled until all evidence gates pass.                                                 | `config/canonical-product-registry.json`, `products/phr/kernel-product.yaml`    |
+| P0       | Healthcare gate evidence        | Make consent, PII, audit, FHIR, and data-sovereignty gates executable and evidence-backed, not only manifest-backed.                                                                       | `products/phr/lifecycle/gate-packs/*`, `.kernel/evidence/phr/*`                 |
+| P0       | Contract parity                 | Reinstate or replace OpenAPI validation with enforced route↔OpenAPI↔handler parity.                                                                                                        | `products/phr/build.gradle.kts`, PHR API tests                                  |
+| P1       | Emergency access workflow       | Ensure break-glass requires post-hoc review, immutable audit, notification, and patient visibility. Add negative-path tests.                                                               | `EmergencyAccessLogService`, `EmergencyAccessReviewWorkflow`, consent tests     |
+| P1       | FHIR production proof           | Add FHIR R4 golden fixtures and contract tests for patient, observation, medication, immunization, imaging, notes, referrals.                                                              | `products/phr/src/test`, schema packs                                           |
+| P1       | Observability                   | Add end-to-end trace/correlation from PHR API → service → Data Cloud/Kernel → audit.                                                                                                       | PHR HTTP/API/services, platform observability                                   |
+| P1       | UI readiness                    | Verify patient/provider/admin route access, consent states, empty/error/unauthorized/degraded states, i18n/a11y.                                                                           | `products/phr/apps/web`                                                         |
+| P2       | Reusable extraction             | Promote PHR consent panel, audit trail, FHIR validation gate, break-glass workflow, tenant-scoped repository pattern into asset registry candidates.                                       | New Product Family Asset Registry                                               |
+
+## 4. Digital Marketing findings
+
+### What is strong
+
+Digital Marketing has a clearer product-boundary document than PHR. It explicitly says DMOS owns marketing domain logic, routes, contracts, persistence, connector adapters, tests, runbooks, and dashboards, while Kernel/platform owns generic identity, feature flags, audit, approvals, telemetry, notification, compliance, and policy primitives. 
+
+The registry marks Digital Marketing as active, lifecycle enabled, backend/web implemented, bridge conformance true, bridge adapter tests present, agent definitions true, mastery bindings true, evaluation packs true, and lifecycle execution allowed. 
+
+`DigitalMarketingKernelAdapterImpl` is a strong product-owned adapter over Kernel/plugin ports. It constructor-injects authorization, audit, consent, approval, audit trail, risk, notification, and feature-flag plugins. It uses authorization checks before consent, approval, audit, risk, feature flag, and notification operations. It also redacts sensitive values and has production-mode fail-closed behavior for risk and notification failures.  
+
+### Production blockers
+
+Digital Marketing is still registry-local only: deployment target is `compose-local`, supported environment is `local`, even though the architecture describes production deployment with PostgreSQL, secrets, OTLP, rate limits, retention/DSAR, connector credentials, and production bootstrap validation.  
+
+`dm-application` has feature flag generation disabled “temporarily due to build issues,” and application coverage gates are reduced to 60% line / 50% branch. That is not production-grade for a release candidate. 
+
+`dm-persistence` has PostgreSQL/Flyway/Testcontainers dependencies, which is good, but coverage verification is only enabled when `CI=true`. Production release gates should not depend on environment ambiguity; release profile should enforce persistence coverage and migration validation deterministically. 
+
+The registry says `runtimeModule: false` for Digital Marketing, which means the product is not yet a full Kernel runtime module even though it is a lifecycle pilot. 
+
+### Digital Marketing implementation plan
+
+| Priority | Area                       | What to change                                                                                                                                                            | Where                                                                                      |
+| -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| P0       | Production release profile | Add staging/prod profiles, secrets validation, PostgreSQL/Flyway migration gate, connector credential validation, OTLP config, rollback readiness.                        | `config/canonical-product-registry.json`, `products/digital-marketing/kernel-product.yaml` |
+| P0       | Feature flags              | Re-enable canonical feature flag generation and make compile/check depend on it.                                                                                          | `products/digital-marketing/dm-application/build.gradle.kts`                               |
+| P0       | Coverage gate              | Restore production-grade thresholds for app/domain/bridge/persistence, or define strict per-package gates with evidence.                                                  | `dm-application`, `dm-domain`, `dm-kernel-bridge`, `dm-persistence` builds                 |
+| P0       | Persistence proof          | Make migration validation, tenant/workspace query enforcement, idempotency constraints, external ID constraints, and repository integration tests required release gates. | `dm-persistence`                                                                           |
+| P0       | Connector execution        | Prove Google Ads connector: OAuth validation, idempotency, retries, DLQ, compensation, external ID persistence, audit.                                                    | `dm-connector-google-ads`, `dm-application`                                                |
+| P1       | Runtime module             | Decide whether DMOS needs `runtimeModule: true` for release. If yes, implement; if no, document why lifecycle execution works without it.                                 | Registry + Kernel product config                                                           |
+| P1       | UI runtime truth           | Ensure UI route/cards/actions come from backend capabilities, not frontend assumptions. Add empty/error/unauthorized/locked/degraded states.                              | `products/digital-marketing/ui`                                                            |
+| P1       | AI action evidence         | Persist prompt/input/model/provider/confidence/rationale/risk/policy/approval outcome.                                                                                    | `dm-domain`, `dm-application`, `dm-persistence`                                            |
+| P1       | Observability              | Add trace/correlation across UI → API → app → persistence/connector → Kernel bridge → audit/notification.                                                                 | API/application/bridge                                                                     |
+| P2       | Reusable extraction        | Promote approval queue, connector adapter pattern, AI transparency panel, campaign dashboard, notification retry/DLQ pattern into asset registry candidates.              | Product Family Asset Registry                                                              |
+
+## 5. Kernel/Data Cloud/foundation usage plan for PHR and Digital Marketing
+
+### Required production slices for PHR release
+
+| Foundation             | Required slice                                                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Kernel                 | lifecycle validate/build/package/deploy/verify; product manifest; capability registry; schema registration; rollback evidence |
+| Kernel plugins         | consent, audit, compliance, human approval, ledger only if billing is in release                                              |
+| Data Cloud             | patient/consent/audit/evidence records; tenant-scoped mutations and queries; runtime truth for product surfaces               |
+| Platform security      | auth, route entitlements, RBAC, tenant isolation, rate limiting                                                               |
+| Platform observability | correlation IDs, health, metrics, audit trail                                                                                 |
+| YAPPC                  | release visibility only if used; must not claim runtime truth from local/fake data                                            |
+| Audio-Video            | exclude unless PHR uses telemedicine/media in production                                                                      |
+
+### Required production slices for Digital Marketing release
+
+| Foundation             | Required slice                                                                                               |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Kernel                 | lifecycle profile, plugin bridge, capability/feature flag gates                                              |
+| Kernel plugins         | audit, approval, notification, risk, feature flag, compliance                                                |
+| Data Cloud             | campaign/activity/event/evidence/runtime truth if used; otherwise product-owned PostgreSQL must be canonical |
+| Platform security      | trusted server identity, backend authZ, tenant/workspace scope                                               |
+| Platform observability | campaign/connector/AI action traceability                                                                    |
+| AEP/agents             | only recommendation/action flows used by release                                                             |
+| YAPPC                  | onboarding/visibility/control only if used by release                                                        |
+
+## 6. Cross-product TODO list
+
+| ID      | Priority | TODO                                                                                                                                                                                  |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FND-001 | P0       | Add Product Foundation Usage Profile files for `phr` and `digital-marketing`; release gates should evaluate only used production slices, but fail any used non-production capability. |
+| FND-002 | P0       | Update release readiness script to fail if registry says `implemented/ready/enabled` but deployment target is only `local` for a release candidate.                                   |
+| FND-003 | P0       | Add a production-fallback scanner for `test-tenant`, `test-user`, `InMemory*`, `Noop*`, `fallback`, `disabled`, `sample`, and `local-only` in production paths.                       |
+| FND-004 | P0       | Make docs/registry/code truth consistent: `implemented` must mean executable and evidence-backed, not merely present.                                                                 |
+| FND-005 | P1       | Implement Product Family Asset Registry schema and begin extracting PHR + DMOS reusable assets.                                                                                       |
+| FND-006 | P1       | Add release evidence pack per product: build/test, API parity, tenant isolation, auth matrix, policy gates, audit, observability, i18n/a11y, deployment, rollback.                    |
+| FND-007 | P1       | Add reusable asset promotion policy: candidate → hardened → production → shared package/plugin/template/schema.                                                                       |
+| FND-008 | P2       | Add YAPPC UI for reusable asset discovery, compatibility, maturity, and guided reuse.                                                                                                 |
 
 ---
-
-## 1. Executive Summary
-
-YAPPC is directionally correct but not production-ready. The product vision is explicitly an AI-powered product/app creation, visibility, health, and evolution platform with the lifecycle **Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve**, and the README itself reports current maturity as AI-native **3/10**, feature completeness **4/10**, and production readiness **2/10**. 
-
-The architecture is more mature than the implementation. The build wiring includes YAPPC modules, agents, scaffold, refactorer, knowledge graph, Data Cloud, AEP action-plane modules, auth gateway, platform Kernel modules, and shared platform libraries, which is the right direction. 
-
-The critical blocker is that several “production” paths still contain local-only, fallback, simplified, or placeholder behavior. `PhasePacketServiceImpl` calls Data Cloud, platform evidence, policy, capability, audit, and preview health, but still has `platformRunStatus = null`, empty feature flags, simplified readiness scoring, hardcoded preview ID derivation, and “for now / in production” comments.  
-
-Kernel integration is partially real but not production-complete. `ProductUnitIntentExporter`, `ProductUnitIntentValidationService`, and `CreateCommand` exist, but the flow is still CLI/file-oriented, uses random workspace IDs, defaults surfaces to `web-api`, and validates against local hardcoded provider/profile lists instead of canonical Kernel contracts.   
-
-Frontend IA is mostly correct: project routes expose the eight lifecycle phases as first-class routes, plus Kernel health and admin pages.  But the phase cockpit contains hardcoded English copy, frontend helper gating, and derived preview data; it is not fully i18n/backend-contract-driven yet. 
-
----
-
-## 2. Deterministic Progress Summary
-
-| Area                      |  Progress State | Summary                                                                                                                                                         |
-| ------------------------- | --------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Product vision            | PARTIALLY_FIXED | Vision is clear and documented; implementation still uneven by phase.                                                                                           |
-| Build/module architecture | PARTIALLY_FIXED | Good module inclusion and shared/platform dependency direction, but several API/impl splits are explicitly deferred.                                            |
-| Data Cloud integration    | PARTIALLY_FIXED | Some repositories are Data Cloud-backed and tenant-scoped; not all lifecycle state/evidence/run/learning paths are durable.                                     |
-| AEP/agent integration     | PARTIALLY_FIXED | Agent modules and Data Cloud action-plane dependencies are wired, but lifecycle phase execution/learning loops are not fully end-to-end.                        |
-| Kernel integration        | PARTIALLY_FIXED | ProductUnitIntent exporter/validator/CLI exist; production Data Cloud/Event Cloud/Kernel API ingestion remains future/local-only.                               |
-| Frontend lifecycle IA     | PARTIALLY_FIXED | Eight phase routes exist; UI still has hardcoded copy and local action logic.                                                                                   |
-| Production operations     | PARTIALLY_FIXED | Commit adds stricter release gates for SLO/cost/domain invariants/OpenAPI breaking changes, but YAPPC-specific executable proof is still not complete.          |
-| Testing                   | PARTIALLY_FIXED | Frontend test scripts exist, including readiness, E2E, a11y, visual, performance, and canvas tests, but execution was not verified and coverage is not proven.  |
-
----
-
-## 3. Top Production Blockers
-
-1. **Phase packet is not a full production contract yet** — `platformRunStatus` is null; readiness and feature flags are simplified; health IDs are derived rather than sourced from runtime state.
-2. **Kernel visibility remains local-filesystem-first** — `KernelLifecycleEventIngestService` reads `.kernel/out/products/**`; Data Cloud/Event Cloud/Kernel API ingestion is documented as future. 
-3. **Docs contradict implementation state** — Kernel visibility doc claims “existing and executable,” but its implementation status table still marks core items pending. 
-4. **ProductUnitIntent validation is not contract-backed** — provider/profile lists are hardcoded locally instead of pulled from Kernel public contracts.
-5. **CreateCommand generates Kernel intent with random workspace ID** — not tied to actual workspace/project/tenant state.
-6. **Data Cloud/AEP evidence is partial** — `PhasePacketServiceImpl` queries evidence/policy but uses null workspace IDs and swallows failures into empty lists.
-7. **Frontend cockpit still has hardcoded English and derived action logic** — not fully i18n/backend-contract-driven.
-8. **Feature flags and entitlements are placeholders** — `determineEnabledFlags` returns `Set.of()`.
-9. **Degraded behavior is explicit but incomplete** — degraded packets lose platform run status, evidence, governance, required artifacts, and actionable recovery metadata.
-10. **Executable E2E proof is unverified** — no successful test run evidence was available in this audit.
-
----
-
-## 4. Product Vision vs Implementation Reality
-
-| Product Capability | Vision                                                     | Current Evidence                                                                                   | Gap                                                                                  | Progress State  | Priority |
-| ------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------- | -------- |
-| Intent             | Capture product goals and success criteria with AI support | README says intent is medium maturity; API manifest includes intent capture/analyze/read routes.   | Need verify durable Data Cloud schema, versioning, audit, AI grounding, and UI flow. | PARTIALLY_FIXED | P1       |
-| Shape              | Architecture/product modeling, canvas, surfaces, runtime   | README and frontend routes expose shape/canvas concepts.                                           | Advanced modeling and artifact graph linkage not proven.                             | PARTIALLY_FIXED | P1       |
-| Validate           | Gates, policies, evidence, blockers                        | `PhasePacketServiceImpl` uses `PhaseGateValidator` and platform policy.                            | Conditions passed to gate validator are empty; readiness is simplified.              | PARTIALLY_FIXED | P0       |
-| Generate           | Code/scaffold/ProductUnitIntent                            | Exporter, validator, create CLI exist.                                                             | Intent not backed by canonical Kernel contract registry; workspace ID is random.     | PARTIALLY_FIXED | P0       |
-| Run                | Preview/runtime/Kernel handoff                             | Health signals and Kernel filesystem ingestion exist.                                              | `platformRunStatus` null; production ingestion future; local-only Kernel output.     | PARTIALLY_FIXED | P0       |
-| Observe            | Health, metrics, dashboard                                 | Kernel health routes exist; ingest and health service exist.                                       | No Data Cloud/Event Cloud-backed runtime truth proven.                               | PARTIALLY_FIXED | P1       |
-| Learn              | Feedback and adaptive improvement                          | README says prompt registry supports versioning/rollback.                                          | End-to-end learning loop not proven in inspected code.                               | PARTIALLY_FIXED | P1       |
-| Evolve             | Closed loop change/evolution                               | Evolve route exists.                                                                               | Change-request flow to Kernel and regression validation not proven.                  | PARTIALLY_FIXED | P1       |
-
----
-
-## 5. Lifecycle Phase Audit
-
-### Intent
-
-Current implementation has route manifest entries for intent capture/analyze/read with required auth scopes and privacy classification. 
-
-Gaps:
-
-* Need prove backend handlers persist intent to Data Cloud with tenant/workspace/project scoping.
-* Need versioning/history and audit evidence for intent changes.
-* Need ensure AI interpretation is not rules-only and is labeled correctly.
-* Need UI i18n and error/degraded states.
-
-Required implementation:
-
-* Wire intent capture/analyze/read to a Data Cloud-backed `IntentRepository`.
-* Add `IntentVersionRepository` or use canonical artifact versioning.
-* Emit audit/evidence records for create/analyze/update.
-* Add integration tests for tenant isolation and missing workspace/project.
-
-### Shape
-
-Current route IA includes `shape` and legacy `canvas`, with shared canvas/UI builder dependencies present in frontend package.  
-
-Gaps:
-
-* Need prove shape artifacts are persisted as Data Cloud artifacts, not only canvas/client state.
-* Need validate runtime/framework choices through shared registries.
-* Need model-to-code traceability.
-
-Required implementation:
-
-* Use canonical artifact graph for shape outputs.
-* Connect canvas edits to Data Cloud state and audit events.
-* Add shape-to-generate traceability tests.
-
-### Validate
-
-Current implementation calls `PhaseGateValidator`, but uses empty conditions and simplified blocker/readiness mapping.  
-
-Gaps:
-
-* Gate conditions do not include project state, completed artifacts, policy results, evidence, feature flags, or tenant tier.
-* Completeness score is binary-like: `1.0` if no blockers, `0.5` otherwise.
-* Policy results are converted to governance display records, but not clearly enforced before actions.
-
-Required implementation:
-
-* Build `PhaseGateContext` from Data Cloud project state, artifacts, policy, evidence, runtime health, and tenant entitlements.
-* Replace simplified readiness with weighted readiness model from config.
-* Block actions server-side when policy/gate fails.
-
-### Generate
-
-Exporter and validator exist, but are local-map based.  
-
-Gaps:
-
-* Contract is not generated/imported from Kernel product contracts.
-* Validation provider/profile lists are hardcoded.
-* No proof generated code is compiled/tested before handoff.
-
-Required implementation:
-
-* Replace local ProductUnitIntent maps with typed Kernel contract DTOs.
-* Validate provider/profile/surface against Kernel public registry contracts.
-* Add generated artifact verification gate.
-
-### Run
-
-Current run support is partial: health signals are derived from a preview runtime service, and Kernel ingest reads local manifests.  
-
-Gaps:
-
-* `platformRunStatus` is null.
-* Preview IDs are derived from `projectId + phase`.
-* Kernel event ingestion is local filesystem only.
-* No rollback/promote flow proven.
-
-Required implementation:
-
-* Add `PlatformRunStatusService` backed by AEP/Data Cloud/Kernel event stream.
-* Persist run IDs and preview IDs in project/runtime state.
-* Add run/rollback/promote API tests.
-
-### Observe
-
-Kernel health routes exist in frontend routing. 
-
-Gaps:
-
-* Local filesystem ingestion cannot support production multi-tenant runtime truth.
-* Health snapshots are untyped maps.
-* No SLO-driven remediation flow proven.
-
-Required implementation:
-
-* Add typed Kernel health read models.
-* Consume Kernel public events or Data Cloud/Event Cloud stream.
-* Add SLO/cost/domain invariant dashboard evidence.
-
-### Learn
-
-Gaps:
-
-* Prompt registry claims are not fully verified in inspected code.
-* No end-to-end learning record from failed generation/run to updated suggestion/prompt/agent state was proven.
-* Human approval learning queue not verified.
-
-Required implementation:
-
-* Add learning event schema in Data Cloud.
-* Connect agent outcomes, approvals/rejections, and Kernel gate failures to learning evidence.
-* Add promotion/rollback/quarantine tests.
-
-### Evolve
-
-Gaps:
-
-* Evolve route exists but closed-loop change request to Kernel was not proven.
-* No diff review/regression re-validation flow proven.
-
-Required implementation:
-
-* Add `EvolutionPlanService`.
-* Persist evolution proposal, diff, impact analysis, approvals, and generated ProductUnitIntent update.
-* Re-enter validate/generate/run with traceability.
-
----
-
-## 6. Architecture and Boundary Findings
-
-| ID       | Progress State  | Area                | Finding                                                                                      | Severity | Files                                                                     | Why It Matters                                                             | Fix                                                                             |
-| -------- | --------------- | ------------------- | -------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| ARCH-001 | STILL_OPEN      | Docs vs code        | Kernel visibility doc says “existing and executable” but table marks key components pending. | High     | `products/yappc/docs/architecture/KERNEL_VISIBILITY_AND_CONTROL_PLANE.md` | Misleads implementation planning.                                          | Update doc from code evidence and use progress states.                          |
-| ARCH-002 | PARTIALLY_FIXED | Module wiring       | Data Cloud/AEP/shared modules are included in standalone build.                              | Medium   | `products/yappc/settings.gradle.kts`                                      | Correct foundation, but inclusion does not prove full runtime integration. | Add integration tests proving each critical module is used in production paths. |
-| ARCH-003 | STILL_OPEN      | Kernel boundary     | Kernel ingestion is local filesystem-first and production Data Cloud/Event Stream is future. | High     | `KernelLifecycleEventIngestService`                                       | Local FS is not production multi-tenant runtime truth.                     | Add event/API/Data Cloud-backed ingestion provider.                             |
-| ARCH-004 | PARTIALLY_FIXED | API source of truth | Route manifest defines route/auth/scope/privacy schema.                                      | Medium   | `route-manifest.yaml`                                                     | Good direction, but parity must be executable.                             | Run/extend manifest↔OpenAPI↔backend↔frontend parity checks.                     |
-
----
-
-## 7. Backend Findings
-
-| ID     | Progress State  | File                                     | Class/Method                     | Problem                                                                  | Required Fix                                                                                     | Tests                                                                                        |
-| ------ | --------------- | ---------------------------------------- | -------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| BE-001 | PARTIALLY_FIXED | `PhasePacketServiceImpl.java`            | `buildPhasePacket`               | Aggregates real services but leaves `platformRunStatus` null.            | Implement `PlatformRunStatusService` using AEP/Data Cloud/Kernel events.                         | Unit + integration: phase packet includes real run status for running/succeeded/failed runs. |
-| BE-002 | STILL_OPEN      | `PhasePacketServiceImpl.java`            | `queryPhaseBlockers`             | Calls gate validator with `Map.of()` conditions.                         | Build full gate context from project state, artifacts, policy, runtime health, and entitlements. | Gate tests for missing artifacts, denied policy, degraded runtime.                           |
-| BE-003 | STILL_OPEN      | `PhasePacketServiceImpl.java`            | `determineEnabledFlags`          | Always returns `Set.of()`.                                               | Query GrowthBook/entitlement Data Cloud state or canonical feature service.                      | Role/tier/flag tests for enabled/disabled actions.                                           |
-| BE-004 | STILL_OPEN      | `PhasePacketServiceImpl.java`            | `calculatePhaseReadiness`        | Completeness score is simplified.                                        | Use configured phase required artifacts, gate severity, evidence confidence, policy outcome.     | Readiness golden tests per phase.                                                            |
-| BE-005 | STILL_OPEN      | `PhasePacketServiceImpl.java`            | `queryGovernanceRecords`         | Policy is displayed as governance but not clearly used to block actions. | Enforce policy before action generation and phase transition.                                    | Denied policy prevents primary action.                                                       |
-| BE-006 | PARTIALLY_FIXED | `AgentStateRepository.java`              | `resolveTenantId`                | Good tenant fail-closed behavior exists.                                 | Extend same pattern to all lifecycle/evidence/prompt/conversation repos.                         | Tenant isolation integration tests.                                                          |
-| BE-007 | STILL_OPEN      | `KernelLifecycleEventIngestService.java` | static `BLOCKING_EXECUTOR`       | Static cached executor lacks lifecycle/shutdown ownership.               | Inject managed blocking executor from platform runtime.                                          | Resource lifecycle test.                                                                     |
-| BE-008 | STILL_OPEN      | `CreateCommand.java`                     | `executeKernelProductUnitCreate` | Uses random workspace ID and default surface.                            | Require real workspace/project context or explicit CLI args; fail if missing.                    | CLI tests for missing workspace and multi-surface inputs.                                    |
-
----
-
-## 8. Frontend Findings
-
-| ID     | Progress State  | File                | Component/Hook/Route   | Problem                                                              | Required Fix                                                       | Tests                                                             |
-| ------ | --------------- | ------------------- | ---------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| FE-001 | PARTIALLY_FIXED | `routes.ts`         | project routes         | Eight phase routes exist.                                            | Ensure every route is backed by phase packet and capability gates. | Route inventory + E2E phase traversal.                            |
-| FE-002 | STILL_OPEN      | `_phaseCockpit.tsx` | `PHASE_DETAIL_COPY`    | Hardcoded English strings.                                           | Move to `@ghatana/i18n` keys.                                      | i18n conformance test.                                            |
-| FE-003 | STILL_OPEN      | `_phaseCockpit.tsx` | `phasePacketToPreview` | Derives preview snapshot client-side with null estimates/confidence. | Backend must provide transition preview/readiness prediction.      | Contract test ensuring no client-only lifecycle truth.            |
-| FE-004 | STILL_OPEN      | `usePhasePacket.ts` | helper gating          | `isActionEnabled` only checks `canRead` and local flags.             | Use backend `availableActions` and capability decision only.       | Unit test: disabled backend action cannot be enabled client-side. |
-| FE-005 | PARTIALLY_FIXED | `package.json`      | dependencies/scripts   | Good shared dependency set and many tests exist.                     | Verify scripts run in CI and are not test theater.                 | CI evidence and coverage thresholds.                              |
-
----
-
-## 9. Data Cloud / AEP / Agent Findings
-
-| ID      | Progress State  | Area            | Current Behavior                                                                   | Gap                                                   | Required Fix                                                 | Files                         |
-| ------- | --------------- | --------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ | ----------------------------- |
-| DC-001  | PARTIALLY_FIXED | Agent state     | Data Cloud-backed `AgentStateRepository` with tenant context exists.               | Need prove all agent runtime/workflow outputs use it. | Wire agent runtime execution state through this repo.        | `AgentStateRepository.java`   |
-| DC-002  | STILL_OPEN      | Phase evidence  | `PhasePacketServiceImpl` calls platform evidence search with `workspaceId = null`. | Workspace scoping missing.                            | Include workspace ID and tenant-aware evidence query.        | `PhasePacketServiceImpl.java` |
-| DC-003  | STILL_OPEN      | Lifecycle state | Project state lookup is Data Cloud-backed but returns reduced map.                 | Loses full shape/phase/runtime/evidence fields.       | Add typed `ProjectLifecycleState` mapper.                    | `PhasePacketServiceImpl.java` |
-| AEP-001 | STILL_OPEN      | Platform run    | `platformRunStatus` is null.                                                       | AEP workflow status not surfaced.                     | Query AEP workflow/run state and include trace/evidence IDs. | `PhasePacketServiceImpl.java` |
-| AEP-002 | STILL_OPEN      | Learning        | No inspected end-to-end learn/evolve loop.                                         | Agent outcomes not proven to feed learning.           | Add `LearningEvidenceRepository` and promotion workflow.     | Data Cloud + agent modules    |
-
----
-
-## 10. Kernel Integration Findings
-
-| ID      | Progress State  | Area                         | Current Behavior                                   | Boundary Risk                             | Required Fix                                                                                                    | Files                                     |
-| ------- | --------------- | ---------------------------- | -------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| KRN-001 | PARTIALLY_FIXED | ProductUnitIntent export     | Exports YAML/JSON intent map.                      | Local map may drift from Kernel contract. | Use typed Kernel public contract DTO/schema.                                                                    | `ProductUnitIntentExporter.java`          |
-| KRN-002 | STILL_OPEN      | ProductUnitIntent validation | Hardcoded providers/profiles.                      | Duplicate Kernel registry truth.          | Resolve provider/profile/surface through Kernel public contracts.                                               | `ProductUnitIntentValidationService.java` |
-| KRN-003 | STILL_OPEN      | CLI handoff                  | Random workspace ID and default `web-api` surface. | Invalid/non-traceable ProductUnitIntent.  | Require workspace/project/surface/lifecycle profile from Data Cloud/project config.                             | `CreateCommand.java`                      |
-| KRN-004 | STILL_OPEN      | Kernel observe               | Reads `.kernel/out/products/**`.                   | Local-only, not production multi-tenant.  | Add `KernelLifecycleEventProvider` with filesystem dev provider and Data Cloud/Event Cloud production provider. | `KernelLifecycleEventIngestService.java`  |
-| KRN-005 | STILL_OPEN      | Docs                         | Doc says components pending while code exists.     | Confusing progress tracking.              | Replace pending table with verified states: implemented/local-only/production-backed.                           | `KERNEL_VISIBILITY_AND_CONTROL_PLANE.md`  |
-
----
-
-## 11. Shared Library Reuse Findings
-
-| ID      | Progress State  | Duplicate/Bypass               | Canonical Shared Library                                   | YAPPC File                                | Fix                                                                         |
-| ------- | --------------- | ------------------------------ | ---------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------- |
-| SHR-001 | STILL_OPEN      | Hardcoded UI copy              | `@ghatana/i18n`                                            | `_phaseCockpit.tsx`                       | Replace strings with translation keys.                                      |
-| SHR-002 | STILL_OPEN      | Local capability helper        | `yappc-auth` / backend capabilities                        | `usePhasePacket.ts`                       | Remove client-side capability inference except display filtering.           |
-| SHR-003 | PARTIALLY_FIXED | Canvas/UI builder dependencies | `@ghatana/canvas`, `@ghatana/ui-builder`                   | `package.json`                            | Verify actual route/component usage and eliminate legacy local canvas code. |
-| SHR-004 | STILL_OPEN      | Kernel validation constants    | `@ghatana/kernel-product-contracts` / Kernel Java contract | `ProductUnitIntentValidationService.java` | Import/generate from canonical Kernel contract.                             |
-| SHR-005 | STILL_OPEN      | Static executor                | platform runtime/executor service                          | `KernelLifecycleEventIngestService.java`  | Inject managed executor.                                                    |
-
----
-
-## 12. API and Contract Parity Findings
-
-| Route/Contract              | Manifest                                                                                       | OpenAPI             | Backend                         | Frontend                | Issue                                      | Fix                                                               |
-| --------------------------- | ---------------------------------------------------------------------------------------------- | ------------------- | ------------------------------- | ----------------------- | ------------------------------------------ | ----------------------------------------------------------------- |
-| Intent capture/analyze/read | Present with auth/scope/privacy                                                                | Not fully inspected | Not fully inspected             | Not fully inspected     | Parity unverified.                         | Run `checkYappcOpenApiParity` and add handler/client route tests. |
-| Phase packet                | Manifest mentions phase packet event types; frontend calls `LifecycleService.getPhasePacket`.  | Not fully inspected | `PhasePacketServiceImpl` exists | `usePhasePacket` exists | GET/POST parity comment says still a task. | Add manifest/OpenAPI/generated-client/backend parity test.        |
-| Kernel health               | Frontend routes exist                                                                          | Not fully inspected | Kernel services exist           | Routes exist            | Production data provider local-only.       | Add typed contract and Data Cloud/Event Cloud provider.           |
-| Admin prompt/AB/flags       | Routes exist                                                                                   | Not fully inspected | Not fully inspected             | Routes exist            | Capability gating not proven.              | Add route auth/capability E2E.                                    |
-
----
-
-## 13. Security, Privacy, Governance, Tenancy, Audit
-
-The strongest security evidence found is `AgentStateRepository.resolveTenantId`, which fails closed if tenant context is missing or `default-tenant` is used.  This pattern should become mandatory across all YAPPC repositories.
-
-Gaps:
-
-* `PhasePacketServiceImpl` builds actor context from `principal.getName()` and first role; this is not enough for fine-grained RBAC.
-* `determineAvailableActions` uses simple role checks (`ADMIN`, `OWNER`, `EDITOR`) instead of canonical permission decisions.
-* Policy decisions are converted into governance records but not clearly enforced server-side before actions.
-* Route manifest privacy classification exists, but audit/authorization parity across OpenAPI/backend/frontend was not fully verified.
-* Degraded packet has safe no-actions behavior, but loses recovery detail and evidence.
-
-P0 fix:
-
-* Introduce a server-side `PhaseActionAuthorizationService` that combines capability evaluation, policy decision, tenant tier, feature flags, and phase gate outcome. Frontend must only render backend-returned actions.
-
----
-
-## 14. UI/UX, i18n, a11y, Design System
-
-Frontend strengths:
-
-* Eight phase IA is explicit.
-* Phase cockpit uses structured panels for blockers, evidence, governance, action cards, and status surfaces.
-* Package dependencies include design system, i18n, product shell, realtime, canvas, and UI builder. 
-
-Gaps:
-
-* Hardcoded phase copy and labels in `_phaseCockpit.tsx`.
-* Phase summary content is English and not translation-keyed.
-* Some UI behavior derives lifecycle state from packet client-side instead of receiving backend-ready view models.
-* A11y scripts exist, but execution and coverage were not verified.
-
-P1 fix:
-
-* Create `phaseCockpit.i18n.ts` key map and replace inline text.
-* Add tests that no visible phase cockpit copy bypasses i18n.
-* Ensure every empty/loading/error/degraded/unauthorized state has deterministic copy and ARIA semantics.
-
----
-
-## 15. Testing and CI Gaps
-
-Evidence:
-
-* Commit adds stricter CI gates for product SLO budgets, cost budgets, product domain invariants, and OpenAPI breaking changes. 
-* YAPPC web package includes readiness, smoke, canvas unit/integration/performance, E2E, a11y, visual, and performance-memory scripts. 
-
-Gaps:
-
-* I could not execute tests in this environment.
-* Need verify YAPPC-specific CI actually runs all critical scripts.
-* Need add tests around current gaps: phase packet, policy blocking, feature flags, Kernel ingestion provider, ProductUnitIntent typed contract, i18n, and backend/frontend parity.
-
----
-
-## 16. Production Readiness Scorecard
-
-|  # | Dimension                           | Score | Progress State  |
-| -: | ----------------------------------- | ----: | --------------- |
-|  1 | Product vision alignment            |     4 | PARTIALLY_FIXED |
-|  2 | Lifecycle completeness              |     2 | PARTIALLY_FIXED |
-|  3 | Intent phase                        |     3 | PARTIALLY_FIXED |
-|  4 | Shape phase                         |     3 | PARTIALLY_FIXED |
-|  5 | Validate phase                      |     2 | STILL_OPEN      |
-|  6 | Generate phase                      |     3 | PARTIALLY_FIXED |
-|  7 | Run phase                           |     2 | STILL_OPEN      |
-|  8 | Observe phase                       |     2 | STILL_OPEN      |
-|  9 | Learn phase                         |     2 | STILL_OPEN      |
-| 10 | Evolve phase                        |     2 | STILL_OPEN      |
-| 11 | Data Cloud integration              |     3 | PARTIALLY_FIXED |
-| 12 | AEP/agent integration               |     2 | PARTIALLY_FIXED |
-| 13 | Kernel integration                  |     2 | PARTIALLY_FIXED |
-| 14 | Shared library reuse                |     3 | PARTIALLY_FIXED |
-| 15 | Artifact compiler/decompiler        |     2 | UNVERIFIED      |
-| 16 | Canvas/UI builder                   |     3 | PARTIALLY_FIXED |
-| 17 | CLI/scaffold/generation             |     3 | PARTIALLY_FIXED |
-| 18 | Backend correctness                 |     2 | STILL_OPEN      |
-| 19 | Frontend correctness                |     3 | PARTIALLY_FIXED |
-| 20 | API/contract parity                 |     2 | STILL_OPEN      |
-| 21 | Security                            |     3 | PARTIALLY_FIXED |
-| 22 | Privacy                             |     2 | STILL_OPEN      |
-| 23 | Governance                          |     2 | STILL_OPEN      |
-| 24 | Auth/RBAC/capability gates          |     2 | STILL_OPEN      |
-| 25 | Multi-tenancy                       |     3 | PARTIALLY_FIXED |
-| 26 | Auditability                        |     3 | PARTIALLY_FIXED |
-| 27 | Observability                       |     3 | PARTIALLY_FIXED |
-| 28 | Reliability/degraded behavior       |     3 | PARTIALLY_FIXED |
-| 29 | Performance                         |     2 | UNVERIFIED      |
-| 30 | Scalability                         |     2 | STILL_OPEN      |
-| 31 | Async/concurrency correctness       |     2 | STILL_OPEN      |
-| 32 | i18n                                |     2 | STILL_OPEN      |
-| 33 | a11y                                |     3 | UNVERIFIED      |
-| 34 | UX simplicity                       |     3 | PARTIALLY_FIXED |
-| 35 | Testing completeness                |     2 | UNVERIFIED      |
-| 36 | CI/release readiness                |     3 | PARTIALLY_FIXED |
-| 37 | Documentation accuracy              |     2 | STILL_OPEN      |
-| 38 | Operational readiness               |     2 | STILL_OPEN      |
-| 39 | Data integrity                      |     2 | STILL_OPEN      |
-| 40 | Learning/adaptation                 |     2 | STILL_OPEN      |
-| 41 | Prompt/version/evaluation lifecycle |     2 | UNVERIFIED      |
-| 42 | Human approval workflows            |     2 | UNVERIFIED      |
-| 43 | Admin/config surfaces               |     2 | PARTIALLY_FIXED |
-| 44 | Dependency hygiene                  |     3 | PARTIALLY_FIXED |
-| 45 | Code minimality/DRY/SRP             |     3 | PARTIALLY_FIXED |
-| 46 | Boundary correctness                |     2 | STILL_OPEN      |
-| 47 | Production deployment readiness     |     2 | STILL_OPEN      |
-
----
-
-## 17. Deterministic Implementation Plan
-
-| ID       | Progress State  | Priority | Owner Boundary       | Category                             | File(s)                                                                     | What to Change                                                                                                         | Why                                                                | Dependencies                          | Acceptance Criteria                                          | Tests                                            |
-| -------- | --------------- | -------- | -------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
-| TODO-001 | PARTIALLY_FIXED | P0       | YAPPC/Data Cloud/AEP | Phase packet correctness             | `PhasePacketServiceImpl.java`                                               | Replace `platformRunStatus = null` with real AEP/Data Cloud/Kernel run status.                                         | Run phase cannot be production-ready without executable run truth. | AEP run status contract.              | Phase packet includes runId/status/trace/evidence.           | Unit + integration for running/succeeded/failed. |
-| TODO-002 | PARTIALLY_FIXED | P0       | YAPPC                | Gate correctness                     | `PhasePacketServiceImpl.queryPhaseBlockers`                                 | Pass full `PhaseGateContext`, not `Map.of()`.                                                                          | Empty gate input causes false readiness.                           | Project/artifact/evidence model.      | Missing required artifact blocks phase.                      | Gate validation tests per phase.                 |
-| TODO-003 | PARTIALLY_FIXED | P0       | YAPPC/Auth           | Authorization                        | `PhasePacketServiceImpl.determineAvailableActions`                          | Replace role-string logic with capability/policy/feature/tier decision service.                                        | Prevent unauthorized phase/action exposure.                        | Capability service, policy service.   | Denied policy disables actions server-side.                  | RBAC/capability matrix tests.                    |
-| TODO-004 | PARTIALLY_FIXED | P0       | Kernel/YAPPC         | Kernel contract                      | `ProductUnitIntentExporter.java`, `ProductUnitIntentValidationService.java` | Use typed Kernel public contract DTO/schema instead of local maps/constants.                                           | Prevent contract drift.                                            | Kernel product contracts.             | Generated intent validates against Kernel contract.          | Contract compatibility tests.                    |
-| TODO-005 | PARTIALLY_FIXED | P0       | YAPPC                | CLI correctness                      | `CreateCommand.java`                                                        | Require workspace ID/project ID/surfaces/lifecycle profile; remove random workspace default.                           | Random workspace breaks traceability.                              | CLI arg/schema update.                | Missing workspace fails clearly.                             | CLI tests.                                       |
-| TODO-006 | PARTIALLY_FIXED | P0       | Kernel/Data Cloud    | Kernel observe                       | `KernelLifecycleEventIngestService.java`                                    | Split into `KernelLifecycleEventProvider` with dev filesystem provider and production Data Cloud/Event Cloud provider. | Local FS cannot be production runtime truth.                       | Data Cloud/Event Cloud contract.      | Production profile does not read `.kernel` directly.         | Provider selection integration tests.            |
-| TODO-007 | PARTIALLY_FIXED | P0       | Shared Platform      | Async/resource lifecycle             | `KernelLifecycleEventIngestService.java`                                    | Replace static cached executor with injected managed executor.                                                         | Avoid resource leaks and unmanaged threads.                        | Platform runtime executor.            | Executor shutdown is owned by service lifecycle.             | Resource lifecycle test.                         |
-| TODO-008 | PARTIALLY_FIXED | P1       | YAPPC/Data Cloud     | Readiness                            | `PhasePacketServiceImpl.calculatePhaseReadiness`                            | Implement weighted readiness from stage config, artifacts, evidence, policy, health.                                   | Current 1.0/0.5 score is not meaningful.                           | Stage/artifact/evidence models.       | Score explains missing requirements.                         | Golden readiness tests.                          |
-| TODO-009 | PARTIALLY_FIXED | P1       | YAPPC/Data Cloud     | Feature flags                        | `PhasePacketServiceImpl.determineEnabledFlags`                              | Query canonical entitlement/feature-flag state.                                                                        | Current empty set blocks feature-aware UI.                         | Feature service/Data Cloud schema.    | Phase packet includes effective flags.                       | Flag/tier tests.                                 |
-| TODO-010 | PARTIALLY_FIXED | P1       | YAPPC/Data Cloud     | Evidence scoping                     | `PhasePacketServiceImpl.queryPhaseEvidence`                                 | Include workspace ID and typed evidence filters.                                                                       | Evidence search is not workspace-scoped.                           | Evidence query contract.              | Evidence cannot leak across workspace/tenant.                | Tenant/workspace isolation tests.                |
-| TODO-011 | PARTIALLY_FIXED | P1       | Frontend/i18n        | i18n                                 | `_phaseCockpit.tsx`                                                         | Move all user-visible copy to `@ghatana/i18n`.                                                                         | Current UI is not production i18n-ready.                           | Translation keys.                     | No hardcoded phase cockpit labels.                           | i18n conformance test.                           |
-| TODO-012 | PARTIALLY_FIXED | P1       | Frontend/YAPPC       | Backend-driven UI                    | `usePhasePacket.ts`, `_phaseCockpit.tsx`                                    | Remove client-side lifecycle/action inference; consume backend action/readiness contract.                              | Prevent frontend-only truth.                                       | TODO-003.                             | UI cannot enable unavailable backend action.                 | Component tests.                                 |
-| TODO-013 | PARTIALLY_FIXED | P1       | Data Cloud           | Tenant consistency                   | all YAPPC Data Cloud repos                                                  | Apply `AgentStateRepository` fail-closed tenant pattern everywhere.                                                    | Prevent tenant leakage/default tenant use.                         | Repo inventory.                       | All durable repos reject missing/default tenant.             | Tenant isolation integration tests.              |
-| TODO-014 | PARTIALLY_FIXED | P1       | YAPPC/AEP            | Learn loop                           | learning/prompt/agent modules                                               | Persist learning evidence from gate failures, approvals, generation, run.                                              | Learn/Evolve phases are not closed-loop.                           | AEP learning contracts.               | Failed run produces learning recommendation with provenance. | E2E learn-from-failure test.                     |
-| TODO-015 | PARTIALLY_FIXED | P1       | YAPPC/Kernel         | Evolve loop                          | evolve route/services                                                       | Add evolution proposal → diff → approval → ProductUnitIntent update → validate/generate/run loop.                      | Evolve is not executable end-to-end.                               | Kernel change request contract.       | Evolve produces traceable validated change.                  | E2E evolve flow.                                 |
-| TODO-016 | STILL_OPEN      | P2       | Docs                 | Accuracy                             | `KERNEL_VISIBILITY_AND_CONTROL_PLANE.md`, README                            | Replace stale pending/complete claims with verified progress states.                                                   | Prevent audit confusion.                                           | Current code inventory.               | Docs match implementation.                                   | Doc-claims-evidence check.                       |
-| TODO-017 | UNVERIFIED      | P2       | CI/Test              | Release proof                        | package/workflow scripts                                                    | Ensure YAPPC-specific build/test/e2e/a11y/contract tests run in CI.                                                    | Scripts exist but execution not verified.                          | CI workflow update.                   | CI produces YAPPC evidence artifacts.                        | Workflow evidence check.                         |
-| TODO-018 | STILL_OPEN      | P2       | Observability        | SLO/cost/domain invariant visibility | frontend + backend metrics                                                  | Surface commit-added SLO/cost/domain invariant gates in YAPPC observe/admin UI.                                        | Gates exist but YAPPC visibility must show them.                   | Kernel/Data Cloud evidence artifacts. | UI shows latest gate status and evidence.                    | UI + API integration tests.                      |
-
----
-
-## 18. Stop Conditions and Unverified Claims
-
-Unverified:
-
-* I ran focused local `./gradlew` test slices for touched YAPPC phase and kernel visibility services, but did not run full-repo `./gradlew`/`pnpm`/Vitest/Jest/Playwright/CI-gate suites end-to-end.
-* The prior repo-level Gradle version-catalog parse blocker (`resilience4j-circuitbreaker-lib` bundle shape) was resolved by adding cataloged resilience4j library aliases + array bundle wiring and switching kernel-core to the catalog bundle.
-* Focused verification now passes for the targeted evolve/learn handoff slice: `EvolutionServiceTest`, `DataCloudEvolutionExecutionHandoffServiceTest`, `EvolutionExecutionHandoffDispatcherTest`, and `EvolutionHandoffLifecycleIntegrationTest`.
-* I did not fully inspect every backend handler corresponding to every route in `route-manifest.yaml`.
-* I did not fully inspect `openapi.yaml`, so API parity findings are based on route manifest + frontend hook evidence, not full schema diff.
-* Prompt registry/versioning/rollback claims from README were not fully validated in implementation.
-* Human approval workflow implementation was not fully inspected.
-* Artifact compiler/decompiler implementation was not fully inspected.
-* AEP runtime execution path was not fully traced end-to-end.
-* Frontend shared library usage was verified by dependency declarations and selected route files, not by complete component tree traversal.
-
-Bottom line: YAPPC is making deterministic progress, but at commit `f302e89c8e7116e8821a7957b4a06a5d7dff81e`, the highest-value next work is to make **phase packet truth, Kernel handoff/observe, Data Cloud/AEP evidence, server-side authorization, and contract parity** production-real rather than partial/local/simplified.

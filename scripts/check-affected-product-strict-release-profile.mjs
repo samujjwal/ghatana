@@ -10,6 +10,7 @@ const repoRoot = process.cwd();
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'affected-product-release-profile.json');
+const foundationUsageProfilesPath = path.join(repoRoot, 'config/product-foundation-usage-profiles.json');
 const productReleaseWorkflowPath = path.join(repoRoot, '.github/workflows/product-release.yml');
 const affectedWorkflowPath = path.join(repoRoot, '.github/workflows/affected-products.yml');
 const strictTargetProducts = ['data-cloud', 'digital-marketing', 'finance', 'flashit', 'phr', 'yappc'];
@@ -110,8 +111,49 @@ const strictWorkflowTokens = [
   'Upload release readiness evidence',
 ];
 
+const readinessTruthStatuses = new Set(['implemented', 'ready', 'enabled']);
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeDeploymentTargets(product) {
+  return asArray(product?.deployment?.targets)
+    .map((target) => String(target).trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function hasReleaseReadySurface(product) {
+  return asArray(product?.surfaces).some((surface) =>
+    readinessTruthStatuses.has(String(surface?.implementationStatus ?? '').toLowerCase()),
+  );
+}
+
+function hasReleaseReadyLifecycle(product) {
+  return readinessTruthStatuses.has(String(product?.lifecycleStatus ?? '').toLowerCase());
+}
+
+function hasNonLocalTarget(targets) {
+  return targets.some((target) => !target.includes('local') && target !== 'compose-local');
+}
+
+function loadFoundationUsageProfiles() {
+  if (!existsSync(foundationUsageProfilesPath)) {
+    return null;
+  }
+
+  const source = JSON.parse(readFileSync(foundationUsageProfilesPath, 'utf8'));
+  return source.profiles ?? null;
+}
+
 const perProductCoverage = [];
 const strictTargetCoverage = [];
+const foundationUsageProfiles = loadFoundationUsageProfiles();
+const affectedProductSet = new Set(affectedProducts);
+
+if (!foundationUsageProfiles) {
+  violations.push('Missing config/product-foundation-usage-profiles.json or invalid profiles payload');
+}
 
 for (const productId of strictTargetProducts) {
   const product = registry[productId];
@@ -141,6 +183,14 @@ for (const productId of strictTargetProducts) {
     active: isActive,
     ciEnabled,
   });
+
+  const deploymentTargets = normalizeDeploymentTargets(product);
+  const releaseCandidateLike = hasReleaseReadySurface(product) || hasReleaseReadyLifecycle(product);
+  if (affectedProductSet.has(productId) && releaseCandidateLike && !hasNonLocalTarget(deploymentTargets)) {
+    violations.push(
+      `Strict target product ${productId} declares release-ready status but deployment.targets are local-only (${deploymentTargets.join(', ') || 'none'})`,
+    );
+  }
 }
 
 for (const workflowPath of [productReleaseWorkflowPath, affectedWorkflowPath]) {
@@ -172,6 +222,44 @@ for (const productId of affectedProducts) {
 
   if (product.metadata?.status !== 'active') {
     violations.push(`Affected product ${productId} must be active in canonical product registry`);
+  }
+
+  const deploymentTargets = normalizeDeploymentTargets(product);
+  const releaseCandidateLike = hasReleaseReadySurface(product) || hasReleaseReadyLifecycle(product);
+  if (releaseCandidateLike && !hasNonLocalTarget(deploymentTargets)) {
+    violations.push(
+      `Affected product ${productId} declares release-ready status but deployment.targets are local-only (${deploymentTargets.join(', ') || 'none'})`,
+    );
+  }
+
+  if (releaseCandidateLike) {
+    const readinessEvidenceRefs = asArray(product?.lifecycleReadiness?.evidenceRefs);
+    if (readinessEvidenceRefs.length === 0) {
+      violations.push(
+        `Affected product ${productId} has release-ready claims but no lifecycleReadiness.evidenceRefs; claims must be evidence-backed`,
+      );
+    }
+    if (product.lifecycleExecutionAllowed !== true) {
+      violations.push(
+        `Affected product ${productId} has release-ready claims but lifecycleExecutionAllowed is not true`,
+      );
+    }
+  }
+
+  const usageProfile = foundationUsageProfiles?.[productId];
+  if (!usageProfile) {
+    violations.push(`Affected product ${productId} is missing foundation usage profile in config/product-foundation-usage-profiles.json`);
+  } else {
+    const requiredSlices = asArray(usageProfile.requiredSlices).filter((slice) => slice?.requiredForRelease === true);
+    if (requiredSlices.length === 0) {
+      violations.push(`Affected product ${productId} foundation usage profile must declare at least one required release slice`);
+    }
+    const nonReadyRequiredSlices = requiredSlices.filter((slice) => slice?.productionReady !== true);
+    if (nonReadyRequiredSlices.length > 0) {
+      violations.push(
+        `Affected product ${productId} has non-production required slices: ${nonReadyRequiredSlices.map((slice) => slice.id ?? 'unknown').join(', ')}`,
+      );
+    }
   }
 
   const releaseJourney = {
@@ -218,6 +306,8 @@ for (const productId of affectedProducts) {
     hasAtLeastOneReleaseCore,
     hasWebSurface: releaseJourney.hasWebSurface,
     hasBackendSurface: releaseJourney.hasBackendSurface,
+    deploymentTargets,
+    hasFoundationUsageProfile: Boolean(foundationUsageProfiles?.[productId]),
   });
 }
 

@@ -139,6 +139,10 @@ tasks.register<Test>("checkApiContractConformance") {
     }
 }
 
+tasks.named("check") {
+    dependsOn("checkApiContractConformance")
+}
+
 configure<ProductPackValidationExtension> {
     productName.set("PHR")
     manifestFile.set(layout.projectDirectory.file("domain-pack-manifest.yaml"))

@@ -263,21 +263,10 @@ public class LifecycleApiController {
                                                     .then(observation -> {
                                                         recordPhaseTiming("OBSERVE", observeStart, phaseDurationsMs, executedPhases);
 
-                                                        long learnEvolveStart = System.currentTimeMillis();
+                                                        long learnStart = System.currentTimeMillis();
                                                         return analyzeAndEvolve(payload, context, executionId, intentSpec, shapeSpec,
                                                             validationResult, artifacts, runResult, observation,
-                                                            phaseDurationsMs, executedPhases, pipelineStartMs)
-                                                            .map(result -> {
-                                                                recordPhaseTiming("LEARN_EVOLVE", learnEvolveStart, phaseDurationsMs, executedPhases);
-                                                                Map<String, String> metadata = buildPipelineMetadata(
-                                                                    "SUCCESS",
-                                                                    executionId,
-                                                                    executionPlan,
-                                                                    executedPhases,
-                                                                    phaseDurationsMs
-                                                                );
-                                                                return result.withMetadata(metadata);
-                                                            });
+                                                            phaseDurationsMs, executedPhases, pipelineStartMs, learnStart);
                                                     });
                                             });
                                     });
@@ -298,18 +287,22 @@ public class LifecycleApiController {
         Observation observation,
         Map<String, Long> phaseDurationsMs,
         List<String> executedPhases,
-        long pipelineStartMs
+        long pipelineStartMs,
+        long learnStartMs
     ) {
         Promise<Insights> insightsPromise = payload.historicalContext() == null
             ? learningService.analyze(observation)
             : learningService.analyzeWithContext(observation, payload.historicalContext());
 
         return insightsPromise.then(insights -> {
+            recordPhaseTiming("LEARN", learnStartMs, phaseDurationsMs, executedPhases);
+            long evolveStartMs = System.currentTimeMillis();
             Promise<EvolutionPlan> evolvePromise = payload.constraints() == null
                 ? evolutionService.propose(insights)
                 : evolutionService.proposeWithConstraints(insights, payload.constraints());
 
             return evolvePromise.map(evolutionPlan -> {
+                recordPhaseTiming("EVOLVE", evolveStartMs, phaseDurationsMs, executedPhases);
                 LifecycleExecutionResult result = new LifecycleExecutionResult(
                     intentSpec,
                     shapeSpec,
@@ -323,9 +316,17 @@ public class LifecycleApiController {
                 );
 
                 long totalDurationMs = System.currentTimeMillis() - pipelineStartMs;
-                persistExecutionResult(executionId, context, result, phaseDurationsMs, executedPhases, totalDurationMs);
+                Map<String, String> metadata = buildPipelineMetadata(
+                    "SUCCESS",
+                    executionId,
+                    resolveDagExecutionPlan(),
+                    executedPhases,
+                    phaseDurationsMs
+                );
+                LifecycleExecutionResult resultWithMetadata = result.withMetadata(metadata);
+                persistExecutionResult(executionId, context, resultWithMetadata, phaseDurationsMs, executedPhases, totalDurationMs);
 
-                return result;
+                return resultWithMetadata;
             });
         });
     }

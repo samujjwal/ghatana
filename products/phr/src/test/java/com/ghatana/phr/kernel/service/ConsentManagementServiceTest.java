@@ -18,6 +18,7 @@ import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
 import com.ghatana.kernel.adapter.datacloud.SchemaInfo;
 import com.ghatana.kernel.adapter.datacloud.TransactionHandle;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import com.ghatana.phr.kernel.consent.ConsentService.*;
 import com.ghatana.phr.kernel.policy.PhrDataClassification;
 import com.ghatana.phr.kernel.service.ConsentManagementService.*;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +64,11 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         dataCloud = new StubDataCloudAdapter();
         KernelContext context = createTestContext(dataCloud);
         notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
-        service = new ConsentManagementService(context, notificationSender);
+        service = new ConsentManagementService(
+            context,
+            new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)),
+            notificationSender
+        );
         runPromise(service::start);
     }
 

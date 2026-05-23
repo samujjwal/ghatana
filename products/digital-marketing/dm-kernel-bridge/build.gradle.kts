@@ -50,9 +50,8 @@ tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.jacocoTestReport)
     violationRules {
         rule {
-            // Lowered from 90%/80% to 70%/55% to match current test coverage
-            limit { counter = "LINE"; value = "COVEREDRATIO"; minimum = "0.70".toBigDecimal() }
-            limit { counter = "BRANCH"; value = "COVEREDRATIO"; minimum = "0.55".toBigDecimal() }
+            limit { counter = "LINE"; value = "COVEREDRATIO"; minimum = "0.85".toBigDecimal() }
+            limit { counter = "BRANCH"; value = "COVEREDRATIO"; minimum = "0.70".toBigDecimal() }
         }
     }
 }

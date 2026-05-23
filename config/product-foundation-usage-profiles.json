@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "profiles": {
+    "phr": {
+      "productId": "phr",
+      "releaseMode": "regulated",
+      "requiredSlices": [
+        {
+          "id": "kernel.lifecycle-runtime",
+          "domain": "kernel",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "kernel.capability-registry",
+          "domain": "kernel",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.consent",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.audit",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.compliance",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "datacloud.patient-consent-audit",
+          "domain": "data-cloud",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "platform.security.tenant-isolation",
+          "domain": "platform-security",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "platform.observability.trace-correlation",
+          "domain": "platform-observability",
+          "requiredForRelease": true,
+          "productionReady": true
+        }
+      ]
+    },
+    "digital-marketing": {
+      "productId": "digital-marketing",
+      "releaseMode": "non-regulated",
+      "requiredSlices": [
+        {
+          "id": "kernel.lifecycle-runtime",
+          "domain": "kernel",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "kernel.capability-gates",
+          "domain": "kernel",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.approval",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.audit",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.notification",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "plugin.risk",
+          "domain": "kernel-plugins",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "platform.security.workspace-scope",
+          "domain": "platform-security",
+          "requiredForRelease": true,
+          "productionReady": true
+        },
+        {
+          "id": "platform.observability.trace-correlation",
+          "domain": "platform-observability",
+          "requiredForRelease": true,
+          "productionReady": true
+        }
+      ]
+    }
+  }
+}

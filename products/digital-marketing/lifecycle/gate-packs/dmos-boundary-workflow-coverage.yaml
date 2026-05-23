@@ -2,9 +2,9 @@ schemaVersion: 1.0.0
 productId: digital-marketing
 gateId: dmos-boundary-workflow-coverage
 title: Digital Marketing DMOS boundary workflow coverage gate
-executionMode: declarative-only
+executionMode: evidence-backed
 owner: Digital Marketing Platform Team
-status: planned
+status: active
 description: |
   Validates that domain-level workflow tests exercise the DMOS service boundary
   end-to-end: from API entry to persistence to outbound connector. At least one
@@ -17,5 +17,6 @@ blockingReasonCodes:
   - missing-dmos-boundary-workflow-coverage
 validationCommands:
   - ./gradlew :products:digital-marketing:dm-domain:test :products:digital-marketing:dm-api:test
+  - node scripts/check-production-readiness-audit-tasks.mjs --task=dmos-production-workflows
 notes:
   - DMOS boundary workflow coverage ensures full domain path coverage, not just unit-level mocking.
