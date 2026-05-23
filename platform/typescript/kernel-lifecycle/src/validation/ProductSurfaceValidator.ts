@@ -1,76 +1,36 @@
-import { ProductSurface, ProductSurfaceType } from '../domain/ProductLifecyclePhase.js';
+import { ProductSurfaceSchema, getCombinationRecoveryGuidance } from '@ghatana/kernel-product-contracts';
+import type { ProductSurfaceType } from '../domain/ProductLifecyclePhase.js';
 
 /**
- * Product surface validator
+ * Product surface validator using strict Zod schema
  */
 export class ProductSurfaceValidator {
   /**
-   * Validate surface configuration
+   * Validate surface configuration using Zod schema
    */
-  validate(surface: ProductSurface): ValidationError[] {
+  validate(surface: unknown): ValidationError[] {
     const errors: ValidationError[] = [];
 
-    if (!surface.type) {
-      errors.push({ path: 'type', message: 'Surface type is required' });
-    } else {
-      this.validateSurfaceType(surface.type, errors);
-    }
+    const result = ProductSurfaceSchema.safeParse(surface);
 
-    if (!surface.adapter || surface.adapter.trim().length === 0) {
-      errors.push({ path: 'adapter', message: 'Surface adapter is required' });
-    }
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const path = issue.path.join('.');
+        let message = issue.message;
 
-    if (!surface.path || surface.path.trim().length === 0) {
-      errors.push({ path: 'path', message: 'Surface path is required' });
-    }
+        // Add recovery guidance for combination errors
+        if (issue.code === 'custom' && issue.message.includes('Invalid language/runtime/buildSystem combination')) {
+          const data = surface as any;
+          if (data.language && data.runtime && data.buildSystem) {
+            message = getCombinationRecoveryGuidance(data.language, data.runtime, data.buildSystem);
+          }
+        }
 
-    if (!surface.implementationStatus) {
-      errors.push({ path: 'implementationStatus', message: 'Implementation status is required' });
-    } else {
-      this.validateImplementationStatus(surface.implementationStatus, errors);
+        errors.push({ path, message });
+      }
     }
 
     return errors;
-  }
-
-  /**
-   * Validate surface type
-   */
-  private validateSurfaceType(type: string, errors: ValidationError[]): void {
-    const validTypes: ProductSurfaceType[] = [
-      'backend-api',
-      'web',
-      'worker',
-      'operator',
-      'mobile-ios',
-      'mobile-android',
-      'sdk',
-      'domain-pack',
-    ];
-
-    if (!validTypes.includes(type as ProductSurfaceType)) {
-      errors.push({
-        path: 'type',
-        message: `Invalid surface type: ${type}. Must be one of: ${validTypes.join(', ')}`,
-      });
-    }
-  }
-
-  /**
-   * Validate implementation status
-   */
-  private validateImplementationStatus(
-    status: string,
-    errors: ValidationError[],
-  ): void {
-    const validStatuses = ['implemented', 'planned', 'backend-only'];
-
-    if (!validStatuses.includes(status)) {
-      errors.push({
-        path: 'implementationStatus',
-        message: `Invalid implementation status: ${status}. Must be one of: ${validStatuses.join(', ')}`,
-      });
-    }
   }
 
   /**

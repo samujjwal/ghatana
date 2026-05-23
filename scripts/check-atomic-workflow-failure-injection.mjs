@@ -30,6 +30,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const RELEASE_MODE = getReleaseMode();
+const CI_MODE = process.argv.includes('--ci') || process.env.CI === 'true';
 const productArgIndex = process.argv.indexOf('--product');
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1]
   ?? (productArgIndex >= 0 ? process.argv[productArgIndex + 1] : undefined);
@@ -39,6 +40,7 @@ const warnings = [];
 const evidence = [];
 let executedTestProductCount = 0;
 let currentExpectedProductCount = 0;
+let currentProductScope = [];
 const stableGeneratedAt = resolveEvidenceIdentity();
 
 const requiredScenarioPatterns = {
@@ -92,6 +94,37 @@ function hasRequiredScenarioCoverage(content) {
     .every((patterns) => patterns.every((pattern) => normalized.includes(pattern)));
 }
 
+function sleepMs(durationMs) {
+  const signal = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(signal, 0, 0, durationMs);
+}
+
+function isTransientGradleCleanupFailure(error) {
+  const text = `${error?.message ?? ''}\n${error?.stdout ?? ''}\n${error?.stderr ?? ''}`;
+  return /Unable to delete directory|output\.bin|EBUSY|EPERM|file[s]? open/i.test(text);
+}
+
+function execGradleProof(args) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return execFileSync(process.execPath, args, {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 300000
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2 || !isTransientGradleCleanupFailure(error)) {
+        throw error;
+      }
+      logWarning('Transient Gradle cleanup lock detected; retrying atomic failure-injection proof once');
+      sleepMs(1500);
+    }
+  }
+  throw lastError;
+}
+
 /**
  * Execute atomic workflow failure-injection tests
  */
@@ -142,15 +175,12 @@ function executeAtomicWorkflowTests(productPath, productName, gradleTask) {
                 '--tests',
                 testPattern,
                 '--no-daemon',
+                '--no-build-cache',
                 '--max-workers=1',
               ];
 
               console.log(`  Executing: node ${args.join(' ')}`);
-              const output = execFileSync(process.execPath, args, {
-                cwd: repoRoot,
-                encoding: 'utf8',
-                timeout: 180000
-              });
+              const output = execGradleProof(args);
 
               const testPassed = output.includes('BUILD SUCCESSFUL') || output.includes('PASSED');
               const testFailed = output.includes('FAILED') || output.includes('BUILD FAILED');
@@ -627,16 +657,25 @@ function generateEvidenceReport() {
 
   if (missingScenarios.length > 0) {
     for (const scenario of missingScenarios) {
-      logError(`Missing atomic failure-injection scenario evidence: ${scenario}`);
+      if (RELEASE_MODE === 'release' || CI_MODE) {
+        logError(`Missing atomic failure-injection scenario evidence: ${scenario}`);
+      } else {
+        logWarning(`Missing atomic failure-injection scenario evidence: ${scenario}`);
+      }
     }
   }
 
   if (executedTestProductCount === 0) {
-    logError('No product executed real atomic workflow failure-injection tests');
+    if (RELEASE_MODE === 'release' || CI_MODE) {
+      logError('No product executed real atomic workflow failure-injection tests');
+    } else {
+      logWarning('No product executed real atomic workflow failure-injection tests');
+    }
   }
 
   const report = {
     timestamp: stableGeneratedAt,
+    productScope: currentProductScope,
     violations,
     warnings,
     evidence,
@@ -685,6 +724,7 @@ function main() {
     logError(`No atomic workflow product matched --product=${PRODUCT_ARG}`);
   }
   currentExpectedProductCount = filteredProducts.length;
+  currentProductScope = filteredProducts.map((product) => product.productId);
 
   for (const product of filteredProducts) {
     const productPath = path.join(repoRoot, product.path);

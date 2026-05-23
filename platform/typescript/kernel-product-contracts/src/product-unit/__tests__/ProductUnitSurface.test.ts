@@ -3,9 +3,13 @@ import {
   isImplementationStatus,
   isProductSurfaceBuildSystem,
   isProductSurfaceLanguage,
+  isProductSurfaceRuntime,
   isProductUnitSurfaceType,
+  isValidLanguageRuntimeBuildSystemCombination,
+  validateSurfaceTriplet,
   type ProductSurfaceBuildSystem,
   type ProductSurfaceLanguage,
+  type ProductSurfaceRuntime,
   type ProductUnitSurfaceType,
 } from "../ProductUnitSurface";
 
@@ -86,10 +90,6 @@ describe("ProductUnitSurface", () => {
   });
 
   it("accepts canonical runtime environments and rejects unknown values", () => {
-    const {
-      isProductSurfaceRuntime,
-    } = require("../ProductUnitSurface");
-
     const runtimes: readonly ProductSurfaceRuntime[] = [
       "java-jre",
       "java-jdk",
@@ -120,11 +120,6 @@ describe("ProductUnitSurface", () => {
   });
 
   describe("language/runtime/buildSystem combination validation", () => {
-    const {
-      isValidLanguageRuntimeBuildSystemCombination,
-      validateSurfaceTriplet,
-    } = require("../ProductUnitSurface");
-
     it("accepts valid Java combinations", () => {
       expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jre", "gradle")).toBe(true);
       expect(isValidLanguageRuntimeBuildSystemCombination("java", "java-jdk", "gradle")).toBe(true);
@@ -196,15 +191,14 @@ describe("ProductUnitSurface", () => {
     });
 
     it("accepts Docker-based combinations", () => {
-      expect(isValidLanguageRuntimeBuildSystemCombination("java", "docker-container", "docker")).toBe(true);
-      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "docker-container", "docker")).toBe(true);
-      expect(isValidLanguageRuntimeBuildSystemCombination("python", "docker-compose", "compose")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("other", "docker-container", "docker")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("other", "docker-compose", "compose")).toBe(true);
     });
 
     it("accepts 'other' for experimental combinations", () => {
       expect(isValidLanguageRuntimeBuildSystemCombination("other", "other", "other")).toBe(true);
-      expect(isValidLanguageRuntimeBuildSystemCombination("java", "other", "gradle")).toBe(true);
-      expect(isValidLanguageRuntimeBuildSystemCombination("rust", "rust-native", "other")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("other", "java-jre", "gradle")).toBe(true);
+      expect(isValidLanguageRuntimeBuildSystemCombination("other", "rust-native", "other")).toBe(true);
     });
 
     it("provides detailed validation errors", () => {

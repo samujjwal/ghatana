@@ -1,0 +1,121 @@
+{
+  "version": "1.0.0",
+  "productId": "data-cloud",
+  "targetScore": 5,
+  "sourceCommitRequired": "5323e76480f52d237d7adb4142d1258a82b2dc4d",
+  "canonicalProductLanguage": "Data Cloud Action Plane",
+  "internalCompatibilityNames": [
+    "AEP"
+  ],
+  "proofAreas": {
+    "atomicWorkflowFamilies": [
+      {
+        "id": "entities",
+        "requiredTokens": ["collection creation", "entity deletion", "rollback"]
+      },
+      {
+        "id": "events",
+        "requiredTokens": ["event append", "replay after crash", "outbox"]
+      },
+      {
+        "id": "governance-policies",
+        "requiredTokens": ["policy update", "approval requirement", "audit"]
+      },
+      {
+        "id": "privacy-redaction",
+        "requiredTokens": ["redaction", "fail-closed", "audit"]
+      },
+      {
+        "id": "retention-purge",
+        "requiredTokens": ["retention purge", "critical audit", "production profile"]
+      },
+      {
+        "id": "connector-credential-rotation",
+        "requiredTokens": ["Register connector strips raw credentials", "secretRef"]
+      },
+      {
+        "id": "settings-key-rotation",
+        "requiredTokens": ["settings key rotation", "CRITICAL"]
+      },
+      {
+        "id": "model-promotion",
+        "requiredTokens": ["model promotion", "quality gate", "staging"]
+      },
+      {
+        "id": "action-plane-lifecycle",
+        "requiredTokens": ["dry-run", "checkpoint", "cancel", "retry", "rollback", "restore"]
+      },
+      {
+        "id": "plugin-lifecycle",
+        "requiredTokens": ["enable", "disable", "upgrade", "conformance"]
+      },
+      {
+        "id": "legal-holds",
+        "requiredTokens": ["legal holds", "extend", "release"]
+      },
+      {
+        "id": "sovereign-backup-restore",
+        "requiredTokens": ["sovereign", "backup", "restore"]
+      }
+    ],
+    "agentRuntimeProof": [
+      "privacyRedactionApplied",
+      "fallbackMode",
+      "auditRequired",
+      "costBudgetMaxTokens",
+      "recordExecution",
+      "getMemory",
+      "HumanReviewQueue",
+      "requiresHumanApproval",
+      "LearningDelta",
+      "TraceEventType",
+      "ACTION_DENIED",
+      "fallback is disabled"
+    ],
+    "aiGovernanceProof": [
+      "redacts privacy data before model calls",
+      "fails closed without heuristic fallback",
+      "model is unavailable",
+      "prompt token budget",
+      "AgentLifecycleActionTraceRecorder",
+      "costBudgetMaxTokens"
+    ],
+    "uiRouteProof": [
+      "@a11y",
+      "pseudo-locale",
+      "supportedLngs",
+      "Intl.NumberFormat"
+    ],
+    "actionPlaneLifecycleProof": [
+      "/api/v1/action",
+      "x-ghatana-legacy-status",
+      "Idempotency-Key",
+      "rollback",
+      "restore",
+      "checkpoint",
+      "retry",
+      "cancel"
+    ]
+  },
+  "evidenceFiles": [
+    ".kernel/evidence/data-cloud-maturity-proof.json",
+    ".kernel/evidence/action-plane-route-lifecycle.json",
+    ".kernel/evidence/atomic-workflow-posture.json",
+    ".kernel/evidence/data-cloud-release-runtime-profile.json",
+    ".kernel/evidence/product-a11y-route-matrix.json",
+    ".kernel/evidence/product-slo-budgets.json",
+    ".kernel/evidence/product-cost-budgets.json",
+    ".kernel/evidence/openapi-breaking-changes.json"
+  ],
+  "routeClassification": {
+    "canonicalPrefix": "/api/v1/action/",
+    "compatibilitySpecs": [
+      "products/data-cloud/contracts/openapi/aep.yaml"
+    ],
+    "canonicalSpecs": [
+      "products/data-cloud/contracts/openapi/action-plane.yaml"
+    ],
+    "compatibilityRegistry": "products/data-cloud/contracts/openapi/route-compatibility-registry.yaml",
+    "deprecatedCompatibilityNamePolicy": "AEP is an internal compatibility/runtime alias. Customer-facing docs, SDKs, and navigation must prefer Data Cloud Action Plane."
+  }
+}

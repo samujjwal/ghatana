@@ -3415,6 +3415,70 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  /api/v1/yappc/evolve/{proposalId}/approve:
+    post:
+      tags: [evolve]
+      summary: Approve an evolution proposal and hand off to validate/generate/run
+      operationId: approveEvolutionProposal
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvolveDecisionRequest"
+      responses:
+        "200":
+          description: Evolution proposal decision result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolveDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/evolve/{proposalId}/reject:
+    post:
+      tags: [evolve]
+      summary: Reject an evolution proposal
+      operationId: rejectEvolutionProposal
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvolveDecisionRequest"
+      responses:
+        "200":
+          description: Evolution proposal decision result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvolveDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   /api/v1/yappc/lifecycle/execute:
@@ -7724,6 +7788,57 @@ components:
               type: array
               items:
                 type: string
+
+    EvolveDecisionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    EvolveDecisionResponse:
+      type: object
+      required: [proposalId, tenantId, projectId, decision, shouldExecuteLifecycle, executionPhases, productUnitIntentRef, metadata]
+      properties:
+        proposalId:
+          type: string
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED]
+        shouldExecuteLifecycle:
+          type: boolean
+        executionPhases:
+          type: array
+          items:
+            type: string
+        productUnitIntentRef:
+          type: string
+        metadata:
+          type: object
+          required: [reason, decidedBy, approvalState]
+          properties:
+            reason:
+              type: string
+            decidedBy:
+              type: string
+            approvalState:
+              type: string
+              enum: [APPROVED, REJECTED]
+            handoffId:
+              type: string
+              description: Present for approved proposals when lifecycle handoff is queued.
+            handoffStatus:
+              type: string
+              description: Handoff queue status. Present when handoff exists.
+              enum: [QUEUED, DISABLED]
+            handoffAcceptedAt:
+              type: string
+              format: date-time
+              description: Timestamp when the handoff was accepted by the handoff service.
+          additionalProperties: true
 
     FullLifecycleRequest:
       type: object

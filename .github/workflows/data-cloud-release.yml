@@ -215,6 +215,8 @@ jobs:
       - name: Run Data Cloud release runtime profile checks
         run: |
           pnpm check:data-cloud-release-runtime-profile
+          pnpm check:action-plane-route-lifecycle
+          pnpm check:data-cloud-maturity-proof
           pnpm check:kernel-implementation-plan-coverage
           pnpm check:data-cloud-ui-a11y
           pnpm check:product-a11y-route-matrix
@@ -232,7 +234,12 @@ jobs:
           name: data-cloud-runtime-profile-evidence
           path: |
             .kernel/evidence/data-cloud-release-runtime-profile.json
+            .kernel/evidence/action-plane-route-lifecycle.json
+            .kernel/evidence/data-cloud-maturity-proof.json
             .kernel/evidence/atomic-workflow-posture.json
+            .kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json
+            .kernel/evidence/i18n-behavioral-proof/i18n-behavioral-proof-latest.json
+            .kernel/evidence/a11y-behavioral-proof/a11y-behavioral-proof-latest.json
             .kernel/evidence/kernel-implementation-plan-progress.json
             .kernel/evidence/product-a11y-route-matrix.json
             .kernel/evidence/product-slo-budgets.json
@@ -424,6 +431,8 @@ jobs:
           test -s release-evidence/smoke/smoke-e2e-report.json
           test -s release-evidence/backup/backup-drill-report.json
           test -s .kernel/evidence/data-cloud-release-runtime-profile.json
+          test -s .kernel/evidence/action-plane-route-lifecycle.json
+          test -s .kernel/evidence/data-cloud-maturity-proof.json
           test -s .kernel/evidence/atomic-workflow-posture.json
           test -s .kernel/evidence/product-slo-budgets.json
           test -s .kernel/evidence/product-cost-budgets.json
@@ -452,6 +461,8 @@ jobs:
             release-evidence/release-summary.md
             release-evidence/wave2-product-quality-scorecard.md
             .kernel/evidence/wave2-product-quality-scorecard.json
+            .kernel/evidence/action-plane-route-lifecycle.json
+            .kernel/evidence/data-cloud-maturity-proof.json
             .kernel/evidence/product-a11y-route-matrix.json
             .kernel/evidence/product-slo-budgets.json
             .kernel/evidence/product-cost-budgets.json

@@ -5,7 +5,24 @@ export type { ProductLifecyclePhase } from "./lifecycle/ProductLifecyclePhase.js
 export type {
   ProductSurface,
   ProductSurfaceType,
+  ProductLanguage,
+  ProductRuntime,
+  ProductBuildSystem,
+  JavaConfig,
+  TypeScriptConfig,
+  RustConfig,
+  PythonConfig,
+  KotlinConfig,
+  SwiftConfig,
 } from "./surface/ProductSurface.js";
+export {
+  ProductSurfaceSchema,
+  getValidCombinationsForLanguage,
+  getCombinationRecoveryGuidance,
+} from "./surface/ProductSurfaceSchema.js";
+export type {
+  ProductSurfaceInput,
+} from "./surface/ProductSurfaceSchema.js";
 export type { ProductArtifact } from "./artifact/ProductArtifact.js";
 export type { ProductEnvironment } from "./environment/ProductEnvironment.js";
 export type { ProductGate } from "./gate/ProductGate.js";

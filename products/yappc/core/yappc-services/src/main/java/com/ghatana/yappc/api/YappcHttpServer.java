@@ -90,6 +90,8 @@ public class YappcHttpServer extends HttpServerLauncher {
                 // Evolve endpoints
                 .with(HttpMethod.POST, "/api/v1/yappc/evolve", secureVersioned(authenticationFilter, routeAuthorizationFilter, evolveController::propose, versionPolicy))
                 .with(HttpMethod.POST, "/api/v1/yappc/evolve/with-constraints", secureVersioned(authenticationFilter, routeAuthorizationFilter, evolveController::proposeWithConstraints, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/evolve/:proposalId/approve", secureVersioned(authenticationFilter, routeAuthorizationFilter, evolveController::approveProposal, versionPolicy))
+                .with(HttpMethod.POST, "/api/v1/yappc/evolve/:proposalId/reject", secureVersioned(authenticationFilter, routeAuthorizationFilter, evolveController::rejectProposal, versionPolicy))
 
                 // Full lifecycle orchestration endpoint
                 .with(HttpMethod.POST, "/api/v1/yappc/lifecycle/execute", secureVersioned(authenticationFilter, routeAuthorizationFilter, lifecycleController::executeFullLifecycle, versionPolicy))

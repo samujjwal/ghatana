@@ -220,6 +220,7 @@ public class LifecycleApiController {
                                 if (!validationResult.passed() || validationResult.hasBlockingIssues()) {
                                     Map<String, String> metadata = buildPipelineMetadata(
                                         "VALIDATION_FAILED",
+                                        executionId,
                                         executionPlan,
                                         executedPhases,
                                         phaseDurationsMs
@@ -270,6 +271,7 @@ public class LifecycleApiController {
                                                                 recordPhaseTiming("LEARN_EVOLVE", learnEvolveStart, phaseDurationsMs, executedPhases);
                                                                 Map<String, String> metadata = buildPipelineMetadata(
                                                                     "SUCCESS",
+                                                                    executionId,
                                                                     executionPlan,
                                                                     executedPhases,
                                                                     phaseDurationsMs
@@ -355,43 +357,43 @@ public class LifecycleApiController {
                 executedPhases,
                 phaseDurationsMs,
                 result.metadata().getOrDefault("status", "SUCCESS"),
-                result.intent() != null ? Map.of(
+                result.intent() != null ? mapOfNonNull(
                     "id", result.intent().id(),
                     "title", result.intent().productName(),
                     "description", result.intent().description()
                 ) : null,
-                result.shape() != null ? Map.of(
+                result.shape() != null ? mapOfNonNull(
                     "architecture", result.shape().architecture(),
                     "domainModel", result.shape().domainModel(),
                     "workflows", result.shape().workflows(),
                     "integrations", result.shape().integrations()
                 ) : null,
-                result.validation() != null ? Map.of(
+                result.validation() != null ? mapOfNonNull(
                     "passed", result.validation().passed(),
                     "hasBlockingIssues", result.validation().hasBlockingIssues(),
                     "issues", result.validation().issues()
                 ) : null,
-                result.artifacts() != null ? Map.of(
+                result.artifacts() != null ? mapOfNonNull(
                     "id", result.artifacts().id(),
                     "specRef", result.artifacts().specRef(),
                     "generatorVersion", result.artifacts().generatorVersion(),
                     "artifacts", result.artifacts().artifacts()
                 ) : null,
-                result.run() != null ? Map.of(
+                result.run() != null ? mapOfNonNull(
                     "status", result.run().status().toString(),
                     "taskResults", result.run().taskResults()
                 ) : null,
-                result.observation() != null ? Map.of(
+                result.observation() != null ? mapOfNonNull(
                     "metrics", result.observation().metrics(),
                     "logs", result.observation().logs(),
                     "traces", result.observation().traces()
                 ) : null,
-                result.insights() != null ? Map.of(
+                result.insights() != null ? mapOfNonNull(
                     "patterns", result.insights().patterns(),
                     "anomalies", result.insights().anomalies(),
                     "recommendations", result.insights().recommendations()
                 ) : null,
-                result.evolution() != null ? Map.of(
+                result.evolution() != null ? mapOfNonNull(
                     "tasks", result.evolution().tasks(),
                     "newIntentRef", result.evolution().newIntentRef(),
                     "metadata", result.evolution().metadata()
@@ -411,6 +413,21 @@ public class LifecycleApiController {
         }
     }
 
+    private Map<String, Object> mapOfNonNull(Object... keyValues) {
+        LinkedHashMap<String, Object> values = new LinkedHashMap<>();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            Object key = keyValues[i];
+            Object value = keyValues[i + 1];
+            if (!(key instanceof String keyString)) {
+                continue;
+            }
+            if (value != null) {
+                values.put(keyString, value);
+            }
+        }
+        return values;
+    }
+
     private List<String> resolveDagExecutionPlan() {
         // Current lifecycle is a linearized DAG. Keeping this explicit allows non-linear expansion later.
         return List.copyOf(PIPELINE_DAG_ORDER);
@@ -428,12 +445,14 @@ public class LifecycleApiController {
 
     private Map<String, String> buildPipelineMetadata(
         String status,
+        String executionId,
         List<String> executionPlan,
         List<String> executedPhases,
         Map<String, Long> phaseDurationsMs
     ) {
         return Map.of(
             "status", status,
+            "executionId", executionId,
             "pipelineMode", "DAG",
             "pipelineGraphVersion", "2026-04-17",
             "executionPlan", String.join("->", executionPlan),

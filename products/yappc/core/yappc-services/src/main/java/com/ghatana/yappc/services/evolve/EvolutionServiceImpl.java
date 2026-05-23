@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -36,13 +37,22 @@ public class EvolutionServiceImpl implements EvolutionService {
     private final AuditLogger auditLogger;
     private final MetricsCollector metrics;
     private final EvolutionPlanRepository planRepository;
+    private final EvolutionExecutionHandoffService executionHandoffService;
     private final boolean persistPlan;
+    private static final List<String> APPROVED_EXECUTION_PHASES = List.of("validate", "generate", "run");
 
     public EvolutionServiceImpl(
             CompletionService aiService,
             AuditLogger auditLogger,
             MetricsCollector metrics) {
-        this(aiService, auditLogger, metrics, EvolutionPlanRepository.noop(), false);
+        this(
+            aiService,
+            auditLogger,
+            metrics,
+            EvolutionPlanRepository.noop(),
+            EvolutionExecutionHandoffService.noop(),
+            false
+        );
     }
 
     public EvolutionServiceImpl(
@@ -50,7 +60,16 @@ public class EvolutionServiceImpl implements EvolutionService {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             EvolutionPlanRepository planRepository) {
-        this(aiService, auditLogger, metrics, planRepository, true);
+        this(aiService, auditLogger, metrics, planRepository, EvolutionExecutionHandoffService.noop(), true);
+    }
+
+    public EvolutionServiceImpl(
+            CompletionService aiService,
+            AuditLogger auditLogger,
+            MetricsCollector metrics,
+            EvolutionPlanRepository planRepository,
+            EvolutionExecutionHandoffService executionHandoffService) {
+        this(aiService, auditLogger, metrics, planRepository, executionHandoffService, true);
     }
 
     private EvolutionServiceImpl(
@@ -58,11 +77,13 @@ public class EvolutionServiceImpl implements EvolutionService {
             AuditLogger auditLogger,
             MetricsCollector metrics,
             EvolutionPlanRepository planRepository,
+            EvolutionExecutionHandoffService executionHandoffService,
             boolean persistPlan) {
         this.aiService = aiService;
         this.auditLogger = auditLogger;
         this.metrics = metrics;
         this.planRepository = planRepository;
+        this.executionHandoffService = executionHandoffService;
         this.persistPlan = persistPlan;
     }
 
@@ -96,6 +117,134 @@ public class EvolutionServiceImpl implements EvolutionService {
                         e,
                         Map.of("has_constraints", String.valueOf(constraints != null)));
                 });
+    }
+
+    @Override
+    public Promise<EvolutionDecision> approveProposal(String proposalId, String decidedBy, String reason) {
+        String tenantId = resolveTenantId();
+        long startTime = System.currentTimeMillis();
+
+        return resolveProposalState(tenantId, proposalId)
+                .then(state -> {
+                    ensurePendingApproval(state, proposalId);
+                    Map<String, Object> transition = Map.of(
+                            "nextPhases", APPROVED_EXECUTION_PHASES,
+                            "requiresLifecycleExecute", true,
+                            "productUnitIntentRef", state.productUnitIntentRef(),
+                            "decision", "APPROVED"
+                    );
+                    return planRepository.transitionApprovalState(
+                                    tenantId,
+                                    proposalId,
+                                    "APPROVED",
+                                    decidedBy,
+                                    reason,
+                                    transition
+                            )
+                            .then(ignored -> executionHandoffService.handoff(new EvolutionExecutionHandoffService.EvolutionExecutionRequest(
+                                    UUID.randomUUID().toString(),
+                                    proposalId,
+                                    tenantId,
+                                    state.projectId(),
+                                    state.productUnitIntentRef(),
+                                    decidedBy,
+                                    APPROVED_EXECUTION_PHASES,
+                                    Instant.now(),
+                                    Map.of(
+                                            "decision", "APPROVED",
+                                            "reason", safeReason(reason)
+                                    )
+                            )))
+                            .map(handoff -> {
+                                metrics.recordTimer(
+                                        "yappc.evolve.approval.approve",
+                                        System.currentTimeMillis() - startTime,
+                                        Map.of("decision", "APPROVED")
+                                );
+                                return new EvolutionDecision(
+                                        proposalId,
+                                        tenantId,
+                                        state.projectId(),
+                                        "APPROVED",
+                                        true,
+                                        APPROVED_EXECUTION_PHASES,
+                                        state.productUnitIntentRef(),
+                                        Map.of(
+                                                "reason", safeReason(reason),
+                                                "decidedBy", decidedBy,
+                                                "approvalState", "APPROVED",
+                                                "handoffId", handoff.handoffId(),
+                                                "handoffStatus", handoff.status(),
+                                                "handoffAcceptedAt", handoff.acceptedAt().toString()
+                                        )
+                                );
+                            });
+                });
+    }
+
+    @Override
+    public Promise<EvolutionDecision> rejectProposal(String proposalId, String decidedBy, String reason) {
+        String tenantId = resolveTenantId();
+        long startTime = System.currentTimeMillis();
+
+        return resolveProposalState(tenantId, proposalId)
+                .then(state -> {
+                    ensurePendingApproval(state, proposalId);
+                    Map<String, Object> transition = Map.of(
+                            "nextPhases", List.of(),
+                            "requiresLifecycleExecute", false,
+                            "productUnitIntentRef", state.productUnitIntentRef(),
+                            "decision", "REJECTED"
+                    );
+                    return planRepository.transitionApprovalState(
+                                    tenantId,
+                                    proposalId,
+                                    "REJECTED",
+                                    decidedBy,
+                                    reason,
+                                    transition
+                            )
+                            .map(ignored -> {
+                                metrics.recordTimer(
+                                        "yappc.evolve.approval.reject",
+                                        System.currentTimeMillis() - startTime,
+                                        Map.of("decision", "REJECTED")
+                                );
+                                return new EvolutionDecision(
+                                        proposalId,
+                                        tenantId,
+                                        state.projectId(),
+                                        "REJECTED",
+                                        false,
+                                        List.of(),
+                                        state.productUnitIntentRef(),
+                                        Map.of(
+                                                "reason", safeReason(reason),
+                                                "decidedBy", decidedBy,
+                                                "approvalState", "REJECTED"
+                                        )
+                                );
+                            });
+                });
+    }
+
+    private Promise<EvolutionPlanRepository.EvolutionProposalState> resolveProposalState(String tenantId, String proposalId) {
+        return planRepository.findProposalState(tenantId, proposalId)
+                .then(stateOpt -> stateOpt
+                        .map(Promise::of)
+                        .orElseGet(() -> Promise.ofException(new IllegalArgumentException(
+                                "Evolution proposal not found: " + proposalId))));
+    }
+
+    private static void ensurePendingApproval(EvolutionPlanRepository.EvolutionProposalState state, String proposalId) {
+        if (!"PENDING_APPROVAL".equalsIgnoreCase(state.approvalState())) {
+            throw new IllegalStateException(
+                    "Evolution proposal " + proposalId + " is not pending approval; current state=" + state.approvalState());
+        }
+    }
+
+    private static String safeReason(String reason) {
+        return reason == null || reason.isBlank() ? "No decision reason provided" : reason;
     }
 
     private Promise<EvolutionPlan> proposeWithAI(Insights insights, ConstraintSpec constraints) {

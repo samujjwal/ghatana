@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.bundles.jackson.yaml)
     implementation(libs.bundles.common.utils)
     api(libs.bundles.logging.core)
+    implementation(libs.bundles.resilience4j.circuitbreaker.lib)
     compileOnly(libs.bundles.dev.tools)
     testCompileOnly(libs.bundles.dev.tools)
     testImplementation(project(":platform:java:testing"))

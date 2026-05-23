@@ -32,6 +32,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const RELEASE_MODE = getReleaseMode();
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
+const CI_MODE = process.argv.includes('--ci') || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
 const violations = [];
 const warnings = [];
@@ -57,6 +58,20 @@ function logEvidence(message) {
   console.log(`  📋 ${message}`);
 }
 
+function resolveWebProofPath(product) {
+  const webSurface = product.surfaces?.find((surface) => surface.type === 'web' && surface.path);
+  if (webSurface?.path) {
+    return path.join(repoRoot, webSurface.path);
+  }
+
+  const concretePackage = product.pnpmPackages?.find((packagePath) => !packagePath.includes('*'));
+  if (concretePackage) {
+    return path.join(repoRoot, concretePackage);
+  }
+
+  return path.join(repoRoot, product.path);
+}
+
 /**
  * Execute i18n behavioral tests with Playwright
  */
@@ -66,29 +81,39 @@ function executeI18nTests(productPath, productName) {
     path.join(productPath, 'e2e'),
     path.join(productPath, 'playwright'),
     path.join(productPath, 'tests/e2e'),
+    path.join(productPath, 'src/i18n/__tests__'),
   ];
 
   let testFound = false;
+  let executedPassed = false;
   for (const testDir of testDirs) {
     if (!existsSync(testDir)) continue;
 
     function searchDir(dir) {
+      if (executedPassed) {
+        return;
+      }
       try {
         const items = readdirSync(dir);
         
         for (const item of items) {
+          if (executedPassed) {
+            return;
+          }
           const itemPath = path.join(dir, item);
           const stat = statSync(itemPath);
           
           if (stat.isDirectory() && !item.includes('node_modules') && !item.includes('.git')) {
             searchDir(itemPath);
-          } else if (item.endsWith('.spec.ts') && (item.includes('i18n') || item.includes('locale'))) {
+          } else if ((item.endsWith('.spec.ts') || item.endsWith('.test.ts')) && (item.includes('i18n') || item.includes('locale') || item === 'config.test.ts')) {
             testFound = true;
-            const testName = item.replace('.spec.ts', '');
+            const relativeTestPath = path.relative(productPath, itemPath).replace(/\\/g, '/');
             
             try {
-              // Execute the test using Playwright
-              const testCommand = `npx playwright test ${testName}`;
+              const isBrowserSpec = item.endsWith('.spec.ts');
+              const testCommand = isBrowserSpec
+                ? `npx playwright test ${relativeTestPath}`
+                : `pnpm exec vitest run ${relativeTestPath}`;
               
               console.log(`  Executing: ${testCommand}`);
               const output = execSync(testCommand, {
@@ -104,10 +129,11 @@ function executeI18nTests(productPath, productName) {
               if (testPassed) {
                 logSuccess(`${productName}: I18n behavioral tests PASSED`);
                 logEvidence(`${productName}: Executed real i18n behavioral scenarios`);
-                return true;
+                executedPassed = true;
+                return;
               } else if (testFailed) {
                 logError(`${productName}: I18n behavioral tests FAILED`);
-                return false;
+                return;
               }
             } catch (error) {
               logWarning(`${productName}: Failed to execute i18n test: ${error.message}`);
@@ -120,6 +146,9 @@ function executeI18nTests(productPath, productName) {
     }
 
     searchDir(testDir);
+    if (executedPassed) {
+      return true;
+    }
   }
 
   if (!testFound) {
@@ -593,14 +622,15 @@ function main() {
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
-    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
+    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase())
+        || p.productId.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
     : products;
 
   for (const product of filteredProducts) {
-    const productPath = path.join(repoRoot, product.path);
+    const productPath = resolveWebProofPath(product);
     
     if (!existsSync(productPath)) {
-      logError(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product web path not found at ${path.relative(repoRoot, productPath)}`);
       continue;
     }
 

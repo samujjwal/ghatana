@@ -129,4 +129,138 @@ public class PluginDependencyResolver {
         cycle.add(repeatedPluginId);
         return String.join(" -> ", cycle);
     }
+
+    /**
+     * Builds a dependency graph for visualization and analysis.
+     *
+     * @param plugins the plugins to build the graph from
+     * @return the dependency graph
+     */
+    public PluginDependencyGraph buildDependencyGraph(Map<String, PluginManifest> plugins) {
+        Map<String, Set<String>> adjacencyList = new HashMap<>();
+        Map<String, Integer> dependencyDepth = new HashMap<>();
+
+        for (Map.Entry<String, PluginManifest> entry : plugins.entrySet()) {
+            String pluginId = entry.getKey();
+            PluginManifest manifest = entry.getValue();
+
+            Set<String> dependencies = new HashSet<>();
+            for (KernelDependency dependency : manifest.getDependencies()) {
+                if (dependency.getType() == KernelDependency.DependencyType.PLUGIN) {
+                    dependencies.add(dependency.getDependencyId());
+                }
+            }
+            adjacencyList.put(pluginId, dependencies);
+            dependencyDepth.put(pluginId, calculateDepth(pluginId, adjacencyList, new HashSet<>()));
+        }
+
+        return new PluginDependencyGraph(adjacencyList, dependencyDepth);
+    }
+
+    /**
+     * Returns a topological sort of plugins based on dependencies.
+     *
+     * @param plugins the plugins to sort
+     * @return list of plugin IDs in dependency order (dependencies before dependents)
+     * @throws PluginDependencyException if circular dependencies exist
+     */
+    public List<String> topologicalSort(Map<String, PluginManifest> plugins) throws PluginDependencyException {
+        checkCircularDependencies(plugins);
+
+        Map<String, Set<String>> graph = buildDependencyGraph(plugins).adjacencyList();
+        List<String> result = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        Set<String> visiting = new HashSet<>();
+
+        for (String pluginId : new TreeSet<>(plugins.keySet())) {
+            if (!visited.contains(pluginId)) {
+                topologicalVisit(pluginId, graph, visited, visiting, result);
+            }
+        }
+
+        Collections.reverse(result);
+        return result;
+    }
+
+    private int calculateDepth(String pluginId, Map<String, Set<String>> adjacencyList, Set<String> visiting) {
+        if (visiting.contains(pluginId)) {
+            return 0;
+        }
+        visiting.add(pluginId);
+
+        Set<String> dependencies = adjacencyList.getOrDefault(pluginId, Set.of());
+        int maxDepth = 0;
+        for (String dep : dependencies) {
+            int depDepth = calculateDepth(dep, adjacencyList, new HashSet<>(visiting));
+            maxDepth = Math.max(maxDepth, depDepth + 1);
+        }
+
+        return maxDepth;
+    }
+
+    private void topologicalVisit(
+            String pluginId,
+            Map<String, Set<String>> graph,
+            Set<String> visited,
+            Set<String> visiting,
+            List<String> result) {
+        if (visited.contains(pluginId)) {
+            return;
+        }
+        if (visiting.contains(pluginId)) {
+            throw new PluginDependencyException("Circular dependency detected during topological sort");
+        }
+
+        visiting.add(pluginId);
+
+        for (String dependency : graph.getOrDefault(pluginId, Set.of())) {
+            topologicalVisit(dependency, graph, visited, visiting, result);
+        }
+
+        visiting.remove(pluginId);
+        visited.add(pluginId);
+        result.add(pluginId);
+    }
+
+    /**
+     * Dependency graph representation for visualization and analysis.
+     */
+    public static final class PluginDependencyGraph {
+        private final Map<String, Set<String>> adjacencyList;
+        private final Map<String, Integer> dependencyDepth;
+
+        PluginDependencyGraph(Map<String, Set<String>> adjacencyList, Map<String, Integer> dependencyDepth) {
+            this.adjacencyList = Map.copyOf(adjacencyList);
+            this.dependencyDepth = Map.copyOf(dependencyDepth);
+        }
+
+        public Map<String, Set<String>> adjacencyList() {
+            return adjacencyList;
+        }
+
+        public Map<String, Integer> dependencyDepth() {
+            return dependencyDepth;
+        }
+
+        public String toDotFormat() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("digraph PluginDependencies {\n");
+            sb.append("  rankdir=LR;\n");
+            sb.append("  node [shape=box];\n\n");
+
+            for (Map.Entry<String, Set<String>> entry : adjacencyList.entrySet()) {
+                String pluginId = entry.getKey();
+                int depth = dependencyDepth.getOrDefault(pluginId, 0);
+                sb.append("  \"").append(pluginId).append("\" [label=\"").append(pluginId)
+                  .append(" (depth: ").append(depth).append(")\"];\n");
+
+                for (String dependency : entry.getValue()) {
+                    sb.append("  \"").append(dependency).append("\" -> \"").append(pluginId).append("\";\n");
+                }
+            }
+
+            sb.append("}\n");
+            return sb.toString();
+        }
+    }
 }

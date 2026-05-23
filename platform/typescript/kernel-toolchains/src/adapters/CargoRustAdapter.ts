@@ -154,6 +154,7 @@ export class CargoRustAdapter implements ToolchainAdapter {
       // P1-01: Add target triple and binary metadata to result metadata
       const targetTriple = await this.detectTargetTriple();
       const rustVersion = await this.detectRustVersion();
+      const cargoMetadata = await this.extractCargoMetadata(context);
       result.observability = {
         ...result.observability,
         commandId: result.observability?.commandId ?? 'cargo-build',
@@ -169,6 +170,10 @@ export class CargoRustAdapter implements ToolchainAdapter {
         targetTriple,
         rustVersion,
         artifactType: this.artifactType(context),
+        dependencies: cargoMetadata.dependencies,
+        features: cargoMetadata.features,
+        workspaceMembers: cargoMetadata.workspaceMembers,
+        crossPlatformTargets: this.getCrossPlatformTargets(),
       };
     }
 
@@ -367,5 +372,57 @@ export class CargoRustAdapter implements ToolchainAdapter {
     } catch {
       return 'unknown';
     }
+  }
+
+  /**
+   * POLY-002: Extract cargo metadata for dependency information and build details.
+   */
+  private async extractCargoMetadata(context: ToolchainAdapterContext): Promise<{
+    dependencies: Array<{ name: string; version: string }>;
+    features: string[];
+    workspaceMembers: string[];
+  }> {
+    const crateDirectory = this.resolveCrateDirectory(context);
+    try {
+      const result = await this.commandRunner.run('cargo', ['metadata', '--format-version', '1'], {
+        cwd: crateDirectory,
+        timeoutMs: 30_000,
+      });
+      const metadata = JSON.parse(result.stdout);
+      
+      const currentPackage = metadata.packages?.find((pkg: any) => 
+        pkg.manifest_path === path.join(crateDirectory, 'Cargo.toml').replace(/\\/g, '/')
+      );
+      
+      const dependencies = currentPackage?.dependencies?.map((dep: any) => ({
+        name: dep.name,
+        version: dep.req || '*',
+      })) || [];
+      
+      const features = Object.keys(currentPackage?.features || {});
+      const workspaceMembers = metadata.workspace_members || [];
+      
+      return { dependencies, features, workspaceMembers };
+    } catch {
+      return { dependencies: [], features: [], workspaceMembers: [] };
+    }
+  }
+
+  /**
+   * POLY-002: Get cross-platform target configuration.
+   */
+  private getCrossPlatformTargets(): string[] {
+    const targets: string[] = [];
+    if (process.platform === 'win32') {
+      targets.push('x86_64-pc-windows-msvc');
+      targets.push('aarch64-pc-windows-msvc');
+    } else if (process.platform === 'darwin') {
+      targets.push('x86_64-apple-darwin');
+      targets.push('aarch64-apple-darwin');
+    } else {
+      targets.push('x86_64-unknown-linux-gnu');
+      targets.push('aarch64-unknown-linux-gnu');
+    }
+    return targets;
   }
 }

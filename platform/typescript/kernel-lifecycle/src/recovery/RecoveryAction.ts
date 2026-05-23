@@ -18,7 +18,9 @@ export type RecoveryActionType =
   | "check-network"
   | "increase-resources"
   | "contact-support"
-  | "manual-intervention";
+  | "manual-intervention"
+  | "address-gate"
+  | "regenerate-artifact";
 
 export interface RecoveryAction {
   readonly type: RecoveryActionType;

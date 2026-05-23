@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -170,6 +171,129 @@ class EvolutionServiceTest extends EventloopTestBase {
                             && proposal.approvalState().equals("PENDING_APPROVAL")
                             && proposal.productUnitIntentRef().equals(result.newIntentRef())
                             && proposal.provenance().contains("insights-123")));
+        } finally {
+            TenantContext.clear();
+            runBlocking(TenantContext::clear);
+        }
+    }
+
+    @Test
+    void shouldApproveProposalAndReturnLifecycleHandoff() {
+        CompletionService aiService = mock(CompletionService.class);
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+        EvolutionPlanRepository repository = mock(EvolutionPlanRepository.class);
+                EvolutionExecutionHandoffService handoffService = mock(EvolutionExecutionHandoffService.class);
+
+        EvolutionPlanRepository.EvolutionProposalState state =
+                new EvolutionPlanRepository.EvolutionProposalState(
+                        "proposal-123",
+                        "tenant-alpha",
+                        "project-123",
+                        "PENDING_APPROVAL",
+                        "intent-987",
+                        Map.of(),
+                        java.time.Instant.now()
+                );
+
+        when(repository.findProposalState("tenant-alpha", "proposal-123"))
+                .thenReturn(Promise.of(Optional.of(state)));
+        when(repository.transitionApprovalState(
+                eq("tenant-alpha"),
+                eq("proposal-123"),
+                eq("APPROVED"),
+                eq("reviewer-1"),
+                any(),
+                any()))
+                .thenReturn(Promise.complete());
+        when(handoffService.handoff(any(EvolutionExecutionHandoffService.EvolutionExecutionRequest.class)))
+                .thenReturn(Promise.of(new EvolutionExecutionHandoffService.EvolutionExecutionHandoff(
+                        "handoff-123",
+                        "QUEUED",
+                        java.time.Instant.now(),
+                        Map.of("collection", "yappc_evolution_execution_handoffs")
+                )));
+
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics, repository, handoffService);
+
+        try {
+            EvolutionService.EvolutionDecision decision = runPromise(() ->
+                    service.approveProposal("proposal-123", "reviewer-1", "ready for execution"));
+
+            assertEquals("APPROVED", decision.decision());
+            assertTrue(decision.shouldExecuteLifecycle());
+            assertEquals(List.of("validate", "generate", "run"), decision.executionPhases());
+            assertEquals("intent-987", decision.productUnitIntentRef());
+                        assertEquals("handoff-123", decision.metadata().get("handoffId"));
+                        assertEquals("QUEUED", decision.metadata().get("handoffStatus"));
+            verify(repository).transitionApprovalState(
+                    eq("tenant-alpha"),
+                    eq("proposal-123"),
+                    eq("APPROVED"),
+                    eq("reviewer-1"),
+                    eq("ready for execution"),
+                    argThat(metadata -> List.of("validate", "generate", "run").equals(metadata.get("nextPhases"))));
+                        verify(handoffService).handoff(argThat(request ->
+                                        request.proposalId().equals("proposal-123")
+                                                        && request.tenantId().equals("tenant-alpha")
+                                                        && request.projectId().equals("project-123")
+                                                        && request.productUnitIntentRef().equals("intent-987")
+                                                        && request.phases().equals(List.of("validate", "generate", "run"))));
+        } finally {
+            TenantContext.clear();
+            runBlocking(TenantContext::clear);
+        }
+    }
+
+    @Test
+    void shouldRejectProposalWithoutLifecycleHandoff() {
+        CompletionService aiService = mock(CompletionService.class);
+        AuditLogger auditLogger = mock(AuditLogger.class);
+        MetricsCollector metrics = mock(MetricsCollector.class);
+        EvolutionPlanRepository repository = mock(EvolutionPlanRepository.class);
+
+        EvolutionPlanRepository.EvolutionProposalState state =
+                new EvolutionPlanRepository.EvolutionProposalState(
+                        "proposal-999",
+                        "tenant-alpha",
+                        "project-123",
+                        "PENDING_APPROVAL",
+                        "intent-111",
+                        Map.of(),
+                        java.time.Instant.now()
+                );
+
+        when(repository.findProposalState("tenant-alpha", "proposal-999"))
+                .thenReturn(Promise.of(Optional.of(state)));
+        when(repository.transitionApprovalState(
+                eq("tenant-alpha"),
+                eq("proposal-999"),
+                eq("REJECTED"),
+                eq("reviewer-2"),
+                any(),
+                any()))
+                .thenReturn(Promise.complete());
+
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics, repository);
+
+        try {
+            EvolutionService.EvolutionDecision decision = runPromise(() ->
+                    service.rejectProposal("proposal-999", "reviewer-2", "not enough confidence"));
+
+            assertEquals("REJECTED", decision.decision());
+            assertFalse(decision.shouldExecuteLifecycle());
+            assertTrue(decision.executionPhases().isEmpty());
+            verify(repository).transitionApprovalState(
+                    eq("tenant-alpha"),
+                    eq("proposal-999"),
+                    eq("REJECTED"),
+                    eq("reviewer-2"),
+                    eq("not enough confidence"),
+                    argThat(metadata -> Boolean.FALSE.equals(metadata.get("requiresLifecycleExecute"))));
         } finally {
             TenantContext.clear();
             runBlocking(TenantContext::clear);

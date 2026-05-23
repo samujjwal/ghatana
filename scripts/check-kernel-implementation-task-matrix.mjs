@@ -14,6 +14,12 @@ function readJson(filePath) {
 }
 
 function parsePlanTasks(planSource) {
+  const tableTasks = parsePlanTasksFromTodoTable(planSource);
+  if (tableTasks.length > 0) {
+    return tableTasks;
+  }
+
+  // Backward-compatible parser for the legacy numbered-list plan format.
   const itemRegex = /^\s*(\d+)\.\s+\*\*(.+?)\*\*\s*$/gm;
   const matches = [];
   let match;
@@ -49,6 +55,31 @@ function parsePlanTasks(planSource) {
       whereRefs,
     };
   });
+}
+
+function parsePlanTasksFromTodoTable(planSource) {
+  const tasks = [];
+  const lines = planSource.split(/\r?\n/);
+  const rowRegex = /^\|\s*TODO-(\d{3})\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*([^|]+?)\s*\|/;
+
+  for (const line of lines) {
+    const match = line.match(rowRegex);
+    if (!match) {
+      continue;
+    }
+
+    const id = Number(match[1]);
+    const fileColumn = match[2].trim();
+    const whereRefs = [...fileColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+
+    tasks.push({
+      id,
+      title: `TODO-${String(id).padStart(3, '0')}`,
+      whereRefs,
+    });
+  }
+
+  return tasks;
 }
 
 function isWorkspacePathRef(ref) {

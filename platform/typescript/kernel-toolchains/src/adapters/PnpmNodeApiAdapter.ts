@@ -76,8 +76,67 @@ export class PnpmNodeApiAdapter implements ToolchainAdapter {
         checkedAt,
       });
     }
-    const blockingIssues = checks.filter((check) => check.status === 'failed').map((check) => check.message);
-    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings: [] };
+
+    // POLY-004: Check for Node version requirements
+    const packageJson = packageJsonExists ? await this.readPackageJson(packageDirectory) : null;
+    const requiredNodeVersion = packageJson?.engines?.node as string | undefined;
+    if (requiredNodeVersion) {
+      try {
+        const nodeResult = await this.commandRunner.run('node', ['--version'], { cwd: this.repoRoot, timeoutMs: 10_000 });
+        const installedVersion = nodeResult.stdout.trim().replace('v', '');
+        const versionCheck = this.checkNodeVersion(installedVersion, requiredNodeVersion);
+        checks.push({
+          checkId: 'node-version',
+          checkName: 'Node version requirement',
+          status: versionCheck ? 'passed' : 'failed',
+          message: `Node ${installedVersion} (required: ${requiredNodeVersion})`,
+          ...(versionCheck ? {} : { severity: 'critical', remediation: [`Install Node ${requiredNodeVersion}`] }),
+          checkedAt,
+        });
+      } catch {
+        checks.push({
+          checkId: 'node-version',
+          checkName: 'Node version requirement',
+          status: 'failed',
+          message: 'Node executable not found',
+          severity: 'critical',
+          remediation: ['Install Node.js'],
+          checkedAt,
+        });
+      }
+    }
+
+    // POLY-004: Check for health/readiness endpoints in dev mode
+    if (context.phase === 'dev' && packageJson) {
+      const hasHealthScript = hasPackageScript(packageJson, 'health');
+      const hasReadinessScript = hasPackageScript(packageJson, 'readiness');
+      if (!hasHealthScript) {
+        checks.push({
+          checkId: 'health-script',
+          checkName: 'Health check script',
+          status: 'failed',
+          message: 'Missing "health" script in package.json',
+          severity: 'low',
+          remediation: ['Add health check script for production readiness'],
+          checkedAt,
+        });
+      }
+      if (!hasReadinessScript) {
+        checks.push({
+          checkId: 'readiness-script',
+          checkName: 'Readiness check script',
+          status: 'failed',
+          message: 'Missing "readiness" script in package.json',
+          severity: 'low',
+          remediation: ['Add readiness check script for production readiness'],
+          checkedAt,
+        });
+      }
+    }
+
+    const blockingIssues = checks.filter((check) => check.status === 'failed' && check.severity === 'critical').map((check) => check.message);
+    const warnings = checks.filter((check) => check.status === 'failed' && check.severity === 'low').map((check) => check.message);
+    return { status: blockingIssues.length === 0 ? 'ready' : 'blocked', checks, blockingIssues, warnings };
   }
 
   async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
@@ -207,10 +266,49 @@ export class PnpmNodeApiAdapter implements ToolchainAdapter {
       ? configured
       : defaultTimeoutMs(context.phase);
   }
+
+  /**
+   * POLY-004: Check if installed Node version meets requirements.
+   * Supports semantic version comparison (e.g., ">=18", "20", ">=20.0.0").
+   */
+  private checkNodeVersion(installed: string, required: string): boolean {
+    const installedParts = installed.split('.').map(Number);
+
+    if (!required.startsWith('>=') && !required.startsWith('>')) {
+      return installed === required;
+    }
+
+    if (required.startsWith('>=')) {
+      const minParts = required.slice(2).split('.').map(Number);
+      for (let i = 0; i < 3; i++) {
+        const installedPart = installedParts[i] ?? 0;
+        const minPart = minParts[i] ?? 0;
+        if (installedPart > minPart) return true;
+        if (installedPart < minPart) return false;
+      }
+      return true;
+    }
+
+    if (required.startsWith('>')) {
+      const minParts = required.slice(1).split('.').map(Number);
+      for (let i = 0; i < 3; i++) {
+        const installedPart = installedParts[i] ?? 0;
+        const minPart = minParts[i] ?? 0;
+        if (installedPart > minPart) return true;
+        if (installedPart < minPart) return false;
+      }
+      return false;
+    }
+
+    return false;
+  }
 }
 
 interface PackageJson {
   readonly scripts?: Record<string, string>;
+  readonly engines?: {
+    readonly node?: string;
+  };
 }
 
 function isPackageJson(value: unknown): value is PackageJson {

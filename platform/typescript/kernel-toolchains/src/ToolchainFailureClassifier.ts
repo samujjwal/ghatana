@@ -114,7 +114,7 @@ export class ToolchainFailureClassifier {
       requiresHumanIntervention,
       remediationSteps,
       relatedFailureCodes,
-      component: context.surface.id as string,
+      component: context.surface.type as string,
     };
   }
 

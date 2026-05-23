@@ -9,10 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Agent execution service for AEP.
@@ -31,8 +33,15 @@ public class AgentExecutionService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentExecutionService.class);
     private static final int DEFAULT_MAX_TOKENS = 1024;
+    private static final int MAX_PROMPT_TOKEN_BUDGET = 8192;
     private static final String EXECUTABLE_METADATA_KEY = "executable";
     private static final String REGISTRATION_MODE_METADATA_KEY = "registrationMode";
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+        "\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b",
+        Pattern.CASE_INSENSITIVE);
+    private static final Pattern US_SSN_PATTERN = Pattern.compile("\\b\\d{3}-\\d{2}-\\d{4}\\b");
+    private static final Pattern SECRET_PATTERN = Pattern.compile(
+        "(?i)\\b(api[_-]?key|token|secret|password)\\s*[:=]\\s*[^\\s,;]+");
 
     private final AgentRegistry agentRegistry;
     private final LLMGateway llmGateway;
@@ -105,14 +114,23 @@ public class AgentExecutionService {
                 ));
             }
 
-            String prompt = input != null ? input.toString() : "";
+            String rawPrompt = input != null ? input.toString() : "";
+            String prompt = redactPrompt(rawPrompt);
+            enforcePromptBudget(prompt);
+
+            Map<String, Object> requestMetadata = new HashMap<>();
+            requestMetadata.put("agentId", agentId);
+            requestMetadata.put("executionId", executionId);
+            requestMetadata.put("privacyRedactionApplied", !prompt.equals(rawPrompt));
+            requestMetadata.put("fallbackMode", "disabled");
+            requestMetadata.put("auditRequired", true);
+            requestMetadata.put("costBudgetMaxTokens", DEFAULT_MAX_TOKENS);
+            requestMetadata.put("promptTokenBudget", MAX_PROMPT_TOKEN_BUDGET);
+
             CompletionRequest request = CompletionRequest.builder()
                 .prompt(prompt)
                 .maxTokens(DEFAULT_MAX_TOKENS)
-                .metadata(Map.of(
-                    "agentId",     agentId,
-                    "executionId", executionId
-                ))
+                .metadata(requestMetadata)
                 .build();
 
             log.debug("[execution] Dispatching LLM request: agentId={} executionId={}", agentId, executionId);
@@ -133,11 +151,35 @@ public class AgentExecutionService {
                 return historyStore.append(agentId, record)
                     .then(ignored -> memoryClient.recordExecution(agentId, executionId, input, result.getText(), durationMs))
                     .map(ignored -> new ExecutionResult(executionId, "success", result.getText(), durationMs));
-            });
+            }).mapException(error -> new IllegalStateException(
+                "Model unavailable for agent '" + agentId + "' and fallback is disabled", error));
         }).mapException(e -> {
             log.error("[execution] Failed: agentId={} executionId={}", agentId, executionId, e);
             return e;
         });
+    }
+
+    private String redactPrompt(String prompt) {
+        String redacted = EMAIL_PATTERN.matcher(prompt).replaceAll("[REDACTED_EMAIL]");
+        redacted = US_SSN_PATTERN.matcher(redacted).replaceAll("[REDACTED_SSN]");
+        redacted = SECRET_PATTERN.matcher(redacted).replaceAll(match -> {
+            String token = match.group();
+            int separatorIndex = Math.max(token.indexOf(':'), token.indexOf('='));
+            if (separatorIndex < 0) {
+                return "[REDACTED_SECRET]";
+            }
+            return token.substring(0, separatorIndex + 1) + "[REDACTED_SECRET]";
+        });
+        return redacted;
+    }
+
+    private void enforcePromptBudget(String prompt) {
+        int estimatedTokens = Math.max(1, (int) Math.ceil(prompt.length() / 4.0d));
+        if (estimatedTokens > MAX_PROMPT_TOKEN_BUDGET) {
+            throw new IllegalArgumentException(
+                "Agent prompt exceeds token budget: estimated=" + estimatedTokens
+                    + " budget=" + MAX_PROMPT_TOKEN_BUDGET);
+        }
     }
 
     private boolean isNonExecutableRegistration(com.ghatana.agent.AgentDescriptor descriptor) {

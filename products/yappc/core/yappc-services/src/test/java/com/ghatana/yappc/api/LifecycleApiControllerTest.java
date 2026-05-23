@@ -501,5 +501,33 @@ class LifecycleApiControllerTest extends EventloopTestBase {
             proposeCallCount++;
             return Promise.of(proposeResult);
         }
+
+        @Override
+        public Promise<EvolutionDecision> approveProposal(String proposalId, String decidedBy, String reason) {
+            return Promise.of(new EvolutionDecision(
+                    proposalId,
+                    "tenant-test",
+                    "project-test",
+                    "APPROVED",
+                    true,
+                    java.util.List.of("validate", "generate", "run"),
+                    "intent-test",
+                    java.util.Map.of("reason", reason == null ? "" : reason)
+            ));
+        }
+
+        @Override
+        public Promise<EvolutionDecision> rejectProposal(String proposalId, String decidedBy, String reason) {
+            return Promise.of(new EvolutionDecision(
+                    proposalId,
+                    "tenant-test",
+                    "project-test",
+                    "REJECTED",
+                    false,
+                    java.util.List.of(),
+                    "intent-test",
+                    java.util.Map.of("reason", reason == null ? "" : reason)
+            ));
+        }
     }
 }

@@ -18,7 +18,15 @@
       "ok": true
     },
     {
+      "check": "Data Cloud maturity proof",
+      "ok": true
+    },
+    {
       "check": "AI governance conformance",
+      "ok": true
+    },
+    {
+      "check": "AI governance behavioral proof",
       "ok": true
     },
     {
@@ -26,7 +34,19 @@
       "ok": true
     },
     {
+      "check": "i18n behavioral proof",
+      "ok": true
+    },
+    {
+      "check": "a11y behavioral proof",
+      "ok": true
+    },
+    {
       "check": "Route entitlement contracts",
+      "ok": true
+    },
+    {
+      "check": "Action Plane route lifecycle",
       "ok": true
     },
     {

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T14:07:56.501Z",
-  "sourceCommit": "367ce916067282d257852cc29649281e80cd56a1",
+  "generatedAt": "2026-05-23T19:13:42.928Z",
+  "sourceCommit": "5323e76480f52d237d7adb4142d1258a82b2dc4d",
   "sourceBranch": "main",
   "productScope": [
     "digital-marketing",
@@ -22,7 +22,7 @@
     "runtimeProfile": {
       "available": true,
       "pass": true,
-      "checkCount": 9
+      "checkCount": 14
     },
     "atomicWorkflow": {
       "available": true,

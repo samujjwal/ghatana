@@ -29,9 +29,22 @@ public final class PluginLifecycleOrchestrator {
     }
 
     /**
+     * Validates plugin dependencies before startup.
+     *
+     * @param plugins plugins to validate
+     * @throws PluginDependencyException when circular dependency is detected
+     */
+    public void validateStartup(Collection<KernelPlugin> plugins) throws PluginDependencyException {
+        dependencyResolver.checkCircularDependencies(plugins);
+    }
+
+    /**
      * Installs and starts plugins in dependency order.
      */
     public Promise<Void> installAndStartAll(Collection<KernelPlugin> plugins) {
+        // Validate dependencies before starting
+        validateStartup(plugins);
+        
         List<KernelPlugin> ordered = dependencyResolver.resolveStartupOrder(plugins);
         Promise<Void> chain = Promise.complete();
 

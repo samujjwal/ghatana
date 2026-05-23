@@ -98,7 +98,8 @@ function runGradleTask(product, task, surface, dryRun) {
     throw new Error(`Product ${product.id} has no pnpm packages or Gradle modules for task ${task}`);
   }
 
-  run('./gradlew', [`${modulePath}:${task}`, '--no-daemon'], { dryRun });
+  const gradleCommand = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+  run(gradleCommand, [`${modulePath}:${task}`, '--no-daemon'], { dryRun });
   return true;
 }
 

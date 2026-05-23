@@ -352,6 +352,13 @@ jobs:
           chmod +x scripts/check-data-cloud-boundary-language.mjs
           node scripts/check-data-cloud-boundary-language.mjs
 
+      - name: Data Cloud maturity proof gate
+        run: |
+          node --test ./scripts/__tests__/check-action-plane-route-lifecycle.test.mjs
+          node ./scripts/check-action-plane-route-lifecycle.mjs
+          node --test ./scripts/__tests__/check-data-cloud-maturity-proof.test.mjs
+          node ./scripts/check-data-cloud-maturity-proof.mjs
+
   # Reuse scorecard: enforces shared-library adoption (E7-S1 / Workstream G)
   reuse-scorecard:
     runs-on: ubuntu-latest
@@ -463,9 +470,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run E2E smoke validation
+      - name: Run E2E smoke validation (developer advisory only)
         continue-on-error: true
         run: |
+          echo "::notice::Developer advisory only; strict release smoke evidence is produced by data-cloud-release.yml."
           chmod +x products/data-cloud/scripts/run-smoke-e2e.sh
           bash products/data-cloud/scripts/run-smoke-e2e.sh --warn-only
         env:
@@ -493,9 +501,10 @@ jobs:
           chmod +x products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
           bash products/data-cloud/planes/action/server/src/test/scripts/validate-runbook-commands.sh
 
-      - name: Run backup/restore pre-flight drill
+      - name: Run backup/restore pre-flight drill (developer advisory only)
         continue-on-error: true
         run: |
+          echo "::notice::Developer advisory only; strict release backup evidence is produced by data-cloud-release.yml."
           chmod +x products/data-cloud/scripts/run-backup-drill.sh
           bash products/data-cloud/scripts/run-backup-drill.sh --warn-only
         env:
@@ -666,16 +675,18 @@ jobs:
           cache: gradle
 
       # Dependency check
-      - name: Run dependency vulnerability check
+      - name: Run dependency vulnerability check (developer advisory only)
         run: |
+          echo "::notice::Developer advisory only; strict release dependency scan is blocking in data-cloud-release.yml."
           ./gradlew \
             :products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze \
             --no-daemon
         continue-on-error: true
 
       # SBOM generation
-      - name: Generate SBOM
+      - name: Generate SBOM (developer advisory only)
         run: |
+          echo "::notice::Developer advisory only; strict release SBOM generation is blocking in data-cloud-release.yml."
           ./gradlew \
             cyclonedxBom \
             --no-daemon

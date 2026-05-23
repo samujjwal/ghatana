@@ -57,6 +57,140 @@ public final class FileProductInteractionEvidenceWriter implements ProductIntera
                 .resolve(evidenceId(request) + ".json");
     }
 
+    /**
+     * Reads an evidence record by evidence ID.
+     *
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param runId the run ID
+     * @param evidenceId the evidence ID
+     * @return the evidence record if found, empty otherwise
+     */
+    public java.util.Optional<Map<String, Object>> readEvidence(
+            String tenantId,
+            String workspaceId,
+            String runId,
+            String evidenceId) {
+        try {
+            Path evidencePath = evidenceRoot
+                    .resolve(safePathSegment(runId))
+                    .resolve(evidenceId + ".json");
+            if (!Files.exists(evidencePath)) {
+                return java.util.Optional.empty();
+            }
+            byte[] content = Files.readAllBytes(evidencePath);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> record = OBJECT_MAPPER.readValue(content, Map.class);
+            return java.util.Optional.of(record);
+        } catch (IOException error) {
+            throw new UncheckedIOException("Failed to read evidence record", error);
+        }
+    }
+
+    /**
+     * Lists evidence records for a tenant/workspace/run.
+     *
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param runId the run ID
+     * @param limit maximum number of records to return
+     * @return list of evidence record metadata (IDs and timestamps)
+     */
+    public java.util.List<Map<String, String>> listEvidence(
+            String tenantId,
+            String workspaceId,
+            String runId,
+            int limit) {
+        try {
+            Path runDirectory = evidenceRoot.resolve(safePathSegment(runId));
+            if (!Files.exists(runDirectory) || !Files.isDirectory(runDirectory)) {
+                return List.of();
+            }
+            java.util.List<Map<String, String>> metadata = new java.util.ArrayList<>();
+            try (var stream = Files.list(runDirectory)) {
+                stream.filter(Files::isRegularFile)
+                        .filter(p -> p.toString().endsWith(".json"))
+                        .limit(limit)
+                        .forEach(path -> {
+                            try {
+                                byte[] content = Files.readAllBytes(path);
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> record = OBJECT_MAPPER.readValue(content, Map.class);
+                                Map<String, String> meta = new LinkedHashMap<>();
+                                meta.put("evidenceId", path.getFileName().toString().replace(".json", ""));
+                                Object capturedAt = record.get("capturedAt");
+                                meta.put("capturedAt", capturedAt instanceof String ? (String) capturedAt : "");
+                                metadata.add(meta);
+                            } catch (IOException error) {
+                                // Skip files that cannot be read
+                            }
+                        });
+            }
+            return metadata;
+        } catch (IOException error) {
+            throw new UncheckedIOException("Failed to list evidence records", error);
+        }
+    }
+
+    /**
+     * Validates evidence freshness by checking if the evidence is within the allowed age.
+     *
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param runId the run ID
+     * @param evidenceId the evidence ID
+     * @param maxAge the maximum allowed age for the evidence
+     * @return true if evidence exists and is fresh enough, false otherwise
+     */
+    public boolean isEvidenceFresh(
+            String tenantId,
+            String workspaceId,
+            String runId,
+            String evidenceId,
+            java.time.Duration maxAge) {
+        java.util.Optional<Map<String, Object>> evidence = readEvidence(tenantId, workspaceId, runId, evidenceId);
+        if (evidence.isEmpty()) {
+            return false;
+        }
+        Object timestamp = evidence.get().get("capturedAt");
+        if (timestamp instanceof String) {
+            try {
+                Instant capturedAt = Instant.parse((String) timestamp);
+                return java.time.Duration.between(capturedAt, Instant.now()).compareTo(maxAge) <= 0;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates that evidence has valid source references.
+     *
+     * @param tenantId the tenant ID
+     * @param workspaceId the workspace ID
+     * @param runId the run ID
+     * @param evidenceId the evidence ID
+     * @return true if evidence exists and has valid source references, false otherwise
+     */
+    public boolean hasValidSourceRefs(
+            String tenantId,
+            String workspaceId,
+            String runId,
+            String evidenceId) {
+        java.util.Optional<Map<String, Object>> evidence = readEvidence(tenantId, workspaceId, runId, evidenceId);
+        if (evidence.isEmpty()) {
+            return false;
+        }
+        Object sourceRefs = evidence.get().get("sourceRefs");
+        if (sourceRefs instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<?> refs = (List<?>) sourceRefs;
+            return !refs.isEmpty() && refs.stream().allMatch(ref -> ref instanceof String && !((String) ref).isBlank());
+        }
+        return false;
+    }
+
     private void writeBlocking(ProductInteractionRequest<?> request, ProductInteractionOutcome<?> outcome) {
         Path target = evidencePath(request);
         Path temp = target.resolveSibling(target.getFileName() + ".tmp");

@@ -401,6 +401,24 @@ yappc-services:
     auditEventType: EVOLVE_WITH_CONSTRAINTS
     privacyClassification: RESTRICTED
   - method: POST
+    path: /api/v1/yappc/evolve/{proposalId}/approve
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: approveEvolutionProposal
+    auditEventType: EVOLVE_PROPOSAL_APPROVED
+    privacyClassification: RESTRICTED
+  - method: POST
+    path: /api/v1/yappc/evolve/{proposalId}/reject
+    auth: required
+    scopes: [project:write]
+    owner: yappc-services
+    boundary: YAPPC
+    operationId: rejectEvolutionProposal
+    auditEventType: EVOLVE_PROPOSAL_REJECTED
+    privacyClassification: RESTRICTED
+  - method: POST
     path: /api/v1/yappc/lifecycle/execute
     auth: required
     scopes: [project:write]

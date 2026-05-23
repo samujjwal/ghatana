@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Persists evolution proposals with approval and traceability metadata.
@@ -29,13 +30,92 @@ public interface EvolutionPlanRepository {
      */
     Promise<Void> save(@NotNull EvolutionProposal proposal);
 
+        /**
+         * Resolves one proposal state by ID.
+         *
+         * @param tenantId tenant owner
+         * @param proposalId proposal identifier
+         * @return optional proposal state when found
+         */
+        Promise<Optional<EvolutionProposalState>> findProposalState(
+            @NotNull String tenantId,
+            @NotNull String proposalId
+        );
+
+        /**
+         * Transitions proposal approval state and stores decision metadata.
+         *
+         * @param tenantId tenant owner
+         * @param proposalId proposal identifier
+         * @param approvalState new approval state (for example APPROVED or REJECTED)
+         * @param decidedBy actor that made the decision
+         * @param decisionReason optional freeform decision reason
+         * @param transitionMetadata metadata describing downstream handoff actions
+         * @return promise completing after update
+         */
+        Promise<Void> transitionApprovalState(
+            @NotNull String tenantId,
+            @NotNull String proposalId,
+            @NotNull String approvalState,
+            @NotNull String decidedBy,
+            @Nullable String decisionReason,
+            @NotNull Map<String, Object> transitionMetadata
+        );
+
     /**
      * Creates a repository that intentionally performs no durable write.
      *
      * @return no-op repository for isolated tests that do not compose Data Cloud
      */
     static EvolutionPlanRepository noop() {
-        return proposal -> Promise.complete();
+        return new EvolutionPlanRepository() {
+            @Override
+            public Promise<Void> save(@NotNull EvolutionProposal proposal) {
+                return Promise.complete();
+            }
+
+            @Override
+            public Promise<Optional<EvolutionProposalState>> findProposalState(
+                    @NotNull String tenantId,
+                    @NotNull String proposalId
+            ) {
+                return Promise.of(Optional.empty());
+            }
+
+            @Override
+            public Promise<Void> transitionApprovalState(
+                    @NotNull String tenantId,
+                    @NotNull String proposalId,
+                    @NotNull String approvalState,
+                    @NotNull String decidedBy,
+                    @Nullable String decisionReason,
+                    @NotNull Map<String, Object> transitionMetadata
+            ) {
+                return Promise.complete();
+            }
+        };
+    }
+
+    /**
+     * Minimal persisted proposal state for approval transitions.
+     *
+     * @param proposalId proposal identifier
+     * @param tenantId tenant owner
+     * @param projectId project reference
+     * @param approvalState current approval state
+     * @param productUnitIntentRef generated ProductUnitIntent reference
+     * @param metadata metadata captured at proposal creation/update
+     * @param createdAt creation timestamp
+     */
+    record EvolutionProposalState(
+            @NotNull String proposalId,
+            @NotNull String tenantId,
+            @NotNull String projectId,
+            @NotNull String approvalState,
+            @NotNull String productUnitIntentRef,
+            @NotNull Map<String, Object> metadata,
+            @NotNull Instant createdAt
+    ) {
     }
 
     /**

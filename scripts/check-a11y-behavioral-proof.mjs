@@ -30,6 +30,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const RELEASE_MODE = getReleaseMode();
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1];
+const CI_MODE = process.argv.includes('--ci') || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
 const violations = [];
 const warnings = [];
@@ -55,6 +56,20 @@ function logEvidence(message) {
   console.log(`  📋 ${message}`);
 }
 
+function resolveWebProofPath(product) {
+  const webSurface = product.surfaces?.find((surface) => surface.type === 'web' && surface.path);
+  if (webSurface?.path) {
+    return path.join(repoRoot, webSurface.path);
+  }
+
+  const concretePackage = product.pnpmPackages?.find((packagePath) => !packagePath.includes('*'));
+  if (concretePackage) {
+    return path.join(repoRoot, concretePackage);
+  }
+
+  return path.join(repoRoot, product.path);
+}
+
 /**
  * Execute a11y behavioral tests with Playwright
  */
@@ -67,14 +82,21 @@ function executeA11yTests(productPath, productName) {
   ];
 
   let testFound = false;
+  let executedPassed = false;
   for (const testDir of testDirs) {
     if (!existsSync(testDir)) continue;
 
     function searchDir(dir) {
+      if (executedPassed) {
+        return;
+      }
       try {
         const items = readdirSync(dir);
         
         for (const item of items) {
+          if (executedPassed) {
+            return;
+          }
           const itemPath = path.join(dir, item);
           const stat = statSync(itemPath);
           
@@ -82,11 +104,11 @@ function executeA11yTests(productPath, productName) {
             searchDir(itemPath);
           } else if (item.endsWith('.spec.ts') && (item.includes('a11y') || item.includes('accessibility'))) {
             testFound = true;
-            const testName = item.replace('.spec.ts', '');
+            const relativeTestPath = path.relative(productPath, itemPath).replace(/\\/g, '/');
             
             try {
               // Execute the test using Playwright
-              const testCommand = `npx playwright test ${testName}`;
+              const testCommand = `npx playwright test --project=chromium ${relativeTestPath}`;
               
               console.log(`  Executing: ${testCommand}`);
               const output = execSync(testCommand, {
@@ -102,10 +124,11 @@ function executeA11yTests(productPath, productName) {
               if (testPassed) {
                 logSuccess(`${productName}: A11y behavioral tests PASSED`);
                 logEvidence(`${productName}: Executed real keyboard/screen-reader/focus behavioral tests`);
-                return true;
+                executedPassed = true;
+                return;
               } else if (testFailed) {
                 logError(`${productName}: A11y behavioral tests FAILED`);
-                return false;
+                return;
               }
             } catch (error) {
               logWarning(`${productName}: Failed to execute a11y test: ${error.message}`);
@@ -118,6 +141,9 @@ function executeA11yTests(productPath, productName) {
     }
 
     searchDir(testDir);
+    if (executedPassed) {
+      return true;
+    }
   }
 
   if (!testFound) {
@@ -636,14 +662,15 @@ function main() {
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
-    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
+    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase())
+        || p.productId.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
     : products;
 
   for (const product of filteredProducts) {
-    const productPath = path.join(repoRoot, product.path);
+    const productPath = resolveWebProofPath(product);
     
     if (!existsSync(productPath)) {
-      logError(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product web path not found at ${path.relative(repoRoot, productPath)}`);
       continue;
     }
 

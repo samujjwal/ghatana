@@ -37,12 +37,12 @@ describe("ProductUnit", () => {
           {
             id: "digital-marketing-api",
             type: "backend-api",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "java", runtime: "java-jre", buildSystem: "gradle",
           },
           {
             id: "digital-marketing-web",
             type: "web",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "typescript", runtime: "nodejs", buildSystem: "pnpm",
           },
         ],
         productShape: "marketing-ops",
@@ -73,7 +73,7 @@ describe("ProductUnit", () => {
           {
             id: "data-cloud-api",
             type: "backend-api",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "java", runtime: "java-jre", buildSystem: "gradle",
           },
         ],
         productShape: "platform-provider",
@@ -248,7 +248,7 @@ describe("ProductUnit", () => {
             type: "backend-api",
             implementationStatus: "implemented",
             language: "rust",
-            runtime: "native",
+            runtime: "rust-native",
             buildSystem: "cargo",
             cratePath: "products/polyglot/rust-api",
             cargoToml: "products/polyglot/rust-api/Cargo.toml",
@@ -259,7 +259,7 @@ describe("ProductUnit", () => {
             type: "worker",
             implementationStatus: "implemented",
             language: "python",
-            runtime: "python3.12",
+            runtime: "python",
             buildSystem: "pyproject",
             pyprojectPath: "products/polyglot/python-worker/pyproject.toml",
             adapterHint: "python-pyproject",
@@ -269,7 +269,7 @@ describe("ProductUnit", () => {
             type: "backend-api",
             implementationStatus: "implemented",
             language: "typescript",
-            runtime: "nodejs22",
+            runtime: "nodejs",
             buildSystem: "pnpm",
             packagePath: "products/polyglot/node-api/package.json",
             adapterHint: "pnpm-node-api",
@@ -492,7 +492,7 @@ describe("ProductUnit", () => {
           {
             id: "test-web",
             type: "web",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "typescript", runtime: "nodejs", buildSystem: "pnpm",
           },
         ],
         lifecycleProfile: "standard-web-api-product",
@@ -537,7 +537,7 @@ describe("ProductUnit", () => {
           {
             id: "test-web",
             type: "web",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "typescript", runtime: "nodejs", buildSystem: "pnpm",
           },
         ],
         lifecycleProfile: "standard-web-api-product",
@@ -607,8 +607,10 @@ describe("ProductUnit", () => {
         {
           id: "digital-marketing-api",
           type: "backend-api",
-          implementationStatus: "implemented",
-          runtime: "java",
+          implementationStatus: "implemented",            language: "java", runtime: "java-jre", buildSystem: "gradle",
+          runtime: "java-jre",
+          language: "java",
+          buildSystem: "gradle",
           gradleModule: ":products:digital-marketing:api",
           adapterHint: "gradle-java-service",
         },
@@ -617,6 +619,8 @@ describe("ProductUnit", () => {
           type: "web",
           implementationStatus: "implemented",
           runtime: "nodejs",
+          language: "typescript",
+          buildSystem: "pnpm",
           packagePath: "products/digital-marketing/ui",
           adapterHint: "pnpm-vite-react",
         },
@@ -655,7 +659,9 @@ describe("ProductUnit", () => {
           id: "finance-api",
           type: "backend-api",
           implementationStatus: "implemented",
-          runtime: "java",
+          runtime: "java-jre",
+          language: "java",
+          buildSystem: "gradle",
           gradleModule: ":products:finance:api",
           adapterHint: "gradle-java-service",
         },
@@ -663,7 +669,9 @@ describe("ProductUnit", () => {
           id: "finance-operator",
           type: "operator",
           implementationStatus: "implemented",
-          runtime: "java",
+          runtime: "java-jre",
+          language: "java",
+          buildSystem: "gradle",
           gradleModule: ":products:finance:operator",
           adapterHint: "gradle-java-operator",
         },
@@ -671,7 +679,9 @@ describe("ProductUnit", () => {
           id: "finance-sdk",
           type: "sdk",
           implementationStatus: "planned",
-          runtime: "java",
+          runtime: "java-jre",
+          language: "java",
+          buildSystem: "gradle",
           gradleModule: ":products:finance:sdk",
           adapterHint: "gradle-java-library",
         },
@@ -703,7 +713,9 @@ describe("ProductUnit", () => {
           id: "flashit-api",
           type: "backend-api",
           implementationStatus: "implemented",
-          runtime: "java",
+          runtime: "java-jre",
+          language: "java",
+          buildSystem: "gradle",
           gradleModule: ":products:flashit:api",
           adapterHint: "gradle-java-service",
         },
@@ -712,6 +724,8 @@ describe("ProductUnit", () => {
           type: "web",
           implementationStatus: "implemented",
           runtime: "nodejs",
+          language: "typescript",
+          buildSystem: "pnpm",
           packagePath: "products/flashit/web",
           adapterHint: "pnpm-vite-react",
         },
@@ -719,7 +733,9 @@ describe("ProductUnit", () => {
           id: "flashit-ios",
           type: "mobile-ios",
           implementationStatus: "planned",
-          runtime: "swift",
+          runtime: "mobile-ios",
+          language: "swift",
+          buildSystem: "xcode",
           packagePath: "products/flashit/ios",
           adapterHint: "xcode-ios-app",
         },
@@ -727,7 +743,9 @@ describe("ProductUnit", () => {
           id: "flashit-android",
           type: "mobile-android",
           implementationStatus: "planned",
-          runtime: "kotlin",
+          runtime: "kotlin-jvm",
+          language: "kotlin",
+          buildSystem: "gradle",
           packagePath: "products/flashit/android",
           adapterHint: "gradle-android-app",
         },
@@ -761,6 +779,8 @@ describe("ProductUnit", () => {
           type: "backend-api",
           implementationStatus: "planned",
           runtime: "nodejs",
+          language: "typescript",
+          buildSystem: "pnpm",
           sourceRef: "https://github.com/example/external-repo.git",
           adapterHint: "pnpm-typescript-service",
         },
@@ -769,6 +789,8 @@ describe("ProductUnit", () => {
           type: "web",
           implementationStatus: "planned",
           runtime: "nodejs",
+          language: "typescript",
+          buildSystem: "pnpm",
           sourceRef: "https://github.com/example/external-repo.git",
           adapterHint: "pnpm-vite-react",
         },
@@ -800,3 +822,37 @@ describe("ProductUnit", () => {
     });
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

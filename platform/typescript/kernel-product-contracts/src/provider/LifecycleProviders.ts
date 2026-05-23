@@ -539,14 +539,25 @@ export function validateProviderBackingForMode(
     ["runtimeTruth", context.runtimeTruth],
   ];
 
+  // Platform mode pilot: allow file-backed providers for development
+  // In production, this should be enforced to require data-cloud backing
+  const allowFileBacking = process.env.GHATANA_PLATFORM_ALLOW_FILE_BACKING === "true";
+
   for (const [providerName, provider] of providerEntries) {
     if (provider !== undefined && provider.backingStore === "file") {
-      invalidBackingStores.push({
-        providerName,
-        backingStore: provider.backingStore,
-        reason:
-          "Platform mode cannot use file-backed providers. Use data-cloud or external backing store.",
-      });
+      if (allowFileBacking) {
+        // Log warning but allow for development
+        console.warn(
+          `[Platform Mode Pilot] Provider ${providerName} uses file backing store. In production, use data-cloud backing.`
+        );
+      } else {
+        invalidBackingStores.push({
+          providerName,
+          backingStore: provider.backingStore,
+          reason:
+            "Platform mode cannot use file-backed providers. Use data-cloud or external backing store, or set GHATANA_PLATFORM_ALLOW_FILE_BACKING=true for development.",
+        });
+      }
     }
   }
 

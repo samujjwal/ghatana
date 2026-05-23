@@ -144,40 +144,55 @@ function parseArgs(argv) {
     }
   }
 
+  // Canonical grammar: kernel-product <command> [args]
+  // Commands: product, doctor, release
+  const command = positional[0];
   let mode = 'execute';
   let productId;
   let phase;
   let checkType;
 
-  if (positional[0] === 'doctor') {
+  if (command === 'doctor') {
     mode = 'doctor';
     checkType = positional[1];
-  } else if (positional[0] === 'release' && ['create', 'manifest'].includes(positional[1])) {
-    mode = `release-${positional[1]}`;
-    productId = positional[2];
-    phase = 'release';
-  } else if (positional[0] === 'product' && positional[1] === 'plan') {
-    mode = 'plan';
-    productId = positional[2];
-    phase = positional[3];
-  } else if (positional[0] === 'product') {
-    if (positional[2] === 'explain') {
-      productId = positional[1];
+  } else if (command === 'release') {
+    const releaseAction = positional[1];
+    if (releaseAction === 'create' || releaseAction === 'manifest') {
+      mode = `release-${releaseAction}`;
+      productId = positional[2];
+      phase = 'release';
+    } else {
+      throw new Error(`Invalid release action "${releaseAction}"; expected create or manifest`);
+    }
+  } else if (command === 'product') {
+    // Canonical: product <productId> <phase>
+    productId = positional[1];
+    phase = positional[2];
+
+    // Handle special subcommands
+    if (phase === 'create') {
+      mode = 'product-create';
+    } else if (phase === 'status') {
+      mode = 'plan';
+      phase = 'verify';
+      options.explain = true;
+      options.env = options.env ?? 'local';
+    } else if (phase === 'recover') {
+      mode = 'recover';
+      phase = 'verify';
+      options.explain = true;
+      options.env = options.env ?? 'local';
+    } else if (phase === 'plan') {
+      mode = 'plan';
+      phase = positional[3];
+    } else if (positional[2] === 'explain') {
+      // Legacy support: product <productId> explain <phase>
       phase = positional[3];
       options.explain = true;
       mode = 'plan';
-    } else if (!isLifecycleIntent(positional[1]) && isLifecycleIntent(positional[2])) {
-      productId = positional[1];
-      phase = positional[2];
-    } else {
-      phase = positional[1];
-      productId = positional[2];
     }
-  } else if (positional[0] === 'plan') {
-    mode = 'plan';
-    productId = positional[1];
-    phase = positional[2];
   } else {
+    // Legacy support: <phase> <productId> (reversed order)
     phase = positional[0];
     productId = positional[1];
   }
@@ -188,23 +203,18 @@ function parseArgs(argv) {
     options.env = options.env ?? alias.env;
   }
 
-  if (!productId || !phase || !VALID_PHASES.has(phase)) {
-    if (positional[0] === 'product' && (positional[1] === 'status' || positional[2] === 'status')) {
-      return { mode: 'plan', productId: positional[2] === 'status' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
-    }
-    if (positional[0] === 'product' && (positional[1] === 'recover' || positional[2] === 'recover')) {
-      return { mode: 'recover', productId: positional[2] === 'recover' ? positional[1] : positional[2], phase: 'verify', options: { ...options, env: options.env ?? 'local', explain: true } };
-    }
-    if (mode === 'doctor') {
-      return { mode, checkType, options };
-    }
-    throw new Error('Usage: product plan <productId> <phase> [options]');
+  if (mode === 'execute' && (!productId || !phase || !VALID_PHASES.has(phase))) {
+    throw new Error(`Invalid lifecycle command. Usage: kernel-product product <productId> <phase>`);
+  }
+
+  if (mode === 'doctor') {
+    return { mode, checkType, options };
   }
 
   return { mode, productId, phase, options };
 }
 
-function createProviderContext(repoRoot, options) {
+async function createProviderContext(repoRoot, options) {
   if (options.mode === 'bootstrap') {
     return createBootstrapKernelProviders({
       repoRoot,
@@ -217,9 +227,36 @@ function createProviderContext(repoRoot, options) {
     }).context;
   }
 
-  throw new Error(
-    'Kernel platform mode requires the Data Cloud-backed provider bridge, which is not registered in this repository snapshot.',
-  );
+  if (options.mode === 'platform') {
+    // Verify Data Cloud provider bridge is available before allowing platform mode
+    const kernelBridgePath = join(repoRoot, 'products/data-cloud/extensions/kernel-bridge');
+    const kernelBridgeJarPath = join(kernelBridgePath, 'build/libs/kernel-bridge.jar');
+    const kernelBridgeSourcePath = join(kernelBridgePath, 'src/main/java/com/ghatana/datacloud/kernel/DataCloudKernelExtension.java');
+    
+    const { existsSync } = await import('node:fs');
+    const bridgeExists = existsSync(kernelBridgeJarPath) || existsSync(kernelBridgeSourcePath);
+    
+    if (!bridgeExists) {
+      throw new Error('Kernel platform mode requires the Data Cloud-backed provider bridge to be registered and available');
+    }
+    
+    return import('../platform/typescript/kernel-providers/dist/index.js').then((module) => {
+      return module.createPlatformKernelProviders({
+        repoRoot,
+        ...(options.outputDir
+          ? {
+              outputRoot: options.outputDir,
+              allowOutputOutsideKernelOut: true,
+            }
+          : {}),
+        ...(options.tenant ? { tenantId: options.tenant } : {}),
+        ...(options.workspace ? { workspaceId: options.workspace } : {}),
+        ...(options.project ? { projectId: options.project } : {}),
+      }).context;
+    });
+  }
+
+  throw new Error(`Invalid mode "${options.mode}"; expected bootstrap or platform`);
 }
 
 function assertApprovalSafety(plan, options) {
@@ -641,7 +678,7 @@ async function main() {
 
   if (commandMode === 'doctor') {
     // P0-06: Kernel doctor command for provider readiness and diagnostics
-    const providerContext = createBootstrapKernelProviders({ repoRoot });
+    const providerContext = await createProviderContext(repoRoot, options);
     const planner = new ProductLifecyclePlanner(repoRoot, undefined, providerContext);
     const service = new KernelLifecycleService({
       repoRoot,
@@ -718,7 +755,40 @@ async function main() {
     return;
   }
 
-  const providerContext = createProviderContext(repoRoot, options);
+  if (commandMode === 'product-create') {
+    // Delegate to scaffold-product.mjs for product creation
+    const { spawn } = await import('node:child_process');
+    const scaffoldArgs = ['--id', productId];
+    
+    // Pass through relevant options
+    if (options.surfaces?.length > 0) {
+      scaffoldArgs.push('--surfaces', options.surfaces.join(','));
+    }
+    
+    const scaffoldProcess = spawn('node', [join(repoRoot, 'scripts/scaffold-product.mjs'), ...scaffoldArgs], {
+      stdio: 'inherit',
+      cwd: repoRoot,
+    });
+    
+    await new Promise((resolve, reject) => {
+      scaffoldProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log(`\n[kernel] ${productId} / product create - CREATED`);
+          console.log(`  Next steps:`);
+          console.log(`    1. Review generated product structure in products/${productId}/`);
+          console.log(`    2. Customize surfaces and adapters as needed`);
+          console.log(`    3. Run: pnpm kernel product ${productId} plan build\n`);
+          resolve();
+        } else {
+          reject(new Error(`Product scaffolding failed with exit code ${code}`));
+        }
+      });
+      scaffoldProcess.on('error', reject);
+    });
+    return;
+  }
+
+  const providerContext = await createProviderContext(repoRoot, options);
 
   const planner = new ProductLifecyclePlanner(repoRoot, undefined, providerContext);
   const planningService = createLifecycleService({

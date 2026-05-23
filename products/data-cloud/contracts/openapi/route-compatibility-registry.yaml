@@ -8,31 +8,11 @@
 # - Legacy routes are conditionally available via feature flag: DataCloudFeature.LEGACY_ACTION_ROUTES
 # - Legacy routes will be removed in a future major version
 #
-# Auto-generated on: 2026-05-20
+# Auto-generated on: 2026-05-23
 # Regenerate with: node scripts/generate-route-security-metadata.mjs
 
 legacy_routes:
   # Legacy v1 routes (migrated to /api/v1/action/v1/*)
-  - path: "/api/v1/memory/:agentId/:memoryId"
-    canonical: "/api/v1/action/memory/:agentId/:memoryId"
-    methods: [DELETE]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use DELETE /api/v1/action/memory/{agentId}/{memoryId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId"
-    canonical: "/api/v1/action/pipelines/:pipelineId"
-    methods: [DELETE]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use DELETE /api/v1/action/pipelines/{pipelineId} instead.
-      The response schema is identical.
-
   - path: "/api/v1/agents/catalog"
     canonical: "/api/v1/action/agents/catalog"
     methods: [GET]
@@ -53,16 +33,6 @@ legacy_routes:
       Use GET /api/v1/action/agents/catalog/:id instead.
       The response schema is identical.
 
-  - path: "/api/v1/agents/catalog/:id"
-    canonical: "/api/v1/action/agents/catalog/:id"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/agents/catalog/{id} instead.
-      The response schema is identical.
-
   - path: "/api/v1/autonomy/domains"
     canonical: "/api/v1/action/autonomy/domains"
     methods: [GET]
@@ -81,16 +51,6 @@ legacy_routes:
     feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
     migration_notes: |
       Use GET /api/v1/action/autonomy/domains/:domain instead.
-      The response schema is identical.
-
-  - path: "/api/v1/autonomy/domains/:domain"
-    canonical: "/api/v1/action/autonomy/domains/:domain"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/autonomy/domains/{domain} instead.
       The response schema is identical.
 
   - path: "/api/v1/autonomy/level"
@@ -123,16 +83,6 @@ legacy_routes:
       Use GET /api/v1/action/autonomy/plan/:actionType instead.
       The response schema is identical.
 
-  - path: "/api/v1/autonomy/plan/:actionType"
-    canonical: "/api/v1/action/autonomy/plan/:actionType"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/autonomy/plan/{actionType} instead.
-      The response schema is identical.
-
   - path: "/api/v1/executions/:executionId"
     canonical: "/api/v1/action/executions/:executionId"
     methods: [GET]
@@ -163,116 +113,6 @@ legacy_routes:
       Use GET /api/v1/action/executions/:executionId/logs instead.
       The response schema is identical.
 
-  - path: "/api/v1/executions/:executionId"
-    canonical: "/api/v1/action/executions/:executionId"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/executions/{executionId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/checkpoints"
-    canonical: "/api/v1/action/executions/:executionId/checkpoints"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/executions/{executionId}/checkpoints instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/logs"
-    canonical: "/api/v1/action/executions/:executionId/logs"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/executions/{executionId}/logs instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory"
-    canonical: "/api/v1/action/memory"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/memory instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory/:agentId"
-    canonical: "/api/v1/action/memory/:agentId"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/memory/{agentId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory/:agentId/:tier"
-    canonical: "/api/v1/action/memory/:agentId/:tier"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/memory/{agentId}/{tier} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines"
-    canonical: "/api/v1/action/pipelines"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/pipelines instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId"
-    canonical: "/api/v1/action/pipelines/:pipelineId"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/pipelines/{pipelineId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/executions"
-    canonical: "/api/v1/action/pipelines/:pipelineId/executions"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/pipelines/{pipelineId}/executions instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/executions/:executionId"
-    canonical: "/api/v1/action/pipelines/:pipelineId/executions/:executionId"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/executions/:executionId/logs"
-    canonical: "/api/v1/action/pipelines/:pipelineId/executions/:executionId/logs"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/logs instead.
-      The response schema is identical.
-
   - path: "/api/v1/plugins"
     canonical: "/api/v1/action/plugins"
     methods: [GET]
@@ -301,26 +141,6 @@ legacy_routes:
     feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
     migration_notes: |
       Use GET /api/v1/action/plugins/:id/sandbox instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id"
-    canonical: "/api/v1/action/plugins/:id"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/plugins/{id} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id/sandbox"
-    canonical: "/api/v1/action/plugins/:id/sandbox"
-    methods: [GET]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use GET /api/v1/action/plugins/{id}/sandbox instead.
       The response schema is identical.
 
   - path: "/api/v1/plugins/marketplace"
@@ -393,86 +213,6 @@ legacy_routes:
       Use POST /api/v1/action/executions/:executionId/rollback instead.
       The response schema is identical.
 
-  - path: "/api/v1/executions/:executionId/cancel"
-    canonical: "/api/v1/action/executions/:executionId/cancel"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/executions/{executionId}/cancel instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/checkpoint"
-    canonical: "/api/v1/action/executions/:executionId/checkpoint"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/executions/{executionId}/checkpoint instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/restore"
-    canonical: "/api/v1/action/executions/:executionId/restore"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/executions/{executionId}/restore instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/retry"
-    canonical: "/api/v1/action/executions/:executionId/retry"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/executions/{executionId}/retry instead.
-      The response schema is identical.
-
-  - path: "/api/v1/executions/:executionId/rollback"
-    canonical: "/api/v1/action/executions/:executionId/rollback"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/executions/{executionId}/rollback instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory/:agentId"
-    canonical: "/api/v1/action/memory/:agentId"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/memory/{agentId} instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory/:agentId/search"
-    canonical: "/api/v1/action/memory/:agentId/search"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/memory/{agentId}/search instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines"
-    canonical: "/api/v1/action/pipelines"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/pipelines instead.
-      The response schema is identical.
-
   - path: "/api/v1/pipelines/:pipelineId/optimise-hint"
     canonical: "/api/v1/action/pipelines/:pipelineId/optimise-hint"
     methods: [POST]
@@ -481,36 +221,6 @@ legacy_routes:
     feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
     migration_notes: |
       Use POST /api/v1/action/pipelines/:pipelineId/optimise-hint instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/execute"
-    canonical: "/api/v1/action/pipelines/:pipelineId/execute"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/pipelines/{pipelineId}/execute instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel"
-    canonical: "/api/v1/action/pipelines/:pipelineId/executions/:executionId/cancel"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/pipelines/{pipelineId}/executions/{executionId}/cancel instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId/optimise-hint"
-    canonical: "/api/v1/action/pipelines/:pipelineId/optimise-hint"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/pipelines/{pipelineId}/optimise-hint instead.
       The response schema is identical.
 
   - path: "/api/v1/pipelines/draft"
@@ -573,56 +283,6 @@ legacy_routes:
       Use POST /api/v1/action/plugins/:id/validate instead.
       The response schema is identical.
 
-  - path: "/api/v1/plugins/:id/conformance"
-    canonical: "/api/v1/action/plugins/:id/conformance"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/plugins/{id}/conformance instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id/disable"
-    canonical: "/api/v1/action/plugins/:id/disable"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/plugins/{id}/disable instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id/enable"
-    canonical: "/api/v1/action/plugins/:id/enable"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/plugins/{id}/enable instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id/upgrade"
-    canonical: "/api/v1/action/plugins/:id/upgrade"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/plugins/{id}/upgrade instead.
-      The response schema is identical.
-
-  - path: "/api/v1/plugins/:id/validate"
-    canonical: "/api/v1/action/plugins/:id/validate"
-    methods: [POST]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use POST /api/v1/action/plugins/{id}/validate instead.
-      The response schema is identical.
-
   - path: "/api/v1/autonomy/level"
     canonical: "/api/v1/action/autonomy/level"
     methods: [PUT]
@@ -631,26 +291,6 @@ legacy_routes:
     feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
     migration_notes: |
       Use PUT /api/v1/action/autonomy/level instead.
-      The response schema is identical.
-
-  - path: "/api/v1/memory/:agentId/:memoryId/retain"
-    canonical: "/api/v1/action/memory/:agentId/:memoryId/retain"
-    methods: [PUT]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use PUT /api/v1/action/memory/{agentId}/{memoryId}/retain instead.
-      The response schema is identical.
-
-  - path: "/api/v1/pipelines/:pipelineId"
-    canonical: "/api/v1/action/pipelines/:pipelineId"
-    methods: [PUT]
-    deprecated_since: "2026-05-20"
-    retirement_target: "2026-12-31"
-    feature_flag: "DataCloudFeature.LEGACY_ACTION_ROUTES"
-    migration_notes: |
-      Use PUT /api/v1/action/pipelines/{pipelineId} instead.
       The response schema is identical.
 
 canonical_action_routes:

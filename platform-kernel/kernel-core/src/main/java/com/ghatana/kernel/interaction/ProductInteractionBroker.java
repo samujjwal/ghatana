@@ -67,8 +67,13 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private final AtomicLong cacheHits;
     private final AtomicLong cacheMisses;
     private final AtomicLong cacheEvictions;
+    private final AtomicLong sloViolations;
+    private final Map<String, Duration> latencyBudgetsByContract;
     private final ProductInteractionHandlerRegistry handlerRegistry;
     private final ScheduledExecutorService developmentEvidenceExecutor;
+    private final ProductInteractionCircuitBreaker circuitBreaker;
+    private final com.ghatana.kernel.observability.TracingPort tracing;
+    private final com.ghatana.kernel.observability.MetricCollectorPort metrics;
 
     private ProductInteractionBroker(Builder builder) {
         this.handlersByContractId = new ConcurrentHashMap<>(builder.handlersByContractId);
@@ -87,6 +92,9 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.evidenceWriter = developmentEvidenceExecutor == null
                 ? builder.evidenceWriter
                 : new FileProductInteractionEvidenceWriter(builder.developmentEvidenceRoot, developmentEvidenceExecutor);
+        this.circuitBreaker = builder.circuitBreaker != null ? builder.circuitBreaker : ProductInteractionCircuitBreaker.builder().build();
+        this.tracing = builder.tracing;
+        this.metrics = builder.metrics;
         this.requested = new AtomicLong();
         this.succeeded = new AtomicLong();
         this.blocked = new AtomicLong();
@@ -97,6 +105,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.cacheHits = new AtomicLong();
         this.cacheMisses = new AtomicLong();
         this.cacheEvictions = new AtomicLong();
+        this.sloViolations = new AtomicLong();
+        this.latencyBudgetsByContract = Map.copyOf(builder.latencyBudgetsByContract);
         this.handlerRegistry = builder.handlerRegistry;
 
         // P0-01: Validate evidence writer in production mode.
@@ -183,13 +193,33 @@ public final class ProductInteractionBroker implements AutoCloseable {
         requested.incrementAndGet();
         long startedNanos = System.nanoTime();
 
+        // Start tracing span if tracing is enabled
+        final com.ghatana.kernel.observability.TracingPort.Span span;
+        if (tracing != null) {
+            span = tracing.startSpan("ProductInteractionBroker.execute");
+            tracing.addAttribute("contractId", request.contractId());
+            tracing.addAttribute("providerProductId", request.providerProductId());
+            tracing.addAttribute("consumerProductId", request.consumerProductId());
+            tracing.addAttribute("tenantId", request.tenantId());
+            tracing.addAttribute("workspaceId", request.workspaceId());
+        } else {
+            span = null;
+        }
+
         Optional<ProductInteractionOutcome<Res>> basicFailure = validateBasicPreflight(request);
         if (basicFailure.isPresent()) {
+            if (span != null) {
+                span.end();
+            }
             return complete(request, fallbackInteractionKey(request, basicFailure.get().reasonCode()), basicFailure.get(), startedNanos);
         }
 
         ProductInteractionContract contract = contractsByContractId.get(request.contractId());
         if (contract == null) {
+            if (span != null) {
+                tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "contract_missing");
+                span.end();
+            }
             return complete(
                     request,
                     fallbackInteractionKey(request, "product_interaction.contract_missing"),
@@ -220,6 +250,10 @@ public final class ProductInteractionBroker implements AutoCloseable {
         CachedOutcome cached = completedByInteraction.get(interactionKey);
         if (cached != null && !cached.isExpired(cacheTtl)) {
             cacheHits.incrementAndGet();
+            if (span != null) {
+                tracing.addAttribute("cache", "hit");
+                span.end();
+            }
             @SuppressWarnings("unchecked")
             ProductInteractionOutcome<Res> outcome = (ProductInteractionOutcome<Res>) cached.outcome;
             return Promise.of(outcome);
@@ -243,6 +277,13 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         Optional<ProductInteractionOutcome<Res>> preflightFailure = validatePolicyPreflight(requestWithTrustedContext);
         if (preflightFailure.isPresent()) {
+            if (span != null) {
+                tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "policy_denied");
+                span.end();
+            }
+            if (metrics != null) {
+                metrics.incrementCounter("product_interaction.policy_denied", 1, "contractId", request.contractId());
+            }
             return complete(requestWithTrustedContext, interactionKey, preflightFailure.get(), startedNanos);
         }
 
@@ -258,12 +299,33 @@ public final class ProductInteractionBroker implements AutoCloseable {
             }
         }
         if (handler == null) {
+            if (span != null) {
+                tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "handler_unavailable");
+                span.end();
+            }
+            if (metrics != null) {
+                metrics.incrementCounter("product_interaction.handler_unavailable", 1, "contractId", request.contractId());
+            }
             return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.handler_unavailable"), startedNanos);
         }
         if (!Objects.equals(handler.schemaVersion(), requestWithTrustedContext.contractVersion())) {
+            if (span != null) {
+                tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "handler_version_mismatch");
+                span.end();
+            }
+            if (metrics != null) {
+                metrics.incrementCounter("product_interaction.version_mismatch", 1, "contractId", request.contractId());
+            }
             return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.handler_version_mismatch"), startedNanos);
         }
         if (!handler.requestType().isInstance(requestWithTrustedContext.payload())) {
+            if (span != null) {
+                tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "invalid_payload");
+                span.end();
+            }
+            if (metrics != null) {
+                metrics.incrementCounter("product_interaction.invalid_payload", 1, "contractId", request.contractId());
+            }
             return complete(requestWithTrustedContext, interactionKey, blocked(requestWithTrustedContext, "product_interaction.invalid_payload"), startedNanos);
         }
 
@@ -276,14 +338,40 @@ public final class ProductInteractionBroker implements AutoCloseable {
         }
 
         return handlerOutcome.then(
-                outcome -> complete(
-                        requestWithTrustedContext,
-                        interactionKey,
-                        normalizeProviderOutcome(requestWithTrustedContext, outcome),
-                        startedNanos),
+                outcome -> {
+                    if (span != null) {
+                        if (outcome.status() == ProductInteractionStatus.SUCCEEDED) {
+                            tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.OK);
+                        } else {
+                            tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, outcome.reasonCode());
+                        }
+                        span.end();
+                    }
+                    if (metrics != null) {
+                        long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
+                        metrics.recordTimer("product_interaction.latency", latencyMs, "contractId", request.contractId(), "status", outcome.status().name());
+                        if (outcome.status() == ProductInteractionStatus.SUCCEEDED) {
+                            metrics.incrementCounter("product_interaction.success", 1, "contractId", request.contractId());
+                        } else {
+                            metrics.incrementCounter("product_interaction.failure", 1, "contractId", request.contractId(), "reasonCode", outcome.reasonCode());
+                        }
+                    }
+                    return complete(
+                            requestWithTrustedContext,
+                            interactionKey,
+                            normalizeProviderOutcome(requestWithTrustedContext, outcome),
+                            startedNanos);
+                },
                 error -> {
                     if (isTimeout(error)) {
                         timedOut.incrementAndGet();
+                        if (span != null) {
+                            tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "timeout");
+                            span.end();
+                        }
+                        if (metrics != null) {
+                            metrics.incrementCounter("product_interaction.timeout", 1, "contractId", request.contractId());
+                        }
                         return complete(
                                 requestWithTrustedContext,
                                 interactionKey,
@@ -291,6 +379,14 @@ public final class ProductInteractionBroker implements AutoCloseable {
                                         requestWithTrustedContext,
                                         "product_interaction.timeout"),
                                 startedNanos);
+                    }
+                    if (span != null) {
+                        tracing.setStatus(com.ghatana.kernel.observability.TracingPort.SpanStatus.ERROR, "runtime_error");
+                        tracing.recordException(error);
+                        span.end();
+                    }
+                    if (metrics != null) {
+                        metrics.incrementCounter("product_interaction.runtime_error", 1, "contractId", request.contractId());
                     }
                     return complete(
                             requestWithTrustedContext,
@@ -313,7 +409,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
                 maxLatencyMs.get(),
                 cacheHits.get(),
                 cacheMisses.get(),
-                cacheEvictions.get());
+                cacheEvictions.get(),
+                sloViolations.get());
     }
 
     @Override
@@ -391,7 +488,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
             }
             // Phase 1: Store outcome with timestamp for TTL-based eviction
             completedByInteraction.put(interactionKey, new CachedOutcome(finalOutcome));
-            recordMetrics(finalOutcome, startedNanos);
+            recordMetrics(request, finalOutcome, startedNanos);
             cb.set(finalOutcome);
         }));
     }
@@ -420,10 +517,20 @@ public final class ProductInteractionBroker implements AutoCloseable {
         return outcome;
     }
 
-    private void recordMetrics(ProductInteractionOutcome<?> outcome, long startedNanos) {
+    private void recordMetrics(
+            ProductInteractionRequest<?> request,
+            ProductInteractionOutcome<?> outcome,
+            long startedNanos) {
         long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos);
         totalLatencyMs.addAndGet(latencyMs);
         maxLatencyMs.accumulateAndGet(latencyMs, Math::max);
+
+        // PERF-002: Check SLO violation against latency budget
+        Duration budget = latencyBudgetsByContract.get(request.contractId());
+        if (budget != null && latencyMs > budget.toMillis()) {
+            sloViolations.incrementAndGet();
+        }
+
         if (outcome.status() == ProductInteractionStatus.SUCCEEDED) {
             succeeded.incrementAndGet();
             return;
@@ -564,6 +671,7 @@ public final class ProductInteractionBroker implements AutoCloseable {
     public static final class Builder {
         private final Map<String, ProductInteractionHandler<?, ?>> handlersByContractId = new ConcurrentHashMap<>();
         private final Map<String, ProductInteractionContract> contractsByContractId = new ConcurrentHashMap<>();
+        private final Map<String, Duration> latencyBudgetsByContract = new ConcurrentHashMap<>();
         private Set<String> supportedContractVersions = DEFAULT_SUPPORTED_CONTRACT_VERSIONS;
         private ProductInteractionPolicyEvaluator policyEvaluator = ProductInteractionPolicyEvaluator.defaultEvaluator();
         private ProductInteractionEvidenceWriter evidenceWriter = ProductInteractionEvidenceWriter.noop();
@@ -574,6 +682,9 @@ public final class ProductInteractionBroker implements AutoCloseable {
         private Duration cacheTtl = Duration.ofMinutes(5); // Phase 1: Default 5-minute TTL
         private ProductInteractionHandlerRegistry handlerRegistry;
         private Path developmentEvidenceRoot = Path.of(".kernel", "evidence", "product-interactions");
+        private ProductInteractionCircuitBreaker circuitBreaker;
+        private com.ghatana.kernel.observability.TracingPort tracing;
+        private com.ghatana.kernel.observability.MetricCollectorPort metrics;
 
         public Builder register(ProductInteractionHandler<?, ?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -649,6 +760,36 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         public Builder handlerRegistry(ProductInteractionHandlerRegistry registry) {
             this.handlerRegistry = registry;
+            return this;
+        }
+
+        public Builder circuitBreaker(ProductInteractionCircuitBreaker circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
+            return this;
+        }
+
+        public Builder tracing(com.ghatana.kernel.observability.TracingPort tracing) {
+            this.tracing = tracing;
+            return this;
+        }
+
+        public Builder metrics(com.ghatana.kernel.observability.MetricCollectorPort metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        /**
+         * PERF-002: Set latency budget for a specific contract.
+         * Interactions exceeding this budget will be counted as SLO violations.
+         *
+         * @param contractId the contract ID
+         * @param budget the latency budget
+         * @return this builder
+         */
+        public Builder latencyBudget(String contractId, Duration budget) {
+            Objects.requireNonNull(contractId, "contractId must not be null");
+            Objects.requireNonNull(budget, "budget must not be null");
+            latencyBudgetsByContract.put(contractId, budget);
             return this;
         }
 

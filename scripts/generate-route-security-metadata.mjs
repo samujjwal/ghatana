@@ -295,12 +295,19 @@ function generateCompatibilityRegistry(legacyRoutes, existingCompatibilityConten
 legacy_routes:
 `;
 
-  // Sort legacy routes
+  // Sort and de-duplicate legacy routes after OpenAPI parameter normalization.
+  const legacyRoutesByNormalizedKey = new Map();
   const sortedLegacy = Array.from(legacyRoutes.entries()).sort(([a], [b]) => a.localeCompare(b));
+  for (const [, route] of sortedLegacy) {
+    const normalizedKey = `${route.method} ${normalizePath(route.path)}`;
+    if (!legacyRoutesByNormalizedKey.has(normalizedKey)) {
+      legacyRoutesByNormalizedKey.set(normalizedKey, route);
+    }
+  }
   
   // Group by base path for cleaner output
   const routeGroups = new Map();
-  for (const [key, route] of sortedLegacy) {
+  for (const [key, route] of Array.from(legacyRoutesByNormalizedKey.entries()).sort(([a], [b]) => a.localeCompare(b))) {
     const { method, path } = route;
     const basePath = path.split('/')[2]; // Get the third segment (pipelines, memory, etc.)
     if (!routeGroups.has(basePath)) {

@@ -28,6 +28,8 @@ const evidenceTypeByPath = new Map([
   [smokeEvidencePath, 'runtime-executed'],
   [backupEvidencePath, 'runtime-executed'],
   ['.kernel/evidence/data-cloud-release-runtime-profile.json', 'static-configuration'],
+  ['.kernel/evidence/data-cloud-maturity-proof.json', 'runtime-executed'],
+  ['.kernel/evidence/action-plane-route-lifecycle.json', 'generated-on-demand'],
   ['.kernel/evidence/atomic-workflow-posture.json', 'runtime-executed'],
   ['.kernel/evidence/kernel-implementation-plan-progress.json', 'runtime-executed'],
   ['.kernel/evidence/product-slo-budgets.json', 'runtime-production'],
@@ -41,6 +43,8 @@ const requiredEvidenceFiles = [
   smokeEvidencePath,
   backupEvidencePath,
   '.kernel/evidence/data-cloud-release-runtime-profile.json',
+  '.kernel/evidence/data-cloud-maturity-proof.json',
+  '.kernel/evidence/action-plane-route-lifecycle.json',
   '.kernel/evidence/atomic-workflow-posture.json',
   '.kernel/evidence/kernel-implementation-plan-progress.json',
   '.kernel/evidence/product-slo-budgets.json',
@@ -221,7 +225,7 @@ function ensureReleaseSummary(errors) {
   }
 }
 
-function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredScenarioKeys, errors }) {
+function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredScenarioKeys, requiredProductIds = [], errors }) {
   const dirAbsolutePath = path.join(repoRoot, dirRelativePath);
   if (!existsSync(dirAbsolutePath)) {
     errors.push(`Missing failure-injection evidence directory: ${dirRelativePath}`);
@@ -246,6 +250,16 @@ function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredSce
   const report = readJson(latest.relativePath, errors);
   if (!report) {
     return;
+  }
+
+  if (!Array.isArray(report.productScope) || report.productScope.length === 0) {
+    errors.push(`Failure-injection report must declare productScope: ${latest.relativePath}`);
+  } else {
+    for (const productId of requiredProductIds) {
+      if (!report.productScope.includes(productId)) {
+        errors.push(`Failure-injection report productScope must include ${productId}: ${latest.relativePath}`);
+      }
+    }
   }
 
   // Validate evidence quality
@@ -370,6 +384,50 @@ function validateRequiredContent(evidenceByPath, errors) {
       if (behavioralSignals.length < 3) {
         errors.push('Runtime profile evidence appears posture-only: expected >= 3 behavioral check signals');
       }
+    }
+  }
+
+  const maturityProof = evidenceByPath.get('.kernel/evidence/data-cloud-maturity-proof.json');
+  if (maturityProof) {
+    if (maturityProof.summary?.passed !== true) {
+      errors.push('Data Cloud maturity proof evidence must pass');
+    }
+    if (maturityProof.targetScore !== 5) {
+      errors.push('Data Cloud maturity proof targetScore must be 5');
+    }
+    if (!Array.isArray(maturityProof.violations) || maturityProof.violations.length > 0) {
+      errors.push('Data Cloud maturity proof must include an empty violations array');
+    }
+    if (typeof maturityProof.summary?.proofAreaCount !== 'number' || maturityProof.summary.proofAreaCount < 5) {
+      errors.push('Data Cloud maturity proof must cover at least five proof areas');
+    }
+  }
+
+  const actionPlaneRouteLifecycle = evidenceByPath.get('.kernel/evidence/action-plane-route-lifecycle.json');
+  if (actionPlaneRouteLifecycle) {
+    if (actionPlaneRouteLifecycle.summary?.passed !== true) {
+      errors.push('Action Plane route lifecycle evidence must pass');
+    }
+    if (actionPlaneRouteLifecycle.targetScore !== 5) {
+      errors.push('Action Plane route lifecycle targetScore must be 5');
+    }
+    if (!Array.isArray(actionPlaneRouteLifecycle.violations) || actionPlaneRouteLifecycle.violations.length > 0) {
+      errors.push('Action Plane route lifecycle evidence must include an empty violations array');
+    }
+    if (actionPlaneRouteLifecycle.policy?.canonicalProductLanguage !== 'Data Cloud Action Plane') {
+      errors.push('Action Plane route lifecycle must enforce Data Cloud Action Plane as canonical product language');
+    }
+    if (actionPlaneRouteLifecycle.policy?.internalCompatibilityName !== 'AEP') {
+      errors.push('Action Plane route lifecycle must classify AEP as compatibility/internal naming');
+    }
+    if (typeof actionPlaneRouteLifecycle.classification?.canonicalActionPathCount !== 'number' || actionPlaneRouteLifecycle.classification.canonicalActionPathCount < 1) {
+      errors.push('Action Plane route lifecycle must classify canonical Action Plane paths');
+    }
+    if (typeof actionPlaneRouteLifecycle.classification?.aepCompatibilityOnlyPathCount !== 'number' || actionPlaneRouteLifecycle.classification.aepCompatibilityOnlyPathCount < 1) {
+      errors.push('Action Plane route lifecycle must classify AEP compatibility-only paths');
+    }
+    if (typeof actionPlaneRouteLifecycle.classification?.registeredLegacyRouteCount !== 'number' || actionPlaneRouteLifecycle.classification.registeredLegacyRouteCount < 1) {
+      errors.push('Action Plane route lifecycle must validate registered legacy routes');
     }
   }
 
@@ -617,6 +675,7 @@ function main() {
       'queueSaturation',
       'retryBackoff',
     ],
+    requiredProductIds: ['data-cloud'],
     errors,
   });
   validateLatestScenarioReport({
@@ -631,6 +690,7 @@ function main() {
       'rollbackAfterPartialFailure',
       'replayAfterCrash',
     ],
+    requiredProductIds: ['data-cloud'],
     errors,
   });
 

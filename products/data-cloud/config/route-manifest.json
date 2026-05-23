@@ -1,6 +1,6 @@
 {
-  "version": "generated-2026-05-21",
-  "lastUpdated": "2026-05-21T20:20:42.006Z",
+  "version": "generated-2026-05-23",
+  "lastUpdated": "2026-05-23T18:36:20.583Z",
   "generatedFrom": "DataCloudRouterBuilder.java + RouteSecurityRegistry.java",
   "routes": [
     {
@@ -869,7 +869,7 @@
       "requiredAccess": "VIEWER",
       "idempotent": true,
       "description": "GET /api/v1/agents/catalog",
-      "legacyStatus": "active",
+      "legacyStatus": "compatibility-only",
       "runtimeTruthSurface": "VISIBLE",
       "category": "Admin"
     },
@@ -884,7 +884,7 @@
       "requiredAccess": "VIEWER",
       "idempotent": true,
       "description": "GET /api/v1/agents/catalog/{id}",
-      "legacyStatus": "active",
+      "legacyStatus": "compatibility-only",
       "runtimeTruthSurface": "VISIBLE",
       "category": "Admin"
     },

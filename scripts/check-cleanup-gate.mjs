@@ -29,6 +29,7 @@ const STALE_PATTERNS = [
   /example.*product.*do not use/i,
   /sample.*product.*remove/i,
   /placeholder.*delete.*this/i,
+  /MOVED:\s*Implementation lives/i,
   
   // Stale comments
   /\/\/.*deprecated.*\bremove\b/i,

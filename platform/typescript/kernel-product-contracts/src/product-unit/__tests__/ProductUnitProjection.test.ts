@@ -37,7 +37,7 @@ describe("ProductUnit Projection", () => {
           {
             id: "test-api",
             type: "backend-api",
-            implementationStatus: "implemented",
+            implementationStatus: "implemented",            language: "java", runtime: "java-jre", buildSystem: "gradle",
           },
         ],
       };
@@ -66,14 +66,18 @@ describe("ProductUnit Projection", () => {
             id: "full-api",
             type: "backend-api",
             implementationStatus: "implemented",
-            runtime: "java",
+            language: "java",
+            runtime: "java-jre",
+            buildSystem: "gradle",
             packagePath: "products/full/api",
           },
           {
             id: "full-web",
             type: "web",
             implementationStatus: "implemented",
+            language: "typescript",
             runtime: "nodejs",
+            buildSystem: "pnpm",
             packagePath: "products/full/web",
           },
         ],
@@ -141,6 +145,9 @@ describe("ProductUnit Projection", () => {
             id: "valid-api",
             type: "backend-api",
             implementationStatus: "implemented",
+            language: "java",
+            runtime: "java-jre",
+            buildSystem: "gradle",
           },
         ],
       };
@@ -185,6 +192,9 @@ describe("ProductUnit Projection", () => {
             id: "provider-api",
             type: "backend-api",
             implementationStatus: "implemented",
+            language: "java",
+            runtime: "java-jre",
+            buildSystem: "gradle",
           },
         ],
       };
@@ -232,6 +242,9 @@ describe("ProductUnit Projection", () => {
               id: `${kind}-surface`,
               type: "backend-api",
               implementationStatus: "implemented",
+              language: "java",
+              runtime: "java-jre",
+              buildSystem: "gradle",
             },
           ],
         };
@@ -265,6 +278,9 @@ describe("ProductUnit Projection", () => {
               id: "status-surface",
               type: "backend-api",
               implementationStatus: "implemented",
+              language: "java",
+              runtime: "java-jre",
+              buildSystem: "gradle",
             },
           ],
         };
@@ -275,3 +291,6 @@ describe("ProductUnit Projection", () => {
     });
   });
 });
+
+
+

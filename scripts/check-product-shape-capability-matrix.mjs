@@ -11,7 +11,7 @@
  * - All registered products have shape rows
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -420,21 +420,40 @@ function writeCapabilityCheckEvidence(errors, warnings, capabilityMatrix) {
   const evidenceDir = join(repoRoot, '.kernel/evidence');
   const evidencePath = join(evidenceDir, 'product-capability-matrix-validation.json');
   mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    evidencePath,
-    `${JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        status: errors.length === 0 ? 'passed' : 'failed',
-        capabilityCount: Array.isArray(capabilityMatrix?.capabilities) ? capabilityMatrix.capabilities.length : 0,
-        warnings,
-        errors,
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    status: errors.length === 0 ? 'passed' : 'failed',
+    capabilityCount: Array.isArray(capabilityMatrix?.capabilities) ? capabilityMatrix.capabilities.length : 0,
+    warnings,
+    errors,
+  };
+  writeJsonWithRetry(evidencePath, payload);
+}
+
+function writeJsonWithRetry(targetPath, payload, maxAttempts = 8) {
+  const tempPath = `${targetPath}.tmp`;
+  const content = `${JSON.stringify(payload, null, 2)}\n`;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, content, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      const code = error?.code;
+      const retriable = code === 'UNKNOWN' || code === 'EACCES' || code === 'EBUSY' || code === 'EPERM';
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // best-effort cleanup
+      }
+      if (!retriable || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
 }
 
 function validatePublicMatrixRows(rows, registry, errors) {

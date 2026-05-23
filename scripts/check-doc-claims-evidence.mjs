@@ -64,8 +64,18 @@ const CLAIM_PATTERNS = [
   /\bvalidated\b/i,
 ];
 
+const TARGET_STATE_CLAIM_PATTERNS = [
+  /\bwill be\b/i,
+  /\bplanned for\b/i,
+  /\bscheduled for\b/i,
+  /\bfuture state\b/i,
+];
+
 const EVIDENCE_PATTERN =
   /\b(test|tests|e2e|integration|contract|coverage|vitest|jest|playwright|ci|build|check|lint|typecheck|jacoco|report|evidence)\b/i;
+
+const TARGET_STATE_EVIDENCE_PATTERN =
+  /\b(tracker|issue|pr|ticket|milestone|plan|roadmap|lifecycle|phase|status|in progress|partial|unverified|ghatana-world-class-implementation-tracker|implementation-plan|implementation plan|adrs?|architecture-decision)\b/i;
 function loadDocumentationScope() {
   if (!existsSync(DOC_SCOPE_FILE)) {
     return null;
@@ -134,10 +144,15 @@ function hasClaim(line) {
   return CLAIM_PATTERNS.some((pattern) => pattern.test(line));
 }
 
+function hasTargetStateClaim(line) {
+  return TARGET_STATE_CLAIM_PATTERNS.some((pattern) => pattern.test(line));
+}
+
 /***********************
  * Audit tracker evidence validation
  ***********************/
 
+const failures = [];
 const warnings = [];
 
 for (const trackerFile of AUDIT_TRACKER_FILES) {
@@ -185,7 +200,6 @@ const documentationScope = loadDocumentationScope();
 const markdownFiles = documentationScope
   ? [...documentationScope.includeFiles].map((file) => join(REPO_ROOT, file)).filter((file) => existsSync(file))
   : DOC_ROOTS.flatMap((root) => walkMarkdownFiles(root));
-const failures = [];
 
 for (const markdownFile of markdownFiles) {
   const relPath = relative(REPO_ROOT, markdownFile).replace(/\\/g, '/');
@@ -200,7 +214,11 @@ for (const markdownFile of markdownFiles) {
   const lines = text.split('\n');
 
   lines.forEach((line, index) => {
-    if (!hasClaim(line)) {
+    if (/^\s*(#|\|)/.test(line)) {
+      return;
+    }
+
+    if (!hasClaim(line) && !hasTargetStateClaim(line)) {
       return;
     }
 
@@ -208,9 +226,15 @@ for (const markdownFile of markdownFiles) {
     const end = Math.min(lines.length, index + 2);
     const window = lines.slice(start, end).join(' ');
 
-    if (!EVIDENCE_PATTERN.test(window)) {
+    if (hasClaim(line) && !EVIDENCE_PATTERN.test(window)) {
       failures.push(
         `${relPath}:${index + 1} contains a strong claim without nearby test/build evidence`,
+      );
+    }
+
+    if (hasTargetStateClaim(line) && !TARGET_STATE_EVIDENCE_PATTERN.test(window)) {
+      failures.push(
+        `${relPath}:${index + 1} contains a target-state claim without nearby tracker/plan evidence`,
       );
     }
   });

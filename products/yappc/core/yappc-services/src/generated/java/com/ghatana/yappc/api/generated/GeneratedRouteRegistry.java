@@ -276,6 +276,28 @@ public final class GeneratedRouteRegistry {
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
             "POST",
+            "/api/v1/yappc/evolve/{proposalId}/approve",
+            AuthMode.REQUIRED,
+            Set.of("project:write"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "approveEvolutionProposal",
+            "EVOLVE_PROPOSAL_APPROVED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
+            "/api/v1/yappc/evolve/{proposalId}/reject",
+            AuthMode.REQUIRED,
+            Set.of("project:write"),
+            "yappc-services",
+            Boundary.YAPPC,
+            "rejectEvolutionProposal",
+            "EVOLVE_PROPOSAL_REJECTED",
+            PrivacyClassification.RESTRICTED
+        ));
+        MANIFEST.addRoute("yappc-services", new RouteEntry(
+            "POST",
             "/api/v1/yappc/lifecycle/execute",
             AuthMode.REQUIRED,
             Set.of("project:write"),

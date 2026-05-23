@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "planPath": "platform-kernel/docs/01-KERNEL_IMPLEMENTATION_PLAN.md",
-  "requiredTaskCount": 50,
+  "requiredTaskCount": 18,
   "defaults": {
     "ownerTeam": "Kernel Release Engineering",
     "ownerModule": "scripts",
@@ -39,40 +39,21 @@
       "ownerTeam": "Kernel Release Engineering",
       "ownerModule": "scripts"
     },
-    "34": {
-      "status": "Deferred",
-      "maturityDepth": 2,
-      "ownerTeam": "Data Cloud Runtime",
-      "ownerModule": "products/data-cloud",
-      "deferReason": "Load and backpressure suites are deferred for later session execution per implementation plan note."
-    },
-    "46": {
+    "16": {
       "status": "Partial",
       "maturityDepth": 3,
-      "ownerTeam": "Data Cloud Runtime",
-      "ownerModule": "products/data-cloud"
+      "ownerTeam": "Documentation Governance",
+      "ownerModule": "products/yappc/docs"
     },
-    "47": {
-      "status": "Partial",
-      "maturityDepth": 3,
-      "ownerTeam": "Security and Compliance",
-      "ownerModule": "scripts"
-    },
-    "48": {
+    "17": {
       "status": "Partial",
       "maturityDepth": 3,
       "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts"
+      "ownerModule": ".github/workflows"
     },
-    "49": {
+    "18": {
       "status": "Partial",
       "maturityDepth": 3,
-      "ownerTeam": "Kernel Release Engineering",
-      "ownerModule": "scripts"
-    },
-    "50": {
-      "status": "Partial",
-      "maturityDepth": 2,
       "ownerTeam": "Frontend Experience",
       "ownerModule": "release-evidence"
     }

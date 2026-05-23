@@ -21,6 +21,8 @@ import com.ghatana.yappc.api.RunApiController;
 import com.ghatana.yappc.api.ObserveApiController;
 import com.ghatana.yappc.api.LearnApiController;
 import com.ghatana.yappc.api.EvolveApiController;
+import com.ghatana.yappc.api.LifecycleApiController;
+import com.ghatana.yappc.api.LifecycleExecutionRepository;
 import com.ghatana.yappc.api.GenerationRunRepository;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
@@ -30,6 +32,11 @@ import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.evolve.DataCloudEvolutionPlanRepository;
+import com.ghatana.yappc.services.evolve.DataCloudEvolutionExecutionHandoffService;
+import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffDispatcher;
+import com.ghatana.yappc.services.evolve.EvolutionExecutionHandoffSchedulerService;
+import com.ghatana.yappc.services.evolve.EvolutionLifecycleExecutionDispatcher;
+import com.ghatana.yappc.services.evolve.LifecycleApiExecutionDispatcher;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.services.generate.GenerationServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
@@ -271,7 +278,45 @@ public class LifecycleServiceModule extends AbstractModule {
                 aiService,
                 auditLogger,
                 metrics,
-                new DataCloudEvolutionPlanRepository(dataCloudClient));
+            new DataCloudEvolutionPlanRepository(dataCloudClient),
+            new DataCloudEvolutionExecutionHandoffService(dataCloudClient));
+        }
+
+        @Provides
+        EvolutionLifecycleExecutionDispatcher evolutionLifecycleExecutionDispatcher(
+            LifecycleApiController lifecycleApiController,
+            LifecycleExecutionRepository executionRepository,
+            ObjectMapper objectMapper
+        ) {
+        logger.info("Creating EvolutionLifecycleExecutionDispatcher");
+        return new LifecycleApiExecutionDispatcher(lifecycleApiController, executionRepository, objectMapper);
+        }
+
+        @Provides
+        EvolutionExecutionHandoffDispatcher evolutionExecutionHandoffDispatcher(
+            DataCloudClient dataCloudClient,
+            EvolutionLifecycleExecutionDispatcher lifecycleDispatcher
+        ) {
+        logger.info("Creating EvolutionExecutionHandoffDispatcher");
+        return new EvolutionExecutionHandoffDispatcher(dataCloudClient, lifecycleDispatcher);
+        }
+
+        @Provides
+        EvolutionExecutionHandoffSchedulerService evolutionExecutionHandoffSchedulerService(
+            Eventloop eventloop,
+            EvolutionExecutionHandoffDispatcher dispatcher
+        ) {
+        Map<String, String> config = Map.of(
+            "yappc.scheduler.evolve-handoff.enabled", System.getenv().getOrDefault("YAPPC_EVOLVE_HANDOFF_SCHEDULER_ENABLED", "false"),
+            "yappc.scheduler.evolve-handoff.interval", System.getenv().getOrDefault("YAPPC_EVOLVE_HANDOFF_SCHEDULER_INTERVAL_SECONDS", "30"),
+            "yappc.scheduler.evolve-handoff.limit", System.getenv().getOrDefault("YAPPC_EVOLVE_HANDOFF_SCHEDULER_LIMIT", "25"),
+            "yappc.scheduler.evolve-handoff.tenants", System.getenv().getOrDefault("YAPPC_EVOLVE_HANDOFF_SCHEDULER_TENANTS", "")
+        );
+
+        EvolutionExecutionHandoffSchedulerService scheduler =
+            new EvolutionExecutionHandoffSchedulerService(eventloop, dispatcher, config);
+        scheduler.start();
+        return scheduler;
     }
 
     // ========== Phase 7: Learn ==========

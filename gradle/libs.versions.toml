@@ -63,6 +63,9 @@ onnx-runtime = "1.20.0"
 nimbus-jose-jwt = "9.47"
 bouncycastle = "1.80"
 
+# Resilience
+resilience4j = "2.2.0"
+
 # Common Libraries
 guava = "33.4.6-jre"
 commons-lang3 = "3.17.0"
@@ -249,6 +252,13 @@ onnx-runtime = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref =
 # =============================================================================
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
 bouncycastle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+
+# =============================================================================
+# Resilience
+# =============================================================================
+resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
+resilience4j-core = { module = "io.github.resilience4j:resilience4j-core", version.ref = "resilience4j" }
+resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
 
 # =============================================================================
 # Common Libraries
@@ -454,6 +464,13 @@ ai-integration = [
 security-core = [
     "nimbus-jose-jwt",
     "bouncycastle-provider"
+]
+
+# Resilience - Circuit breaker and retry
+resilience4j-circuitbreaker-lib = [
+    "resilience4j-circuitbreaker",
+    "resilience4j-core",
+    "resilience4j-retry"
 ]
 
 # Common Utilities - Essential utility libraries

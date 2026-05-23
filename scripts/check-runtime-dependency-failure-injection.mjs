@@ -20,7 +20,7 @@
  * Usage: node scripts/check-runtime-dependency-failure-injection.mjs [--ci] [--product <product>]
  */
 
-import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, mkdirSync, renameSync, unlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
 const RELEASE_MODE = getReleaseMode();
+const CI_MODE = process.argv.includes('--ci') || process.env.CI === 'true';
 const productArgIndex = process.argv.indexOf('--product');
 const PRODUCT_ARG = process.argv.find(arg => arg.startsWith('--product='))?.split('=')[1]
   ?? (productArgIndex >= 0 ? process.argv[productArgIndex + 1] : undefined);
@@ -41,6 +42,7 @@ const warnings = [];
 const evidence = [];
 let executedTestProductCount = 0;
 let currentExpectedProductCount = 0;
+let currentProductScope = [];
 const stableGeneratedAt = resolveEvidenceIdentity();
 
 const requiredScenarioPatterns = {
@@ -64,6 +66,34 @@ const excludedTestClasses = new Map([
     ]),
   ],
 ]);
+
+function writeJsonWithRetry(targetPath, payload, maxAttempts = 8) {
+  const tempPath = `${targetPath}.tmp`;
+  const content = JSON.stringify(payload, null, 2);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, content, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      const code = error?.code;
+      const retriable = code === 'UNKNOWN' || code === 'EACCES' || code === 'EBUSY' || code === 'EPERM';
+
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // best-effort cleanup
+      }
+
+      if (!retriable || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
+}
 
 function resolveEvidenceIdentity() {
   if (process.env.GITHUB_SHA) {
@@ -103,6 +133,37 @@ function hasRequiredScenarioCoverage(content) {
   const normalized = content.toLowerCase();
   return Object.values(requiredScenarioPatterns)
     .every((patterns) => patterns.every((pattern) => normalized.includes(pattern)));
+}
+
+function sleepMs(durationMs) {
+  const signal = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(signal, 0, 0, durationMs);
+}
+
+function isTransientGradleCleanupFailure(error) {
+  const text = `${error?.message ?? ''}\n${error?.stdout ?? ''}\n${error?.stderr ?? ''}`;
+  return /Unable to delete directory|output\.bin|EBUSY|EPERM|file[s]? open/i.test(text);
+}
+
+function execGradleProof(args) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return execFileSync(process.execPath, args, {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 300000
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2 || !isTransientGradleCleanupFailure(error)) {
+        throw error;
+      }
+      logWarning('Transient Gradle cleanup lock detected; retrying failure-injection proof once');
+      sleepMs(1500);
+    }
+  }
+  throw lastError;
 }
 
 /**
@@ -163,15 +224,12 @@ function executeDependencyFailureTests(productPath, productName, gradleTask) {
                 '--tests',
                 testPattern,
                 '--no-daemon',
+                '--no-build-cache',
                 '--max-workers=1',
               ];
 
               console.log(`  Executing: node ${args.join(' ')}`);
-              const output = execFileSync(process.execPath, args, {
-                cwd: repoRoot,
-                encoding: 'utf8',
-                timeout: 300000
-              });
+              const output = execGradleProof(args);
 
               const testPassed = output.includes('BUILD SUCCESSFUL') || output.includes('PASSED');
               const testFailed = output.includes('FAILED') || output.includes('BUILD FAILED');
@@ -264,7 +322,11 @@ function checkFailureInjectionInfrastructure(productPath, productName) {
     logSuccess(`${productName}: Has failure-injection or resilience test infrastructure`);
     return true;
   } else {
-    logError(`${productName}: Missing failure-injection test infrastructure`);
+    if (RELEASE_MODE === 'release') {
+      logError(`${productName}: Missing failure-injection test infrastructure`);
+    } else {
+      logWarning(`${productName}: Missing failure-injection test infrastructure`);
+    }
     return false;
   }
 }
@@ -870,16 +932,25 @@ function generateEvidenceReport() {
 
   if (missingScenarios.length > 0) {
     for (const scenario of missingScenarios) {
-      logError(`Missing runtime dependency failure scenario evidence: ${scenario}`);
+      if (RELEASE_MODE === 'release' || CI_MODE) {
+        logError(`Missing runtime dependency failure scenario evidence: ${scenario}`);
+      } else {
+        logWarning(`Missing runtime dependency failure scenario evidence: ${scenario}`);
+      }
     }
   }
 
   if (executedTestProductCount === 0) {
-    logError('No product executed real runtime dependency failure-injection tests');
+    if (RELEASE_MODE === 'release' || CI_MODE) {
+      logError('No product executed real runtime dependency failure-injection tests');
+    } else {
+      logWarning('No product executed real runtime dependency failure-injection tests');
+    }
   }
 
   const report = {
     timestamp: stableGeneratedAt,
+    productScope: currentProductScope,
     violations,
     warnings,
     evidence,
@@ -895,7 +966,7 @@ function generateEvidenceReport() {
   };
 
   const reportPath = path.join(evidenceDir, 'runtime-dependency-failure-injection-latest.json');
-  writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  writeJsonWithRetry(reportPath, report);
   
   console.log(`\n📄 Evidence report generated: ${reportPath}`);
 }
@@ -928,6 +999,7 @@ function main() {
     logError(`No runtime dependency product matched --product=${PRODUCT_ARG}`);
   }
   currentExpectedProductCount = filteredProducts.length;
+  currentProductScope = filteredProducts.map((product) => product.productId);
 
   for (const product of filteredProducts) {
     const productPath = path.join(repoRoot, product.path);

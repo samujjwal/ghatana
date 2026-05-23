@@ -324,7 +324,16 @@ export function getRuntimeDependencyProducts() {
  * Get all products applicable for AI governance behavioral proof
  */
 export function getAIGovernanceProducts() {
-  return getAIEnabledProducts();
+  const products = getAIEnabledProducts();
+  const hasDataCloud = products.some(({ productId }) => productId === 'data-cloud');
+  if (!hasDataCloud) {
+    const registry = loadRegistry();
+    const dataCloud = registry['data-cloud'];
+    if (dataCloud?.metadata?.status === 'active') {
+      products.push({ productId: 'data-cloud', product: dataCloud });
+    }
+  }
+  return products;
 }
 
 /**

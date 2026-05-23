@@ -470,19 +470,33 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
 
   /**
    * Parse pytest output into structured test results.
+   * POLY-003: Enhanced parsing with coverage and error details.
    */
-  private parsePytestOutput(stdout: string): { tests: number; failures: number; skipped: number; durationMs: number } {
-    const result = {
+  private parsePytestOutput(stdout: string): { 
+    tests: number; 
+    failures: number; 
+    skipped: number; 
+    durationMs: number;
+    coveragePercent?: number;
+    errors: Array<{ test: string; error: string }>;
+  } {
+    const result: { 
+      tests: number; 
+      failures: number; 
+      skipped: number; 
+      durationMs: number;
+      coveragePercent?: number;
+      errors: Array<{ test: string; error: string }>;
+    } = {
       tests: 0,
       failures: 0,
       skipped: 0,
       durationMs: 0,
+      errors: [],
     };
 
-    // Parse pytest output format
     const lines = stdout.split('\n');
     for (const line of lines) {
-      // Match summary line like "10 passed, 2 failed, 1 skipped in 5.23s"
       const summaryMatch = line.match(/(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+skipped)?(?:\s+in\s+([\d.]+)s)?/);
       if (summaryMatch) {
         const [, passed, failed, skipped, duration] = summaryMatch;
@@ -494,13 +508,25 @@ export class PythonPyprojectAdapter implements ToolchainAdapter {
         }
       }
 
-      // Match alternative summary format like "=== 10 passed, 2 failed, 1 skipped ==="
       const altSummaryMatch = line.match(/===\s*(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+skipped)?\s*===/);
       if (altSummaryMatch) {
         const [, passed, failed, skipped] = altSummaryMatch;
         result.tests = parseInt(passed, 10) + (failed ? parseInt(failed, 10) : 0) + (skipped ? parseInt(skipped, 10) : 0);
         result.failures = failed ? parseInt(failed, 10) : 0;
         result.skipped = skipped ? parseInt(skipped, 10) : 0;
+      }
+
+      // POLY-003: Parse coverage percentage
+      const coverageMatch = line.match(/TOTAL\s+(\d+)%/);
+      if (coverageMatch) {
+        result.coveragePercent = parseInt(coverageMatch[1], 10);
+      }
+
+      // POLY-003: Parse failure details
+      const failureMatch = line.match(/^FAILED\s+(.+?)::(.+?)\s+-\s+(.+)/);
+      if (failureMatch) {
+        const [, _module, test, error] = failureMatch;
+        result.errors.push({ test, error });
       }
     }
 

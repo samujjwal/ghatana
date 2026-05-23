@@ -31,6 +31,11 @@ export {
   type BootstrapKernelProvidersOptions,
 } from "./factory/createBootstrapKernelProviders.js";
 export {
+  createPlatformKernelProviders,
+  type PlatformKernelProviders,
+  type PlatformKernelProvidersOptions,
+} from "./factory/createPlatformKernelProviders.js";
+export {
   FileProvenanceProvider,
   type FileProvenanceProviderOptions,
 } from "./provenance/FileProvenanceProvider.js";
@@ -84,6 +89,10 @@ export {
   DataCloudRuntimeTruthProvider,
   type DataCloudRuntimeTruthProviderOptions,
 } from "./runtime-truth/DataCloudRuntimeTruthProvider.js";
+export {
+  FileSourceProvider,
+  type FileSourceProviderOptions,
+} from "./source/FileSourceProvider.js";
 export {
   KernelProviderHealthMatrixProvider,
   type KernelProviderHealthMatrixProviderOptions,

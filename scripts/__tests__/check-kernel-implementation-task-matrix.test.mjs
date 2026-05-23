@@ -7,7 +7,7 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const scriptPath = path.join(repoRoot, 'scripts/check-kernel-implementation-task-matrix.mjs');
 
-test('kernel implementation task matrix parses all 50 plan items', () => {
+test('kernel implementation task matrix parses all actionable plan tasks', () => {
   const run = spawnSync(process.execPath, [scriptPath], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -20,7 +20,7 @@ test('kernel implementation task matrix parses all 50 plan items', () => {
   const evidencePath = path.join(repoRoot, '.kernel/evidence/kernel-implementation-task-matrix.json');
   const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
 
-  assert.equal(evidence.summary.requiredTaskCount, 50);
+  assert.equal(evidence.summary.requiredTaskCount, 18);
   assert.equal(evidence.incrementalRoadmap.targetMaturityDepth, 5);
   assert.ok(Array.isArray(evidence.incrementalRoadmap.tasks));
   assert.ok(evidence.incrementalRoadmap.tasks.length >= 1);

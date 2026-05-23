@@ -4,7 +4,7 @@
  * Generated from canonical route manifest by generate-route-manifest.mjs
  * To regenerate, run: npm run generate:route-manifest
  *
- * Generated at: 2026-05-21T20:20:42.006Z
+ * Generated at: 2026-05-23T18:36:20.583Z
  * Source: DataCloudRouterBuilder.java + RouteSecurityRegistry.java
  *
  * DC-P0-03: Runtime truth for UI feature gating and route visibility
@@ -893,7 +893,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     requiresPolicy: false,
     requiresBlockingAudit: false,
     requiredAccess: 'VIEWER',
-    legacyStatus: 'active',
+    legacyStatus: 'compatibility-only',
     idempotent: true,
     description: 'GET /api/v1/agents/catalog'
   },
@@ -908,7 +908,7 @@ export const RUNTIME_TRUTH_POSTURED: RuntimeRoute[] = [
     requiresPolicy: false,
     requiresBlockingAudit: false,
     requiredAccess: 'VIEWER',
-    legacyStatus: 'active',
+    legacyStatus: 'compatibility-only',
     idempotent: true,
     description: 'GET /api/v1/agents/catalog/{id}'
   },

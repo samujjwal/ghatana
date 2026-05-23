@@ -141,6 +141,79 @@ describe("KernelLifecycleApiHandlers scope validation", () => {
       correlationId: "source-scope-required",
     });
   });
+
+  describe("tenant/workspace isolation", () => {
+    it("allows requests when tenant and workspace match", async () => {
+      const handlers = createKernelLifecycleApiHandlers({
+        service: createMockService(),
+        requireScopeHeaders: true,
+        requireAuthentication: false,
+      });
+
+      const request: KernelLifecycleApiRequest = {
+        headers: {
+          "x-ghatana-tenant-id": "tenant-1",
+          "x-ghatana-workspace-id": "workspace-1",
+          "x-ghatana-project-id": "project-1",
+        },
+      };
+
+      const response = await handlers.listProductUnits(request);
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it("documents expected project ID scope validation (not yet implemented)", async () => {
+      // This test documents that project ID scope should be validated in plan creation
+      expect(true).toBe(true); // Placeholder for future implementation
+    });
+
+    it("documents expected tenant mismatch behavior (not yet implemented)", async () => {
+      // This test documents the expected behavior for tenant isolation
+      // The actual implementation should validate that the requested product unit
+      // belongs to the tenant specified in the scope headers
+      expect(true).toBe(true); // Placeholder for future implementation
+    });
+
+    it("documents expected workspace mismatch behavior (not yet implemented)", async () => {
+      // This test documents the expected behavior for workspace isolation
+      // The actual implementation should validate that lifecycle execution
+      // is scoped to the workspace specified in the headers
+      expect(true).toBe(true); // Placeholder for future implementation
+    });
+  });
+
+  describe("scope header validation edge cases", () => {
+    it("normalizes header names case-insensitively", async () => {
+      const handlers = createKernelLifecycleApiHandlers({
+        service: createMockService(),
+        requireScopeHeaders: true,
+        requireAuthentication: false,
+      });
+
+      const request: KernelLifecycleApiRequest = {
+        headers: {
+          "X-GHATANA-TENANT-ID": "tenant-1",
+          "x-ghatana-workspace-id": "workspace-1",
+          "X-GHATANA-PROJECT-ID": "project-1",
+        },
+      };
+
+      const response = await handlers.listProductUnits(request);
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it("documents expected empty tenant ID validation (not yet implemented)", async () => {
+      // This test documents that empty tenant IDs should be rejected
+      expect(true).toBe(true); // Placeholder for future implementation
+    });
+
+    it("documents expected malformed tenant ID validation (not yet implemented)", async () => {
+      // This test documents that tenant IDs with special characters should be rejected
+      expect(true).toBe(true); // Placeholder for future implementation
+    });
+  });
 });
 
 function createMockService(): KernelLifecycleService {

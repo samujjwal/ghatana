@@ -12,6 +12,7 @@ import { CargoRustAdapter } from './adapters/CargoRustAdapter.js';
 import { PythonPyprojectAdapter } from './adapters/PythonPyprojectAdapter.js';
 import { DockerBuildxAdapter } from './adapters/DockerBuildxAdapter.js';
 import { ComposeLocalAdapter } from './adapters/ComposeLocalAdapter.js';
+import { ProductInteractionBrokerAdapter } from './adapters/ProductInteractionBrokerAdapter.js';
 
 /**
  * Toolchain adapter registry.
@@ -287,6 +288,7 @@ export function createDefaultToolchainAdapterRegistry(
   registry.register(new PythonPyprojectAdapter(adapterOptions));
   registry.register(new DockerBuildxAdapter(adapterOptions));
   registry.register(new ComposeLocalAdapter(adapterOptions));
+  registry.register(new ProductInteractionBrokerAdapter());
 
   return { registry, bridge: new ToolchainAdapterRegistryBridge(registry) };
 }

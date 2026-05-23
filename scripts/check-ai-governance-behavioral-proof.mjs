@@ -37,6 +37,25 @@ const violations = [];
 const warnings = [];
 const evidence = [];
 const stableGeneratedAt = process.env.GITHUB_SHA ? `commit:${process.env.GITHUB_SHA}` : 'generated-on-demand';
+const requiredAIGovernanceScenarioPatterns = [
+  ['redacts privacy data before model calls', 'privacyRedactionApplied'],
+  ['fails closed without heuristic fallback', 'fallback is disabled'],
+  ['model is unavailable', 'Model unavailable'],
+  ['prompt token budget', 'costBudgetMaxTokens'],
+];
+
+function resolveAIGovernanceProofPath(product) {
+  if (product.productId === 'data-cloud') {
+    return path.join(repoRoot, 'products/data-cloud/planes/action/orchestrator');
+  }
+  return path.join(repoRoot, product.path);
+}
+
+function hasRequiredAIGovernanceScenarioCoverage(content) {
+  return requiredAIGovernanceScenarioPatterns.every((patterns) =>
+    patterns.some((pattern) => content.includes(pattern)),
+  );
+}
 
 function logError(message) {
   violations.push(message);
@@ -68,23 +87,37 @@ function executeAIGovernanceTests(productPath, productName, testCommand) {
   ];
 
   let testFound = false;
+  let executedPassed = false;
   for (const testDir of testDirs) {
     if (!existsSync(testDir)) continue;
 
     function searchDir(dir) {
+      if (executedPassed) {
+        return;
+      }
       try {
         const items = readdirSync(dir);
         
         for (const item of items) {
+          if (executedPassed) {
+            return;
+          }
           const itemPath = path.join(dir, item);
           const stat = statSync(itemPath);
           
           if (stat.isDirectory() && !item.includes('node_modules') && !item.includes('.git')) {
             searchDir(itemPath);
-          } else if (item.endsWith('.java') && (item.includes('AIGovernance') || item.includes('ModelGovernance'))) {
-            testFound = true;
+          } else if (item.endsWith('.java') && (
+            item.includes('AIGovernance')
+            || item.includes('ModelGovernance')
+            || item.includes('AgentExecutionServiceTest')
+          )) {
             const className = item.replace('.java', '');
             const content = readFileSync(itemPath, 'utf8');
+            if (!hasRequiredAIGovernanceScenarioCoverage(content)) {
+              continue;
+            }
+            testFound = true;
             const packageMatch = content.match(/^\s*package\s+([\w.]+);/m);
             const testPattern = packageMatch ? `${packageMatch[1]}.${className}` : `*${className}`;
             
@@ -110,7 +143,7 @@ function executeAIGovernanceTests(productPath, productName, testCommand) {
               const output = execFileSync(testCommand.startsWith('pnpm') ? 'pnpm' : process.execPath, args, {
                 cwd: repoRoot,
                 encoding: 'utf8',
-                timeout: 120000
+                timeout: 300000
               });
 
               const testPassed = output.includes('BUILD SUCCESSFUL') || output.includes('PASSED') || output.includes('PASS');
@@ -119,10 +152,11 @@ function executeAIGovernanceTests(productPath, productName, testCommand) {
               if (testPassed) {
                 logSuccess(`${productName}: AI governance tests PASSED`);
                 logEvidence(`${productName}: Executed real AI governance behavioral scenarios`);
-                return true;
+                executedPassed = true;
+                return;
               } else if (testFailed) {
                 logError(`${productName}: AI governance tests FAILED`);
-                return false;
+                return;
               }
             } catch (error) {
               logWarning(`${productName}: Failed to execute test ${className}: ${error.message}`);
@@ -135,6 +169,9 @@ function executeAIGovernanceTests(productPath, productName, testCommand) {
     }
 
     searchDir(testDir);
+    if (executedPassed) {
+      return true;
+    }
   }
 
   if (!testFound) {
@@ -718,21 +755,24 @@ function main() {
 
   // Filter by product if specified
   const filteredProducts = PRODUCT_ARG 
-    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
+    ? products.filter(p => p.name.toLowerCase().includes(PRODUCT_ARG.toLowerCase())
+        || p.productId.toLowerCase().includes(PRODUCT_ARG.toLowerCase()))
     : products;
 
   for (const product of filteredProducts) {
-    const productPath = path.join(repoRoot, product.path);
+    const productPath = resolveAIGovernanceProofPath(product);
     
     if (!existsSync(productPath)) {
-      logError(`${product.name}: Product path not found at ${product.path}`);
+      logError(`${product.name}: Product AI governance path not found at ${path.relative(repoRoot, productPath)}`);
       continue;
     }
 
     console.log(`\n--- Checking ${product.name} ---`);
     
     // Determine test command for this product
-    const testCommand = getProductLifecycleTestCommand(product.productId) || `${product.productId}:test`;
+    const testCommand = product.productId === 'data-cloud'
+      ? ':products:data-cloud:planes:action:orchestrator:test'
+      : (getProductLifecycleTestCommand(product.productId) || `${product.productId}:test`);
     
     // Execute real tests instead of posture checks
     const testsPassed = executeAIGovernanceTests(productPath, product.name, testCommand);

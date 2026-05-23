@@ -576,6 +576,147 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         }
     }
 
+    // SEC-001: Full wrong tenant/workspace isolation tests
+    @Test
+    @DisplayName("SEC-001: blocks interaction from wrong tenant")
+    void blocksInteractionFromWrongTenant() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .policyContextResolver((request, contract) -> 
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request = new ProductInteractionRequest<>(
+                    "1.0.0",
+                    "broker-wrong-tenant",
+                    EchoHandler.CONTRACT_ID,
+                    "1.0.0",
+                    "provider-product",
+                    "consumer-product",
+                    "consumer-product",
+                    "tenant-2",  // Wrong tenant
+                    "workspace-1",
+                    "run-1",
+                    "corr-1",
+                    Instant.parse("2026-05-21T00:00:00Z"),
+                    Map.of("actor", "kernel-test-runner"),
+                    new EchoRequest("hello"));
+
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() -> broker.execute(request));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.tenant_mismatch");
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("SEC-001: blocks interaction from wrong workspace")
+    void blocksInteractionFromWrongWorkspace() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .policyContextResolver((request, contract) -> 
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request = new ProductInteractionRequest<>(
+                    "1.0.0",
+                    "broker-wrong-workspace",
+                    EchoHandler.CONTRACT_ID,
+                    "1.0.0",
+                    "provider-product",
+                    "consumer-product",
+                    "consumer-product",
+                    "tenant-1",
+                    "workspace-2",  // Wrong workspace
+                    "run-1",
+                    "corr-1",
+                    Instant.parse("2026-05-21T00:00:00Z"),
+                    Map.of("actor", "kernel-test-runner"),
+                    new EchoRequest("hello"));
+
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() -> broker.execute(request));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.workspace_mismatch");
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("SEC-001: blocks interaction with both wrong tenant and workspace")
+    void blocksInteractionWithWrongTenantAndWorkspace() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .policyContextResolver((request, contract) -> 
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request = new ProductInteractionRequest<>(
+                    "1.0.0",
+                    "broker-wrong-both",
+                    EchoHandler.CONTRACT_ID,
+                    "1.0.0",
+                    "provider-product",
+                    "consumer-product",
+                    "consumer-product",
+                    "tenant-2",  // Wrong tenant
+                    "workspace-2",  // Wrong workspace
+                    "run-1",
+                    "corr-1",
+                    Instant.parse("2026-05-21T00:00:00Z"),
+                    Map.of("actor", "kernel-test-runner"),
+                    new EchoRequest("hello"));
+
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() -> broker.execute(request));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.BLOCKED);
+            // Should fail on tenant check first
+            assertThat(outcome.reasonCode()).isEqualTo("product_interaction.tenant_mismatch");
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("SEC-001: allows interaction with correct tenant and workspace")
+    void allowsInteractionWithCorrectTenantAndWorkspace() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .policyContextResolver((request, contract) -> 
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            ProductInteractionRequest<EchoRequest> request = new ProductInteractionRequest<>(
+                    "1.0.0",
+                    "broker-correct-scope",
+                    EchoHandler.CONTRACT_ID,
+                    "1.0.0",
+                    "provider-product",
+                    "consumer-product",
+                    "consumer-product",
+                    "tenant-1",  // Correct tenant
+                    "workspace-1",  // Correct workspace
+                    "run-1",
+                    "corr-1",
+                    Instant.parse("2026-05-21T00:00:00Z"),
+                    Map.of("actor", "kernel-test-runner"),
+                    new EchoRequest("hello"));
+
+            ProductInteractionOutcome<EchoResponse> outcome = runPromise(() -> broker.execute(request));
+
+            assertThat(outcome.status()).isEqualTo(ProductInteractionStatus.SUCCEEDED);
+        } finally {
+            broker.close();
+        }
+    }
+
     private static ProductInteractionRequest<EchoRequest> baseRequest(String interactionId, EchoRequest payload) {
         return new ProductInteractionRequest<>(
                 "1.0.0",

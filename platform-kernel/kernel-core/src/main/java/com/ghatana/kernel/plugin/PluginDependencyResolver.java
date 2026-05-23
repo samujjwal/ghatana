@@ -22,6 +22,71 @@ import java.util.Set;
 public final class PluginDependencyResolver {
 
     /**
+     * Checks for circular dependencies among plugins.
+     *
+     * @param plugins plugins to check
+     * @throws PluginDependencyException when circular dependency is detected
+     */
+    public void checkCircularDependencies(Collection<KernelPlugin> plugins) throws PluginDependencyException {
+        Map<String, Set<String>> dependencies = new HashMap<>();
+        Map<String, Set<String>> visiting = new HashMap<>();
+        Map<String, Set<String>> visited = new HashMap<>();
+
+        for (KernelPlugin plugin : plugins) {
+            String pluginId = plugin.getModuleId();
+            dependencies.put(pluginId, new HashSet<>());
+            visiting.put(pluginId, new HashSet<>());
+            visited.put(pluginId, new HashSet<>());
+        }
+
+        for (KernelPlugin plugin : plugins) {
+            String pluginId = plugin.getModuleId();
+            for (KernelDependency dependency : plugin.getDependencies()) {
+                if (dependency.getType() == KernelDependency.DependencyType.PLUGIN
+                    || dependency.getType() == KernelDependency.DependencyType.MODULE) {
+                    String depId = dependency.getDependencyId();
+                    if (!depId.equals(pluginId)) {
+                        dependencies.get(pluginId).add(depId);
+                    }
+                }
+            }
+        }
+
+        for (String pluginId : dependencies.keySet()) {
+            if (!visited.get(pluginId).contains(pluginId)) {
+                if (hasCycle(pluginId, dependencies, visiting, visited, new ArrayList<>())) {
+                    throw new PluginDependencyException("Circular dependency detected involving plugin: " + pluginId);
+                }
+            }
+        }
+    }
+
+    private boolean hasCycle(
+            String pluginId,
+            Map<String, Set<String>> dependencies,
+            Map<String, Set<String>> visiting,
+            Map<String, Set<String>> visited,
+            List<String> path) {
+        visited.get(pluginId).add(pluginId);
+        visiting.get(pluginId).add(pluginId);
+        path.add(pluginId);
+
+        for (String depId : dependencies.get(pluginId)) {
+            if (!visited.get(depId).contains(depId)) {
+                if (hasCycle(depId, dependencies, visiting, visited, path)) {
+                    return true;
+                }
+            } else if (visiting.get(depId).contains(depId)) {
+                return true;
+            }
+        }
+
+        visiting.get(pluginId).remove(pluginId);
+        path.remove(path.size() - 1);
+        return false;
+    }
+
+    /**
      * Resolves plugins into dependency-safe startup order.
      *
      * @param plugins plugins to order
