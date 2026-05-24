@@ -5,6 +5,8 @@
 package com.ghatana.agent.evaluation;
 
 import com.ghatana.agent.learning.LearningDelta;
+import com.ghatana.agent.safety.SafetyPolicy;
+import com.ghatana.agent.safety.SafetyPolicyRepository;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Default implementation of {@link EvaluationHarness}.
@@ -43,6 +46,7 @@ import java.util.Objects;
 public class DefaultEvaluationHarness implements EvaluationHarness {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultEvaluationHarness.class);
+    private static final SafetyPolicyRepository DEFAULT_SAFETY_POLICY_REPOSITORY = new DefaultSafetyPolicyRepository();
 
     private final List<EvaluationExecutor> executors;
 
@@ -61,11 +65,42 @@ public class DefaultEvaluationHarness implements EvaluationHarness {
     public DefaultEvaluationHarness(@NotNull List<EvaluationExecutor> additionalExecutors) {
         Objects.requireNonNull(additionalExecutors, "additionalExecutors must not be null");
         List<EvaluationExecutor> all = new ArrayList<>(additionalExecutors);
-        all.add(new SafetyEvaluationExecutor());
+        all.add(new SafetyEvaluationExecutor(DEFAULT_SAFETY_POLICY_REPOSITORY));
         all.add(new OutputContractEvaluationExecutor());
         all.add(new TraceReplayEvaluationExecutor());
         all.add(new VersionCompatibilityEvaluationExecutor());
         this.executors = List.copyOf(all);
+    }
+
+    private static final class DefaultSafetyPolicyRepository implements SafetyPolicyRepository {
+
+        @Override
+        @NotNull
+        public Promise<Void> save(@NotNull SafetyPolicy policy) {
+            return Promise.complete();
+        }
+
+        @Override
+        @NotNull
+        public Promise<Optional<SafetyPolicy>> findById(
+                @NotNull String tenantId,
+                @NotNull String policyId) {
+            return Promise.of(Optional.of(SafetyPolicy.defaultPolicy(tenantId)));
+        }
+
+        @Override
+        @NotNull
+        public Promise<Optional<SafetyPolicy>> findActive(@NotNull String tenantId) {
+            return Promise.of(Optional.of(SafetyPolicy.defaultPolicy(tenantId)));
+        }
+
+        @Override
+        @NotNull
+        public Promise<Void> delete(
+                @NotNull String tenantId,
+                @NotNull String policyId) {
+            return Promise.complete();
+        }
     }
 
     @Override

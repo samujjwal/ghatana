@@ -417,6 +417,33 @@ describe("LifecycleProviders", () => {
       expect(result.invalidBackingStores.length).toBe(7);
       expect(result.reasonCodes).toContain("invalid-backing-store");
     });
+
+    it("platform mode records explicit development file-backing allowance without console logging", () => {
+      const previous = process.env.GHATANA_PLATFORM_ALLOW_FILE_BACKING;
+      process.env.GHATANA_PLATFORM_ALLOW_FILE_BACKING = "true";
+      try {
+        const context: KernelLifecycleProviderContext = {
+          ...bootstrapContext(),
+          mode: "platform",
+          events: provider(
+            "events",
+            "file",
+          ) as KernelLifecycleProviderContext["events"],
+        };
+
+        const result = validateProviderBackingForMode(context);
+
+        expect(result.valid).toBe(true);
+        expect(result.invalidBackingStores).toEqual([]);
+        expect(result.reasonCodes).toContain("file-backing-allowed");
+      } finally {
+        if (previous === undefined) {
+          delete process.env.GHATANA_PLATFORM_ALLOW_FILE_BACKING;
+        } else {
+          process.env.GHATANA_PLATFORM_ALLOW_FILE_BACKING = previous;
+        }
+      }
+    });
   });
 
   describe("validateKernelLifecycleProviderContext with backing store validation", () => {

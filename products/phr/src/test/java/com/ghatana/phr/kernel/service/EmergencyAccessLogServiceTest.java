@@ -335,7 +335,9 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
                             "accessedAt", event.accessedAt().toString(),
                             "accessExpiresAt", event.accessExpiresAt().toString(),
                             "reviewDueAt", event.reviewDueAt().toString(),
-                            "reviewCaseId", event.reviewCaseId()),
+                            "reviewCaseId", event.reviewCaseId(),
+                            "tenantId", event.patientId(),
+                            "principalId", event.accessorId()),
                     "EmergencyAccessEvent",
                     1
             ).map($ -> event);

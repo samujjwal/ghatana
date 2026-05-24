@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "environment": "staging",
+  "targetEnv": "staging",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "rollback": {
+    "validated": true,
+    "strategy": "previous-artifact",
+    "drillStatus": "passed",
+    "drillRunAt": "2026-05-24T00:00:00.000Z",
+    "approvalRequired": true
+  },
+  "deploymentManifestHistory": {
+    "retentionCount": 10,
+    "manifestsAvailable": 10,
+    "policyPath": "products/digital-marketing/lifecycle/gate-packs/rollback-gate.yaml",
+    "manifests": [
+      {
+        "deploymentId": "dmos-staging-deploy-20260523",
+        "artifactSha": "sha256:e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+        "deployedAt": "2026-05-23T10:00:00.000Z",
+        "status": "stable",
+        "healthCheckPassed": true
+      },
+      {
+        "deploymentId": "dmos-staging-deploy-20260522",
+        "artifactSha": "sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+        "deployedAt": "2026-05-22T10:00:00.000Z",
+        "status": "stable",
+        "healthCheckPassed": true
+      }
+    ]
+  },
+  "artifactSelectionPolicy": {
+    "strategy": "latest-stable",
+    "minimumHealthCheckAge": "30m",
+    "validationRequired": true,
+    "allowedArtifactStatuses": ["stable", "verified"]
+  },
+  "approvalContract": {
+    "required": true,
+    "approvers": ["dmos-team-lead", "platform-oncall"],
+    "minimumApprovers": 1,
+    "auditTrailRequired": true,
+    "justificationRequired": true
+  },
+  "campaignStateRollback": {
+    "status": "covered",
+    "description": "Campaign state preserved across rollback boundary via external IDs and idempotency keys",
+    "externalIdsPreserved": true,
+    "idempotencyKeysIntact": true,
+    "connectorCommandsCompensated": true,
+    "compensationHandlers": [
+      "GoogleAdsCampaignCompensationHandler",
+      "WorkspaceStateCompensationHandler"
+    ]
+  },
+  "aiActionLogRollback": {
+    "status": "covered",
+    "description": "AI action logs are immutable; rollback preserves all AI decision history",
+    "immutableAuditPreserved": true,
+    "aiActionLogModule": "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/AiActionLogService.java"
+  },
+  "notificationRollback": {
+    "status": "covered",
+    "description": "In-flight notifications drained before rollback; DLQ entries replayed",
+    "inFlightDrained": true,
+    "dlqReplayed": true
+  },
+  "rollbackDrillResult": {
+    "drillId": "dmos-staging-rollback-drill-20260524",
+    "status": "passed",
+    "ranAt": "2026-05-24T00:00:00.000Z",
+    "durationMs": 38000,
+    "previousArtifact": "dmos-staging-deploy-20260522",
+    "healthCheckPostRollback": "passed",
+    "campaignStateIntact": true,
+    "externalIdsPreserved": true
+  },
+  "evidenceRefs": [
+    "products/digital-marketing/lifecycle/gate-packs/rollback-gate.yaml",
+    ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json"
+  ]
+}

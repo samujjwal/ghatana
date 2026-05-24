@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
@@ -161,9 +162,11 @@ function parseOpenApiSpec(source) {
     }
   }
   
-  // Simple YAML parser for our specific needs
-  // This is a minimal parser that handles the structure we need for diffing
-  return parseYaml(normalized);
+  try {
+    return YAML.parse(normalized) ?? {};
+  } catch {
+    return parseYaml(normalized);
+  }
 }
 
 /**
@@ -310,8 +313,8 @@ export function detectSchemaBreakingChanges(baselineSpec, currentSpec, specId) {
       }
       
       // Check parameter changes
-      const baselineParams = baselineOp.parameters || [];
-      const currentParams = currentOp.parameters || [];
+      const baselineParams = asArray(baselineOp.parameters);
+      const currentParams = asArray(currentOp.parameters);
       
       const paramChanges = detectParameterChanges(
         baselineParams,
@@ -424,10 +427,10 @@ function detectResponseSchemaChanges(baselineResp, currentResp, operation, statu
 function detectSchemaPropertyChanges(baselineSchema, currentSchema, operation, location, contentType) {
   const changes = [];
   
-  const baselineProps = baselineSchema.properties || {};
-  const currentProps = currentSchema.properties || {};
-  const baselineRequired = baselineSchema.required || [];
-  const currentRequired = currentSchema.required || [];
+  const baselineProps = asObject(baselineSchema.properties);
+  const currentProps = asObject(currentSchema.properties);
+  const baselineRequired = asArray(baselineSchema.required);
+  const currentRequired = asArray(currentSchema.required);
   
   // Check for removed properties
   for (const propName of Object.keys(baselineProps)) {
@@ -457,8 +460,10 @@ function detectSchemaPropertyChanges(baselineSchema, currentSchema, operation, l
   for (const [propName, baselineProp] of Object.entries(baselineProps)) {
     const currentProp = currentProps[propName];
     if (baselineProp && currentProp) {
-      if (baselineProp.enum && currentProp.enum) {
-        const removedEnums = baselineProp.enum.filter(v => !currentProp.enum.includes(v));
+      const baselineEnum = asArray(baselineProp.enum);
+      const currentEnum = asArray(currentProp.enum);
+      if (baselineEnum.length > 0 && currentEnum.length > 0) {
+        const removedEnums = baselineEnum.filter(v => !currentEnum.includes(v));
         if (removedEnums.length > 0) {
           changes.push({
             type: BREAKING_CHANGE_TYPES.ENUM_VALUE_REMOVED,
@@ -544,6 +549,14 @@ function detectParameterChanges(baselineParams, currentParams, operation, specId
   }
   
   return changes;
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function asObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 /**

@@ -37,6 +37,7 @@ public final class PluginManifest {
     private final PluginTier tier;
     private final PluginResourceQuota resourceQuotas;
     private final Map<String, Object> configSchema;
+    private final boolean ephemeral;
 
     private PluginManifest(Builder builder) {
         this.pluginId = Objects.requireNonNull(builder.pluginId, "pluginId cannot be null");
@@ -52,6 +53,7 @@ public final class PluginManifest {
         this.tier = builder.tier;
         this.resourceQuotas = builder.resourceQuotas != null ? builder.resourceQuotas : PluginResourceQuota.defaults();
         this.configSchema = builder.configSchema != null ? Map.copyOf(builder.configSchema) : Map.of();
+        this.ephemeral = builder.ephemeral;
     }
 
     // Getters
@@ -68,6 +70,7 @@ public final class PluginManifest {
     public PluginTier getTier() { return tier; }
     public PluginResourceQuota getResourceQuotas() { return resourceQuotas; }
     public Map<String, Object> getConfigSchema() { return configSchema; }
+    public boolean isEphemeral() { return ephemeral; }
 
     /**
      * Checks if this plugin is compatible with a kernel version.
@@ -118,6 +121,7 @@ public final class PluginManifest {
         private PluginTier tier;
         private PluginResourceQuota resourceQuotas;
         private Map<String, Object> configSchema;
+        private boolean ephemeral;
 
         public Builder pluginId(String pluginId) {
             this.pluginId = pluginId;
@@ -181,6 +185,11 @@ public final class PluginManifest {
 
         public Builder configSchema(Map<String, Object> configSchema) {
             this.configSchema = configSchema;
+            return this;
+        }
+
+        public Builder ephemeral(boolean ephemeral) {
+            this.ephemeral = ephemeral;
             return this;
         }
 

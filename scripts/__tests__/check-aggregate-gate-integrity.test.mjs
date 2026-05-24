@@ -10,7 +10,6 @@ test('passes when all referenced checks are defined', () => {
   const scripts = {
     'check:phase8': 'pnpm check:phase0 && pnpm check:phase1',
     'check:release-gate': 'pnpm check:phase8 && pnpm check:data-cloud-release-gate',
-    'check:world-class-platform-readiness': 'pnpm check:release-gate',
     'check:phase0': 'node ./scripts/check-domain-boundaries.mjs',
     'check:phase1': 'node ./scripts/check-kernel-boundaries.mjs',
     'check:data-cloud-release-gate': 'pnpm check:data-cloud-ui-contracts',
@@ -40,7 +39,6 @@ test('fails when aggregate script references undefined checks', () => {
   const scripts = {
     'check:phase8': 'pnpm check:phase0 && pnpm check:missing-check',
     'check:release-gate': 'pnpm check:phase8',
-    'check:world-class-platform-readiness': 'pnpm check:release-gate',
     'check:phase0': 'node ./scripts/check-domain-boundaries.mjs',
   };
 
@@ -86,7 +84,6 @@ test('validates node scripts, pnpm directories, and test runner target paths rec
       'check:phase8': 'pnpm check:phase8:fast',
       'check:phase8:fast': 'node ./scripts/real-check.mjs && pnpm --dir packages/studio exec vitest run src/__tests__/real.test.ts',
       'check:release-gate': 'pnpm check:phase8',
-      'check:world-class-platform-readiness': 'pnpm check:release-gate',
     };
 
     const violations = checkAggregateGateIntegrity({ scripts, rootDir });
@@ -103,7 +100,6 @@ test('fails when referenced node scripts, pnpm directories, or test targets are 
     const scripts = {
       'check:phase8': 'node ./scripts/missing.mjs && pnpm --dir packages/missing exec vitest run src/__tests__/missing.test.ts',
       'check:release-gate': 'pnpm check:phase8',
-      'check:world-class-platform-readiness': 'pnpm check:release-gate',
     };
 
     const violations = checkAggregateGateIntegrity({ scripts, rootDir });
@@ -119,14 +115,13 @@ test('fails when referenced node scripts, pnpm directories, or test targets are 
 test('detects recursive aggregate gate cycles', () => {
   const scripts = {
     'check:phase8': 'pnpm check:release-gate',
-    'check:release-gate': 'pnpm check:world-class-platform-readiness',
-    'check:world-class-platform-readiness': 'pnpm check:phase8',
+    'check:release-gate': 'pnpm check:phase8',
   };
 
   const violations = checkAggregateGateIntegrity({ scripts });
 
   assert.equal(
-    violations.includes('check:phase8: recursive aggregate script cycle detected: check:phase8 -> check:release-gate -> check:world-class-platform-readiness -> check:phase8'),
+    violations.includes('check:phase8: recursive aggregate script cycle detected: check:phase8 -> check:release-gate -> check:phase8'),
     true,
   );
 });
@@ -138,7 +133,6 @@ test('validates gradle task project directories', () => {
     const scripts = {
       'check:phase8': 'node ./scripts/run-gradle-wrapper.mjs :platform-kernel:kernel-plugin:test',
       'check:release-gate': 'pnpm check:phase8 && node ./scripts/run-gradle-wrapper.mjs :missing:project:test',
-      'check:world-class-platform-readiness': 'pnpm check:release-gate',
     };
     mkdirSync(path.join(rootDir, 'scripts'), { recursive: true });
     writeFileSync(path.join(rootDir, 'scripts', 'run-gradle-wrapper.mjs'), '');

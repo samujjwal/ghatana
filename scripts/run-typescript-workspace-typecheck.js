@@ -1,10 +1,13 @@
 const ts = require('typescript');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..');
 const dryRun = process.argv.includes('--dry-run');
+const affectedOnly = process.argv.includes('--affected');
+const jobs = Math.max(1, Number(argValue('--jobs') || Math.min(4, os.cpus().length)) || 1);
 const skipDirs = new Set([
   '.git',
   '.gradle',
@@ -25,6 +28,89 @@ const skipConfigNames = new Set([
   'tsconfig.paths.json',
   'tsconfig.refs.json',
 ]);
+
+function argValue(name) {
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+function normalizePath(value) {
+  return String(value).replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+function splitCsv(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map(normalizePath);
+}
+
+function readChangedFiles() {
+  const explicitPaths = splitCsv(argValue('--paths'));
+  if (explicitPaths.length > 0) {
+    return explicitPaths;
+  }
+
+  const base = argValue('--base') || process.env.GITHUB_BASE_SHA || 'origin/main';
+  const head = argValue('--head') || process.env.GITHUB_SHA || 'HEAD';
+  const result = spawnSync('git', ['diff', '--name-only', `${base}...${head}`], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: process.env,
+  });
+
+  if (result.status !== 0) {
+    throw new Error(`Could not resolve affected TypeScript diff ${base}...${head}`);
+  }
+
+  return result.stdout.split(/\r?\n/).filter(Boolean).map(normalizePath);
+}
+
+function isUnder(candidate, root) {
+  const normalizedRoot = root.replace(/\/$/, '');
+  return candidate === normalizedRoot || candidate.startsWith(`${normalizedRoot}/`);
+}
+
+function productRoots() {
+  const productIds = splitCsv(argValue('--products') || process.env.AFFECTED_PRODUCTS);
+  if (productIds.length === 0) {
+    return [];
+  }
+
+  const registry = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config/canonical-product-registry.json'), 'utf8')).registry;
+  const roots = [];
+  for (const productId of productIds) {
+    const product = registry[productId];
+    if (!product) {
+      throw new Error(`Unknown product id for TypeScript typecheck: ${productId}`);
+    }
+    roots.push(`products/${productId}`);
+    for (const candidate of [
+      product.manifestPath,
+      product.buildFile,
+      ...(product.pnpmPackages ?? []),
+      ...(product.surfaces ?? []).flatMap((surface) => [surface.path, surface.packagePath].filter(Boolean)),
+    ]) {
+      if (typeof candidate === 'string') {
+        roots.push(candidate.replace(/\/package\.json$/, ''));
+      }
+    }
+  }
+  return [...new Set(roots.map(normalizePath))];
+}
+
+function isGlobalTypeScriptImpact(changedFile) {
+  return [
+    'package.json',
+    'pnpm-lock.yaml',
+    'pnpm-workspace.yaml',
+    'tsconfig.json',
+    'tsconfig.base.json',
+  ].includes(changedFile)
+    || changedFile.startsWith('scripts/')
+    || changedFile.startsWith('config/');
+}
 
 function listWorkspacePackageDirs() {
   const result = spawnSync('pnpm', ['list', '-r', '--depth', '-1', '--json'], {
@@ -102,11 +188,44 @@ function collectTargetsFromConfig(configPath, seen) {
   return targets;
 }
 
-function buildCommands() {
+function selectedPackageDirs(allPackageDirs) {
+  const roots = productRoots();
+  const changedFiles = affectedOnly || argValue('--paths') ? readChangedFiles() : [];
+
+  if (roots.length === 0 && changedFiles.length === 0) {
+    return allPackageDirs;
+  }
+
+  if (roots.length === 0 && changedFiles.some(isGlobalTypeScriptImpact)) {
+    return allPackageDirs;
+  }
+
+  const selectedRoots = [...roots];
+  const packageRoots = allPackageDirs.map((packageDir) => ({
+    absolutePath: packageDir,
+    relativePath: normalizePath(path.relative(repoRoot, packageDir)),
+  }));
+
+  for (const changedFile of changedFiles) {
+    const owner = packageRoots
+      .filter((entry) => isUnder(changedFile, entry.relativePath))
+      .sort((left, right) => right.relativePath.length - left.relativePath.length)[0];
+    if (owner) {
+      selectedRoots.push(owner.relativePath);
+    }
+  }
+
+  const uniqueRoots = [...new Set(selectedRoots)];
+  return packageRoots
+    .filter((entry) => uniqueRoots.some((root) => isUnder(entry.relativePath, root) || isUnder(root, entry.relativePath)))
+    .map((entry) => entry.absolutePath);
+}
+
+function buildCommands(packageDirs) {
   const commands = [];
   const seenTargets = new Set();
 
-  for (const packageDir of listWorkspacePackageDirs()) {
+  for (const packageDir of packageDirs) {
     const packageJsonPath = path.join(packageDir, 'package.json');
     if (!fs.existsSync(packageJsonPath)) {
       continue;
@@ -151,10 +270,11 @@ function buildCommands() {
   return commands;
 }
 
-function main() {
+async function main() {
   let commands;
   try {
-    commands = buildCommands();
+    const packageDirs = listWorkspacePackageDirs();
+    commands = buildCommands(selectedPackageDirs(packageDirs));
   } catch (error) {
     console.error(`Failed to build the typecheck plan: ${error.message}`);
     process.exit(1);
@@ -166,24 +286,54 @@ function main() {
   }
 
   console.log(`Discovered ${commands.length} TypeScript workspace targets.`);
+  console.log(`Worker count: ${dryRun ? 0 : jobs}.`);
 
-  for (const { label, command } of commands) {
+  if (dryRun) {
+    for (const { label, command } of commands) {
+      console.log(`\n==> ${label}`);
+      console.log(command.join(' '));
+    }
+    return;
+  }
+
+  await runCommands(commands, jobs);
+}
+
+function runOne({ label, command }) {
+  return new Promise((resolve) => {
     console.log(`\n==> ${label}`);
     console.log(command.join(' '));
 
-    if (dryRun) {
-      continue;
-    }
-
-    const result = spawnSync(command[0], command.slice(1), {
+    const child = spawn(command[0], command.slice(1), {
       cwd: repoRoot,
       stdio: 'inherit',
       env: process.env,
+      shell: process.platform === 'win32',
     });
 
-    if (result.status !== 0) {
-      process.exit(result.status || 1);
+    child.on('exit', (status) => resolve(status ?? 1));
+    child.on('error', () => resolve(1));
+  });
+}
+
+async function runCommands(commands, workerCount) {
+  let nextIndex = 0;
+  let failedStatus = 0;
+
+  async function worker() {
+    while (nextIndex < commands.length && failedStatus === 0) {
+      const command = commands[nextIndex];
+      nextIndex += 1;
+      const status = await runOne(command);
+      if (status !== 0) {
+        failedStatus = status;
+      }
     }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(workerCount, commands.length) }, () => worker()));
+  if (failedStatus !== 0) {
+    process.exit(failedStatus);
   }
 }
 

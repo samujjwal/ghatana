@@ -1,0 +1,328 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "tutorputor",
+  "generatedAt": "2026-05-24T00:00:00Z",
+  "assets": [
+    {
+      "asset_id": "tutorputor-content-generation-service",
+      "asset_name": "Tutorputor Content Generation Service",
+      "asset_type": "service",
+      "source_product": "tutorputor",
+      "description": "AI-assisted content generation service with safety invariants, governed agent dispatch, and educational content validation",
+      "tags": ["education", "ai", "content-generation", "safety", "governance"],
+      "maturity_level": "candidate",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "candidate",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/tutorputor/tutorputor-release-readiness.json",
+          "products/tutorputor/services/tutorputor-content/src/services/content-generation/"
+        ],
+        "test_coverage": "65%",
+        "security_review": "pending"
+      },
+      "paths": [
+        "products/tutorputor/services/tutorputor-content/src/services/content-generation/ContentGenerationService.java",
+        "products/tutorputor/services/tutorputor-content/src/services/content-generation/SafetyInvariantMonitor.java"
+      ],
+      "tests": [
+        "products/tutorputor/services/tutorputor-content/src/test/services/content-generation/ContentGenerationServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:agent-core",
+        "platform:java:ai-integration",
+        "platform:java:observability"
+      ],
+      "product_usage": [],
+      "owner": "tutorputor-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "tutorputor-assessment-engine",
+      "asset_name": "Tutorputor Assessment Engine",
+      "asset_type": "service",
+      "source_product": "tutorputor",
+      "description": "Assessment engine with proctored workflow, anti-cheating measures, and integrity validation",
+      "tags": ["education", "assessment", "integrity", "proctoring", "anti-cheating"],
+      "maturity_level": "candidate",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "candidate",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/tutorputor/tutorputor-release-readiness.json",
+          "products/tutorputor/services/tutorputor-assessment/src/services/assessment/"
+        ],
+        "test_coverage": "68%",
+        "security_review": "pending"
+      },
+      "paths": [
+        "products/tutorputor/services/tutorputor-assessment/src/services/assessment/AssessmentEngine.java",
+        "products/tutorputor/services/tutorputor-assessment/src/services/assessment/IntegrityValidator.java"
+      ],
+      "tests": [
+        "products/tutorputor/services/tutorputor-assessment/src/test/services/assessment/AssessmentEngineTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:observability",
+        "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "tutorputor-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "reuse-phr-consent-panel-for-tutorputor",
+      "asset_name": "PHR Consent Panel (Reused for Tutorputor)",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "PHR consent management panel adapted for Tutorputor learner consent tracking and FERPA compliance",
+      "tags": ["education", "consent", "privacy", "ui", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "85%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/consent/ConsentPanel.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:tokens"
+      ],
+      "product_usage": ["tutorputor"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      },
+      "reuse_mapping": {
+        "target_product": "tutorputor",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "healthcare_consent": "education_consent",
+          "patient_control": "learner_control",
+          "hipaa_compliance": "ferpa_compliance"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-phr-audit-trail-panel-for-tutorputor",
+      "asset_name": "PHR Audit Trail Panel (Reused for Tutorputor)",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "PHR audit trail display component adapted for Tutorputor assessment audit and FERPA compliance logging",
+      "tags": ["education", "audit", "compliance", "ui", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "90%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/audit/AuditTrailPanel.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/audit/__tests__/AuditTrailPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:observability"
+      ],
+      "product_usage": ["tutorputor"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      },
+      "reuse_mapping": {
+        "target_product": "tutorputor",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "healthcare_data_access": "assessment_access",
+          "phi_modification": "learning_data_modification",
+          "hipaa_logging": "ferpa_logging"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-phr-tenant-scoped-repository-for-tutorputor",
+      "asset_name": "PHR Tenant-Scoped Repository Pattern (Reused for Tutorputor)",
+      "asset_type": "pattern",
+      "source_product": "phr",
+      "description": "PHR tenant isolation repository pattern adapted for Tutorputor multi-tenant learning data management",
+      "tags": ["education", "repository", "tenant-isolation", "pattern", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "88%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/domains/persistence/src/main/java/com/ghatana/phr/persistence/TenantScopedRepository.java"
+      ],
+      "tests": [
+        "products/phr/domains/persistence/src/test/java/com/ghatana/phr/persistence/TenantScopedRepositoryTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:security"
+      ],
+      "product_usage": ["tutorputor"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      },
+      "reuse_mapping": {
+        "target_product": "tutorputor",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "patient_data": "learning_data",
+          "healthcare_rls": "education_rls",
+          "phi_sovereignty": "learning_data_sovereignty"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-dmos-connector-pattern-for-tutorputor",
+      "asset_name": "DMOS Connector Pattern (Reused for Tutorputor)",
+      "asset_type": "pattern",
+      "source_product": "digital-marketing",
+      "description": "DMOS external connector pattern adapted for Tutorputor LMS integration and external assessment systems",
+      "tags": ["education", "connector", "integration", "pattern", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/reusable-assets-registration.json",
+          ".kernel/evidence/digital-marketing/digital-marketing-release-readiness.json"
+        ],
+        "test_coverage": "82%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/operations/connectors/src/main/java/com/ghatana/dmos/connector/ExternalConnector.java"
+      ],
+      "tests": [
+        "products/digital-marketing/operations/connectors/src/test/java/com/ghatana/dmos/connector/ExternalConnectorTest.java"
+      ],
+      "dependencies": [
+        "platform:java:http",
+        "platform:java:observability"
+      ],
+      "product_usage": ["tutorputor"],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      },
+      "reuse_mapping": {
+        "target_product": "tutorputor",
+        "adaptation_required": "moderate",
+        "domain_mapping": {
+          "marketing_platform": "lms_platform",
+          "campaign_data": "assessment_data",
+          "oauth_flow": "sso_flow"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-dmos-idempotency-pattern-for-tutorputor",
+      "asset_name": "DMOS Idempotency Pattern (Reused for Tutorputor)",
+      "asset_type": "pattern",
+      "source_product": "digital-marketing",
+      "description": "DMOS idempotency pattern adapted for Tutorputor assessment submission and learning progress recording",
+      "tags": ["education", "idempotency", "pattern", "reuse", "reliability"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/digital-marketing/reusable-assets-registration.json",
+          ".kernel/evidence/digital-marketing/digital-marketing-release-readiness.json"
+        ],
+        "test_coverage": "85%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/digital-marketing/operations/persistence/src/main/java/com/ghatana/dmos/persistence/IdempotentOperationHandler.java"
+      ],
+      "tests": [
+        "products/digital-marketing/operations/persistence/src/test/java/com/ghatana/dmos/persistence/IdempotentOperationHandlerTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:observability"
+      ],
+      "product_usage": ["tutorputor"],
+      "owner": "dmos-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      },
+      "reuse_mapping": {
+        "target_product": "tutorputor",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "campaign_operation": "assessment_operation",
+          "deduplication_key": "submission_key"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.ghatana.orchestrator.deployment.http;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.http.HttpClient;
 import io.activej.http.HttpRequest;
@@ -39,6 +40,10 @@ import org.slf4j.MDC;
 @Slf4j
 @RequiredArgsConstructor
 public class KernelLifecycleClient {
+    private static final TypeReference<Map<String, Object>> STRING_OBJECT_MAP =
+            new TypeReference<>() {
+            };
+
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String kernelLifecycleBaseUrl;
@@ -217,7 +222,7 @@ public class KernelLifecycleClient {
         try {
             if (response.getCode() >= 200 && response.getCode() < 300) {
                 String body = response.getBody().asString(StandardCharsets.UTF_8);
-                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+                Map<String, Object> data = objectMapper.readValue(body, STRING_OBJECT_MAP);
                 
                 return Promise.of(new LifecycleRunResult(
                         (String) data.get("runId"),
@@ -247,7 +252,7 @@ public class KernelLifecycleClient {
         try {
             if (response.getCode() >= 200 && response.getCode() < 300) {
                 String body = response.getBody().asString(StandardCharsets.UTF_8);
-                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+                Map<String, Object> data = objectMapper.readValue(body, STRING_OBJECT_MAP);
                 
                 return Promise.of(new LifecyclePlanResult(
                         (String) data.get("runId"),

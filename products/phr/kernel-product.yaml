@@ -8,11 +8,37 @@ migration:
   reason: "PHR enabled as second parallel lifecycle pilot alongside Digital Marketing. Healthcare gates are active at execution time."
 
 readiness:
-  reasonCodes:
-    - healthcare-pilot-enabled
-    - fhir-r4-pilot-surfaces-validated
-    - consent-gate-active
-    - pii-classification-active
+  classification: ready/local
+  reasonCode: phr-release-readiness-local
+  environments:
+    local:
+      status: ready
+      consent: satisfied
+      piiClassification: satisfied
+      auditEvidence: satisfied
+      fhirContractValidation: satisfied
+      tenantDataSovereignty: satisfied
+    dev:
+      status: pending
+      consent: required
+      piiClassification: required
+      auditEvidence: required
+      fhirContractValidation: required
+      tenantDataSovereignty: required
+    staging:
+      status: pending
+      consent: required
+      piiClassification: required
+      auditEvidence: required
+      fhirContractValidation: required
+      tenantDataSovereignty: required
+    prod:
+      status: pending
+      consent: required
+      piiClassification: required
+      auditEvidence: required
+      fhirContractValidation: required
+      tenantDataSovereignty: required
   requiredGates:
     - consent
     - pii-classification

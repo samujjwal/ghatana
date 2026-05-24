@@ -12,6 +12,14 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'jotai';
+
+vi.mock('../../logging/studioLogger', () => ({
+  studioLogger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 import {
   artifactWorkflowAtom,
   artifactModelAtom,
@@ -415,7 +423,7 @@ describe('resolvePersistenceAdapterForEnv', () => {
 
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue({ ok: true, status: 200 } as Response);
+      .mockResolvedValue(new Response(null, { status: 200 }));
 
     await adapter.persist(
       {
@@ -465,15 +473,11 @@ describe('resolvePersistenceAdapterForEnv', () => {
     );
 
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy).toHaveBeenNthCalledWith(
-      1,
-      'https://kernel.local/api/v1/studio/workflow-state',
-      expect.objectContaining({ method: 'PUT' }),
-    );
-    expect(fetchSpy).toHaveBeenNthCalledWith(
-      2,
-      'https://kernel.local/api/v1/studio/workflow-evidence',
-      expect.objectContaining({ method: 'PUT' }),
-    );
+    const [stateUrl, stateInit] = fetchSpy.mock.calls[0] ?? [];
+    const [evidenceUrl, evidenceInit] = fetchSpy.mock.calls[1] ?? [];
+    expect(String(stateUrl)).toBe('https://kernel.local/api/v1/studio/workflow-state');
+    expect(stateInit).toMatchObject({ method: 'PUT' });
+    expect(String(evidenceUrl)).toBe('https://kernel.local/api/v1/studio/workflow-evidence');
+    expect(evidenceInit).toMatchObject({ method: 'PUT' });
   });
 });

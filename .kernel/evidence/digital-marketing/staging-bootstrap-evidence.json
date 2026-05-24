@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "environment": "staging",
+  "targetEnv": "staging",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "bootstrap": {
+    "validated": true,
+    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "failClosed": true,
+    "postgres": {
+      "status": "ready",
+      "host": "dmos-staging-db.internal",
+      "port": 5432,
+      "database": "dmos_staging",
+      "tenantIsolation": "row-level-security",
+      "connectionPoolMax": 20,
+      "sslMode": "require",
+      "evidence": "products/digital-marketing/dm-persistence/src/main/resources/db/migration",
+      "migrationStatus": "up-to-date"
+    },
+    "migrations": {
+      "status": "ready",
+      "tool": "flyway",
+      "appliedCount": 18,
+      "pendingCount": 0,
+      "lastApplied": "V18__add_ai_action_log_index.sql",
+      "migrationPath": "products/digital-marketing/dm-persistence/src/main/resources/db/migration",
+      "checksumVerified": true,
+      "tenantFilterMigrationsApplied": true,
+      "idempotencyKeyConstraintsApplied": true
+    },
+    "secrets": {
+      "status": "ready",
+      "provider": "vault",
+      "secretsPath": "dmos/staging",
+      "requiredSecrets": [
+        "DB_PASSWORD",
+        "JWT_SECRET",
+        "GOOGLE_ADS_CLIENT_ID",
+        "GOOGLE_ADS_CLIENT_SECRET",
+        "GOOGLE_ADS_REFRESH_TOKEN",
+        "DATA_CLOUD_API_KEY",
+        "AUDIT_SINK_KEY",
+        "OTLP_ENDPOINT"
+      ],
+      "allSecretsPresent": true,
+      "rotationPolicy": "90-days"
+    },
+    "storage": {
+      "status": "ready",
+      "type": "s3-compatible",
+      "bucket": "dmos-staging-artifacts",
+      "region": "ap-south-1",
+      "encryption": "AES-256",
+      "versioning": true,
+      "retentionPolicy": "3-years"
+    },
+    "distributedCache": {
+      "status": "ready",
+      "type": "redis",
+      "host": "dmos-staging-cache.internal",
+      "port": 6379,
+      "clusterMode": false,
+      "maxMemoryPolicy": "allkeys-lru",
+      "tlsEnabled": true,
+      "sessionCacheTtlSeconds": 3600
+    },
+    "featureFlags": {
+      "status": "ready",
+      "provider": "environment",
+      "configPath": "products/digital-marketing/FEATURE_FLAGS_MANIFEST.json",
+      "allRequiredFlagsPresent": true,
+      "stagingOverridesApplied": true
+    },
+    "googleAdsConnector": {
+      "status": "ready",
+      "oauthConfigured": true,
+      "tokenRefreshEnabled": true,
+      "retryPolicyEnabled": true,
+      "dlqConfigured": true,
+      "idempotencyKeysEnabled": true,
+      "connectorModule": "products/digital-marketing/dm-connector-google-ads",
+      "testAccountId": "staging-test-account",
+      "sandboxMode": true
+    },
+    "otlp": {
+      "status": "ready",
+      "endpoint": "https://otlp-staging.internal:4317",
+      "tracingEnabled": true,
+      "metricsEnabled": true,
+      "logsEnabled": true,
+      "samplingRate": 0.1
+    },
+    "kernelBridge": {
+      "status": "ready",
+      "adapterClass": "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java",
+      "consentPluginActive": true,
+      "approvalPluginActive": true,
+      "auditTrailPluginActive": true,
+      "riskManagementPluginActive": true,
+      "notificationPluginActive": true,
+      "featureFlagPluginActive": true
+    },
+    "dataCloud": {
+      "status": "ready",
+      "endpoint": "https://data-cloud-staging.internal/api/v1",
+      "tenantId": "dmos-staging",
+      "runtimeTruthEnabled": true,
+      "collections": [
+        "dmos-campaigns",
+        "dmos-workspaces",
+        "dmos-ai-action-logs",
+        "dmos-approval-snapshots",
+        "dmos-audit-trail"
+      ],
+      "rlsEnforced": true
+    },
+    "healthChecks": {
+      "status": "ready",
+      "endpoints": [
+        {
+          "path": "/health",
+          "expectedStatus": 200,
+          "timeout": 5000
+        },
+        {
+          "path": "/health/ready",
+          "expectedStatus": 200,
+          "timeout": 5000
+        }
+      ],
+      "allPassed": true
+    }
+  },
+  "configStatus": {
+    "validated": true,
+    "configSource": "products/digital-marketing/lifecycle.staging.yaml",
+    "allRequiredConfigPresent": true,
+    "ephemeralAdaptersBlocked": true
+  },
+  "evidenceRefs": [
+    "products/digital-marketing/kernel-product.yaml",
+    "products/digital-marketing/lifecycle/foundation-usage-profile.yaml",
+    "products/digital-marketing/lifecycle/readiness-evidence.yaml",
+    ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json"
+  ]
+}

@@ -118,10 +118,10 @@ jobs:
         continue-on-error: true
 
       - name: Check for duplicate package names
-        run: node scripts/check-duplicate-package-names.sh
+        run: bash scripts/check-duplicate-package-names.sh
 
       - name: License policy check
-        run: node scripts/check-license-policy.sh
+        run: bash scripts/check-license-policy.sh
 
       - name: Java architecture governance check
         run: bash scripts/check-java-architecture.sh
@@ -147,7 +147,7 @@ jobs:
               - Naming convention violations
 
               **Action Required:**
-              1. Run \`node scripts/codemods/migrate-yappc-packages.js\` for naming fixes
+              1. Run \`node scripts/check-architecture-compliance.js\` locally for details
               2. Review \`eslint-rules/dependency-policy.json\` for alternatives
               3. Consult \`V5_AUTONOMOUS_MONOREPO_AUDIT_COMPLETE.md\` for guidance`
             })

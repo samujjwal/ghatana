@@ -175,7 +175,7 @@ public class BillingService extends PhrServiceBase {
                     ENCOUNTER_DATASET,
                     encounterId,
                     closed,
-                    enrichMetadata(Map.of("status", "CLOSED")),
+                    enrichMetadata(Map.of("patientId", closed.patientId(), "status", "CLOSED")),
                     "BillingEncounter",
                     1
                 ).then(updated -> audit("CLOSE_ENCOUNTER", updated.patientId(),
@@ -282,7 +282,7 @@ public class BillingService extends PhrServiceBase {
                     CLAIM_DATASET,
                     sanitizedClaimId,
                     updated,
-                    enrichMetadata(Map.of("status", newStatus.name())),
+                    enrichMetadata(Map.of("patientId", updated.patientId(), "status", newStatus.name())),
                     "InsuranceClaim",
                     1
                 ).then(saved -> audit("UPDATE_CLAIM_STATUS", saved.patientId(),
@@ -319,18 +319,11 @@ public class BillingService extends PhrServiceBase {
     // ==================== Private Helpers ====================
 
     private Map<String, String> enrichMetadata(Map<String, String> baseMetadata) {
-        String tenantId = Optional.ofNullable(kernelContext.getTenantContext())
-            .map(com.ghatana.kernel.context.KernelTenantContext::getTenantId)
-            .orElse("default");
         String principalId = Optional.ofNullable(kernelContext.getTenantContext())
             .map(ctx -> ctx.getSecurityContext())
             .map(com.ghatana.kernel.context.KernelTenantContext.SecurityContext::getUserId)
             .orElse("system");
-        
-        Map<String, String> enriched = new HashMap<>(baseMetadata);
-        enriched.put("tenantId", tenantId);
-        enriched.put("principalId", principalId);
-        return enriched;
+        return mutationMetadata(baseMetadata, principalId);
     }
 
     private List<ServiceLine> sanitizeServiceLines(List<ServiceLine> serviceLines) {

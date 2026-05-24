@@ -2,8 +2,7 @@
 /**
  * Cross-platform test-authenticity gate.
  *
- * Enforces the same anti-theater rules as check-test-authenticity.sh without
- * requiring a POSIX shell on Windows.
+ * Enforces anti-theater rules without requiring a POSIX shell on Windows.
  */
 
 import { execFileSync } from "node:child_process";
@@ -11,13 +10,17 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { loadCanonicalRegistry, resolveAffectedProducts } from "./resolve-affected-products.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const args = process.argv.slice(2);
-const changedOnly = args.includes("--changed-only");
+let changedOnly = args.includes("--changed-only");
 const baseRefArg = args.find((arg) => arg.startsWith("--base-ref="));
-const baseRef = baseRefArg?.slice("--base-ref=".length) ?? "origin/main";
+const baseRef = argValue("--base") ?? baseRefArg?.slice("--base-ref=".length) ?? process.env.GITHUB_BASE_SHA ?? "origin/main";
+const headRef = argValue("--head") ?? process.env.GITHUB_SHA ?? "HEAD";
+const explicitPaths = splitCsv(argValue("--paths"));
 
 const scanRoots = [
   "platform",
@@ -35,9 +38,22 @@ if (scanRoots.length === 0) {
   process.exit(0);
 }
 
-const changedFiles = changedOnly ? readChangedFiles(baseRef) : null;
+const changedFiles = changedOnly ? readChangedFiles(baseRef, headRef) : null;
 if (changedOnly && changedFiles?.size === 0) {
-  console.log(`Changed-only mode enabled, but no changed files were detected against ${baseRef}.`);
+  console.log(`Changed-only mode enabled, but no changed files were detected against ${baseRef}...${headRef}; treating as no-op.`);
+  process.exit(0);
+}
+
+if (changedOnly && changedFiles !== null) {
+  const registry = loadCanonicalRegistry(repoRoot);
+  const affected = resolveAffectedProducts([...changedFiles], registry, {
+    businessProductsOnly: false,
+    includeDemo: false,
+  });
+  if (affected.docsOnly) {
+    console.log("Changed-only mode resolved a docs-only change set; skipping test-authenticity scan.");
+    process.exit(0);
+  }
 }
 
 const violations = [];
@@ -58,14 +74,42 @@ for (const violation of violations) {
 }
 process.exit(1);
 
-function readChangedFiles(ref) {
+function argValue(name) {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
+function splitCsv(value) {
+  return String(value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map(normalizePath);
+}
+
+function isCi() {
+  return process.env.CI === "true" || Boolean(process.env.GITHUB_ACTIONS);
+}
+
+function readChangedFiles(ref, head) {
+  if (explicitPaths.length > 0) {
+    return new Set(explicitPaths);
+  }
+
   try {
-    const output = execFileSync("git", ["diff", "--name-only", `${ref}...HEAD`], {
+    const output = execFileSync("git", ["diff", "--name-only", `${ref}...${head}`], {
       cwd: repoRoot,
       encoding: "utf8",
     });
     return new Set(output.split(/\r?\n/).filter(Boolean).map(normalizePath));
-  } catch {
+  } catch (error) {
+    const message = `Could not resolve changed-only test-authenticity diff ${ref}...${head}.`;
+    if (isCi()) {
+      console.error(`${message} Fetch the base ref or pass --base/--head explicitly.`);
+      process.exit(1);
+    }
+    console.warn(`${message} Falling back to a full local scan.`);
+    changedOnly = false;
     return new Set();
   }
 }

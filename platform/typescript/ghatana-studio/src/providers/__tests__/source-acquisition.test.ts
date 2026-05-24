@@ -45,7 +45,13 @@ function makeTarFile(name: string, entries: readonly { readonly path: string; re
     }
   }
   chunks.push(new Uint8Array(1024));
-  return new File(chunks, name, { type: 'application/x-tar' });
+  return new File(chunks.map(toBlobPart), name, { type: 'application/x-tar' });
+}
+
+function toBlobPart(bytes: Uint8Array): BlobPart {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
 }
 
 describe('source acquisition providers', () => {
@@ -299,12 +305,11 @@ describe('source acquisition providers', () => {
 
       expect(capturedUrl).toBe('https://kernel.local/api/v1/studio/source-acquisition/repository');
       expect(capturedInit?.method).toBe('POST');
-      expect(capturedInit?.headers).toMatchObject({
-        Authorization: 'Bearer token-1',
-        'x-ghatana-tenant-id': 'tenant-1',
-        'x-ghatana-workspace-id': 'workspace-1',
-        'x-ghatana-project-id': 'project-1',
-      });
+      const headers = new Headers(capturedInit?.headers);
+      expect(headers.get('authorization')).toBe('Bearer token-1');
+      expect(headers.get('x-ghatana-tenant-id')).toBe('tenant-1');
+      expect(headers.get('x-ghatana-workspace-id')).toBe('workspace-1');
+      expect(headers.get('x-ghatana-project-id')).toBe('project-1');
       expect(JSON.parse(String(capturedInit?.body))).toMatchObject({
         input: {
           kind: 'github-repository',
@@ -431,12 +436,11 @@ describe('source acquisition providers', () => {
 
       expect(capturedUrl).toBe('https://kernel.local/api/v1/studio/source-acquisition/jobs/studio-acquisition%3Agithub%3A1');
       expect(capturedInit?.method).toBe('GET');
-      expect(capturedInit?.headers).toMatchObject({
-        Authorization: 'Bearer token-1',
-        'x-ghatana-tenant-id': 'tenant-1',
-        'x-ghatana-workspace-id': 'workspace-1',
-        'x-ghatana-project-id': 'project-1',
-      });
+      const headers = new Headers(capturedInit?.headers);
+      expect(headers.get('authorization')).toBe('Bearer token-1');
+      expect(headers.get('x-ghatana-tenant-id')).toBe('tenant-1');
+      expect(headers.get('x-ghatana-workspace-id')).toBe('workspace-1');
+      expect(headers.get('x-ghatana-project-id')).toBe('project-1');
       expect(job).toMatchObject({
         jobId: 'studio-acquisition:github:1',
         status: 'pending',

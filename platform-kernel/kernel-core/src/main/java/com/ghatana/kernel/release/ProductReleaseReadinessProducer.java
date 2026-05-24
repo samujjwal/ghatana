@@ -10,13 +10,20 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * Product release readiness producer.
  *
  * <p>Generates release readiness evidence for products by
- * collecting build, test, API, FHIR, consent, audit, tenant, cache, rollback, and
+ * collecting build, test, API, consent, audit, tenant, cache, rollback, and
  * deployment evidence from lifecycle execution outputs.</p>
+ *
+ * <p><b>Hardening (KER-006)</b><br>
+ * - Generalizes evidence categories for all products
+ * - Supports product-specific evidence category configuration
+ * - Allows custom evidence extraction strategies per product
+ * - Maintains backward compatibility with existing product categories
  *
  * @doc.type class
  * @doc.purpose Generate release readiness evidence for products
@@ -29,13 +36,23 @@ public class ProductReleaseReadinessProducer {
 
     private final ReleaseEvidenceCollector evidenceCollector;
     private final ReleaseScorecardCalculator scorecardCalculator;
+    private final EvidenceCategoryConfig categoryConfig;
 
     public ProductReleaseReadinessProducer(
         ReleaseEvidenceCollector evidenceCollector,
         ReleaseScorecardCalculator scorecardCalculator
     ) {
+        this(evidenceCollector, scorecardCalculator, new DefaultEvidenceCategoryConfig());
+    }
+
+    public ProductReleaseReadinessProducer(
+        ReleaseEvidenceCollector evidenceCollector,
+        ReleaseScorecardCalculator scorecardCalculator,
+        EvidenceCategoryConfig categoryConfig
+    ) {
         this.evidenceCollector = evidenceCollector;
         this.scorecardCalculator = scorecardCalculator;
+        this.categoryConfig = categoryConfig;
     }
 
     /**
@@ -61,7 +78,7 @@ public class ProductReleaseReadinessProducer {
         Map<String, Object> evidence
     ) {
         ProductReleaseReadinessEvidence.ReleaseReadiness readiness = calculateReadiness(productId, evidence);
-        Map<String, ProductReleaseReadinessEvidence.EvidenceCategory> categories = categorizeEvidence(evidence);
+        Map<String, ProductReleaseReadinessEvidence.EvidenceCategory> categories = categorizeEvidence(productId, evidence);
         Map<String, ProductReleaseReadinessEvidence.GateStatus> gates = extractGateStatus(evidence);
         ProductReleaseReadinessEvidence.Summary summary = calculateSummary(gates);
 
@@ -109,64 +126,65 @@ public class ProductReleaseReadinessProducer {
         return "not-ready";
     }
 
+    /**
+     * Categorizes evidence based on product-specific configuration.
+     * KER-006: Generalized to support custom categories per product.
+     */
     private Map<String, ProductReleaseReadinessEvidence.EvidenceCategory> categorizeEvidence(
+        String productId,
         Map<String, Object> evidence
     ) {
         Map<String, ProductReleaseReadinessEvidence.EvidenceCategory> categories = new HashMap<>();
+        Set<String> categoryNames = categoryConfig.getCategoriesForProduct(productId);
 
-        // Build evidence
-        categories.put("build", new ProductReleaseReadinessEvidence.EvidenceCategory(
-            extractStatus(evidence, "build"),
-            extractTimestamp(evidence, "build"),
-            extractEvidenceRefs(evidence, "build"),
-            buildEvidenceData(
-                "artifacts", extractArtifacts(evidence, "build"),
-                "qualityMetrics", extractQualityMetrics(evidence, "build"))
-        ));
-
-        // Test evidence
-        categories.put("test", new ProductReleaseReadinessEvidence.EvidenceCategory(
-            extractStatus(evidence, "test"),
-            extractTimestamp(evidence, "test"),
-            extractEvidenceRefs(evidence, "test"),
-            extractTestSuites(evidence, "test")
-        ));
-
-        // API evidence
-        categories.put("api", new ProductReleaseReadinessEvidence.EvidenceCategory(
-            extractStatus(evidence, "api"),
-            extractTimestamp(evidence, "api"),
-            extractEvidenceRefs(evidence, "api"),
-            extractContractConformance(evidence, "api")
-        ));
-
-        // Rollback evidence
-        categories.put("rollback", new ProductReleaseReadinessEvidence.EvidenceCategory(
-            extractStatus(evidence, "rollback"),
-            extractTimestamp(evidence, "rollback"),
-            extractEvidenceRefs(evidence, "rollback"),
-            extractRollbackReadiness(evidence, "rollback")
-        ));
-
-        // Deployment evidence
-        categories.put("deployment", new ProductReleaseReadinessEvidence.EvidenceCategory(
-            extractStatus(evidence, "deployment"),
-            extractTimestamp(evidence, "deployment"),
-            extractEvidenceRefs(evidence, "deployment"),
-            extractDeploymentEnvironments(evidence, "deployment")
-        ));
+        for (String categoryName : categoryNames) {
+            categories.put(categoryName, extractCategory(evidence, categoryName));
+        }
 
         return categories;
+    }
+
+    /**
+     * Extracts a single evidence category.
+     * KER-006: Uses product-specific extraction strategy.
+     */
+    private ProductReleaseReadinessEvidence.EvidenceCategory extractCategory(
+        Map<String, Object> evidence,
+        String categoryName
+    ) {
+        return new ProductReleaseReadinessEvidence.EvidenceCategory(
+            extractStatus(evidence, categoryName),
+            extractTimestamp(evidence, categoryName),
+            extractEvidenceRefs(evidence, categoryName),
+            extractCategoryData(evidence, categoryName)
+        );
+    }
+
+    /**
+     * Extracts category-specific data using product-specific strategy.
+     * KER-006: Supports custom data extraction per product.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractCategoryData(
+        Map<String, Object> evidence,
+        String categoryName
+    ) {
+        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(categoryName);
+        if (categoryData == null) {
+            return new HashMap<>();
+        }
+
+        return categoryConfig.extractCategoryData(categoryName, categoryData);
     }
 
     private Map<String, ProductReleaseReadinessEvidence.GateStatus> extractGateStatus(
         Map<String, Object> evidence
     ) {
         Map<String, ProductReleaseReadinessEvidence.GateStatus> gates = new HashMap<>();
-        
+
         @SuppressWarnings("unchecked")
         Map<String, Object> gateResults = (Map<String, Object>) evidence.get("gates");
-        
+
         if (gateResults != null) {
             for (Map.Entry<String, Object> entry : gateResults.entrySet()) {
                 @SuppressWarnings("unchecked")
@@ -177,20 +195,8 @@ public class ProductReleaseReadinessProducer {
                 ));
             }
         }
-        
-        return gates;
-    }
 
-    private Map<String, Object> buildEvidenceData(
-        String firstKey,
-        Map<String, Object> firstValue,
-        String secondKey,
-        Map<String, Object> secondValue
-    ) {
-        Map<String, Object> data = new HashMap<>();
-        data.put(firstKey, firstValue);
-        data.put(secondKey, secondValue);
-        return data;
+        return gates;
     }
 
     private ProductReleaseReadinessEvidence.Summary calculateSummary(
@@ -257,42 +263,6 @@ public class ProductReleaseReadinessProducer {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> extractArtifacts(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("artifacts") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractQualityMetrics(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("qualityMetrics") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractTestSuites(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("testSuites") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractContractConformance(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("contractConformance") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractRollbackReadiness(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("readiness") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractDeploymentEnvironments(Map<String, Object> evidence, String category) {
-        Map<String, Object> categoryData = (Map<String, Object>) evidence.get(category);
-        return categoryData != null ? (Map<String, Object>) categoryData.get("environments") : new HashMap<>();
-    }
-
-    @SuppressWarnings("unchecked")
     private List<String> extractBlockingIssues(Map<String, Object> evidence) {
         Map<String, Object> readiness = (Map<String, Object>) evidence.get("releaseReadiness");
         return readiness != null ? (List<String>) readiness.get("blockingIssues") : new ArrayList<>();
@@ -322,6 +292,60 @@ public class ProductReleaseReadinessProducer {
      */
     public interface ReleaseScorecardCalculator {
         double calculateOverallScore(Map<String, Object> evidence);
+    }
+
+    /**
+     * Evidence category configuration interface.
+     * KER-006: Allows product-specific evidence category configuration.
+     */
+    public interface EvidenceCategoryConfig {
+        Set<String> getCategoriesForProduct(String productId);
+        Map<String, Object> extractCategoryData(String categoryName, Map<String, Object> categoryData);
+    }
+
+    /**
+     * Default evidence category configuration.
+     * KER-006: Provides backward-compatible categories for existing products.
+     */
+    public static class DefaultEvidenceCategoryConfig implements EvidenceCategoryConfig {
+        private static final Set<String> DEFAULT_CATEGORIES = Set.of(
+            "build", "test", "api", "rollback", "deployment"
+        );
+
+        @Override
+        public Set<String> getCategoriesForProduct(String productId) {
+            // Existing products use default categories
+            // New products can override with custom config
+            return DEFAULT_CATEGORIES;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> extractCategoryData(String categoryName, Map<String, Object> categoryData) {
+            return switch (categoryName) {
+                case "build" -> buildEvidenceData(
+                    "artifacts", (Map<String, Object>) categoryData.get("artifacts"),
+                    "qualityMetrics", (Map<String, Object>) categoryData.get("qualityMetrics")
+                );
+                case "test" -> (Map<String, Object>) categoryData.getOrDefault("testSuites", new HashMap<>());
+                case "api" -> (Map<String, Object>) categoryData.getOrDefault("contractConformance", new HashMap<>());
+                case "rollback" -> (Map<String, Object>) categoryData.getOrDefault("readiness", new HashMap<>());
+                case "deployment" -> (Map<String, Object>) categoryData.getOrDefault("environments", new HashMap<>());
+                default -> new HashMap<>();
+            };
+        }
+
+        private Map<String, Object> buildEvidenceData(
+            String firstKey,
+            Map<String, Object> firstValue,
+            String secondKey,
+            Map<String, Object> secondValue
+        ) {
+            Map<String, Object> data = new HashMap<>();
+            data.put(firstKey, firstValue);
+            data.put(secondKey, secondValue);
+            return data;
+        }
     }
 
     /**

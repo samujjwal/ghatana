@@ -3,10 +3,10 @@ name: "YAPPC FE: UI Quality & DoD Enforcement"
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    paths: ['products/yappc/frontend/**']
+    paths: ["products/yappc/frontend/**"]
   push:
     branches: [main]
-    paths: ['products/yappc/frontend/**']
+    paths: ["products/yappc/frontend/**"]
 defaults:
   run:
     working-directory: products/yappc/frontend
@@ -26,27 +26,13 @@ jobs:
           cache-pnpm-store: "true"
 
       - name: Run ESLint
-        run: pnpm -w -s lint
+        run: pnpm lint
 
       - name: Run strict design-system lint gate
-        run: pnpm -w -s --dir products/yappc/frontend lint:strict:design-system
+        run: pnpm lint:strict:design-system
 
-      - name: Run duplication check (jscpd)
-        run: pnpm run jscpd
-
-      - name: Dependency boundary check (dependency-cruiser)
-        run: |
-          pnpm run depcruise -- --output-type dot > depcruise.dot
-          pnpm run depcruise:report
-
-      - name: Render depcruise graph (container)
-        if: always()
-        uses: addnab/docker-run-action@v3
-        with:
-          image: docker.io/graphviz/graphviz:latest
-          options: --entrypoint ""
-          run: |
-            sh -c "if [ -f depcruise.dot ]; then dot -Tsvg depcruise.dot -o depcruise.svg; fi"
+      - name: Dependency boundary check
+        run: pnpm check:workspace-deps
 
       - name: Size limit (apps/web)
         run: |
@@ -61,7 +47,7 @@ jobs:
         run: node ./scripts/verify-dod.js
 
       - name: Route smoke tests (web)
-        run: pnpm run test:smoke:web
+        run: pnpm test:verify
 
       - name: Upload report (if any)
         if: always()
@@ -69,9 +55,6 @@ jobs:
         with:
           name: ui-quality-report
           path: |
-            .jscpd-report.html
-            depcruise-report.txt
-            depcruise.svg
             libs/ui/storybook-static/
 
       - name: Post CI summary to PR

@@ -1,7 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-23T00:00:00Z",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
   "assets": [
     {
       "asset_id": "phr-consent-panel",
@@ -13,10 +14,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
+          ".kernel/evidence/phr/ui-privacy-access-tests-evidence.json",
           "products/phr/domains/consent/src/main/java/com/ghatana/phr/consent/"
         ],
         "test_coverage": "85%",
@@ -53,10 +55,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
+          ".kernel/evidence/phr/ui-privacy-access-tests-evidence.json",
           "products/phr/domains/audit/src/main/java/com/ghatana/phr/audit/"
         ],
         "test_coverage": "90%",
@@ -93,10 +96,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
+          ".kernel/evidence/phr/fhir-golden-fixture-coverage.json",
           "products/phr/hie/src/main/java/com/ghatana/phr/hie/fhir/"
         ],
         "test_coverage": "95%",
@@ -133,10 +137,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
+          ".kernel/evidence/phr/break-glass-e2e-evidence.json",
           "products/phr/domains/emergency/src/main/java/com/ghatana/phr/emergency/"
         ],
         "test_coverage": "92%",
@@ -174,7 +179,7 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
@@ -193,6 +198,50 @@
       "dependencies": [
         "platform:java:database",
         "platform:java:security"
+      ],
+      "product_usage": [],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "phr-rollback-gate",
+      "asset_name": "PHR Rollback Gate",
+      "asset_type": "service",
+      "source_product": "phr",
+      "description": "Rollback safety gate for healthcare deployments with artifact selection, post-rollback verification, healthcare-specific gates, and audit evidence",
+      "tags": ["healthcare", "rollback", "deployment", "safety", "gate"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "eligible",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/phr-release-readiness.json",
+          ".kernel/evidence/phr/staging-rollback-evidence.json",
+          ".kernel/evidence/phr/prod-rollback-evidence.json",
+          "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+          "products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java"
+        ],
+        "test_coverage": "90%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java",
+        "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml"
+      ],
+      "tests": [
+        "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:workflow",
+        "platform:java:observability",
+        "platform:java:database"
       ],
       "product_usage": [],
       "owner": "phr-team",

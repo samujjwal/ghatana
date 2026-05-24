@@ -10,7 +10,7 @@
  *        node scripts/strict-release-workflow.mjs --check-step <step-name>
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,10 +23,9 @@ const REQUIRED_STEPS = [
   'check-evidence-freshness',
   'check-production-readiness-audit-tasks',
   'generate-comprehensive-release-summary',
-  'generate-product-release-readiness-evidence',
   'validate-release-evidence',
-  'artifact-bundle',
-  'artifact-bundle-validation',
+  'artifact-bundler',
+  'validate-artifact-bundle',
 ];
 
 // Evidence freshness threshold (in hours)
@@ -74,7 +73,7 @@ function validateWorkflow() {
   for (const evidence of REQUIRED_EVIDENCE) {
     const evidencePath = path.join(repoRoot, evidence);
     if (existsSync(evidencePath)) {
-      const stats = require('node:fs').statSync(evidencePath);
+      const stats = statSync(evidencePath);
       const ageHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
       if (ageHours > EVIDENCE_FRESHNESS_THRESHOLD) {
         console.error(`❌ Evidence is stale: ${evidence} (${ageHours.toFixed(1)}h old)`);

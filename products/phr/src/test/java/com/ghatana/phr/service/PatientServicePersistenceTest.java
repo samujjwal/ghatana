@@ -54,7 +54,7 @@ class PatientServicePersistenceTest {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
         AuditTrailService auditTrail = new PHRAuditTrailServiceImpl(new PhrTestInfrastructure.StubDataCloudAdapter());
         PatientRecordRepository repository = new PatientRecordRepository(connectionPool.getDataSource());
-        PatientService patientService = new PatientService(telemetry, auditTrail, repository);
+        PatientService patientService = new PatientService(telemetry, auditTrail, repository, null);
 
         patientService.createRecord("patient-1", Map.of("diagnosis", "Diabetes", "treatment", "Insulin"));
 
@@ -89,7 +89,7 @@ class PatientServicePersistenceTest {
             }
         };
         PatientRecordRepository repository = new PatientRecordRepository(connectionPool.getDataSource());
-        PatientService patientService = new PatientService(telemetry, failingAuditTrail, repository);
+        PatientService patientService = new PatientService(telemetry, failingAuditTrail, repository, null);
 
         IllegalStateException exception = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () ->
             patientService.createRecord("patient-1", Map.of("diagnosis", "Diabetes"))

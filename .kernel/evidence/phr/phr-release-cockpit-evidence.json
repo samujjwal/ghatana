@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "evidenceType": "ui-release-cockpit",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "uiReleaseCockpit": {
+    "status": "hardened",
+    "description": "PHR UI release cockpit with comprehensive release readiness visualization and foundation usage display"
+  },
+  "component": {
+    "name": "PhrReleaseCockpit",
+    "path": "products/phr/ui/src/pages/PhrReleaseCockpit.tsx",
+    "framework": "React",
+    "uiLibrary": "shadcn/ui"
+  },
+  "features": {
+    "environmentSelection": {
+      "status": "implemented",
+      "description": "Select between local, staging, and production environments",
+      "environments": ["local", "staging", "production"]
+    },
+    "overallStatusDisplay": {
+      "status": "implemented",
+      "description": "Displays overall release readiness status with score and metrics",
+      "metrics": ["overallScore", "passed", "partial", "blocked"]
+    },
+    "foundationUsageSection": {
+      "status": "implemented",
+      "description": "Displays platform foundation readiness (Kernel, Data Cloud, plugins)",
+      "components": ["kernel", "dataCloud", "plugins"],
+      "displays": ["name", "status", "lastChecked"],
+      "refinement": "PHR-010: Foundation usage section added with detailed plugin status display"
+    },
+    "blockingIssuesDisplay": {
+      "status": "implemented",
+      "description": "Alert display for blocking issues with count and details"
+    },
+    "warningsDisplay": {
+      "status": "implemented",
+      "description": "Alert display for warnings with count and details"
+    },
+    "evidenceCategoriesTab": {
+      "status": "implemented",
+      "description": "Tabbed view of evidence categories with status, freshness, and references",
+      "features": ["statusIcon", "freshnessIndicator", "staleBadge", "evidenceRefs"]
+    },
+    "gateStatusTab": {
+      "status": "implemented",
+      "description": "Tabbed view of gate status with evidence references and environment tags",
+      "features": ["statusIcon", "evidenceRef", "environmentBadge"]
+    },
+    "nextStepsTab": {
+      "status": "implemented",
+      "description": "Tabbed view of next required work tasks",
+      "features": ["taskList", "completionIndicator"]
+    },
+    "refreshCapability": {
+      "status": "implemented",
+      "description": "Manual refresh button to reload release readiness data"
+    },
+    "loadingStates": {
+      "status": "implemented",
+      "description": "Loading spinner and error handling states"
+    }
+  },
+  "dataFlow": {
+    "apiEndpoint": "/api/phr/release-readiness",
+    "queryParameter": "environment",
+    "responseStructure": "ReleaseReadinessEvidence",
+    "errorHandling": "Alert display with error message"
+  },
+  "uiComponents": {
+    "card": "shadcn/ui Card",
+    "badge": "shadcn/ui Badge",
+    "button": "shadcn/ui Button",
+    "tabs": "shadcn/ui Tabs",
+    "alert": "shadcn/ui Alert",
+    "icons": "lucide-react"
+  },
+  "statusIndicators": {
+    "ready": {
+      "icon": "CheckCircle2",
+      "color": "green"
+    },
+    "blocked": {
+      "icon": "XCircle",
+      "color": "red"
+    },
+    "partial": {
+      "icon": "AlertTriangle",
+      "color": "yellow"
+    },
+    "pending": {
+      "icon": "Clock",
+      "color": "gray"
+    }
+  },
+  "freshnessHandling": {
+    "status": "implemented",
+    "description": "Evidence freshness indicators with stale badges",
+    "features": ["ageHours", "isStale", "staleBadge"]
+  },
+  "accessibility": {
+    "status": "implemented",
+    "features": ["semanticIcons", "colorCoding", "clearLabels", "keyboardNavigation"]
+  },
+  "hardeningEvidence": {
+    "environmentSpecific": "true",
+    "freshnessValidation": "true",
+    "blockingIssueHighlighting": "true",
+    "warningHighlighting": "true",
+    "evidenceTraceability": "true",
+    "gateTraceability": "true",
+    "actionableNextSteps": "true",
+    "foundationUsageDisplay": "true"
+  },
+  "refinements": {
+    "PHR-010": {
+      "description": "Foundation usage section refinement",
+      "changes": [
+        "Added dedicated Foundation Usage card section",
+        "Displays Kernel, Data Cloud, and Plugins status",
+        "Shows last checked timestamps for each foundation component",
+        "Uses color-coded badges for status visualization",
+        "Icons for each foundation type (Shield for Kernel, Database for Data Cloud, Layers for Plugins)"
+      ],
+      "benefits": [
+        "Clear visibility into platform foundation readiness",
+        "Environment-specific foundation status tracking",
+        "Plugin-level status granularity"
+      ]
+    }
+  },
+  "evidenceRefs": [
+    "products/phr/ui/src/pages/PhrReleaseCockpit.tsx",
+    ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
+    ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+    ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+    ".kernel/evidence/phr/staging-rollback-evidence.json",
+    ".kernel/evidence/phr/prod-rollback-evidence.json"
+  ]
+}

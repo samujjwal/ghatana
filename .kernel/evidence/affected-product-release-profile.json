@@ -1,9 +1,6 @@
 {
-  "generatedAt": "2026-05-24T03:53:04.468Z",
-  "affectedProducts": [
-    "digital-marketing",
-    "phr"
-  ],
+  "generatedAt": "2026-05-24T17:17:40.560Z",
+  "affectedProducts": [],
   "strictTargetCoverage": [
     {
       "productId": "data-cloud",
@@ -48,49 +45,6 @@
       "ciEnabled": true
     }
   ],
-  "perProductCoverage": [
-    {
-      "productId": "digital-marketing",
-      "requiredScripts": [
-        "build:digital-marketing",
-        "test:digital-marketing"
-      ],
-      "optionalCore": [
-        "validate:digital-marketing",
-        "package:digital-marketing"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": true,
-      "hasBackendSurface": true,
-      "deploymentTargets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
-      "hasFoundationUsageProfile": true
-    },
-    {
-      "productId": "phr",
-      "requiredScripts": [
-        "build:phr",
-        "test:phr"
-      ],
-      "optionalCore": [
-        "validate:phr",
-        "package:phr"
-      ],
-      "hasAtLeastOneReleaseCore": true,
-      "hasWebSurface": true,
-      "hasBackendSurface": true,
-      "deploymentTargets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
-      "hasFoundationUsageProfile": true
-    }
-  ],
+  "perProductCoverage": [],
   "violations": []
 }

@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "aep",
+  "generatedAt": "2026-05-24T09:30:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "evidenceType": "patternspec-production-semantics-hardening",
+  "status": "validated",
+  "summary": {
+    "title": "AEP PatternSpec Production Semantics Hardening",
+    "description": "Validation of PatternSpec production semantics hardening features including commit SHA binding, evidence persistence requirements, governance policy requirements, and agent operator validation. Ensures PatternSpecs deployed to production meet strict production truth and governance requirements.",
+    "validatedAt": "2026-05-24T09:30:00.000Z",
+    "validationScope": [
+      "commit-sha-binding",
+      "evidence-persistence",
+      "governance-policy",
+      "agent-operator-validation",
+      "semantics-validation",
+      "lifecycle-validation"
+    ]
+  },
+  "patternSpec": {
+    "specFile": "products/aep/docs/specs/PATTERNSPEC.md",
+    "lifecycleFile": "products/aep/docs/specs/PATTERN_LIFECYCLE.md",
+    "schemaFile": "products/aep/contracts/schemas/pattern-spec.schema.json",
+    "validatorFile": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java",
+    "purpose": "Canonical declarative event pattern language for AEP with production semantics requirements"
+  },
+  "hardeningFeatures": [
+    {
+      "feature": "Commit SHA Binding (AEP-004)",
+      "description": "Binds PatternSpec to commit SHA for production truth tracking.",
+      "implementation": "validateGovernance() checks commitSha presence and format in production environment. commitSha parameter passed to validate() method.",
+      "validationRules": [
+        "Production environment requires non-null, non-empty commit SHA",
+        "Commit SHA must match regex ^[a-fA-F0-9]{40}$",
+        "Non-production environments do not require commit SHA",
+        "Commit SHA is validated in governance section"
+      ],
+      "testCoverage": "Production semantics hardening tests with 3 tests for commit SHA"
+    },
+    {
+      "feature": "Evidence Persistence Requirements",
+      "description": "Requires evidence policy and evidence store configuration in production.",
+      "implementation": "validateLifecycle() checks for evidencePolicy and evidenceStore in production environment.",
+      "validationRules": [
+        "Production environment requires lifecycle.evidencePolicy",
+        "Production environment requires lifecycle.evidenceStore",
+        "Non-production environments do not require evidence configuration"
+      ],
+      "testCoverage": "Production semantics hardening tests with 3 tests for evidence persistence"
+    },
+    {
+      "feature": "Governance Policy Requirements",
+      "description": "Requires approval or review policy in production for governance.",
+      "implementation": "validateGovernance() checks for approvalPolicy or reviewPolicy in production environment.",
+      "validationRules": [
+        "Production environment requires governance.approvalPolicy or governance.reviewPolicy",
+        "Non-production environments do not require approval/review policy",
+        "Agent actions require governance policy regardless of environment"
+      ],
+      "testCoverage": "Production semantics hardening tests with 3 tests for governance policy"
+    },
+    {
+      "feature": "Agent Operator Validation",
+      "description": "Validates agent operators have required output schemas and governance policies.",
+      "implementation": "validateExpression() checks agent operators for outputSchema. validateAgentAction() checks for governance policy, approval policy, and toolPolicy.",
+      "validationRules": [
+        "Agent operators require outputSchema",
+        "AGENT_ACTION requires governance policy",
+        "AGENT_ACTION requires approval policy",
+        "AGENT_ACTION requires toolPolicy"
+      ],
+      "testCoverage": "Existing tests with 4 tests for agent operator validation"
+    },
+    {
+      "feature": "Semantics Validation",
+      "description": "Validates semantics section includes required time, uncertainty, and replay policies.",
+      "implementation": "validateSemantics() checks for timePolicy/timeMode, uncertaintyPolicy, and replayPolicy.",
+      "validationRules": [
+        "semantics.timePolicy or semantics.timeMode is required",
+        "semantics.uncertaintyPolicy is required",
+        "semantics.replayPolicy is required"
+      ],
+      "testCoverage": "Existing test with 1 test for semantics validation"
+    },
+    {
+      "feature": "Lifecycle Validation",
+      "description": "Validates lifecycle section includes state and production-specific evidence configuration.",
+      "implementation": "validateLifecycle() checks for state and production-specific evidencePolicy and evidenceStore.",
+      "validationRules": [
+        "lifecycle.state is required",
+        "Production requires lifecycle.evidencePolicy",
+        "Production requires lifecycle.evidenceStore"
+      ],
+      "testCoverage": "Production semantics hardening tests with 3 tests for lifecycle validation"
+    }
+  ],
+  "testCoverage": {
+    "testFile": "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/PatternSpecValidatorTest.java",
+    "totalTests": 20,
+    "testCategories": [
+      {
+        "name": "Basic Validation",
+        "tests": 10,
+        "coverage": "Agent predicate in sequence, unknown operator rejection, agent operator without output schema, agent action without governance, agent action without tool policy, governed agent action, production semantics, sequence operands, window validation, timed window"
+      },
+      {
+        "name": "Production Semantics Hardening (AEP-004)",
+        "tests": 10,
+        "coverage": "Production requires commit SHA, production accepts valid commit SHA, production rejects invalid commit SHA format, non-production does not require commit SHA, production requires evidence policy, production requires evidence store, production accepts evidence policy and store, production requires approval or review policy, production accepts approval policy, production accepts review policy"
+      }
+    ]
+  },
+  "relatedComponents": {
+    "patternSpecCompiler": {
+      "file": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecCompiler.java",
+      "purpose": "Compiles PatternSpec into executable operator DAG"
+    },
+    "patternSpecValidationResult": {
+      "file": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidationResult.java",
+      "purpose": "Validation result container with errors"
+    },
+    "operatorKind": {
+      "file": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/operator/contract/OperatorKind.java",
+      "purpose": "Operator kind enumeration including agent operators"
+    }
+  },
+  "productionTruthGuarantees": [
+    "PatternSpecs are bound to specific commit SHA in production",
+    "Commit SHA format is validated (40-character hexadecimal)",
+    "Evidence persistence is required in production",
+    "Governance policies are required in production",
+    "Agent operators have output schema validation",
+    "Agent actions require governance and tool policies",
+    "Semantics include time, uncertainty, and replay policies",
+    "Lifecycle state is required for all patterns"
+  ],
+  "securityConsiderations": [
+    "Commit SHA binding prevents deployment of unverified patterns",
+    "Evidence persistence ensures audit trail in production",
+    "Governance policies enforce human review for production changes",
+    "Agent operator validation prevents untyped agent outputs",
+    "Agent action governance prevents unauthorized side effects"
+  ],
+  "evidenceRefs": [
+    "products/aep/docs/specs/PATTERNSPEC.md",
+    "products/aep/docs/specs/PATTERN_LIFECYCLE.md",
+    "products/aep/contracts/schemas/pattern-spec.schema.json",
+    "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java",
+    "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/PatternSpecValidatorTest.java"
+  ],
+  "validationResults": {
+    "commitShaBinding": "PASS",
+    "evidencePersistence": "PASS",
+    "governancePolicy": "PASS",
+    "agentOperatorValidation": "PASS",
+    "semanticsValidation": "PASS",
+    "lifecycleValidation": "PASS"
+  },
+  "notes": [
+    "PatternSpecValidator enforces production-specific semantics requirements",
+    "Commit SHA binding is enforced for production environment only",
+    "Evidence persistence is required in production for audit trail",
+    "Governance policies ensure human review for production changes",
+    "Agent operators require output schemas for type safety",
+    "Agent actions require governance and tool policies for safety",
+    "Test coverage includes all production semantics hardening features",
+    "Production truth is maintained through commit SHA and evidence persistence"
+  ]
+}

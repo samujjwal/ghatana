@@ -56,13 +56,19 @@ public final class RuntimeTruthService {
      * @param systemStatus overall system status
      * @param planeStates individual plane states
      * @param timestamp timestamp of this truth snapshot
+     * @param commitSha the commit SHA for this runtime truth
+     * @param environment the target environment for this runtime truth
      */
     public record RuntimeTruth(
             PlaneStatus systemStatus,
             Map<String, PlaneState> planeStates,
-            Instant timestamp) {}
+            Instant timestamp,
+            String commitSha,
+            String environment) {}
 
     private final Map<String, PlaneState> planeStates = new HashMap<>();
+    private String commitSha;
+    private String environment;
 
     /**
      * Registers or updates the state of a plane.
@@ -77,6 +83,24 @@ public final class RuntimeTruthService {
         Objects.requireNonNull(metadata, "metadata must not be null");
 
         planeStates.put(planeName, new PlaneState(planeName, status, metadata, Instant.now()));
+    }
+
+    /**
+     * Sets the commit SHA for this runtime truth.
+     *
+     * @param commitSha the commit SHA
+     */
+    public void setCommitSha(String commitSha) {
+        this.commitSha = commitSha;
+    }
+
+    /**
+     * Sets the target environment for this runtime truth.
+     *
+     * @param environment the target environment
+     */
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     /**
@@ -96,7 +120,7 @@ public final class RuntimeTruthService {
      */
     public RuntimeTruth getRuntimeTruth() {
         PlaneStatus systemStatus = computeSystemStatus();
-        return new RuntimeTruth(systemStatus, Map.copyOf(planeStates), Instant.now());
+        return new RuntimeTruth(systemStatus, Map.copyOf(planeStates), Instant.now(), commitSha, environment);
     }
 
     /**

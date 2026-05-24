@@ -61,8 +61,16 @@ export class ProductInteractionBrokerAdapter implements ToolchainAdapter {
     return createDefaultPreflightResult();
   }
 
-  async plan(_context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
-    return [];
+  async plan(context: ToolchainAdapterContext): Promise<ToolchainPlanStep[]> {
+    return [
+      {
+        id: `product-interaction-${context.phase}-preflight`,
+        description: `Validate Kernel product interaction contracts before ${context.phase}`,
+        command: ['pnpm', 'check:product-interaction-contracts'],
+        workingDirectory: process.cwd(),
+        expectedOutputs: ['.kernel/evidence/product-interaction-coverage-matrix.json'],
+      },
+    ];
   }
 
   async execute(context: ToolchainAdapterContext): Promise<ToolchainExecutionResult> {

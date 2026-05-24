@@ -1,0 +1,74 @@
+schemaVersion: "1.0.0"
+environment: "staging"
+
+surfaces:
+  backend-api:
+    dev:
+      enabled: true
+      port: 8080
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 8080
+      replicas: 3
+      resources:
+        limits:
+          cpu: "2000m"
+          memory: "2Gi"
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+  
+  web:
+    dev:
+      enabled: true
+      port: 5173
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 3000
+      replicas: 2
+      resources:
+        limits:
+          cpu: "1000m"
+          memory: "1Gi"
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+
+deployment:
+  adapter: "kubernetes-staging"
+  namespace: "staging"
+  envFile: "deploy/staging.env.example"
+
+runtimeProfile: high-performance
+
+healthCheckProfile: comprehensive
+
+promotionPolicy: dev-to-staging
+
+dataCloud:
+  enabled: true
+  tenantId: "phr-staging"
+  durableWrites: true
+  collections:
+    - "phr-patients"
+    - "phr-consent-grants"
+    - "phr-audit-trail"
+    - "phr-fhir-resources"
+
+kernel:
+  lifecycleEnabled: true
+  gatesActive:
+    - "consent"
+    - "pii-classification"
+    - "audit-evidence"
+    - "fhir-contract-validation"
+    - "tenant-data-sovereignty"
+
+fhir:
+  r4Enabled: true
+  validationGate: "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+  goldenFixtures: "products/phr/src/test/resources/fhir/golden"

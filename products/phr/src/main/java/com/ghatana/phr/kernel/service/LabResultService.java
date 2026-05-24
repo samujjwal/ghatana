@@ -97,11 +97,11 @@ public class LabResultService extends PhrServiceBase {
             RESULT_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "loincCode", toStore.loincCode(),
                 "status", toStore.status().name()
-            ),
+            ), toStore.performingLabId()),
             "LabObservation",
             1
         ).then(stored -> audit("RECORD_OBSERVATION", stored.patientId(),
@@ -137,7 +137,10 @@ public class LabResultService extends PhrServiceBase {
             PANEL_DATASET,
             panelId,
             toStore,
-            Map.of("patientId", toStore.patientId(), "panelName", toStore.panelName()),
+            mutationMetadata(Map.of(
+                "patientId", toStore.patientId(),
+                "panelName", toStore.panelName()
+            ), toStore.performingLabId()),
             "LabPanel",
             1
         );
@@ -158,7 +161,10 @@ public class LabResultService extends PhrServiceBase {
                     RESULT_DATASET,
                     obsId,
                     withId,
-                    Map.of("patientId", withId.patientId(), "panelId", panelId),
+                    mutationMetadata(Map.of(
+                        "patientId", withId.patientId(),
+                        "panelId", panelId
+                    ), withId.performingLabId()),
                     "LabObservation",
                     1
                 );

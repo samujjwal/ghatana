@@ -29,15 +29,6 @@ on:
         type: boolean
         default: false
 
-env:
-  DC_MODULES: >-
-    :products:data-cloud:planes:shared-spi
-    :products:data-cloud:delivery:runtime-composition
-    :products:data-cloud:delivery:launcher
-    :products:data-cloud:delivery:sdk
-    :products:data-cloud:extensions:agent-registry
-    :products:data-cloud:integration-tests
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -59,22 +50,21 @@ jobs:
           cache: pnpm
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
 
       - name: Install UI dependencies
         run: pnpm install --frozen-lockfile
         working-directory: products/data-cloud/delivery/ui
 
       # Backend: Compile all modules
-      - name: Compile backend modules
+      - name: Validate active Data Cloud module classification
+        run: node ./scripts/list-data-cloud-active-modules.mjs --validate
+
+      - name: Compile active Data Cloud modules
         run: |
-          ./gradlew \
-            :products:data-cloud:planes:shared-spi:compileJava \
-            :products:data-cloud:delivery:runtime-composition:compileJava \
-            :products:data-cloud:delivery:launcher:compileJava \
-            :products:data-cloud:extensions:agent-registry:compileJava \
-            :products:data-cloud:integration-tests:testClasses \
-            --no-daemon
+          set -euo pipefail
+          TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=all-active --task=compileJava --format=shell)"
+          ./gradlew ${TASKS} --no-daemon
 
       # Backend: Static analysis
       - name: Run backend SpotBugs
@@ -400,7 +390,7 @@ jobs:
           cache: pnpm
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
 
       # Generate all three SDK targets from contracts/openapi/data-cloud.yaml
       - name: Generate Data-Cloud SDKs from OpenAPI spec
@@ -750,7 +740,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.33.0
 
       - name: Install UI dependencies
         working-directory: products/data-cloud/delivery/ui
@@ -762,7 +752,7 @@ jobs:
 
       - name: Check bundle budgets (DC-P1-477)
         working-directory: products/data-cloud/delivery/ui
-        run: bash scripts/check-bundle-budgets.sh --skip-build
+        run: pnpm run bundle:check:ci
         env:
           CHUNK_BUDGET_KB: "600"
           VENDOR_BUDGET_KB: "1000"

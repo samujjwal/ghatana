@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "tenantIsolation": true,
+  "dataIntegrityConstraints": true,
+  "isolationMode": "row-level-security",
+  "constraints": {
+    "foreignKeys": true,
+    "uniqueConstraints": true,
+    "checkConstraints": true,
+    "notNullConstraints": true
+  },
+  "migrationTool": "flyway",
+  "migrationPath": "products/digital-marketing/dm-persistence/src/main/resources/db/migration",
+  "evidenceRefs": [
+    "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml"
+  ]
+}

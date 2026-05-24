@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "promptLogging": true,
+  "modelLogging": true,
+  "confidenceLogging": true,
+  "rationaleLogging": true,
+  "immutableAudit": true,
+  "aiActionLogModule": "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/AiActionLogService.java",
+  "loggingFields": [
+    "prompt",
+    "model",
+    "confidence",
+    "rationale",
+    "timestamp",
+    "userId",
+    "campaignId",
+    "decision"
+  ],
+  "evidenceRefs": [
+    "products/digital-marketing/lifecycle/foundation-usage-profile.yaml"
+  ]
+}

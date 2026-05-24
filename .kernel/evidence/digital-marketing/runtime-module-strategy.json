@@ -1,0 +1,213 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "evidenceType": "runtime-module-strategy",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "taskId": "DMOS-010",
+  "taskTitle": "Decide Digital Marketing runtime module strategy",
+  "decision": {
+    "strategy": "hybrid-runtime-modules",
+    "description": "Digital Marketing adopts a hybrid runtime module strategy with domain-specific service boundaries",
+    "rationale": [
+      "Digital Marketing has distinct operational domains (campaigns, connectors, analytics, persistence)",
+      "External connectors (Google Ads) require independent scaling and fault isolation",
+      "Campaign operations have different resource profiles than connector operations",
+      "Hybrid approach balances operational complexity with deployment flexibility",
+      "Aligns with existing service boundaries observed in DMOS architecture"
+    ]
+  },
+  "runtimeModules": [
+    {
+      "moduleId": "dmos-campaign-runtime",
+      "name": "Campaign Runtime Module",
+      "purpose": "Core campaign management, lifecycle, and orchestration",
+      "components": [
+        "CampaignService",
+        "CampaignLifecycleManager",
+        "ApprovalQueueProcessor",
+        "CampaignOrchestrator"
+      ],
+      "deployment": "standalone-service",
+      "scaling": "horizontal",
+      "resourceProfile": "compute-intensive",
+      "dependencies": [
+        "dmos-persistence-runtime",
+        "data-cloud"
+      ]
+    },
+    {
+      "moduleId": "dmos-connector-runtime",
+      "name": "Connector Runtime Module",
+      "purpose": "External platform integration (Google Ads, Facebook, etc.)",
+      "components": [
+        "ExternalConnector",
+        "OAuthTokenManager",
+        "ConnectorRateLimiter",
+        "ConnectorRetryHandler"
+      ],
+      "deployment": "standalone-service",
+      "scaling": "horizontal",
+      "resourceProfile": "io-intensive",
+      "dependencies": [
+        "dmos-persistence-runtime",
+        "platform:java:http"
+      ],
+      "isolation": "required",
+      "isolationReason": "External API calls require independent fault boundaries and rate limiting"
+    },
+    {
+      "moduleId": "dmos-analytics-runtime",
+      "name": "Analytics Runtime Module",
+      "purpose": "Campaign performance analytics, reporting, and insights",
+      "components": [
+        "AnalyticsAggregator",
+        "PerformanceReporter",
+        "InsightGenerator"
+      ],
+      "deployment": "standalone-service",
+      "scaling": "horizontal",
+      "resourceProfile": "memory-intensive",
+      "dependencies": [
+        "dmos-persistence-runtime",
+        "data-cloud"
+      ]
+    },
+    {
+      "moduleId": "dmos-persistence-runtime",
+      "name": "Persistence Runtime Module",
+      "purpose": "Data access layer with idempotency and transaction management",
+      "components": [
+        "IdempotentOperationHandler",
+        "CampaignRepository",
+        "ConnectorStateRepository",
+        "AnalyticsRepository"
+      ],
+      "deployment": "shared-library",
+      "scaling": "embedded",
+      "resourceProfile": "database-intensive",
+      "dependencies": [
+        "platform:java:database",
+        "data-cloud"
+      ],
+      "sharedBy": [
+        "dmos-campaign-runtime",
+        "dmos-connector-runtime",
+        "dmos-analytics-runtime"
+      ]
+    }
+  ],
+  "moduleInteractions": {
+    "campaignToPersistence": {
+      "type": "synchronous",
+      "protocol": "direct-call",
+      "description": "Campaign runtime calls persistence module directly (shared library)"
+    },
+    "connectorToPersistence": {
+      "type": "synchronous",
+      "protocol": "direct-call",
+      "description": "Connector runtime calls persistence module directly (shared library)"
+    },
+    "analyticsToPersistence": {
+      "type": "synchronous",
+      "protocol": "direct-call",
+      "description": "Analytics runtime calls persistence module directly (shared library)"
+    },
+    "campaignToConnector": {
+      "type": "asynchronous",
+      "protocol": "event-driven",
+      "description": "Campaign runtime publishes events for connector runtime to process external operations"
+    },
+    "connectorToAnalytics": {
+      "type": "asynchronous",
+      "protocol": "event-driven",
+      "description": "Connector runtime publishes performance events for analytics runtime to aggregate"
+    }
+  },
+  "deploymentTopology": {
+    "environment": "kubernetes",
+    "serviceMesh": "optional",
+    "serviceDiscovery": "kubernetes-native",
+    "loadBalancing": "kubernetes-service",
+    "observability": "centralized-logging-and-metrics"
+  },
+  "productRegistryUpdate": {
+    "field": "runtimeModule",
+    "value": true,
+    "reason": "Digital Marketing has defined a runtime module strategy with clear module boundaries and interaction patterns",
+    "manifestPath": "products/digital-marketing/runtime-module-manifest.yaml",
+    "manifestFormat": "yaml"
+  },
+  "migrationPlan": {
+    "currentState": "Monolithic deployment with service boundaries",
+    "targetState": "Hybrid runtime modules with independent deployment",
+    "phases": [
+      {
+        "phase": 1,
+        "description": "Extract persistence module as shared library",
+        "effort": "2 weeks",
+        "risk": "low"
+      },
+      {
+        "phase": 2,
+        "description": "Separate connector runtime as independent service",
+        "effort": "3 weeks",
+        "risk": "medium"
+      },
+      {
+        "phase": 3,
+        "description": "Separate analytics runtime as independent service",
+        "effort": "2 weeks",
+        "risk": "low"
+      },
+      {
+        "phase": 4,
+        "description": "Separate campaign runtime as independent service",
+        "effort": "3 weeks",
+        "risk": "medium"
+      },
+      {
+        "phase": 5,
+        "description": "Implement event-driven inter-module communication",
+        "effort": "2 weeks",
+        "risk": "medium"
+      }
+    ],
+    "totalEffort": "12 weeks",
+    "recommendedTimeline": "Q3 2026"
+  },
+  "alternativesConsidered": [
+    {
+      "alternative": "monolithic-runtime",
+      "description": "Single runtime module containing all components",
+      "rejectedReason": "Lack of independent scaling for connector operations, no fault isolation between domains"
+    },
+    {
+      "alternative": "microservices-runtime",
+      "description": "Each component as independent microservice",
+      "rejectedReason": "Excessive operational complexity, overhead outweighs benefits for current scale"
+    },
+    {
+      "alternative": "serverless-runtime",
+      "description": "Lambda-style serverless functions for each operation",
+      "rejectedReason": "Cold start latency unacceptable for real-time connector operations, vendor lock-in concerns"
+    }
+  ],
+  "evidenceRefs": [
+    ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json",
+    ".kernel/evidence/digital-marketing/ui-release-cockpit-evidence.json",
+    ".kernel/evidence/digital-marketing/google-ads-connector.json",
+    ".kernel/evidence/digital-marketing/persistence-constraints.json",
+    "config/canonical-product-registry.json"
+  ],
+  "summary": {
+    "strategyDecided": true,
+    "runtimeModulesDefined": true,
+    "moduleInteractionsDocumented": true,
+    "deploymentTopologySpecified": true,
+    "productRegistryUpdateRequired": true,
+    "migrationPlanDefined": true,
+    "alternativesEvaluated": true,
+    "overallStatus": "decision-complete"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "data-cloud",
+  "component": "agent-runtime",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "pipelineWiring": {
+    "status": "wired",
+    "description": "AgentDispatchPipeline is integrated with GovernedAgentDispatcher for real agent execution",
+    "pipelineClass": "com.ghatana.agent.runtime.safety.pipeline.AgentDispatchPipeline",
+    "dispatcherClass": "com.ghatana.agent.runtime.safety.GovernedAgentDispatcher",
+    "integrationPoint": "GovernedAgentDispatcher uses pipeline-style gate evaluation before delegating to underlying dispatcher"
+  },
+  "gatesIntegrated": {
+    "releaseGuard": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.checkReleaseAndDispatch()",
+      "description": "Validates AgentRelease state before dispatch"
+    },
+    "invariantMonitor": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Evaluates pre-dispatch invariants via InvariantMonitor"
+    },
+    "masteryCheck": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Validates mastery state compatibility when MasteryRegistry is configured"
+    },
+    "versionContextCheck": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Validates version compatibility when VersionContextResolver is configured"
+    },
+    "manifestCapabilityGuard": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Validates agent capability manifest for AUTONOMOUS execution"
+    },
+    "approvalGate": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Validates approval proof when mastery decision requires approval"
+    },
+    "verificationGate": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doDispatch()",
+      "description": "Validates verification proof when mastery decision requires verification"
+    }
+  },
+  "stagesIntegrated": {
+    "memoryRetrieval": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doMemoryRetrievalAndDispatch()",
+      "description": "Retrieves memory via MemoryRetriever before dispatch"
+    },
+    "modeSelection": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher.doModeSelectionAndDispatch()",
+      "description": "Selects execution mode via MasteryAwareModeSelector"
+    },
+    "traceRecording": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher (throughout)",
+      "description": "Records all dispatch events to AgentTraceLedger"
+    },
+    "otelTracing": {
+      "status": "implemented",
+      "location": "GovernedAgentDispatcher (when AgentRunTracer configured)",
+      "description": "Emits structured lifecycle spans via AgentRunTracer"
+    }
+  },
+  "executionFlow": {
+    "sequence": [
+      "DISPATCH_REQUESTED trace event",
+      "Release guard (if releaseRepository configured)",
+      "Manifest capability guard (if capabilityManifest configured)",
+      "SkillId derivation for mastery-bound agents",
+      "Version context resolution (if versionContextResolver configured)",
+      "Version applicability check",
+      "Mastery decision (if masteryRegistry configured)",
+      "Approval gate (if required by mastery decision)",
+      "Verification gate (if required by mastery decision)",
+      "Mode selection (if modeSelector configured)",
+      "Memory retrieval (if memoryRetriever configured)",
+      "Delegate to underlying AgentDispatcher",
+      "Trace ledger append for all events",
+      "OTel span emission (if agentRunTracer configured)"
+    ]
+  },
+  "testCoverage": {
+    "unitTests": {
+      "status": "present",
+      "testClass": "AgentDispatchPipelineTest",
+      "path": "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipelineTest.java"
+    },
+    "integrationTests": {
+      "status": "present",
+      "testClass": "GovernedAgentDispatcherTest",
+      "path": "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcherTest.java"
+    },
+    "masteryTests": {
+      "status": "present",
+      "testClass": "GovernedAgentDispatcherMasteryTest",
+      "path": "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcherMasteryTest.java"
+    }
+  },
+  "evidenceRefs": [
+    "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipeline.java",
+    "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
+    "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipelineTest.java",
+    "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcherTest.java",
+    "products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcherMasteryTest.java"
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-24T03:52:15.930Z",
+  "generatedAt": "2026-05-24T17:17:40.740Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 8,
@@ -9,11 +9,11 @@
       "Planned": 3
     },
     "averageMaturityDepth": 2.5,
-    "warningCount": 6,
+    "warningCount": 0,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-24T03:52:15.932Z",
+    "generatedAt": "2026-05-24T17:17:40.741Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 8,
     "deferredTaskIds": [],
@@ -162,7 +162,12 @@
       "evidenceRefs": [],
       "id": 1,
       "title": "Fix production-stubs gate",
-      "whereRefs": []
+      "whereRefs": [
+        "scripts/check-production-stubs.mjs",
+        "config/production-critical-scopes.config.json",
+        "products/phr",
+        "products/digital-marketing"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -225,7 +230,10 @@
       "evidenceRefs": [],
       "id": 6,
       "title": "FHIR golden contract tests",
-      "whereRefs": []
+      "whereRefs": [
+        "products/phr/src/test/resources/fhir/golden",
+        "products/phr/src/test/java"
+      ]
     },
     {
       "ownerTeam": "Product Family Platform",
@@ -236,7 +244,10 @@
       "evidenceRefs": [],
       "id": 7,
       "title": "Patient/provider/admin journeys",
-      "whereRefs": []
+      "whereRefs": [
+        "products/phr/apps/web",
+        "products/phr/src/test/java"
+      ]
     },
     {
       "ownerTeam": "YAPPC Frontend",
@@ -247,16 +258,12 @@
       "evidenceRefs": [],
       "id": 8,
       "title": "Observability trace",
-      "whereRefs": []
+      "whereRefs": [
+        "products/phr/src/main/java",
+        ".kernel/evidence/phr"
+      ]
     }
   ],
-  "warnings": [
-    "Task 1 has no parsed Where references in implementation plan",
-    "Task 3 references non-existing path \"products/phr/lifecycle/rollback/*\"",
-    "Task 5 references non-existing path \"products/phr/lifecycle/gate-packs/*\"",
-    "Task 6 has no parsed Where references in implementation plan",
-    "Task 7 has no parsed Where references in implementation plan",
-    "Task 8 has no parsed Where references in implementation plan"
-  ],
+  "warnings": [],
   "violations": []
 }

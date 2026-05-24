@@ -136,7 +136,8 @@ public final class EnhancedPluginManager {
                 configSchemaValidator.validate(manifest.getPluginId(), manifest.getConfigSchema(), Map.of());
 
                 // Check tier compatibility
-                PluginTier tier = PluginTier.fromManifest(manifest);
+                com.ghatana.kernel.plugin.PluginTier tier =
+                    com.ghatana.kernel.plugin.PluginTier.fromManifest(manifest);
                 tierEnforcer.validateTier(tier);
 
                 // Verify capabilities (convert KernelCapability to String)
@@ -145,10 +146,15 @@ public final class EnhancedPluginManager {
                     .collect(java.util.stream.Collectors.toSet());
                 capabilityVerifier.verifyCapabilities(capabilityNames);
 
-                // Check resource quotas (convert kernel-core to kernel-plugin wrapper)
-                PluginResourceQuota pluginQuotas = PluginResourceQuota.builder()
-                    .maxMemoryMB((int) manifest.getResourceQuotas().getMaxMemoryMb())
-                    .maxCpuPercent((int) manifest.getResourceQuotas().getMaxCpuPercent())
+                com.ghatana.kernel.plugin.PluginResourceQuota pluginQuotas =
+                    com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .maxMemoryMb(manifest.getResourceQuotas().getMaxMemoryMb())
+                    .maxCpuPercent(manifest.getResourceQuotas().getMaxCpuPercent())
+                    .maxFileDescriptors(manifest.getResourceQuotas().getMaxFileDescriptors())
+                    .maxConcurrentOperations(manifest.getResourceQuotas().getMaxConcurrentOperations())
+                    .maxExecutionTimeMs(manifest.getResourceQuotas().getMaxExecutionTimeMs())
+                    .maxNetworkConnections(manifest.getResourceQuotas().getMaxNetworkConnections())
+                    .tier(manifest.getResourceQuotas().getTier())
                     .build();
                 resourceEnforcer.validateQuotas(pluginQuotas);
 
@@ -230,9 +236,9 @@ public final class EnhancedPluginManager {
             // Create enhanced plugin with additional metadata
             EnhancedLoadedPlugin enhanced = new EnhancedLoadedPlugin(
                 basicPlugin,
-                PluginTier.T2, // Default tier
+                com.ghatana.kernel.plugin.PluginTier.T2, // Default tier
                 Set.of(), // Default capabilities
-                PluginResourceQuota.defaults()
+                com.ghatana.kernel.plugin.PluginResourceQuota.defaults()
             );
 
             enhancedPlugins.put(pluginId, enhanced);
@@ -283,15 +289,15 @@ public final class EnhancedPluginManager {
      */
     public static final class EnhancedLoadedPlugin {
         private final HotReloadPluginManager.LoadedPlugin basicPlugin;
-        private final PluginTier tier;
+        private final com.ghatana.kernel.plugin.PluginTier tier;
         private final Set<String> capabilities;
-        private final PluginResourceQuota resourceQuota;
+        private final com.ghatana.kernel.plugin.PluginResourceQuota resourceQuota;
 
         public EnhancedLoadedPlugin(
             HotReloadPluginManager.LoadedPlugin basicPlugin,
-            PluginTier tier,
+            com.ghatana.kernel.plugin.PluginTier tier,
             Set<String> capabilities,
-            PluginResourceQuota resourceQuota
+            com.ghatana.kernel.plugin.PluginResourceQuota resourceQuota
         ) {
             this.basicPlugin = basicPlugin;
             this.tier = tier;
@@ -300,9 +306,9 @@ public final class EnhancedPluginManager {
         }
 
         public HotReloadPluginManager.LoadedPlugin basicPlugin() { return basicPlugin; }
-        public PluginTier tier() { return tier; }
+        public com.ghatana.kernel.plugin.PluginTier tier() { return tier; }
         public Set<String> capabilities() { return capabilities; }
-        public PluginResourceQuota resourceQuota() { return resourceQuota; }
+        public com.ghatana.kernel.plugin.PluginResourceQuota resourceQuota() { return resourceQuota; }
     }
 
     /**

@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
+
+import { loadCanonicalRegistry } from './resolve-affected-products.mjs';
 
 const repoRoot = process.cwd();
 
-const SCAN_ROOTS = [
+const DEFAULT_SCAN_ROOTS = [
   'platform',
   'platform-kernel',
   'platform-plugins',
@@ -16,6 +19,82 @@ const SCAN_ROOTS = [
   'products/yappc',
   'products/virtual-org',
 ];
+
+const argv = process.argv.slice(2);
+
+function argValue(name) {
+  const index = argv.indexOf(name);
+  return index >= 0 ? argv[index + 1] : undefined;
+}
+
+function splitCsv(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map(toPosix);
+}
+
+function normalizeRoot(root) {
+  return toPosix(root).replace(/^\.?\//, '').replace(/\/$/, '');
+}
+
+function readChangedFilesFromGit() {
+  const base = argValue('--base') || process.env.GITHUB_BASE_SHA || 'origin/main';
+  const head = argValue('--head') || process.env.GITHUB_SHA || 'HEAD';
+  const result = spawnSync('git', ['diff', '--name-only', `${base}...${head}`], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    console.error(`Could not resolve changed-only production readiness diff ${base}...${head}.`);
+    if (result.stderr) {
+      console.error(result.stderr.trim());
+    }
+    process.exit(result.status ?? 1);
+  }
+  return result.stdout.split(/\r?\n/).filter(Boolean).map(toPosix);
+}
+
+function productRoots(productIds) {
+  if (productIds.length === 0) {
+    return [];
+  }
+
+  const registry = loadCanonicalRegistry(repoRoot);
+  const roots = [];
+  for (const productId of productIds) {
+    const product = registry[productId];
+    if (!product) {
+      console.error(`Unknown product id for production readiness scan: ${productId}`);
+      process.exit(1);
+    }
+    roots.push(`products/${productId}`);
+    for (const candidate of [
+      product.manifestPath,
+      product.buildFile,
+      ...(product.pnpmPackages ?? []),
+      ...(product.surfaces ?? []).flatMap((surface) => [surface.path, surface.packagePath].filter(Boolean)),
+    ]) {
+      if (typeof candidate === 'string') {
+        roots.push(candidate.replace(/\/package\.json$/, ''));
+      }
+    }
+  }
+  return roots.map(normalizeRoot);
+}
+
+function selectedRoots() {
+  const explicitRoots = splitCsv(argValue('--roots'));
+  const products = splitCsv(argValue('--products') || process.env.AFFECTED_PRODUCTS);
+  const roots = [...explicitRoots, ...productRoots(products)];
+  return roots.length > 0 ? [...new Set(roots.map(normalizeRoot))] : DEFAULT_SCAN_ROOTS;
+}
+
+function selectedChangedFiles() {
+  const paths = splitCsv(argValue('--paths'));
+  return paths.length > 0 ? paths : readChangedFilesFromGit();
+}
 
 const INCLUDE_EXTENSIONS = new Set([
   '.java',
@@ -141,6 +220,26 @@ function walk(dirPath, out) {
   }
 }
 
+function isUnderRoots(relativePath, roots) {
+  return roots.some((root) => relativePath === root || relativePath.startsWith(`${root}/`));
+}
+
+function filesForScan(roots) {
+  if (argv.includes('--changed-only')) {
+    return selectedChangedFiles()
+      .filter((relativePath) => isUnderRoots(relativePath, roots))
+      .filter((relativePath) => fs.existsSync(path.join(repoRoot, relativePath)))
+      .filter((relativePath) => shouldScanFile(relativePath))
+      .map((relativePath) => path.join(repoRoot, relativePath));
+  }
+
+  const files = [];
+  for (const root of roots) {
+    walk(path.join(repoRoot, root), files);
+  }
+  return files;
+}
+
 function getLineViolations(content, regex) {
   const lines = content.split(/\r?\n/);
   const matches = [];
@@ -238,12 +337,10 @@ requireIncludes(
   'KernelLifecycleService must return NOT_READY behavior for blocked products',
 );
 
-for (const root of SCAN_ROOTS) {
-  const absoluteRoot = path.join(repoRoot, root);
-  const files = [];
-  walk(absoluteRoot, files);
+const rootsToScan = selectedRoots();
+const productionFiles = filesForScan(rootsToScan);
 
-  for (const filePath of files) {
+for (const filePath of productionFiles) {
     const rel = path.relative(repoRoot, filePath);
     const relPosix = toPosix(rel);
 
@@ -292,7 +389,6 @@ for (const root of SCAN_ROOTS) {
         });
       }
     }
-  }
 }
 
 if (violations.length > 0) {

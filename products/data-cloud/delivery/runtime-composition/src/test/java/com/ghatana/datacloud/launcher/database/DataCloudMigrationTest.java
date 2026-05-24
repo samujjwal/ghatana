@@ -110,8 +110,74 @@ class DataCloudMigrationTest {
             assertTableExists(conn, "memory_namespaces");
             assertTableExists(conn, "promotion_evidence");
             assertTableExists(conn, "media_artifacts");
+            // V025: release readiness evidence tables
+            assertTableExists(conn, "product_release_readiness");
+            assertTableExists(conn, "product_bootstrap_evidence");
+            assertTableExists(conn, "product_rollback_evidence");
         } catch (SQLException e) {
             fail("Failed to verify table existence: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void releaseReadinessTablesHaveCorrectConstraints() {
+        flyway.migrate();
+
+        try (Connection conn = dataSource.getConnection()) {
+            assertUniqueConstraintExists(conn, "product_release_readiness",
+                    "uq_release_readiness_product_version_target");
+            assertUniqueConstraintExists(conn, "product_bootstrap_evidence",
+                    "uq_bootstrap_evidence_product_env");
+            assertUniqueConstraintExists(conn, "product_rollback_evidence",
+                    "uq_rollback_evidence_product_env");
+        } catch (SQLException e) {
+            fail("Failed to verify V025 release readiness constraints: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void releaseReadinessTableEnforcesVerdictCheckConstraint() {
+        flyway.migrate();
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            String insertInvalidVerdict = """
+                INSERT INTO product_release_readiness
+                    (product_id, product_version, release_target, release_verdict, tenant_id)
+                VALUES ('phr', '1.0.0', 'staging', 'invalid-verdict', 'tenant-test')
+                """;
+            try (var stmt = conn.prepareStatement(insertInvalidVerdict)) {
+                assertThrows(SQLException.class, stmt::executeUpdate,
+                        "Invalid release_verdict should be rejected by check constraint");
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            // Expected path for constraint violations — test passes
+        }
+    }
+
+    @Test
+    void releaseReadinessTableEnforcesTargetCheckConstraint() {
+        flyway.migrate();
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            String insertInvalidTarget = """
+                INSERT INTO product_release_readiness
+                    (product_id, product_version, release_target, release_verdict, tenant_id)
+                VALUES ('phr', '1.0.0', 'unknown-env', 'pass', 'tenant-test')
+                """;
+            try (var stmt = conn.prepareStatement(insertInvalidTarget)) {
+                assertThrows(SQLException.class, stmt::executeUpdate,
+                        "Invalid release_target should be rejected by check constraint");
+            } finally {
+                conn.rollback();
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            // Expected path for constraint violations — test passes
         }
     }
 

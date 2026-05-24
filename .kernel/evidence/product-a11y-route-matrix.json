@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-24T05:04:06.320Z",
+  "generatedAt": "2026-05-24T17:17:39.456Z",
   "scopedProductCount": 2,
   "rows": [
     {
@@ -12,7 +12,7 @@
         "workflowCoverage": true
       },
       "evidence": {
-        "a11ySpecPath": "products\\digital-marketing\\ui\\e2e\\a11y.spec.ts"
+        "a11ySpecPath": "products/digital-marketing/ui/e2e/a11y.spec.ts"
       }
     },
     {
@@ -25,7 +25,7 @@
         "workflowCoverage": true
       },
       "evidence": {
-        "a11ySpecPath": "products\\phr\\apps\\web\\tests\\e2e\\phr-a11y.spec.ts"
+        "a11ySpecPath": "products/phr/apps/web/tests/e2e/phr-a11y.spec.ts"
       }
     }
   ],

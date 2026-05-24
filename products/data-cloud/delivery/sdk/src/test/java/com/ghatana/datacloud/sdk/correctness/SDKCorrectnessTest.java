@@ -79,7 +79,7 @@ class SDKCorrectnessTest {
     @DisplayName("SDK validates required fields in entity creation")
     void sdkValidatesRequiredFieldsInEntityCreation() { 
         // Create entity with minimal valid data
-        Map<String, Object> validEntity = Map.of( 
+        Map<String, Object> validEntity = Map.of(
             "name", "Test Entity",
             "type", "test"
         );
@@ -107,7 +107,7 @@ class SDKCorrectnessTest {
     @Test
     @DisplayName("SDK preserves data types through round-trip")
     void sdkPreservesDataTypesThroughRoundTrip() { 
-        Map<String, Object> originalData = Map.of( 
+        Map<String, Object> originalData = Map.of(
             "stringField", "test-value",
             "numberField", 42,
             "booleanField", true,
@@ -175,7 +175,7 @@ class SDKCorrectnessTest {
     @Test
     @DisplayName("SDK handles special characters in entity data")
     void sdkHandlesSpecialCharactersInEntityData() { 
-        Map<String, Object> specialData = Map.of( 
+        Map<String, Object> specialData = Map.of(
             "unicode", "Hello 世界 🌍",
             "quotes", "Text with \"quotes\" and 'apostrophes'",
             "newlines", "Line 1\nLine 2\nLine 3",
@@ -200,7 +200,7 @@ class SDKCorrectnessTest {
     @Test
     @DisplayName("SDK handles concurrent requests correctly")
     void sdkHandlesConcurrentRequestsCorrectly() throws InterruptedException { 
-        List<Thread> threads = List.of( 
+        List<Thread> threads = List.of(
             createEntityThread("concurrent_test_entities", "Thread-1"), 
             createEntityThread("concurrent_test_entities", "Thread-2"), 
             createEntityThread("concurrent_test_entities", "Thread-3") 
@@ -231,7 +231,7 @@ class SDKCorrectnessTest {
             largeString.append("data-");
         }
         
-        Map<String, Object> largePayload = Map.of( 
+        Map<String, Object> largePayload = Map.of(
             "largeField", largeString.toString(), 
             "metadata", Map.of("size", largeString.length()) 
         );

@@ -183,11 +183,11 @@ class OperatorCompatibilityCheckerTest {
         }
 
         @Test
-        @DisplayName("validation checks operator kind")
-        void validationChecksOperatorKind() {
+        @DisplayName("validation checks operator kind requirements")
+        void validationChecksOperatorKindRequirements() {
             OperatorSpec spec = new OperatorSpec(
                 "op-1",
-                OperatorKind.FILTER,
+                OperatorKind.AGENT_ACTION,
                 "schema-1",
                 "schema-2",
                 Map.of(),
@@ -196,8 +196,43 @@ class OperatorCompatibilityCheckerTest {
             List<OperatorCompatibilityChecker.CompatibilityIssue> issues =
                 checker.validateOperatorSpec(spec);
 
-            // Placeholder: no required parameters for now
-            assertThat(issues).isEmpty();
+            assertThat(issues)
+                .extracting(OperatorCompatibilityChecker.CompatibilityIssue::issue)
+                .contains(OperatorCompatibilityChecker.IssueType.MISSING_REQUIRED_PARAMETER);
+            assertThat(issues)
+                .extracting(OperatorCompatibilityChecker.CompatibilityIssue::description)
+                .anyMatch(description -> description.contains("agentRef"));
+        }
+
+        @Test
+        @DisplayName("agent action is terminal and cannot feed another operator")
+        void agentActionIsTerminalAndCannotFeedAnotherOperator() {
+            OperatorSpec source = new OperatorSpec(
+                "op-action",
+                OperatorKind.AGENT_ACTION,
+                "schema-1",
+                "schema-2",
+                Map.of(
+                    "agentRef", "agent://approve",
+                    "toolPolicy", "restricted",
+                    "approvalPolicy", "human-required",
+                    "auditPolicy", "required"),
+                Map.of());
+
+            OperatorSpec target = new OperatorSpec(
+                "op-target",
+                OperatorKind.TRANSFORM,
+                "schema-2",
+                "schema-3",
+                Map.of(),
+                Map.of());
+
+            List<OperatorCompatibilityChecker.CompatibilityIssue> issues =
+                checker.checkCompatibility(source, target);
+
+            assertThat(issues)
+                .extracting(OperatorCompatibilityChecker.CompatibilityIssue::issue)
+                .contains(OperatorCompatibilityChecker.IssueType.KIND_INCOMPATIBILITY);
         }
     }
 

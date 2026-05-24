@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
  * @doc.layer agent-core
  * @doc.pattern Service
  */
+@SuppressWarnings("deprecation")
 public final class MemoryRetrievalService {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryRetrievalService.class);

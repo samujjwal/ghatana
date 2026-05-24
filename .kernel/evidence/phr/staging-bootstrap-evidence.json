@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "environment": "staging",
+  "targetEnv": "staging",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "bootstrap": {
+    "validated": true,
+    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "postgres": {
+      "status": "ready",
+      "host": "phr-staging-db.internal",
+      "port": 5432,
+      "database": "phr_staging",
+      "rlsEnabled": true,
+      "tenantIsolation": "row-level-security",
+      "connectionPoolMax": 20,
+      "sslMode": "require",
+      "evidence": "products/phr/src/main/resources/db/migration",
+      "migrationStatus": "up-to-date"
+    },
+    "migrations": {
+      "status": "ready",
+      "tool": "flyway",
+      "appliedCount": 12,
+      "pendingCount": 0,
+      "lastApplied": "V12__add_consent_audit_index.sql",
+      "migrationPath": "products/phr/src/main/resources/db/migration",
+      "checksumVerified": true
+    },
+    "secrets": {
+      "status": "ready",
+      "provider": "vault",
+      "secretsPath": "phr/staging",
+      "requiredSecrets": [
+        "DB_PASSWORD",
+        "JWT_SECRET",
+        "FHIR_API_KEY",
+        "DATA_CLOUD_API_KEY",
+        "AUDIT_SINK_KEY"
+      ],
+      "allSecretsPresent": true,
+      "rotationPolicy": "90-days"
+    },
+    "storage": {
+      "status": "ready",
+      "type": "s3-compatible",
+      "bucket": "phr-staging-fhir-artifacts",
+      "region": "ap-south-1",
+      "encryption": "AES-256",
+      "versioning": true,
+      "retentionPolicy": "7-years-hipaa"
+    },
+    "distributedCache": {
+      "status": "ready",
+      "type": "redis",
+      "host": "phr-staging-cache.internal",
+      "port": 6379,
+      "clusterMode": true,
+      "maxMemoryPolicy": "allkeys-lru",
+      "tlsEnabled": true,
+      "consentCacheTtlSeconds": 300,
+      "invalidationSupported": true
+    },
+    "dataCloud": {
+      "status": "ready",
+      "endpoint": "https://data-cloud-staging.internal/api/v1",
+      "tenantId": "phr-staging",
+      "collections": [
+        "phr-patients",
+        "phr-consent-grants",
+        "phr-audit-trail",
+        "phr-fhir-resources"
+      ],
+      "rlsEnforced": true,
+      "durableWritesEnabled": true,
+      "writeProofPath": ".kernel/evidence/phr/data-cloud-collections.json"
+    },
+    "kernel": {
+      "status": "ready",
+      "lifecycleEnabled": true,
+      "kernelProductConfig": "products/phr/kernel-product.yaml",
+      "lifecyclePhases": [
+        "validate",
+        "test",
+        "build",
+        "package",
+        "deploy",
+        "verify"
+      ],
+      "gatesActive": [
+        "consent",
+        "pii-classification",
+        "audit-evidence",
+        "fhir-contract-validation",
+        "tenant-data-sovereignty"
+      ]
+    },
+    "healthChecks": {
+      "status": "ready",
+      "endpoints": [
+        {
+          "path": "/health",
+          "expectedStatus": 200,
+          "timeout": 5000
+        },
+        {
+          "path": "/health/ready",
+          "expectedStatus": 200,
+          "timeout": 5000
+        },
+        {
+          "path": "/health/live",
+          "expectedStatus": 200,
+          "timeout": 5000
+        }
+      ],
+      "allPassed": true
+    },
+    "fhir": {
+      "status": "ready",
+      "r4Enabled": true,
+      "validationGate": "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml",
+      "goldenFixtures": "products/phr/src/test/resources/fhir/golden",
+      "supportedResources": [
+        "Patient",
+        "Observation",
+        "MedicationRequest",
+        "Immunization",
+        "ImagingStudy",
+        "DocumentReference",
+        "ServiceRequest"
+      ]
+    }
+  },
+  "configStatus": {
+    "validated": true,
+    "configSource": "products/phr/lifecycle.staging.yaml",
+    "allRequiredConfigPresent": true
+  },
+  "evidenceRefs": [
+    "products/phr/kernel-product.yaml",
+    "products/phr/lifecycle/foundation-usage-profile.yaml",
+    "products/phr/lifecycle/readiness-evidence.yaml",
+    ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json"
+  ]
+}

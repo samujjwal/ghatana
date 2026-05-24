@@ -5,6 +5,7 @@
 package com.ghatana.agent.mastery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,7 @@ public final class VersionScopeParser {
 
     private static final Logger log = LoggerFactory.getLogger(VersionScopeParser.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
 
     private VersionScopeParser() {
         // Utility class
@@ -49,7 +51,7 @@ public final class VersionScopeParser {
     @NotNull
     public static VersionScope fromJson(@NotNull String json, @NotNull VersionScope fallback) {
         try {
-            Map<String, Object> root = objectMapper.readValue(json, Map.class);
+            Map<String, Object> root = objectMapper.readValue(json, MAP_TYPE);
             return fromMap(root, fallback);
         } catch (JsonProcessingException e) {
             log.debug("Failed to parse version scope JSON, using fallback: {}", e.getMessage());

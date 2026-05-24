@@ -102,7 +102,7 @@
         },
         {
           "name": "check-test-authenticity",
-          "script": "scripts/check-test-authenticity.sh",
+          "script": "scripts/check-test-authenticity.mjs",
           "description": "Validate test authenticity (anti-theater rule)",
           "args": []
         },

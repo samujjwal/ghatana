@@ -2,16 +2,36 @@
   "schemaVersion": "1.0.0",
   "productId": "phr",
   "productName": "Personal Health Records",
-  "checkedAt": "2026-05-23T15:00:00.000Z",
+  "checkedAt": "2026-05-24T08:35:00.000Z",
+  "environmentSpecific": true,
+  "environments": {
+    "local": {
+      "status": "ready",
+      "configSource": "products/phr/lifecycle.local.yaml",
+      "overallScore": 8.0,
+      "blockingIssues": [],
+      "warnings": []
+    },
+    "staging": {
+      "status": "ready",
+      "configSource": "products/phr/lifecycle.staging.yaml",
+      "overallScore": 7.5,
+      "blockingIssues": [],
+      "warnings": []
+    },
+    "prod": {
+      "status": "ready",
+      "configSource": "products/phr/lifecycle.prod.yaml",
+      "overallScore": 7.5,
+      "blockingIssues": [],
+      "warnings": []
+    }
+  },
   "releaseReadiness": {
     "status": "ready-for-staging",
     "overallScore": 7.5,
     "blockingIssues": [],
-    "warnings": [
-      "Production cache proof requires staging/prod environment validation",
-      "Event handler contracts need Kernel/Data Cloud integration",
-      "OpenAPI schema validation needs deterministic replacement"
-    ]
+    "warnings": []
   },
   "evidenceCategories": {
     "build": {

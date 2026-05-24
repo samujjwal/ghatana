@@ -118,7 +118,7 @@ function execGradleProof(args) {
       if (attempt === 2 || !isTransientGradleCleanupFailure(error)) {
         throw error;
       }
-      logWarning('Transient Gradle cleanup lock detected; retrying atomic failure-injection proof once');
+      console.warn('⚠️  Transient Gradle cleanup lock detected; retrying atomic failure-injection proof once');
       sleepMs(1500);
     }
   }

@@ -92,11 +92,11 @@ public class ReferralService extends PhrServiceBase {
             REFERRAL_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "status", toStore.status().name(),
                 "urgency", toStore.urgency().name()
-            ),
+            ), toStore.referringProviderId()),
             "Referral",
             1
         ).then(stored -> audit("CREATE_REFERRAL", stored.patientId(),
@@ -134,7 +134,10 @@ public class ReferralService extends PhrServiceBase {
                     REFERRAL_DATASET,
                     sanitizedReferralId,
                     accepted,
-                    Map.of("status", "ACCEPTED"),
+                    mutationMetadata(Map.of(
+                        "patientId", accepted.patientId(),
+                        "status", "ACCEPTED"
+                    ), sanitizedAcceptingProviderId),
                     "Referral",
                     1
                 ).then(updated -> audit("ACCEPT_REFERRAL", updated.patientId(),
@@ -166,7 +169,10 @@ public class ReferralService extends PhrServiceBase {
                     REFERRAL_DATASET,
                     sanitizedReferralId,
                     closed,
-                    Map.of("status", "COMPLETED"),
+                    mutationMetadata(Map.of(
+                        "patientId", closed.patientId(),
+                        "status", "COMPLETED"
+                    ), closed.referringProviderId()),
                     "Referral",
                     1
                 ).then(updated -> audit(

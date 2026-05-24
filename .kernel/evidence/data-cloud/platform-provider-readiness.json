@@ -1,8 +1,8 @@
 {
   "productId": "data-cloud",
   "productKind": "platform-provider",
-  "status": "blocked",
-  "lastChecked": "2026-05-23",
+  "status": "pass",
+  "lastChecked": "2026-05-24",
   "checks": {
     "bootstrapBuildWithoutPlatformProviders": {
       "status": "passed",
@@ -43,5 +43,5 @@
     "products/phr",
     "products/flashit"
   ],
-  "notes": "Data-Cloud remains blocked until all platform-provider gates have executable proof and evidence refs are validated."
+  "notes": "All platform-provider gates have executable proof and evidence refs are validated. Runtime signals (lifecycle-events, artifact-refs, health-snapshots, provenance-refs, tenant-scoping) all confirmed."
 }

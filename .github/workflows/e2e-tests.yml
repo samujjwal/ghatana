@@ -1,5 +1,5 @@
 name: E2E Tests
-# P1-4: Toolchain already uses Node 20 and pnpm@10.33.0 as required
+# P1-4: Toolchain already uses Node 22 and pnpm.33.0 as required
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "22"
           cache: 'pnpm'
 
       - name: Install dependencies

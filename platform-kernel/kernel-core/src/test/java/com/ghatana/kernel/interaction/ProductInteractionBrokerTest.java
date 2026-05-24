@@ -717,6 +717,77 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         }
     }
 
+    // KER-004: Commit SHA binding for production truth
+    @Test
+    @DisplayName("KER-004: production mode requires commit SHA")
+    void productionModeRequiresCommitSha() {
+        assertThatThrownBy(() -> brokerBuilder()
+                .register(new EchoHandler())
+                .evidenceWriter(new RecordingEvidenceWriter())
+                .brokerMode(BrokerMode.PRODUCTION)
+                .build())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Production mode requires commit SHA for production truth binding");
+    }
+
+    @Test
+    @DisplayName("KER-004: production mode accepts valid commit SHA")
+    void productionModeAcceptsValidCommitSha() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .evidenceWriter(new RecordingEvidenceWriter())
+                .brokerMode(BrokerMode.PRODUCTION)
+                .commitSha("7f84bc08e9e4e6d7e209cb49a855f199f7c90347")
+                .build();
+        try {
+            assertThat(broker).isNotNull();
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("KER-004: rejects invalid commit SHA format")
+    void rejectsInvalidCommitShaFormat() {
+        assertThatThrownBy(() -> brokerBuilder()
+                .register(new EchoHandler())
+                .evidenceWriter(new RecordingEvidenceWriter())
+                .brokerMode(BrokerMode.PRODUCTION)
+                .commitSha("invalid-sha")
+                .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid commit SHA format");
+    }
+
+    @Test
+    @DisplayName("KER-004: non-production mode does not require commit SHA")
+    void nonProductionModeDoesNotRequireCommitSha() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .evidenceWriter(new RecordingEvidenceWriter())
+                .brokerMode(BrokerMode.DEVELOPMENT)
+                .build();
+        try {
+            assertThat(broker).isNotNull();
+        } finally {
+            broker.close();
+        }
+    }
+
+    @Test
+    @DisplayName("KER-004: test mode does not require commit SHA")
+    void testModeDoesNotRequireCommitSha() {
+        ProductInteractionBroker broker = brokerBuilder()
+                .register(new EchoHandler())
+                .brokerMode(BrokerMode.TEST)
+                .build();
+        try {
+            assertThat(broker).isNotNull();
+        } finally {
+            broker.close();
+        }
+    }
+
     private static ProductInteractionRequest<EchoRequest> baseRequest(String interactionId, EchoRequest payload) {
         return new ProductInteractionRequest<>(
                 "1.0.0",

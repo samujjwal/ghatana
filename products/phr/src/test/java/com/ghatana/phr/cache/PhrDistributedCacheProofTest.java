@@ -6,6 +6,7 @@ import com.ghatana.platform.cache.RedisDistributedCacheAdapter;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -29,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Integration test
  */
 @DisplayName("PHR Distributed Cache Proof")
+@Tag("integration")
+@Tag("infrastructure-backed")
 final class PhrDistributedCacheProofTest extends EventloopTestBase {
 
     private static final String REDIS_IMAGE = "redis:7-alpine";

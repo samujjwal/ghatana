@@ -213,7 +213,7 @@ public final class DurablePhrNotificationSender extends PhrServiceBase implement
                     OUTBOX_DATASET,
                     deliveryId,
                     entry,
-                    metadataFor(entry),
+                    mutationMetadata(metadataFor(entry), entry.recipientId()),
                     "PhrNotificationOutboxEntry",
                     1
                 ).toVoid();

@@ -60,43 +60,79 @@ public final class AgentOperatorAdapter implements AgentOperator {
     private final String operatorDescription;
     private final List<String> capabilities;
     private final Map<String, String> metadata;
+    private final AgentSideEffectProfile sideEffectProfile;
+    private final String inputSchema;
+    private final String outputSchema;
+    private final Map<String, Object> modelPolicy;
+    private final Map<String, Object> toolPolicy;
+    private final Map<String, Object> memoryPolicy;
+    private final Map<String, Object> retrievalPolicy;
+    private final Map<String, Object> guardrailPolicy;
+    private final Map<String, Object> replayPolicy;
+    private final Map<String, Object> uncertaintyPolicy;
+    private final Map<String, Object> humanReviewPolicy;
+    private final Map<String, Object> observabilityPolicy;
     private volatile OperatorState state = OperatorState.CREATED;
     private volatile OperatorConfig config = OperatorConfig.empty();
 
     public AgentOperatorAdapter(
             @NotNull TypedAgent<Map<String, Object>, Map<String, Object>> agent,
             @NotNull String agentRef,
-            @NotNull AgentOperatorKind kind) {
-            this.agent = Objects.requireNonNull(agent, "agent");
-            this.agentRef = Objects.requireNonNull(agentRef, "agentRef");
-            this.kind = Objects.requireNonNull(kind, "kind");
+            @NotNull AgentOperatorKind kind,
+            @NotNull String inputSchema,
+            @NotNull String outputSchema,
+            @NotNull AgentSideEffectProfile sideEffectProfile,
+            @NotNull Map<String, Object> modelPolicy,
+            @NotNull Map<String, Object> toolPolicy,
+            @NotNull Map<String, Object> memoryPolicy,
+            @NotNull Map<String, Object> retrievalPolicy,
+            @NotNull Map<String, Object> guardrailPolicy,
+            @NotNull Map<String, Object> replayPolicy,
+            @NotNull Map<String, Object> uncertaintyPolicy,
+            @NotNull Map<String, Object> humanReviewPolicy,
+            @NotNull Map<String, Object> observabilityPolicy) {
+        this.agent = Objects.requireNonNull(agent, "agent");
+        this.agentRef = Objects.requireNonNull(agentRef, "agentRef");
+        this.kind = Objects.requireNonNull(kind, "kind");
+        this.inputSchema = requireNonBlank(inputSchema, "inputSchema");
+        this.outputSchema = requireNonBlank(outputSchema, "outputSchema");
+        this.sideEffectProfile = Objects.requireNonNull(sideEffectProfile, "sideEffectProfile");
+        this.modelPolicy = requirePolicy(modelPolicy, "modelPolicy");
+        this.toolPolicy = requirePolicy(toolPolicy, "toolPolicy");
+        this.memoryPolicy = requirePolicy(memoryPolicy, "memoryPolicy");
+        this.retrievalPolicy = requirePolicy(retrievalPolicy, "retrievalPolicy");
+        this.guardrailPolicy = requirePolicy(guardrailPolicy, "guardrailPolicy");
+        this.replayPolicy = requirePolicy(replayPolicy, "replayPolicy");
+        this.uncertaintyPolicy = requirePolicy(uncertaintyPolicy, "uncertaintyPolicy");
+        this.humanReviewPolicy = requirePolicy(humanReviewPolicy, "humanReviewPolicy");
+        this.observabilityPolicy = requirePolicy(observabilityPolicy, "observabilityPolicy");
 
-            AgentDescriptor descriptor = agent.descriptor();
-            String namespace = nonBlank(descriptor.getNamespace(), "default");
-            String idSeed = nonBlank(descriptor.getAgentId(), agentRef);
-            String version = nonBlank(descriptor.getVersion(), "1.0.0");
+        AgentDescriptor descriptor = agent.descriptor();
+        String namespace = nonBlank(descriptor.getNamespace(), "default");
+        String idSeed = nonBlank(descriptor.getAgentId(), agentRef);
+        String version = nonBlank(descriptor.getVersion(), "1.0.0");
 
-            this.operatorId = OperatorId.of(namespace, "agent", sanitize(idSeed), version);
-            this.operatorName = nonBlank(descriptor.getName(), idSeed);
-            this.operatorDescription = nonBlank(
-                descriptor.getDescription(),
-                "Adapter operator for typed agent " + this.agentRef);
-            this.capabilities = List.copyOf(descriptor.getCapabilities());
-            this.metadata = Map.of(
-                "agentRef", this.agentRef,
-                "agentOperatorKind", this.kind.name(),
-                "adapterType", "typed-agent");
+        this.operatorId = OperatorId.of(namespace, "agent", sanitize(idSeed), version);
+        this.operatorName = nonBlank(descriptor.getName(), idSeed);
+        this.operatorDescription = nonBlank(
+            descriptor.getDescription(),
+            "Adapter operator for typed agent " + this.agentRef);
+        this.capabilities = List.copyOf(descriptor.getCapabilities());
+        this.metadata = Map.of(
+            "agentRef", this.agentRef,
+            "agentOperatorKind", this.kind.name(),
+            "adapterType", "typed-agent");
     }
 
     @Override
     @NotNull
-            public Promise<EventOperatorResult<Map<String, Object>>> process(
-                @NotNull EventContext<Map<String, Object>> input,
-                @Nullable OperatorRuntimeContext ctx) {
-            Map<String, Object> inputPayload = input.input().orElseGet(Map::of);
-            AgentContext agentContext = createAgentContext(ctx, input.tenantId());
-            return agent.process(agentContext, inputPayload)
-                .map(result -> mapAgentResult(result, input));
+    public Promise<EventOperatorResult<Map<String, Object>>> process(
+            @NotNull EventContext<Map<String, Object>> input,
+            @Nullable OperatorRuntimeContext ctx) {
+        Map<String, Object> inputPayload = input.input().orElseGet(Map::of);
+        AgentContext agentContext = createAgentContext(ctx, input.tenantId());
+        return agent.process(agentContext, inputPayload)
+            .map(result -> mapAgentResult(result, input));
     }
 
     @Override
@@ -114,73 +150,73 @@ public final class AgentOperatorAdapter implements AgentOperator {
     @Override
     @NotNull
     public AgentSideEffectProfile sideEffectProfile() {
-        return AgentSideEffectProfile.SIDE_EFFECTING;
+        return sideEffectProfile;
     }
 
     @Override
     @NotNull
     public String inputSchema() {
-        return "agent-input-default";
+        return inputSchema;
     }
 
     @Override
     @NotNull
     public String outputSchema() {
-        return "agent-output-default";
+        return outputSchema;
     }
 
     @Override
     @NotNull
     public Map<String, Object> modelPolicy() {
-        return Map.of();
+        return modelPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> toolPolicy() {
-        return Map.of();
+        return toolPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> memoryPolicy() {
-        return Map.of();
+        return memoryPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> retrievalPolicy() {
-        return Map.of();
+        return retrievalPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> guardrailPolicy() {
-        return Map.of();
+        return guardrailPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> replayPolicy() {
-        return Map.of();
+        return replayPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> uncertaintyPolicy() {
-        return Map.of();
+        return uncertaintyPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> humanReviewPolicy() {
-        return Map.of();
+        return humanReviewPolicy;
     }
 
     @Override
     @NotNull
     public Map<String, Object> observabilityPolicy() {
-        return Map.of();
+        return observabilityPolicy;
     }
 
     @Override
@@ -354,6 +390,22 @@ public final class AgentOperatorAdapter implements AgentOperator {
             return fallback;
         }
         return value;
+    }
+
+    private static String requireNonBlank(@Nullable String value, @NotNull String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return value;
+    }
+
+    private static Map<String, Object> requirePolicy(
+            @Nullable Map<String, Object> policy,
+            @NotNull String fieldName) {
+        if (policy == null || policy.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " must not be empty");
+        }
+        return Map.copyOf(policy);
     }
 
     private static String sanitize(@NotNull String value) {

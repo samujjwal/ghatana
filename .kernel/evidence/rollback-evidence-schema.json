@@ -1,0 +1,318 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rollback Evidence Schema",
+  "description": "Schema for validating rollback evidence files across products",
+  "type": "object",
+  "required": ["schemaVersion", "productId", "environment", "targetEnv", "generatedAt", "commitSha", "rollback"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "productId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["local", "dev", "staging", "prod"]
+    },
+    "targetEnv": {
+      "type": "string",
+      "enum": ["local", "dev", "staging", "prod"]
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["validated", "strategy", "drillStatus", "drillRunAt"],
+      "properties": {
+        "validated": {
+          "type": "boolean"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["previous-artifact", "blue-green", "canary"]
+        },
+        "drillStatus": {
+          "type": "string",
+          "enum": ["passed", "failed", "skipped"]
+        },
+        "drillRunAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approvalRequired": {
+          "type": "boolean"
+        },
+        "dualApprovalRequired": {
+          "type": "boolean"
+        },
+        "failClosed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deploymentManifestHistory": {
+      "type": "object",
+      "required": ["retentionCount", "manifestsAvailable", "policyPath"],
+      "properties": {
+        "retentionCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "manifestsAvailable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policyPath": {
+          "type": "string"
+        },
+        "manifests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["deploymentId", "artifactSha", "deployedAt", "status", "healthCheckPassed"],
+            "properties": {
+              "deploymentId": {
+                "type": "string"
+              },
+              "artifactSha": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]+$"
+              },
+              "deployedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["stable", "verified", "failed"]
+              },
+              "healthCheckPassed": {
+                "type": "boolean"
+              },
+              "promotedFromStaging": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "artifactSelectionPolicy": {
+      "type": "object",
+      "required": ["strategy", "validationRequired"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["latest-stable", "manual", "blue-green"]
+        },
+        "minimumHealthCheckAge": {
+          "type": "string"
+        },
+        "policyPath": {
+          "type": "string"
+        },
+        "validationRequired": {
+          "type": "boolean"
+        },
+        "requiresStagingPromotion": {
+          "type": "boolean"
+        },
+        "allowedArtifactStatuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "approvalContract": {
+      "type": "object",
+      "required": ["required"],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "approvers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "minimumApprovers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "policyPath": {
+          "type": "string"
+        },
+        "auditTrailRequired": {
+          "type": "boolean"
+        },
+        "justificationRequired": {
+          "type": "boolean"
+        },
+        "changeManagementTicketRequired": {
+          "type": "boolean"
+        }
+      }
+    },
+    "healthcarePostRollbackGates": {
+      "type": "object",
+      "required": ["policyPath", "gates", "allGatesMustPass"],
+      "properties": {
+        "policyPath": {
+          "type": "string"
+        },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["gate", "description", "required", "timeout"],
+            "properties": {
+              "gate": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "timeout": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "allGatesMustPass": {
+          "type": "boolean"
+        }
+      }
+    },
+    "campaignStateRollback": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["covered", "not-covered"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "externalIdsPreserved": {
+          "type": "boolean"
+        },
+        "idempotencyKeysIntact": {
+          "type": "boolean"
+        },
+        "connectorCommandsCompensated": {
+          "type": "boolean"
+        },
+        "compensationHandlers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "aiActionLogRollback": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["covered", "not-covered"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "immutableAuditPreserved": {
+          "type": "boolean"
+        },
+        "aiActionLogModule": {
+          "type": "string"
+        }
+      }
+    },
+    "notificationRollback": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["covered", "not-covered"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "inFlightDrained": {
+          "type": "boolean"
+        },
+        "dlqReplayed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rollbackDrillResult": {
+      "type": "object",
+      "required": ["drillId", "status", "ranAt", "durationMs", "previousArtifact", "healthCheckPostRollback"],
+      "properties": {
+        "drillId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "ranAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "previousArtifact": {
+          "type": "string"
+        },
+        "healthCheckPostRollback": {
+          "type": "string",
+          "enum": ["passed", "failed"]
+        },
+        "consentCacheInvalidated": {
+          "type": "boolean"
+        },
+        "auditTrailContinuous": {
+          "type": "boolean"
+        },
+        "phiIntegrityVerified": {
+          "type": "boolean"
+        },
+        "campaignStateIntact": {
+          "type": "boolean"
+        },
+        "externalIdsPreserved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -83,7 +83,7 @@ public final class BackupRestoreService {
 
     public BackupRestoreService(RuntimeTruthService runtimeTruthService) {
         this.runtimeTruthService = Objects.requireNonNull(runtimeTruthService, "runtimeTruthService must not be null");
-        this.backupStorage = new java.util.concurrent.ConcurrentHashMap();
+        this.backupStorage = new java.util.concurrent.ConcurrentHashMap<>();
     }
 
     /**

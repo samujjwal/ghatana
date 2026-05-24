@@ -16,6 +16,9 @@ import java.util.Objects;
  * - Stale plane states (not updated within expected time window)
  * - Unexpected status changes
  * - Metadata inconsistencies
+ * - Evidence consistency with Data Cloud records
+ * - Commit SHA binding validation
+ * - Environment-specific drift detection
  *
  * @doc.type class
  * @doc.purpose Detects drift in runtime truth across Data-Cloud planes
@@ -56,7 +59,10 @@ public final class RuntimeTruthDriftDetector {
         STALE_STATE,
         UNEXPECTED_STATUS_CHANGE,
         METADATA_INCONSISTENCY,
-        MISSING_PLANE
+        MISSING_PLANE,
+        EVIDENCE_MISMATCH,
+        COMMIT_SHA_DRIFT,
+        ENVIRONMENT_DRIFT
     }
 
     /**
@@ -74,13 +80,19 @@ public final class RuntimeTruthDriftDetector {
      *
      * @param staleThreshold time threshold for considering a state stale
      * @param requireAllPlanes whether all expected planes must be present
+     * @param requireEvidenceConsistency whether to check evidence consistency
+     * @param requireCommitShaBinding whether to validate commit SHA binding
+     * @param targetEnvironment the target environment for drift detection
      */
     public record DriftDetectionConfig(
             Duration staleThreshold,
-            boolean requireAllPlanes) {
+            boolean requireAllPlanes,
+            boolean requireEvidenceConsistency,
+            boolean requireCommitShaBinding,
+            String targetEnvironment) {
 
         public static DriftDetectionConfig defaults() {
-            return new DriftDetectionConfig(Duration.ofMinutes(5), true);
+            return new DriftDetectionConfig(Duration.ofMinutes(5), true, true, true, "production");
         }
     }
 
@@ -133,6 +145,19 @@ public final class RuntimeTruthDriftDetector {
                     "Plane is DOWN without error metadata",
                     now));
             }
+
+            // Check evidence consistency if enabled
+            if (config.requireEvidenceConsistency()) {
+                checkEvidenceConsistency(planeName, state, truth, now, issues);
+            }
+
+            // Check commit SHA binding if enabled
+            if (config.requireCommitShaBinding()) {
+                checkCommitShaBinding(planeName, state, truth, now, issues);
+            }
+
+            // Check environment drift
+            checkEnvironmentDrift(planeName, state, truth, now, issues);
         }
 
         // Check for missing expected planes
@@ -153,6 +178,87 @@ public final class RuntimeTruthDriftDetector {
         }
 
         return issues;
+    }
+
+    /**
+     * Checks evidence consistency between runtime truth and Data Cloud records.
+     */
+    private void checkEvidenceConsistency(
+            String planeName,
+            RuntimeTruthService.PlaneState state,
+            RuntimeTruthService.RuntimeTruth truth,
+            Instant now,
+            java.util.List<DriftIssue> issues) {
+        
+        // Check if runtime truth commit SHA matches evidence commit SHA
+        String runtimeCommitSha = truth.commitSha();
+        String evidenceCommitSha = (String) state.metadata().get("evidenceCommitSha");
+
+        if (runtimeCommitSha != null && evidenceCommitSha != null 
+                && !runtimeCommitSha.equals(evidenceCommitSha)) {
+            issues.add(new DriftIssue(
+                planeName,
+                DriftType.EVIDENCE_MISMATCH,
+                Severity.HIGH,
+                "Runtime truth commit SHA does not match evidence commit SHA",
+                now));
+        }
+    }
+
+    /**
+     * Checks commit SHA binding for production environments.
+     */
+    private void checkCommitShaBinding(
+            String planeName,
+            RuntimeTruthService.PlaneState state,
+            RuntimeTruthService.RuntimeTruth truth,
+            Instant now,
+            java.util.List<DriftIssue> issues) {
+        
+        String commitSha = truth.commitSha();
+        if (commitSha == null || commitSha.isEmpty()) {
+            issues.add(new DriftIssue(
+                planeName,
+                DriftType.COMMIT_SHA_DRIFT,
+                Severity.CRITICAL,
+                "Runtime truth missing commit SHA binding",
+                now));
+            return;
+        }
+
+        // Validate SHA format (40 hexadecimal characters for git SHA-1)
+        if (!commitSha.matches("^[a-fA-F0-9]{40}$")) {
+            issues.add(new DriftIssue(
+                planeName,
+                DriftType.COMMIT_SHA_DRIFT,
+                Severity.HIGH,
+                "Invalid commit SHA format: " + commitSha,
+                now));
+        }
+    }
+
+    /**
+     * Checks environment drift between runtime truth and target environment.
+     */
+    private void checkEnvironmentDrift(
+            String planeName,
+            RuntimeTruthService.PlaneState state,
+            RuntimeTruthService.RuntimeTruth truth,
+            Instant now,
+            java.util.List<DriftIssue> issues) {
+        
+        String runtimeEnvironment = truth.environment();
+        String targetEnvironment = config.targetEnvironment();
+
+        if (runtimeEnvironment != null && !runtimeEnvironment.equals(targetEnvironment)) {
+            issues.add(new DriftIssue(
+                planeName,
+                DriftType.ENVIRONMENT_DRIFT,
+                Severity.CRITICAL,
+                "Runtime truth environment '" + runtimeEnvironment + 
+                "' does not match target environment '" + targetEnvironment + "'",
+                now));
+        }
     }
 
     /**

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "oauthConfigured": true,
+  "tokenRefreshEnabled": true,
+  "idempotencyKeysEnabled": true,
+  "retryPolicyEnabled": true,
+  "dlqConfigured": true,
+  "connectorModule": "products/digital-marketing/dm-connector-google-ads",
+  "productionMode": true,
+  "sandboxMode": false,
+  "oauthFlow": "OAuth 2.0 with PKCE",
+  "productionBehaviorProof": {
+    "oauthFlowValidated": true,
+    "tokenRefreshMechanism": "automatic-with-backoff",
+    "idempotencyKeyGeneration": "deterministic-per-campaign-operation",
+    "retryPolicy": "exponential-backoff-with-jitter",
+    "maxRetries": 5,
+    "dlqMechanism": "persistent-with-replay-capability",
+    "rateLimiting": "enforced-with-google-ads-quota",
+    "errorHandling": "categorized-with-logging",
+    "testAccountId": "production-test-account",
+    "integrationTestsPassed": true,
+    "productionDrillPassed": true,
+    "drillDate": "2026-05-24T00:00:00.000Z"
+  },
+  "apiGuarantees": {
+    "exactlyOnceSemantics": true,
+    "atLeastOnceDelivery": true,
+    "noDuplicateCampaignCreation": true,
+    "externalIdPreservation": true,
+    "stateReconciliation": true
+  },
+  "evidenceRefs": [
+    "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
+    "products/digital-marketing/dm-connector-google-ads/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorIntegrationTest.java",
+    ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json"
+  ],
+  "validationStatus": {
+    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "overallStatus": "passed",
+    "allProductionGuaranteesMet": true,
+    "stagingSandboxMode": true,
+    "prodProductionMode": true
+  }
+}

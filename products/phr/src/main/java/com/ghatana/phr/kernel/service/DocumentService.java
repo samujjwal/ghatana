@@ -324,11 +324,11 @@ public class DocumentService extends PhrServiceBase {
             DOCUMENT_DATASET,
             document.getId(),
             document,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", document.getPatientId(),
                 "documentType", document.getDocumentType(),
                 "createdAt", document.getCreatedAt().toString()
-            ),
+            ), "system"),
             "PatientDocument",
             1
         );
@@ -339,11 +339,11 @@ public class DocumentService extends PhrServiceBase {
             CONTENT_DATASET,
             content.getContentId(),
             content,
-            Map.of(
+            mutationMetadata(Map.of(
                 "documentId", content.getDocumentId(),
                 "contentType", content.getContentType(),
                 "size", String.valueOf(content.getContent().length)
-            ),
+            ), "system"),
             "DocumentContent",
             1
         );

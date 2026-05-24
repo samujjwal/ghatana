@@ -9,20 +9,20 @@
 
 ## Overview
 
-This document describes all automated governance checks that enforce architectural invariants in the Ghatana repository. Every check listed here runs as part of CI and can be executed locally via `pnpm check:governance`.
+This document describes automated governance checks that enforce architectural invariants in the Ghatana repository. The canonical root PR command is `pnpm check:required`; the script-level governance orchestrator can be run with `node scripts/governance/run-governance-checks.mjs`.
 
 ---
 
 ## Governance Check Registry
 
-| Check Name                     | Command                                   | Source Files Read                                                                                                                          | Owner                | Failure Mode                                                                                                                              |
-| ------------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain-registry`              | `pnpm check:domain-registry`              | `config/domain-registry.json`, `config/canonical-product-registry.json`                                                                    | Architecture Team    | Non-zero exit — invalid domain classifications or missing registry entries                                                                |
-| `product-registry-consistency` | `pnpm check:product-registry-consistency` | `config/canonical-product-registry.json`, `config/canonical-product-registry-schema.json`, `config/generated/settings-gradle-includes.kts` | Platform Engineering | Non-zero exit — blocked product has `lifecycleExecutionAllowed: true`, missing `reasonCodes`, or generated settings file is missing       |
-| `package-governance`           | `pnpm check:package-governance`           | `platform/typescript/*/package.json`, `platform/typescript/*/README.md`                                                                    | Platform Engineering | Non-zero exit — missing `package.json`, missing `README.md`, deprecated package name, or missing entry point                              |
-| `boundaries`                   | `pnpm check:boundaries`                   | All `platform/`, `products/`, `shared-services/` source files                                                                              | Architecture Team    | Non-zero exit — product code imports platform internals, kernel code imports product code, or cross-domain violations                     |
-| `doc-claims`                   | `pnpm check:doc-claims`                   | All `docs/**/*.md`, `products/**/*.md`, `config/documentation-authority-map.json`                                                          | Architecture Team    | Non-zero exit — documentation makes current-state claims that contradict reality, or references authoritative sources without citing them |
-| `duplication-exceptions`       | `pnpm check:duplication-exceptions`       | `config/duplication-exceptions.json`, `config/duplication-exceptions.schema.json`                                                          | Platform Engineering | Non-zero exit — invalid exception schema or expired exception entry                                                                       |
+| Check Name                     | Command                                                          | Source Files Read                                                                                                                          | Owner                | Failure Mode                                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain-registry`              | `pnpm check:domain-registry`                                     | `config/domain-registry.json`, `config/canonical-product-registry.json`                                                                    | Architecture Team    | Non-zero exit — invalid domain classifications or missing registry entries                                                                |
+| `product-registry-consistency` | `node scripts/governance/check-product-registry-consistency.mjs` | `config/canonical-product-registry.json`, `config/canonical-product-registry-schema.json`, `config/generated/settings-gradle-includes.kts` | Platform Engineering | Non-zero exit — blocked product has `lifecycleExecutionAllowed: true`, missing `reasonCodes`, or generated settings file is missing       |
+| `package-governance`           | `node scripts/governance/check-package-governance.mjs`           | `platform/typescript/*/package.json`, `platform/typescript/*/README.md`                                                                    | Platform Engineering | Non-zero exit — missing `package.json`, missing `README.md`, deprecated package name, or missing entry point                              |
+| `boundaries`                   | `node scripts/governance/check-boundaries.mjs`                   | All `platform/`, `products/`, `shared-services/` source files                                                                              | Architecture Team    | Non-zero exit — product code imports platform internals, kernel code imports product code, or cross-domain violations                     |
+| `doc-claims`                   | `node scripts/governance/check-doc-current-state-claims.mjs`     | All `docs/**/*.md`, `products/**/*.md`, `config/documentation-authority-map.json`                                                          | Architecture Team    | Non-zero exit — documentation makes current-state claims that contradict reality, or references authoritative sources without citing them |
+| `duplication-exceptions`       | `pnpm check:duplication-exceptions`                              | `config/duplication-exceptions.json`, `config/duplication-exceptions.schema.json`                                                          | Platform Engineering | Non-zero exit — invalid exception schema or expired exception entry                                                                       |
 
 ---
 
@@ -31,8 +31,6 @@ This document describes all automated governance checks that enforce architectur
 Run all governance checks at once:
 
 ```bash
-pnpm check:governance
-# or
 node scripts/governance/run-governance-checks.mjs
 ```
 

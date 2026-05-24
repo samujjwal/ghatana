@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("P1-049: Production Persistence Wiring Proof")
+@Tag("integration")
 class ProductionPersistenceWiringProofTest {
 
     private static final String LONG_KEY = "0123456789abcdef0123456789abcdef";

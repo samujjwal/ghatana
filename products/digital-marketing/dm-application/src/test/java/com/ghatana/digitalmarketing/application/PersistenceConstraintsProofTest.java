@@ -3,12 +3,11 @@ package com.ghatana.digitalmarketing.application;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
-import com.ghatana.digitalmarketing.domain.approval.ApprovalRecord;
-import com.ghatana.digitalmarketing.domain.audit.AuditRecord;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -21,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("DMOS-P1-004: Persistence Constraints Proof (Production-Grade)")
+@Tag("integration")
+@Tag("infrastructure-backed")
 class PersistenceConstraintsProofTest {
 
     private static final String POSTGRES_IMAGE = "postgres:15-alpine";
@@ -106,7 +108,7 @@ class PersistenceConstraintsProofTest {
             }
 
             @Override
-            public java.util.logging.Logger getParentLogger() throws SQLException {
+            public java.util.logging.Logger getParentLogger() {
                 return null;
             }
 
@@ -199,6 +201,22 @@ class PersistenceConstraintsProofTest {
                     tenant_id VARCHAR(100) NOT NULL,
                     workspace_id VARCHAR(100) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """);
+
+            // Create google_ads_campaign_links table — external ID uniqueness (DMOS-005)
+            conn.createStatement().execute("""
+                CREATE TABLE IF NOT EXISTS google_ads_campaign_links (
+                    id VARCHAR(100) NOT NULL PRIMARY KEY,
+                    tenant_id VARCHAR(100) NOT NULL,
+                    connector_id VARCHAR(100) NOT NULL,
+                    internal_campaign_id VARCHAR(100) NOT NULL,
+                    external_campaign_id VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT uq_google_ads_link_internal_per_tenant
+                        UNIQUE (tenant_id, internal_campaign_id),
+                    CONSTRAINT uq_google_ads_link_external_per_tenant
+                        UNIQUE (tenant_id, external_campaign_id)
                 )
             """);
         }
@@ -296,8 +314,8 @@ class PersistenceConstraintsProofTest {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
             stmt.setString(1, "approval-2");
-            stmt.setString(2, tenantId.value());
-            stmt.setString(3, workspaceId.value());
+            stmt.setString(2, tenantId.getValue());
+            stmt.setString(3, workspaceId.getValue());
             stmt.setString(4, "non-existent-campaign");
             stmt.setString(5, "approved");
             stmt.setString(6, "approver-1");
@@ -336,8 +354,8 @@ class PersistenceConstraintsProofTest {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
             stmt.setString(1, "campaign-1");
-            stmt.setString(2, tenantId.value());
-            stmt.setString(3, workspaceId.value());
+            stmt.setString(2, tenantId.getValue());
+            stmt.setString(3, workspaceId.getValue());
             stmt.setString(4, "Campaign 1 Duplicate");
             stmt.setString(5, "Active");
             stmt.setDouble(6, 15000.0);
@@ -448,8 +466,8 @@ class PersistenceConstraintsProofTest {
              """)) {
             stmt.setString(1, "UPDATE");
             stmt.setString(2, "user-2");
-            stmt.setString(3, tenantId.value());
-            stmt.setString(4, workspaceId.value());
+            stmt.setString(3, tenantId.getValue());
+            stmt.setString(4, workspaceId.getValue());
             stmt.setString(5, "audit-1");
 
             // This should fail due to the CHECK constraint
@@ -498,8 +516,8 @@ class PersistenceConstraintsProofTest {
              """)) {
             stmt.setString(1, "rejected");
             stmt.setString(2, "approver-2");
-            stmt.setString(3, tenantId.value());
-            stmt.setString(4, workspaceId.value());
+            stmt.setString(3, tenantId.getValue());
+            stmt.setString(4, workspaceId.getValue());
             stmt.setString(5, "approval-1");
 
             // This should fail due to the CHECK constraint
@@ -515,6 +533,78 @@ class PersistenceConstraintsProofTest {
         assertThat(retrieved.approverId()).isEqualTo("approver-1");
     }
 
+    @Test
+    @DisplayName("external ID uniqueness — one internal campaign ID cannot map to two external Google Ads IDs per tenant")
+    void externalIdUniqueness_internalCampaignIdMustBeUniquePerTenant() throws SQLException {
+        String tenantId = "tenant-extid-1";
+        String connectorId = "conn-1";
+        String internalCampaignId = "camp-internal-1";
+
+        saveGoogleAdsCampaignLink(tenantId, connectorId, internalCampaignId, "customers/100/campaigns/1");
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("""
+                 INSERT INTO google_ads_campaign_links
+                     (id, tenant_id, connector_id, internal_campaign_id, external_campaign_id)
+                 VALUES (?, ?, ?, ?, ?)
+             """)) {
+            stmt.setString(1, "link-dup-" + java.util.UUID.randomUUID());
+            stmt.setString(2, tenantId);
+            stmt.setString(3, connectorId);
+            stmt.setString(4, internalCampaignId);
+            stmt.setString(5, "customers/100/campaigns/999");
+
+            assertThatThrownBy(stmt::executeUpdate)
+                .isInstanceOf(SQLException.class)
+                .satisfies(e -> assertThat(((SQLException) e).getSQLState())
+                    .as("Violation of uq_google_ads_link_internal_per_tenant must produce a unique constraint error (23505)")
+                    .startsWith("23"));
+        }
+    }
+
+    @Test
+    @DisplayName("external ID uniqueness — one external Google Ads campaign ID cannot map to two internal IDs per tenant")
+    void externalIdUniqueness_externalCampaignIdMustBeUniquePerTenant() throws SQLException {
+        String tenantId = "tenant-extid-2";
+        String connectorId = "conn-2";
+        String externalCampaignId = "customers/200/campaigns/42";
+
+        saveGoogleAdsCampaignLink(tenantId, connectorId, "camp-internal-a", externalCampaignId);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("""
+                 INSERT INTO google_ads_campaign_links
+                     (id, tenant_id, connector_id, internal_campaign_id, external_campaign_id)
+                 VALUES (?, ?, ?, ?, ?)
+             """)) {
+            stmt.setString(1, "link-dup-" + java.util.UUID.randomUUID());
+            stmt.setString(2, tenantId);
+            stmt.setString(3, connectorId);
+            stmt.setString(4, "camp-internal-b");
+            stmt.setString(5, externalCampaignId);
+
+            assertThatThrownBy(stmt::executeUpdate)
+                .isInstanceOf(SQLException.class)
+                .satisfies(e -> assertThat(((SQLException) e).getSQLState())
+                    .as("Violation of uq_google_ads_link_external_per_tenant must produce a unique constraint error (23505)")
+                    .startsWith("23"));
+        }
+    }
+
+    @Test
+    @DisplayName("external ID uniqueness — same external ID allowed for different tenants (cross-tenant isolation)")
+    void externalIdUniqueness_sameExternalIdAllowedAcrossTenants() throws SQLException {
+        String externalCampaignId = "customers/300/campaigns/77";
+
+        saveGoogleAdsCampaignLink("tenant-a", "conn-a", "camp-ta-1", externalCampaignId);
+
+        assertThatThrownBy(() ->
+            saveGoogleAdsCampaignLink("tenant-a", "conn-a", "camp-ta-2", externalCampaignId))
+            .isInstanceOf(SQLException.class);
+
+        saveGoogleAdsCampaignLink("tenant-b", "conn-b", "camp-tb-1", externalCampaignId);
+    }
+
     // Database helper methods
 
     private void createWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId) throws SQLException {
@@ -524,22 +614,22 @@ class PersistenceConstraintsProofTest {
                  VALUES (?, ?, ?)
                  ON CONFLICT (tenant_id, workspace_id) DO NOTHING
              """)) {
-            stmt.setString(1, tenantId.value());
-            stmt.setString(2, workspaceId.value());
+            stmt.setString(1, tenantId.getValue());
+            stmt.setString(2, workspaceId.getValue());
             stmt.setString(3, "Test Workspace");
             stmt.executeUpdate();
         }
     }
 
-    private void saveCampaign(DmTenantId tenantId, DmWorkspaceId workspaceId, Campaign campaign) throws SQLException {
+    private Campaign saveCampaign(DmTenantId tenantId, DmWorkspaceId workspaceId, Campaign campaign) throws SQLException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("""
                  INSERT INTO campaigns (id, tenant_id, workspace_id, name, status, budget, created_at, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
             stmt.setString(1, campaign.id());
-            stmt.setString(2, tenantId.value());
-            stmt.setString(3, workspaceId.value());
+            stmt.setString(2, tenantId.getValue());
+            stmt.setString(3, workspaceId.getValue());
             stmt.setString(4, campaign.name());
             stmt.setString(5, campaign.status());
             stmt.setDouble(6, campaign.budget());
@@ -547,6 +637,7 @@ class PersistenceConstraintsProofTest {
             stmt.setTimestamp(8, Timestamp.from(campaign.updatedAt()));
             stmt.executeUpdate();
         }
+        return findCampaign(tenantId, workspaceId, campaign.id());
     }
 
     private Campaign saveCampaignWithIdempotency(DmTenantId tenantId, DmWorkspaceId workspaceId, Campaign campaign, String idempotencyKey) throws SQLException {
@@ -573,8 +664,8 @@ class PersistenceConstraintsProofTest {
             """)) {
                 insertKeyStmt.setString(1, idempotencyKey);
                 insertKeyStmt.setString(2, campaign.id());
-                insertKeyStmt.setString(3, tenantId.value());
-                insertKeyStmt.setString(4, workspaceId.value());
+                insertKeyStmt.setString(3, tenantId.getValue());
+                insertKeyStmt.setString(4, workspaceId.getValue());
                 insertKeyStmt.executeUpdate();
             }
 
@@ -593,8 +684,8 @@ class PersistenceConstraintsProofTest {
             stmt.setString(2, campaign.status());
             stmt.setDouble(3, campaign.budget());
             stmt.setTimestamp(4, Timestamp.from(Instant.now()));
-            stmt.setString(5, tenantId.value());
-            stmt.setString(6, workspaceId.value());
+            stmt.setString(5, tenantId.getValue());
+            stmt.setString(6, workspaceId.getValue());
             stmt.setString(7, campaign.id());
             stmt.executeUpdate();
         }
@@ -607,7 +698,7 @@ class PersistenceConstraintsProofTest {
                  SELECT id, name, status, budget, created_at, updated_at
                  FROM campaigns WHERE tenant_id = ?
              """)) {
-            stmt.setString(1, tenantId.value());
+            stmt.setString(1, tenantId.getValue());
             ResultSet rs = stmt.executeQuery();
             List<Campaign> campaigns = new java.util.ArrayList<>();
             while (rs.next()) {
@@ -630,8 +721,8 @@ class PersistenceConstraintsProofTest {
                  SELECT id, name, status, budget, created_at, updated_at
                  FROM campaigns WHERE tenant_id = ? AND workspace_id = ?
              """)) {
-            stmt.setString(1, tenantId.value());
-            stmt.setString(2, workspaceId.value());
+            stmt.setString(1, tenantId.getValue());
+            stmt.setString(2, workspaceId.getValue());
             ResultSet rs = stmt.executeQuery();
             List<Campaign> campaigns = new java.util.ArrayList<>();
             while (rs.next()) {
@@ -654,8 +745,8 @@ class PersistenceConstraintsProofTest {
                  SELECT id, name, status, budget, created_at, updated_at
                  FROM campaigns WHERE tenant_id = ? AND workspace_id = ? AND id = ?
              """)) {
-            stmt.setString(1, tenantId.value());
-            stmt.setString(2, workspaceId.value());
+            stmt.setString(1, tenantId.getValue());
+            stmt.setString(2, workspaceId.getValue());
             stmt.setString(3, campaignId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -679,8 +770,8 @@ class PersistenceConstraintsProofTest {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
             stmt.setString(1, id);
-            stmt.setString(2, tenantId.value());
-            stmt.setString(3, workspaceId.value());
+            stmt.setString(2, tenantId.getValue());
+            stmt.setString(3, workspaceId.getValue());
             stmt.setString(4, campaignId);
             stmt.setString(5, status);
             stmt.setString(6, approverId);
@@ -698,8 +789,8 @@ class PersistenceConstraintsProofTest {
              """)) {
             stmt.setString(1, status);
             stmt.setString(2, notes);
-            stmt.setString(3, tenantId.value());
-            stmt.setString(4, workspaceId.value());
+            stmt.setString(3, tenantId.getValue());
+            stmt.setString(4, workspaceId.getValue());
             stmt.setString(5, id);
             stmt.executeUpdate();
         }
@@ -711,8 +802,8 @@ class PersistenceConstraintsProofTest {
                  SELECT id, campaign_id, status, approver_id, timestamp, notes
                  FROM approvals WHERE tenant_id = ? AND workspace_id = ? AND id = ?
              """)) {
-            stmt.setString(1, tenantId.value());
-            stmt.setString(2, workspaceId.value());
+            stmt.setString(1, tenantId.getValue());
+            stmt.setString(2, workspaceId.getValue());
             stmt.setString(3, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -736,8 +827,8 @@ class PersistenceConstraintsProofTest {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
              """)) {
             stmt.setString(1, id);
-            stmt.setString(2, tenantId.value());
-            stmt.setString(3, workspaceId.value());
+            stmt.setString(2, tenantId.getValue());
+            stmt.setString(3, workspaceId.getValue());
             stmt.setString(4, entityId);
             stmt.setString(5, action);
             stmt.setString(6, userId);
@@ -753,8 +844,8 @@ class PersistenceConstraintsProofTest {
                  SELECT id, entity_id, action, user_id, timestamp, metadata
                  FROM audit_records WHERE tenant_id = ? AND workspace_id = ? AND id = ?
              """)) {
-            stmt.setString(1, tenantId.value());
-            stmt.setString(2, workspaceId.value());
+            stmt.setString(1, tenantId.getValue());
+            stmt.setString(2, workspaceId.getValue());
             stmt.setString(3, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -768,6 +859,24 @@ class PersistenceConstraintsProofTest {
                 );
             }
             return null;
+        }
+    }
+
+    private void saveGoogleAdsCampaignLink(
+            String tenantId, String connectorId, String internalCampaignId, String externalCampaignId)
+            throws SQLException {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("""
+                 INSERT INTO google_ads_campaign_links
+                     (id, tenant_id, connector_id, internal_campaign_id, external_campaign_id)
+                 VALUES (?, ?, ?, ?, ?)
+             """)) {
+            stmt.setString(1, "link-" + java.util.UUID.randomUUID());
+            stmt.setString(2, tenantId);
+            stmt.setString(3, connectorId);
+            stmt.setString(4, internalCampaignId);
+            stmt.setString(5, externalCampaignId);
+            stmt.executeUpdate();
         }
     }
 

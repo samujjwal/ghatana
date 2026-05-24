@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node scripts/governance/run-governance-checks.mjs
- *   pnpm check:governance
+ *   node scripts/governance/run-governance-checks.mjs
  *
  * Individual checks:
  *   check-domain-registry.mjs          — domain registry validation

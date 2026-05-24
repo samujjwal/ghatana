@@ -88,9 +88,11 @@ public class CaregiverService extends PhrServiceBase {
             RELATIONSHIP_DATASET,
             id,
             toStore,
-            Map.of("caregiverId", toStore.caregiverId(),
+            mutationMetadata(Map.of(
+                "caregiverId", toStore.caregiverId(),
                 "patientId", toStore.patientId(),
-                "status", "ACTIVE"),
+                "status", "ACTIVE"
+            ), toStore.caregiverId()),
             "CaregiverRelationship",
             1
         ).then(stored -> audit("CREATE_RELATIONSHIP", stored.patientId(),
@@ -121,7 +123,10 @@ public class CaregiverService extends PhrServiceBase {
                     RELATIONSHIP_DATASET,
                     relationshipId,
                     revoked,
-                    Map.of("status", "REVOKED"),
+                    mutationMetadata(Map.of(
+                        "patientId", revoked.patientId(),
+                        "status", "REVOKED"
+                    ), revoked.caregiverId()),
                     "CaregiverRelationship",
                     1
                 ).then(updated -> audit("REVOKE_RELATIONSHIP", updated.patientId(),

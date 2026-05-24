@@ -195,12 +195,12 @@ public class AppointmentService extends PhrServiceBase {
                     APPOINTMENT_DATASET,
                     appointmentId,
                     serialize(appointment, "Appointment", appointment.getVersion()),
-                    PhrTraceContext.metadata(correlationId, "phr_appointment_create", Map.of(
+                    mutationMetadata(PhrTraceContext.metadata(correlationId, "phr_appointment_create", Map.of(
                         "patientId", appointment.getPatientId(),
                         "providerId", appointment.getProviderId(),
                         "status", appointment.getStatus(),
                         "scheduledTime", appointment.getScheduledTime().toString()
-                    ))
+                    )), appointment.getProviderId())
                 );
 
                 return dataCloud.writeData(writeRequest)
@@ -317,12 +317,15 @@ public class AppointmentService extends PhrServiceBase {
             return Promise.of(List.of());
         }
 
+        String sanitizedProviderId = PhrInputSanitizationUtils.requireSafeIdentifier(providerId, "providerId");
+        String sanitizedDate = PhrInputSanitizationUtils.requireSafeCode(date, "date");
+
         DataQueryRequest request = new DataQueryRequest(
             SLOT_DATASET,
             "providerId = :providerId AND date = :date AND status = :status",
             Map.of(
-                "providerId", providerId,
-                "date", date,
+                "providerId", sanitizedProviderId,
+                "date", sanitizedDate,
                 "status", "AVAILABLE"
             ),
             100,
@@ -374,7 +377,11 @@ public class AppointmentService extends PhrServiceBase {
                     SLOT_DATASET,
                     slotId,
                     serializeSlot(booked),
-                    Map.of("status", "BOOKED")
+                    mutationMetadata(Map.of(
+                        "slotId", slotId,
+                        "providerId", booked.getProviderId(),
+                        "status", "BOOKED"
+                    ), booked.getProviderId())
                 );
 
                 slotCache.put(slotId, new SlotCacheEntry(false));
@@ -397,7 +404,11 @@ public class AppointmentService extends PhrServiceBase {
                     SLOT_DATASET,
                     slotId,
                     serializeSlot(freed),
-                    Map.of("status", "AVAILABLE")
+                    mutationMetadata(Map.of(
+                        "slotId", slotId,
+                        "providerId", freed.getProviderId(),
+                        "status", "AVAILABLE"
+                    ), freed.getProviderId())
                 );
 
                 slotCache.put(slotId, new SlotCacheEntry(true));
@@ -417,7 +428,12 @@ public class AppointmentService extends PhrServiceBase {
             APPOINTMENT_DATASET,
             appointment.getId(),
             serialize(appointment, "Appointment", appointment.getVersion()),
-            Map.of("version", String.valueOf(appointment.getVersion() + 1))
+            mutationMetadata(Map.of(
+                "patientId", appointment.getPatientId(),
+                "providerId", appointment.getProviderId(),
+                "status", appointment.getStatus(),
+                "version", String.valueOf(appointment.getVersion() + 1)
+            ), appointment.getProviderId())
         );
 
         return dataCloud.writeData(request);

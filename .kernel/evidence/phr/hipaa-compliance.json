@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "encryptionAtRest": true,
+  "tlsInTransit": true,
+  "auditLogging": true,
+  "accessControls": true,
+  "minimumNecessary": true,
+  "breachNotification": true,
+  "compliance": {
+    "encryptionStandard": "AES-256",
+    "tlsVersion": "1.3",
+    "auditRetention": "7-years",
+    "accessLogging": "all-phr-access"
+  },
+  "evidenceRefs": [
+    "products/phr/lifecycle/foundation-usage-profile.yaml"
+  ]
+}

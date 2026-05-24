@@ -150,6 +150,12 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(grant.getPatientId(), "patientId");
         String recipientId = PhrInputSanitizationUtils.requireSafeIdentifier(grant.getRecipientId(), "recipientId");
         ConsentScope sanitizedScope = sanitizeScope(grant.getScope());
+        Instant expiresAt = requireFutureExpiry(grant.getExpiresAt(), "expiresAt");
+        String status = PhrInputSanitizationUtils.requireAllowedValue(
+            grant.getStatus(),
+            "status",
+            Set.of("ACTIVE", "REVOKED", "EXPIRED")
+        );
 
         String rateLimitKey = recipientId;
         if (!tryAcquire(createGrantLimiter, rateLimitKey)) {
@@ -171,9 +177,9 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                     patientId,
                     recipientId,
                     sanitizedScope,
-                    grant.getStatus(),
+                    status,
                     Instant.now(),
-                    grant.getExpiresAt(),
+                    expiresAt,
                     grant.getRevokedAt()
                 );
 
@@ -181,12 +187,12 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                     CONSENT_DATASET,
                     grantId,
                     toStore,
-                    Map.of(
+                    mutationMetadata(Map.of(
                         "patientId", toStore.getPatientId(),
                         "recipientId", toStore.getRecipientId(),
                         "status", toStore.getStatus(),
                         "expiresAt", toStore.getExpiresAt().toString()
-                    ),
+                    ), toStore.getRecipientId()),
                     "ConsentGrant",
                     1
                 ).then(stored -> invalidateConsentCache(stored.getRecipientId(), stored.getPatientId())
@@ -239,7 +245,10 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         ensureRunning();
 
         // Check cache first
-        String cacheKey = accessorId + ":" + patientId + ":" + resourceType;
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        String sanitizedAccessorId = PhrInputSanitizationUtils.requireSafeIdentifier(accessorId, "accessorId");
+        String sanitizedResourceType = PhrInputSanitizationUtils.requireSafeCode(resourceType, "resourceType");
+        String cacheKey = sanitizedAccessorId + ":" + sanitizedPatientId + ":" + sanitizedResourceType;
         return consentCache.get(cacheKey)
             .then(optCached -> {
                 if (optCached.isPresent()) {
@@ -253,10 +262,10 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                     }
                 }
                 // Query active grants
-                return getActiveGrantsForPatient(patientId)
+                return getActiveGrantsForPatient(sanitizedPatientId)
                     .then(grants -> {
                         for (ConsentGrant grant : grants) {
-                            if (grant.covers(accessorId, resourceType)) {
+                            if (grant.covers(sanitizedAccessorId, sanitizedResourceType)) {
                                 ConsentCacheEntry entry = new ConsentCacheEntry(
                                     grant.getId(), true, grant.getExpiresAt());
                                 return consentCache.put(cacheKey, entry)
@@ -281,7 +290,16 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                     false, null, List.of()));
         }
 
-        String rateLimitKey = request.actor().actorId();
+        SanitizedAccessRequest sanitized;
+        try {
+            sanitized = sanitizeAccessRequest(request);
+        } catch (IllegalArgumentException ex) {
+            return Promise.of(new ConsentAccessDecision(
+                    false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
+                    true, null, List.of("MALFORMED_REQUEST")));
+        }
+
+        String rateLimitKey = sanitized.actorId();
         if (!tryAcquire(checkAccessLimiter, rateLimitKey)) {
             return Promise.of(new ConsentAccessDecision(
                     false, ReasonCode.SYSTEM_DENY, null, CacheStatus.BYPASS,
@@ -290,7 +308,7 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
 
         // Self-access shortcut: patient accessing own data
         if (request.actor().actorType() == ActorType.PATIENT
-                && request.target().patientId().equals(request.actor().patientId())) {
+                && sanitized.targetPatientId().equals(sanitized.actorPatientId())) {
             return Promise.of(new ConsentAccessDecision(
                     true, ReasonCode.SELF_ACCESS, null, CacheStatus.BYPASS,
                     false, null, List.of()));
@@ -305,8 +323,8 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
         }
 
         // Check cache
-        String cacheKey = request.actor().actorId() + ":" + request.target().patientId()
-                + ":" + request.target().resourceType();
+        String cacheKey = sanitized.tenantId() + ":" + sanitized.actorId() + ":"
+                + sanitized.targetPatientId() + ":" + sanitized.resourceType();
         return consentCache.get(cacheKey)
                 .then(optCached -> {
                     if (optCached.isPresent()) {
@@ -320,11 +338,11 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
                         }
                     }
                     // Query grants
-                    return getActiveGrantsForPatient(request.target().patientId())
+                    return getActiveGrantsForPatient(sanitized.targetPatientId())
                             .then(grants -> {
                                 for (ConsentGrant grant : grants) {
-                                    if (grant.covers(request.actor().actorId(),
-                                            request.target().resourceType())) {
+                                    if (grant.covers(sanitized.actorId(),
+                                            sanitized.resourceType())) {
                                         ConsentCacheEntry entry = new ConsentCacheEntry(
                                                 grant.getId(), true, grant.getExpiresAt());
                                         return consentCache.put(cacheKey, entry)
@@ -447,12 +465,12 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             EMERGENCY_DATASET,
             grant.getId(),
             grant,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", patientId,
                 "providerId", providerId,
                 "status", "ACTIVE",
                 "expiresAt", expiresAt.toString()
-            ),
+            ), providerId),
             "EmergencyGrant",
             1
         ).then(stored -> notifyPatientOfEmergencyAccess(stored)
@@ -493,7 +511,11 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             CONSENT_DATASET,
             grant.getId(),
             grant,
-            Map.of("status", grant.getStatus()),
+            mutationMetadata(Map.of(
+                "patientId", grant.getPatientId(),
+                "recipientId", grant.getRecipientId(),
+                "status", grant.getStatus()
+            ), grant.getRecipientId()),
             "ConsentGrant",
             1
         );
@@ -521,7 +543,9 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             0,
             ConsentGrant.class
         ).map(grants -> grants.stream()
-            .filter(g -> "ACTIVE".equals(g.getStatus()) && !g.isExpired())
+            .filter(g -> "ACTIVE".equals(g.getStatus())
+                && g.getExpiresAt() != null
+                && !g.isExpired())
             .toList());
     }
 
@@ -576,6 +600,41 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
             .collect(java.util.stream.Collectors.toUnmodifiableSet());
         return new ConsentScope(resourceTypes, scope.allDocuments, documentIds, actions);
     }
+
+    private static Instant requireFutureExpiry(Instant expiresAt, String fieldName) {
+        if (expiresAt == null) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        if (!expiresAt.isAfter(Instant.now())) {
+            throw new IllegalArgumentException(fieldName + " must be in the future");
+        }
+        return expiresAt;
+    }
+
+    private static SanitizedAccessRequest sanitizeAccessRequest(ConsentCheckRequest request) {
+        String tenantId = PhrInputSanitizationUtils.requireSafeIdentifier(request.tenantId(), "tenantId");
+        String actorId = PhrInputSanitizationUtils.requireSafeIdentifier(request.actor().actorId(), "actorId");
+        String actorPatientId = request.actor().patientId() == null
+            ? null
+            : PhrInputSanitizationUtils.requireSafeIdentifier(request.actor().patientId(), "actor.patientId");
+        String targetPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(
+            request.target().patientId(),
+            "target.patientId"
+        );
+        String resourceType = PhrInputSanitizationUtils.requireSafeCode(
+            request.target().resourceType(),
+            "target.resourceType"
+        );
+        return new SanitizedAccessRequest(tenantId, actorId, actorPatientId, targetPatientId, resourceType);
+    }
+
+    private record SanitizedAccessRequest(
+        String tenantId,
+        String actorId,
+        String actorPatientId,
+        String targetPatientId,
+        String resourceType
+    ) {}
 
     // ==================== Inner Types ====================
 
@@ -805,8 +864,11 @@ public class ConsentManagementService extends PhrServiceBase implements ConsentS
 
         String getGrantId() { return grantId; }
         boolean isAllowed() { return allowed; }
-        boolean isExpired() { return Instant.now().isAfter(expiresAt); }
+        boolean isExpired() { return expiresAt == null || Instant.now().isAfter(expiresAt); }
         boolean isNearExpiry() {
+            if (expiresAt == null) {
+                return true;
+            }
             return expiresAt.minusSeconds(300).isBefore(Instant.now());
         }
     }

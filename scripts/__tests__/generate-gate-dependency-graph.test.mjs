@@ -12,7 +12,6 @@ test('generates aggregate gate nodes, edges, tiers, owners, and targets', () => 
     'check:phase8:fast': 'pnpm --dir platform/typescript/kernel-lifecycle exec vitest run src/api/__tests__/KernelLifecycleApiHandlers.test.ts',
     'check:phase8:e2e': 'pnpm --dir platform/typescript/ghatana-studio exec playwright test e2e/artifact-deep-interactions.spec.ts',
     'check:release-gate': 'pnpm check:phase8 && node ./scripts/check-release.mjs',
-    'check:world-class-platform-readiness': 'pnpm check:release-gate',
   };
 
   const graph = generateGateDependencyGraph({ scripts });

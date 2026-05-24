@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.*;
  *   <li>Query operations: queries are inherently tenant-scoped</li>
  *   <li>TenantContext SPI: correct scoping and metadata</li>
  *   <li>Concurrent multi-tenant access: no cross-contamination under load</li>
+ *   <li>Governance plane: policies and rules are tenant-scoped</li>
  * </ul>
  */
 @DisplayName("Data-Cloud Tenant Isolation")
@@ -456,6 +457,166 @@ class DataCloudTenantIsolationTest {
             eventloop.submit(() -> { 
                 client.queryEvents(TENANT_C, EventQuery.all()) 
                         .whenResult(events -> assertThat(events).isEmpty()); 
+            });
+            eventloop.run(); 
+        }
+    }
+
+    // =========================================================================
+    // 7. Governance Plane Tenant Isolation
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Governance Plane Isolation")
+    class GovernancePlaneIsolation {
+
+        @Test
+        @DisplayName("Policies defined by tenant A are invisible to tenant B")
+        void policiesInvisibleAcrossTenants() { 
+            Eventloop eventloop = Eventloop.builder().build(); 
+
+            // Tenant A defines a policy
+            eventloop.submit(() -> { 
+                client.save(TENANT_A, "governance-policies", Map.of(
+                    "policyId", "data-retention-30d",
+                    "policyType", "retention",
+                    "rules", Map.of("maxAgeDays", 30),
+                    "tenant", TENANT_A
+                )); 
+            });
+            eventloop.run(); 
+
+            // Tenant B queries policies — should find nothing
+            eventloop.submit(() -> { 
+                client.query(TENANT_B, "governance-policies", Query.all()) 
+                        .whenResult(results -> assertThat(results).isEmpty()); 
+            });
+            eventloop.run(); 
+        }
+
+        @Test
+        @DisplayName("Each tenant sees only its own governance rules")
+        void eachTenantSeesOwnGovernanceRules() { 
+            Eventloop eventloop = Eventloop.builder().build(); 
+
+            // Tenant A defines a retention policy
+            eventloop.submit(() -> { 
+                client.save(TENANT_A, "governance-policies", Map.of(
+                    "policyId", "retention-90d",
+                    "policyType", "retention",
+                    "rules", Map.of("maxAgeDays", 90)
+                )); 
+            });
+            eventloop.run(); 
+
+            // Tenant B defines an access control policy
+            eventloop.submit(() -> { 
+                client.save(TENANT_B, "governance-policies", Map.of(
+                    "policyId", "access-control",
+                    "policyType", "authorization",
+                    "rules", Map.of("defaultAction", "deny")
+                )); 
+            });
+            eventloop.run(); 
+
+            // Verify tenant A sees 1 policy
+            eventloop.submit(() -> { 
+                client.query(TENANT_A, "governance-policies", Query.all()) 
+                        .whenResult(results -> { 
+                            assertThat(results).hasSize(1); 
+                            assertThat(results.get(0).data()).containsEntry("policyId", "retention-90d"); 
+                        }); 
+            });
+            eventloop.run(); 
+
+            // Verify tenant B sees 1 policy
+            eventloop.submit(() -> { 
+                client.query(TENANT_B, "governance-policies", Query.all()) 
+                        .whenResult(results -> { 
+                            assertThat(results).hasSize(1); 
+                            assertThat(results.get(0).data()).containsEntry("policyId", "access-control"); 
+                        }); 
+            });
+            eventloop.run(); 
+        }
+
+        @Test
+        @DisplayName("Policy enforcement is tenant-scoped")
+        void policyEnforcementTenantScoped() { 
+            Eventloop eventloop = Eventloop.builder().build(); 
+
+            // Tenant A defines a strict data classification policy
+            eventloop.submit(() -> { 
+                client.save(TENANT_A, "governance-policies", Map.of(
+                    "policyId", "classification",
+                    "policyType", "data-classification",
+                    "rules", Map.of("requireClassification", true)
+                )); 
+            });
+            eventloop.run(); 
+
+            // Tenant B has no such policy
+            // Verify tenant A's policy exists
+            eventloop.submit(() -> { 
+                client.query(TENANT_A, "governance-policies", 
+                    Query.builder().filter(com.ghatana.datacloud.DataCloudClient.Filter.eq("policyId", "classification")).build()) 
+                        .whenResult(results -> assertThat(results).hasSize(1)); 
+            });
+            eventloop.run(); 
+
+            // Verify tenant B has no classification policy
+            eventloop.submit(() -> { 
+                client.query(TENANT_B, "governance-policies", 
+                    Query.builder().filter(com.ghatana.datacloud.DataCloudClient.Filter.eq("policyId", "classification")).build()) 
+                        .whenResult(results -> assertThat(results).isEmpty()); 
+            });
+            eventloop.run(); 
+        }
+
+        @Test
+        @DisplayName("Audit logs are tenant-scoped in governance plane")
+        void auditLogsTenantScoped() { 
+            Eventloop eventloop = Eventloop.builder().build(); 
+
+            // Tenant A appends audit events
+            eventloop.submit(() -> { 
+                client.appendEvent(TENANT_A, Event.of("policy.created", Map.of(
+                    "policyId", "new-policy",
+                    "actor", "admin@" + TENANT_A
+                ))); 
+                client.appendEvent(TENANT_A, Event.of("policy.updated", Map.of(
+                    "policyId", "existing-policy",
+                    "actor", "admin@" + TENANT_A
+                ))); 
+            });
+            eventloop.run(); 
+
+            // Tenant B appends different audit events
+            eventloop.submit(() -> { 
+                client.appendEvent(TENANT_B, Event.of("policy.created", Map.of(
+                    "policyId", "beta-policy",
+                    "actor", "admin@" + TENANT_B
+                ))); 
+            });
+            eventloop.run(); 
+
+            // Verify tenant A sees only its audit events
+            eventloop.submit(() -> { 
+                client.queryEvents(TENANT_A, EventQuery.byType("policy.created"))
+                        .whenResult(events -> { 
+                            assertThat(events).hasSize(1); 
+                            assertThat(events.get(0).payload()).containsEntry("actor", "admin@" + TENANT_A); 
+                        }); 
+            });
+            eventloop.run(); 
+
+            // Verify tenant B sees only its audit events
+            eventloop.submit(() -> { 
+                client.queryEvents(TENANT_B, EventQuery.byType("policy.created"))
+                        .whenResult(events -> { 
+                            assertThat(events).hasSize(1); 
+                            assertThat(events.get(0).payload()).containsEntry("actor", "admin@" + TENANT_B); 
+                        }); 
             });
             eventloop.run(); 
         }

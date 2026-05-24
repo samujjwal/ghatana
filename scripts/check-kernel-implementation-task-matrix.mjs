@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -195,6 +195,11 @@ function normalizePathRef(ref) {
 
 function fileExistsFromRepo(ref) {
   const normalized = normalizePathRef(ref);
+  if (normalized.endsWith('/*')) {
+    const directory = normalized.slice(0, -2);
+    const absoluteDirectory = path.join(repoRoot, directory);
+    return existsSync(absoluteDirectory) && readdirSync(absoluteDirectory).length > 0;
+  }
   return existsSync(path.join(repoRoot, normalized));
 }
 

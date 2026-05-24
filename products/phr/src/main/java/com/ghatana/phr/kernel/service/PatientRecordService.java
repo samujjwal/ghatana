@@ -65,11 +65,12 @@ public class PatientRecordService extends PhrServiceBase {
             DATASET_ID,
             patientId,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "type", "patient",
                 "version", "1.0",
-                "createdAt", Instant.now().toString()
-            ),
+                "createdAt", Instant.now().toString(),
+                "patientId", patientId
+            ), "system"),
             "Patient",
             1
         ).then(created -> audit("PATIENT_CREATE", patientId, "Patient record created")
@@ -102,11 +103,12 @@ public class PatientRecordService extends PhrServiceBase {
             DATASET_ID,
             patient.getId(),
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "type", "patient",
                 "version", "1.0",
-                "updatedAt", Instant.now().toString()
-            ),
+                "updatedAt", Instant.now().toString(),
+                "patientId", patient.getId()
+            ), "system"),
             "Patient",
             1
         ).then(updated -> audit("PATIENT_UPDATE", patient.getId(), "Patient record updated")

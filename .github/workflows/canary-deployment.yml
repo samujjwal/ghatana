@@ -57,8 +57,8 @@ jobs:
       - name: Execute canary deployment
         id: deploy
         run: |
-          chmod +x ./scripts/deploy-canary.sh
-          ./scripts/deploy-canary.sh ${{ inputs.version }} ${{ inputs.stage }}
+          chmod +x ./scripts/deployment/deploy-canary.sh
+          ./scripts/deployment/deploy-canary.sh ${{ inputs.version }} ${{ inputs.stage }}
         env:
           FEATURE_FLAG_API: ${{ secrets.FEATURE_FLAG_API_URL }}
       
@@ -166,7 +166,7 @@ jobs:
         if: failure()
         run: |
           echo "::warning::Auto-rollback triggered due to metrics failure"
-          ./scripts/deploy-canary.sh ${{ inputs.version }} rollback
+          ./scripts/deployment/deploy-canary.sh ${{ inputs.version }} rollback
 
   post-deployment:
     needs: [canary-deployment, monitor-canary]

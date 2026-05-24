@@ -21,6 +21,18 @@ const checkMode = process.argv.includes('--check');
 
 // Generic platform scripts that should NOT be replaced by generated scripts
 const GENERIC_SCRIPTS = new Set([
+  'check',
+  'check:required',
+  'check:staged',
+  'check:dev',
+  'check:validate',
+  'check:test',
+  'check:build',
+  'check:package',
+  'check:full',
+  'check:release',
+  'check:release:product',
+  'typecheck:affected',
   'build',
   'build:platform',
   'dev',
@@ -162,6 +174,7 @@ const GENERIC_SCRIPTS = new Set([
   'generate:data-cloud-architecture-scorecard',
   'check:data-cloud-architecture-scorecard',
   'check:data-cloud-ui-contracts',
+  'check:data-cloud-active-modules',
   'check:data-cloud-sdk-drift',
   'check:data-cloud-runbook-smoke',
   'check:platform-product-boundaries',
@@ -196,6 +209,9 @@ const GENERIC_SCRIPTS = new Set([
   'check:ai-governance-behavioral-proof',
   'check:i18n-behavioral-proof',
   'check:a11y-behavioral-proof',
+  'check:data-cloud-ai-governance-behavioral-proof',
+  'check:data-cloud-i18n-behavioral-proof',
+  'check:data-cloud-a11y-behavioral-proof',
   'check:openapi-release-quality-enhanced',
   'check:action-plane-route-lifecycle',
   'check:data-cloud-maturity-proof',
@@ -219,7 +235,6 @@ const GENERIC_SCRIPTS = new Set([
   'check:phase8:e2e',
   'check:phase8:release',
   'check:phase8',
-  'check:world-class-platform-readiness',
 ]);
 
 function main() {

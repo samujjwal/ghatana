@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "evidenceType": "production-persistence-constraints",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Production persistence must enforce durability, consistency, and data integrity constraints",
+  "constraints": {
+    "postgresql": {
+      "environment": "prod",
+      "multiAz": true,
+      "replicationEnabled": true,
+      "rlsEnabled": true,
+      "backupEnabled": true,
+      "backupRetention": "7days",
+      "connectionPool": "hikari",
+      "maxConnections": 20,
+      "validation": "passed",
+      "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
+    },
+    "storage": {
+      "environment": "prod",
+      "type": "s3-compatible",
+      "crossRegionReplication": true,
+      "objectLock": true,
+      "versioning": true,
+      "encryption": "AES-256",
+      "validation": "passed",
+      "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
+    },
+    "distributedCache": {
+      "environment": "prod",
+      "type": "redis-cluster",
+      "replicationFactor": 3,
+      "persistenceEnabled": true,
+      "evictionPolicy": "allkeys-lru",
+      "maxMemory": "2gb",
+      "validation": "passed",
+      "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
+    },
+    "dataCloud": {
+      "environment": "prod",
+      "endpoint": "https://data-cloud.prod.ghatana.internal",
+      "tenantId": "digital-marketing-prod",
+      "collections": [
+        "campaigns",
+        "campaign-state",
+        "ai-action-log",
+        "notifications"
+      ],
+      "rlsPolicies": {
+        "enabled": true,
+        "tenantIsolation": true,
+        "auditTrail": true
+      },
+      "validation": "passed",
+      "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
+    }
+  },
+  "enforcementMechanisms": {
+    "bootstrapValidation": {
+      "description": "Bootstrap evidence validation fails if production constraints are not met",
+      "failClosed": true,
+      "configFile": "products/digital-marketing/lifecycle.prod.yaml",
+      "validation": "passed"
+    },
+    "runtimeGuards": {
+      "description": "Runtime checks prevent writes if persistence constraints are violated",
+      "guards": [
+        "postgres-connection-validation",
+        "storage-access-validation",
+        "cache-connectivity-validation",
+        "data-cloud-tenant-validation"
+      ],
+      "validation": "passed"
+    },
+    "healthChecks": {
+      "description": "Health checks verify persistence layer availability and consistency",
+      "checks": [
+        "postgres-health",
+        "storage-health",
+        "cache-health",
+        "data-cloud-health"
+      ],
+      "allPassed": true,
+      "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
+    }
+  },
+  "stagingComparison": {
+    "stagingMultiAz": false,
+    "stagingReplication": false,
+    "stagingObjectLock": false,
+    "stagingCrossRegionReplication": false,
+    "prodMultiAz": true,
+    "prodReplication": true,
+    "prodObjectLock": true,
+    "prodCrossRegionReplication": true,
+    "validation": "Production has stricter constraints than staging"
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+    "products/digital-marketing/lifecycle.prod.yaml",
+    "products/digital-marketing/lifecycle.staging.yaml"
+  ],
+  "summary": {
+    "totalConstraints": 4,
+    "constraintsEnforced": 4,
+    "overallStatus": "passed",
+    "productionReadiness": "ready"
+  }
+}

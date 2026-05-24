@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.net.http.HttpClient;
 
 /**
@@ -103,8 +104,12 @@ public class PhrKernelModule implements KernelModule {
     private static final String DATASET_CONSENT = "phr.consent.evidence";
     private static final ObjectMapper EVENT_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
+    private static final int MAX_EVIDENCE_WRITE_RETRIES = 3;
+    private static final long EVIDENCE_WRITE_BASE_BACKOFF_MS = 100L;
+
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicLong evidenceWriteFailureCount = new AtomicLong(0);
     private final List<KernelLifecycleAware> services = new ArrayList<>();
     private volatile KernelContext context;
     private volatile PhrServiceCatalog serviceCatalog;
@@ -529,25 +534,80 @@ public class PhrKernelModule implements KernelModule {
             String correlationId,
             String tenantId) {
         if (!context.hasDependency(DataCloudKernelAdapter.class)) {
-            LOG.warn("PHR event evidence persistence skipped because DataCloudKernelAdapter is unavailable: dataset={} eventId={}", datasetId, eventId);
+            long failures = evidenceWriteFailureCount.incrementAndGet();
+            LOG.error("[PHR-EVIDENCE-DURABILITY] DataCloudKernelAdapter unavailable — evidence write permanently lost. "
+                    + "dataset={} eventId={} tenantId={} correlationId={} totalFailures={}",
+                    datasetId, eventId, tenantId, correlationId, failures);
             return;
         }
 
+        DataCloudKernelAdapter dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+        byte[] body;
         try {
-            DataCloudKernelAdapter dataCloud = context.getDependency(DataCloudKernelAdapter.class);
-            byte[] body = EVENT_OBJECT_MAPPER.writeValueAsBytes(payload);
-            Map<String, String> metadata = Map.of(
-                "productId", "phr",
-                "eventId", eventId,
-                "tenantId", tenantId == null ? "" : tenantId,
-                "correlationId", correlationId == null ? "" : correlationId,
-                "occurredAt", toIso(timestamp),
-                "contentType", "application/json"
-            );
-            dataCloud.writeData(new DataWriteRequest(datasetId, eventId, body, metadata));
-        } catch (Exception error) {
-            LOG.error("Failed to persist PHR event evidence to Data Cloud for dataset={} eventId={}", datasetId, eventId, error);
+            body = EVENT_OBJECT_MAPPER.writeValueAsBytes(payload);
+        } catch (Exception serializationError) {
+            long failures = evidenceWriteFailureCount.incrementAndGet();
+            LOG.error("[PHR-EVIDENCE-DURABILITY] Failed to serialize PHR event evidence — write will not be retried. "
+                    + "dataset={} eventId={} tenantId={} totalFailures={}",
+                    datasetId, eventId, tenantId, failures, serializationError);
+            return;
         }
+
+        Map<String, String> metadata = Map.of(
+            "productId", "phr",
+            "eventId", eventId,
+            "tenantId", tenantId == null ? "" : tenantId,
+            "correlationId", correlationId == null ? "" : correlationId,
+            "occurredAt", toIso(timestamp),
+            "contentType", "application/json"
+        );
+
+        DataWriteRequest writeRequest = new DataWriteRequest(datasetId, eventId, body, metadata);
+        Exception lastError = null;
+        for (int attempt = 0; attempt <= MAX_EVIDENCE_WRITE_RETRIES; attempt++) {
+            try {
+                dataCloud.writeData(writeRequest);
+                if (attempt > 0) {
+                    LOG.info("[PHR-EVIDENCE-DURABILITY] PHR event evidence write succeeded after {} retries. "
+                            + "dataset={} eventId={}", attempt, datasetId, eventId);
+                }
+                return;
+            } catch (Exception writeError) {
+                lastError = writeError;
+                if (attempt < MAX_EVIDENCE_WRITE_RETRIES) {
+                    long backoffMs = EVIDENCE_WRITE_BASE_BACKOFF_MS * (1L << attempt);
+                    LOG.warn("[PHR-EVIDENCE-DURABILITY] PHR event evidence write failed (attempt {}/{}), retrying in {}ms. "
+                            + "dataset={} eventId={} error={}",
+                            attempt + 1, MAX_EVIDENCE_WRITE_RETRIES + 1, backoffMs,
+                            datasetId, eventId, writeError.getMessage());
+                    try {
+                        Thread.sleep(backoffMs);
+                    } catch (InterruptedException interruptedException) {
+                        Thread.currentThread().interrupt();
+                        long failures = evidenceWriteFailureCount.incrementAndGet();
+                        LOG.error("[PHR-EVIDENCE-DURABILITY] PHR event evidence write retry interrupted — evidence may be lost. "
+                                + "dataset={} eventId={} tenantId={} totalFailures={}",
+                                datasetId, eventId, tenantId, failures, interruptedException);
+                        return;
+                    }
+                }
+            }
+        }
+
+        long failures = evidenceWriteFailureCount.incrementAndGet();
+        LOG.error("[PHR-EVIDENCE-DURABILITY] PHR event evidence write failed after {} attempts — evidence permanently lost. "
+                + "dataset={} eventId={} tenantId={} correlationId={} totalFailures={}",
+                MAX_EVIDENCE_WRITE_RETRIES + 1, datasetId, eventId, tenantId, correlationId, failures, lastError);
+    }
+
+    /**
+     * Returns the total count of permanent evidence write failures since module start.
+     * Exposed for health checks and observability.
+     *
+     * @return number of permanently failed evidence writes
+     */
+    public long getEvidenceWriteFailureCount() {
+        return evidenceWriteFailureCount.get();
     }
 
     private String nullable(String value) {

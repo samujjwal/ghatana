@@ -95,7 +95,7 @@ public final class PluginCapabilityVerifier {
      * @param tier the plugin tier
      * @return set of approved capabilities
      */
-    private Set<String> getApprovedCapabilities(PluginTier tier) {
+    private Set<String> getApprovedCapabilities(com.ghatana.kernel.plugin.PluginTier tier) {
         return switch (tier) {
             case T1 -> T1_APPROVED_CAPABILITIES;
             case T2 -> T2_APPROVED_CAPABILITIES;

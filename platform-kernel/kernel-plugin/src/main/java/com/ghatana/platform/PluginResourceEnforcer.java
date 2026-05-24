@@ -27,7 +27,7 @@ public final class PluginResourceEnforcer {
      * @param quotas the resource quotas
      * @throws PluginResourceException if quotas exceed limits
      */
-    public void validateQuotas(PluginResourceQuota quotas) throws PluginResourceException {
+    public void validateQuotas(com.ghatana.kernel.plugin.PluginResourceQuota quotas) throws PluginResourceException {
         log.debug("Validating resource quotas: {}", quotas);
 
         if (quotas == null) {
@@ -35,24 +35,25 @@ public final class PluginResourceEnforcer {
         }
 
         // Validate memory quota
-        if (quotas.maxMemoryMB() <= 0 || quotas.maxMemoryMB() > getMaxMemoryForTier(quotas.tier())) {
+        if (quotas.getMaxMemoryMb() <= 0 || quotas.getMaxMemoryMb() > getMaxMemoryForTier(quotas.getTier())) {
             throw new PluginResourceException(
                 String.format("Invalid memory quota: %d MB (max: %d MB)",
-                    quotas.maxMemoryMB(), getMaxMemoryForTier(quotas.tier())));
+                    quotas.getMaxMemoryMb(), getMaxMemoryForTier(quotas.getTier())));
         }
 
         // Validate CPU quota
-        if (quotas.maxCpuPercent() <= 0 || quotas.maxCpuPercent() > getMaxCpuForTier(quotas.tier())) {
+        if (quotas.getMaxCpuPercent() <= 0 || quotas.getMaxCpuPercent() > getMaxCpuForTier(quotas.getTier())) {
             throw new PluginResourceException(
                 String.format("Invalid CPU quota: %d%% (max: %d%%)",
-                    quotas.maxCpuPercent(), getMaxCpuForTier(quotas.tier())));
+                    quotas.getMaxCpuPercent(), getMaxCpuForTier(quotas.getTier())));
         }
 
         // Validate file descriptor quota
-        if (quotas.maxFileDescriptors() <= 0 || quotas.maxFileDescriptors() > getMaxFileDescriptorsForTier(quotas.tier())) {
+        if (quotas.getMaxFileDescriptors() <= 0
+                || quotas.getMaxFileDescriptors() > getMaxFileDescriptorsForTier(quotas.getTier())) {
             throw new PluginResourceException(
                 String.format("Invalid file descriptor quota: %d (max: %d)",
-                    quotas.maxFileDescriptors(), getMaxFileDescriptorsForTier(quotas.tier())));
+                    quotas.getMaxFileDescriptors(), getMaxFileDescriptorsForTier(quotas.getTier())));
         }
 
         log.debug("Resource quotas validated: {}", quotas);
@@ -68,30 +69,30 @@ public final class PluginResourceEnforcer {
             EnhancedPluginManager.EnhancedLoadedPlugin plugin) {
 
         try {
-            PluginResourceQuota quotas = plugin.resourceQuota();
+            com.ghatana.kernel.plugin.PluginResourceQuota quotas = plugin.resourceQuota();
 
             // Check current resource usage (baseline implementation)
             ResourceUsage currentUsage = getCurrentResourceUsage(plugin.basicPlugin().id());
 
             // Enforce memory quota
-            if (currentUsage.memoryMB() > quotas.maxMemoryMB()) {
+            if (currentUsage.memoryMB() > quotas.getMaxMemoryMb()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
                     String.format("Memory usage exceeded: %d MB > %d MB",
-                        currentUsage.memoryMB(), quotas.maxMemoryMB()));
+                        currentUsage.memoryMB(), quotas.getMaxMemoryMb()));
             }
 
             // Enforce CPU quota
-            if (currentUsage.cpuPercent() > quotas.maxCpuPercent()) {
+            if (currentUsage.cpuPercent() > quotas.getMaxCpuPercent()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
                     String.format("CPU usage exceeded: %d%% > %d%%",
-                        currentUsage.cpuPercent(), quotas.maxCpuPercent()));
+                        currentUsage.cpuPercent(), quotas.getMaxCpuPercent()));
             }
 
             // Enforce file descriptor quota
-            if (currentUsage.fileDescriptors() > quotas.maxFileDescriptors()) {
+            if (currentUsage.fileDescriptors() > quotas.getMaxFileDescriptors()) {
                 return EnhancedPluginManager.ResourceEnforcementResult.failure(
                     String.format("File descriptor usage exceeded: %d > %d",
-                        currentUsage.fileDescriptors(), quotas.maxFileDescriptors()));
+                        currentUsage.fileDescriptors(), quotas.getMaxFileDescriptors()));
             }
 
             return EnhancedPluginManager.ResourceEnforcementResult.success();
@@ -106,7 +107,7 @@ public final class PluginResourceEnforcer {
     /**
      * Gets maximum memory allowed for a tier.
      */
-    private int getMaxMemoryForTier(PluginTier tier) {
+    private int getMaxMemoryForTier(com.ghatana.kernel.plugin.PluginTier tier) {
         return switch (tier) {
             case T1 -> 64;   // 64 MB for config-only plugins
             case T2 -> 512;  // 512 MB for scripted plugins
@@ -117,7 +118,7 @@ public final class PluginResourceEnforcer {
     /**
      * Gets maximum CPU percentage allowed for a tier.
      */
-    private int getMaxCpuForTier(PluginTier tier) {
+    private int getMaxCpuForTier(com.ghatana.kernel.plugin.PluginTier tier) {
         return switch (tier) {
             case T1 -> 5;   // 5% for config-only plugins
             case T2 -> 25;  // 25% for scripted plugins
@@ -128,7 +129,7 @@ public final class PluginResourceEnforcer {
     /**
      * Gets maximum file descriptors allowed for a tier.
      */
-    private int getMaxFileDescriptorsForTier(PluginTier tier) {
+    private int getMaxFileDescriptorsForTier(com.ghatana.kernel.plugin.PluginTier tier) {
         return switch (tier) {
             case T1 -> 10;   // 10 for config-only plugins
             case T2 -> 100;  // 100 for scripted plugins

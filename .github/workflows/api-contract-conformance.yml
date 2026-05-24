@@ -13,27 +13,80 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      products:
+        description: 'Comma-separated product ids to check'
+        required: false
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
+  resolve-products:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: resolve
+        env:
+          PRODUCTS_INPUT: ${{ github.event.inputs.products }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node <<'NODE' > matrix.json
+          const { execFileSync } = require('node:child_process');
+          const input = (process.env.PRODUCTS_INPUT || '').trim();
+          const resolved = input
+            ? input.split(',').map((entry) => entry.trim()).filter(Boolean)
+            : JSON.parse(execFileSync('node', [
+                'scripts/resolve-affected-products.mjs',
+                '--json',
+                '--base',
+                process.env.BASE,
+                '--head',
+                process.env.HEAD,
+              ], { encoding: 'utf8' })).affectedProducts || [];
+          const commands = {
+            phr: {
+              product: 'PHR',
+              command: './gradlew :products:phr:checkApiContractConformance --no-daemon --stacktrace',
+              reportPath: 'products/phr/build/reports/tests/test/',
+            },
+            finance: {
+              product: 'Finance',
+              command: './gradlew :products:finance:checkApiContractConformance --no-daemon --stacktrace',
+              reportPath: 'products/finance/build/reports/tests/test/',
+            },
+            'digital-marketing': {
+              product: 'Digital Marketing',
+              command: './gradlew :products:digital-marketing:dm-api:test --tests \"*ContractTest\" --no-daemon --stacktrace',
+              reportPath: 'products/digital-marketing/dm-api/build/reports/tests/test/',
+            },
+            flashit: {
+              product: 'FlashIt',
+              command: 'pnpm --filter @ghatana/flashit-tests test:contract',
+              reportPath: 'products/flashit/backend/gateway/test-results/',
+            },
+          };
+          const include = [...new Set(resolved)]
+            .filter((productId) => commands[productId])
+            .map((productId) => commands[productId]);
+          process.stdout.write(JSON.stringify({ include }));
+          NODE
+          echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
+
   contract-conformance:
     name: ${{ matrix.product }} API Contract Conformance
     runs-on: ubuntu-latest
+    needs: [resolve-products]
+    if: needs.resolve-products.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - product: PHR
-            command: ./gradlew :products:phr:checkApiContractConformance --no-daemon --stacktrace
-            reportPath: products/phr/build/reports/tests/test/
-          - product: Finance
-            command: ./gradlew :products:finance:checkApiContractConformance --no-daemon --stacktrace
-            reportPath: products/finance/build/reports/tests/test/
-          - product: Digital Marketing
-            command: ./gradlew :products:digital-marketing:dm-api:test --tests "*ContractTest" --no-daemon --stacktrace
-            reportPath: products/digital-marketing/dm-api/build/reports/tests/test/
-          - product: FlashIt
-            command: pnpm --filter @ghatana/flashit-tests test:contract
-            reportPath: products/flashit/backend/gateway/test-results/
+      matrix: ${{ fromJson(needs.resolve-products.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,16 +98,16 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js
         if: matrix.product == 'FlashIt'
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install pnpm
         if: matrix.product == 'FlashIt'
-        run: corepack enable && corepack prepare pnpm@10.33.0 --activate
+        run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
 
       - name: Install workspace dependencies
         if: matrix.product == 'FlashIt'

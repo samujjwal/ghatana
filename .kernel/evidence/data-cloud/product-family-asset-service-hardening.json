@@ -1,0 +1,258 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "data-cloud",
+  "evidenceType": "product-family-asset-service-hardening",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "serviceHardening": {
+    "status": "hardened",
+    "description": "ProductFamilyAssetService hardened with schema validation, promotion gate enforcement, commit SHA binding, and environment validation"
+  },
+  "service": {
+    "name": "ProductFamilyAssetService",
+    "path": "products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/application/ProductFamilyAssetService.java",
+    "layer": "application",
+    "pattern": "Service"
+  },
+  "hardeningFeatures": {
+    "schemaValidation": {
+      "status": "implemented",
+      "description": "Validates asset schema on registration",
+      "validations": [
+        "assetId uniqueness",
+        "assetType validity (ui-component, service, workflow, policy)",
+        "maturityLevel validity (stable, beta, experimental)",
+        "promotionStatus validity (draft, proposed, approved, rejected)",
+        "required fields presence"
+      ],
+      "enforcement": "IllegalArgumentException thrown if validation fails"
+    },
+    "commitShaBinding": {
+      "status": "implemented",
+      "description": "Requires commit SHA for all asset promotions",
+      "validationMethod": "validateCommitSha",
+      "formatValidation": "40 hexadecimal characters (git SHA-1)",
+      "enforcement": "IllegalArgumentException thrown if missing or invalid"
+    },
+    "environmentBinding": {
+      "status": "implemented",
+      "description": "Requires target environment for asset promotions",
+      "validationMethod": "validateTargetEnvironment",
+      "validEnvironments": ["production", "staging", "development"],
+      "enforcement": "IllegalArgumentException thrown if invalid"
+    },
+    "promotionGateEnforcement": {
+      "status": "implemented",
+      "description": "Enforces promotion gates against policy",
+      "gates": [
+        "maturityLevel requirement",
+        "targetProductIds allowed list",
+        "assetTypes allowed list",
+        "approvalWorkflow completion"
+      ],
+      "validationMethod": "validatePromotionGates",
+      "enforcement": "Promotion fails if gates not satisfied"
+    },
+    "promotionHistory": {
+      "status": "implemented",
+      "description": "Records promotion history with commit SHA and environment",
+      "recordedFields": [
+        "assetId",
+        "sourceProductId",
+        "targetProductId",
+        "promotionStatus",
+        "promotedBy",
+        "commitSha",
+        "targetEnvironment",
+        "promotedAt",
+        "tenantId"
+      ]
+    },
+    "metricsCollection": {
+      "status": "implemented",
+      "description": "Emits metrics for all operations",
+      "metrics": [
+        "product_family_asset.registered",
+        "product_family_asset.register_failed"
+      ],
+      "tags": ["asset_type", "source_product", "maturity_level"]
+    },
+    "tenantIsolation": {
+      "status": "implemented",
+      "description": "All operations are tenant-scoped",
+      "enforcement": "Tenant ID validated and passed to repository"
+    },
+    "asyncNonBlocking": {
+      "status": "implemented",
+      "description": "All operations return ActiveJ Promise for non-blocking execution",
+      "asyncModel": "ActiveJ Promise"
+    }
+  },
+  "testCoverage": {
+    "testSuite": "ProductFamilyAssetServiceTest",
+    "testFramework": "JUnit 5",
+    "asyncTestBase": "EventloopTestBase",
+    "tests": [
+      {
+        "test": "shouldRegisterAsset",
+        "feature": "schemaValidation",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectInvalidAssetType",
+        "feature": "schemaValidation",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectInvalidMaturityLevel",
+        "feature": "schemaValidation",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectInvalidPromotionStatus",
+        "feature": "schemaValidation",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldPromoteAsset",
+        "feature": "promotionGateEnforcement",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectPromotionWithoutCommitSha",
+        "feature": "commitShaBinding",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectPromotionWithInvalidCommitSha",
+        "feature": "commitShaBinding",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRejectPromotionWithInvalidEnvironment",
+        "feature": "environmentBinding",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldFailPromotionWhenAssetNotFound",
+        "feature": "promotionGateEnforcement",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldFailPromotionWhenMaturityLevelNotMet",
+        "feature": "promotionGateEnforcement",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldFailPromotionWhenTargetProductNotAllowed",
+        "feature": "promotionGateEnforcement",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldFailPromotionWhenAssetTypeNotAllowed",
+        "feature": "promotionGateEnforcement",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldRetrieveAsset",
+        "feature": "repository-interaction",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldListAssetsBySource",
+        "feature": "repository-interaction",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldListPromotableAssets",
+        "feature": "repository-interaction",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldEmitMetricsOnRegistration",
+        "feature": "metricsCollection",
+        "status": "implemented"
+      },
+      {
+        "test": "shouldEmitFailureMetricsOnRegistrationError",
+        "feature": "metricsCollection",
+        "status": "implemented"
+      }
+    ]
+  },
+  "repositoryInterface": {
+    "name": "ProductFamilyAssetRepository",
+    "operations": [
+      "upsert",
+      "findById",
+      "findBySourceProduct",
+      "findByPromotionStatus",
+      "findActivePolicyForAsset",
+      "recordPromotionHistory"
+    ],
+    "tenantScoping": "all operations tenant-scoped"
+  },
+  "domainObjects": [
+    {
+      "name": "ProductFamilyAsset",
+      "fields": [
+        "id",
+        "assetId",
+        "assetName",
+        "assetType",
+        "sourceProductId",
+        "description",
+        "tags",
+        "maturityLevel",
+        "usageCount",
+        "lastUsedAt",
+        "promotionStatus",
+        "promotionEvidence",
+        "tenantId",
+        "createdAt",
+        "updatedAt"
+      ],
+      "builderPattern": "implemented"
+    },
+    {
+      "name": "AssetPromotionPolicy",
+      "fields": [
+        "id",
+        "policyId",
+        "policyName",
+        "policyType",
+        "sourceProductId",
+        "targetProductIds",
+        "assetTypes",
+        "requiredMaturityLevel",
+        "approvalWorkflowId",
+        "policyRules",
+        "isActive",
+        "tenantId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "AssetPromotionHistory",
+      "fields": [
+        "id",
+        "assetId",
+        "sourceProductId",
+        "targetProductId",
+        "promotionStatus",
+        "promotedBy",
+        "commitSha",
+        "targetEnvironment",
+        "promotedAt",
+        "reviewComments",
+        "evidence",
+        "tenantId"
+      ]
+    }
+  ],
+  "evidenceRefs": [
+    "products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/application/ProductFamilyAssetService.java",
+    "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/application/ProductFamilyAssetServiceTest.java"
+  ]
+}

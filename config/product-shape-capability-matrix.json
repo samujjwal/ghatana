@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-23T21:42:53.169Z",
+  "generated": "2026-05-24T14:55:31.182Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -165,7 +165,8 @@
       "currentEvidenceRefs": [
         "products/data-cloud/lifecycle/readiness-evidence.yaml",
         "products/data-cloud/extensions/kernel-bridge",
-        "products/data-cloud/planes/action/kernel-bridge"
+        "products/data-cloud/planes/action/kernel-bridge",
+        ".kernel/evidence/data-cloud/platform-provider-readiness.json"
       ],
       "missingEvidenceRefs": [
         "manifest:artifact-manifest",

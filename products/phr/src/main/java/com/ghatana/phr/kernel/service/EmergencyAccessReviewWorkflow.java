@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * @doc.type class
@@ -23,12 +24,21 @@ public class EmergencyAccessReviewWorkflow {
 
     private final EmergencyAccessNotificationSender notificationSender;
     private final EmergencyAccessReviewAuditLogger auditLogger;
+    private final Predicate<String> reviewerAuthorizer;
 
     public EmergencyAccessReviewWorkflow(
             EmergencyAccessNotificationSender notificationSender,
             EmergencyAccessReviewAuditLogger auditLogger) {
+        this(notificationSender, auditLogger, reviewerId -> true);
+    }
+
+    public EmergencyAccessReviewWorkflow(
+            EmergencyAccessNotificationSender notificationSender,
+            EmergencyAccessReviewAuditLogger auditLogger,
+            Predicate<String> reviewerAuthorizer) {
         this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
         this.auditLogger = Objects.requireNonNull(auditLogger, "auditLogger must not be null");
+        this.reviewerAuthorizer = Objects.requireNonNull(reviewerAuthorizer, "reviewerAuthorizer must not be null");
     }
 
     public static EmergencyAccessReviewWorkflow fromContext(KernelContext context) {
@@ -63,6 +73,9 @@ public class EmergencyAccessReviewWorkflow {
 
     public Promise<EmergencyAccessReviewCase> complete(EmergencyAccessEvent event) {
         EmergencyAccessReviewCase reviewCase = toReviewCase(event);
+        if (!isAuthorizedReviewer(event)) {
+            return Promise.of(reviewCase.withStatus(EmergencyAccessReviewCase.ReviewCaseStatus.QUEUED));
+        }
         EmergencyAccessReviewCase completedCase = reviewCase.withStatus(mapStatus(event.reviewStatus()));
         return auditLogger.logReviewCompleted(completedCase, event)
             .then(() -> event.reviewStatus() == ReviewStatus.ESCALATED
@@ -93,5 +106,12 @@ public class EmergencyAccessReviewWorkflow {
             case REVIEWED -> EmergencyAccessReviewCase.ReviewCaseStatus.REVIEWED;
             case ESCALATED -> EmergencyAccessReviewCase.ReviewCaseStatus.ESCALATED;
         };
+    }
+
+    private boolean isAuthorizedReviewer(EmergencyAccessEvent event) {
+        if (event.reviewStatus() == ReviewStatus.PENDING_REVIEW) {
+            return true;
+        }
+        return event.reviewedBy() != null && reviewerAuthorizer.test(event.reviewedBy());
     }
 }

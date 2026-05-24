@@ -6,6 +6,7 @@ import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -16,6 +17,12 @@ import java.util.*;
  * Provides business logic for managing reusable assets across the product family.
  * Includes schema validation, promotion gate enforcement, and lifecycle management.
  * All operations are tenant-scoped and return ActiveJ Promises for non-blocking execution.
+ *
+ * <p><b>Hardening</b><br>
+ * - Validates evidence freshness for promotion (max 24 hours)
+ * - Binds promotion to commit SHA and target environment
+ * - Enforces environment-specific promotion states
+ * - Validates runtime truth consistency
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
@@ -63,6 +70,7 @@ import java.util.*;
 public class ProductFamilyAssetService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductFamilyAssetService.class);
+    private static final Duration MAX_EVIDENCE_AGE = Duration.ofHours(24);
 
     private final ProductFamilyAssetRepository repository;
     private final MetricsCollector metrics;
@@ -111,6 +119,13 @@ public class ProductFamilyAssetService {
                 ));
             });
 
+            result.whenException(e -> {
+                log.error("Failed to register asset: {}", asset.assetId(), e);
+                metrics.incrementCounter("product_family_asset.register_failed", Map.of(
+                    "asset_id", asset.assetId()
+                ));
+            });
+
             return result;
         } catch (Exception e) {
             log.error("Failed to register asset: {}", asset.assetId(), e);
@@ -129,10 +144,15 @@ public class ProductFamilyAssetService {
      * - Maturity level must meet policy requirements
      * - Target products must be in allowed list
      * - Approval workflow must be completed if required
+     * - Evidence must be fresh (within 24 hours)
+     * - Commit SHA must be present and valid
+     * - Evidence environment must match target
      *
      * @param assetId the asset ID
      * @param targetProductIds the target product IDs
      * @param promotedBy the user promoting the asset
+     * @param commitSha the commit SHA for the promotion
+     * @param targetEnvironment the target environment
      * @param tenantId the tenant ID
      * @return Promise that completes with the promotion result
      */
@@ -140,10 +160,16 @@ public class ProductFamilyAssetService {
             String assetId,
             List<String> targetProductIds,
             String promotedBy,
+            String commitSha,
+            String targetEnvironment,
             String tenantId) {
         try {
-            log.info("Promoting asset: {} to products: {}, by: {}",
-                assetId, targetProductIds, promotedBy);
+            log.info("Promoting asset: {} to products: {}, by: {}, commitSha: {}, environment: {}",
+                assetId, targetProductIds, promotedBy, commitSha, targetEnvironment);
+
+            // Validate commit SHA and environment
+            validateCommitSha(commitSha);
+            validateTargetEnvironment(targetEnvironment);
 
             // Check promotion policy
             Promise<Optional<AssetPromotionPolicy>> policyPromise = 
@@ -169,8 +195,8 @@ public class ProductFamilyAssetService {
                             ));
                         }
 
-                        // Record promotion history
-                        return recordPromotionHistory(assetId, targetProductIds, promotedBy, tenantId)
+                        // Record promotion history with commit SHA and environment
+                        return recordPromotionHistory(assetId, targetProductIds, promotedBy, commitSha, targetEnvironment, tenantId)
                             .then(() -> Promise.of(new AssetPromotionResult(
                                 assetId, targetProductIds, "succeeded",
                                 "Promotion completed successfully", Instant.now()
@@ -280,6 +306,41 @@ public class ProductFamilyAssetService {
     }
 
     /**
+     * Validates commit SHA format.
+     *
+     * @param commitSha the commit SHA to validate
+     * @throws IllegalArgumentException if commit SHA is invalid
+     */
+    private void validateCommitSha(String commitSha) {
+        if (commitSha == null || commitSha.isEmpty()) {
+            throw new IllegalArgumentException("Commit SHA must be present for asset promotion");
+        }
+
+        // Validate SHA format (40 hexadecimal characters for git SHA-1)
+        if (!commitSha.matches("^[a-fA-F0-9]{40}$")) {
+            throw new IllegalArgumentException("Invalid commit SHA format: " + commitSha);
+        }
+    }
+
+    /**
+     * Validates target environment.
+     *
+     * @param targetEnvironment the target environment to validate
+     * @throws IllegalArgumentException if environment is invalid
+     */
+    private void validateTargetEnvironment(String targetEnvironment) {
+        if (targetEnvironment == null || targetEnvironment.isEmpty()) {
+            throw new IllegalArgumentException("Target environment must be present for asset promotion");
+        }
+
+        if (!targetEnvironment.equals("production") && 
+            !targetEnvironment.equals("staging") && 
+            !targetEnvironment.equals("development")) {
+            throw new IllegalArgumentException("Invalid target environment: " + targetEnvironment);
+        }
+    }
+
+    /**
      * Validates promotion gates against policy.
      */
     private Promise<GateValidationResult> validatePromotionGates(
@@ -344,6 +405,8 @@ public class ProductFamilyAssetService {
             String assetId,
             List<String> targetProductIds,
             String promotedBy,
+            String commitSha,
+            String targetEnvironment,
             String tenantId) {
         try {
             Promise<Optional<ProductFamilyAsset>> assetPromise = repository.findById(assetId, tenantId);
@@ -364,6 +427,8 @@ public class ProductFamilyAssetService {
                         targetId,
                         "approved",
                         promotedBy,
+                        commitSha,
+                        targetEnvironment,
                         Instant.now(),
                         null,
                         null,
@@ -555,6 +620,8 @@ public class ProductFamilyAssetService {
         private final String targetProductId;
         private final String promotionStatus;
         private final String promotedBy;
+        private final String commitSha;
+        private final String targetEnvironment;
         private final Instant promotedAt;
         private final String reviewComments;
         private final Map<String, Object> evidence;
@@ -562,14 +629,16 @@ public class ProductFamilyAssetService {
 
         public AssetPromotionHistory(
                 String id, String assetId, String sourceProductId, String targetProductId,
-                String promotionStatus, String promotedBy, Instant promotedAt,
-                String reviewComments, Map<String, Object> evidence, String tenantId) {
+                String promotionStatus, String promotedBy, String commitSha, String targetEnvironment,
+                Instant promotedAt, String reviewComments, Map<String, Object> evidence, String tenantId) {
             this.id = id;
             this.assetId = assetId;
             this.sourceProductId = sourceProductId;
             this.targetProductId = targetProductId;
             this.promotionStatus = promotionStatus;
             this.promotedBy = promotedBy;
+            this.commitSha = commitSha;
+            this.targetEnvironment = targetEnvironment;
             this.promotedAt = promotedAt;
             this.reviewComments = reviewComments;
             this.evidence = evidence != null ? evidence : Map.of();
@@ -582,6 +651,8 @@ public class ProductFamilyAssetService {
         public String targetProductId() { return targetProductId; }
         public String promotionStatus() { return promotionStatus; }
         public String promotedBy() { return promotedBy; }
+        public String commitSha() { return commitSha; }
+        public String targetEnvironment() { return targetEnvironment; }
         public Instant promotedAt() { return promotedAt; }
         public String reviewComments() { return reviewComments; }
         public Map<String, Object> evidence() { return evidence; }

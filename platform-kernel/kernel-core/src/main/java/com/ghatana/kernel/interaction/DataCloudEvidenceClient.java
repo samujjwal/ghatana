@@ -2,9 +2,13 @@ package com.ghatana.kernel.interaction;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Provider contract for writing and reading evidence records to/from Data Cloud.
@@ -136,12 +140,14 @@ public interface DataCloudEvidenceClient {
     }
 
     /**
-     * Creates a no-op client that discards all writes and returns empty for reads.
+     * Creates a local development client that keeps evidence in process.
      *
-     * @return a no-op client
+     * @return a local client for development and tests
      */
     static DataCloudEvidenceClient noop() {
         return new DataCloudEvidenceClient() {
+            private final ConcurrentMap<String, Map<String, Object>> evidenceRecords = new ConcurrentHashMap<>();
+
             @Override
             public void writeEvidence(
                 String tenantId,
@@ -150,7 +156,7 @@ public interface DataCloudEvidenceClient {
                 String evidenceId,
                 Map<String, Object> evidenceRecord
             ) {
-                // Discard evidence - useful for development/testing
+                evidenceRecords.put(recordKey(tenantId, workspaceId, evidenceType, evidenceId), Map.copyOf(evidenceRecord));
             }
 
             @Override
@@ -160,7 +166,7 @@ public interface DataCloudEvidenceClient {
                 String evidenceType,
                 String evidenceId
             ) {
-                return Optional.empty();
+                return Optional.ofNullable(evidenceRecords.get(recordKey(tenantId, workspaceId, evidenceType, evidenceId)));
             }
 
             @Override
@@ -170,7 +176,29 @@ public interface DataCloudEvidenceClient {
                 String evidenceType,
                 int limit
             ) {
-                return List.of();
+                if (limit <= 0) {
+                    return Collections.unmodifiableList(new ArrayList<>());
+                }
+                return evidenceRecords.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith(recordPrefix(tenantId, workspaceId, evidenceType)))
+                    .limit(limit)
+                    .map(entry -> Map.of(
+                        "evidenceId", evidenceIdFromKey(entry.getKey()),
+                        "capturedAt", String.valueOf(entry.getValue().getOrDefault("capturedAt", ""))))
+                    .toList();
+            }
+
+            private String recordKey(String tenantId, String workspaceId, String evidenceType, String evidenceId) {
+                return recordPrefix(tenantId, workspaceId, evidenceType) + evidenceId;
+            }
+
+            private String recordPrefix(String tenantId, String workspaceId, String evidenceType) {
+                return tenantId + "/" + workspaceId + "/" + evidenceType + "/";
+            }
+
+            private String evidenceIdFromKey(String key) {
+                int index = key.lastIndexOf('/');
+                return index >= 0 ? key.substring(index + 1) : key;
             }
         };
     }

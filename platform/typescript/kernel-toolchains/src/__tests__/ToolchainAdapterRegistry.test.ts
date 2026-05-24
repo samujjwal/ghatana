@@ -7,6 +7,7 @@ import {
   createDefaultToolchainAdapterRegistry,
 } from "../ToolchainAdapterRegistry.js";
 import { GradleJavaServiceAdapter } from "../adapters/GradleJavaServiceAdapter.js";
+import { ProductInteractionBrokerAdapter } from "../adapters/ProductInteractionBrokerAdapter.js";
 import { PnpmViteReactAdapter } from "../adapters/PnpmViteReactAdapter.js";
 import { FakeCommandRunner } from "../execution/FakeCommandRunner.js";
 import type {
@@ -128,6 +129,35 @@ describe("createDefaultToolchainAdapterRegistry", () => {
     const rollbackAdapters = registry.getByPhase("rollback");
     expect(deployAdapters.map((a) => a.id)).toContain("compose-local");
     expect(rollbackAdapters.map((a) => a.id)).toContain("compose-local");
+  });
+});
+
+describe("ProductInteractionBrokerAdapter", () => {
+  it("plans the strict product interaction contract gate", async () => {
+    const adapter = new ProductInteractionBrokerAdapter();
+
+    const steps = await adapter.plan({
+      productId: "test",
+      phase: "validate",
+      surface: { type: "backend-api", adapter: "kernel-product-interaction-broker", path: "/p" },
+      dryRun: true,
+      surfaceConfig: {},
+      phaseConfig: {},
+      logger: {
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+        debug: () => {},
+      },
+    });
+
+    expect(steps).toEqual([
+      expect.objectContaining({
+        id: "product-interaction-validate-preflight",
+        command: ["pnpm", "check:product-interaction-contracts"],
+        expectedOutputs: [".kernel/evidence/product-interaction-coverage-matrix.json"],
+      }),
+    ]);
   });
 });
 

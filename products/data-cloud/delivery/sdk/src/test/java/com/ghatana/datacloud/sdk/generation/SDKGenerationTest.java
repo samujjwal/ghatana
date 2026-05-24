@@ -43,9 +43,9 @@ class SDKGenerationTest {
     @Test
     @DisplayName("metadata captures canonical CRUD and health endpoints from OpenAPI")
     void metadataCapturesCanonicalEndpoints() throws Exception { 
-        Map<String, Object> metadata = objectMapper.readValue( 
+        Map<String, Object> metadata = objectMapper.readValue(
             Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { } 
+            new TypeReference<>() { }
         );
 
         assertThat(metadata).containsEntry("title", "Data-Cloud Platform API"); 

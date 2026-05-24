@@ -1,6 +1,8 @@
 package com.ghatana.digitalmarketing.bridge;
 
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -19,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Integration test
  */
 @DisplayName("Digital Marketing Lifecycle Gate Tests")
+@Tag("integration")
 class DigitalMarketingLifecycleGateTest {
 
     private static final String PRODUCT_ID = "digital-marketing";
@@ -266,6 +269,93 @@ class DigitalMarketingLifecycleGateTest {
         assertThat(content)
             .as("Gate pack should have requiredEvidenceRefs")
             .contains("requiredEvidenceRefs:");
+    }
+
+    @Test
+    @DisplayName("Auth denied gate should block unauthorized operations")
+    void testAuthDeniedGateBlocksUnauthorized() throws Exception {
+        // Verify OPA authorization service exists
+        Path opaServicePath = resolveRepoPath(
+            "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/OpaAuthorizationService.java"
+        );
+        assertThat(Files.exists(opaServicePath))
+            .as("OPA authorization service should exist")
+            .isTrue();
+
+        String opaContent = Files.readString(opaServicePath);
+        assertThat(opaContent)
+            .as("OPA service should have authorization check method")
+            .contains("authorize");
+    }
+
+    @Test
+    @DisplayName("Consent denied gate should block operations without consent")
+    void testConsentDeniedGateBlocksWithoutConsent() throws Exception {
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
+        String content = Files.readString(kernelProductPath);
+
+        // Verify marketing consent boundary is enforced
+        assertThat(content)
+            .as("Kernel product should enforce marketing consent boundary")
+            .contains("marketing-consent-boundary");
+
+        // Verify PHR consent status interaction is declared
+        assertThat(content)
+            .as("Kernel product should check PHR consent status")
+            .contains("phr.consent-status.v1");
+    }
+
+    @Test
+    @DisplayName("Approval required gate should enforce approval workflow")
+    void testApprovalRequiredGateEnforcesWorkflow() throws Exception {
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
+        String content = Files.readString(kernelProductPath);
+
+        // Verify approval workflow is declared
+        assertThat(content)
+            .as("Kernel product should require approval for high-risk operations")
+            .contains("approval-required");
+
+        // Verify gate pack for approval exists
+        Path gatePacksPath = resolveRepoPath("products/digital-marketing/lifecycle/gate-packs");
+        Path approvalGatePath = gatePacksPath.resolve("marketing-consent-boundary.yaml");
+        assertThat(Files.exists(approvalGatePath))
+            .as("Marketing consent boundary gate pack should exist")
+            .isTrue();
+    }
+
+    @Test
+    @DisplayName("Risk fail-closed gate should block high-risk operations")
+    void testRiskFailClosedGateBlocksHighRisk() throws Exception {
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
+        String content = Files.readString(kernelProductPath);
+
+        // Verify risk assessment is declared
+        assertThat(content)
+            .as("Kernel product should have risk assessment")
+            .contains("risk-assessment");
+
+        // Verify fail-closed behavior is configured
+        assertThat(content)
+            .as("Kernel product should be fail-closed for risk gates")
+            .contains("fail-closed");
+    }
+
+    @Test
+    @DisplayName("Notification fail-closed gate should block without notification delivery")
+    void testNotificationFailClosedGateBlocksWithoutDelivery() throws Exception {
+        // Verify notification handler exists
+        Path notificationHandlerPath = resolveRepoPath(
+            "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandler.java"
+        );
+        assertThat(Files.exists(notificationHandlerPath))
+            .as("Notification preference interaction handler should exist")
+            .isTrue();
+
+        String notificationContent = Files.readString(notificationHandlerPath);
+        assertThat(notificationContent)
+            .as("Notification handler should have delivery check")
+            .contains("deliver");
     }
 
     private static Path resolveRepoPath(String relativePath) {

@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
  * @doc.layer product
  * @doc.pattern Adapter, Plugin
  */
+@SuppressWarnings("deprecation")
 public class PostgresEntityStore implements EntityStore, AutoCloseable {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());

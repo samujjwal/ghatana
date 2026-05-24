@@ -87,11 +87,11 @@ public class MedicationService extends PhrServiceBase {
             MEDICATION_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "status", toStore.status().name(),
                 "medicationCode", toStore.medicationCode()
-            ),
+            ), toStore.prescriberId()),
             "Prescription",
             1
         ).then(stored -> audit("PRESCRIBE", stored.patientId(),
@@ -159,7 +159,10 @@ public class MedicationService extends PhrServiceBase {
                     MEDICATION_DATASET,
                     prescriptionId,
                     discontinued,
-                    Map.of("status", "DISCONTINUED"),
+                    mutationMetadata(Map.of(
+                        "patientId", discontinued.patientId(),
+                        "status", "DISCONTINUED"
+                    ), discontinued.prescriberId()),
                     "Prescription",
                     1
                 ).then(updated -> audit("DISCONTINUE", existing.patientId(),
@@ -203,7 +206,10 @@ public class MedicationService extends PhrServiceBase {
                     MEDICATION_DATASET,
                     prescriptionId,
                     refilled,
-                    Map.of("refillsRemaining", String.valueOf(refilled.refillsRemaining())),
+                    mutationMetadata(Map.of(
+                        "patientId", refilled.patientId(),
+                        "refillsRemaining", String.valueOf(refilled.refillsRemaining())
+                    ), refilled.prescriberId()),
                     "Prescription",
                     1
                 ).then(updated -> audit("REFILL", updated.patientId(),

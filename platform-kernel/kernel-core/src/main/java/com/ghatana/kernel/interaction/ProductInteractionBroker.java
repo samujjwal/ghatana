@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>Requires real evidence writer in production mode (no no-op)</li>
  *   <li>Resolves policy context from trusted providers, not caller-supplied flags</li>
  *   <li>Includes payload hash and contract metadata in replay key for idempotency</li>
+ *   <li>Binds interactions to commit SHA for production truth</li>
+ *   <li>Validates environment-specific interaction constraints</li>
  * </ul>
  *
  * @doc.type class
@@ -74,6 +76,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
     private final ProductInteractionCircuitBreaker circuitBreaker;
     private final com.ghatana.kernel.observability.TracingPort tracing;
     private final com.ghatana.kernel.observability.MetricCollectorPort metrics;
+    private String commitSha;
+    private String environment;
 
     private ProductInteractionBroker(Builder builder) {
         this.handlersByContractId = new ConcurrentHashMap<>(builder.handlersByContractId);
@@ -108,6 +112,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
         this.sloViolations = new AtomicLong();
         this.latencyBudgetsByContract = Map.copyOf(builder.latencyBudgetsByContract);
         this.handlerRegistry = builder.handlerRegistry;
+        this.commitSha = builder.commitSha;
+        this.environment = builder.environment;
 
         // P0-01: Validate evidence writer in production mode.
         // DEVELOPMENT mode resolves an omitted writer to a local file-backed writer.
@@ -116,6 +122,18 @@ public final class ProductInteractionBroker implements AutoCloseable {
             throw new IllegalStateException(
                     "Production mode requires a real evidence writer. No-op evidence writer is not allowed. "
                             + "Use FileProductInteractionEvidenceWriter for local development or BrokerMode.TEST for tests.");
+        }
+
+        // KER-004: Validate commit SHA in production mode
+        if (brokerMode == BrokerMode.PRODUCTION && (commitSha == null || commitSha.isEmpty())) {
+            throw new IllegalStateException(
+                    "Production mode requires commit SHA for production truth binding");
+        }
+
+        // KER-004: Validate commit SHA format if provided
+        if (commitSha != null && !commitSha.isEmpty() && !commitSha.matches("^[a-fA-F0-9]{40}$")) {
+            throw new IllegalArgumentException(
+                    "Invalid commit SHA format: " + commitSha + ". Expected 40 hexadecimal characters.");
         }
 
         // Phase 1: Start cache eviction task if TTL is configured
@@ -685,6 +703,8 @@ public final class ProductInteractionBroker implements AutoCloseable {
         private ProductInteractionCircuitBreaker circuitBreaker;
         private com.ghatana.kernel.observability.TracingPort tracing;
         private com.ghatana.kernel.observability.MetricCollectorPort metrics;
+        private String commitSha;
+        private String environment;
 
         public Builder register(ProductInteractionHandler<?, ?> handler) {
             Objects.requireNonNull(handler, "handler must not be null");
@@ -775,6 +795,29 @@ public final class ProductInteractionBroker implements AutoCloseable {
 
         public Builder metrics(com.ghatana.kernel.observability.MetricCollectorPort metrics) {
             this.metrics = metrics;
+            return this;
+        }
+
+        /**
+         * KER-004: Set commit SHA for production truth binding.
+         * Required in production mode.
+         *
+         * @param commitSha the commit SHA (40 hexadecimal characters)
+         * @return this builder
+         */
+        public Builder commitSha(String commitSha) {
+            this.commitSha = commitSha;
+            return this;
+        }
+
+        /**
+         * KER-004: Set target environment for interaction validation.
+         *
+         * @param environment the target environment (e.g., "production", "staging", "development")
+         * @return this builder
+         */
+        public Builder environment(String environment) {
+            this.environment = environment;
             return this;
         }
 

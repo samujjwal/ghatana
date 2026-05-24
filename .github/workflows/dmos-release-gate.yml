@@ -18,14 +18,19 @@ name: DMOS P0 Release Gate
 
 on:
   push:
-    branches: [main, release/*]
+    branches: [release/*]
+    tags:
+      - "v*"
+      - "dmos-v*"
     paths:
       - 'products/digital-marketing/**'
       - '.github/workflows/dmos-release-gate.yml'
   pull_request:
-    branches: [main, release/*]
+    branches: [main, develop, release/*]
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - 'products/digital-marketing/**'
+      - '.github/workflows/dmos-release-gate.yml'
   workflow_dispatch:
     inputs:
       environment:
@@ -42,6 +47,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
   NODE_OPTIONS: --max-old-space-size=4096
 
@@ -52,6 +59,7 @@ jobs:
   unit-tests:
     name: P0 Unit Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -95,6 +103,7 @@ jobs:
   repository-integration-tests:
     name: Repository Integration Tests (TestContainers)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     services:
       postgres:
         image: postgres:15-alpine
@@ -143,6 +152,7 @@ jobs:
   api-integration-tests:
     name: API Integration Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     services:
       postgres:
         image: postgres:15-alpine
@@ -195,6 +205,7 @@ jobs:
   e2e-browser-tests:
     name: E2E Browser Tests (Playwright)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -202,14 +213,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install dependencies
         working-directory: products/digital-marketing/ui
@@ -236,6 +247,7 @@ jobs:
   ui-quality-gates:
     name: UI Type/Lint/Route Contract Gates
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -243,14 +255,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install dependencies
         working-directory: products/digital-marketing/ui
@@ -286,6 +298,7 @@ jobs:
   stable-route-e2e-realbackend:
     name: Stable Route E2E (Real Backend) - Mandatory for Production
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     services:
       postgres:
         image: postgres:15-alpine
@@ -316,14 +329,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install UI dependencies
         working-directory: products/digital-marketing/ui
@@ -398,6 +411,7 @@ jobs:
   production-bootstrap-validation:
     name: Production Bootstrap Validation
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -435,6 +449,7 @@ jobs:
   security-header-tests:
     name: Security Header Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -469,6 +484,7 @@ jobs:
   contract-parity-tests:
     name: API Contract Parity
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -476,14 +492,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install Redocly CLI
         run: npm install -g @redocly/cli
@@ -528,6 +544,7 @@ jobs:
   durable-workflow-tests:
     name: Durable Workflow Tests (DLQ, External ID Mapping)
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     services:
       postgres:
         image: postgres:15-alpine
@@ -579,6 +596,7 @@ jobs:
   privacy-dsar-tests:
     name: Privacy and DSAR Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -623,6 +641,7 @@ jobs:
   analytics-dashboard-tests:
     name: Analytics Dashboard Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -664,6 +683,7 @@ jobs:
   feature-flag-tests:
     name: Feature Flag Configuration Tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -671,14 +691,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: products/digital-marketing/ui/pnpm-lock.yaml
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Validate Vite Environment Variables
         working-directory: products/digital-marketing/ui
@@ -725,7 +745,7 @@ jobs:
       - privacy-dsar-tests
       - analytics-dashboard-tests
       - feature-flag-tests
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci'))
     steps:
       - name: Check all P0/P1 tests passed
         run: |

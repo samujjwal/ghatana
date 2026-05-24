@@ -895,7 +895,7 @@ export default function LifecyclePage(): ReactElement {
       )}
 
       {/* Recovery guidance for failed runs */}
-      {selectedRun && selectedRun.status !== "succeeded" && (
+      {selectedRun && shouldShowLifecycleRecovery(selectedRun) && (
         <article
           className="studio-card space-y-3"
           aria-labelledby="recovery-title"
@@ -1666,7 +1666,7 @@ function RecoveryPanel(props: {
   const t = useStudioTranslation();
   const run = props.run;
 
-  if (!run || run.status === "succeeded") {
+  if (!run || !shouldShowLifecycleRecovery(run)) {
     return (
       <p className="text-sm text-gray-600">
         {t("studio.route.lifecycle.noRecoveryNeeded")}
@@ -1675,8 +1675,8 @@ function RecoveryPanel(props: {
   }
 
   const failureCategory = inferFailureCategory(
-    run.errorMessage || "Unknown error",
-    run.statusCode
+    lifecycleRunErrorMessage(run),
+    lifecycleRunStatusCode(run)
   );
   const guidance = getRecoveryGuidance(failureCategory);
 
@@ -1745,6 +1745,27 @@ function RecoveryPanel(props: {
       </div>
     </div>
   );
+}
+
+function shouldShowLifecycleRecovery(run: LifecycleRun): boolean {
+  return (
+    run.status === "failed" ||
+    run.status === "blocked" ||
+    run.status === "degraded" ||
+    run.status === "quarantined"
+  );
+}
+
+function lifecycleRunErrorMessage(run: LifecycleRun): string {
+  const value = run.errorMessage;
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : "Unknown error";
+}
+
+function lifecycleRunStatusCode(run: LifecycleRun): number | undefined {
+  const value = run.statusCode;
+  return typeof value === "number" ? value : undefined;
 }
 
 function VerifyHealthPanel(props: {

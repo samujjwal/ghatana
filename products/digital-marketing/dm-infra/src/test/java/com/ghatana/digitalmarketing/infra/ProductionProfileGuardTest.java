@@ -23,6 +23,7 @@ class ProductionProfileGuardTest {
         ProductionProfileGuard.validate();
 
         assertThat(ProductionProfileGuard.isProduction()).isFalse();
+        assertThat(ProductionProfileGuard.isStaging()).isFalse();
         assertThat(ProductionProfileGuard.isEphemeralAllowed()).isTrue();
     }
 
@@ -36,6 +37,59 @@ class ProductionProfileGuardTest {
             .withMessageContaining("cannot be used in production");
 
         assertThat(ProductionProfileGuard.isProduction()).isTrue();
+        assertThat(ProductionProfileGuard.isStaging()).isFalse();
         assertThat(ProductionProfileGuard.isEphemeralAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("staging environment fails closed - in-memory adapters are not permitted")
+    void stagingEnvironmentFailsClosed() {
+        System.setProperty("DMOS_ENV", "staging");
+
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(ProductionProfileGuard::validate)
+            .withMessageContaining("cannot be used in staging");
+
+        assertThat(ProductionProfileGuard.isProduction()).isFalse();
+        assertThat(ProductionProfileGuard.isStaging()).isTrue();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("case-insensitive environment detection for staging")
+    void caseInsensitiveStagingDetection() {
+        System.setProperty("DMOS_ENV", "STAGING");
+
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(ProductionProfileGuard::validate)
+            .withMessageContaining("cannot be used in staging");
+
+        assertThat(ProductionProfileGuard.isStaging()).isTrue();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("case-insensitive environment detection for production")
+    void caseInsensitiveProductionDetection() {
+        System.setProperty("DMOS_ENV", "PRODUCTION");
+
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(ProductionProfileGuard::validate)
+            .withMessageContaining("cannot be used in production");
+
+        assertThat(ProductionProfileGuard.isProduction()).isTrue();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("development explicit value allows in-memory adapters")
+    void explicitDevelopmentAllowsEphemeral() {
+        System.setProperty("DMOS_ENV", "development");
+
+        ProductionProfileGuard.validate();
+
+        assertThat(ProductionProfileGuard.isProduction()).isFalse();
+        assertThat(ProductionProfileGuard.isStaging()).isFalse();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isTrue();
     }
 }

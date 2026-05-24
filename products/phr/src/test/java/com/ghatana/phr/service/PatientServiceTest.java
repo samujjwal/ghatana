@@ -33,7 +33,7 @@ class PatientServiceTest {
         AuditTrailService auditTrail = new PHRAuditTrailServiceImpl(new PhrTestInfrastructure.StubDataCloudAdapter());
         recordsRepository = new PatientRecordRepository();
 
-        patientService = new PatientService(telemetry, auditTrail, recordsRepository);
+        patientService = new PatientService(telemetry, auditTrail, recordsRepository, null);
 
         TenantSecurityContext context = TenantSecurityContext.builder()
             .tenantId("tenant-1")
@@ -120,7 +120,7 @@ class PatientServiceTest {
             }
         };
 
-        patientService = new PatientService(telemetry, failingAuditTrail, recordsRepository);
+        patientService = new PatientService(telemetry, failingAuditTrail, recordsRepository, null);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
             patientService.createRecord("patient-1", Map.of("diagnosis", "Hypertension"))

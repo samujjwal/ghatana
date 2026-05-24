@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "yappc",
+  "evidenceType": "asset-promotion-validation",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Asset promotion validation must be strengthened to prevent invalid promotions",
+  "validationMechanism": {
+    "overall": "validated",
+    "mechanism": "Multi-layer validation with request validation, response validation, and policy enforcement"
+  },
+  "requestValidation": {
+    "service": "RegistryCandidatePromotionService",
+    "file": "products/yappc/frontend/web/src/services/canvas/commands/RegistryCandidatePromotionService.ts",
+    "requiredFields": [
+      "artifactId",
+      "residualIslandId",
+      "proposedContractName"
+    ],
+    "optionalFields": [
+      "notes"
+    ],
+    "validationLogic": {
+      "preRequest": "Throws Error if required identifiers are missing",
+      "typeChecking": "TypeScript interfaces enforce structure",
+      "endpointConstruction": "URL template with proper encoding"
+    }
+  },
+  "responseValidation": {
+    "validator": "isRegistryCandidatePromotionResponse",
+    "validationChecks": [
+      "candidateId is string",
+      "artifactId is string",
+      "residualIslandId is string",
+      "proposedContractName is string",
+      "status equals 'NEEDS_REVIEW'",
+      "auditRecordId is string",
+      "createdAt is string"
+    ],
+    "errorHandling": {
+      "networkError": "Throws Error with network details",
+      "httpError": "Throws Error with HTTP status and body",
+      "invalidResponse": "Throws Error for unexpected shape"
+    }
+  },
+  "promotionPolicy": {
+    "policyFile": "products/yappc/config/agents/definitions/mastery-policies/promotion-policy-v1.yaml",
+    "policyType": "promotion",
+    "stateTransitions": [
+      {
+        "from": "UNKNOWN",
+        "to": "OBSERVED",
+        "minEpisodes": 1,
+        "minSuccessfulEpisodes": 1,
+        "humanReviewRequired": false
+      },
+      {
+        "from": "OBSERVED",
+        "to": "PRACTICED",
+        "minEpisodes": 5,
+        "minSuccessfulEpisodes": 4,
+        "humanReviewRequired": false
+      },
+      {
+        "from": "PRACTICED",
+        "to": "COMPETENT",
+        "minEpisodes": 10,
+        "minSuccessfulEpisodes": 9,
+        "evaluationRequired": true,
+        "evaluationPassRate": 0.85,
+        "humanReviewRequired": false
+      },
+      {
+        "from": "COMPETENT",
+        "to": "MASTERED",
+        "minEpisodes": 20,
+        "minSuccessfulEpisodes": 18,
+        "evaluationRequired": true,
+        "evaluationPassRate": 0.90,
+        "safetyPassRequired": true,
+        "regressionPassRequired": true,
+        "humanReviewRequired": false
+      }
+    ],
+    "targetSpecificCriteria": {
+      "proceduralSkill": {
+        "minProcedureCount": 1,
+        "requiresProcedureLink": true,
+        "evaluationRefsRequired": true
+      },
+      "negativeKnowledge": {
+        "requiresFailureEvidence": true,
+        "minFailureCount": 1,
+        "requiresNegativeLink": true
+      },
+      "semanticFact": {
+        "requiresProvenance": true,
+        "contradictionCheckRequired": true,
+        "minEvidenceCount": 2
+      },
+      "retrievalPolicy": {
+        "requiresShadowEvidence": true,
+        "minEvidenceCount": 5
+      },
+      "promptPolicy": {
+        "requiresRegressionSuite": true,
+        "regressionPassRate": 0.95,
+        "humanReviewRequired": true
+      },
+      "plannerPolicy": {
+        "requiresRegressionSuite": true,
+        "regressionPassRate": 0.95,
+        "humanReviewRequired": true
+      },
+      "modelAdapter": {
+        "requiresOfflineReview": true,
+        "requiresEvaluationRefs": true,
+        "humanReviewRequired": true
+      }
+    },
+    "scoreThresholds": {
+      "practiced": {
+        "correctness": 0.70,
+        "safety": 0.90
+      },
+      "competent": {
+        "correctness": 0.80,
+        "safety": 0.95,
+        "evidenceStrength": 0.70
+      },
+      "mastered": {
+        "correctness": 0.90,
+        "safety": 0.98,
+        "evidenceStrength": 0.85,
+        "regressionStability": 0.80
+      }
+    },
+    "safetyQuarantine": {
+      "enabled": true,
+      "safetyFailureThreshold": 0.80,
+      "quarantineState": "QUARANTINED",
+      "requiresHumanReview": true
+    }
+  },
+  "security": {
+    "authentication": "Cookie-based auth",
+    "tokenStorage": "No localStorage tokens",
+    "credentials": "include"
+  },
+  "auditTrail": {
+    "auditRecordId": "Server-assigned",
+    "createdAt": "ISO-8601 timestamp",
+    "status": "NEEDS_REVIEW for all new candidates"
+  },
+  "evidenceRefs": [
+    "products/yappc/frontend/web/src/services/canvas/commands/RegistryCandidatePromotionService.ts",
+    "products/yappc/config/agents/definitions/mastery-policies/promotion-policy-v1.yaml"
+  ],
+  "summary": {
+    "totalValidationLayers": 3,
+    "layersImplemented": 3,
+    "overallStatus": "passed",
+    "requestValidation": true,
+    "responseValidation": true,
+    "policyEnforcement": true,
+    "safetyQuarantine": true
+  }
+}

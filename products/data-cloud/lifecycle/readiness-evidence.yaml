@@ -59,6 +59,14 @@ actionPlane:
     - products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/audit/DataCloudAgentTraceLedgerTest.java
 conformance:
   updateFieldsOnlyWithExecutableProof: true
+  keepStatusBlockedUntil:
+    - product-release-readiness-pass-true
+    - ai-governance-behavioral-proof-zero-warnings
+    - all-active-data-cloud-modules-compile-and-release-check
+    - action-plane-boundary-tests-pass
   executableProofRefs:
     - scripts/check-data-cloud-platform-providers.mjs
     - scripts/check-data-cloud-platform-provider-readiness.mjs
+    - scripts/list-data-cloud-active-modules.mjs
+    - scripts/check-ai-governance-behavioral-proof.mjs
+    - scripts/check-product-release-readiness.mjs

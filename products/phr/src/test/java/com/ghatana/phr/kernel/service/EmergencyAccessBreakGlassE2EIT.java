@@ -7,6 +7,7 @@ import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("EmergencyAccessBreakGlassE2EIT")
+@Tag("integration")
 class EmergencyAccessBreakGlassE2EIT extends EventloopTestBase {
 
     @Test

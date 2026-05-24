@@ -46,7 +46,9 @@ public final class AgentVersionGate implements AgentDispatchGate {
         }
 
         if (versionContext.containsKey("dependencyFingerprint")) {
-            Map<String, String> expectedFingerprint = (Map<String, String>) versionContext.get("dependencyFingerprint");
+            Map<String, String> expectedFingerprint = requireStringMap(
+                versionContext.get("dependencyFingerprint"),
+                "dependencyFingerprint");
             Map<String, String> actualFingerprint = versionContextResolver.getRuntimeFingerprint();
             
             if (!expectedFingerprint.equals(actualFingerprint)) {
@@ -56,6 +58,21 @@ public final class AgentVersionGate implements AgentDispatchGate {
         }
 
         return GateResult.success();
+    }
+
+    private static Map<String, String> requireStringMap(Object value, String fieldName) {
+        if (!(value instanceof Map<?, ?> rawMap)) {
+            throw new IllegalArgumentException(fieldName + " must be a map of string values");
+        }
+
+        java.util.LinkedHashMap<String, String> typedMap = new java.util.LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            if (!(entry.getKey() instanceof String key) || !(entry.getValue() instanceof String stringValue)) {
+                throw new IllegalArgumentException(fieldName + " must be a map of string values");
+            }
+            typedMap.put(key, stringValue);
+        }
+        return Map.copyOf(typedMap);
     }
 
     /**

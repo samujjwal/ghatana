@@ -48,6 +48,51 @@ if (existsSync(releaseWorkflowPath)) {
   }
 }
 
+const behavioralProofPath = path.join(
+  repoRoot,
+  '.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json',
+);
+
+if (!existsSync(behavioralProofPath)) {
+  violations.push('Missing AI governance behavioral proof evidence: .kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json');
+} else {
+  const proofSource = readFileSync(behavioralProofPath, 'utf8');
+  let proof = null;
+  try {
+    proof = JSON.parse(proofSource);
+  } catch (error) {
+    violations.push(`AI governance behavioral proof evidence is not valid JSON: ${error.message}`);
+  }
+
+  if (proof) {
+    if (Number(proof.summary?.totalWarnings ?? 0) !== 0) {
+      violations.push('AI governance behavioral proof must have zero warnings');
+    }
+    if (Number(proof.summary?.totalViolations ?? 0) !== 0) {
+      violations.push('AI governance behavioral proof must have zero violations');
+    }
+    if (Array.isArray(proof.warnings) && proof.warnings.length > 0) {
+      violations.push('AI governance behavioral proof warnings array must be empty');
+    }
+    if (Array.isArray(proof.violations) && proof.violations.length > 0) {
+      violations.push('AI governance behavioral proof violations array must be empty');
+    }
+  }
+
+  for (const forbiddenToken of [
+    'falling back to posture checks',
+    'fallback to posture checks',
+    'Test execution failed',
+    'Missing AI governance infrastructure',
+    'Missing model registry',
+    'Missing human approval proof',
+  ]) {
+    if (proofSource.includes(forbiddenToken)) {
+      violations.push(`AI governance behavioral proof contains forbidden release evidence token: ${forbiddenToken}`);
+    }
+  }
+}
+
 const agentEvalWorkflowPath = path.join(repoRoot, '.github/workflows/agent-eval.yml');
 if (existsSync(agentEvalWorkflowPath)) {
   const workflowSource = readFileSync(agentEvalWorkflowPath, 'utf8');

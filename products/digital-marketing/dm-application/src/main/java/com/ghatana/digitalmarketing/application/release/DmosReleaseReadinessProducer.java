@@ -15,7 +15,7 @@ import java.util.*;
  * YAPPC-002: Release readiness producer for DMOS (Digital Marketing Operations System).
  *
  * <p>Reads DMOS release evidence from .kernel/evidence/product-release-evidence-pack.digital-marketing.json
- * and produces it to Data Cloud via ProductReleaseReadinessService integration.</p>
+ * and converts it to a Data Cloud release-readiness payload.</p>
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
@@ -67,13 +67,13 @@ public class DmosReleaseReadinessProducer {
     }
 
     /**
-     * Converts DMOS release evidence to Data Cloud ProductReleaseReadiness format.
+     * Converts DMOS release evidence to a Data Cloud release-readiness payload.
      *
      * @param evidence the DMOS release evidence
      * @param tenantId the tenant ID
-     * @return ProductReleaseReadiness in Data Cloud format
+     * @return release readiness payload in Data Cloud wire format
      */
-    public com.ghatana.datacloud.application.ProductReleaseReadinessService.ProductReleaseReadiness 
+    public ProductReleaseReadinessPayload
             toDataCloudFormat(DmosReleaseEvidence evidence, String tenantId) {
         
         Map<String, Object> evidenceMap = new HashMap<>();
@@ -98,24 +98,40 @@ public class DmosReleaseReadinessProducer {
         double averageScore = "passed".equals(evidence.status()) ? 1.0 : 0.0;
         double releaseTargetScore = "passed".equals(evidence.status()) ? 0.90 : 0.0;
 
-        return com.ghatana.datacloud.application.ProductReleaseReadinessService.ProductReleaseReadiness.builder()
-            .productId(evidence.productId())
-            .productVersion(getDmosVersion())
-            .releaseTarget("production")
-            .releaseVerdict("passed".equals(evidence.status()) ? "pass" : "fail")
-            .averageScore(averageScore)
-            .releaseTargetScore(releaseTargetScore)
-            .generatedAt(Instant.parse(evidence.generatedAt()))
-            .evidence(evidenceMap)
-            .blockingGaps(blockingGaps)
-            .belowTargetDimensions(belowTargetDimensions)
-            .tenantId(tenantId)
-            .build();
+        return new ProductReleaseReadinessPayload(
+            evidence.productId(),
+            getDmosVersion(),
+            "production",
+            "passed".equals(evidence.status()) ? "pass" : "fail",
+            averageScore,
+            releaseTargetScore,
+            Instant.parse(evidence.generatedAt()),
+            Map.copyOf(evidenceMap),
+            List.copyOf(blockingGaps),
+            List.copyOf(belowTargetDimensions),
+            tenantId);
     }
 
     private String getDmosVersion() {
         // In production, this would read from build.gradle.kts or a version file
         return "1.0.0";
+    }
+
+    /**
+     * Product-local DTO matching the Data Cloud release-readiness wire shape.
+     */
+    public record ProductReleaseReadinessPayload(
+            String productId,
+            String productVersion,
+            String releaseTarget,
+            String releaseVerdict,
+            double averageScore,
+            double releaseTargetScore,
+            Instant generatedAt,
+            Map<String, Object> evidence,
+            List<Map<String, Object>> blockingGaps,
+            List<Map<String, Object>> belowTargetDimensions,
+            String tenantId) {
     }
 
     /**

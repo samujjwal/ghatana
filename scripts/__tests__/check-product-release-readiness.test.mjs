@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildScopedExecutionOrder,
   buildProductScorecard,
   filterReleaseEligibleProducts,
   runProductReleaseReadinessCheck,
@@ -56,6 +57,22 @@ test('release readiness filters out non-execution-eligible products', () => {
     filterReleaseEligibleProducts(['digital-marketing', 'finance', 'infra'], registry),
     ['digital-marketing'],
   );
+});
+
+test('product release readiness scopes execution to the selected product family', () => {
+  const dataCloudPlan = buildScopedExecutionOrder(['data-cloud'], {
+    paths: ['products/data-cloud/lifecycle/readiness-evidence.yaml'],
+    releaseRisk: false,
+  });
+  const dmosPlan = buildScopedExecutionOrder(['digital-marketing'], {
+    paths: ['products/digital-marketing/kernel-product.yaml'],
+    releaseRisk: false,
+  });
+
+  assert.ok(dataCloudPlan.includes('pnpm:check:data-cloud-release-gate'));
+  assert.ok(!dataCloudPlan.includes('./scripts/check-dmos-production-wiring.mjs'));
+  assert.ok(dmosPlan.includes('./scripts/check-dmos-production-wiring.mjs'));
+  assert.ok(!dmosPlan.includes('pnpm:check:data-cloud-release-gate'));
 });
 
 test('product scorecard uses product execution evidence instead of global maturity baseline', () => {

@@ -1,7 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
-  "generatedAt": "2026-05-23T00:00:00Z",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
   "assets": [
     {
       "asset_id": "dmos-approval-queue",
@@ -13,10 +14,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          ".kernel/evidence/digital-marketing/kernel-bridge-release-gates.json",
           "products/digital-marketing/domains/approval/src/main/java/com/ghatana/digitalmarketing/approval/"
         ],
         "test_coverage": "87%",
@@ -54,10 +56,12 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          ".kernel/evidence/digital-marketing/google-ads-connector.json",
+          ".kernel/evidence/digital-marketing/persistence-constraints.json",
           "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java/com/ghatana/digitalmarketing/connector/"
         ],
         "test_coverage": "92%",
@@ -95,7 +99,7 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
@@ -135,10 +139,11 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+          ".kernel/evidence/digital-marketing/ai-action-transparency-evidence.json",
           "products/digital-marketing/frontend/src/components/ai/"
         ],
         "test_coverage": "85%",
@@ -175,7 +180,7 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "proposed",
+      "promotion_status": "eligible",
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/digital-marketing/foundation-usage-profile.json",

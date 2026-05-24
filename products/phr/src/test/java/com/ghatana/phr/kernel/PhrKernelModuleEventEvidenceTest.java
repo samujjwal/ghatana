@@ -46,6 +46,108 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
 
     @Test
+    @DisplayName("increments evidenceWriteFailureCount when DataCloudKernelAdapter is unavailable")
+    void incrementsFailureCountWhenDataCloudUnavailable() {
+        String originalMode = System.getenv("PHR_DATACLOUD_MODE");
+        try {
+            System.setProperty("PHR_DATACLOUD_MODE", "DEGRADED");
+            NoDataCloudKernelContext context = new NoDataCloudKernelContext();
+            PhrKernelModule module = new PhrKernelModule();
+            module.initialize(context);
+
+        EventHandler<PhrLifecycleEvent> lifecycleHandler = context.handlerFor(PhrLifecycleEvent.class);
+
+        lifecycleHandler.handle(PhrLifecycleEvent.builder()
+                .eventId("evt-lifecycle-fail-1")
+                .productId("phr")
+                .phase("bootstrap")
+                .status("started")
+                .runId("run-fail")
+                .correlationId("corr-fail-1")
+                .environment("prod")
+                .tenantId("tenant-1")
+                .timestamp(Instant.now())
+                .build());
+
+        assertThat(module.getEvidenceWriteFailureCount())
+                .as("Failure counter must be incremented when DataCloudKernelAdapter is absent")
+                .isEqualTo(1L);
+        } finally {
+            if (originalMode != null) {
+                System.setProperty("PHR_DATACLOUD_MODE", originalMode);
+            } else {
+                System.clearProperty("PHR_DATACLOUD_MODE");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("retries transient write failure and succeeds — evidenceWriteFailureCount stays zero")
+    void retriesTransientWriteFailureAndSucceeds() {
+        int transientFailureCount = 2;
+        RetryCapturingDataCloudAdapter retryAdapter = new RetryCapturingDataCloudAdapter(transientFailureCount);
+        CapturingConsentCache consentCache = new CapturingConsentCache();
+        CapturingKernelContext context = new CapturingKernelContext(retryAdapter, consentCache);
+
+        PhrKernelModule module = new PhrKernelModule();
+        module.initialize(context);
+
+        EventHandler<PhrLifecycleEvent> lifecycleHandler = context.handlerFor(PhrLifecycleEvent.class);
+
+        lifecycleHandler.handle(PhrLifecycleEvent.builder()
+                .eventId("evt-retry-success-1")
+                .productId("phr")
+                .phase("deploy")
+                .status("completed")
+                .runId("run-retry")
+                .correlationId("corr-retry")
+                .environment("staging")
+                .tenantId("tenant-2")
+                .timestamp(Instant.now())
+                .build());
+
+        assertThat(module.getEvidenceWriteFailureCount())
+                .as("No permanent failures when write eventually succeeds within retry budget")
+                .isEqualTo(0L);
+        assertThat(retryAdapter.totalAttempts())
+                .as("Should have retried at least 3 times (2 failures + 1 success)")
+                .isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("increments evidenceWriteFailureCount after all retries exhausted on persistent write failure")
+    void incrementsFailureCountAfterRetryBudgetExhausted() {
+        FailingDataCloudAdapter failingAdapter = new FailingDataCloudAdapter();
+        CapturingConsentCache consentCache = new CapturingConsentCache();
+        CapturingKernelContext context = new CapturingKernelContext(failingAdapter, consentCache);
+
+        PhrKernelModule module = new PhrKernelModule();
+        module.initialize(context);
+
+        EventHandler<PhrAuditEvent> auditHandler = context.handlerFor(PhrAuditEvent.class);
+
+        auditHandler.handle(PhrAuditEvent.builder()
+                .eventId("evt-audit-fail-1")
+                .productId("phr")
+                .auditType("patient-access")
+                .action("read")
+                .resourceType("patient")
+                .resourceId("patient-99")
+                .actorId("actor-1")
+                .actorRole("PROVIDER")
+                .tenantId("tenant-3")
+                .patientId("patient-99")
+                .metadata(Map.of())
+                .correlationId("corr-fail-audit")
+                .timestamp(Instant.now())
+                .build());
+
+        assertThat(module.getEvidenceWriteFailureCount())
+                .as("Failure counter must be incremented after all retries are exhausted")
+                .isGreaterThanOrEqualTo(1L);
+    }
+
+    @Test
     @DisplayName("writes lifecycle, audit, and consent evidence to Data Cloud and invalidates consent cache")
     void writesEvidenceAndInvalidatesConsentCache() throws Exception {
         CapturingDataCloudAdapter dataCloudAdapter = new CapturingDataCloudAdapter();
@@ -125,13 +227,13 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
                 .containsEntry("status", "passed");
     }
 
-    private static final class CapturingKernelContext implements KernelContext {
-        private final CapturingDataCloudAdapter dataCloudAdapter;
+    private static class CapturingKernelContext implements KernelContext {
+        protected final CapturingDataCloudAdapter dataCloudAdapter;
         private final CapturingConsentCache consentCache;
         private final ConcurrentHashMap<Class<?>, EventHandler<?>> handlers = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<Class<?>, Object> registeredServices = new ConcurrentHashMap<>();
 
-        private CapturingKernelContext(CapturingDataCloudAdapter dataCloudAdapter, CapturingConsentCache consentCache) {
+        protected CapturingKernelContext(CapturingDataCloudAdapter dataCloudAdapter, CapturingConsentCache consentCache) {
             this.dataCloudAdapter = dataCloudAdapter;
             this.consentCache = consentCache;
         }
@@ -216,7 +318,26 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
         }
     }
 
-    private static final class CapturingDataCloudAdapter implements DataCloudKernelAdapter {
+    private static final class NoDataCloudKernelContext extends CapturingKernelContext {
+        private NoDataCloudKernelContext() {
+            super(null, new CapturingConsentCache());
+        }
+
+        @Override
+        public <T> T getDependency(Class<T> type) {
+            if (type == DataCloudKernelAdapter.class) {
+                return null;
+            }
+            return super.getDependency(type);
+        }
+
+        @Override
+        public <T> boolean hasDependency(Class<T> type) {
+            return type != DataCloudKernelAdapter.class && super.hasDependency(type);
+        }
+    }
+
+    private static class CapturingDataCloudAdapter implements DataCloudKernelAdapter {
         private final List<DataWriteRequest> requests = new ArrayList<>();
 
         @Override public Promise<DataResult> readData(DataReadRequest request) { return Promise.of(null); }
@@ -230,6 +351,35 @@ class PhrKernelModuleEventEvidenceTest extends EventloopTestBase {
         @Override public Promise<Void> commitTransaction(BridgeContext context, TransactionHandle transaction) { return Promise.complete(); }
         @Override public Promise<Void> rollbackTransaction(BridgeContext context, TransactionHandle transaction) { return Promise.complete(); }
         @Override public Promise<DataStream> openStream(DataStreamRequest request) { return Promise.of(null); }
+    }
+
+    private static final class RetryCapturingDataCloudAdapter extends CapturingDataCloudAdapter {
+        private final int failuresBeforeSuccess;
+        private int attempts;
+
+        private RetryCapturingDataCloudAdapter(int failuresBeforeSuccess) {
+            this.failuresBeforeSuccess = failuresBeforeSuccess;
+        }
+
+        @Override
+        public Promise<Void> writeData(DataWriteRequest request) {
+            attempts += 1;
+            if (attempts <= failuresBeforeSuccess) {
+                throw new IllegalStateException("transient Data Cloud write failure");
+            }
+            return super.writeData(request);
+        }
+
+        private int totalAttempts() {
+            return attempts;
+        }
+    }
+
+    private static final class FailingDataCloudAdapter extends CapturingDataCloudAdapter {
+        @Override
+        public Promise<Void> writeData(DataWriteRequest request) {
+            throw new IllegalStateException("persistent Data Cloud write failure");
+        }
     }
 
     private static final class CapturingConsentCache implements DistributedCachePort<String, com.ghatana.phr.kernel.service.ConsentManagementService.ConsentCacheEntry> {

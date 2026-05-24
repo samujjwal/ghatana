@@ -10,6 +10,7 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -38,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern E2E Test
  */
 @DisplayName("BreakGlassWorkflowE2E (Production-Grade)")
+@Tag("integration")
+@Tag("infrastructure-backed")
 class BreakGlassWorkflowE2ETest extends EventloopTestBase {
 
     private static final String POSTGRES_IMAGE = "postgres:15-alpine";

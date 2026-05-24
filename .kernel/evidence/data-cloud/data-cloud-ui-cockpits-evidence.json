@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "data-cloud",
+  "evidenceType": "ui-cockpits",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "uiCockpits": {
+    "status": "implemented",
+    "description": "Data Cloud UI provides release readiness cockpits for PHR and Digital Marketing products"
+  },
+  "cockpits": {
+    "phrReleaseCockpit": {
+      "component": "PhrReleaseCockpitPage",
+      "path": "products/data-cloud/delivery/ui/src/pages/PhrReleaseCockpitPage.tsx",
+      "features": {
+        "overviewTab": {
+          "status": "implemented",
+          "features": [
+            "Statistics cards (Total Releases, Passed, Failed, Average Score)",
+            "Evidence categories summary with status indicators",
+            "Pass rate calculation"
+          ]
+        },
+        "historyTab": {
+          "status": "implemented",
+          "features": [
+            "Release history table with version, target, verdict, score, timestamp",
+            "Filter by release target (ALL, production, staging, development)",
+            "Filter by verdict (ALL, pass, fail)",
+            "Release details sheet with blocking gaps, below-target dimensions, full evidence"
+          ]
+        },
+        "evidenceTab": {
+          "status": "implemented",
+          "features": [
+            "Evidence inspection placeholder",
+            "Integration with release selection from history tab"
+          ]
+        },
+        "dataFlow": {
+          "apiService": "releaseReadinessService",
+          "endpoints": [
+            "getReleaseReadinessStats(tenantId)",
+            "listReleaseReadiness({productId, releaseTarget, releaseVerdict, tenantId, limit})"
+          ],
+          "queryLibrary": "@tanstack/react-query"
+        }
+      }
+    },
+    "dmosReleaseCockpit": {
+      "component": "DmosReleaseCockpitPage",
+      "path": "products/data-cloud/delivery/ui/src/pages/DmosReleaseCockpitPage.tsx",
+      "features": {
+        "overviewTab": {
+          "status": "implemented",
+          "features": [
+            "Statistics cards (Total Releases, Passed, Failed, Average Score)",
+            "Evidence categories summary with status indicators",
+            "Pass rate calculation",
+            "Connector status (Google Ads) displayed in evidence categories"
+          ]
+        },
+        "historyTab": {
+          "status": "implemented",
+          "features": [
+            "Release history table with version, target, verdict, score, timestamp",
+            "Filter by release target (ALL, production, staging, development)",
+            "Filter by verdict (ALL, pass, fail)",
+            "Release details sheet with blocking gaps, below-target dimensions, full evidence"
+          ]
+        },
+        "evidenceTab": {
+          "status": "implemented",
+          "features": [
+            "Evidence inspection placeholder",
+            "Integration with release selection from history tab"
+          ]
+        },
+        "dataFlow": {
+          "apiService": "releaseReadinessService",
+          "endpoints": [
+            "getReleaseReadinessStats(tenantId)",
+            "listReleaseReadiness({productId, releaseTarget, releaseVerdict, tenantId, limit})"
+          ],
+          "queryLibrary": "@tanstack/react-query"
+        }
+      }
+    }
+  },
+  "sharedComponents": {
+    "uiLibrary": "shadcn/ui",
+    "components": [
+      "Card",
+      "CardContent",
+      "CardDescription",
+      "CardHeader",
+      "CardTitle",
+      "Badge",
+      "Button",
+      "Select",
+      "SelectContent",
+      "SelectItem",
+      "SelectTrigger",
+      "SelectValue",
+      "Tabs",
+      "TabsContent",
+      "TabsList",
+      "TabsTrigger",
+      "Table",
+      "TableBody",
+      "TableCell",
+      "TableHead",
+      "TableHeader",
+      "TableRow",
+      "Sheet",
+      "SheetContent",
+      "SheetDescription",
+      "SheetHeader",
+      "SheetTitle",
+      "SheetTrigger"
+    ],
+    "icons": "lucide-react",
+    "queryLibrary": "@tanstack/react-query"
+  },
+  "improvements": {
+    "currentState": "Functional but could be enhanced",
+    "potentialEnhancements": [
+      "Add real-time evidence freshness indicators",
+      "Add foundation usage display similar to PHR local cockpit",
+      "Add next steps tab with actionable tasks",
+      "Add environment-specific filtering at the API level",
+      "Add export functionality for evidence reports",
+      "Add trend visualization for release scores over time",
+      "Add comparison view between different releases",
+      "Add alert integration for blocking issues",
+      "Add tenant-specific configuration",
+      "Add role-based access control for sensitive evidence"
+    ],
+    "consistencyWithLocalCockpits": {
+      "phrLocalCockpit": "products/phr/ui/src/pages/PhrReleaseCockpit.tsx",
+      "dataCloudCockpit": "products/data-cloud/delivery/ui/src/pages/PhrReleaseCockpitPage.tsx",
+      "differences": [
+        "Local PHR cockpit has foundation usage section (Kernel, Data Cloud, Plugins)",
+        "Local PHR cockpit has next steps tab with required work tasks",
+        "Local PHR cockpit has gate status tab with environment badges",
+        "Data Cloud cockpit has release history with filtering",
+        "Data Cloud cockpit uses centralized release readiness service",
+        "Data Cloud cockpit supports multi-tenant context"
+      ]
+    }
+  },
+  "apiIntegration": {
+    "service": "releaseReadinessService",
+    "path": "products/data-cloud/delivery/ui/src/api/release-readiness.service.ts",
+    "methods": {
+      "getReleaseReadinessStats": {
+        "description": "Fetch release readiness statistics across all products",
+        "parameters": ["tenantId"],
+        "returns": "ReleaseReadinessStats with byProduct breakdown and averageScore"
+      },
+      "listReleaseReadiness": {
+        "description": "List release readiness records with filtering",
+        "parameters": ["productId", "releaseTarget", "releaseVerdict", "tenantId", "limit"],
+        "returns": "Array of ReleaseReadiness records"
+      }
+    }
+  },
+  "evidenceRefs": [
+    "products/data-cloud/delivery/ui/src/pages/PhrReleaseCockpitPage.tsx",
+    "products/data-cloud/delivery/ui/src/pages/DmosReleaseCockpitPage.tsx",
+    "products/data-cloud/delivery/ui/src/api/release-readiness.service.ts",
+    ".kernel/evidence/phr/phr-release-cockpit-evidence.json",
+    ".kernel/evidence/digital-marketing/ui-release-cockpit-evidence.json"
+  ],
+  "summary": {
+    "phrCockpitImplemented": true,
+    "dmosCockpitImplemented": true,
+    "sharedComponents": true,
+    "apiIntegration": true,
+    "multiTenantSupport": true,
+    "filteringCapabilities": true,
+    "evidenceInspection": true,
+    "foundationUsageDisplay": false,
+    "foundationUsageDisplayNote": "Available in local PHR cockpit only",
+    "nextStepsDisplay": false,
+    "nextStepsDisplayNote": "Available in local PHR cockpit only",
+    "gateStatusDisplay": false,
+    "gateStatusDisplayNote": "Available in local PHR cockpit only",
+    "overallStatus": "functional with enhancement opportunities"
+  }
+}

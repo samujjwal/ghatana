@@ -10,9 +10,7 @@ Release infrastructure has comprehensive scripts and workflows:
 - ✅ `check-evidence-freshness.mjs` - Evidence freshness validation
 - ✅ `check-production-readiness-audit-tasks.mjs` - Production readiness audit
 - ✅ `generate-comprehensive-release-summary.mjs` - Release summary generation
-- ✅ `generate-product-release-readiness-evidence.mjs` - Evidence generation
 - ✅ `generate-release-maturity-summary.mjs` - Maturity summary generation
-- ✅ `produce-release-readiness-evidence.mjs` - Evidence production
 - ✅ `validate-release-evidence.mjs` - Evidence validation
 - ✅ `check-kernel-implementation-plan-coverage.mjs` - Implementation plan coverage
 
@@ -134,7 +132,7 @@ According to the implementation tracker, Phase 8 requires:
 
 **Implementation**:
 
-- Create `artifact-bundle-validator.mjs` script
+- Use `validate-artifact-bundle.mjs` for bundle validation
 - Add completeness checks
 - Add integrity checks
 - Add signature validation

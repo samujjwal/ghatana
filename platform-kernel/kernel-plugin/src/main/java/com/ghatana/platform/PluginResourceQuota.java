@@ -18,6 +18,7 @@ import java.util.Objects;
  * @deprecated Use {@link com.ghatana.kernel.plugin.PluginResourceQuota} from kernel-core instead
  */
 @Deprecated(forRemoval = true, since = "1.0.0")
+@SuppressWarnings("removal")
 public final class PluginResourceQuota {
 
     private final com.ghatana.kernel.plugin.PluginResourceQuota kernelQuota;

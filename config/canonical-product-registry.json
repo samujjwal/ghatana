@@ -950,7 +950,8 @@
         "evidenceRefs": [
           "products/data-cloud/lifecycle/readiness-evidence.yaml",
           "products/data-cloud/extensions/kernel-bridge",
-          "products/data-cloud/planes/action/kernel-bridge"
+          "products/data-cloud/planes/action/kernel-bridge",
+          ".kernel/evidence/data-cloud/platform-provider-readiness.json"
         ],
         "blockerGateAdapterMatrix": {
           "blockers": [
@@ -1367,6 +1368,7 @@
         "evidenceRefs": ["products/tutorputor/kernel-product.yaml"]
       },
       "lifecycleConfigPath": "products/tutorputor/kernel-product.yaml",
+      "foundationUsageProfile": "products/tutorputor/lifecycle/foundation-usage-profile.yaml",
       "lifecycle": {
         "enabled": false,
         "phases": {

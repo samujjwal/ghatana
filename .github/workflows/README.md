@@ -2,13 +2,14 @@
 
 **Status:** Phase 2 Implementation  
 **Created:** March 17, 2026  
-**Purpose:** Automated governance checks for CI/CD pipeline  
+**Purpose:** Automated governance checks for CI/CD pipeline
 
 ---
 
 ## Overview
 
 This directory contains automated governance checks that run in CI/CD to ensure:
+
 - Dependency version convergence
 - License compliance
 - SBOM generation
@@ -23,6 +24,7 @@ This directory contains automated governance checks that run in CI/CD to ensure:
 
 **Triggers:** Push to main, pull requests, manual dispatch  
 **Jobs:**
+
 - SBOM Generation (CycloneDX + SPDX)
 - License Compliance Check
 - Dependency Convergence Analysis
@@ -30,6 +32,7 @@ This directory contains automated governance checks that run in CI/CD to ensure:
 - Security Audit
 
 **Artifacts:**
+
 - `sbom-reports/` - CycloneDX and SPDX SBOMs
 - `license-report/` - License analysis JSON
 - `dependency-convergence-report/` - Dependency version report
@@ -39,6 +42,7 @@ This directory contains automated governance checks that run in CI/CD to ensure:
 
 **Triggers:** Push to main, pull requests  
 **Jobs:**
+
 - Check version alignment
 - Detect duplicate dependencies
 - Verify peer dependency compatibility
@@ -91,6 +95,7 @@ pnpm test
 See `scripts/align-dependencies.js` for the canonical list of target versions.
 
 Key dependencies:
+
 - **React:** ^19.2.4
 - **TypeScript:** ^5.9.3
 - **Vite:** ^7.3.1
@@ -102,6 +107,7 @@ Key dependencies:
 ## License Policy
 
 ### Allowed Licenses
+
 - MIT
 - Apache-2.0
 - BSD (all variants)
@@ -110,6 +116,7 @@ Key dependencies:
 - Unlicense
 
 ### Forbidden Licenses
+
 - GPL (all variants)
 - AGPL
 - LGPL
@@ -159,10 +166,11 @@ pnpm lint || exit 1
 ### PR Requirements
 
 Branch protection rules should require:
-- ✅ Governance Checks passing
-- ✅ Dependency Convergence passing
-- ✅ No forbidden licenses
-- ✅ Security audit clean
+
+- ✅ Required Checks passing on every pull request
+- ✅ Product release gates only for release branches, tags, or manual promotion
+- ✅ Product-specific advisory workflows should not be required globally
+- ✅ Strict release gates must publish evidence artifacts before promotion
 
 ---
 

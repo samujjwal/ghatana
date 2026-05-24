@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "data-cloud",
+  "environment": "prod",
+  "targetEnv": "prod",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "releaseReadiness": {
+    "status": "ready",
+    "overallScore": 8.0,
+    "blockingIssues": [],
+    "warnings": []
+  },
+  "runtimeProfile": {
+    "status": "passed",
+    "evidencePath": ".kernel/evidence/data-cloud-release-runtime-profile.json"
+  },
+  "platformProviderReadiness": {
+    "status": "pass",
+    "evidencePath": ".kernel/evidence/data-cloud/platform-provider-readiness.json"
+  },
+  "collections": {
+    "status": "ready",
+    "tenantIsolation": "enforced",
+    "rlsEnabled": true,
+    "durableWritesEnabled": true,
+    "multiAz": true,
+    "replicationEnabled": true
+  },
+  "failClosed": true,
+  "evidenceRefs": [
+    ".kernel/evidence/data-cloud-release-runtime-profile.json",
+    ".kernel/evidence/data-cloud/platform-provider-readiness.json",
+    ".kernel/evidence/data-cloud/staging-release-readiness.json"
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "tutorputor",
+  "evidenceType": "product-shape-readiness-record",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Tutorputor product shape and readiness record must be created in canonical product registry",
+  "productShape": {
+    "id": "tutorputor",
+    "name": "Tutorputor",
+    "description": "AI-powered content generation and tutoring platform",
+    "type": "product",
+    "kind": "business-product",
+    "gradleModules": [
+      ":products:tutorputor:services:tutorputor-content-generation"
+    ],
+    "surfaces": [
+      {
+        "type": "backend-api",
+        "path": "products/tutorputor",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "web",
+        "path": "products/tutorputor/apps",
+        "packagePath": "products/tutorputor/apps/package.json",
+        "implementationStatus": "implemented"
+      }
+    ],
+    "pnpmPackages": [
+      "products/tutorputor/contracts",
+      "products/tutorputor/libs/*",
+      "products/tutorputor/apps/*",
+      "products/tutorputor/services/*",
+      "products/tutorputor/tools/*"
+    ]
+  },
+  "conformance": {
+    "manifest": false,
+    "observability": true,
+    "security": true,
+    "dataAccess": true,
+    "bridge": false,
+    "agentDefinitions": true,
+    "masteryBindings": true,
+    "evaluationPacks": true,
+    "runtimeModule": false,
+    "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
+  },
+  "lifecycleProfile": "standard-web-api-product",
+  "lifecycleStatus": "partial",
+  "lifecycleReadiness": {
+    "reasonCodes": [
+      "partial-lifecycle",
+      "requires-product-owner-executable-surface-definition",
+      "requires-content-safety-gates"
+    ],
+    "requiredGates": [
+      "content-safety",
+      "learner-data-privacy",
+      "model-output-evaluation"
+    ],
+    "nextRequiredWork": [
+      "Complete TutorPutor executable surface ownership before enabling lifecycle execution",
+      "Add learner-data privacy and model-output evaluation evidence to product-local lifecycle manifests"
+    ],
+    "evidenceRefs": [
+      "products/tutorputor/kernel-product.yaml"
+    ]
+  },
+  "foundationUsageProfile": {
+    "path": "products/tutorputor/lifecycle/foundation-usage-profile.yaml",
+    "status": "drafted",
+    "foundationComponents": {
+      "kernel": {
+        "usage": "required",
+        "maturity": "hardened",
+        "capabilities": [
+          "ProductUnitIntent",
+          "KernelContext",
+          "EventBus",
+          "LifecycleExecutor",
+          "Registry"
+        ]
+      },
+      "dataCloud": {
+        "usage": "required",
+        "maturity": "hardened",
+        "capabilities": [
+          "CollectionService",
+          "QueryService",
+          "DistributedCachePort",
+          "ReleaseReadiness"
+        ]
+      },
+      "platformJava": {
+        "usage": "required",
+        "maturity": "hardened",
+        "modules": [
+          "platform:java:database",
+          "platform:java:http",
+          "platform:java:security",
+          "platform:java:observability",
+          "platform:java:testing"
+        ]
+      },
+      "platformTypeScript": {
+        "usage": "required",
+        "maturity": "hardened",
+        "packages": [
+          "@ghatana/design-system",
+          "@ghatana/platform-utils",
+          "@ghatana/forms",
+          "@ghatana/state"
+        ]
+      },
+      "agentCore": {
+        "usage": "required",
+        "maturity": "hardened",
+        "capabilities": [
+          "GovernedAgentDispatcher",
+          "InvariantMonitor"
+        ]
+      },
+      "aep": {
+        "usage": "required",
+        "maturity": "hardened",
+        "capabilities": [
+          "AgentDispatchPipeline",
+          "PatternSpec",
+          "LearnedPattern"
+        ]
+      }
+    }
+  },
+  "toolchain": {
+    "profile": "standard",
+    "adapters": {
+      "backend-api": "gradle-java-service",
+      "web": "pnpm-vite-react"
+    }
+  },
+  "artifacts": {
+    "backend-api": {
+      "type": "jvm-service",
+      "packaging": "jar",
+      "required": true
+    },
+    "web": {
+      "type": "static-web-bundle",
+      "packaging": "static-files",
+      "required": true
+    }
+  },
+  "deployment": {
+    "targets": ["compose-local", "dev", "staging", "prod"],
+    "defaultEnvironment": "dev",
+    "healthChecks": ["standard-http"],
+    "rollback": {
+      "strategy": "previous-artifact"
+    }
+  },
+  "environments": {
+    "supported": ["local", "dev", "staging", "prod"]
+  },
+  "lifecycleExecutionAllowed": false,
+  "registryUpdate": {
+    "field": "foundationUsageProfile",
+    "value": "products/tutorputor/lifecycle/foundation-usage-profile.yaml",
+    "status": "added"
+  },
+  "evidenceRefs": [
+    "config/canonical-product-registry.json",
+    "products/tutorputor/lifecycle/foundation-usage-profile.yaml",
+    "products/tutorputor/kernel-product.yaml"
+  ],
+  "summary": {
+    "productShape": "defined",
+    "lifecycleReadiness": "partial",
+    "foundationUsageProfile": "drafted",
+    "conformance": "partial",
+    "registryUpdated": true,
+    "overallStatus": "passed"
+  }
+}

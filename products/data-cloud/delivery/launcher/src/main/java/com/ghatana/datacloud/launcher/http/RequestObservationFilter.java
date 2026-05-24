@@ -4,6 +4,7 @@ import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.entity.observability.Span;
 import com.ghatana.datacloud.entity.observability.SpanStatus;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
+import com.ghatana.datacloud.launcher.http.security.RequestContextResolver;
 import com.ghatana.datacloud.launcher.support.RequestContext;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -83,16 +84,12 @@ public final class RequestObservationFilter {
                 metadata.sampled()));
 
             if (httpSupport.isStrictTenantResolution() && requiresTenant(path)) {
-                if (!httpSupport.hasExplicitTenantCandidate(request)) {
-                    HttpResponse response = httpSupport.errorResponse(401,
-                        "X-Tenant-Id header or tenantId parameter required",
-                        requestId);
-                    RequestTraceSupport.clearCurrent();
-                    return Promise.of(response);
-                }
-                if (effectiveTenantId == null) {
-                    HttpResponse response = httpSupport.errorResponse(400,
-                        "Invalid tenant identifier format",
+                RequestContextResolver.ResolutionResult resolution =
+                    httpSupport.resolveRequestContextWithError(request);
+                if (!resolution.isSuccess()) {
+                    HttpResponse response = httpSupport.errorResponse(
+                        resolution.errorCode(),
+                        resolution.errorMessage(),
                         requestId);
                     RequestTraceSupport.clearCurrent();
                     return Promise.of(response);

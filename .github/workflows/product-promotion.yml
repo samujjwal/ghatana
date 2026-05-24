@@ -2,7 +2,7 @@ name: Product Promotion
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10.33.0'
+  PNPM_VERSION: "10.33.0"
 
 on:
   workflow_dispatch:

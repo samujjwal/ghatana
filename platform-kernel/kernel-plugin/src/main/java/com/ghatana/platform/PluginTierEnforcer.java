@@ -34,7 +34,7 @@ public final class PluginTierEnforcer {
      * @param tier the plugin tier
      * @throws PluginTierViolationException if tier is not allowed
      */
-    public void validateTier(PluginTier tier) throws PluginTierViolationException {
+    public void validateTier(com.ghatana.kernel.plugin.PluginTier tier) throws PluginTierViolationException {
         log.debug("Validating plugin tier: {}", tier);
 
         // Check if tier is supported
@@ -55,7 +55,7 @@ public final class PluginTierEnforcer {
      * @param capability the capability to access
      * @return true if access is allowed
      */
-    public boolean canAccessCapability(PluginTier tier, String capability) {
+    public boolean canAccessCapability(com.ghatana.kernel.plugin.PluginTier tier, String capability) {
         return switch (tier) {
             case T1 -> canT1Access(capability);
             case T2 -> canT2Access(capability);
@@ -99,7 +99,9 @@ public final class PluginTierEnforcer {
      * @param requestedCapability the capability being requested
      * @throws PluginTierViolationException if escalation is detected
      */
-    public void preventTierEscalation(PluginTier currentTier, String requestedCapability)
+    public void preventTierEscalation(
+            com.ghatana.kernel.plugin.PluginTier currentTier,
+            String requestedCapability)
             throws PluginTierViolationException {
 
         if (!canAccessCapability(currentTier, requestedCapability)) {

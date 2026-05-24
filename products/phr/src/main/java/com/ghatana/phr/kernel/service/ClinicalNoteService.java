@@ -88,11 +88,11 @@ public class ClinicalNoteService extends PhrServiceBase {
             NOTE_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "type", "SOAP",
                 "status", toStore.status().name()
-            ),
+            ), toStore.authorId()),
             "SoapNote",
             1
         ).then(stored -> audit("CREATE_SOAP_NOTE", stored.patientId(),
@@ -133,7 +133,11 @@ public class ClinicalNoteService extends PhrServiceBase {
                     NOTE_DATASET,
                     sanitizedNoteId,
                     signed,
-                    Map.of("status", "FINAL", "signedBy", sanitizedSignedBy),
+                    mutationMetadata(Map.of(
+                        "patientId", signed.patientId(),
+                        "status", "FINAL",
+                        "signedBy", sanitizedSignedBy
+                    ), sanitizedSignedBy),
                     "SoapNote",
                     1
                 ).then(updated -> audit("SIGN_NOTE", updated.patientId(),

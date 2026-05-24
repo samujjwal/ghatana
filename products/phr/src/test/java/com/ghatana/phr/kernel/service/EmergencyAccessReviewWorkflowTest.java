@@ -34,7 +34,10 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
     void setUp() {
         notificationSender = new RecordingNotificationSender();
         auditLogger = new RecordingAuditLogger();
-        workflow = new EmergencyAccessReviewWorkflow(notificationSender, auditLogger);
+        workflow = new EmergencyAccessReviewWorkflow(
+                notificationSender,
+                auditLogger,
+                "reviewer-1"::equals);
     }
 
     @Test
@@ -123,7 +126,102 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
         assertThat(attempts.get()).isEqualTo(3);
     }
 
+    @Test
+    @DisplayName("denies review when reviewer is not authorized")
+    void deniesUnauthorizedReview() {
+        EmergencyAccessEvent unauthorizedEvent = event(
+                ReviewStatus.REVIEWED,
+                Instant.now(),
+                "Unauthorized reviewer attempt",
+                "unauthorized-user"
+        );
+
+        EmergencyAccessReviewCase reviewCase = runPromise(() -> workflow.complete(unauthorizedEvent));
+
+        assertThat(reviewCase.status()).isEqualTo(EmergencyAccessReviewCase.ReviewCaseStatus.QUEUED);
+        assertThat(auditLogger.completedCases).isEmpty();
+    }
+
+    @Test
+    @DisplayName("expires emergency access after deadline")
+    void expiresEmergencyAccessAfterDeadline() {
+        Instant accessedAt = Instant.now().minusSeconds(15000);
+        EmergencyAccessEvent expiredEvent = new EmergencyAccessEvent(
+                "event-expired",
+                "patient-1",
+                "doctor-1",
+                "ER_PHYSICIAN",
+                "Patient unconscious",
+                Set.of("medications", "labs"),
+                accessedAt,
+                accessedAt.plusSeconds(14400),
+                ReviewStatus.PENDING_REVIEW,
+                accessedAt.plusSeconds(86400),
+                null,
+                null,
+                null,
+                "EMR-EXPIRED"
+        );
+
+        EmergencyAccessReviewCase reviewCase = runPromise(() -> workflow.initiate(expiredEvent));
+
+        assertThat(reviewCase.accessExpiresAt()).isBefore(Instant.now());
+        assertThat(reviewCase.status()).isEqualTo(EmergencyAccessReviewCase.ReviewCaseStatus.QUEUED);
+    }
+
+    @Test
+    @DisplayName("requires mandatory review before access expires")
+    void requiresMandatoryReviewBeforeExpiration() {
+        Instant accessedAt = Instant.now().minusSeconds(1800);
+        EmergencyAccessEvent baseEvent = event(
+                ReviewStatus.PENDING_REVIEW,
+                null,
+                null
+        );
+        EmergencyAccessEvent pendingEvent = new EmergencyAccessEvent(
+                baseEvent.id(),
+                baseEvent.patientId(),
+                baseEvent.accessorId(),
+                baseEvent.accessorRole(),
+                baseEvent.justification(),
+                baseEvent.resourcesAccessed(),
+                accessedAt,
+                accessedAt.plusSeconds(14400),
+                ReviewStatus.PENDING_REVIEW,
+                accessedAt.plusSeconds(86400),
+                null,
+                null,
+                null,
+                "EMR-PENDING"
+        );
+
+        EmergencyAccessReviewCase reviewCase = runPromise(() -> workflow.initiate(pendingEvent));
+
+        assertThat(reviewCase.reviewDueAt()).isAfter(Instant.now());
+        assertThat(reviewCase.complianceDeadline()).isAfter(Instant.now());
+        assertThat(notificationSender.reviewSchedules).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("audit trail persists all emergency access events")
+    void auditTrailPersistsAllEvents() {
+        EmergencyAccessEvent event1 = event(ReviewStatus.PENDING_REVIEW, null, null);
+        EmergencyAccessEvent event2 = event(ReviewStatus.REVIEWED, Instant.now(), "Clinically justified");
+
+        runPromise(() -> workflow.initiate(event1));
+        runPromise(() -> workflow.complete(event2));
+
+        assertThat(auditLogger.queuedCases).hasSize(1);
+        assertThat(auditLogger.completedCases).hasSize(1);
+        assertThat(auditLogger.queuedCases.get(0).caseId()).isEqualTo("EMR-12345678");
+        assertThat(auditLogger.completedCases.get(0).caseId()).isEqualTo("EMR-12345678");
+    }
+
     private static EmergencyAccessEvent event(ReviewStatus status, Instant reviewedAt, String notes) {
+        return event(status, reviewedAt, notes, "reviewer-1");
+    }
+
+    private static EmergencyAccessEvent event(ReviewStatus status, Instant reviewedAt, String notes, String reviewerId) {
         Instant accessedAt = Instant.now().minusSeconds(300);
         return new EmergencyAccessEvent(
                 "event-1",
@@ -137,7 +235,7 @@ class EmergencyAccessReviewWorkflowTest extends EventloopTestBase {
                 status,
                 accessedAt.plusSeconds(86400),
                 reviewedAt,
-                "reviewer-1",
+                reviewerId,
                 notes,
                 "EMR-12345678"
         );

@@ -54,13 +54,28 @@ public final class MasteryBindingMaterializer {
         Object bindingsListObj = definition.getMetadata().get("masteryBindingsList");
         if (bindingsListObj instanceof List<?> bindingsList) {
             return bindingsList.stream()
-                    .filter(Map.class::isInstance)
-                    .map(Map.class::cast)
+                    .map(MasteryBindingMaterializer::asStringObjectMap)
                     .map(MasteryBindingMaterializer::parseSingleBinding)
                     .toList();
         }
 
         return List.of();
+    }
+
+    private static Map<String, Object> asStringObjectMap(Object value) {
+        if (!(value instanceof Map<?, ?> rawMap)) {
+            throw new IllegalStateException("Each mastery binding entry must be a map");
+        }
+
+        return rawMap.entrySet().stream()
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                        entry -> {
+                            if (!(entry.getKey() instanceof String key)) {
+                                throw new IllegalStateException("Mastery binding keys must be strings");
+                            }
+                            return key;
+                        },
+                        Map.Entry::getValue));
     }
 
     /**

@@ -19,7 +19,7 @@ class PlaneDependencyBoundaryTest {
     @Test
     @DisplayName("foundational planes do not depend on Action Plane Gradle modules")
     void foundationalPlanesDoNotDependOnActionPlaneModules() throws IOException {
-        List<String> restrictedPlanes = List.of("data", "event", "context", "governance");
+        List<String> restrictedPlanes = List.of("data", "event", "context", "governance", "operations");
 
         for (String plane : restrictedPlanes) {
             Path planeRoot = DATA_CLOUD_ROOT.resolve("planes").resolve(plane);

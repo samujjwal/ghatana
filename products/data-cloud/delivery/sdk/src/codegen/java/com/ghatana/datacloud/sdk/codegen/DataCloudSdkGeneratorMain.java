@@ -234,6 +234,31 @@ public final class DataCloudSdkGeneratorMain {
             .map(DataCloudSdkGeneratorMain::javaString)
             .collect(Collectors.joining(",\n            "));
 
+        return javaSdkTemplate().formatted(
+            summary.title(),
+            summary.version(),
+            javaString(summary.title()),
+            javaString(summary.version()),
+            documentedPaths,
+            javaString(summary.healthPath()),
+            javaString(summary.capabilitiesPath() != null ? summary.capabilitiesPath() : "/api/v1/surfaces"),
+            javaString(summary.settingsPath() != null ? summary.settingsPath() : "/api/v1/settings"),
+            javaString(summary.listAlertsPath() != null ? summary.listAlertsPath() : "/api/v1/alerts"),
+            javaString(summary.aiSuggestionsPath() != null ? summary.aiSuggestionsPath() : "/api/v1/ai/suggestions"),
+            javaString(summary.createEntityPath().replace("{collection}", ""))
+        );
+    }
+
+    private static String javaSdkTemplate() {
+        return javaSdkHeaderTemplate()
+            + javaSdkMetadataTemplate()
+            + javaSdkEntityOperationsTemplate()
+            + javaSdkOperationalEndpointsTemplate()
+            + javaSdkTransportTemplate()
+            + javaSdkPathTemplate();
+    }
+
+    private static String javaSdkHeaderTemplate() {
         return """
 package com.ghatana.datacloud.sdk.generated;
 
@@ -278,6 +303,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         this.tenantId = tenantId == null || tenantId.isBlank() ? "default" : tenantId;
     }
 
+""";
+    }
+
+    private static String javaSdkMetadataTemplate() {
+        return """
     public String specTitle() {
         return %s;
     }
@@ -296,6 +326,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         return send("GET", %s, null);
     }
 
+""";
+    }
+
+    private static String javaSdkEntityOperationsTemplate() {
+        return """
     public Map<String, Object> createEntity(String collection, Map<String, Object> payload) {
         return send("POST", entityCollectionPath(collection), payload);
     }
@@ -313,6 +348,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         return send("DELETE", entityItemPath(collection, entityId), null);
     }
 
+""";
+    }
+
+    private static String javaSdkOperationalEndpointsTemplate() {
+        return """
     public Map<String, Object> capabilities() {
         return send("GET", %s, null);
     }
@@ -337,6 +377,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         return send("GET", %s, null);
     }
 
+""";
+    }
+
+    private static String javaSdkTransportTemplate() {
+        return """
     private Map<String, Object> send(String method, String path, Map<String, Object> body) {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -368,6 +413,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         }
     }
 
+""";
+    }
+
+    private static String javaSdkPathTemplate() {
+        return """
     private static String entityCollectionPath(String collection) {
         return %s + sanitize(collection);
     }
@@ -392,19 +442,7 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         // HttpClient does not require explicit shutdown.
     }
 }
-""".formatted(
-            summary.title(),
-            summary.version(),
-            javaString(summary.title()),
-            javaString(summary.version()),
-            documentedPaths,
-            javaString(summary.healthPath()),
-            javaString(summary.capabilitiesPath() != null ? summary.capabilitiesPath() : "/api/v1/surfaces"),
-            javaString(summary.settingsPath() != null ? summary.settingsPath() : "/api/v1/settings"),
-            javaString(summary.listAlertsPath() != null ? summary.listAlertsPath() : "/api/v1/alerts"),
-            javaString(summary.aiSuggestionsPath() != null ? summary.aiSuggestionsPath() : "/api/v1/ai/suggestions"),
-            javaString(summary.createEntityPath().replace("{collection}", ""))
-        );
+""";
     }
 
     private static String renderTypeScriptSdk(OpenApiSummary summary) {

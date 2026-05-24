@@ -4,13 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, AlertTriangle, Clock, Shield, Database, Activity, BarChart3, Target } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Clock, Shield, Database, Activity, BarChart3, Target, Layers, Calendar, RefreshCw } from 'lucide-react';
 
 interface ReleaseReadinessEvidence {
   schemaVersion: string;
   productId: string;
   productName: string;
   checkedAt: string;
+  targetEnvironment?: string;
   releaseReadiness: {
     status: string;
     overallScore: number;
@@ -28,6 +29,9 @@ interface ReleaseReadinessEvidence {
     overallStatus: string;
   };
   nextRequiredWork: string[];
+  foundationUsage?: FoundationUsage;
+  connectorReadiness?: ConnectorReadiness;
+  rollbackStatus?: RollbackStatus;
 }
 
 interface EvidenceCategory {
@@ -35,26 +39,75 @@ interface EvidenceCategory {
   lastChecked: string;
   evidenceRefs: string[];
   data?: Record<string, unknown>;
+  freshness?: {
+    ageHours: number;
+    isStale: boolean;
+  };
 }
 
 interface GateStatus {
   status: string;
   evidenceRef: string;
+  environment?: string;
+}
+
+interface FoundationUsage {
+  kernel: FoundationSlice;
+  dataCloud: FoundationSlice;
+  plugins: FoundationSlice[];
+  overallStatus: string;
+}
+
+interface FoundationSlice {
+  name: string;
+  status: string;
+  evidenceRef?: string;
+  lastChecked?: string;
+}
+
+interface ConnectorReadiness {
+  googleAds: ConnectorStatus;
+  connectors: Record<string, ConnectorStatus>;
+  overallStatus: string;
+}
+
+interface ConnectorStatus {
+  name: string;
+  status: string;
+  lastChecked?: string;
+  oauthValid?: boolean;
+  tokenRefreshWorking?: boolean;
+  idempotencyValid?: boolean;
+}
+
+interface RollbackStatus {
+  staging: RollbackEnvironmentStatus;
+  production: RollbackEnvironmentStatus;
+  overallStatus: string;
+}
+
+interface RollbackEnvironmentStatus {
+  hasEvidence: boolean;
+  lastRollbackTest?: string;
+  campaignStatePreserved?: boolean;
+  externalIdsPreserved?: boolean;
+  connectorCommandsPreserved?: boolean;
 }
 
 export function DmosReleaseCockpit() {
   const [evidence, setEvidence] = useState<ReleaseReadinessEvidence | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string>('production');
 
   useEffect(() => {
     fetchReleaseReadiness();
-  }, []);
+  }, [selectedEnvironment]);
 
   const fetchReleaseReadiness = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/digital-marketing/release-readiness');
+      const response = await fetch(`/api/digital-marketing/release-readiness?environment=${selectedEnvironment}`);
       if (!response.ok) {
         throw new Error('Failed to fetch release readiness');
       }
@@ -133,10 +186,21 @@ export function DmosReleaseCockpit() {
           <h1 className="text-3xl font-bold">Digital Marketing Release Cockpit</h1>
           <p className="text-muted-foreground">Digital Marketing Operations System Release Readiness Dashboard</p>
         </div>
-        <Button onClick={fetchReleaseReadiness} variant="outline">
-          <Activity className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="px-3 py-2 border rounded-md"
+          >
+            <option value="local">Local</option>
+            <option value="staging">Staging</option>
+            <option value="production">Production</option>
+          </select>
+          <Button onClick={fetchReleaseReadiness} variant="outline">
+            <Activity className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Overall Status */}
@@ -145,6 +209,11 @@ export function DmosReleaseCockpit() {
           <CardTitle className="flex items-center gap-2">
             {getStatusIcon(evidence.releaseReadiness.status)}
             Overall Status: {evidence.releaseReadiness.status}
+            {evidence.targetEnvironment && (
+              <Badge variant="outline" className="ml-2">
+                {evidence.targetEnvironment}
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Last checked: {new Date(evidence.checkedAt).toLocaleString()}
@@ -171,6 +240,203 @@ export function DmosReleaseCockpit() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Foundation Usage - DMOS-008 */}
+      {evidence.foundationUsage && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Foundation Usage
+            </CardTitle>
+            <CardDescription>
+              Platform foundation readiness for Digital Marketing
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Kernel</p>
+                    <p className="text-sm text-muted-foreground">{evidence.foundationUsage.kernel.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {evidence.foundationUsage.kernel.lastChecked && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(evidence.foundationUsage.kernel.lastChecked).toLocaleString()}
+                    </span>
+                  )}
+                  <Badge className={getStatusColor(evidence.foundationUsage.kernel.status)}>
+                    {evidence.foundationUsage.kernel.status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Database className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium">Data Cloud</p>
+                    <p className="text-sm text-muted-foreground">{evidence.foundationUsage.dataCloud.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {evidence.foundationUsage.dataCloud.lastChecked && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(evidence.foundationUsage.dataCloud.lastChecked).toLocaleString()}
+                    </span>
+                  )}
+                  <Badge className={getStatusColor(evidence.foundationUsage.dataCloud.status)}>
+                    {evidence.foundationUsage.dataCloud.status}
+                  </Badge>
+                </div>
+              </div>
+              {evidence.foundationUsage.plugins.map((plugin, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Layers className="h-5 w-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">{plugin.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {plugin.lastChecked && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(plugin.lastChecked).toLocaleString()}
+                      </span>
+                    )}
+                    <Badge className={getStatusColor(plugin.status)}>
+                      {plugin.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Connector Readiness - DMOS-008 */}
+      {evidence.connectorReadiness && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Connector Readiness
+            </CardTitle>
+            <CardDescription>
+              External connector status and validation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Target className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <p className="font-medium">Google Ads</p>
+                    <p className="text-sm text-muted-foreground">{evidence.connectorReadiness.googleAds.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {evidence.connectorReadiness.googleAds.lastChecked && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(evidence.connectorReadiness.googleAds.lastChecked).toLocaleString()}
+                    </span>
+                  )}
+                  <Badge className={getStatusColor(evidence.connectorReadiness.googleAds.status)}>
+                    {evidence.connectorReadiness.googleAds.status}
+                  </Badge>
+                </div>
+              </div>
+              {evidence.connectorReadiness.googleAds.oauthValid !== undefined && (
+                <div className="text-sm text-muted-foreground">
+                  OAuth Valid: {evidence.connectorReadiness.googleAds.oauthValid ? '✓' : '✗'} |
+                  Token Refresh: {evidence.connectorReadiness.googleAds.tokenRefreshWorking ? '✓' : '✗'} |
+                  Idempotency: {evidence.connectorReadiness.googleAds.idempotencyValid ? '✓' : '✗'}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rollback Status - DMOS-008 */}
+      {evidence.rollbackStatus && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Rollback Status
+            </CardTitle>
+            <CardDescription>
+              Rollback evidence and state preservation validation
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 border rounded-lg">
+                <p className="font-medium mb-2">Staging</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    {evidence.rollbackStatus.staging.hasEvidence ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                    <span>Has Evidence</span>
+                  </div>
+                  {evidence.rollbackStatus.staging.lastRollbackTest && (
+                    <div className="text-muted-foreground">
+                      Last test: {new Date(evidence.rollbackStatus.staging.lastRollbackTest).toLocaleString()}
+                    </div>
+                  )}
+                  {evidence.rollbackStatus.staging.campaignStatePreserved !== undefined && (
+                    <div className="flex items-center gap-2">
+                      {evidence.rollbackStatus.staging.campaignStatePreserved ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span>Campaign State Preserved</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="p-3 border rounded-lg">
+                <p className="font-medium mb-2">Production</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex items-center gap-2">
+                    {evidence.rollbackStatus.production.hasEvidence ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                    <span>Has Evidence</span>
+                  </div>
+                  {evidence.rollbackStatus.production.lastRollbackTest && (
+                    <div className="text-muted-foreground">
+                      Last test: {new Date(evidence.rollbackStatus.production.lastRollbackTest).toLocaleString()}
+                    </div>
+                  )}
+                  {evidence.rollbackStatus.production.campaignStatePreserved !== undefined && (
+                    <div className="flex items-center gap-2">
+                      {evidence.rollbackStatus.production.campaignStatePreserved ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                      <span>Campaign State Preserved</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Blocking Issues */}
       {evidence.releaseReadiness.blockingIssues.length > 0 && (
@@ -220,10 +486,26 @@ export function DmosReleaseCockpit() {
                       {getCategoryIcon(category)}
                       {category}
                     </span>
-                    {getStatusIcon(data.status)}
+                    <div className="flex items-center gap-2">
+                      {data.freshness?.isStale && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Stale
+                        </Badge>
+                      )}
+                      {getStatusIcon(data.status)}
+                    </div>
                   </CardTitle>
                   <CardDescription>
-                    Last checked: {data.lastChecked ? new Date(data.lastChecked).toLocaleString() : 'Never'}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      Last checked: {data.lastChecked ? new Date(data.lastChecked).toLocaleString() : 'Never'}
+                    </div>
+                    {data.freshness && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Age: {data.freshness.ageHours.toFixed(1)} hours
+                      </div>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -255,6 +537,11 @@ export function DmosReleaseCockpit() {
                       <div>
                         <p className="font-medium">{gate}</p>
                         <p className="text-sm text-muted-foreground">{status.evidenceRef}</p>
+                        {status.environment && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {status.environment}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <Badge className={getStatusColor(status.status)}>{status.status}</Badge>

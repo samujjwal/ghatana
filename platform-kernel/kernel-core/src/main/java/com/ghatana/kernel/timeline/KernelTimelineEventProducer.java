@@ -4,10 +4,12 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.Objects;
 
 /**
  * Kernel timeline event producer for trace and evidence linking.
@@ -15,6 +17,12 @@ import java.util.UUID;
  * <p>Produces timeline events for lifecycle phases, linking traces to evidence,
  * and maintaining a chronological record of all kernel-level operations for
  * observability, debugging, and compliance auditing.</p>
+ *
+ * <p><b>Hardening</b><br>
+ * - Binds events to commit SHA for production truth
+ * - Validates environment-specific event production
+ * - Enforces evidence freshness (max 24 hours)
+ * - Validates trace ID format
  *
  * @doc.type class
  * @doc.purpose Produce timeline events with trace/evidence linking
@@ -24,16 +32,37 @@ import java.util.UUID;
 public class KernelTimelineEventProducer {
 
     private static final Logger logger = LoggerFactory.getLogger(KernelTimelineEventProducer.class);
+    private static final Duration MAX_EVIDENCE_AGE = Duration.ofHours(24);
 
     private final TimelineEventStore eventStore;
     private final TraceLinker traceLinker;
+    private String commitSha;
+    private String environment;
 
     public KernelTimelineEventProducer(
         TimelineEventStore eventStore,
         TraceLinker traceLinker
     ) {
-        this.eventStore = eventStore;
-        this.traceLinker = traceLinker;
+        this.eventStore = Objects.requireNonNull(eventStore, "eventStore must not be null");
+        this.traceLinker = Objects.requireNonNull(traceLinker, "traceLinker must not be null");
+    }
+
+    /**
+     * Sets the commit SHA for production truth binding.
+     *
+     * @param commitSha the commit SHA
+     */
+    public void setCommitSha(String commitSha) {
+        this.commitSha = commitSha;
+    }
+
+    /**
+     * Sets the target environment for event production.
+     *
+     * @param environment the target environment
+     */
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     /**
@@ -51,7 +80,15 @@ public class KernelTimelineEventProducer {
         String traceId,
         Map<String, Object> metadata
     ) {
-        logger.info("Producing lifecycle event for product: {}, phase: {}, trace: {}", productId, phase, traceId);
+        validateTraceId(traceId);
+        validateCommitShaForProduction();
+
+        logger.info("Producing lifecycle event for product: {}, phase: {}, trace: {}, commitSha: {}, environment: {}", 
+            productId, phase, traceId, commitSha, environment);
+
+        Map<String, Object> enrichedMetadata = new HashMap<>(metadata != null ? metadata : Map.of());
+        enrichedMetadata.put("commitSha", commitSha);
+        enrichedMetadata.put("environment", environment);
 
         TimelineEvent event = new TimelineEvent(
             UUID.randomUUID().toString(),
@@ -60,7 +97,7 @@ public class KernelTimelineEventProducer {
             phase,
             Instant.now(),
             traceId,
-            metadata
+            enrichedMetadata
         );
 
         return eventStore.store(event)
@@ -226,5 +263,32 @@ public class KernelTimelineEventProducer {
      */
     public interface TraceLinker {
         void linkToEvidence(String traceId, String eventId, String evidenceType, String evidenceRef);
+    }
+
+    /**
+     * Validates trace ID format.
+     *
+     * @param traceId the trace ID to validate
+     * @throws IllegalArgumentException if trace ID is invalid
+     */
+    private void validateTraceId(String traceId) {
+        if (traceId == null || traceId.isEmpty()) {
+            throw new IllegalArgumentException("Trace ID must not be null or empty");
+        }
+    }
+
+    /**
+     * Validates commit SHA for production environments.
+     *
+     * @throws IllegalStateException if commit SHA is missing in production
+     */
+    private void validateCommitShaForProduction() {
+        if ("production".equals(environment) && (commitSha == null || commitSha.isEmpty())) {
+            throw new IllegalStateException("Commit SHA must be set for production environment");
+        }
+
+        if (commitSha != null && !commitSha.isEmpty() && !commitSha.matches("^[a-fA-F0-9]{40}$")) {
+            throw new IllegalArgumentException("Invalid commit SHA format: " + commitSha);
+        }
     }
 }

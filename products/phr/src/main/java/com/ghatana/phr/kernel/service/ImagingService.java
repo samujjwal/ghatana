@@ -94,7 +94,10 @@ public class ImagingService extends PhrServiceBase {
             ORDER_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(), "status", "PENDING"),
+            mutationMetadata(Map.of(
+                "patientId", toStore.patientId(),
+                "status", "PENDING"
+            ), toStore.orderingProviderId()),
             "ImagingOrder",
             1
         ).then(stored -> audit("CREATE_ORDER", stored.patientId(),
@@ -134,10 +137,10 @@ public class ImagingService extends PhrServiceBase {
             STUDY_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "dcmStudyInstanceUid", toStore.dcmStudyInstanceUid()
-            ),
+            ), "system"),
             "ImagingStudy",
             1
         );
@@ -182,7 +185,10 @@ public class ImagingService extends PhrServiceBase {
             REPORT_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(), "studyId", toStore.studyId()),
+            mutationMetadata(Map.of(
+                "patientId", toStore.patientId(),
+                "studyId", toStore.studyId()
+            ), toStore.reportingRadiologistId()),
             "RadiologyReport",
             1
         ).then(stored -> audit("STORE_REPORT", stored.patientId(),
@@ -244,7 +250,10 @@ public class ImagingService extends PhrServiceBase {
                     ORDER_DATASET,
                     orderId,
                     fulfilled,
-                    Map.of("status", "FULFILLED"),
+                    mutationMetadata(Map.of(
+                        "patientId", fulfilled.patientId(),
+                        "status", "FULFILLED"
+                    ), fulfilled.orderingProviderId()),
                     "ImagingOrder",
                     1
                 ).map($ -> null);

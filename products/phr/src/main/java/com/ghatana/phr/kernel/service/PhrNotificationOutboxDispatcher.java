@@ -94,7 +94,7 @@ public final class PhrNotificationOutboxDispatcher extends PhrServiceBase {
                         DurablePhrNotificationSender.OUTBOX_DATASET,
                         entry.id(),
                         delivered,
-                        DurablePhrNotificationSender.metadataFor(delivered),
+                        mutationMetadata(DurablePhrNotificationSender.metadataFor(delivered), delivered.recipientId()),
                         "PhrNotificationOutboxEntry",
                         1
                     ).map(updated -> new DispatchOutcome(updated.id(), updated.status(), updated.providerMessageId(), updated.failureReason()));
@@ -105,7 +105,7 @@ public final class PhrNotificationOutboxDispatcher extends PhrServiceBase {
                     DurablePhrNotificationSender.OUTBOX_DATASET,
                     entry.id(),
                     failed,
-                    DurablePhrNotificationSender.metadataFor(failed),
+                    mutationMetadata(DurablePhrNotificationSender.metadataFor(failed), failed.recipientId()),
                     "PhrNotificationOutboxEntry",
                     1
                 ).map(updated -> new DispatchOutcome(updated.id(), updated.status(), updated.providerMessageId(), updated.failureReason()));

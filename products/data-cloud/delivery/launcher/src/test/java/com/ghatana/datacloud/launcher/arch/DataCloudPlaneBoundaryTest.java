@@ -68,6 +68,9 @@ class DataCloudPlaneBoundaryTest {
     /** Governance plane classes only. */
     private static JavaClasses GOVERNANCE_PLANE_CLASSES;
 
+    /** Operations plane classes only. */
+    private static JavaClasses OPERATIONS_PLANE_CLASSES;
+
     /** Context plane classes only. */
     private static JavaClasses CONTEXT_PLANE_CLASSES;
 
@@ -95,6 +98,15 @@ class DataCloudPlaneBoundaryTest {
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
                 .importPackages("com.ghatana.datacloud.governance");
 
+        OPERATIONS_PLANE_CLASSES = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages(
+                        "com.ghatana.datacloud.config",
+                        "com.ghatana.datacloud.application.policy",
+                        "com.ghatana.datacloud.infrastructure.policy",
+                        "com.ghatana.datacloud.pattern",
+                        "com.ghatana.datacloud.reflex");
+
         CONTEXT_PLANE_CLASSES = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
                 .importPackages("com.ghatana.datacloud.context");
@@ -107,6 +119,36 @@ class DataCloudPlaneBoundaryTest {
     @Nested
     @DisplayName("No Data Cloud plane imports AEP server internals (DC-BND-001)")
     class NoActionPlaneInternals {
+
+        @Test
+        @DisplayName("Data/Event/Governance/Operations planes must not import AEP internals")
+        void foundationalPlanesHaveNoAepImplementationDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.entity..",
+                            "com.ghatana.datacloud.record..",
+                            "com.ghatana.datacloud.event..",
+                            "com.ghatana.datacloud.platform.event..",
+                            "com.ghatana.datacloud.governance..",
+                            "com.ghatana.datacloud.config..",
+                            "com.ghatana.datacloud.application.policy..",
+                            "com.ghatana.datacloud.infrastructure.policy..",
+                            "com.ghatana.datacloud.pattern..",
+                            "com.ghatana.datacloud.reflex..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep..",
+                            "com.ghatana.orchestrator..",
+                            "com.ghatana.pattern..",
+                            "com.ghatana.pipeline.registry..",
+                            "com.ghatana.core.operator..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "Data, Event, Governance, and Operations planes are Data Cloud substrate planes. "
+                            + "AEP/EventCloud/PatternSpec/operator semantics must stay in the Action Plane "
+                            + "or behind stable Data Cloud SPI/client contracts.");
+            rule.check(DATA_CLOUD_CLASSES);
+        }
 
         @Test
         @DisplayName("Data plane must not import AEP server internals")
@@ -180,6 +222,28 @@ class DataCloudPlaneBoundaryTest {
                             "The governance plane must not couple directly to AEP server internals. "
                             + "Governance integration must go through the shared SPI or public Action Plane API.");
             rule.check(GOVERNANCE_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Operations plane must not import AEP server internals")
+        void operationsPlaneHasNoAepServerDependency() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.config..",
+                            "com.ghatana.datacloud.application.policy..",
+                            "com.ghatana.datacloud.infrastructure.policy..",
+                            "com.ghatana.datacloud.pattern..",
+                            "com.ghatana.datacloud.reflex..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..",
+                            "com.ghatana.aep.di..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "The operations plane must not couple directly to AEP server internals. "
+                            + "Operational policy/configuration integration must go through Data Cloud contracts.");
+            rule.check(OPERATIONS_PLANE_CLASSES);
         }
 
         @Test

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "kernel",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "environmentSpecificEvidence": {
+    "enabled": true,
+    "description": "Kernel evidence is now bound to specific environments (local, dev, staging, prod)",
+    "bindingMechanism": "commit-sha + target-env"
+  },
+  "environments": {
+    "local": {
+      "status": "ready",
+      "evidencePath": ".kernel/evidence/kernel-local.json",
+      "supportedProducts": ["phr", "digital-marketing", "data-cloud", "yappc"]
+    },
+    "dev": {
+      "status": "ready",
+      "evidencePath": ".kernel/evidence/kernel-dev.json",
+      "supportedProducts": ["phr", "digital-marketing", "data-cloud", "yappc"]
+    },
+    "staging": {
+      "status": "ready",
+      "evidencePath": ".kernel/evidence/kernel-staging.json",
+      "supportedProducts": ["phr", "digital-marketing", "data-cloud", "yappc"]
+    },
+    "prod": {
+      "status": "ready",
+      "evidencePath": ".kernel/evidence/kernel-prod.json",
+      "supportedProducts": ["phr", "digital-marketing", "data-cloud", "yappc"],
+      "failClosed": true
+    }
+  },
+  "evidenceBinding": {
+    "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+    "targetEnv": "required",
+    "timestamp": "2026-05-24T08:35:00.000Z",
+    "bindingMechanism": "commit-sha + target-env",
+    "immutableBinding": true,
+    "bindingSignature": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347:staging",
+    "crossEnvForbidden": true
+  },
+  "validationGates": {
+    "envSpecificEvidenceRequired": true,
+    "crossEnvEvidenceBlocked": true,
+    "stagingPromotionRequired": true
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+    ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+    ".kernel/evidence/data-cloud/staging-release-readiness.json",
+    ".kernel/evidence/data-cloud/prod-release-readiness.json"
+  ]
+}

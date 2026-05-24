@@ -4,13 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, AlertTriangle, Clock, Shield, Database, Activity } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Clock, Shield, Database, Activity, Layers, Calendar } from 'lucide-react';
 
 interface ReleaseReadinessEvidence {
   schemaVersion: string;
   productId: string;
   productName: string;
   checkedAt: string;
+  targetEnvironment?: string;
   releaseReadiness: {
     status: string;
     overallScore: number;
@@ -28,6 +29,7 @@ interface ReleaseReadinessEvidence {
     overallStatus: string;
   };
   nextRequiredWork: string[];
+  foundationUsage?: FoundationUsage;
 }
 
 interface EvidenceCategory {
@@ -35,26 +37,46 @@ interface EvidenceCategory {
   lastChecked: string;
   evidenceRefs: string[];
   data?: Record<string, unknown>;
+  freshness?: {
+    ageHours: number;
+    isStale: boolean;
+  };
 }
 
 interface GateStatus {
   status: string;
   evidenceRef: string;
+  environment?: string;
+}
+
+interface FoundationUsage {
+  kernel: FoundationSlice;
+  dataCloud: FoundationSlice;
+  plugins: FoundationSlice[];
+  overallStatus: string;
+}
+
+interface FoundationSlice {
+  name: string;
+  status: string;
+  evidenceRef?: string;
+  lastChecked?: string;
 }
 
 export function PhrReleaseCockpit() {
   const [evidence, setEvidence] = useState<ReleaseReadinessEvidence | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string>('production');
 
   useEffect(() => {
     fetchReleaseReadiness();
-  }, []);
+  }, [selectedEnvironment]);
 
   const fetchReleaseReadiness = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/phr/release-readiness');
+      const response = await fetch(`/api/phr/release-readiness?environment=${selectedEnvironment}`);
       if (!response.ok) {
         throw new Error('Failed to fetch release readiness');
       }
@@ -133,10 +155,21 @@ export function PhrReleaseCockpit() {
           <h1 className="text-3xl font-bold">PHR Release Cockpit</h1>
           <p className="text-muted-foreground">Personal Health Records Release Readiness Dashboard</p>
         </div>
-        <Button onClick={fetchReleaseReadiness} variant="outline">
-          <Activity className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedEnvironment}
+            onChange={(e) => setSelectedEnvironment(e.target.value)}
+            className="px-3 py-2 border rounded-md"
+          >
+            <option value="local">Local</option>
+            <option value="staging">Staging</option>
+            <option value="production">Production</option>
+          </select>
+          <Button onClick={fetchReleaseReadiness} variant="outline">
+            <Activity className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Overall Status */}
@@ -145,6 +178,11 @@ export function PhrReleaseCockpit() {
           <CardTitle className="flex items-center gap-2">
             {getStatusIcon(evidence.releaseReadiness.status)}
             Overall Status: {evidence.releaseReadiness.status}
+            {evidence.targetEnvironment && (
+              <Badge variant="outline" className="ml-2">
+                {evidence.targetEnvironment}
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Last checked: {new Date(evidence.checkedAt).toLocaleString()}
@@ -171,6 +209,83 @@ export function PhrReleaseCockpit() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Foundation Usage - PHR-010 */}
+      {evidence.foundationUsage && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5" />
+              Foundation Usage
+            </CardTitle>
+            <CardDescription>
+              Platform foundation readiness for PHR
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="font-medium">Kernel</p>
+                    <p className="text-sm text-muted-foreground">{evidence.foundationUsage.kernel.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {evidence.foundationUsage.kernel.lastChecked && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(evidence.foundationUsage.kernel.lastChecked).toLocaleString()}
+                    </span>
+                  )}
+                  <Badge className={getStatusColor(evidence.foundationUsage.kernel.status)}>
+                    {evidence.foundationUsage.kernel.status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Database className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium">Data Cloud</p>
+                    <p className="text-sm text-muted-foreground">{evidence.foundationUsage.dataCloud.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {evidence.foundationUsage.dataCloud.lastChecked && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(evidence.foundationUsage.dataCloud.lastChecked).toLocaleString()}
+                    </span>
+                  )}
+                  <Badge className={getStatusColor(evidence.foundationUsage.dataCloud.status)}>
+                    {evidence.foundationUsage.dataCloud.status}
+                  </Badge>
+                </div>
+              </div>
+              {evidence.foundationUsage.plugins.map((plugin, index) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Layers className="h-5 w-5 text-purple-500" />
+                    <div>
+                      <p className="font-medium">{plugin.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {plugin.lastChecked && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(plugin.lastChecked).toLocaleString()}
+                      </span>
+                    )}
+                    <Badge className={getStatusColor(plugin.status)}>
+                      {plugin.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Blocking Issues */}
       {evidence.releaseReadiness.blockingIssues.length > 0 && (
@@ -217,10 +332,26 @@ export function PhrReleaseCockpit() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between text-lg">
                     <span className="capitalize">{category}</span>
-                    {getStatusIcon(data.status)}
+                    <div className="flex items-center gap-2">
+                      {data.freshness?.isStale && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Stale
+                        </Badge>
+                      )}
+                      {getStatusIcon(data.status)}
+                    </div>
                   </CardTitle>
                   <CardDescription>
-                    Last checked: {data.lastChecked ? new Date(data.lastChecked).toLocaleString() : 'Never'}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      Last checked: {data.lastChecked ? new Date(data.lastChecked).toLocaleString() : 'Never'}
+                    </div>
+                    {data.freshness && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Age: {data.freshness.ageHours.toFixed(1)} hours
+                      </div>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -252,6 +383,11 @@ export function PhrReleaseCockpit() {
                       <div>
                         <p className="font-medium">{gate}</p>
                         <p className="text-sm text-muted-foreground">{status.evidenceRef}</p>
+                        {status.environment && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {status.environment}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <Badge className={getStatusColor(status.status)}>{status.status}</Badge>

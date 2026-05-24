@@ -9,6 +9,11 @@
  *  - WebSocket accepted/rejected/closed counts
  *  - Backend unreachable failures (HTTP, SSE, WS)
  *  - Backend latency distribution (count, sum, buckets)
+ *  - Action Plane pattern match counts (AEP-006)
+ *  - Action Plane agent execution metrics (AEP-006)
+ *  - Action Plane evidence write metrics (AEP-006)
+ *  - Action Plane policy evaluation metrics (AEP-006)
+ *  - Action Plane commit SHA validation metrics (AEP-006)
  *
  * Exposed as a plain `GatewayMetrics` instance so it can be injected into
  * `buildApp` and accessed in tests without module-level singletons.
@@ -36,6 +41,12 @@ export interface GatewayMetricsSnapshot {
   wsClosedTotal: number;
   backendUnreachableTotal: number;
   backendLatencyMs: LatencyHistogram;
+  // AEP-006: Action Plane metrics
+  patternMatchesByType: Record<string, number>;
+  agentExecutionsByStatus: Record<string, number>;
+  evidenceWritesByStatus: Record<string, number>;
+  policyEvaluationsByDecision: Record<string, number>;
+  commitShaValidationsByResult: Record<string, number>;
 }
 
 export class GatewayMetrics {
@@ -55,6 +66,12 @@ export class GatewayMetrics {
   private readonly _latencyBuckets = new Map<string, number>(
     LATENCY_BUCKETS_MS.map((b) => [`le_${b}`, 0] as [string, number]),
   );
+  // AEP-006: Action Plane metrics
+  private readonly _patternMatchesByType = new Map<string, number>();
+  private readonly _agentExecutionsByStatus = new Map<string, number>();
+  private readonly _evidenceWritesByStatus = new Map<string, number>();
+  private readonly _policyEvaluationsByDecision = new Map<string, number>();
+  private readonly _commitShaValidationsByResult = new Map<string, number>();
 
   /** Record an HTTP proxy response status code (2xx, 4xx, 5xx, etc.). */
   recordHttpProxyRequest(status: number): void {
@@ -176,6 +193,12 @@ export class GatewayMetrics {
         sumMs: this._latencySumMs,
         buckets: Object.fromEntries(this._latencyBuckets),
       },
+      // AEP-006: Action Plane metrics
+      patternMatchesByType: Object.fromEntries(this._patternMatchesByType),
+      agentExecutionsByStatus: Object.fromEntries(this._agentExecutionsByStatus),
+      evidenceWritesByStatus: Object.fromEntries(this._evidenceWritesByStatus),
+      policyEvaluationsByDecision: Object.fromEntries(this._policyEvaluationsByDecision),
+      commitShaValidationsByResult: Object.fromEntries(this._commitShaValidationsByResult),
     };
   }
 
@@ -197,5 +220,38 @@ export class GatewayMetrics {
     for (const key of this._latencyBuckets.keys()) {
       this._latencyBuckets.set(key, 0);
     }
+    // AEP-006: Reset Action Plane metrics
+    this._patternMatchesByType.clear();
+    this._agentExecutionsByStatus.clear();
+    this._evidenceWritesByStatus.clear();
+    this._policyEvaluationsByDecision.clear();
+    this._commitShaValidationsByResult.clear();
+  }
+
+  // AEP-006: Action Plane metrics methods
+
+  /** Record a pattern match by type. */
+  recordPatternMatch(patternType: string): void {
+    this._patternMatchesByType.set(patternType, (this._patternMatchesByType.get(patternType) ?? 0) + 1);
+  }
+
+  /** Record an agent execution by status. */
+  recordAgentExecution(status: string): void {
+    this._agentExecutionsByStatus.set(status, (this._agentExecutionsByStatus.get(status) ?? 0) + 1);
+  }
+
+  /** Record an evidence write by status. */
+  recordEvidenceWrite(status: string): void {
+    this._evidenceWritesByStatus.set(status, (this._evidenceWritesByStatus.get(status) ?? 0) + 1);
+  }
+
+  /** Record a policy evaluation by decision. */
+  recordPolicyEvaluation(decision: string): void {
+    this._policyEvaluationsByDecision.set(decision, (this._policyEvaluationsByDecision.get(decision) ?? 0) + 1);
+  }
+
+  /** Record a commit SHA validation by result. */
+  recordCommitShaValidation(result: string): void {
+    this._commitShaValidationsByResult.set(result, (this._commitShaValidationsByResult.get(result) ?? 0) + 1);
   }
 }

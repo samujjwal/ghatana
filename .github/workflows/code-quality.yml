@@ -14,9 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check for hardcoded dependency versions
-        run: |
-          chmod +x scripts/check-hardcoded-versions.sh
-          ./scripts/check-hardcoded-versions.sh
+        run: bash scripts/validate-gradle-build.sh
       - name: Report violations
         if: failure()
         run: |

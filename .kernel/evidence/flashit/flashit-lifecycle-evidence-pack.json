@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "flashit",
+  "checkedAt": "2026-05-24T00:00:00.000Z",
+  "smokeEnabled": false,
+  "evidenceCategories": [
+    "baseline",
+    "plan",
+    "validate",
+    "test",
+    "build",
+    "package",
+    "deploy",
+    "verify",
+    "rollback",
+    "gate-results",
+    "health",
+    "approvals",
+    "provenance",
+    "product-domain-correctness"
+  ],
+  "checks": {
+    "plannedPhases": [
+      {
+        "phase": "validate",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "build",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "test",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "package",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "deploy",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "verify",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      },
+      {
+        "phase": "rollback",
+        "status": "planned",
+        "reason": "Lifecycle execution not yet enabled for FlashIt"
+      }
+    ],
+    "smokePhases": [],
+    "failureScenarios": [],
+    "composeProof": []
+  },
+  "lifecycleReadiness": {
+    "status": "blocked",
+    "reasonCodes": [
+      "planned-shape-only",
+      "requires-mobile-adapters",
+      "requires-preview-security-gate",
+      "requires-personal-data-classification",
+      "requires-mobile-bundle-artifacts"
+    ],
+    "requiredGates": [
+      "privacy",
+      "preview-security",
+      "personal-data-classification",
+      "mobile-bundle-contract"
+    ],
+    "missingManifests": [
+      "mobile-ipa-artifact-manifest",
+      "mobile-aab-artifact-manifest"
+    ],
+    "nextRequiredWork": [
+      "Keep FlashIt mobile lifecycle disabled until xcode-ios and gradle-android adapters are execution-ready",
+      "Add ipa/aab artifact contracts before enabling mobile bundle execution"
+    ],
+    "evidenceRefs": [
+      "products/flashit/kernel-product.yaml",
+      "products/flashit/lifecycle/foundation-usage-profile.yaml",
+      ".kernel/evidence/flashit/mobile-lifecycle-disabled.json"
+    ]
+  },
+  "foundationUsageProfile": {
+    "path": "products/flashit/lifecycle/foundation-usage-profile.yaml",
+    "status": "drafted",
+    "foundationComponents": {
+      "kernel": {
+        "usage": "required",
+        "maturity": "hardened"
+      },
+      "dataCloud": {
+        "usage": "required",
+        "maturity": "hardened"
+      },
+      "platformJava": {
+        "usage": "required",
+        "maturity": "hardened"
+      },
+      "platformTypeScript": {
+        "usage": "required",
+        "maturity": "hardened"
+      },
+      "agentCore": {
+        "usage": "optional",
+        "maturity": "experimental"
+      }
+    }
+  },
+  "mobileLifecycle": {
+    "status": "disabled",
+    "reason": "Focus on web platform; mobile apps in maintenance mode",
+    "evidenceRef": ".kernel/evidence/flashit/mobile-lifecycle-disabled.json",
+    "mobilePlatforms": {
+      "android": {
+        "status": "maintenance",
+        "lifecycleEvents": "disabled"
+      },
+      "ios": {
+        "status": "maintenance",
+        "lifecycleEvents": "disabled"
+      }
+    },
+    "webPlatform": {
+      "status": "active",
+      "lifecycleEvents": "enabled"
+    }
+  },
+  "generalizationNotes": {
+    "pattern": "FlashIt follows the same lifecycle evidence pattern as PHR and DMOS",
+    "adaptations": [
+      "Education-specific gates: privacy, preview-security, personal-data-classification, mobile-bundle-contract",
+      "Mobile lifecycle disabled until adapters are execution-ready (FI-002)",
+      "Foundation usage profile includes agentCore as optional/experimental for future AI-assisted flash card generation",
+      "Reusable assets mapped from PHR (tenant isolation, cache) and DMOS (rate limiting)"
+    ],
+    "evidenceStructure": "Consistent with PHR/DMOS lifecycle evidence pack schema",
+    "manifestTypes": [
+      "lifecycle-plan.json",
+      "lifecycle-result.json",
+      "gate-result-manifest.json",
+      "lifecycle-events.json",
+      "lifecycle-health-snapshot.json",
+      "artifact-manifest.json (build/package)",
+      "deployment-manifest.json (deploy)",
+      "verify-health-report.json (verify)",
+      "rollback-manifest.json (rollback)"
+    ]
+  },
+  "summary": {
+    "status": "planned",
+    "errorCount": 0,
+    "warningCount": 0,
+    "lifecycleExecutionEnabled": false,
+    "foundationProfileDrafted": true,
+    "mobileLifecycleDisabled": true,
+    "reusableAssetsMapped": true
+  },
+  "errors": [],
+  "warnings": []
+}

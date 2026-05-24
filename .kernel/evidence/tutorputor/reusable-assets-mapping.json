@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "tutorputor",
+  "evidenceType": "reusable-assets-mapping",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Map reusable assets from PHR/DMOS for Tutorputor",
+  "sourceProducts": ["phr", "digital-marketing"],
+  "targetProduct": "tutorputor",
+  "reuseRecommendationsTable": "product_family_reuse_recommendations",
+  "migrationFile": "products/data-cloud/delivery/runtime-composition/src/main/resources/db/migration/V024__create_product_family_reuse_recommendations.sql",
+  "mappedAssets": {
+    "fromPHR": [
+      {
+        "assetId": "phr-consent-ui-component",
+        "type": "ui-component",
+        "confidenceScore": 0.85,
+        "benefitCategory": "compliance",
+        "estimatedEffortHours": 8,
+        "rationale": "Tutorputor requires student consent for data collection and analytics. PHR consent UI component provides GDPR-compliant consent capture and revocation.",
+        "adaptationNotes": "Adapt healthcare-specific language to education context. Remove HIPAA references, add FERPA compliance notes.",
+        "tutorputorUseCase": "Student data collection consent, learning analytics consent, parental consent for minors"
+      },
+      {
+        "assetId": "phr-audit-trail-service",
+        "type": "service",
+        "confidenceScore": 0.90,
+        "benefitCategory": "compliance",
+        "estimatedEffortHours": 6,
+        "rationale": "Tutorputor requires immutable audit logging for educational content changes and student data access. PHR audit trail service provides tamper detection and compliance reporting.",
+        "adaptationNotes": "Adapt healthcare audit categories to education context (e.g., curriculum changes, grade modifications).",
+        "tutorputorUseCase": "Curriculum modification audit, grade change audit, student data access audit"
+      },
+      {
+        "assetId": "phr-tenant-isolation-middleware",
+        "type": "service",
+        "confidenceScore": 0.95,
+        "benefitCategory": "security",
+        "estimatedEffortHours": 4,
+        "rationale": "Tutorputor requires strict tenant isolation for multi-tenant learning environments. PHR tenant isolation middleware provides signed JWT validation and cross-tenant data leakage prevention.",
+        "adaptationNotes": "Minimal adaptation needed. Tenant model is compatible with learning environment isolation requirements.",
+        "tutorputorUseCase": "School/institution tenant isolation, student data boundary enforcement"
+      },
+      {
+        "assetId": "phr-distributed-cache-integration",
+        "type": "service",
+        "confidenceScore": 0.85,
+        "benefitCategory": "performance",
+        "estimatedEffortHours": 8,
+        "rationale": "Tutorputor requires caching for frequently accessed learning materials. PHR distributed cache integration provides Redis-backed caching with multi-node synchronization.",
+        "adaptationNotes": "Adapt cache invalidation strategy for learning material updates instead of consent changes.",
+        "tutorputorUseCase": "Learning content cache, assessment question cache, student progress cache"
+      }
+    ],
+    "fromDMOS": [
+      {
+        "assetId": "dmos-marketing-analytics-dashboard",
+        "type": "ui-component",
+        "confidenceScore": 0.75,
+        "benefitCategory": "ui-consistency",
+        "estimatedEffortHours": 12,
+        "rationale": "Tutorputor needs student engagement analytics dashboard. DMOS marketing analytics dashboard provides visualization patterns for metrics and trends.",
+        "adaptationNotes": "Replace marketing metrics with education metrics (engagement time, quiz scores, completion rates).",
+        "tutorputorUseCase": "Student engagement dashboard, learning progress visualization, assessment analytics"
+      },
+      {
+        "assetId": "dmos-rate-limiting-policy",
+        "type": "policy",
+        "confidenceScore": 0.80,
+        "benefitCategory": "performance",
+        "estimatedEffortHours": 6,
+        "rationale": "Tutorputor needs rate limiting for public learning content access to prevent abuse. DMOS rate limiting policy provides tenant-specific limits and graceful degradation.",
+        "adaptationNotes": "Adjust rate limits for learning content access patterns (read-heavy, write-light).",
+        "tutorputorUseCase": "Learning content API rate limiting, assessment submission rate limiting"
+      }
+    ]
+  },
+  "reuseStrategy": {
+    "prioritization": "high-confidence-first",
+    "adaptationApproach": "domain-specific-translation",
+    "validation": "evidence-backed",
+    "tracking": "product_family_reuse_recommendations table"
+  },
+  "benefitCategories": {
+    "compliance": {
+      "count": 2,
+      "assets": ["phr-consent-ui-component", "phr-audit-trail-service"],
+      "totalEffortHours": 14
+    },
+    "security": {
+      "count": 1,
+      "assets": ["phr-tenant-isolation-middleware"],
+      "totalEffortHours": 4
+    },
+    "performance": {
+      "count": 2,
+      "assets": ["phr-distributed-cache-integration", "dmos-rate-limiting-policy"],
+      "totalEffortHours": 14
+    },
+    "ui-consistency": {
+      "count": 1,
+      "assets": ["dmos-marketing-analytics-dashboard"],
+      "totalEffortHours": 12
+    }
+  },
+  "totalAssets": 6,
+  "averageConfidenceScore": 0.85,
+  "totalEstimatedEffortHours": 44,
+  "evidenceRefs": [
+    "products/data-cloud/delivery/runtime-composition/src/main/resources/db/migration/V024__create_product_family_reuse_recommendations.sql",
+    "products/phr/lifecycle/foundation-usage-profile.yaml",
+    "products/digital-marketing/lifecycle/foundation-usage-profile.yaml",
+    "products/tutorputor/lifecycle/foundation-usage-profile.yaml"
+  ],
+  "summary": {
+    "mappedAssets": 6,
+    "fromPHR": 4,
+    "fromDMOS": 2,
+    "highConfidenceAssets": 4,
+    "mediumConfidenceAssets": 2,
+    "overallStatus": "passed"
+  }
+}

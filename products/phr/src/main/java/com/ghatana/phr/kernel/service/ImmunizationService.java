@@ -94,11 +94,11 @@ public class ImmunizationService extends PhrServiceBase {
             IMMUNIZATION_DATASET,
             id,
             toStore,
-            Map.of(
+            mutationMetadata(Map.of(
                 "patientId", toStore.patientId(),
                 "cvxCode", toStore.cvxCode(),
                 "status", toStore.status().name()
-            ),
+            ), toStore.administeredBy()),
             "ImmunizationRecord",
             1
         ).then(stored -> audit("ADMINISTER", stored.patientId(),
@@ -150,7 +150,11 @@ public class ImmunizationService extends PhrServiceBase {
             SCHEDULE_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(), "dueDate", toStore.dueDate().toString(), "status", toStore.status().name()),
+            mutationMetadata(Map.of(
+                "patientId", toStore.patientId(),
+                "dueDate", toStore.dueDate().toString(),
+                "status", toStore.status().name()
+            ), "system"),
             "VaccinationSchedule",
             1
         ).map($ -> toStore);

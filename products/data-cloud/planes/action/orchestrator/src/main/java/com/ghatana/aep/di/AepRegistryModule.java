@@ -22,6 +22,7 @@ import com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository;
 import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
 import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
 import com.ghatana.agent.spi.AgentRegistry;
+import com.ghatana.agent.dispatch.AgentDispatcher;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import io.activej.inject.annotation.Provides;
@@ -189,10 +190,23 @@ public class AepRegistryModule extends AbstractModule {
     /**
      * Provides the {@link AgentExecutionService} used by {@link AepAgentRegistryController}.
      *
-     * @return default agent execution service
+     * <p>Wires the governed {@link AgentDispatcher} when available to ensure all executions
+     * go through the safety pipeline (gates, stages, invariant checks, trace ledger, mastery decisions).
+     * Falls back to direct {@link LLMGateway} calls when AgentDispatcher is not available.
+     *
+     * <p>Note: {@link AgentRegistry} and {@link LLMGateway} are optional (nullable) because
+     * the governed dispatch path via {@link AgentDispatcher} is the preferred path. The legacy
+     * fallback path is only used when AgentDispatcher is not available.
+     *
+     * @param agentRegistry    agent registry for legacy resolution (may be null)
+     * @param llmGateway       LLM gateway for fallback path (may be null)
+     * @param agentDispatcher  governed dispatcher with safety pipeline (may be null)
+     * @param historyStore     execution history store
+     * @param memoryClient     memory plane client
+     * @return agent execution service using governed dispatch when available
      *
      * @doc.type method
-     * @doc.purpose Provides AgentExecutionService for the registry controller
+     * @doc.purpose Provides AgentExecutionService with governed AgentDispatcher integration
      * @doc.layer product
      * @doc.pattern Factory
      */
@@ -200,9 +214,12 @@ public class AepRegistryModule extends AbstractModule {
     AgentExecutionService agentExecutionService(
             AgentRegistry agentRegistry,
             LLMGateway llmGateway,
+            AgentDispatcher agentDispatcher,
             AgentExecutionHistoryStore historyStore,
             AgentMemoryPlaneClient memoryClient) {
-        return new AgentExecutionService(agentRegistry, llmGateway, historyStore, memoryClient);
+        // Use the constructor that accepts AgentDispatcher for governed dispatch
+        // Pass null for agentRegistry and llmGateway since governed dispatch is preferred
+        return new AgentExecutionService(agentRegistry, llmGateway, agentDispatcher, historyStore, memoryClient);
     }
 
     /**

@@ -1,0 +1,78 @@
+schemaVersion: "1.0.0"
+environment: "prod"
+
+surfaces:
+  backend-api:
+    dev:
+      enabled: true
+      port: 8080
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 8080
+      replicas: 5
+      resources:
+        limits:
+          cpu: "4000m"
+          memory: "4Gi"
+        requests:
+          cpu: "1000m"
+          memory: "2Gi"
+  
+  web:
+    dev:
+      enabled: true
+      port: 5173
+    build:
+      enabled: true
+    deploy:
+      enabled: true
+      port: 3000
+      replicas: 3
+      resources:
+        limits:
+          cpu: "2000m"
+          memory: "2Gi"
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+
+deployment:
+  adapter: "kubernetes-prod"
+  namespace: "prod"
+  envFile: "deploy/prod.env.example"
+
+runtimeProfile: high-performance
+
+healthCheckProfile: comprehensive
+
+promotionPolicy: staging-to-prod
+
+rollbackPolicy: automatic-on-failure
+
+dataCloud:
+  enabled: true
+  tenantId: "phr-prod"
+  durableWrites: true
+  collections:
+    - "phr-patients"
+    - "phr-consent-grants"
+    - "phr-audit-trail"
+    - "phr-fhir-resources"
+
+kernel:
+  lifecycleEnabled: true
+  gatesActive:
+    - "consent"
+    - "pii-classification"
+    - "audit-evidence"
+    - "fhir-contract-validation"
+    - "tenant-data-sovereignty"
+  failClosedOnGateFailure: true
+
+fhir:
+  r4Enabled: true
+  validationGate: "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+  goldenFixtures: "products/phr/src/test/resources/fhir/golden"
+  strictValidationMode: true

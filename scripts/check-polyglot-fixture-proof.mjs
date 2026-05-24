@@ -164,14 +164,36 @@ function runCommand(label, command, args, options = {}) {
   }
 }
 
+function commandExists(command) {
+  const result = spawnSync(command, ['--version'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    shell: false,
+    stdio: 'pipe',
+  });
+  return result.status === 0;
+}
+
+function resolvePythonCommand() {
+  const candidates = process.platform === 'win32'
+    ? ['python.exe', 'py.exe']
+    : ['python3', 'python'];
+  const resolved = candidates.find(commandExists);
+  if (!resolved) {
+    fail(`python fixture requires one of: ${candidates.join(', ')}`);
+  }
+  return resolved;
+}
+
 function runPythonFixtureTests() {
   const venv = mkdtempSync(path.join(tmpdir(), 'ghatana-python-fixture-'));
+  const pythonCommand = resolvePythonCommand();
   const pythonExe = process.platform === 'win32'
     ? path.join(venv, 'Scripts', 'python.exe')
     : path.join(venv, 'bin', 'python');
 
   try {
-    runCommand('python fixture venv create', 'python', ['-m', 'venv', venv]);
+    runCommand('python fixture venv create', pythonCommand, ['-m', 'venv', venv]);
     runCommand('python fixture pip upgrade', pythonExe, ['-m', 'pip', 'install', '--upgrade', 'pip']);
     runCommand('python fixture install', pythonExe, ['-m', 'pip', 'install', '-e', 'products/python-fixture[dev]']);
     runCommand('python fixture tests', pythonExe, ['-m', 'pytest', 'products/python-fixture/tests']);
@@ -184,7 +206,16 @@ export function runPolyglotFixtureProof() {
   assertFixtureShape();
   runCommand('rust fixture tests', 'cargo', ['test', '--manifest-path', 'products/rust-fixture/Cargo.toml']);
   runPythonFixtureTests();
-  runCommand('typescript fixture tests', 'pnpm', ['--filter', 'typescript-fixture', 'test', '--', '--run']);
+  runCommand('typescript fixture tests', 'pnpm', [
+    '--dir',
+    'platform/typescript/kernel-toolchains',
+    'exec',
+    'vitest',
+    'run',
+    '--root',
+    '../../..',
+    'products/typescript-fixture/tests/integration.test.ts',
+  ]);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -30,6 +30,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These fixtures are used for contract validation, interoperability testing, and as
  * reference implementations for FHIR resource generation in PHR.</p>
  *
+ * <p>Golden fixtures validated:
+ * <ul>
+ *   <li>Patient resources</li>
+ *   <li>Observation (lab) resources</li>
+ *   <li>MedicationRequest resources</li>
+ *   <li>Immunization resources</li>
+ *   <li>ImagingStudy resources</li>
+ *   <li>ClinicalImpression (clinical notes) resources</li>
+ *   <li>ServiceRequest (referrals) resources</li>
+ *   <li>DocumentReference resources</li>
+ * </ul>
+ *
  * @doc.type class
  * @doc.purpose Validates golden FHIR R4 fixtures against specification
  * @doc.layer product
@@ -565,6 +577,94 @@ class FhirGoldenFixturesTest {
             JsonNode reasonCodes = root.path("reasonCode");
             assertThat(reasonCodes.isArray()).isTrue();
             assertThat(reasonCodes.size()).isGreaterThan(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("DocumentReference golden fixture")
+    class DocumentReferenceGoldenFixture {
+
+        @Test
+        @DisplayName("document-reference-golden.json exists and is valid JSON")
+        void fixtureExists() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            assertThat(root).isNotNull();
+        }
+
+        @Test
+        @DisplayName("resourceType is DocumentReference")
+        void hasResourceType() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            assertThat(root.path("resourceType").asText()).isEqualTo("DocumentReference");
+        }
+
+        @Test
+        @DisplayName("status is valid DocumentReference status")
+        void hasValidStatus() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            String status = root.path("status").asText();
+            assertThat(status).isIn("current", "superseded", "entered-in-error", "unknown");
+        }
+
+        @Test
+        @DisplayName("docStatus is present")
+        void hasDocStatus() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            String docStatus = root.path("docStatus").asText();
+            assertThat(docStatus).isIn("final", "amended", "entered-in-error", "preliminary", "cancelled");
+        }
+
+        @Test
+        @DisplayName("type uses LOINC or SNOMED CT system")
+        void typeUsesStandardSystem() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            JsonNode coding = root.path("type").path("coding");
+            assertThat(coding.isArray()).isTrue();
+            assertThat(coding.get(0).path("system").asText()).isIn(
+                "http://loinc.org",
+                "http://snomed.info/sct"
+            );
+            assertThat(coding.get(0).path("code").asText()).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("subject reference follows Patient/{id} format")
+        void subjectReferenceFormat() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            assertThat(root.path("subject").path("reference").asText()).startsWith("Patient/");
+        }
+
+        @Test
+        @DisplayName("has content with attachment")
+        void hasContent() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            JsonNode content = root.path("content");
+            assertThat(content.isArray()).isTrue();
+            assertThat(content.size()).isGreaterThan(0);
+
+            JsonNode attachment = content.get(0).path("attachment");
+            assertThat(attachment.path("contentType").asText()).isNotEmpty();
+            assertThat(attachment.path("data").asText()).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("has context with period")
+        void hasContext() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            JsonNode context = root.path("context");
+            assertThat(context).isNotNull();
+            assertThat(context.path("period")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("has author reference")
+        void hasAuthor() throws Exception {
+            JsonNode root = loadFixture("document-reference-golden.json");
+            JsonNode authors = root.path("author");
+            assertThat(authors.isArray()).isTrue();
+            assertThat(authors.size()).isGreaterThan(0);
+
+            assertThat(authors.get(0).path("reference").asText()).startsWith("Practitioner/");
         }
     }
 

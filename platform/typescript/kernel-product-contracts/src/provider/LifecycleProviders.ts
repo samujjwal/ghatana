@@ -459,7 +459,8 @@ export type KernelLifecycleProviderName =
 export type KernelLifecycleProviderContextReasonCode =
   | "missing-provider"
   | "invalid-provider-mode"
-  | "invalid-backing-store";
+  | "invalid-backing-store"
+  | "file-backing-allowed";
 
 export interface KernelLifecycleProviderContextValidationResult {
   readonly valid: boolean;
@@ -527,6 +528,7 @@ export function validateProviderBackingForMode(
   }
 
   const invalidBackingStores: InvalidBackingStoreError[] = [];
+  const allowedFileBackedProviders: string[] = [];
   const providerEntries: ReadonlyArray<[string, KernelProvider | undefined]> = [
     ["registryProvider", context.registryProvider],
     ["sourceProvider", context.sourceProvider],
@@ -546,10 +548,7 @@ export function validateProviderBackingForMode(
   for (const [providerName, provider] of providerEntries) {
     if (provider !== undefined && provider.backingStore === "file") {
       if (allowFileBacking) {
-        // Log warning but allow for development
-        console.warn(
-          `[Platform Mode Pilot] Provider ${providerName} uses file backing store. In production, use data-cloud backing.`
-        );
+        allowedFileBackedProviders.push(providerName);
       } else {
         invalidBackingStores.push({
           providerName,
@@ -564,8 +563,10 @@ export function validateProviderBackingForMode(
   return {
     valid: invalidBackingStores.length === 0,
     invalidBackingStores,
-    reasonCodes:
-      invalidBackingStores.length > 0 ? ["invalid-backing-store"] : [],
+    reasonCodes: [
+      ...(invalidBackingStores.length > 0 ? (["invalid-backing-store"] as const) : []),
+      ...(allowedFileBackedProviders.length > 0 ? (["file-backing-allowed"] as const) : []),
+    ],
   };
 }
 

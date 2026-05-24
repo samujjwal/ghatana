@@ -62,36 +62,52 @@ export function DocTruthWarningsPage() {
     }
   };
 
+  const actionErrorMessage = (action: string, err: unknown): string => (
+    err instanceof Error ? `${action}: ${err.message}` : `${action}: Unknown error`
+  );
+
+  const postDocTruthAction = async (url: string, action: string) => {
+    try {
+      const response = await fetch(url, { method: 'POST' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      await fetchDocTruthData();
+    } catch (err) {
+      setError(actionErrorMessage(action, err));
+    }
+  };
+
   const acknowledgeWarning = async (warningId: string) => {
     try {
-      await fetch(`/api/doc-truth/warnings/${warningId}/acknowledge`, {
-        method: 'POST'
-      });
-      fetchDocTruthData();
+      await postDocTruthAction(
+        `/api/doc-truth/warnings/${warningId}/acknowledge`,
+        'Failed to acknowledge warning'
+      );
     } catch (err) {
-      console.error('Failed to acknowledge warning:', err);
+      setError(actionErrorMessage('Failed to acknowledge warning', err));
     }
   };
 
   const resolveWarning = async (warningId: string) => {
     try {
-      await fetch(`/api/doc-truth/warnings/${warningId}/resolve`, {
-        method: 'POST'
-      });
-      fetchDocTruthData();
+      await postDocTruthAction(
+        `/api/doc-truth/warnings/${warningId}/resolve`,
+        'Failed to resolve warning'
+      );
     } catch (err) {
-      console.error('Failed to resolve warning:', err);
+      setError(actionErrorMessage('Failed to resolve warning', err));
     }
   };
 
   const triggerIngestion = async (docId: string) => {
     try {
-      await fetch(`/api/doc-truth/ingest/${docId}`, {
-        method: 'POST'
-      });
-      fetchDocTruthData();
+      await postDocTruthAction(
+        `/api/doc-truth/ingest/${docId}`,
+        'Failed to trigger ingestion'
+      );
     } catch (err) {
-      console.error('Failed to trigger ingestion:', err);
+      setError(actionErrorMessage('Failed to trigger ingestion', err));
     }
   };
 

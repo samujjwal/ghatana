@@ -184,6 +184,13 @@
   "evidenceRefs": [
     "products/phr/build.gradle.kts",
     "products/phr/kernel-product.yaml",
-    "products/phr/domains/*/build.gradle.kts"
-  ]
+    "products/phr/domains/*/build.gradle.kts",
+    "products/phr/lifecycle/foundation-usage-profile.yaml"
+  ],
+  "validationStatus": {
+    "allRequiredEvidencePresent": true,
+    "allValidationGatesDefined": true,
+    "complianceRequirementsMet": true,
+    "lastValidatedAt": "2026-05-24T00:00:00.000Z"
+  }
 }

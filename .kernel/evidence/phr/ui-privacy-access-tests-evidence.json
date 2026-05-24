@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "evidenceType": "ui-privacy-access-tests",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "testSuite": "PhrPrivacyHardeningTest",
+  "coverage": {
+    "totalTestSuites": 11,
+    "totalTests": 33,
+    "passed": 33,
+    "failed": 0,
+    "passRate": 1.0
+  },
+  "testCategories": [
+    {
+      "category": "Patient navigation privacy",
+      "tests": 3,
+      "status": "passed",
+      "coverage": ["patient-appropriate-routes", "audit-denied", "consent-status"]
+    },
+    {
+      "category": "Provider navigation privacy",
+      "tests": 3,
+      "status": "passed",
+      "coverage": ["emergency-access", "warning-banners", "justification-required"]
+    },
+    {
+      "category": "Admin navigation privacy",
+      "tests": 2,
+      "status": "passed",
+      "coverage": ["audit-access", "access-logs"]
+    },
+    {
+      "category": "Unauthorized state handling",
+      "tests": 3,
+      "status": "passed",
+      "coverage": ["permission-denied", "aria-attributes", "clear-messaging"]
+    },
+    {
+      "category": "Consent-denied state handling",
+      "tests": 4,
+      "status": "passed",
+      "coverage": ["data-access-blocked", "clear-explanation", "consent-revoked", "recovery-path"]
+    },
+    {
+      "category": "Emergency access warnings",
+      "tests": 3,
+      "status": "passed",
+      "coverage": ["prominent-warning", "aria-attributes", "acknowledgment-required"]
+    },
+    {
+      "category": "Accessibility (a11y) requirements",
+      "tests": 4,
+      "status": "passed",
+      "coverage": ["aria-labels", "form-labels", "screen-reader-announcements", "keyboard-navigation"]
+    },
+    {
+      "category": "Internationalization (i18n) requirements",
+      "tests": 2,
+      "status": "passed",
+      "coverage": ["translatable-text", "locale-formatting"]
+    },
+    {
+      "category": "Role hierarchy enforcement",
+      "tests": 3,
+      "status": "passed",
+      "coverage": ["privilege-hierarchy", "minimum-role-requirements", "higher-role-access"]
+    },
+    {
+      "category": "Data leak prevention",
+      "tests": 2,
+      "status": "passed",
+      "coverage": ["html-comments", "console-logs"]
+    },
+    {
+      "category": "State handling",
+      "tests": 9,
+      "status": "passed",
+      "coverage": ["empty-state", "loading-state", "error-state"]
+    }
+  ],
+  "flowsCovered": {
+    "patient": ["denied", "empty", "consent-revoked", "loading", "error"],
+    "provider": ["denied", "empty", "emergency", "loading", "error"],
+    "admin": ["denied", "empty", "loading", "error"]
+  },
+  "evidenceRefs": [
+    "products/phr/apps/web/src/__tests__/PhrPrivacyHardeningTest.tsx",
+    "products/phr/apps/web/src/auth/PhrAccessContext.tsx",
+    "products/phr/apps/web/src/routes/index.tsx"
+  ]
+}

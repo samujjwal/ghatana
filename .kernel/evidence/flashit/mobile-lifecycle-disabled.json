@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "flashit",
+  "productName": "FlashIt",
+  "evidenceType": "mobile-lifecycle-disabled",
+  "checkedAt": "2026-05-24T15:00:00.000Z",
+  "status": "disabled",
+  "reason": "Focus on web platform; mobile apps in maintenance mode",
+  
+  "mobilePlatforms": {
+    "android": {
+      "status": "maintenance",
+      "lifecycleEvents": "disabled",
+      "deploymentEnabled": false,
+      "evidencePath": "products/flashit/client/mobile/android",
+      "lastRelease": "2026-03-01T00:00:00.000Z",
+      "maintenanceModeSince": "2026-03-01T00:00:00.000Z"
+    },
+    "ios": {
+      "status": "maintenance",
+      "lifecycleEvents": "disabled",
+      "deploymentEnabled": false,
+      "evidencePath": "products/flashit/client/mobile/ios",
+      "lastRelease": "2026-03-01T00:00:00.000Z",
+      "maintenanceModeSince": "2026-03-01T00:00:00.000Z"
+    }
+  },
+  
+  "webPlatform": {
+    "status": "active",
+    "lifecycleEvents": "enabled",
+    "deploymentEnabled": true,
+    "evidencePath": "products/flashit/client/web",
+    "primaryPlatform": true
+  },
+  
+  "backend": {
+    "status": "active",
+    "lifecycleEvents": "enabled",
+    "deploymentEnabled": true,
+    "evidencePath": "products/flashit/backend/gateway",
+    "supportsMobile": true,
+    "supportsWeb": true
+  },
+  
+  "disablementGates": {
+    "mobileLifecycleDisabled": {
+      "status": "passed",
+      "evidenceRef": "products/flashit/lifecycle/foundation-usage-profile.yaml",
+      "validatedAt": "2026-05-24T15:00:00.000Z"
+    },
+    "webPlatformActive": {
+      "status": "passed",
+      "evidenceRef": "products/flashit/client/web",
+      "validatedAt": "2026-05-24T15:00:00.000Z"
+    },
+    "backendSupportsWeb": {
+      "status": "passed",
+      "evidenceRef": "products/flashit/backend/gateway",
+      "validatedAt": "2026-05-24T15:00:00.000Z"
+    }
+  },
+  
+  "maintenanceConsiderations": {
+    "securityPatches": "critical-only",
+    "bugFixes": "critical-only",
+    "featureAdditions": "none",
+    "platformUpdates": "minimal",
+    "apiCompatibility": "maintained"
+  },
+  
+  "futurePlans": {
+    "mobileReactivation": "not-planned",
+    "webFocus": "continued",
+    "evaluationDate": "2026-12-31T00:00:00.000Z"
+  }
+}

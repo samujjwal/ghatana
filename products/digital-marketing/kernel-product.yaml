@@ -4,6 +4,7 @@ lifecycleProfile: standard-web-api-product
 status: enabled
 executionEnabled: true
 allowExperimentalAdapters: false
+ephemeralInfrastructureBlocked: true
 # Authoritative Source: docs/kernel/PRODUCT_LIFECYCLE_CONTRACT.md
 
 # Runtime Module Architecture Decision

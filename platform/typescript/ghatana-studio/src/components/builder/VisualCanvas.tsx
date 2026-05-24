@@ -57,14 +57,21 @@ export function VisualCanvas({
     [document],
   );
 
+  const canvasHeight = typeof height === 'number' ? `${height}px` : height;
+
   return (
-    <div className="border rounded-lg overflow-hidden bg-white" data-testid="builder-visual-canvas">
+    <div
+      className="w-full border rounded-lg overflow-hidden bg-white"
+      data-testid="builder-visual-canvas"
+      style={{ height: canvasHeight }}
+    >
       <HybridCanvas
         nodes={[...canvasNodes]}
         edges={[...canvasEdges]}
         mode="hybrid-graph"
         width={width}
         height={height}
+        className="h-full w-full"
         readOnly={readOnly}
         onElementsChange={onElementsChange}
         onNodesChange={onNodesChange}

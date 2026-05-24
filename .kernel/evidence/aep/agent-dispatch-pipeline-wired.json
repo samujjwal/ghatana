@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "aep",
+  "evidenceType": "agent-dispatch-pipeline-wired",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "AgentDispatchPipeline must be wired into real agent execution via GovernedAgentDispatcher",
+  "implementationStatus": {
+    "overall": "wired",
+    "path": "AgentExecutionService -> GovernedAgentDispatcher -> CatalogAgentDispatcher -> AgentDispatchPipeline"
+  },
+  "wiringPoints": {
+    "agentExecutionService": {
+      "file": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentExecutionService.java",
+      "constructorAcceptsDispatcher": true,
+      "executeMethodChecksDispatcher": true,
+      "usesGovernedPathWhenAvailable": true,
+      "fallbackToLlmGateway": true
+    },
+    "aepRegistryModule": {
+      "file": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepRegistryModule.java",
+      "providesAgentExecutionService": true,
+      "injectsAgentDispatcher": true,
+      "lineNumber": 213-223
+    },
+    "aepOrchestrationModule": {
+      "file": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java",
+      "providesGovernedAgentDispatcher": true,
+      "bindsAgentDispatcherToGoverned": true,
+      "lineNumber": 673-776
+    },
+    "governedAgentDispatcher": {
+      "file": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
+      "wrapsCatalogAgentDispatcher": true,
+      "includesReleaseGuard": true,
+      "includesMasteryChecks": true,
+      "includesVersionContextChecks": true,
+      "includesModeSelection": true,
+      "includesTraceLedger": true,
+      "includesInvariantMonitor": true
+    },
+    "agentDispatchPipeline": {
+      "file": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipeline.java",
+      "orchestratesGates": true,
+      "orchestratesStages": true,
+      "providesPipelineResult": true
+    }
+  },
+  "executionFlow": {
+    "request": "AgentExecutionService.execute(agentId, input)",
+    "check": "if (agentDispatcher != null)",
+    "governedPath": "executeViaDispatcher -> GovernedAgentDispatcher.dispatch -> CatalogAgentDispatcher.dispatch -> AgentDispatchPipeline.execute",
+    "legacyPath": "executeViaLlmGateway -> LLMGateway.complete (fallback when dispatcher unavailable)",
+    "governedPathComponents": [
+      "Release guard (AgentReleaseRepository)",
+      "Grant validation",
+      "Invariant monitoring (InvariantMonitor)",
+      "Mastery checks (MasteryRegistry)",
+      "Version context checks (VersionContextResolver)",
+      "Task classification (TaskClassifier)",
+      "Mode selection (MasteryAwareModeSelector)",
+      "Memory retrieval (MemoryRetriever)",
+      "Trace recording (AgentTraceLedger)",
+      "OTel tracing (AgentRunTracer)"
+    ]
+  },
+  "safetyPipeline": {
+    "gates": [
+      "ReleaseGuard",
+      "GrantValidationGate",
+      "InvariantGate",
+      "MasteryGate",
+      "VersionContextGate",
+      "ManifestCapabilityGuard"
+    ],
+    "stages": [
+      "AgentMemoryRetrievalStage",
+      "AgentTraceStage",
+      "AgentDispatchStage"
+    ],
+    "evidenceCollection": {
+      "traceLedger": "DataCloudAgentTraceLedger",
+      "executionHistory": "AgentExecutionHistoryStore",
+      "memoryPlane": "AgentMemoryPlaneClient"
+    }
+  },
+  "evidenceRefs": [
+    "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/engine/registry/AgentExecutionService.java",
+    "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepRegistryModule.java",
+    "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java",
+    "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
+    "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipeline.java"
+  ],
+  "summary": {
+    "totalWiringPoints": 5,
+    "pointsWired": 5,
+    "overallStatus": "passed",
+    "governedPathEnabled": true,
+    "legacyFallbackAvailable": true
+  }
+}

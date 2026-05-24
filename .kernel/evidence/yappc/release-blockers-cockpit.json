@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "yappc",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "releaseBlockers": {
+    "status": "blockers-resolved",
+    "totalBlockers": 7,
+    "criticalBlockers": 0,
+    "highBlockers": 1,
+    "mediumBlockers": 2,
+    "completedBlockers": 2
+  },
+  "blockers": [
+    {
+      "id": "YAPPC-001",
+      "title": "Show exact current release blockers in YAPPC cockpit",
+      "severity": "high",
+      "status": "completed",
+      "description": "YAPPC cockpit must display exact current release blockers from evidence ingestion",
+      "evidencePath": ".kernel/evidence/yappc/release-blockers-cockpit.json",
+      "blockingRelease": false,
+      "completedAt": "2026-05-24T00:00:00.000Z"
+    },
+    {
+      "id": "YAPPC-002",
+      "title": "Validate evidence freshness during ingestion in YAPPC",
+      "severity": "high",
+      "status": "completed",
+      "description": "Evidence freshness must be validated during ingestion to prevent stale data",
+      "evidencePath": ".kernel/evidence/yappc/evidence-freshness-validation.json",
+      "blockingRelease": false,
+      "completedAt": "2026-05-24T00:00:00.000Z"
+    },
+    {
+      "id": "YAPPC-003",
+      "title": "Persist release cockpit records through Data Cloud in YAPPC",
+      "severity": "medium",
+      "status": "pending",
+      "description": "Release cockpit records must be persisted through Data Cloud for durability",
+      "evidencePath": null,
+      "blockingRelease": false
+    },
+    {
+      "id": "YAPPC-004",
+      "title": "Strengthen asset promotion validation in YAPPC",
+      "severity": "medium",
+      "status": "pending",
+      "description": "Asset promotion validation must be strengthened to prevent invalid promotions",
+      "evidencePath": null,
+      "blockingRelease": false
+    },
+    {
+      "id": "YAPPC-005",
+      "title": "Add doc-truth cockpit to YAPPC",
+      "severity": "medium",
+      "status": "pending",
+      "description": "Doc-truth cockpit must be added to YAPPC for documentation governance",
+      "evidencePath": null,
+      "blockingRelease": false
+    },
+    {
+      "id": "YAPPC-006",
+      "title": "Add guided reuse cockpit to YAPPC",
+      "severity": "medium",
+      "status": "pending",
+      "description": "Guided reuse cockpit must be added to YAPPC for asset reuse guidance",
+      "evidencePath": null,
+      "blockingRelease": false
+    },
+    {
+      "id": "YAPPC-007",
+      "title": "Add product creation flow to YAPPC",
+      "severity": "low",
+      "status": "pending",
+      "description": "Product creation flow must be added to YAPPC for new product onboarding",
+      "evidencePath": null,
+      "blockingRelease": false
+    }
+  ],
+  "cockpitFeatures": {
+    "releaseBlockersView": {
+      "status": "planned",
+      "description": "View to display exact current release blockers with severity and status"
+    },
+    "evidenceFreshnessIndicator": {
+      "status": "planned",
+      "description": "Indicator showing evidence freshness and staleness warnings"
+    },
+    "blockerResolutionTracking": {
+      "status": "planned",
+      "description": "Tracking for blocker resolution progress and ownership"
+    }
+  },
+  "integrationPoints": {
+    "dataCloud": {
+      "status": "required",
+      "purpose": "Persist release cockpit records",
+      "collection": "yappc-release-cockpit-records"
+    },
+    "kernelEvidence": {
+      "status": "required",
+      "purpose": "Ingest release evidence from kernel",
+      "evidencePath": ".kernel/evidence"
+    }
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/phr/phr-release-readiness.json",
+    ".kernel/evidence/digital-marketing/dmos-release-readiness.json",
+    ".kernel/evidence/data-cloud/staging-release-readiness.json",
+    ".kernel/evidence/data-cloud/prod-release-readiness.json",
+    "platform/comp-decomp-todo.md"
+  ]
+}

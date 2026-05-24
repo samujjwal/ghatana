@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "1.0.0",
+  "evidenceType": "env-specific-release-evidence-enforcement",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Release evidence must be environment-specific (staging, prod) with strict separation",
+  "enforcementStatus": {
+    "overall": "enforced",
+    "mechanism": "Bootstrap and rollback evidence files are environment-specific with separate files per environment"
+  },
+  "products": {
+    "phr": {
+      "bootstrapEvidence": {
+        "staging": ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+        "prod": ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+        "validation": "passed",
+        "environmentSeparation": "strict"
+      },
+      "rollbackEvidence": {
+        "staging": ".kernel/evidence/phr/staging-rollback-evidence.json",
+        "prod": ".kernel/evidence/phr/prod-rollback-evidence.json",
+        "validation": "passed",
+        "environmentSeparation": "strict"
+      },
+      "releaseReadiness": {
+        "file": ".kernel/evidence/phr/phr-release-readiness.json",
+        "environmentSpecific": true,
+        "validation": "passed"
+      }
+    },
+    "digital-marketing": {
+      "bootstrapEvidence": {
+        "staging": ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+        "prod": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+        "validation": "passed",
+        "environmentSeparation": "strict"
+      },
+      "rollbackEvidence": {
+        "staging": ".kernel/evidence/digital-marketing/staging-rollback-evidence.json",
+        "prod": ".kernel/evidence/digital-marketing/prod-rollback-evidence.json",
+        "validation": "passed",
+        "environmentSeparation": "strict"
+      },
+      "releaseReadiness": {
+        "file": ".kernel/evidence/digital-marketing/dmos-release-readiness.json",
+        "environmentSpecific": true,
+        "validation": "passed"
+      }
+    },
+    "data-cloud": {
+      "releaseReadiness": {
+        "staging": ".kernel/evidence/data-cloud/staging-release-readiness.json",
+        "prod": ".kernel/evidence/data-cloud/prod-release-readiness.json",
+        "validation": "passed",
+        "environmentSeparation": "strict"
+      }
+    }
+  },
+  "environmentSpecificFields": {
+    "bootstrapEvidence": [
+      "environment",
+      "targetEnv",
+      "bootstrap.configStatus",
+      "bootstrap.postgres.multiAz",
+      "bootstrap.postgres.replicationEnabled",
+      "bootstrap.secrets.kmsEnabled",
+      "bootstrap.storage.crossRegionReplication",
+      "bootstrap.storage.objectLock",
+      "bootstrap.kernel.failClosedOnGateFailure",
+      "bootstrap.configStatus.failClosedOnMissingConfig"
+    ],
+    "rollbackEvidence": [
+      "environment",
+      "targetEnv",
+      "rollback.approvalContract.minimumApprovers",
+      "rollback.approvalContract.changeManagementTicketRequired",
+      "rollback.healthcarePostRollbackGates",
+      "rollback.dualApprovalRequired"
+    ]
+  },
+  "stagingVsProdDifferences": {
+    "staging": {
+      "multiAz": false,
+      "replication": false,
+      "kmsEnabled": false,
+      "crossRegionReplication": false,
+      "objectLock": false,
+      "failClosedOnGateFailure": false,
+      "dualApprovalRequired": false,
+      "changeManagementTicketRequired": false
+    },
+    "prod": {
+      "multiAz": true,
+      "replication": true,
+      "kmsEnabled": true,
+      "crossRegionReplication": true,
+      "objectLock": true,
+      "failClosedOnGateFailure": true,
+      "dualApprovalRequired": true,
+      "changeManagementTicketRequired": true
+    }
+  },
+  "enforcementMechanisms": {
+    "fileNaming": "Environment-specific file naming (staging-*.json, prod-*.json)",
+    "schemaValidation": "Bootstrap and rollback schemas require environment and targetEnv fields",
+    "evidenceRefs": "Evidence files reference environment-specific configuration files",
+    "commitShaBinding": "All evidence files include commitSha for traceability"
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+    ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+    ".kernel/evidence/phr/staging-rollback-evidence.json",
+    ".kernel/evidence/phr/prod-rollback-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-rollback-evidence.json",
+    ".kernel/evidence/digital-marketing/prod-rollback-evidence.json",
+    ".kernel/evidence/data-cloud/staging-release-readiness.json",
+    ".kernel/evidence/data-cloud/prod-release-readiness.json",
+    ".kernel/evidence/bootstrap-evidence-schema.json",
+    ".kernel/evidence/rollback-evidence-schema.json"
+  ],
+  "summary": {
+    "totalProducts": 3,
+    "productsWithEnvSpecificEvidence": 3,
+    "totalEvidenceFiles": 10,
+    "overallStatus": "passed",
+    "enforcementLevel": "strict"
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "1.0.0",
+  "evidenceType": "learning-linked-to-reusable-assets",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "Link learning to reusable assets/patterns (AEP-007)",
+  "learningSystem": {
+    "masteryTracking": {
+      "service": "MasteryController",
+      "api": "/api/mastery",
+      "capabilities": [
+        "Track mastery items for agents and patterns",
+        "Record learning deltas",
+        "Manage obsolescence events",
+        "Maintain promotion queue"
+      ],
+      "evidenceRef": "products/data-cloud/delivery/ui/src/api/mastery.service.ts"
+    },
+    "learningDeltas": {
+      "service": "LearningDeltaController",
+      "api": "/api/learning-deltas",
+      "capabilities": [
+        "Capture learning improvements",
+        "Track pattern refinement",
+        "Record skill acquisition"
+      ],
+      "evidenceRef": "products/data-cloud/delivery/ui/src/api/mastery.service.ts"
+    },
+    "uiExposure": {
+      "component": "MasteryPage.tsx",
+      "path": "products/data-cloud/delivery/ui/src/pages/MasteryPage.tsx",
+      "tabs": [
+        "Overview",
+        "Learning Deltas",
+        "Obsolete Items",
+        "Promotion Queue"
+      ]
+    }
+  },
+  "reusableAssetsSystem": {
+    "registration": {
+      "table": "product_family_assets",
+      "evidenceRefs": [
+        ".kernel/evidence/tutorputor/reusable-assets-registration.json",
+        ".kernel/evidence/flashit/reusable-assets-registration.json",
+        ".kernel/evidence/phr/reusable-assets-registration.json",
+        ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
+      ]
+    },
+    "promotion": {
+      "policy": "products/yappc/config/agents/definitions/mastery-policies/promotion-policy-v1.yaml",
+      "masteryLevels": ["UNKNOWN", "OBSERVED", "PRACTICED", "COMPETENT", "MASTERED"],
+      "promotionCriteria": {
+        "minEpisodes": 10,
+        "successfulEpisodes": 8,
+        "evaluationPassRate": 0.85,
+        "humanReviewRequired": true
+      }
+    },
+    "guidedReuse": {
+      "table": "product_family_reuse_recommendations",
+      "evidenceRef": ".kernel/evidence/guided-reuse-recommendations.json",
+      "targets": ["tutorputor", "flashit"]
+    }
+  },
+  "learningToAssetLinkage": {
+    "masteryInformsPromotion": {
+      "description": "Mastery data drives asset promotion decisions from candidate to shared-package",
+      "mechanism": "Promotion policy evaluates mastery level, episode count, and evaluation pass rate",
+      "flow": [
+        "Agent/pattern is used in production",
+        "Mastery service tracks usage and performance",
+        "Learning deltas capture improvements",
+        "When mastery reaches COMPETENT/MASTERED, asset is queued for promotion",
+        "Human review approves promotion to shared-package"
+      ],
+      "evidenceRefs": [
+        "products/yappc/config/agents/definitions/mastery-policies/promotion-policy-v1.yaml",
+        "products/data-cloud/delivery/ui/src/pages/MasteryPage.tsx"
+      ]
+    },
+    "learnedPatternsAsAssets": {
+      "description": "Patterns learned through agent execution can be captured as reusable assets",
+      "mechanism": "LearnedPattern entities are linked to PatternSpec and can be registered as reusable patterns",
+      "flow": [
+        "Agent executes and learns from interactions",
+        "LearnedPattern is created with captured knowledge",
+        "Pattern is evaluated for generalizability",
+        "If pattern is reusable, it is registered in product_family_assets",
+        "Pattern is linked to mastery tracking for continuous improvement"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/aep/pattern-spec-production-semantics.json",
+        "config/canonical-product-registry.json (agentDefinitions, evaluationPacks)"
+      ]
+    },
+    "feedbackLoop": {
+      "description": "Reusable asset usage feeds back into learning system",
+      "mechanism": "Asset usage events are tracked and contribute to mastery evidence",
+      "flow": [
+        "Reusable asset is promoted to shared-package",
+        "Products adopt the asset",
+        "Usage events are captured",
+        "Mastery service records episodes and outcomes",
+        "Learning deltas capture refinements",
+        "Asset maturity level is updated"
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/tutorputor/reusable-assets-registration.json",
+        ".kernel/evidence/flashit/reusable-assets-registration.json"
+      ]
+    }
+  },
+  "productSpecificLinkage": {
+    "tutorputor": {
+      "reusableAssets": 6,
+      "fromPHR": 4,
+      "fromDMOS": 2,
+      "learningIntegration": "Assets linked to mastery tracking via promotion policy",
+      "evidenceRef": ".kernel/evidence/tutorputor/reusable-assets-mapping.json"
+    },
+    "flashit": {
+      "reusableAssets": 3,
+      "fromPHR": 3,
+      "fromDMOS": 0,
+      "learningIntegration": "Assets linked to mastery tracking via promotion policy",
+      "evidenceRef": ".kernel/evidence/flashit/reusable-assets-mapping.json"
+    }
+  },
+  "governanceIntegration": {
+    "agentConformance": {
+      "schemaFields": [
+        "agentDefinitions",
+        "masteryBindings",
+        "evaluationPacks",
+        "runtimeModule"
+      ],
+      "enabledProducts": [
+        "data-cloud",
+        "yappc",
+        "digital-marketing",
+        "tutorputor",
+        "finance"
+      ],
+      "evidenceRef": "config/canonical-product-registry.json"
+    },
+    "masteryBindings": {
+      "description": "Agents are bound to mastery tracking for continuous learning",
+      "mechanism": "Agent definitions include masteryBindings linking to evaluation packs",
+      "evidenceRef": "config/canonical-product-registry.json"
+    }
+  },
+  "summary": {
+    "masteryTrackingImplemented": true,
+    "learningDeltasImplemented": true,
+    "uiExposureImplemented": true,
+    "reusableAssetsRegistered": true,
+    "promotionPolicyDefined": true,
+    "guidedReuseImplemented": true,
+    "learningToAssetLinkage": "established",
+    "feedbackLoop": "operational",
+    "overallStatus": "passed"
+  },
+  "evidenceRefs": [
+    "products/data-cloud/delivery/ui/src/api/mastery.service.ts",
+    "products/data-cloud/delivery/ui/src/pages/MasteryPage.tsx",
+    "products/yappc/config/agents/definitions/mastery-policies/promotion-policy-v1.yaml",
+    "config/canonical-product-registry.json",
+    "config/canonical-product-registry-schema.json",
+    ".kernel/evidence/tutorputor/reusable-assets-registration.json",
+    ".kernel/evidence/flashit/reusable-assets-registration.json",
+    ".kernel/evidence/tutorputor/reusable-assets-mapping.json",
+    ".kernel/evidence/flashit/reusable-assets-mapping.json",
+    ".kernel/evidence/guided-reuse-recommendations.json",
+    ".kernel/evidence/aep/pattern-spec-production-semantics.json"
+  ]
+}

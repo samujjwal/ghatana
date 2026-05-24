@@ -181,7 +181,7 @@ const dimensions = [
   { id: 44, name: 'Migration and deprecation hygiene', gates: ['check:deprecated-imports', 'check:deprecated-packages'] },
   { id: 45, name: 'Cost and operational efficiency', gates: ['check:ai-governance-conformance', 'check:interaction-performance', 'check:product-cost-budgets'] },
   { id: 46, name: 'Overall production readiness', gates: ['check:atomic-workflow-proof', 'check:affected-product-strict-release-profile', 'check:product-release-readiness', 'check:validate-release-evidence'] },
-  { id: 47, name: 'Overall world-class maturity', gates: ['check:world-class-platform-readiness'] },
+  { id: 47, name: 'Overall release maturity', gates: ['check:release'] },
 ];
 
 const journeyAreas = [

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "durableWrites": {
+    "enabled": true,
+    "writeAheadLog": true,
+    "fsyncEnabled": true,
+    "replicationFactor": 3,
+    "consistencyLevel": "quorum"
+  },
+  "collections": [
+    {
+      "name": "phr-patients",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true,
+      "durableWrites": true,
+      "purpose": "Patient PHI records with HIPAA-compliant durable storage"
+    },
+    {
+      "name": "phr-consents",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true,
+      "durableWrites": true,
+      "purpose": "Consent grants and revocations with durable audit trail"
+    },
+    {
+      "name": "phr-audit-trail",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true,
+      "durableWrites": true,
+      "immutable": true,
+      "purpose": "Immutable audit log for all PHI access and lifecycle events"
+    },
+    {
+      "name": "phr-fhir-resources",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true,
+      "durableWrites": true,
+      "purpose": "FHIR R4 resources with durable storage for clinical data"
+    }
+  ],
+  "lifecycleEventDurableWrites": {
+    "enabled": true,
+    "collections": ["phr-audit-trail"],
+    "eventTypes": [
+      "consent-granted",
+      "consent-revoked",
+      "emergency-access-granted",
+      "patient-data-accessed",
+      "fhir-resource-created",
+      "fhir-resource-updated",
+      "lifecycle-phase-transition"
+    ],
+    "writeGuarantee": "durable-quorum"
+  },
+  "rlsPolicy": "row-level-security",
+  "tenantIsolation": "enforced"
+}

@@ -56,5 +56,8 @@ Root commands are intentionally tiered:
 - `pnpm test` is the fast TypeScript/platform and product-UI test sweep. It uses workspace filters and `--if-present`; it must not be treated as complete Java/backend/product integration coverage.
 - `pnpm lint` runs `pnpm typecheck` plus architecture boundary checks. Package-local ESLint/static checks remain enforced by the relevant product/platform gates.
 - `pnpm typecheck` builds the platform TypeScript and product UI workspace slice, so it is a build-backed type gate rather than a pure `tsc --noEmit` sweep.
-- `pnpm check:full-repo-test` is the explicit broader local regression command: it runs root test coverage, Gradle `check`, and the Digital Marketing/PHR lifecycle pilot smoke gates.
-- `pnpm check:phase8` and `pnpm check:world-class-platform-readiness` are no-regression readiness gates and include Studio artifact workflow checks, artifact round-trip checks, Kernel lifecycle/provider checks, and product readiness checks.
+- `pnpm check:required` is the default PR/local gate. It resolves changed files and runs the product-specific stage checks needed for those changes.
+- `pnpm check:dev`, `pnpm check:validate`, `pnpm check:test`, `pnpm check:build`, and `pnpm check:package` are the canonical product-stage commands.
+- `pnpm check:full` is the broader local regression command for sweeping changes.
+- `pnpm check:release` is the strict release gate. `pnpm check:release:product -- --products <id>` is the strict product release gate.
+- `pnpm check:phase8` and `pnpm check:release-gate` are internal aggregate gates used by release readiness; prefer `check:full` or `check:release` from the root command line.

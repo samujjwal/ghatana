@@ -170,13 +170,10 @@ jobs:
 
       - name: Build and test Data Cloud modules
         run: |
-          ./gradlew \
-            :products:data-cloud:planes:shared-spi:check \
-            :products:data-cloud:delivery:runtime-composition:check \
-            :products:data-cloud:delivery:launcher:check \
-            :products:data-cloud:extensions:agent-registry:check \
-            :products:data-cloud:delivery:sdk:check \
-            --no-daemon
+          set -euo pipefail
+          node ./scripts/list-data-cloud-active-modules.mjs --validate
+          TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=release-blocking --task=check --format=shell)"
+          ./gradlew ${TASKS} --no-daemon
 
       - name: Data Cloud UI type-check and readiness tests
         run: |

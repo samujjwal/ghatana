@@ -6,6 +6,7 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * in-memory repositories, missing configuration, and other production blockers.
  */
 @DisplayName("ProductionBootstrapValidator Tests")
+@Tag("integration")
 class ProductionBootstrapValidatorTest {
 
     @Test

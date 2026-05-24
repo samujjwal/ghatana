@@ -4,6 +4,8 @@ import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.agent.spi.AgentRegistry;
+import com.ghatana.agent.dispatch.AgentDispatcher;
+import com.ghatana.agent.framework.api.AgentContext;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,7 @@ public class AgentExecutionService {
 
     private final AgentRegistry agentRegistry;
     private final LLMGateway llmGateway;
+    private final AgentDispatcher agentDispatcher;
     private final AgentExecutionHistoryStore historyStore;
     private final AgentMemoryPlaneClient memoryClient;
 
@@ -53,7 +56,7 @@ public class AgentExecutionService {
      * @param llmGateway    gateway to the configured LLM provider(s); never {@code null}
      */
     public AgentExecutionService(AgentRegistry agentRegistry, LLMGateway llmGateway) {
-        this(agentRegistry, llmGateway, new NoopAgentExecutionHistoryStore(), new AgentMemoryPlaneClient.Noop());
+        this(agentRegistry, llmGateway, null, new NoopAgentExecutionHistoryStore(), new AgentMemoryPlaneClient.Noop());
     }
 
     /**
@@ -67,10 +70,27 @@ public class AgentExecutionService {
             LLMGateway llmGateway,
             AgentExecutionHistoryStore historyStore,
             AgentMemoryPlaneClient memoryClient) {
-        this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry");
-        this.llmGateway    = Objects.requireNonNull(llmGateway,    "llmGateway");
-        this.historyStore  = Objects.requireNonNull(historyStore,  "historyStore");
-        this.memoryClient  = Objects.requireNonNull(memoryClient,  "memoryClient");
+        this(agentRegistry, llmGateway, null, historyStore, memoryClient);
+    }
+
+    /**
+     * @param agentRegistry    registry used to look up registered agents; never {@code null}
+     * @param llmGateway       gateway to the configured LLM provider(s); never {@code null}
+     * @param agentDispatcher  governed agent dispatcher with safety pipeline; may be {@code null}
+     * @param historyStore     persistent execution history store; never {@code null}
+     * @param memoryClient     memory plane client used to materialize episodic state; never {@code null}
+     */
+    public AgentExecutionService(
+            AgentRegistry agentRegistry,
+            LLMGateway llmGateway,
+            AgentDispatcher agentDispatcher,
+            AgentExecutionHistoryStore historyStore,
+            AgentMemoryPlaneClient memoryClient) {
+        this.agentRegistry    = Objects.requireNonNull(agentRegistry, "agentRegistry");
+        this.llmGateway       = Objects.requireNonNull(llmGateway,    "llmGateway");
+        this.agentDispatcher = agentDispatcher;
+        this.historyStore     = Objects.requireNonNull(historyStore,  "historyStore");
+        this.memoryClient     = Objects.requireNonNull(memoryClient,  "memoryClient");
     }
 
     /**
@@ -86,12 +106,60 @@ public class AgentExecutionService {
 
     /**
      * Executes an agent and returns a structured {@link ExecutionResult}.
+     *
+     * <p>If {@link AgentDispatcher} is configured, uses the governed execution path
+     * with safety pipeline and evidence collection. Otherwise falls back to direct
+     * {@link LLMGateway} calls for backward compatibility.
      */
     public Promise<ExecutionResult> execute(String agentId, Object input) {
         Objects.requireNonNull(agentId, "agentId");
 
         long startMs = System.currentTimeMillis();
         String executionId = UUID.randomUUID().toString();
+
+        if (agentDispatcher != null) {
+            return executeViaDispatcher(agentId, input, executionId, startMs);
+        }
+
+        return executeViaLlmGateway(agentId, input, executionId, startMs);
+    }
+
+    private Promise<ExecutionResult> executeViaDispatcher(
+            String agentId, Object input, String executionId, long startMs) {
+        log.debug("[execution] Using governed AgentDispatcher: agentId={} executionId={}", agentId, executionId);
+
+        // Use empty context and derive a child context for this execution
+        AgentContext baseCtx = AgentContext.empty();
+        AgentContext ctx = baseCtx.toBuilder()
+            .agentId(agentId)
+            .turnId(executionId)
+            .build();
+
+        return agentDispatcher.dispatch(agentId, input, ctx).then(result -> {
+            long durationMs = System.currentTimeMillis() - startMs;
+            log.info("[execution] Completed via dispatcher: agentId={} executionId={} durationMs={}",
+                agentId, executionId, durationMs);
+
+            ExecutionRecord record = new ExecutionRecord(
+                executionId,
+                "success",
+                input,
+                result.getOutput(),
+                durationMs,
+                Instant.now().toString());
+
+            return historyStore.append(agentId, record)
+                .then(ignored -> memoryClient.recordExecution(agentId, executionId, input, result.getOutput(), durationMs))
+                .map(ignored -> new ExecutionResult(executionId, "success", result.getOutput(), durationMs));
+        }).mapException(e -> {
+            log.error("[execution] Failed via dispatcher: agentId={} executionId={}", agentId, executionId, e);
+            return e;
+        });
+    }
+
+    private Promise<ExecutionResult> executeViaLlmGateway(
+            String agentId, Object input, String executionId, long startMs) {
+        log.debug("[execution] Using direct LLMGateway (legacy path): agentId={} executionId={}", agentId, executionId);
 
         return agentRegistry.resolve(agentId).<ExecutionResult>then(optAgent -> {
             if (optAgent.isEmpty()) {

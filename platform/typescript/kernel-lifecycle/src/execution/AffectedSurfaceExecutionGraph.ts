@@ -20,6 +20,7 @@
  */
 
 import type { ProductSurface } from '@ghatana/kernel-product-contracts';
+import type { ExecutionLogger } from '../domain/ProductLifecyclePhase.js';
 
 export interface SurfaceDependency {
   readonly surfaceId: string;
@@ -277,7 +278,8 @@ function resolveSurfaceId(surface: ProductSurface): string {
 export async function detectChangedSurfaces(
   repoRoot: string,
   surfaces: readonly ProductSurface[],
-  baseRef?: string
+  baseRef?: string,
+  logger?: Pick<ExecutionLogger, 'warn'>
 ): Promise<SurfaceChange[]> {
   const { execFileSync } = await import('node:child_process');
   const path = await import('node:path');
@@ -312,8 +314,9 @@ export async function detectChangedSurfaces(
       }
     }
   } catch (error) {
-    // If git fails, assume all surfaces changed
-    console.warn('Git diff failed, assuming all surfaces changed:', error);
+    logger?.warn('Git diff failed; assuming all surfaces changed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     for (const surface of surfaces) {
       changes.push({
         surfaceId: resolveSurfaceId(surface),

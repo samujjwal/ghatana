@@ -372,10 +372,11 @@ public class TelemedicineService extends PhrServiceBase {
             SESSION_DATASET,
             session.id(),
             session,
-            PhrTraceContext.metadata(correlationId, traceOperation, Map.of(
+            mutationMetadata(PhrTraceContext.metadata(correlationId, traceOperation, Map.of(
                 "patientId", session.patientId(),
+                "providerId", session.providerId(),
                 "status", session.status().name()
-            )),
+            )), session.providerId()),
             "TeleSession",
             1
         ).then(stored -> audit(action, stored.patientId(), detail + " [" + stored.id() + "]")

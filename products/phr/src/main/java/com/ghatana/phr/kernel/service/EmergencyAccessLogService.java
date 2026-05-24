@@ -111,13 +111,15 @@ public class EmergencyAccessLogService extends PhrServiceBase {
             LOG_DATASET,
             id,
             toStore,
-            Map.of("patientId", toStore.patientId(),
+            mutationMetadata(Map.of(
+                "patientId", toStore.patientId(),
                 "accessorId", toStore.accessorId(),
                 "reviewStatus", "PENDING_REVIEW",
                 "accessedAt", toStore.accessedAt().toString(),
                 "accessExpiresAt", toStore.accessExpiresAt().toString(),
                 "reviewDueAt", toStore.reviewDueAt().toString(),
-                "reviewCaseId", toStore.reviewCaseId()),
+                "reviewCaseId", toStore.reviewCaseId()
+            ), toStore.accessorId()),
             "EmergencyAccessEvent",
             1
         ).then($ -> reviewWorkflow.initiate(toStore).map(__ -> toStore));
@@ -167,11 +169,13 @@ public class EmergencyAccessLogService extends PhrServiceBase {
                     LOG_DATASET,
                     sanitizedEventId,
                     updated,
-                    Map.of(
+                    mutationMetadata(Map.of(
+                        "patientId", updated.patientId(),
                         "reviewStatus", newStatus.name(),
                         "reviewDueAt", updated.reviewDueAt().toString(),
                         "reviewedAt", updated.reviewedAt().toString(),
-                        "reviewCaseId", updated.reviewCaseId()),
+                        "reviewCaseId", updated.reviewCaseId()
+                    ), sanitizedReviewedBy),
                     "EmergencyAccessEvent",
                     1
                 ).then($ -> reviewWorkflow.complete(updated).map(__ -> updated));

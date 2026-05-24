@@ -75,11 +75,7 @@ public class PluginLoader {
 
                 for (KernelPlugin plugin : loader) {
                     LOGGER.info("Found plugin: {} v{}", plugin.getModuleId(), plugin.getVersion());
-
-                    // Validate and register plugin
-                    pluginRegistry.registerPlugin(plugin);
-
-                    LOGGER.info("Successfully registered plugin: {}", plugin.getModuleId());
+                    loadDiscoveredPlugin(plugin);
                 }
             }
         } catch (Exception e) {
@@ -132,6 +128,25 @@ public class PluginLoader {
     }
 
     /**
+     * Register a plugin found by the discovery path after enforcing loader policies.
+     *
+     * @param plugin discovered plugin candidate
+     * @return true when the plugin was registered, false when it was policy-blocked
+     */
+    protected boolean loadDiscoveredPlugin(KernelPlugin plugin) {
+        Objects.requireNonNull(plugin);
+
+        if (isProductionEnvironment() && plugin.getManifest().isEphemeral()) {
+            LOGGER.warn("Ephemeral plugin blocked in production: {}", plugin.getModuleId());
+            return false;
+        }
+
+        pluginRegistry.registerPlugin(plugin);
+        LOGGER.info("Successfully registered plugin: {}", plugin.getModuleId());
+        return true;
+    }
+
+    /**
      * Get plugin directory.
      *
      * @return plugin directory path
@@ -165,5 +180,21 @@ public class PluginLoader {
         } catch (IOException e) {
             throw new RuntimeException("Failed to create plugin directory: " + pluginDirectory, e);
         }
+    }
+
+    /**
+     * Check if running in production environment.
+     *
+     * @return true if production environment
+     */
+    protected boolean isProductionEnvironment() {
+        String env = System.getenv("ENVIRONMENT");
+        if (env == null) {
+            env = System.getenv("NODE_ENV");
+        }
+        if (env == null) {
+            env = System.getProperty("environment");
+        }
+        return "prod".equalsIgnoreCase(env) || "production".equalsIgnoreCase(env);
     }
 }

@@ -26,6 +26,7 @@ import type { DecompileJobResult } from '../adapters/ArtifactStudioWorkflowAdapt
 import type { BuilderDocument } from '@ghatana/ui-builder';
 import type { EvidencePack, FidelityReport, RoundTripDiffReport } from '@ghatana/artifact-contracts';
 import type { LogicalArtifactModel } from '@ghatana/artifact-contracts';
+import { ApiClient } from '@ghatana/api';
 import { studioLogger } from '../logging/studioLogger';
 import { StudioProductionProfileError, isProductionStudioProfile } from '../config/studioEnvironment';
 
@@ -115,6 +116,8 @@ class LocalStoragePersistenceAdapter implements WorkflowPersistenceAdapter {
 }
 
 class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
+  private readonly apiClient: ApiClient;
+
   constructor(
     private readonly config: {
       readonly baseUrl: string;
@@ -124,19 +127,17 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
       readonly authToken: string;
       readonly enableEvidencePersistence: boolean;
     },
-  ) {}
+  ) {
+    this.apiClient = new ApiClient({ baseUrl: config.baseUrl });
+  }
 
   async persist(state: ArtifactWorkflowState, audit: WorkflowAuditMetadata): Promise<void> {
     const payload: PersistedWorkflowState = { state, audit };
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
-        method: 'PUT',
+      await this.apiClient.put<void>('/api/v1/studio/workflow-state', {
         headers: this.headersWithIdempotency(`studio-workflow-state:${audit.persistenceVersion}:${audit.lastModifiedAt}`),
-        body: JSON.stringify(payload),
+        body: payload,
       });
-      if (!response.ok) {
-        throw new Error(`Persist failed (${response.status})`);
-      }
 
       if (this.config.enableEvidencePersistence && state.evidencePack !== null) {
         await this.persistEvidencePack(state.evidencePack);
@@ -149,21 +150,14 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
 
   async load(): Promise<PersistedWorkflowState | null> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
-        method: 'GET',
+      const response = await this.apiClient.get<PersistedWorkflowState>('/api/v1/studio/workflow-state', {
         headers: this.headers,
       });
-
-      if (response.status === 404) {
+      return response.data;
+    } catch (err) {
+      if (isApiStatus(err, 404)) {
         return null;
       }
-
-      if (!response.ok) {
-        throw new Error(`Load failed (${response.status})`);
-      }
-
-      return (await response.json()) as PersistedWorkflowState;
-    } catch (err) {
       studioLogger.error('Failed to load workflow state via kernel API', { error: err });
       return null;
     }
@@ -171,14 +165,13 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
 
   async clear(): Promise<void> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-state`, {
-        method: 'DELETE',
+      await this.apiClient.delete<void>('/api/v1/studio/workflow-state', {
         headers: this.headers,
       });
-      if (!response.ok && response.status !== 404) {
-        throw new Error(`Clear failed (${response.status})`);
-      }
     } catch (err) {
+      if (isApiStatus(err, 404)) {
+        return;
+      }
       studioLogger.error('Failed to clear workflow state via kernel API', { error: err });
     }
   }
@@ -204,16 +197,20 @@ class KernelWorkflowPersistenceAdapter implements WorkflowPersistenceAdapter {
   }
 
   private async persistEvidencePack(evidencePack: EvidencePack): Promise<void> {
-    const response = await fetch(`${this.config.baseUrl}/api/v1/studio/workflow-evidence`, {
-      method: 'PUT',
+    await this.apiClient.put<void>('/api/v1/studio/workflow-evidence', {
       headers: this.headersWithIdempotency(`studio-workflow-evidence:${evidencePack.evidenceId}`),
-      body: JSON.stringify(evidencePack),
+      body: evidencePack,
     });
-
-    if (!response.ok) {
-      throw new Error(`Evidence persist failed (${response.status})`);
-    }
   }
+}
+
+function isApiStatus(error: unknown, status: number): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    (error as { readonly status?: unknown }).status === status
+  );
 }
 
 export function resolvePersistenceAdapterForEnv(
@@ -246,7 +243,7 @@ export function resolvePersistenceAdapterForEnv(
         'Kernel workflow persistence requires kernel base URL, tenant, workspace, project, and auth token.',
       );
     }
-    studioLogger.error('Kernel workflow persistence is enabled but runtime identity is incomplete; using local storage fallback.', {
+    studioLogger.warn('Kernel workflow persistence is enabled but runtime identity is incomplete; using local storage fallback.', {
       hasBaseUrl: Boolean(baseUrl),
       hasTenantId: Boolean(tenantId),
       hasWorkspaceId: Boolean(workspaceId),

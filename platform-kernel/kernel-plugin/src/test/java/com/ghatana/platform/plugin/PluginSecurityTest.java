@@ -6,6 +6,8 @@ package com.ghatana.platform.plugin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.plugin.PluginResourceQuota;
+import com.ghatana.kernel.plugin.PluginTier;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.plugin.impl.DefaultPluginContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -134,9 +136,9 @@ class PluginSecurityTest extends EventloopTestBase {
         @DisplayName("SEC-2b: Memory quota exceeding T1 tier limit is rejected")
         void memoryExceedingT1TierLimitIsRejected() {
             // T1 default max is 64 MB; request 65 MB
-            PluginResourceQuota oversized = PluginResourceQuota.builder()
-                    .tier(com.ghatana.kernel.plugin.PluginTier.T1)
-                    .maxMemoryMB(65)
+            com.ghatana.kernel.plugin.PluginResourceQuota oversized = com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .tier(PluginTier.T1)
+                    .maxMemoryMb(65)
                     .maxCpuPercent(5)
                     .maxFileDescriptors(10)
                     .build();
@@ -149,9 +151,9 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-2c: Zero memory quota is rejected")
         void zeroMemoryIsRejected() {
-            PluginResourceQuota quota = PluginResourceQuota.builder()
-                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
-                    .maxMemoryMB(0)
+            com.ghatana.kernel.plugin.PluginResourceQuota quota = com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .tier(PluginTier.T2)
+                    .maxMemoryMb(0)
                     .maxCpuPercent(10)
                     .maxFileDescriptors(20)
                     .build();
@@ -163,9 +165,9 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-2d: Valid T2 quotas pass validation")
         void validT2QuotasPassValidation() throws Exception {
-            PluginResourceQuota validQuota = PluginResourceQuota.builder()
-                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
-                    .maxMemoryMB(128)
+            com.ghatana.kernel.plugin.PluginResourceQuota validQuota = com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .tier(PluginTier.T2)
+                    .maxMemoryMb(128)
                     .maxCpuPercent(25)
                     .maxFileDescriptors(20)
                     .build();
@@ -178,9 +180,9 @@ class PluginSecurityTest extends EventloopTestBase {
         @DisplayName("SEC-2e: CPU quota exceeding tier limit is rejected")
         void cpuQuotaExceedingLimitIsRejected() {
             // Keep other quotas within T2 limits so this asserts the CPU guard specifically.
-            PluginResourceQuota oversizedCpu = PluginResourceQuota.builder()
-                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
-                    .maxMemoryMB(128)
+            com.ghatana.kernel.plugin.PluginResourceQuota oversizedCpu = com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .tier(PluginTier.T2)
+                    .maxMemoryMb(128)
                     .maxCpuPercent(26)
                     .maxFileDescriptors(20)
                     .build();
@@ -202,7 +204,7 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-3a: T1 plugin cannot access network capability")
         void t1PluginCannotAccessNetworkCapability() {
-            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(PluginTier.T1, "network.access"))
+            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T1, "network.access"))
                     .isInstanceOf(PluginTierViolationException.class)
                     .hasMessageContaining("network.access");
         }
@@ -210,17 +212,17 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-3b: T1 plugin cannot access file system capability")
         void t1PluginCannotAccessFileSystemCapability() {
-            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(PluginTier.T1, "file.system"))
+            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T1, "file.system"))
                     .isInstanceOf(PluginTierViolationException.class);
         }
 
         @Test
         @DisplayName("SEC-3c: T2 plugin cannot access network or process spawn capability")
         void t2PluginCannotAccessNetworkOrProcessSpawn() {
-            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(PluginTier.T2, "network.access"))
+            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T2, "network.access"))
                     .isInstanceOf(PluginTierViolationException.class);
 
-            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(PluginTier.T2, "process.spawn"))
+            assertThatThrownBy(() -> tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T2, "process.spawn"))
                     .isInstanceOf(PluginTierViolationException.class);
         }
 
@@ -228,27 +230,27 @@ class PluginSecurityTest extends EventloopTestBase {
         @DisplayName("SEC-3d: T1 plugin can access config.read and config.write")
         void t1PluginCanAccessAllowedCapabilities() throws Exception {
             // Must not throw for allowed capabilities
-            tierEnforcer.preventTierEscalation(PluginTier.T1, "config.read");
-            tierEnforcer.preventTierEscalation(PluginTier.T1, "config.write");
+            tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T1, "config.read");
+            tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T1, "config.write");
         }
 
         @Test
         @DisplayName("SEC-3e: T3 plugin can access all capabilities")
         void t3PluginCanAccessAllCapabilities() throws Exception {
             // T3 is unrestricted
-            tierEnforcer.preventTierEscalation(PluginTier.T3, "network.access");
-            tierEnforcer.preventTierEscalation(PluginTier.T3, "file.system");
-            tierEnforcer.preventTierEscalation(PluginTier.T3, "process.spawn");
+            tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T3, "network.access");
+            tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T3, "file.system");
+            tierEnforcer.preventTierEscalation(com.ghatana.kernel.plugin.PluginTier.T3, "process.spawn");
         }
 
         @Test
         @DisplayName("SEC-3f: canAccessCapability reflects correct tier boundaries")
         void canAccessCapabilityReflectsTierBoundaries() {
-            assertThat(tierEnforcer.canAccessCapability(PluginTier.T1, "config.read")).isTrue();
-            assertThat(tierEnforcer.canAccessCapability(PluginTier.T1, "network.access")).isFalse();
-            assertThat(tierEnforcer.canAccessCapability(PluginTier.T2, "script.execute")).isTrue();
-            assertThat(tierEnforcer.canAccessCapability(PluginTier.T2, "network.access")).isFalse();
-            assertThat(tierEnforcer.canAccessCapability(PluginTier.T3, "network.access")).isTrue();
+            assertThat(tierEnforcer.canAccessCapability(com.ghatana.kernel.plugin.PluginTier.T1, "config.read")).isTrue();
+            assertThat(tierEnforcer.canAccessCapability(com.ghatana.kernel.plugin.PluginTier.T1, "network.access")).isFalse();
+            assertThat(tierEnforcer.canAccessCapability(com.ghatana.kernel.plugin.PluginTier.T2, "script.execute")).isTrue();
+            assertThat(tierEnforcer.canAccessCapability(com.ghatana.kernel.plugin.PluginTier.T2, "network.access")).isFalse();
+            assertThat(tierEnforcer.canAccessCapability(com.ghatana.kernel.plugin.PluginTier.T3, "network.access")).isTrue();
         }
     }
 

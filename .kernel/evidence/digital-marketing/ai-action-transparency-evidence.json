@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "evidenceType": "ai-action-transparency",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "aiActionTransparency": {
+    "status": "implemented",
+    "description": "AI action transparency system for Digital Marketing with comprehensive logging, evidence tracking, and policy decision recording"
+  },
+  "implementation": {
+    "service": {
+      "interface": "com.ghatana.digitalmarketing.application.transparency.AiActionLogService",
+      "implementation": "com.ghatana.digitalmarketing.application.transparency.AiActionLogServiceImpl",
+      "operations": ["recordAction", "listActions", "getAction"]
+    },
+    "repository": {
+      "interface": "com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository",
+      "implementation": "com.ghatana.digitalmarketing.infrastructure.persistence.DataCloudAiActionLogRepository",
+      "persistence": "durable"
+    },
+    "api": {
+      "servlet": "com.ghatana.digitalmarketing.api.DmosAiActionLogServlet",
+      "endpoints": [
+        "POST /api/v1/ai-actions/record",
+        "GET /api/v1/ai-actions",
+        "GET /api/v1/ai-actions/{actionId}"
+      ]
+    }
+  },
+  "actionFieldsRecorded": {
+    "correlationId": {
+      "description": "Correlation ID for linking related actions",
+      "required": true
+    },
+    "actionType": {
+      "description": "Type of AI action (e.g., CAMPAIGN_GENERATION, AD_COPY, BID_OPTIMIZATION)",
+      "required": true,
+      "values": ["CAMPAIGN_GENERATION", "AD_COPY", "BID_OPTIMIZATION", "AUDIENCE_SEGMENTATION", "CREATIVE_GENERATION"]
+    },
+    "status": {
+      "description": "Status of the action",
+      "required": true,
+      "values": ["PENDING", "COMPLETED", "FAILED", "REJECTED"]
+    },
+    "actor": {
+      "description": "User or system that initiated the action",
+      "required": true
+    },
+    "initiatedByAi": {
+      "description": "Whether the action was initiated by AI autonomously",
+      "required": true
+    },
+    "provider": {
+      "description": "AI provider used (e.g., openai, anthropic)",
+      "required": false
+    },
+    "modelVersion": {
+      "description": "Model version used for the action",
+      "required": false
+    },
+    "humanEdited": {
+      "description": "Whether human edited the AI output",
+      "required": true
+    },
+    "confidence": {
+      "description": "AI confidence score for the action",
+      "required": false,
+      "type": "double",
+      "range": "0.0-1.0"
+    },
+    "evidenceLinks": {
+      "description": "Links to evidence supporting the action",
+      "required": false,
+      "type": "array"
+    },
+    "policyChecks": {
+      "description": "Policy checks performed",
+      "required": false,
+      "type": "array"
+    },
+    "summary": {
+      "description": "Human-readable summary of the action",
+      "required": true
+    },
+    "details": {
+      "description": "Detailed description of the action",
+      "required": true
+    },
+    "relatedEntityId": {
+      "description": "ID of related entity (e.g., campaign, ad)",
+      "required": false
+    },
+    "rationale": {
+      "description": "AI rationale for the action",
+      "required": false
+    },
+    "policyDecision": {
+      "description": "Policy decision result",
+      "required": false
+    },
+    "approvalOutcome": {
+      "description": "Approval outcome if required",
+      "required": false
+    }
+  },
+  "transparencyFeatures": {
+    "immutableAuditTrail": {
+      "status": "enabled",
+      "description": "All AI actions are logged to immutable audit trail"
+    },
+    "correlationTracking": {
+      "status": "enabled",
+      "description": "Related actions are linked via correlation ID"
+    },
+    "policyDecisionLogging": {
+      "status": "enabled",
+      "description": "Policy decisions are recorded with each action"
+    },
+    "humanInLoopTracking": {
+      "status": "enabled",
+      "description": "Human edits and approvals are tracked"
+    },
+    "providerModelTracking": {
+      "status": "enabled",
+      "description": "AI provider and model version are recorded"
+    },
+    "confidenceScoring": {
+      "status": "enabled",
+      "description": "AI confidence scores are recorded"
+    },
+    "evidenceLinking": {
+      "status": "enabled",
+      "description": "Evidence links are recorded for traceability"
+    }
+  },
+  "dataCloudIntegration": {
+    "collection": "ai-action-logs",
+    "persistence": "durable",
+    "queryable": true,
+    "retention": "90-days",
+    "rowLevelSecurity": "enabled",
+    "auditEnabled": true
+  },
+  "queryCapabilities": {
+    "byCorrelationId": {
+      "status": "supported",
+      "description": "Query all actions for a correlation ID"
+    },
+    "byRelatedEntity": {
+      "status": "supported",
+      "description": "Query all actions for a related entity"
+    },
+    "byWorkspace": {
+      "status": "supported",
+      "description": "Query actions within a workspace with tenant isolation"
+    },
+    "byActionId": {
+      "status": "supported",
+      "description": "Retrieve specific action by ID"
+    },
+    "pagination": {
+      "status": "supported",
+      "description": "Limit results for pagination"
+    }
+  },
+  "compliance": {
+    "aiGovernance": {
+      "status": "compliant",
+      "description": "Complies with AI governance requirements for transparency"
+    },
+    "auditTrail": {
+      "status": "compliant",
+      "description": "Immutable audit trail for all AI actions"
+    },
+    "explainability": {
+      "status": "compliant",
+      "description": "Rationale and evidence links provide explainability"
+    },
+    "humanOversight": {
+      "status": "compliant",
+      "description": "Human edits and approvals are tracked"
+    }
+  },
+  "evidenceRefs": [
+    "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/transparency/AiActionLogService.java",
+    "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/transparency/AiActionLogRepository.java",
+    "products/digital-marketing/dm-api/src/main/java/com/ghatana/digitalmarketing/api/DmosAiActionLogServlet.java",
+    "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/domain/transparency/AiActionLogEntry.java"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "doc-ref-001",
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "18842-5",
+        "display": "Discharge summary"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/patient-001"
+  },
+  "author": [
+    {
+      "reference": "Practitioner/practitioner-001"
+    }
+  ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "application/pdf",
+        "data": "JVBERi0xLjQKJeLjz9MK...",
+        "title": "Discharge Summary",
+        "creation": "2026-05-24T00:00:00Z"
+      }
+    }
+  ],
+  "context": {
+    "encounter": [
+      {
+        "reference": "Encounter/encounter-001"
+      }
+    ],
+    "period": {
+      "start": "2026-05-20T00:00:00Z",
+      "end": "2026-05-24T00:00:00Z"
+    }
+  },
+  "meta": {
+    "profile": [
+      "http://hl7.org/fhir/StructureDefinition/DocumentReference"
+    ]
+  }
+}

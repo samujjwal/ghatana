@@ -5,6 +5,7 @@
 package com.ghatana.aep.operator.contract;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +25,8 @@ import java.util.Objects;
  * @doc.pattern Validator
  */
 public final class OperatorCompatibilityChecker {
+
+    private static final Map<OperatorKind, List<String>> REQUIRED_PARAMETERS_BY_KIND = requiredParametersByKind();
 
     /**
      * Represents a detected compatibility issue.
@@ -119,9 +122,10 @@ public final class OperatorCompatibilityChecker {
      * @return true if compatible
      */
     private boolean areKindsCompatible(OperatorKind sourceKind, OperatorKind targetKind) {
-        // Placeholder: all kinds are compatible for now
-        // Production implementation would have specific compatibility rules
-        return true;
+        if (targetKind == OperatorKind.EVENT_REF) {
+            return false;
+        }
+        return sourceKind != OperatorKind.AGENT_ACTION;
     }
 
     /**
@@ -131,8 +135,30 @@ public final class OperatorCompatibilityChecker {
      * @return list of required parameter names
      */
     private List<String> getRequiredParametersForKind(OperatorKind kind) {
-        // Placeholder: no required parameters for now
-        // Production implementation would define required parameters per kind
-        return List.of();
+        return REQUIRED_PARAMETERS_BY_KIND.getOrDefault(kind, List.copyOf(new ArrayList<>()));
+    }
+
+    private static Map<OperatorKind, List<String>> requiredParametersByKind() {
+        Map<OperatorKind, List<String>> required = new EnumMap<>(OperatorKind.class);
+        required.put(OperatorKind.EVENT_REF, List.of("event"));
+        required.put(OperatorKind.AND, List.of("operands"));
+        required.put(OperatorKind.OR, List.of("operands"));
+        required.put(OperatorKind.SEQ, List.of("operands"));
+        required.put(OperatorKind.NOT, List.of("pattern"));
+        required.put(OperatorKind.WITHIN, List.of("pattern", "within"));
+        required.put(OperatorKind.TIMES, List.of("pattern", "min"));
+        required.put(OperatorKind.REPEAT, List.of("pattern", "min"));
+        required.put(OperatorKind.WINDOW, List.of("pattern", "window"));
+        required.put(OperatorKind.ABSENCE, List.of("event", "window"));
+        required.put(OperatorKind.LEARNING, List.of("learningPolicy"));
+        required.put(OperatorKind.AGENT_PREDICATE, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_ENRICH, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_EXTRACT, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_PATTERN_SYNTHESIS, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_EXPLANATION, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_REVIEW, List.of("agentRef"));
+        required.put(OperatorKind.AGENT_ACTION, List.of("agentRef", "toolPolicy", "approvalPolicy", "auditPolicy"));
+        required.put(OperatorKind.AGENT_REFLECTION, List.of("agentRef"));
+        return Map.copyOf(required);
     }
 }

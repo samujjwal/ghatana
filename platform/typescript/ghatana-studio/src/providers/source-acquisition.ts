@@ -16,6 +16,7 @@ import type {
   SourceAcquisitionDescriptor,
   SourceAcquisitionKind,
 } from '@ghatana/artifact-contracts';
+import { ApiClient } from '@ghatana/api';
 import {
   StudioProductionProfileError,
   isProductionStudioProfile,
@@ -88,7 +89,7 @@ const MAX_TEXT_DECODE_BYTES = 5_000_000;
  * - Browser file upload (FileReader-based)
  * - Git repository (via git protocol)
  * - Local file system (Node.js fs)
- * - Remote URL fetch (HTTP/HTTPS)
+ * - Remote URL acquisition over HTTP/HTTPS
  * - Custom adapters (IDE integrations, etc.)
  */
 export interface SourceAcquisitionProvider {
@@ -190,6 +191,9 @@ export interface SourceAcquisitionRuntimeProfile {
  * - Proper error handling and observability
  */
 export class ProductionSourceAcquisitionBackendClient implements SourceAcquisitionBackendClient {
+  private readonly githubApiClient: ApiClient;
+  private readonly gitlabApiClient: ApiClient;
+
   constructor(
     private readonly config: {
       readonly githubApiUrl?: string;
@@ -197,7 +201,10 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
       readonly maxRepositorySizeBytes?: number;
       readonly maxArchiveSizeBytes?: number;
     } = {},
-  ) {}
+  ) {
+    this.githubApiClient = new ApiClient({ baseUrl: config.githubApiUrl ?? 'https://api.github.com' });
+    this.gitlabApiClient = new ApiClient({ baseUrl: config.gitlabApiUrl ?? 'https://gitlab.com/api/v4' });
+  }
 
   async acquireRepository(
     input: RepositorySourceInput,
@@ -298,20 +305,15 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     options: SourceAcquisitionOptions,
     maxBytes: number,
   ): Promise<readonly SourceFileEntry[]> {
-    const apiUrl = this.config.githubApiUrl ?? 'https://api.github.com';
-    const response = await fetch(`${apiUrl}/repos/${owner}/${repo}/zipball/${ref}`);
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+    const response = await this.githubApiClient.get<ArrayBuffer>(`/repos/${owner}/${repo}/zipball/${ref}`);
+    if (response.raw.status !== 200) {
+      throw new Error(`GitHub API error: ${response.raw.status} ${response.raw.statusText}`);
+    }
+    if (response.data.byteLength > maxBytes) {
+      throw new Error(`Repository size (${response.data.byteLength} bytes) exceeds maximum (${maxBytes} bytes)`);
     }
 
-    const blob = await response.blob();
-    if (blob.size > maxBytes) {
-      throw new Error(`Repository size (${blob.size} bytes) exceeds maximum (${maxBytes} bytes)`);
-    }
-
-    const arrayBuffer = await blob.arrayBuffer();
-    return this.unpackZipBuffer(arrayBuffer, options, maxBytes);
+    return this.unpackZipBuffer(response.data, options, maxBytes);
   }
 
   private async fetchGitLabRepository(
@@ -321,22 +323,19 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
     options: SourceAcquisitionOptions,
     maxBytes: number,
   ): Promise<readonly SourceFileEntry[]> {
-    const apiUrl = this.config.gitlabApiUrl ?? 'https://gitlab.com/api/v4';
     // Encode the project path (owner/repo -> owner%2Frepo)
     const encodedProject = encodeURIComponent(`${owner}/${repo}`);
-    const response = await fetch(`${apiUrl}/projects/${encodedProject}/repository/archive?sha=${ref}`);
-
-    if (!response.ok) {
-      throw new Error(`GitLab API error: ${response.status} ${response.statusText}`);
+    const response = await this.gitlabApiClient.get<ArrayBuffer>(`/projects/${encodedProject}/repository/archive`, {
+      query: { sha: ref },
+    });
+    if (response.raw.status !== 200) {
+      throw new Error(`GitLab API error: ${response.raw.status} ${response.raw.statusText}`);
+    }
+    if (response.data.byteLength > maxBytes) {
+      throw new Error(`Repository size (${response.data.byteLength} bytes) exceeds maximum (${maxBytes} bytes)`);
     }
 
-    const blob = await response.blob();
-    if (blob.size > maxBytes) {
-      throw new Error(`Repository size (${blob.size} bytes) exceeds maximum (${maxBytes} bytes)`);
-    }
-
-    const arrayBuffer = await blob.arrayBuffer();
-    return this.unpackZipBuffer(arrayBuffer, options, maxBytes);
+    return this.unpackZipBuffer(response.data, options, maxBytes);
   }
 
   private async unpackArchive(
@@ -590,6 +589,8 @@ export class ProductionSourceAcquisitionBackendClient implements SourceAcquisiti
 }
 
 export class KernelSourceAcquisitionBackendClient implements SourceAcquisitionBackendClient {
+  private readonly apiClient: ApiClient;
+
   constructor(
     private readonly config: {
       readonly baseUrl: string;
@@ -598,7 +599,9 @@ export class KernelSourceAcquisitionBackendClient implements SourceAcquisitionBa
       readonly projectId: string;
       readonly authToken: string;
     },
-  ) {}
+  ) {
+    this.apiClient = new ApiClient({ baseUrl: config.baseUrl });
+  }
 
   async acquireRepository(
     input: RepositorySourceInput,
@@ -628,30 +631,20 @@ export class KernelSourceAcquisitionBackendClient implements SourceAcquisitionBa
   }
 
   async getAcquisitionJob(jobId: string): Promise<AcquisitionJob> {
-    const response = await fetch(`${this.config.baseUrl}/api/v1/studio/source-acquisition/jobs/${encodeURIComponent(jobId)}`, {
-      method: 'GET',
+    const response = await this.apiClient.get<AcquisitionJob>(`/api/v1/studio/source-acquisition/jobs/${encodeURIComponent(jobId)}`, {
       headers: this.headers,
     });
 
-    if (!response.ok) {
-      throw new Error(`Kernel source acquisition job lookup failed (${response.status})`);
-    }
-
-    return (await response.json()) as AcquisitionJob;
+    return response.data;
   }
 
   private async request(path: string, payload: unknown): Promise<SourceAcquisitionResult> {
-    const response = await fetch(`${this.config.baseUrl}${path}`, {
-      method: 'POST',
+    const response = await this.apiClient.post<SourceAcquisitionResult>(path, {
       headers: this.headers,
-      body: JSON.stringify(payload),
+      body: payload,
     });
 
-    if (!response.ok) {
-      throw new Error(`Kernel source acquisition failed (${response.status})`);
-    }
-
-    return (await response.json()) as SourceAcquisitionResult;
+    return response.data;
   }
 
   private get headers(): Record<string, string> {

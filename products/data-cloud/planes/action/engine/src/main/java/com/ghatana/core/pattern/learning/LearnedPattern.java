@@ -3,6 +3,7 @@ package com.ghatana.core.pattern.learning;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Represents a pattern discovered by the learning engine.
@@ -12,6 +13,12 @@ import java.util.Objects;
  * support metrics, and evolution history. Learned patterns can be
  * converted to executable patterns and continuously improved through
  * feedback and evolution.
+ *
+ * <p><b>Hardening (AEP-007)</b><br>
+ * - Links learned patterns to reusable asset IDs
+ * - Tracks pattern promotion status to reusable asset catalog
+ * - Maintains evidence references for learning outcomes
+ * - Supports commit SHA binding for production truth
  *
  * @see RealTimePatternLearningEngine
  * @doc.type class
@@ -29,6 +36,11 @@ public class LearnedPattern {
     private final Instant discoveryTime;
     private final PatternEvolutionHistory evolutionHistory;
     private final PatternPerformanceMetrics performanceMetrics;
+    // AEP-007: Link learning to reusable assets
+    private final Set<String> linkedReusableAssetIds;
+    private final String promotedAssetId;
+    private final String commitSha;
+    private final String environment;
 
     private LearnedPattern(Builder builder) {
         this.signature = builder.signature;
@@ -39,6 +51,10 @@ public class LearnedPattern {
         this.discoveryTime = builder.discoveryTime;
         this.evolutionHistory = builder.evolutionHistory;
         this.performanceMetrics = builder.performanceMetrics;
+        this.linkedReusableAssetIds = Set.copyOf(builder.linkedReusableAssetIds);
+        this.promotedAssetId = builder.promotedAssetId;
+        this.commitSha = builder.commitSha;
+        this.environment = builder.environment;
     }
 
     public String getSignature() { return signature; }
@@ -49,9 +65,22 @@ public class LearnedPattern {
     public Instant getDiscoveryTime() { return discoveryTime; }
     public PatternEvolutionHistory getEvolutionHistory() { return evolutionHistory; }
     public PatternPerformanceMetrics getPerformanceMetrics() { return performanceMetrics; }
+    public Set<String> getLinkedReusableAssetIds() { return linkedReusableAssetIds; }
+    public String getPromotedAssetId() { return promotedAssetId; }
+    public String getCommitSha() { return commitSha; }
+    public String getEnvironment() { return environment; }
 
     public double getFitnessScore() {
         return confidence * Math.log(support + 1) * performanceMetrics.getAccuracy();
+    }
+
+    /**
+     * Checks if this learned pattern has been promoted to a reusable asset.
+     *
+     * @return true if promoted
+     */
+    public boolean isPromoted() {
+        return promotedAssetId != null && !promotedAssetId.isEmpty();
     }
 
     @Override
@@ -69,8 +98,8 @@ public class LearnedPattern {
 
     @Override
     public String toString() {
-        return String.format("LearnedPattern{signature='%s', type=%s, confidence=%.3f, support=%d}",
-                signature, patternType, confidence, support);
+        return String.format("LearnedPattern{signature='%s', type=%s, confidence=%.3f, support=%d, promoted=%s}",
+                signature, patternType, confidence, support, promotedAssetId);
     }
 
     public static Builder builder() {
@@ -86,6 +115,11 @@ public class LearnedPattern {
         private Instant discoveryTime = Instant.now();
         private PatternEvolutionHistory evolutionHistory = new PatternEvolutionHistory();
         private PatternPerformanceMetrics performanceMetrics = new PatternPerformanceMetrics();
+        // AEP-007: Link learning to reusable assets
+        private Set<String> linkedReusableAssetIds = Set.of();
+        private String promotedAssetId;
+        private String commitSha;
+        private String environment;
 
         public Builder signature(String signature) {
             this.signature = signature;
@@ -124,6 +158,28 @@ public class LearnedPattern {
 
         public Builder performanceMetrics(PatternPerformanceMetrics performanceMetrics) {
             this.performanceMetrics = performanceMetrics;
+            return this;
+        }
+
+        // AEP-007: Link learning to reusable assets
+
+        public Builder linkedReusableAssetIds(Set<String> assetIds) {
+            this.linkedReusableAssetIds = assetIds;
+            return this;
+        }
+
+        public Builder promotedAssetId(String assetId) {
+            this.promotedAssetId = assetId;
+            return this;
+        }
+
+        public Builder commitSha(String commitSha) {
+            this.commitSha = commitSha;
+            return this;
+        }
+
+        public Builder environment(String environment) {
+            this.environment = environment;
             return this;
         }
 

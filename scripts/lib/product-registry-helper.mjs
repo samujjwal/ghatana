@@ -287,31 +287,9 @@ export function getRuntimeDependencyProducts() {
     .filter(([, product]) => product.gradleModules && product.gradleModules.length > 0)
     .filter(([, product]) => product.metadata?.status === 'active')
     .filter(([productId, product]) => {
-      // Always include data-cloud
       if (productId === 'data-cloud') {
         return true;
       }
-      // Include digital-marketing
-      if (productId === 'digital-marketing') {
-        return true;
-      }
-      // Include finance (has external dependencies)
-      if (productId === 'finance') {
-        return true;
-      }
-      // Include phr (has external dependencies)
-      if (productId === 'phr') {
-        return true;
-      }
-      // Include yappc (has external dependencies for AI/LLM)
-      if (productId === 'yappc') {
-        return true;
-      }
-      // Include audio-video (has external dependencies for media processing)
-      if (productId === 'audio-video') {
-        return true;
-      }
-      // Include other business products with lifecycle enabled
       if (product.kind !== 'business-product') {
         return false;
       }

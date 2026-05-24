@@ -1,18 +1,18 @@
 package com.ghatana.digitalmarketing.infra;
 
 /**
- * Production profile guard to prevent unsafe adapter usage in production.
+ * Profile guard to prevent unsafe in-memory adapter usage in non-development environments.
  *
- * <p>This class validates that in-memory adapters are not used in production
- * environments. In-memory adapters should only be used in development and test
- * environments where data loss is acceptable.</p>
+ * <p>Both production and staging require real PostgreSQL adapters. In-memory (ephemeral)
+ * adapters are only permitted in development and test environments where data loss is
+ * acceptable and there is no real traffic.</p>
  *
- * <p>Usage: Call {@link #validate()} during application bootstrap before
- * wiring any repositories. If the environment is production and in-memory
- * adapters would be used, this throws an {@link IllegalStateException}.</p>
+ * <p>Usage: Call {@link #validate()} during application bootstrap before wiring any
+ * repositories. An {@link IllegalStateException} is thrown when the environment is
+ * {@code production} or {@code staging} and an ephemeral adapter would be wired.</p>
  *
  * @doc.type class
- * @doc.purpose Production profile validation to prevent in-memory adapter usage
+ * @doc.purpose Profile guard preventing in-memory adapter usage outside development/test
  * @doc.layer product
  * @doc.pattern Guard
  */
@@ -20,6 +20,7 @@ public final class ProductionProfileGuard {
 
     private static final String DMOS_ENV = "DMOS_ENV";
     private static final String PRODUCTION_ENV = "production";
+    private static final String STAGING_ENV = "staging";
 
     private ProductionProfileGuard() {
         // Utility class - prevent instantiation
@@ -28,22 +29,30 @@ public final class ProductionProfileGuard {
     /**
      * Validates that the current environment is safe for in-memory adapter usage.
      *
-     * <p>In production environments, this method throws an exception to prevent
-     * accidental use of in-memory adapters which would cause data loss.</p>
+     * <p>Throws if {@code DMOS_ENV} is {@code production} or {@code staging}, since both
+     * environments require durable PostgreSQL adapters. Development and test environments
+     * are explicitly allowed.</p>
      *
-     * @throws IllegalStateException if in-memory adapters would be used in production
+     * @throws IllegalStateException if the environment is production or staging
      */
     public static void validate() {
-        String env = resolveEnvironment();
-        if (env == null || env.isBlank()) {
-            env = "development";
-        }
+        String resolved = resolveEnvironment();
+        String env = (resolved == null || resolved.isBlank()) ? "development" : resolved.trim().toLowerCase();
 
-        if (PRODUCTION_ENV.equalsIgnoreCase(env.trim())) {
+        if (PRODUCTION_ENV.equals(env)) {
             throw new IllegalStateException(
                 "In-memory adapters cannot be used in production environment. " +
-                "DMOS_ENV is set to 'production'. Please configure PostgreSQL adapters " +
-                "or set DMOS_ENV to 'development' or 'test' for in-memory adapters."
+                "DMOS_ENV is set to 'production'. Configure PostgreSQL adapters " +
+                "or set DMOS_ENV to 'development' for in-memory adapters."
+            );
+        }
+
+        if (STAGING_ENV.equals(env)) {
+            throw new IllegalStateException(
+                "In-memory adapters cannot be used in staging environment. " +
+                "DMOS_ENV is set to 'staging'. Staging requires real PostgreSQL adapters " +
+                "matching the production bootstrap evidence contract. " +
+                "Set DMOS_ENV to 'development' for in-memory adapters."
             );
         }
     }
@@ -61,22 +70,36 @@ public final class ProductionProfileGuard {
         return PRODUCTION_ENV.equalsIgnoreCase(env.trim());
     }
 
+    /**
+     * Returns {@code true} if the current environment is staging.
+     *
+     * @return {@code true} if staging environment
+     */
+    public static boolean isStaging() {
+        String env = resolveEnvironment();
+        if (env == null || env.isBlank()) {
+            return false;
+        }
+        return STAGING_ENV.equalsIgnoreCase(env.trim());
+    }
+
+    /**
+     * Returns {@code true} if the current environment allows in-memory (ephemeral) adapters.
+     *
+     * <p>Only development and test environments permit ephemeral adapters. Both production
+     * and staging require durable PostgreSQL adapters.</p>
+     *
+     * @return {@code true} only for development/test environments
+     */
+    public static boolean isEphemeralAllowed() {
+        return !isProduction() && !isStaging();
+    }
+
     private static String resolveEnvironment() {
         String env = System.getProperty(DMOS_ENV);
         if (env == null || env.isBlank()) {
             env = System.getenv(DMOS_ENV);
         }
         return env;
-    }
-
-    /**
-     * Returns {@code true} if the current environment allows in-memory adapters.
-     *
-     * <p>In-memory adapters are allowed in development and test environments only.</p>
-     *
-     * @return {@code true} if in-memory adapters are allowed
-     */
-    public static boolean isEphemeralAllowed() {
-        return !isProduction();
     }
 }

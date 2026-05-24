@@ -123,6 +123,108 @@ class PatternSpecValidatorTest {
         assertThat(result.valid()).isTrue();
     }
 
+    // AEP-004: Production semantics hardening tests
+    @Test
+    void productionRequiresCommitSha() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec, null, "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("commitSha is required in production"));
+    }
+
+    @Test
+    void productionAcceptsValidCommitSha() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void productionRejectsInvalidCommitShaFormat() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec, "invalid-sha", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("40 hexadecimal characters"));
+    }
+
+    @Test
+    void nonProductionDoesNotRequireCommitSha() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec, null, "development");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void productionRequiresEvidencePolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("evidencePolicy is required in production"));
+    }
+
+    @Test
+    void productionRequiresEvidenceStore() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE", "evidencePolicy", Map.of("retentionDays", 90)));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("evidenceStore is required in production"));
+    }
+
+    @Test
+    void productionAcceptsEvidencePolicyAndStore() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void productionRequiresApprovalOrReviewPolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("governance", Map.of("owner", "sre"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("approvalPolicy or governance.reviewPolicy is required in production"));
+    }
+
+    @Test
+    void productionAcceptsApprovalPolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("governance", Map.of("owner", "sre", "approvalPolicy", "human_required"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void productionAcceptsReviewPolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("governance", Map.of("owner", "sre", "reviewPolicy", "human_required"));
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",

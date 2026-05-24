@@ -449,6 +449,7 @@ function buildDocumentContracts(document: BuilderDocument): ReadonlyMap<string, 
           codegen: {
             importPath: '@ghatana/design-system',
             componentName: node.contractName,
+            namedExport: true,
           },
         },
       },

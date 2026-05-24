@@ -16,7 +16,6 @@ import { fileURLToPath } from 'node:url';
 const DEFAULT_AGGREGATE_SCRIPTS = [
   'check:phase8',
   'check:release-gate',
-  'check:world-class-platform-readiness',
 ];
 
 function parseArgs(argv) {

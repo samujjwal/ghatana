@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "evidenceType": "fhir-golden-fixture-coverage",
+  "generatedAt": "2026-05-24T08:35:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "testSuite": "FhirGoldenFixturesTest",
+  "fhirVersion": "R4",
+  "coverage": {
+    "totalFixtures": 8,
+    "validatedFixtures": 8,
+    "coveragePercentage": 100
+  },
+  "fixtures": [
+    {
+      "resourceType": "Patient",
+      "fixtureFile": "patient-golden.json",
+      "status": "validated",
+      "testsPassed": 8,
+      "keyFields": ["identifier", "name", "gender", "birthDate", "telecom", "address", "active"]
+    },
+    {
+      "resourceType": "Observation",
+      "fixtureFile": "observation-lab-golden.json",
+      "status": "validated",
+      "testsPassed": 7,
+      "keyFields": ["status", "category", "code", "valueQuantity", "subject", "referenceRange"]
+    },
+    {
+      "resourceType": "MedicationRequest",
+      "fixtureFile": "medication-request-golden.json",
+      "status": "validated",
+      "testsPassed": 6,
+      "keyFields": ["status", "intent", "medicationCodeableConcept", "dosageInstruction", "dispenseRequest"]
+    },
+    {
+      "resourceType": "Immunization",
+      "fixtureFile": "immunization-golden.json",
+      "status": "validated",
+      "testsPassed": 8,
+      "keyFields": ["status", "vaccineCode", "patient", "occurrenceDateTime", "primarySource", "protocolApplied", "lotNumber", "expirationDate"]
+    },
+    {
+      "resourceType": "ImagingStudy",
+      "fixtureFile": "imaging-study-golden.json",
+      "status": "validated",
+      "testsPassed": 5,
+      "keyFields": ["status", "modality", "subject", "series"]
+    },
+    {
+      "resourceType": "ClinicalImpression",
+      "fixtureFile": "clinical-note-golden.json",
+      "status": "validated",
+      "testsPassed": 6,
+      "keyFields": ["status", "description", "subject", "finding", "note"]
+    },
+    {
+      "resourceType": "ServiceRequest",
+      "fixtureFile": "service-request-referral-golden.json",
+      "status": "validated",
+      "testsPassed": 7,
+      "keyFields": ["status", "intent", "category", "subject", "performer", "reasonCode"]
+    },
+    {
+      "resourceType": "DocumentReference",
+      "fixtureFile": "document-reference-golden.json",
+      "status": "validated",
+      "testsPassed": 8,
+      "keyFields": ["status", "docStatus", "type", "subject", "content", "context", "author"]
+    }
+  ],
+  "summary": {
+    "totalTests": 55,
+    "passed": 55,
+    "failed": 0,
+    "passRate": 1.0
+  },
+  "evidenceRefs": [
+    "products/phr/src/test/java/com/ghatana/phr/fhir/FhirGoldenFixturesTest.java",
+    "products/phr/src/test/resources/fhir/golden/"
+  ]
+}

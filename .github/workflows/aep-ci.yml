@@ -27,8 +27,8 @@ on:
 
 env:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
-  NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   # ==================== Gate 1: Contract Validation ====================
@@ -214,7 +214,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
       

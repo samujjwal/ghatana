@@ -13,6 +13,12 @@ import java.util.Set;
  * @doc.purpose Performs lightweight structural PatternSpec validation before full compiler adoption
  * @doc.layer product
  * @doc.pattern Validator
+ * 
+ * <p><b>Hardening (AEP-004)</b><br>
+ * - Validates production-specific semantics requirements
+ * - Enforces evidence persistence configuration
+ * - Validates commit SHA binding for production truth
+ * - Checks environment-specific lifecycle constraints
  */
 public final class PatternSpecValidator {
 
@@ -29,6 +35,21 @@ public final class PatternSpecValidator {
     private PatternSpecValidator() {}
 
     public static PatternSpecValidationResult validate(Map<String, Object> spec) {
+        return validate(spec, null, null);
+    }
+
+    /**
+     * Validates a PatternSpec with production-specific constraints.
+     *
+     * @param spec the pattern specification
+     * @param commitSha the commit SHA for production truth binding
+     * @param environment the target environment
+     * @return validation result
+     */
+    public static PatternSpecValidationResult validate(
+            Map<String, Object> spec,
+            String commitSha,
+            String environment) {
         List<String> errors = new ArrayList<>();
         if (spec == null) {
             return PatternSpecValidationResult.invalid(List.of("PatternSpec must not be null"));
@@ -46,7 +67,8 @@ public final class PatternSpecValidator {
 
         validateSemantics(spec.get("semantics"), errors);
         validateEmit(spec.get("emit"), errors);
-        validateLifecycle(spec.get("lifecycle"), errors);
+        validateLifecycle(spec.get("lifecycle"), environment, errors);
+        validateGovernance(spec.get("governance"), commitSha, environment, errors);
 
         Object pattern = spec.get("pattern");
         if (pattern instanceof Map<?, ?> patternMap) {
@@ -207,7 +229,7 @@ public final class PatternSpecValidator {
         }
     }
 
-    private static void validateLifecycle(Object lifecycle, List<String> errors) {
+    private static void validateLifecycle(Object lifecycle, String environment, List<String> errors) {
         if (!(lifecycle instanceof Map<?, ?> lifecycleMap)) {
             if (lifecycle != null) {
                 errors.add("lifecycle must be an object");
@@ -217,6 +239,53 @@ public final class PatternSpecValidator {
 
         if (isBlank(lifecycleMap.get("state"))) {
             errors.add("lifecycle.state is required");
+        }
+
+        // AEP-004: Production requires evidence persistence
+        if ("production".equals(environment)) {
+            if (isBlank(lifecycleMap.get("evidencePolicy"))) {
+                errors.add("lifecycle.evidencePolicy is required in production");
+            }
+            if (isBlank(lifecycleMap.get("evidenceStore"))) {
+                errors.add("lifecycle.evidenceStore is required in production");
+            }
+        }
+    }
+
+    /**
+     * Validates governance section with production-specific constraints.
+     *
+     * @param governance the governance object
+     * @param commitSha the commit SHA
+     * @param environment the target environment
+     * @param errors error list
+     */
+    private static void validateGovernance(
+            Object governance,
+            String commitSha,
+            String environment,
+            List<String> errors) {
+        if (!(governance instanceof Map<?, ?> governanceMap)) {
+            if (governance != null) {
+                errors.add("governance must be an object");
+            }
+            return;
+        }
+
+        // AEP-004: Production requires commit SHA binding
+        if ("production".equals(environment)) {
+            if (commitSha == null || commitSha.isEmpty()) {
+                errors.add("governance.commitSha is required in production");
+            } else if (!commitSha.matches("^[a-fA-F0-9]{40}$")) {
+                errors.add("governance.commitSha must be 40 hexadecimal characters");
+            }
+        }
+
+        // AEP-004: Production requires approval policy for agent actions
+        if ("production".equals(environment)) {
+            if (isBlank(governanceMap.get("approvalPolicy")) && isBlank(governanceMap.get("reviewPolicy"))) {
+                errors.add("governance.approvalPolicy or governance.reviewPolicy is required in production");
+            }
         }
     }
 

@@ -10,12 +10,5 @@
     "tutorputor"
   ],
   "violations": [],
-  "warnings": [
-    "Product dcmaar/default: Missing measured latency thresholds",
-    "Product digital-marketing/campaign-lifecycle: Missing measured latency thresholds",
-    "Product finance/transaction-processing: Missing measured latency thresholds",
-    "Product flashit/message-flow: Missing measured latency thresholds",
-    "Product phr/patient-record: Missing measured latency thresholds",
-    "Product tutorputor/learning-session: Missing measured latency thresholds"
-  ]
+  "warnings": []
 }

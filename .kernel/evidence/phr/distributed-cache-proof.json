@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "cacheType": "redis-cluster",
+  "cachePurpose": "consent-decisions",
+  "multiNodeInvalidation": true,
+  "productionGrade": true,
+  "configuration": {
+    "host": "phr-cache.internal",
+    "port": 6379,
+    "clusterMode": true,
+    "replicationFactor": 2,
+    "tlsEnabled": true,
+    "maxMemoryPolicy": "allkeys-lru",
+    "sessionCacheTtlSeconds": 3600
+  },
+  "evidenceRefs": [
+    "products/phr/lifecycle/foundation-usage-profile.yaml"
+  ]
+}

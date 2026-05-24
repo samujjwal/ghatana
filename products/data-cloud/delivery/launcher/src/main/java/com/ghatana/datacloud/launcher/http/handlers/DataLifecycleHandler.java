@@ -2405,46 +2405,19 @@ public class DataLifecycleHandler {
     private Promise<Optional<EntityStore.Entity>> findByRefOrLegacy(EntityStore entityStore,
                                                                      TenantContext tenantContext,
                                                                      EntityStore.EntityRef ref) {
-        Promise<Optional<EntityStore.Entity>> refPromise = entityStore.findByRef(tenantContext, ref);
-        if (refPromise != null) {
-            return refPromise;
-        }
-        Promise<Optional<EntityStore.Entity>> legacyPromise = entityStore.findById(tenantContext, ref.entityId());
-        if (legacyPromise != null) {
-            return legacyPromise;
-        }
-        return Promise.of(Optional.empty());
+        return entityStore.findByRef(tenantContext, ref);
     }
 
     private Promise<Void> deleteByRefOrLegacy(EntityStore entityStore,
                                               TenantContext tenantContext,
                                               EntityStore.EntityRef ref) {
-        Promise<Void> refDeletePromise = entityStore.deleteByRef(tenantContext, ref);
-        if (refDeletePromise != null) {
-            return refDeletePromise;
-        }
-        Promise<Void> legacyDeletePromise = entityStore.delete(tenantContext, ref.entityId());
-        if (legacyDeletePromise != null) {
-            return legacyDeletePromise;
-        }
-        return Promise.of(null);
+        return entityStore.deleteByRef(tenantContext, ref);
     }
 
     private Promise<BatchResult<String>> deleteByRefsOrLegacy(EntityStore entityStore,
                                                                TenantContext tenantContext,
                                                                List<EntityStore.EntityRef> refs) {
-        Promise<BatchResult<String>> refsDeletePromise = entityStore.deleteByRefs(tenantContext, refs);
-        if (refsDeletePromise != null) {
-            return refsDeletePromise;
-        }
-        return io.activej.promise.Promises.toList(refs.stream()
-                .map(ref -> deleteByRefOrLegacy(entityStore, tenantContext, ref)
-                    .then(ignored -> Promise.of(1), e -> Promise.of(0)))
-                .toList())
-            .map(results -> {
-                int deleted = results.stream().mapToInt(Integer::intValue).sum();
-                return new BatchResult<>(refs.size(), deleted, refs.size() - deleted, List.of());
-            });
+        return entityStore.deleteByRefs(tenantContext, refs);
     }
 
     @SuppressWarnings("unchecked")

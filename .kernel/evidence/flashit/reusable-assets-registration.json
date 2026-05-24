@@ -1,0 +1,271 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "flashit",
+  "generatedAt": "2026-05-24T00:00:00Z",
+  "assets": [
+    {
+      "asset_id": "flashit-spaced-repetition-algorithm",
+      "asset_name": "FlashIt Spaced Repetition Algorithm",
+      "asset_type": "service",
+      "source_product": "flashit",
+      "description": "Spaced repetition algorithm for learning optimization with configurable intervals, difficulty weighting, and performance tracking",
+      "tags": ["education", "learning", "spaced-repetition", "algorithm", "optimization"],
+      "maturity_level": "candidate",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "candidate",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/flashit/flashit-release-readiness.json",
+          "products/flashit/backend/gateway/src/services/spaced-repetition/"
+        ],
+        "test_coverage": "75%",
+        "security_review": "pending"
+      },
+      "paths": [
+        "products/flashit/backend/gateway/src/services/spaced-repetition/SpacedRepetitionService.java",
+        "products/flashit/backend/gateway/src/services/spaced-repetition/AlgorithmConfig.java"
+      ],
+      "tests": [
+        "products/flashit/backend/gateway/src/test/services/spaced-repetition/SpacedRepetitionServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:core",
+        "platform:java:observability"
+      ],
+      "product_usage": [],
+      "owner": "flashit-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "flashit-flash-card-deck-component",
+      "asset_name": "FlashIt Flash Card Deck Component",
+      "asset_type": "ui-component",
+      "source_product": "flashit",
+      "description": "Reusable flash card deck display component with flip animations, progress tracking, and keyboard navigation",
+      "tags": ["education", "flash-cards", "ui", "learning", "interactive"],
+      "maturity_level": "candidate",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "candidate",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/flashit/flashit-release-readiness.json",
+          "products/flashit/client/web/src/components/FlashCardDeck.tsx"
+        ],
+        "test_coverage": "70%",
+        "security_review": "pending"
+      },
+      "paths": [
+        "products/flashit/client/web/src/components/FlashCardDeck.tsx",
+        "products/flashit/client/web/src/components/FlashCard.tsx"
+      ],
+      "tests": [
+        "products/flashit/client/web/src/components/__tests__/FlashCardDeck.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:tokens"
+      ],
+      "product_usage": [],
+      "owner": "flashit-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      }
+    },
+    {
+      "asset_id": "flashit-learning-progress-tracker",
+      "asset_name": "FlashIt Learning Progress Tracker",
+      "asset_type": "service",
+      "source_product": "flashit",
+      "description": "Learning progress tracking service with session recording, performance metrics, and achievement tracking",
+      "tags": ["education", "progress", "tracking", "metrics", "learning"],
+      "maturity_level": "candidate",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "candidate",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/flashit/flashit-release-readiness.json",
+          "products/flashit/backend/gateway/src/services/progress/"
+        ],
+        "test_coverage": "72%",
+        "security_review": "pending"
+      },
+      "paths": [
+        "products/flashit/backend/gateway/src/services/progress/LearningProgressService.java",
+        "products/flashit/backend/gateway/src/services/progress/SessionRecorder.java"
+      ],
+      "tests": [
+        "products/flashit/backend/gateway/src/test/services/progress/LearningProgressServiceTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:observability"
+      ],
+      "product_usage": [],
+      "owner": "flashit-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      }
+    },
+    {
+      "asset_id": "reuse-phr-consent-panel-for-flashit",
+      "asset_name": "PHR Consent Panel (Reused for FlashIt)",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "PHR consent management panel adapted for FlashIt user consent tracking and privacy preferences",
+      "tags": ["education", "consent", "privacy", "ui", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "85%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/consent/ConsentPanel.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:tokens"
+      ],
+      "product_usage": ["flashit"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      },
+      "reuse_mapping": {
+        "target_product": "flashit",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "healthcare_consent": "education_consent",
+          "patient_control": "user_control",
+          "hipaa_compliance": "ferpa_compliance"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-phr-audit-trail-panel-for-flashit",
+      "asset_name": "PHR Audit Trail Panel (Reused for FlashIt)",
+      "asset_type": "ui-component",
+      "source_product": "phr",
+      "description": "PHR audit trail display component adapted for FlashIt learning session audit and compliance logging",
+      "tags": ["education", "audit", "compliance", "ui", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "90%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/frontend/src/components/audit/AuditTrailPanel.tsx"
+      ],
+      "tests": [
+        "products/phr/frontend/src/components/audit/__tests__/AuditTrailPanel.test.tsx"
+      ],
+      "dependencies": [
+        "platform:typescript:design-system",
+        "platform:typescript:observability"
+      ],
+      "product_usage": ["flashit"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "framework": "react",
+        "min_version": "18.0.0",
+        "platform": "web"
+      },
+      "reuse_mapping": {
+        "target_product": "flashit",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "healthcare_data_access": "learning_session_access",
+          "phi_modification": "learning_data_modification",
+          "hipaa_logging": "ferpa_logging"
+        }
+      }
+    },
+    {
+      "asset_id": "reuse-phr-tenant-scoped-repository-for-flashit",
+      "asset_name": "PHR Tenant-Scoped Repository Pattern (Reused for FlashIt)",
+      "asset_type": "pattern",
+      "source_product": "phr",
+      "description": "PHR tenant isolation repository pattern adapted for FlashIt multi-tenant learning data management",
+      "tags": ["education", "repository", "tenant-isolation", "pattern", "reuse"],
+      "maturity_level": "hardened",
+      "usage_count": 0,
+      "last_used_at": null,
+      "promotion_status": "proposed",
+      "promotion_evidence": {
+        "evidence_refs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json",
+          ".kernel/evidence/phr/phr-release-readiness.json"
+        ],
+        "test_coverage": "88%",
+        "security_review": "approved"
+      },
+      "paths": [
+        "products/phr/domains/persistence/src/main/java/com/ghatana/phr/persistence/TenantScopedRepository.java"
+      ],
+      "tests": [
+        "products/phr/domains/persistence/src/test/java/com/ghatana/phr/persistence/TenantScopedRepositoryTest.java"
+      ],
+      "dependencies": [
+        "platform:java:database",
+        "platform:java:security"
+      ],
+      "product_usage": ["flashit"],
+      "owner": "phr-team",
+      "promotion_target": "shared-package",
+      "reuse_mode": "reference",
+      "compatibility": {
+        "language": "java",
+        "min_version": "21",
+        "platform": "jvm"
+      },
+      "reuse_mapping": {
+        "target_product": "flashit",
+        "adaptation_required": "minimal",
+        "domain_mapping": {
+          "patient_data": "learning_data",
+          "healthcare_rls": "education_rls",
+          "phi_sovereignty": "learning_data_sovereignty"
+        }
+      }
+    }
+  ]
+}

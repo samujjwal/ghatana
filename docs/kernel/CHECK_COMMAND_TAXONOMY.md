@@ -9,6 +9,7 @@
 ## Taxonomy Schema
 
 Each command is classified by:
+
 - **Owner Domain**: Team or subsystem responsible for the command
 - **Cost**: Execution cost (low/medium/high) - based on time, resource usage, and dependencies
 - **Scope**: What the command validates (repo-level, product-level, platform-level, kernel-level)
@@ -27,7 +28,7 @@ Each command is classified by:
 - **Scope**: Repo-level
 - **Execution Cadence**: Pre-commit, CI
 - **Evidence Output**: Registry validation report, schema compliance errors
-- **Failure Interpretation**: 
+- **Failure Interpretation**:
   - Registry schema violation → Fix schema or registry entry
   - Missing required fields → Add to canonical-product-registry.json
   - Gradle/pnpm drift → Regenerate includes or update registry
@@ -386,7 +387,7 @@ Each command is classified by:
 - **Cost**: High
 - **Scope**: Product-level
 - **Execution Cadence**: CI, on-demand
-- **Evidence Output**: Lifecycle evidence pack (.kernel/evidence/digital-marketing/**), smoke test results
+- **Evidence Output**: Lifecycle evidence pack (.kernel/evidence/digital-marketing/\*\*), smoke test results
 - **Failure Interpretation**:
   - Lifecycle failure → Fix Digital Marketing lifecycle implementation
   - Smoke test failure → Fix product implementation
@@ -398,7 +399,7 @@ Each command is classified by:
 - **Cost**: High
 - **Scope**: Product-level
 - **Execution Cadence**: CI, on-demand
-- **Evidence Output**: Lifecycle evidence pack (.kernel/evidence/phr/**), healthcare gate validation
+- **Evidence Output**: Lifecycle evidence pack (.kernel/evidence/phr/\*\*), healthcare gate validation
 - **Failure Interpretation**:
   - Lifecycle failure → Fix PHR lifecycle implementation
   - Gate failure → Fix healthcare gate implementation
@@ -696,13 +697,13 @@ Each command is classified by:
   - Coherence error → Fix platform/product coherence
   - Gate failure → Fix blocking issues
 
-### check:world-class-platform-readiness
+### check:release
 
 - **Owner Domain**: Platform Core Team
 - **Cost**: High
 - **Scope**: Repo-level
 - **Execution Cadence**: Pre-release
-- **Evidence Output**: World-class readiness report, all phase gates
+- **Evidence Output**: Release readiness report, all strict release gates
 - **Failure Interpretation**:
   - Readiness failure → Fix all blocking issues
   - Phase failure → Fix failed phase
@@ -710,15 +711,15 @@ Each command is classified by:
 
 ---
 
-## Full Repo Test
+## Full Platform Check
 
-### check:full-repo-test
+### check:full
 
 - **Owner Domain**: Platform Core Team
 - **Cost**: Very High
 - **Scope**: Repo-level
-- **Execution Cadence**: Pre-release, nightly
-- **Evidence Output**: Full repo test report, all validation results
+- **Execution Cadence**: Broad refactors, nightly
+- **Evidence Output**: Full platform confidence report, validation results
 - **Failure Interpretation**:
   - Test failure → Fix failing test
   - Validation failure → Fix validation issue
@@ -731,6 +732,7 @@ Each command is classified by:
 ### When to Run Commands
 
 **Pre-commit (Low Cost)**: Run on every commit
+
 - check:product-registry
 - check:domain-registry
 - check:secret-default-credentials
@@ -740,6 +742,7 @@ Each command is classified by:
 - check:deprecated-packages
 
 **CI (Medium/High Cost)**: Run on every PR
+
 - All architecture and boundary checks
 - All kernel lifecycle checks
 - All toolchain and adapter checks
@@ -748,12 +751,14 @@ Each command is classified by:
 - All documentation and evidence checks
 
 **Pre-release (High/Very High Cost)**: Run before release
+
 - All phase gates (phase0-phase8)
-- check:world-class-platform-readiness
-- check:full-repo-test
+- check:release
+- check:full
 - All artifact and Studio E2E checks
 
 **On-demand**: Run as needed
+
 - Product lifecycle pilot checks (smoke tests)
 - Product readiness checks
 - Specific validation checks
@@ -788,6 +793,7 @@ Each command is classified by:
 ## Maintenance
 
 This taxonomy should be updated when:
+
 - New check commands are added
 - Command ownership changes
 - Evidence output changes

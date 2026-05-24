@@ -8,7 +8,6 @@ import { configureAxe } from 'vitest-axe';
 const vitestAxeMatchers = require('vitest-axe/matchers') as Record<string, any>;
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 expect.extend(vitestAxeMatchers);
-import { server } from '../mocks/server';
 
 /**
  * Global test setup for Data Cloud Platform tests.
@@ -43,22 +42,6 @@ export const axe = configureAxe({
 // ---------------------------------------------------------------------------
 // MSW — API mocking
 // ---------------------------------------------------------------------------
-
-// Start before the test suite; close when done
-beforeAll(() => server.listen({
-  onUnhandledRequest(request, print) {
-    // Only warn for unhandled API requests — ignore asset/font/favicon requests
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/')) {
-      print.warning();
-    }
-  },
-}));
-
-// Reset handler overrides between tests so each test starts clean
-afterEach(() => server.resetHandlers());
-
-afterAll(() => server.close());
 
 // ---------------------------------------------------------------------------
 // React act() environment — suppress false-positive act() warnings (P7-3c)
@@ -113,6 +96,28 @@ Object.defineProperty(global, 'localStorage', {
   writable: true,
   configurable: true,
 });
+
+let server: Awaited<typeof import('../mocks/server')>['server'] | undefined;
+
+// Start after storage is installed; MSW reads global localStorage while loading.
+beforeAll(async () => {
+  const serverModule = await import('../mocks/server');
+  server = serverModule.server;
+  server.listen({
+    onUnhandledRequest(request, print) {
+      // Only warn for unhandled API requests — ignore asset/font/favicon requests
+      const url = new URL(request.url);
+      if (url.pathname.startsWith('/api/')) {
+        print.warning();
+      }
+    },
+  });
+});
+
+// Reset handler overrides between tests so each test starts clean
+afterEach(() => server?.resetHandlers());
+
+afterAll(() => server?.close());
 
 // Reset localStorage before each test so tests don't bleed state into each other
 beforeEach(() => {

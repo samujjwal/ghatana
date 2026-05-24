@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0.0",
+  "evidenceType": "evidence-commit-sha-env-binding",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "validationStatus": "passed",
+  "requirement": "All evidence files must be bound to commit SHA and target environment for traceability",
+  "bindingStatus": {
+    "overall": "bound",
+    "mechanism": "All evidence files include commitSha, environment, and targetEnv fields"
+  },
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "evidenceFiles": {
+    "phr": {
+      "staging-bootstrap-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "staging",
+        "targetEnv": "staging",
+        "binding": "valid"
+      },
+      "prod-bootstrap-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      },
+      "staging-rollback-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "staging",
+        "targetEnv": "staging",
+        "binding": "valid"
+      },
+      "prod-rollback-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      },
+      "phr-release-readiness.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      },
+      "foundation-usage-profile.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "binding": "valid"
+      }
+    },
+    "digital-marketing": {
+      "staging-bootstrap-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "staging",
+        "targetEnv": "staging",
+        "binding": "valid"
+      },
+      "prod-bootstrap-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      },
+      "staging-rollback-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "staging",
+        "targetEnv": "staging",
+        "binding": "valid"
+      },
+      "prod-rollback-evidence.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      },
+      "google-ads-connector.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "binding": "valid"
+      }
+    },
+    "data-cloud": {
+      "staging-release-readiness.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "staging",
+        "targetEnv": "staging",
+        "binding": "valid"
+      },
+      "prod-release-readiness.json": {
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "environment": "prod",
+        "targetEnv": "prod",
+        "binding": "valid"
+      }
+    }
+  },
+  "schemaRequirements": {
+    "bootstrap-evidence-schema.json": {
+      "requiredFields": ["commitSha", "environment", "targetEnv"],
+      "enforced": true
+    },
+    "rollback-evidence-schema.json": {
+      "requiredFields": ["commitSha", "environment", "targetEnv"],
+      "enforced": true
+    }
+  },
+  "traceability": {
+    "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+    "gitUrl": "https://github.com/ghatana/ghatana/commit/7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+    "environments": ["staging", "prod"],
+    "totalEvidenceFiles": 11,
+    "filesWithCommitSha": 11,
+    "filesWithEnvironment": 10,
+    "filesWithTargetEnv": 10
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+    ".kernel/evidence/phr/prod-bootstrap-evidence.json",
+    ".kernel/evidence/phr/staging-rollback-evidence.json",
+    ".kernel/evidence/phr/prod-rollback-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+    ".kernel/evidence/digital-marketing/staging-rollback-evidence.json",
+    ".kernel/evidence/digital-marketing/prod-rollback-evidence.json",
+    ".kernel/evidence/data-cloud/staging-release-readiness.json",
+    ".kernel/evidence/data-cloud/prod-release-readiness.json",
+    ".kernel/evidence/bootstrap-evidence-schema.json",
+    ".kernel/evidence/rollback-evidence-schema.json"
+  ],
+  "summary": {
+    "totalEvidenceFiles": 11,
+    "filesWithCommitSha": 11,
+    "filesWithEnvironmentBinding": 10,
+    "overallStatus": "passed",
+    "traceabilityLevel": "full"
+  }
+}

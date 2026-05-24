@@ -49,7 +49,11 @@ function hasRecordProperty<Key extends string>(
   value: unknown,
   key: Key,
 ): value is Record<Key, Record<string, unknown>> {
-  return typeof value === 'object' && value !== null && key in value && typeof value[key] === 'object' && value[key] !== null;
+  if (typeof value !== 'object' || value === null || !(key in value)) {
+    return false;
+  }
+  const property = (value as Record<Key, unknown>)[key];
+  return typeof property === 'object' && property !== null;
 }
 
 function ArtifactCanvasNode(props: unknown): ReactElement {
@@ -204,7 +208,7 @@ export default function CanvasPage(): ReactElement {
       />
 
       {/* Live Canvas Workspace */}
-      <div className="border rounded-lg overflow-hidden" data-testid="artifact-graph-canvas">
+      <div className="h-[640px] w-full border rounded-lg overflow-hidden" data-testid="artifact-graph-canvas">
         <div className="bg-gray-100 p-2 text-sm text-gray-600 flex items-center justify-between">
           <span>Artifact Graph Canvas</span>
           <span
@@ -223,6 +227,7 @@ export default function CanvasPage(): ReactElement {
           nodeTypes={artifactNodeTypes}
           width="100%"
           height="600px"
+          className="h-[600px] w-full"
           readOnly={false}
           onElementsChange={() => {}}
           onNodesChange={handleNodesChange}

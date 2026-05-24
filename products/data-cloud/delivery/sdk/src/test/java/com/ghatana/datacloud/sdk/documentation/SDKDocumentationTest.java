@@ -168,9 +168,9 @@ class SDKDocumentationTest {
     @Test
     @DisplayName("metadata includes documentation for all documented endpoints")
     void metadataIncludesDocumentationForAllDocumentedEndpoints() throws Exception { 
-        Map<String, Object> metadata = objectMapper.readValue( 
+        Map<String, Object> metadata = objectMapper.readValue(
             Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { } 
+            new TypeReference<>() { }
         );
         
         Object documentedPaths = metadata.get("documentedPaths");
@@ -187,9 +187,9 @@ class SDKDocumentationTest {
     @Test
     @DisplayName("metadata includes SDK version and compatibility information")
     void metadataIncludesSdkVersionAndCompatibilityInformation() throws Exception { 
-        Map<String, Object> metadata = objectMapper.readValue( 
+        Map<String, Object> metadata = objectMapper.readValue(
             Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { } 
+            new TypeReference<>() { }
         );
         
         assertThat(metadata).containsKey("title");

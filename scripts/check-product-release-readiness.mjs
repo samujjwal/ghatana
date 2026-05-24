@@ -111,24 +111,40 @@ const artifactAuthoringReadinessScripts = [
   'pnpm:check:studio-workflow-persistence-contracts',
 ];
 
-function runCheck(checkRef) {
+const productScopedScriptRefs = new Set([
+  './scripts/check-affected-product-strict-release-profile.mjs',
+  './scripts/check-product-release-evidence-packs.mjs',
+  './scripts/check-product-a11y-route-matrix.mjs',
+  './scripts/check-product-slo-budgets.mjs',
+  './scripts/check-product-cost-budgets.mjs',
+  './scripts/check-product-domain-invariants.mjs',
+  'pnpm:check:affected-product-strict-release-profile',
+]);
+
+function runCheck(checkRef, options = {}) {
+  const products = options.products ?? [];
+  const productArgs = productScopedScriptRefs.has(checkRef) && products.length > 0
+    ? ['--products', products.join(',')]
+    : [];
+
   if (checkRef.startsWith('pnpm:')) {
     const scriptName = checkRef.slice('pnpm:'.length);
+    const pnpmArgs = productArgs.length > 0 ? [scriptName, '--', ...productArgs] : [scriptName];
     if (process.platform === 'win32') {
-      return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', scriptName], {
+      return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', ...pnpmArgs], {
         cwd: repoRoot,
         stdio: 'inherit',
         env: process.env,
       });
     }
-    return spawnSync('pnpm', [scriptName], {
+    return spawnSync('pnpm', pnpmArgs, {
       cwd: repoRoot,
       stdio: 'inherit',
       env: process.env,
     });
   }
 
-  return spawnSync(process.execPath, [checkRef], {
+  return spawnSync(process.execPath, [checkRef, ...productArgs], {
     cwd: repoRoot,
     stdio: 'inherit',
     env: process.env,
@@ -376,6 +392,135 @@ for (const releaseArea of releaseAreas) {
   }
 }
 
+const scopedCheckGroups = {
+  globalPrerequisiteChecks: [
+    'pnpm:check:aggregate-gate-integrity',
+    './scripts/check-release-profile-local-targets.mjs',
+    './scripts/check-product-family-asset-registry.mjs',
+    './scripts/check-affected-product-strict-release-profile.mjs',
+  ],
+  platformChecks: [
+    './scripts/check-kernel-platform-lifecycle.mjs',
+    './scripts/check-kernel-lifecycle-truth.mjs',
+    './scripts/check-toolchain-adapter-contracts.mjs',
+    './scripts/check-product-artifact-contracts.mjs',
+    './scripts/check-product-deployment-contracts.mjs',
+    './scripts/check-product-environment-contracts.mjs',
+  ],
+  productChecks: [
+    './scripts/check-product-shape-capability-matrix.mjs',
+    './scripts/check-product-registry-drift.mjs',
+    './scripts/check-product-release-evidence-packs.mjs',
+    './scripts/check-product-ci-matrices.mjs',
+    './scripts/check-product-slo-budgets.mjs',
+    './scripts/check-product-cost-budgets.mjs',
+    './scripts/check-product-domain-invariants.mjs',
+    './scripts/check-product-a11y-route-matrix.mjs',
+    './scripts/check-openapi-release-quality.mjs',
+    './scripts/check-openapi-breaking-changes.mjs',
+  ],
+  dataCloudChecks: [
+    'pnpm:check:data-cloud-release-gate',
+    './scripts/check-data-cloud-release-runtime-profile.mjs',
+    './scripts/check-data-cloud-ui-a11y.mjs',
+    './scripts/check-data-cloud-platform-providers.mjs',
+    './scripts/check-data-cloud-platform-provider-readiness.mjs',
+    './scripts/check-action-plane-route-lifecycle.mjs',
+    './scripts/check-data-cloud-maturity-proof.mjs',
+  ],
+  dmosChecks: [
+    './scripts/check-digital-marketing-lifecycle-pilot.mjs',
+    './scripts/check-dmos-boundary-workflow-coverage.mjs',
+    './scripts/check-dmos-no-fake-data.mjs',
+    './scripts/check-dmos-docs-matrix.mjs',
+    './scripts/check-dmos-operations-docs.mjs',
+    './scripts/check-dmos-duplicate-runtimes.mjs',
+    './scripts/check-dmos-production-wiring.mjs',
+    './scripts/check-dmos-runtime-module.mjs',
+    './scripts/check-dmos-persistence.mjs',
+    './scripts/check-dmos-kernel-context.mjs',
+    './scripts/check-dmos-data-cloud-rls.mjs',
+    './scripts/check-dmos-ai-action-log.mjs',
+    './scripts/check-dmos-google-ads-connector.mjs',
+  ],
+  phrChecks: [
+    './scripts/check-phr-lifecycle-readiness.mjs',
+    './scripts/check-phr-lifecycle-pilot.mjs',
+    './scripts/check-phr-kernel-context.mjs',
+    './scripts/check-phr-data-cloud-rls.mjs',
+    './scripts/check-phr-emergency-access-audit.mjs',
+    './scripts/check-phr-fhir-validation.mjs',
+    './scripts/check-phr-hipaa-compliance.mjs',
+    './scripts/check-phr-consent-cache.mjs',
+  ],
+  yappcChecks: [
+    './scripts/check-yappc-platform-provider-readiness.mjs',
+    './scripts/check-yappc-product-family-control-plane.mjs',
+    './scripts/check-yappc-product-unit-intent-handoff.mjs',
+    './scripts/check-yappc-artifact-intelligence-boundary.mjs',
+  ],
+  flashitChecks: [
+    './scripts/check-flashit-lifecycle-readiness.mjs',
+    './scripts/check-flashit-client-conformance.mjs',
+    './scripts/check-flashit-doc-content.mjs',
+    './scripts/check-flashit-package-manager.mjs',
+  ],
+  artifactAuthoringChecks: artifactAuthoringReadinessScripts,
+};
+
+const productScopedGroupById = {
+  'data-cloud': 'dataCloudChecks',
+  'digital-marketing': 'dmosChecks',
+  phr: 'phrChecks',
+  yappc: 'yappcChecks',
+  flashit: 'flashitChecks',
+};
+
+function uniqueExistingChecks(checkRefs) {
+  const seen = new Set();
+  return checkRefs.filter((checkRef) => {
+    if (seen.has(checkRef)) {
+      return false;
+    }
+    seen.add(checkRef);
+    if (checkRef.startsWith('pnpm:')) {
+      return true;
+    }
+    return existsSync(path.join(repoRoot, checkRef));
+  });
+}
+
+function artifactAuthoringRelevant(paths) {
+  return paths.some((changedPath) =>
+    /^(platform\/typescript\/(?:ghatana-studio|kernel-artifacts|artifact|canvas|ui-builder)|products\/yappc\/|config\/artifact|\.kernel\/evidence\/artifact)/.test(changedPath),
+  );
+}
+
+export function buildScopedExecutionOrder(affectedProducts, options = {}) {
+  if (options.full) {
+    return uniqueExistingChecks(executionOrder);
+  }
+
+  const plan = [
+    ...scopedCheckGroups.globalPrerequisiteChecks,
+    ...scopedCheckGroups.platformChecks,
+    ...scopedCheckGroups.productChecks,
+  ];
+
+  for (const productId of affectedProducts) {
+    const groupName = productScopedGroupById[productId];
+    if (groupName) {
+      plan.push(...scopedCheckGroups[groupName]);
+    }
+  }
+
+  if (options.releaseRisk || artifactAuthoringRelevant(options.paths ?? [])) {
+    plan.push(...scopedCheckGroups.artifactAuthoringChecks);
+  }
+
+  return uniqueExistingChecks(plan);
+}
+
 function releaseProfileIds() {
   const profilesPath = path.join(repoRoot, 'config/product-release-profiles.json');
   if (!existsSync(profilesPath)) {
@@ -393,8 +538,45 @@ function parseArg(flag) {
   return undefined;
 }
 
+function hasArg(flag) {
+  return process.argv.includes(flag);
+}
+
+function splitCsv(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function readChangedFilesFromGit(baseRef, headRef) {
+  if (!baseRef && !headRef) {
+    return [];
+  }
+  const range = baseRef && headRef ? `${baseRef}...${headRef}` : baseRef || headRef;
+  const result = spawnSync('git', ['diff', '--name-only', range], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`Could not resolve release readiness diff ${range}`);
+  }
+  return result.stdout.split(/\r?\n/).filter(Boolean);
+}
+
+function releaseReadinessOptions() {
+  const explicitPaths = splitCsv(parseArg('--paths'));
+  const baseRef = parseArg('--base');
+  const headRef = parseArg('--head');
+  return {
+    full: hasArg('--full'),
+    releaseRisk: hasArg('--release-risk') || process.env.RELEASE_RISK === 'true',
+    paths: explicitPaths.length > 0 ? explicitPaths : readChangedFilesFromGit(baseRef, headRef),
+  };
+}
+
 export function discoverAffectedProducts() {
-  const providedProducts = parseArg('--products') || process.env.AFFECTED_PRODUCTS || '';
+  const providedProducts = parseArg('--products') || parseArg('--product') || process.env.AFFECTED_PRODUCTS || '';
   const registry = loadCanonicalRegistry(repoRoot);
 
   if (providedProducts.trim().length > 0) {
@@ -408,15 +590,21 @@ export function discoverAffectedProducts() {
     );
   }
 
+  const options = releaseReadinessOptions();
+  if (options.paths.length > 0) {
+    const result = resolveAffectedProducts(options.paths, registry, {
+      businessProductsOnly: true,
+      includeDemo: false,
+    });
+    return filterReleaseEligibleProducts(result.affectedProducts, registry);
+  }
+
   const affectedProfile = readJsonIfExists(affectedProductProfilePath);
   if (Array.isArray(affectedProfile?.affectedProducts) && affectedProfile.affectedProducts.length > 0) {
     return filterReleaseEligibleProducts([...affectedProfile.affectedProducts].sort(), registry);
   }
 
-  const result = resolveAffectedProducts(['config/canonical-product-registry.json'], registry, {
-    businessProductsOnly: true,
-  });
-  return filterReleaseEligibleProducts(result.affectedProducts, registry);
+  return [];
 }
 
 function validateProductionEvidence(productId, productMetadata) {
@@ -682,7 +870,9 @@ export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
 function runProductReleaseReadinessCli() {
   const runs = [];
   const runByScript = new Map();
+  const options = releaseReadinessOptions();
   const affectedProducts = discoverAffectedProducts();
+  const plannedExecutionOrder = buildScopedExecutionOrder(affectedProducts, options);
 
   function failWithEvidence(exitCode, failedScript, reason) {
     const releaseProfiles = releaseProfileIds();
@@ -695,15 +885,26 @@ function runProductReleaseReadinessCli() {
       runs,
       journeyMatrix,
       releaseAreas,
+      scopedCheckGroups,
       artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
       releaseProfiles,
       affectedProducts,
+      scopedExecution: !options.full,
+      plannedExecutionOrder,
     });
     writePerProductScorecards(affectedProducts, runs, releaseProfiles);
     if (failedScript) {
       console.error(`Product release readiness failed at ${failedScript}`);
     }
     process.exit(exitCode);
+  }
+
+  if (!options.full && affectedProducts.length === 0) {
+    failWithEvidence(
+      1,
+      null,
+      'No release-eligible products were provided or resolved. Pass --products <id[,id]> or --base/--head/--paths, or use --full for the platform-wide release gate.',
+    );
   }
 
   for (const journey of journeyMatrix) {
@@ -731,9 +932,9 @@ function runProductReleaseReadinessCli() {
     failWithEvidence(buildStatus, platformLifecycleBuildScript, 'platform-lifecycle-build-failure');
   }
 
-  for (const scriptPath of executionOrder) {
+  for (const scriptPath of plannedExecutionOrder) {
     const startedAt = Date.now();
-    const result = runCheck(scriptPath);
+    const result = runCheck(scriptPath, { products: affectedProducts });
 
     const status = result.status ?? 1;
     const durationMs = Date.now() - startedAt;
@@ -782,9 +983,12 @@ function runProductReleaseReadinessCli() {
     journeyResults,
     releaseAreaResults,
     runs,
+    scopedCheckGroups,
     artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
     releaseProfiles: releaseProfileIds(),
     affectedProducts,
+    scopedExecution: !options.full,
+    plannedExecutionOrder,
   };
 
   mkdirSync(evidenceDir, { recursive: true });

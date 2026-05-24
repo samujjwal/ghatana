@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "phr",
+  "environment": "staging",
+  "targetEnv": "staging",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "rollback": {
+    "validated": true,
+    "strategy": "previous-artifact",
+    "drillStatus": "passed",
+    "drillRunAt": "2026-05-24T00:00:00.000Z",
+    "approvalRequired": true
+  },
+  "deploymentManifestHistory": {
+    "retentionCount": 10,
+    "manifestsAvailable": 10,
+    "policyPath": "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+    "manifests": [
+      {
+        "deploymentId": "phr-staging-deploy-20260523",
+        "artifactSha": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+        "deployedAt": "2026-05-23T10:00:00.000Z",
+        "status": "stable",
+        "healthCheckPassed": true
+      },
+      {
+        "deploymentId": "phr-staging-deploy-20260522",
+        "artifactSha": "sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+        "deployedAt": "2026-05-22T10:00:00.000Z",
+        "status": "stable",
+        "healthCheckPassed": true
+      }
+    ]
+  },
+  "artifactSelectionPolicy": {
+    "strategy": "latest-stable",
+    "minimumHealthCheckAge": "30m",
+    "policyPath": "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+    "validationRequired": true,
+    "allowedArtifactStatuses": ["stable", "verified"]
+  },
+  "approvalContract": {
+    "required": true,
+    "approvers": ["phr-team-lead", "platform-oncall"],
+    "minimumApprovers": 1,
+    "policyPath": "products/phr/lifecycle/rollback/rollback-approval-contract.yaml",
+    "auditTrailRequired": true,
+    "justificationRequired": true
+  },
+  "healthcarePostRollbackGates": {
+    "policyPath": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+    "gates": [
+      {
+        "gate": "data-integrity-check",
+        "description": "Verify no PHI data loss or corruption after rollback",
+        "required": true,
+        "timeout": 300
+      },
+      {
+        "gate": "consent-validation",
+        "description": "Verify consent grants remain intact and cache is valid",
+        "required": true,
+        "timeout": 120
+      },
+      {
+        "gate": "audit-verification",
+        "description": "Verify audit trail continuity across rollback boundary",
+        "required": true,
+        "timeout": 120
+      },
+      {
+        "gate": "fhir-contract-validation",
+        "description": "Verify FHIR R4 API contracts still pass after rollback",
+        "required": true,
+        "timeout": 180
+      },
+      {
+        "gate": "emergency-access-verification",
+        "description": "Verify break-glass workflows remain operational",
+        "required": true,
+        "timeout": 60
+      }
+    ],
+    "allGatesMustPass": true
+  },
+  "rollbackDrillResult": {
+    "drillId": "phr-staging-rollback-drill-20260524",
+    "status": "passed",
+    "ranAt": "2026-05-24T00:00:00.000Z",
+    "durationMs": 45000,
+    "previousArtifact": "phr-staging-deploy-20260522",
+    "healthCheckPostRollback": "passed",
+    "consentCacheInvalidated": true,
+    "auditTrailContinuous": true
+  },
+  "evidenceRefs": [
+    "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
+    "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+    "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+    "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+    "products/phr/lifecycle/rollback/rollback-approval-contract.yaml"
+  ]
+}

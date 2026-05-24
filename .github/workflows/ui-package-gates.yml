@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -127,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -175,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -195,7 +195,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - run: corepack enable && corepack prepare pnpm@10.33.0 --activate
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

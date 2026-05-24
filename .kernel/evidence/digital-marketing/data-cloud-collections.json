@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "digital-marketing",
+  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "collections": [
+    {
+      "name": "dmos-campaigns",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true
+    },
+    {
+      "name": "dmos-workspaces",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true
+    },
+    {
+      "name": "dmos-ai-action-logs",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true
+    },
+    {
+      "name": "dmos-approval-snapshots",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true
+    },
+    {
+      "name": "dmos-audit-trail",
+      "rlsEnabled": true,
+      "tenantColumn": "tenant_id",
+      "auditEnabled": true
+    }
+  ],
+  "rlsPolicy": "row-level-security",
+  "tenantIsolation": "enforced"
+}

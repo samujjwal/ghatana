@@ -51,8 +51,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '9'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Job: A11y audit — runs on every PR and main push

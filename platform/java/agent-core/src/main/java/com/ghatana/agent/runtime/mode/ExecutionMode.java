@@ -7,16 +7,16 @@ package com.ghatana.agent.runtime.mode;
 /**
  * Execution mode for agent task execution.
  *
- * <p>This enum previously mixed execution strategy and supervision semantics.
- * Use {@link ExecutionStrategy} and {@link SupervisionMode} for new code.
+ * <p>This enum preserves the public compatibility surface for consumers that still
+ * exchange a single execution-mode value. New internal selection code should prefer
+ * {@link ExecutionStrategy} and {@link SupervisionMode}, then map to this enum only
+ * at compatibility boundaries.
  *
- * @deprecated Use {@link ExecutionStrategy} + {@link SupervisionMode} together.
  * @doc.type enum
- * @doc.purpose Execution mode for agent task execution (deprecated compatibility shim)
+ * @doc.purpose Execution mode for agent task execution compatibility boundaries
  * @doc.layer agent-core
  * @doc.pattern Enumeration
  */
-@Deprecated(forRemoval = true)
 public enum ExecutionMode {
     /**
      * Deterministic execution with full confidence.

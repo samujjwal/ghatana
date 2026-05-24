@@ -151,6 +151,18 @@ class ConsentManagementServiceTest extends EventloopTestBase {
             assertFalse(decision.allowed());
             assertEquals(ReasonCode.OUT_OF_SCOPE, decision.reasonCode());
         }
+
+        @Test
+        @DisplayName("denies malformed access requests before cache lookup")
+        void deniesMalformedAccessRequest() {
+            ConsentCheckRequest request = providerAccessRequest("patient-1", "../doctor<script>", "medications");
+
+            ConsentAccessDecision decision = runPromise(() -> service.checkAccess(request));
+
+            assertFalse(decision.allowed());
+            assertEquals(ReasonCode.SYSTEM_DENY, decision.reasonCode());
+            assertTrue(decision.obligations().contains("MALFORMED_REQUEST"));
+        }
     }
 
     // ==================== assertAccess ====================
@@ -231,11 +243,15 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         @Test
         @DisplayName("notifies patient when a grant is created")
         void notifiesGrantCreated() {
-            runPromise(() -> service.createGrant(testGrant("patient-1", "doctor-1")));
+            ConsentGrant grant = runPromise(() -> service.createGrant(testGrant("patient-1", "doctor-1")));
 
             assertThat(notificationSender.consentChangeNotifications()).hasSize(1);
             assertThat(notificationSender.consentChangeNotifications().getFirst().changeType())
                 .isEqualTo(PhrNotificationSender.ConsentChangeType.GRANT_CREATED);
+            Map<String, String> metadata = dataCloud.metadataFor("phr.consent.grants", grant.getId());
+            assertThat(metadata.get("patientId")).isEqualTo("patient-1");
+            assertThat(metadata.get("tenantId")).isEqualTo("default");
+            assertThat(metadata.get("tenantId")).isNotEqualTo(metadata.get("patientId"));
         }
 
         @Test
@@ -411,6 +427,12 @@ class ConsentManagementServiceTest extends EventloopTestBase {
 
         private final java.util.concurrent.ConcurrentHashMap<String, byte[]> store =
                 new java.util.concurrent.ConcurrentHashMap<>();
+        private final java.util.concurrent.ConcurrentHashMap<String, Map<String, String>> metadata =
+                new java.util.concurrent.ConcurrentHashMap<>();
+
+        Map<String, String> metadataFor(String datasetId, String recordId) {
+            return metadata.get(datasetId + ":" + recordId);
+        }
 
         @Override
         public Promise<DataResult> readData(DataReadRequest request) {
@@ -424,6 +446,7 @@ class ConsentManagementServiceTest extends EventloopTestBase {
         @Override
         public Promise<Void> writeData(DataWriteRequest request) {
             store.put(request.getDatasetId() + ":" + request.getRecordId(), request.getData());
+            metadata.put(request.getDatasetId() + ":" + request.getRecordId(), request.getMetadata());
             return Promise.complete();
         }
 

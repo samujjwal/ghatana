@@ -61,11 +61,18 @@ class SharedLibraryBoundaryArchTest {
             .that()
             .resideInAnyPackage(
                 "com.ghatana.datacloud.data..",
+                "com.ghatana.datacloud.entity..",
+                "com.ghatana.datacloud.record..",
                 "com.ghatana.datacloud.event..",
+                "com.ghatana.datacloud.platform.event..",
                 "com.ghatana.datacloud.context..",
                 "com.ghatana.datacloud.governance..",
                 "com.ghatana.datacloud.analytics..",
                 "com.ghatana.datacloud.config..",
+                "com.ghatana.datacloud.application.policy..",
+                "com.ghatana.datacloud.infrastructure.policy..",
+                "com.ghatana.datacloud.pattern..",
+                "com.ghatana.datacloud.reflex..",
                 "com.ghatana.datacloud.storage..",
                 "com.ghatana.datacloud.plugins..",
                 "com.ghatana.services.featurestore..")

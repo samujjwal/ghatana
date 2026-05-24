@@ -4,6 +4,8 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -116,7 +118,7 @@ public interface PluginInteractionBus {
      */
     @NotNull
     default List<PluginInteractionAuditRecord> auditRecords() {
-        return List.of();
+        return Collections.unmodifiableList(new ArrayList<>());
     }
 
     /**

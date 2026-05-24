@@ -5,6 +5,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -15,6 +16,13 @@ import java.util.*;
  * Provides business logic for ingesting and managing product release readiness data
  * for PHR, DMOS, and other products in the product family. All operations are tenant-scoped
  * and return ActiveJ Promises for non-blocking execution.
+ *
+ * <p><b>Hardening</b><br>
+ * - Computes readiness from evidence and runtime truth, not static registry only
+ * - Validates evidence freshness (max 24 hours)
+ * - Binds evidence to commit SHA and target environment
+ * - Enforces environment-specific readiness states
+ * - Validates runtime truth consistency
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
@@ -32,6 +40,7 @@ import java.util.*;
  *     .blockingGaps(List.of())
  *     .belowTargetDimensions(List.of())
  *     .tenantId("tenant-123")
+ *     .commitSha("7f84bc08e9e4e6d7e209cb49a855f199f7c90347")
  *     .build();
  *
  * Promise<ProductReleaseReadiness> promise = service.produceReleaseReadiness(readiness);
@@ -64,6 +73,7 @@ import java.util.*;
 public class ProductReleaseReadinessService {
 
     private static final Logger log = LoggerFactory.getLogger(ProductReleaseReadinessService.class);
+    private static final Duration MAX_EVIDENCE_AGE = Duration.ofHours(24);
 
     private final ProductReleaseReadinessRepository repository;
     private final MetricsCollector metrics;
@@ -91,6 +101,9 @@ public class ProductReleaseReadinessService {
      * - Release target must be valid (production, staging, development)
      * - Release verdict must be pass or fail
      * - Tenant ID must match context
+     * - Commit SHA must be present and valid
+     * - Evidence must be fresh (within 24 hours)
+     * - Evidence must match target environment
      *
      * <p><b>Upsert Behavior</b><br>
      * If a record exists for the same product_id, product_version, and release_target,
@@ -102,9 +115,13 @@ public class ProductReleaseReadinessService {
     public Promise<ProductReleaseReadiness> produceReleaseReadiness(ProductReleaseReadiness readiness) {
         try {
             validateReleaseReadiness(readiness);
+            validateEvidenceFreshness(readiness);
+            validateCommitShaBinding(readiness);
+            validateEnvironmentBinding(readiness);
 
-            log.info("Producing release readiness for product: {}, version: {}, target: {}, verdict: {}",
-                readiness.productId(), readiness.productVersion(), readiness.releaseTarget(), readiness.releaseVerdict());
+            log.info("Producing release readiness for product: {}, version: {}, target: {}, verdict: {}, commitSha: {}",
+                readiness.productId(), readiness.productVersion(), readiness.releaseTarget(), 
+                readiness.releaseVerdict(), readiness.commitSha());
 
             Promise<ProductReleaseReadiness> result = repository.upsert(readiness);
 
@@ -113,6 +130,13 @@ public class ProductReleaseReadinessService {
                     "product_id", readiness.productId(),
                     "release_target", readiness.releaseTarget(),
                     "verdict", readiness.releaseVerdict()
+                ));
+            });
+
+            result.whenException(e -> {
+                log.error("Failed to produce release readiness for product: {}", readiness.productId(), e);
+                metrics.incrementCounter("product_release_readiness.produce_failed", Map.of(
+                    "product_id", readiness.productId()
                 ));
             });
 
@@ -207,6 +231,57 @@ public class ProductReleaseReadinessService {
         }
     }
 
+    /**
+     * Validates evidence freshness.
+     *
+     * @param readiness the release readiness to validate
+     * @throws IllegalArgumentException if evidence is stale
+     */
+    private void validateEvidenceFreshness(ProductReleaseReadiness readiness) {
+        if (readiness.generatedAt() == null) {
+            throw new IllegalArgumentException("Evidence generatedAt timestamp must be present");
+        }
+
+        Duration age = Duration.between(readiness.generatedAt(), Instant.now());
+        if (age.compareTo(MAX_EVIDENCE_AGE) > 0) {
+            throw new IllegalArgumentException("Evidence is stale: generated " + age.toHours() + " hours ago, max allowed is " + MAX_EVIDENCE_AGE.toHours() + " hours");
+        }
+    }
+
+    /**
+     * Validates commit SHA binding.
+     *
+     * @param readiness the release readiness to validate
+     * @throws IllegalArgumentException if commit SHA is missing or invalid
+     */
+    private void validateCommitShaBinding(ProductReleaseReadiness readiness) {
+        if (readiness.commitSha() == null || readiness.commitSha().isEmpty()) {
+            throw new IllegalArgumentException("Commit SHA must be present for release readiness");
+        }
+
+        // Validate SHA format (40 hexadecimal characters for git SHA-1)
+        if (!readiness.commitSha().matches("^[a-fA-F0-9]{40}$")) {
+            throw new IllegalArgumentException("Invalid commit SHA format: " + readiness.commitSha());
+        }
+    }
+
+    /**
+     * Validates environment binding.
+     *
+     * @param readiness the release readiness to validate
+     * @throws IllegalArgumentException if evidence environment doesn't match target
+     */
+    private void validateEnvironmentBinding(ProductReleaseReadiness readiness) {
+        if (readiness.evidenceEnvironment() == null || readiness.evidenceEnvironment().isEmpty()) {
+            throw new IllegalArgumentException("Evidence environment must be present");
+        }
+
+        if (!readiness.evidenceEnvironment().equals(readiness.releaseTarget())) {
+            throw new IllegalArgumentException("Evidence environment '" + readiness.evidenceEnvironment() + 
+                "' does not match release target '" + readiness.releaseTarget() + "'");
+        }
+    }
+
     private boolean isValidReleaseTarget(String target) {
         return target.equals("production") || target.equals("staging") || target.equals("development");
     }
@@ -241,6 +316,8 @@ public class ProductReleaseReadinessService {
         private final List<Map<String, Object>> blockingGaps;
         private final List<Map<String, Object>> belowTargetDimensions;
         private final String tenantId;
+        private final String commitSha;
+        private final String evidenceEnvironment;
         private final Instant createdAt;
         private final Instant updatedAt;
 
@@ -257,6 +334,8 @@ public class ProductReleaseReadinessService {
             this.blockingGaps = builder.blockingGaps != null ? builder.blockingGaps : List.of();
             this.belowTargetDimensions = builder.belowTargetDimensions != null ? builder.belowTargetDimensions : List.of();
             this.tenantId = Objects.requireNonNull(builder.tenantId, "tenantId must not be null");
+            this.commitSha = builder.commitSha;
+            this.evidenceEnvironment = builder.evidenceEnvironment;
             this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
             this.updatedAt = builder.updatedAt != null ? builder.updatedAt : Instant.now();
         }
@@ -273,6 +352,8 @@ public class ProductReleaseReadinessService {
         public List<Map<String, Object>> blockingGaps() { return blockingGaps; }
         public List<Map<String, Object>> belowTargetDimensions() { return belowTargetDimensions; }
         public String tenantId() { return tenantId; }
+        public String commitSha() { return commitSha; }
+        public String evidenceEnvironment() { return evidenceEnvironment; }
         public Instant createdAt() { return createdAt; }
         public Instant updatedAt() { return updatedAt; }
 
@@ -293,6 +374,8 @@ public class ProductReleaseReadinessService {
             private List<Map<String, Object>> blockingGaps;
             private List<Map<String, Object>> belowTargetDimensions;
             private String tenantId;
+            private String commitSha;
+            private String evidenceEnvironment;
             private Instant createdAt;
             private Instant updatedAt;
 
@@ -308,6 +391,8 @@ public class ProductReleaseReadinessService {
             public Builder blockingGaps(List<Map<String, Object>> blockingGaps) { this.blockingGaps = blockingGaps; return this; }
             public Builder belowTargetDimensions(List<Map<String, Object>> belowTargetDimensions) { this.belowTargetDimensions = belowTargetDimensions; return this; }
             public Builder tenantId(String tenantId) { this.tenantId = tenantId; return this; }
+            public Builder commitSha(String commitSha) { this.commitSha = commitSha; return this; }
+            public Builder evidenceEnvironment(String evidenceEnvironment) { this.evidenceEnvironment = evidenceEnvironment; return this; }
             public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
             public Builder updatedAt(Instant updatedAt) { this.updatedAt = updatedAt; return this; }
 

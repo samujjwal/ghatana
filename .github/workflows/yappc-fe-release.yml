@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: "20"
-  PNPM_VERSION: "10.28.2"
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
 
 defaults:
   run:
