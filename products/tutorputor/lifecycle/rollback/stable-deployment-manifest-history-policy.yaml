@@ -1,0 +1,44 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+policyType: stable-deployment-manifest-history
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+retentionPolicy:
+  minimumManifestCount: 5
+  retentionDays: 90
+  stableStatusRequired: true
+  healthCheckPassedRequired: true
+
+manifestValidationRules:
+  - rule: artifact-sha-required
+    description: Each deployment manifest must reference a verified artifact SHA
+    required: true
+  - rule: health-check-age-minimum
+    description: Artifact must have a passing health check of at least 30 minutes before promotion
+    minimumHealthCheckAgeMinutes: 30
+    required: true
+  - rule: staging-promotion-required
+    description: Production deployments must be promoted from staging
+    requiresStagingPromotion: true
+    required: true
+  - rule: allowed-artifact-statuses
+    description: Only stable or verified artifacts may be selected for rollback
+    allowedStatuses:
+      - stable
+      - verified
+    required: true
+
+educationSpecificRules:
+  - rule: no-assessment-data-loss
+    description: Rollback artifact must not result in assessed student data regression
+    required: true
+  - rule: learning-progress-continuity
+    description: Student learning progress records must be preserved across rollback
+    required: true
+  - rule: ferpa-data-integrity
+    description: FERPA-protected student data must remain intact post-rollback
+    required: true
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/foundation-usage-profile.yaml

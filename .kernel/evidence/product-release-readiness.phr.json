@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-24T21:16:55.488Z",
+  "generatedAt": "2026-05-24T22:03:21.094Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d"
+    "commit": "87af07992ba0be7fb4d97843df856fed11cd965c"
   },
   "productId": "phr",
   "releaseVerdict": "pass",
@@ -647,6 +647,34 @@
   "averageScore": 5,
   "releaseTargetScore": 4,
   "belowTargetDimensions": [],
+  "changelogOnlyDeltaPolicy": {
+    "policyId": "PHR-001",
+    "description": "A release delta consisting solely of changelog, readme, or docs-only file changes may bypass full gate re-execution and proceed with a changelog-only delta verdict.",
+    "acceptedAt": "2026-05-25T00:00:00.000Z",
+    "scope": "phr",
+    "allowedPaths": [
+      "CHANGELOG.md",
+      "CHANGELOG",
+      "*/CHANGELOG.md",
+      "README.md",
+      "*/README.md",
+      "docs/**",
+      "*.md"
+    ],
+    "requiredConditions": [
+      "No source files (.java, .ts, .tsx, .json schema, .yaml config) changed",
+      "No dependency lockfiles changed",
+      "No migration scripts changed",
+      "Prior release evidence is at PASS verdict",
+      "Release approver acknowledges delta is docs-only via CHANGELOG_ONLY_DELTA=true env flag"
+    ],
+    "blockedFor": [
+      "Initial releases to any environment",
+      "Releases following a prior BLOCKED verdict",
+      "Releases that include database schema changes"
+    ],
+    "evidenceRef": ".kernel/evidence/product-release-readiness.phr.json"
+  },
   "blockingGaps": [],
   "skippedGates": [],
   "evidencePaths": [

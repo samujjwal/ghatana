@@ -55,6 +55,30 @@
       "description": "Tabbed view of next required work tasks",
       "features": ["taskList", "completionIndicator"]
     },
+    "environmentReadinessExecutabilityDisplay": {
+      "status": "implemented",
+      "description": "Displays executabilityProof block per environment — shows component-level validation method, pass/fail, and timestamp. Driven by PHR-003 executabilityProof block in bootstrap evidence.",
+      "dataSource": ".kernel/evidence/phr/staging-bootstrap-evidence.json#executabilityProof and prod-bootstrap-evidence.json#executabilityProof",
+      "components": ["postgres", "migrations", "secrets", "storage", "redis", "featureFlags", "otlp", "kernelBridge", "dataCloud", "healthChecks"],
+      "indicators": ["validationMethod", "lastVerified", "pass/fail", "failClosed"]
+    },
+    "healthcareGateSynchronizationDisplay": {
+      "status": "implemented",
+      "description": "Displays healthcareGateSynchronization coverage per environment. Shows which gates are covered, external side effects status, and synchronization timestamp. Driven by PHR-004.",
+      "dataSource": ".kernel/evidence/phr/staging-rollback-evidence.json#healthcareGateSynchronization and prod-rollback-evidence.json#healthcareGateSynchronization",
+      "indicators": ["status", "gatesCovered", "externalSideEffects", "synchronizedAt"]
+    },
+    "promotionStatusDisplay": {
+      "status": "implemented",
+      "description": "Displays reusable asset promotion status panel. Shows each asset with promotion_status (promoted/eligible/blocked), lock SHA, approval, and bootstrap validation flags. Driven by PHR-005.",
+      "dataSource": ".kernel/evidence/phr/reusable-assets-registration.json",
+      "indicators": ["promotion_status", "lockedAtSha", "stagingBootstrapValidated", "prodBootstrapValidated", "rollbackEvidencePresent"]
+    },
+    "evidenceFreshnessTimeline": {
+      "status": "implemented",
+      "description": "Shows a timeline of evidence freshness across all evidence categories with stale/current/pending badges, sorted by age",
+      "indicators": ["lastVerifiedAt", "nextReviewDue", "staleIfOlderThanDays"]
+    },
     "refreshCapability": {
       "status": "implemented",
       "description": "Manual refresh button to reload release readiness data"

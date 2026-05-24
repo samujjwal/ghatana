@@ -3,6 +3,20 @@
   "productId": "phr",
   "generatedAt": "2026-05-24T08:35:00.000Z",
   "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "promotionPolicy": {
+    "promotionRequires": [
+      "test_coverage_gte_80",
+      "security_review_approved",
+      "staging_bootstrap_validated",
+      "prod_bootstrap_validated",
+      "rollback_evidence_present",
+      "no_pending_blocking_issues"
+    ],
+    "promotionLockSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+    "lockedAt": "2026-05-24T00:00:00.000Z",
+    "promotionApprovedBy": "phr-team-lead",
+    "allAssetsLockedForPromotion": true
+  },
   "assets": [
     {
       "asset_id": "phr-consent-panel",
@@ -14,11 +28,22 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
           ".kernel/evidence/phr/ui-privacy-access-tests-evidence.json",
+          ".kernel/evidence/phr/staging-bootstrap-evidence.json",
+          ".kernel/evidence/phr/prod-bootstrap-evidence.json",
           "products/phr/domains/consent/src/main/java/com/ghatana/phr/consent/"
         ],
         "test_coverage": "85%",
@@ -55,7 +80,16 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
@@ -96,7 +130,16 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
@@ -137,7 +180,16 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
@@ -179,7 +231,16 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",
@@ -219,7 +280,16 @@
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
-      "promotion_status": "eligible",
+      "promotion_status": "promoted",
+      "promotion_lock": {
+        "lockedAt": "2026-05-24T00:00:00.000Z",
+        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "promotionTarget": "shared-package",
+        "approvedBy": "phr-team-lead",
+        "stagingBootstrapValidated": true,
+        "prodBootstrapValidated": true,
+        "rollbackEvidencePresent": true
+      },
       "promotion_evidence": {
         "evidence_refs": [
           ".kernel/evidence/phr/phr-release-readiness.json",

@@ -1,0 +1,41 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+policyType: previous-artifact-selection
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+selectionStrategy: latest-stable
+
+selectionCriteria:
+  minimumHealthCheckAgeMinutes: 30
+  requiresStagingPromotion: true
+  allowedArtifactStatuses:
+    - stable
+    - verified
+  excludeCurrentDeployment: true
+  maximumAgeHours: 168
+
+educationSafetyChecks:
+  - check: assessment-session-inactive
+    description: No active proctored assessment sessions before artifact swap
+    required: true
+    blockingIfFailed: true
+  - check: learning-cache-drainable
+    description: Distributed learning-progress cache can be safely flushed without data loss
+    required: true
+    blockingIfFailed: true
+  - check: vr-stream-sessions-drained
+    description: No active VR streaming sessions before artifact swap
+    required: true
+    blockingIfFailed: false
+
+rollbackIncompatibilityRules:
+  - rule: no-db-schema-downgrade-without-migration
+    description: Rollback to artifact with incompatible DB schema requires a compensating migration
+    required: true
+  - rule: cache-key-compatibility
+    description: Learning progress cache keys must be compatible with previous artifact
+    required: true
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml

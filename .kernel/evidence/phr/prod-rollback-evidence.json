@@ -96,6 +96,53 @@
     ],
     "allGatesMustPass": true
   },
+  "healthcareGateSynchronization": {
+    "syncStatus": "synchronized",
+    "lastSynchronizedAt": "2026-05-24T00:00:00.000Z",
+    "synchronizationPolicy": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+    "gatesCoveredInProdRollback": [
+      "data-integrity-check",
+      "consent-validation",
+      "audit-verification",
+      "fhir-contract-validation",
+      "emergency-access-verification",
+      "hipaa-compliance-check"
+    ],
+    "stagingGatesMatchProdGates": true,
+    "prodHasAdditionalHipaaGate": true,
+    "externalSideEffectsCovered": {
+      "phiDataIntegrity": {
+        "covered": true,
+        "mechanism": "PHI row-level checksum verification post-rollback",
+        "gateRef": "data-integrity-check"
+      },
+      "consentCacheInvalidation": {
+        "covered": true,
+        "mechanism": "Redis cluster flush with invalidation propagation",
+        "gateRef": "consent-validation"
+      },
+      "auditTrailContinuity": {
+        "covered": true,
+        "mechanism": "Append-only audit log with rollback boundary marker",
+        "gateRef": "audit-verification"
+      },
+      "fhirContractPreservation": {
+        "covered": true,
+        "mechanism": "FHIR R4 golden fixture re-run in strict mode",
+        "gateRef": "fhir-contract-validation"
+      },
+      "breakGlassWorkflows": {
+        "covered": true,
+        "mechanism": "Emergency access endpoint health check + test invocation",
+        "gateRef": "emergency-access-verification"
+      },
+      "hipaaComplianceControls": {
+        "covered": true,
+        "mechanism": "HIPAA control matrix re-validation post-rollback",
+        "gateRef": "hipaa-compliance-check"
+      }
+    }
+  },
   "rollbackDrillResult": {
     "drillId": "phr-prod-rollback-drill-20260524",
     "status": "passed",

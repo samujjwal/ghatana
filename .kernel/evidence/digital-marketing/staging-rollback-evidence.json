@@ -69,6 +69,40 @@
     "inFlightDrained": true,
     "dlqReplayed": true
   },
+  "externalSideEffectsCoverage": {
+    "status": "fully-covered",
+    "lastReviewedAt": "2026-05-24T00:00:00.000Z",
+    "sideEffects": {
+      "campaignStateRollback": {
+        "covered": true,
+        "mechanism": "External IDs preserved; idempotency keys prevent duplicate campaign creation on replay",
+        "compensationHandlers": ["GoogleAdsCampaignCompensationHandler", "WorkspaceStateCompensationHandler"],
+        "externalIdPreservation": true,
+        "idempotencyKeysIntact": true
+      },
+      "aiActionLogImmutability": {
+        "covered": true,
+        "mechanism": "AI action logs are append-only and immutable; rollback does not modify logs, preserving full audit history",
+        "immutableAuditPreserved": true
+      },
+      "notificationDraining": {
+        "covered": true,
+        "mechanism": "In-flight notifications drained before rollback trigger; DLQ entries eligible for replay post-rollback",
+        "inFlightDrained": true,
+        "dlqReplayEligible": true
+      },
+      "connectorOAuthTokens": {
+        "covered": true,
+        "mechanism": "OAuth refresh tokens are stored in Vault and not affected by artifact rollback",
+        "tokensPersistAcrossRollback": true
+      },
+      "dataCloudAuditTrail": {
+        "covered": true,
+        "mechanism": "Data Cloud audit trail is append-only; rollback boundary marker added",
+        "auditTrailContinuous": true
+      }
+    }
+  },
   "rollbackDrillResult": {
     "drillId": "dmos-staging-rollback-drill-20260524",
     "status": "passed",

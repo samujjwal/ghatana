@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Product-family control-plane read API for YAPPC release cockpits and reusable assets.
@@ -168,6 +169,11 @@ public final class ProductFamilyControlPlaneController {
                                 : String.valueOf(v))
                         .toList();
 
+                // YAPPC-001: Extract evidenceRun.commit for mismatch detection
+                String evidenceCommit = extractEvidenceCommit(json);
+                String targetCommit = resolveHeadCommit();
+                boolean commitMismatch = isCommitMismatch(evidenceCommit, targetCommit);
+
                 Map<String, Object> record = new LinkedHashMap<>();
                 record.put("id", "release-readiness-" + productKey);
                 record.put("product_key", productKey);
@@ -179,6 +185,14 @@ public final class ProductFamilyControlPlaneController {
                 record.put("doc_truth_warnings", List.of());
                 record.put("trace_id", "evidence:" + productKey);
                 record.put("updated_at", String.valueOf(json.getOrDefault("generatedAt", Instant.now().toString())));
+                // YAPPC-001: Persist commit alignment fields so normalizeReleaseRecord can expose them
+                record.put("evidence_commit", evidenceCommit != null ? evidenceCommit : "");
+                record.put("target_commit", targetCommit != null ? targetCommit : "");
+                record.put("commit_mismatch", commitMismatch);
+                if (commitMismatch) {
+                    log.warn("YAPPC-001 evidence commit mismatch: productKey={}, evidenceCommit={}, targetCommit={}",
+                            productKey, evidenceCommit, targetCommit);
+                }
                 return Optional.of(Map.copyOf(record));
             } catch (IOException error) {
                 log.warn("Failed to parse release readiness evidence file: {}", candidate, error);
@@ -186,6 +200,84 @@ public final class ProductFamilyControlPlaneController {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * YAPPC-001: Extracts the evidence run commit SHA from the evidence JSON.
+     * Checks {@code evidenceRun.commit} first, then top-level {@code commit}.
+     */
+    @SuppressWarnings("unchecked")
+    private String extractEvidenceCommit(Map<String, Object> json) {
+        Object evidenceRun = json.get("evidenceRun");
+        if (evidenceRun instanceof Map<?, ?> runMap) {
+            Object commit = runMap.get("commit");
+            if (commit != null && !String.valueOf(commit).isBlank()) {
+                return String.valueOf(commit).trim();
+            }
+        }
+        Object topLevel = json.get("commit");
+        if (topLevel != null && !String.valueOf(topLevel).isBlank()) {
+            return String.valueOf(topLevel).trim();
+        }
+        return null;
+    }
+
+    private static final Pattern SHA_PATTERN = Pattern.compile("^[0-9a-f]{7,40}$", Pattern.CASE_INSENSITIVE);
+
+    /**
+     * YAPPC-001: Resolves the current HEAD commit SHA from .git/HEAD.
+     * Follows symbolic refs (e.g. "ref: refs/heads/main") to the actual SHA.
+     * Returns null when not in a Git repo or HEAD cannot be resolved.
+     */
+    String resolveHeadCommit() {
+        try {
+            Path headFile = repoRoot.resolve(".git/HEAD");
+            if (!Files.exists(headFile)) {
+                return null;
+            }
+            String headContent = Files.readString(headFile, StandardCharsets.UTF_8).strip();
+            if (headContent.startsWith("ref: ")) {
+                String ref = headContent.substring(5).strip();
+                Path refFile = repoRoot.resolve(".git").resolve(ref);
+                if (Files.exists(refFile)) {
+                    String sha = Files.readString(refFile, StandardCharsets.UTF_8).strip();
+                    return SHA_PATTERN.matcher(sha).matches() ? sha : null;
+                }
+                // Packed refs fallback
+                Path packedRefs = repoRoot.resolve(".git/packed-refs");
+                if (Files.exists(packedRefs)) {
+                    for (String line : Files.readAllLines(packedRefs, StandardCharsets.UTF_8)) {
+                        if (line.endsWith(" " + ref)) {
+                            String sha = line.substring(0, line.indexOf(' ')).strip();
+                            return SHA_PATTERN.matcher(sha).matches() ? sha : null;
+                        }
+                    }
+                }
+                return null;
+            }
+            return SHA_PATTERN.matcher(headContent).matches() ? headContent : null;
+        } catch (IOException e) {
+            log.debug("Unable to resolve HEAD commit from git: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * YAPPC-001: Returns true when both commits are non-blank and differ.
+     * Returns false (no mismatch) when either commit cannot be resolved
+     * (avoids false positives in non-git environments).
+     */
+    private boolean isCommitMismatch(String evidenceCommit, String targetCommit) {
+        if (evidenceCommit == null || evidenceCommit.isBlank()) {
+            return false;
+        }
+        if (targetCommit == null || targetCommit.isBlank()) {
+            return false;
+        }
+        // Prefix match to tolerate short SHA vs full SHA comparisons
+        String shorter = evidenceCommit.length() <= targetCommit.length() ? evidenceCommit : targetCommit;
+        String longer = evidenceCommit.length() > targetCommit.length() ? evidenceCommit : targetCommit;
+        return !longer.startsWith(shorter);
     }
 
     private Promise<Void> ingestAssetCandidatesFromEvidence(String tenantId) {
@@ -453,10 +545,15 @@ public final class ProductFamilyControlPlaneController {
                 "targetState", targetState));
     }
 
+    /**
+     * YAPPC-004: Validates asset schema before promotion.
+     * Enforces stricter requirements for production-bound and shared promotions:
+     * owner, compatibility, evidence_refs, tests, and dependencies must all be present.
+     */
     private List<String> validateAssetSchema(Map<String, Object> asset, String targetState) {
         List<String> violations = new java.util.ArrayList<>();
-        
-        // Validate required fields
+
+        // Base required fields for all promotions
         if (asset.get("asset_id") == null || String.valueOf(asset.get("asset_id")).isBlank()) {
             violations.add("asset_id is required");
         }
@@ -466,34 +563,62 @@ public final class ProductFamilyControlPlaneController {
         if (asset.get("source_product") == null || String.valueOf(asset.get("source_product")).isBlank()) {
             violations.add("source_product is required");
         }
-        
-        // Validate target state-specific requirements
-        if ("production".equals(targetState) || "shared-package".equals(targetState)) {
-            if (asset.get("paths") == null || ((List<?>) asset.get("paths")).isEmpty()) {
-                violations.add("paths must be non-empty for production/shared-package promotion");
-            }
-            if (asset.get("tests") == null || ((List<?>) asset.get("tests")).isEmpty()) {
-                violations.add("tests must be non-empty for production/shared-package promotion");
-            }
-            if (asset.get("dependencies") == null) {
-                violations.add("dependencies must be specified for production/shared-package promotion");
+
+        boolean isHardenedOrAbove = List.of("hardened", "production", "shared-package", "plugin", "template", "schema").contains(targetState);
+        boolean isProductionOrShared = List.of("production", "shared-package", "plugin", "template", "schema").contains(targetState);
+
+        // YAPPC-004: owner required from hardened onward
+        if (isHardenedOrAbove) {
+            Object owner = asset.get("owner");
+            if (owner == null || String.valueOf(owner).isBlank() || "unassigned".equals(String.valueOf(owner))) {
+                violations.add("owner must be set for " + targetState + " promotion");
             }
         }
-        
-        // Validate maturity consistency
+
+        // YAPPC-004: paths and tests required from hardened onward
+        if (isHardenedOrAbove) {
+            Object paths = asset.get("paths");
+            if (paths == null || coerceList(paths).isEmpty()) {
+                violations.add("paths must be non-empty for " + targetState + " promotion");
+            }
+            Object tests = asset.get("tests");
+            if (tests == null || coerceList(tests).isEmpty()) {
+                violations.add("tests must be non-empty for " + targetState + " promotion");
+            }
+        }
+
+        // YAPPC-004: dependencies required from hardened onward
+        if (isHardenedOrAbove) {
+            if (asset.get("dependencies") == null) {
+                violations.add("dependencies must be specified for " + targetState + " promotion");
+            }
+        }
+
+        // YAPPC-004: evidence_refs required from production onward
+        if (isProductionOrShared) {
+            Object evidenceRefs = asset.get("evidence_refs");
+            if (evidenceRefs == null || coerceList(evidenceRefs).isEmpty()) {
+                violations.add("evidence_refs must be non-empty for " + targetState + " promotion");
+            }
+        }
+
+        // YAPPC-004: compatibility must be set (non-empty map) for shared/plugin/template/schema promotions
+        if (List.of("shared-package", "plugin", "template", "schema").contains(targetState)) {
+            Object compat = asset.get("compatibility");
+            boolean compatEmpty = compat == null
+                    || (compat instanceof Map<?, ?> m && m.isEmpty())
+                    || String.valueOf(compat).equals("{}");
+            if (compatEmpty) {
+                violations.add("compatibility must be specified for " + targetState + " promotion");
+            }
+        }
+
+        // Maturity consistency check
         String maturity = String.valueOf(asset.getOrDefault("maturity", ""));
         if ("production".equals(targetState) && !"hardened".equals(maturity) && !"production".equals(maturity)) {
             violations.add("asset must be in 'hardened' or 'production' maturity to promote to production");
         }
-        
-        // Validate evidence refs for production promotion
-        if ("production".equals(targetState)) {
-            Object evidenceRefs = asset.get("evidence_refs");
-            if (evidenceRefs == null || ((List<?>) evidenceRefs).isEmpty()) {
-                violations.add("evidence_refs must be non-empty for production promotion");
-            }
-        }
-        
+
         return violations;
     }
 
@@ -597,7 +722,36 @@ public final class ProductFamilyControlPlaneController {
         result.put("docTruthWarnings", value(data, "doc_truth_warnings", List.of()));
         result.put("traceId", value(data, "trace_id", ""));
         result.put("updatedAt", value(data, "updated_at", Instant.now().toString()));
+        // YAPPC-001: Expose evidence commit alignment fields
+        result.put("evidenceCommit", value(data, "evidence_commit", ""));
+        result.put("targetCommit", value(data, "target_commit", ""));
+        result.put("commitMismatch", value(data, "commit_mismatch", false));
+        // YAPPC-002: Expose environment tier for per-environment readiness display
+        result.put("environmentTier", value(data, "environment_tier", resolveEnvironmentTier()));
         return Map.copyOf(result);
+    }
+
+    /**
+     * YAPPC-002: Resolves the environment tier from well-known environment variables.
+     * Returns one of: local, dev, staging, production.
+     */
+    private String resolveEnvironmentTier() {
+        String env = System.getenv("YAPPC_ENVIRONMENT");
+        if (env == null || env.isBlank()) {
+            env = System.getenv("ENVIRONMENT");
+        }
+        if (env == null || env.isBlank()) {
+            env = System.getenv("NODE_ENV");
+        }
+        if (env == null || env.isBlank()) {
+            return "local";
+        }
+        return switch (env.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "production", "prod" -> "production";
+            case "staging", "stage" -> "staging";
+            case "development", "dev" -> "dev";
+            default -> "local";
+        };
     }
 
     private Map<String, Object> normalizeAssetRecord(String assetId, Map<String, Object> data) {

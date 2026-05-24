@@ -10,7 +10,7 @@
 import React from 'react';
 import { useTranslation } from '@ghatana/i18n';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Boxes, CheckCircle2, FileWarning, GitBranch, RefreshCw, Search } from 'lucide-react';
+import { AlertTriangle, Boxes, CheckCircle2, FileWarning, GitBranch, RefreshCw, Search } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
@@ -55,6 +55,14 @@ interface ReleasePanelProps {
   readonly title: string;
 }
 
+// YAPPC-002: Map environment tier to a display variant
+const environmentTierVariant = (tier: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  if (tier === 'production') return 'default';
+  if (tier === 'staging') return 'secondary';
+  if (tier === 'dev') return 'outline';
+  return 'outline';
+};
+
 const ReleasePanel: React.FC<ReleasePanelProps> = ({ productKey, title }) => {
   const { t } = useTranslation('common');
   const query = useQuery<ReleaseReadiness>({
@@ -79,39 +87,85 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({ productKey, title }) => {
 
   const release = query.data;
   const showDigitalMarketingGates = productKey === 'digital-marketing';
+  const commitMismatch = release.commitMismatch === true;
+  const environmentTier = release.environmentTier ?? 'local';
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-fg">{title}</h2>
-          <Badge variant={verdictVariant(release.verdict)}>{release.verdict}</Badge>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-3">
-            <Metric label={t('productFamily.metric.backendStatus')} value={release.status} />
-            <Metric label={t('productFamily.metric.evidenceRefs')} value={String(release.evidenceRefs.length)} />
-            <Metric label={t('productFamily.metric.traceId')} value={release.traceId || t('productFamily.fallback.notRecorded')} />
+    <div className="space-y-3">
+      {/* YAPPC-001: Stale evidence warning banner */}
+      {commitMismatch ? (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex items-start gap-3 rounded-md border border-warning-color bg-warning-muted px-4 py-3"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-color" aria-hidden="true" />
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold text-warning-color">
+              {t('productFamily.release.commitMismatch.title')}
+            </p>
+            <p className="text-xs text-fg-muted">
+              {t('productFamily.release.commitMismatch.detail', {
+                evidenceCommit: release.evidenceCommit ? release.evidenceCommit.slice(0, 12) : '—',
+                targetCommit: release.targetCommit ? release.targetCommit.slice(0, 12) : '—',
+              })}
+            </p>
           </div>
-          <ListBlock title={t('productFamily.release.gateStatus')} items={release.gateStatus} />
-          <ListBlock title={t('productFamily.release.blockers')} items={release.blockers} />
-          {showDigitalMarketingGates ? (
-            <div className="grid gap-3 md:grid-cols-3">
-              <ListBlock title={t('productFamily.release.connectorGates')} items={release.connectorGates ?? []} />
-              <ListBlock title={t('productFamily.release.approvalGates')} items={release.approvalGates ?? []} />
-              <ListBlock title={t('productFamily.release.aiActionGates')} items={release.aiActionGates ?? []} />
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-fg">{title}</h2>
+            <div className="flex items-center gap-2">
+              {/* YAPPC-002: Environment tier badge */}
+              <Badge variant={environmentTierVariant(environmentTier)}>
+                {environmentTier}
+              </Badge>
+              <Badge variant={verdictVariant(release.verdict)}>{release.verdict}</Badge>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold text-fg">{t('productFamily.release.foundationReadinessTitle')}</h2>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <ListBlock title={t('productFamily.release.foundationSlices')} items={release.foundationReadiness} />
-          <ListBlock title={t('productFamily.release.docTruthWarnings')} items={release.docTruthWarnings} />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <Metric label={t('productFamily.metric.backendStatus')} value={release.status} />
+              <Metric label={t('productFamily.metric.evidenceRefs')} value={String(release.evidenceRefs.length)} />
+              <Metric label={t('productFamily.metric.traceId')} value={release.traceId || t('productFamily.fallback.notRecorded')} />
+            </div>
+            {/* YAPPC-001: Commit alignment metrics */}
+            {(release.evidenceCommit || release.targetCommit) ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                <Metric
+                  label={t('productFamily.metric.evidenceCommit')}
+                  value={release.evidenceCommit ? release.evidenceCommit.slice(0, 12) : t('productFamily.fallback.unknown')}
+                />
+                <Metric
+                  label={t('productFamily.metric.targetCommit')}
+                  value={release.targetCommit ? release.targetCommit.slice(0, 12) : t('productFamily.fallback.unknown')}
+                />
+              </div>
+            ) : null}
+            <ListBlock title={t('productFamily.release.gateStatus')} items={release.gateStatus} />
+            <ListBlock title={t('productFamily.release.blockers')} items={release.blockers} />
+            {showDigitalMarketingGates ? (
+              <div className="grid gap-3 md:grid-cols-3">
+                <ListBlock title={t('productFamily.release.connectorGates')} items={release.connectorGates ?? []} />
+                <ListBlock title={t('productFamily.release.approvalGates')} items={release.approvalGates ?? []} />
+                <ListBlock title={t('productFamily.release.aiActionGates')} items={release.aiActionGates ?? []} />
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-fg">{t('productFamily.release.foundationReadinessTitle')}</h2>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ListBlock title={t('productFamily.release.foundationSlices')} items={release.foundationReadiness} />
+            <ListBlock title={t('productFamily.release.docTruthWarnings')} items={release.docTruthWarnings} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -327,8 +381,8 @@ const TruthAndReusePanel: React.FC = () => {
           <ListBlock title={t('productFamily.truth.warnings')} items={docTruth.data?.warnings ?? []} />
         </CardContent>
       </Card>
-      <GuidedReuseCard title={t('productFamily.reuse.tutorputor')} status={tutorputor.data?.status} items={tutorputor.data?.recommendations ?? []} />
-      <GuidedReuseCard title={t('productFamily.reuse.flashit')} status={flashit.data?.status} items={flashit.data?.recommendations ?? []} />
+      <GuidedReuseCard title={t('productFamily.reuse.tutorputor')} status={tutorputor.data?.status} items={tutorputor.data?.recommendations ?? []} targetProduct="tutorputor" />
+      <GuidedReuseCard title={t('productFamily.reuse.flashit')} status={flashit.data?.status} items={flashit.data?.recommendations ?? []} targetProduct="flashit" />
     </div>
   );
 };
@@ -407,21 +461,39 @@ const ListBlockEmpty: React.FC = () => {
   return <p className="text-sm text-fg-muted">{t('productFamily.fallback.noBackendRecords')}</p>;
 };
 
+// YAPPC-003: Candidate-blocked products must show a clear status, not a false "READY"
+const CANDIDATE_BLOCKED_PRODUCTS = new Set(['tutorputor', 'flashit']);
+
 interface GuidedReuseCardProps {
   readonly title: string;
   readonly status: string | undefined;
   readonly items: readonly unknown[];
+  readonly targetProduct?: string;
 }
 
-const GuidedReuseCard: React.FC<GuidedReuseCardProps> = ({ title, status, items }) => {
+const GuidedReuseCard: React.FC<GuidedReuseCardProps> = ({ title, status, items, targetProduct }) => {
   const { t } = useTranslation('common');
+  const isBlocked = targetProduct != null && CANDIDATE_BLOCKED_PRODUCTS.has(targetProduct);
+  const effectiveStatus = isBlocked ? 'CANDIDATE' : (status ?? 'LOADING');
+  const badgeVariant = isBlocked ? 'secondary' : (status === 'READY' ? 'default' : 'secondary');
   return (
     <Card>
       <CardHeader>
         <h2 className="text-lg font-semibold text-fg">{title}</h2>
       </CardHeader>
-      <CardContent>
-        <Badge variant={status === 'READY' ? 'default' : 'secondary'}>{status ?? t('productFamily.status.loading')}</Badge>
+      <CardContent className="space-y-3">
+        <Badge variant={badgeVariant}>{effectiveStatus}</Badge>
+        {isBlocked ? (
+          <div
+            role="status"
+            className="flex items-start gap-2 rounded-md border border-border bg-surface-muted p-3"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
+            <p className="text-xs text-fg-muted">
+              {t('productFamily.reuse.candidateBlocked', { product: title })}
+            </p>
+          </div>
+        ) : null}
         <GuidedReuseItems items={items} />
       </CardContent>
     </Card>

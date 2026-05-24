@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.Nested;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -248,6 +249,181 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(409);
         verify(dataCloudClient, never()).save(eq(TENANT_ID), anyString(), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
+    }
+
+    @Test
+    @DisplayName("YAPPC-004: asset promotion to hardened is blocked when owner is unassigned")
+    void promoteToHardenedBlockedWhenOwnerUnassigned() throws Exception {
+        Map<String, Object> currentAsset = new java.util.LinkedHashMap<>();
+        currentAsset.put("id", "entity-2");
+        currentAsset.put("asset_id", "phr-audit-trail");
+        currentAsset.put("asset_type", "module");
+        currentAsset.put("source_product", "phr");
+        currentAsset.put("maturity", "candidate");
+        currentAsset.put("reuse_mode", "reference");
+        currentAsset.put("owner", "unassigned");
+        currentAsset.put("paths", List.of());
+        currentAsset.put("tests", List.of());
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-audit-trail"))
+                .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-2", ASSET_COLLECTION, Map.copyOf(currentAsset)))));
+
+        HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
+                "phr-audit-trail",
+                Map.of("targetState", "hardened", "reason", "missing owner"))));
+
+        assertThat(response.getCode()).isEqualTo(422);
+        String body = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(body).contains("owner must be set");
+        assertThat(body).contains("paths must be non-empty");
+        verify(dataCloudClient, never()).save(eq(TENANT_ID), eq(ASSET_COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
+    }
+
+    @Test
+    @DisplayName("YAPPC-004: asset promotion to production is blocked when evidence_refs are missing")
+    void promoteToProductionBlockedWhenEvidenceRefsMissing() throws Exception {
+        Map<String, Object> currentAsset = new java.util.LinkedHashMap<>();
+        currentAsset.put("id", "entity-3");
+        currentAsset.put("asset_id", "phr-fhir-adapter");
+        currentAsset.put("asset_type", "connector");
+        currentAsset.put("source_product", "phr");
+        currentAsset.put("maturity", "hardened");
+        currentAsset.put("reuse_mode", "reference");
+        currentAsset.put("owner", "phr-platform");
+        currentAsset.put("paths", List.of("src/FhirAdapter.java"));
+        currentAsset.put("tests", List.of("src/FhirAdapterTest.java"));
+        currentAsset.put("dependencies", List.of());
+        // evidence_refs absent
+        when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-fhir-adapter"))
+                .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-3", ASSET_COLLECTION, Map.copyOf(currentAsset)))));
+
+        HttpResponse response = runPromise(() -> controller().promoteAsset(postPromotion(
+                "phr-fhir-adapter",
+                Map.of("targetState", "production", "reason", "missing evidence"))));
+
+        assertThat(response.getCode()).isEqualTo(422);
+        String body = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(body).contains("evidence_refs must be non-empty");
+        verify(dataCloudClient, never()).save(eq(TENANT_ID), eq(ASSET_COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
+    }
+
+    @Nested
+    @DisplayName("YAPPC-001: commit mismatch detection")
+    class CommitMismatchTests {
+
+        @Test
+        @DisplayName("release readiness exposes commitMismatch=true when evidence commit differs from HEAD")
+        void releaseReadinessExposesMismatchWhenCommitsDiffer() throws Exception {
+            // Write a fake git tree: symbolic HEAD -> refs/heads/main -> a different SHA
+            Path gitDir = tempDir.resolve(".git");
+            Files.createDirectories(gitDir.resolve("refs/heads"));
+            Files.writeString(gitDir.resolve("HEAD"), "ref: refs/heads/main\n", StandardCharsets.UTF_8);
+            Files.writeString(gitDir.resolve("refs/heads/main"), "aabbccddeeff00112233445566778899aabbccdd\n", StandardCharsets.UTF_8);
+
+            Path evidenceDir = tempDir.resolve(".kernel/evidence");
+            Files.createDirectories(evidenceDir);
+            Files.writeString(
+                    evidenceDir.resolve("product-release-readiness.phr.json"),
+                    """
+                    {
+                      "generatedAt": "2026-05-23T00:00:00.000Z",
+                      "productId": "phr",
+                      "releaseVerdict": "pass",
+                      "releaseProfiles": [],
+                      "blockingGaps": [],
+                      "evidencePaths": [],
+                      "dimensions": [],
+                      "evidenceRun": { "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d" }
+                    }
+                    """,
+                    StandardCharsets.UTF_8);
+
+            when(dataCloudClient.query(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.any()))
+                    .thenReturn(Promise.of(List.of()));
+            when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
+                    .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+                            "release-readiness-phr", "product_release_readiness", invocation.getArgument(2))));
+
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+            request.attach(Principal.class, new Principal("tester", List.of("admin"), TENANT_ID));
+            putPathParameter(request, "productKey", "phr");
+
+            ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+            HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            String body = response.getBody().asString(StandardCharsets.UTF_8);
+            assertThat(body).contains("\"commitMismatch\":true");
+            assertThat(body).contains("\"evidenceCommit\":\"ca6a53684a46");
+        }
+
+        @Test
+        @DisplayName("release readiness exposes commitMismatch=false when evidence commit matches HEAD")
+        void releaseReadinessExposesMismatchFalseWhenCommitsMatch() throws Exception {
+            String sha = "ca6a53684a4685fe04fff1dd23cea80b9b65d27d";
+            Path gitDir = tempDir.resolve(".git");
+            Files.createDirectories(gitDir.resolve("refs/heads"));
+            Files.writeString(gitDir.resolve("HEAD"), "ref: refs/heads/main\n", StandardCharsets.UTF_8);
+            Files.writeString(gitDir.resolve("refs/heads/main"), sha + "\n", StandardCharsets.UTF_8);
+
+            Path evidenceDir = tempDir.resolve(".kernel/evidence");
+            Files.createDirectories(evidenceDir);
+            Files.writeString(
+                    evidenceDir.resolve("product-release-readiness.phr.json"),
+                    """
+                    {
+                      "generatedAt": "2026-05-23T00:00:00.000Z",
+                      "productId": "phr",
+                      "releaseVerdict": "pass",
+                      "releaseProfiles": [],
+                      "blockingGaps": [],
+                      "evidencePaths": [],
+                      "dimensions": [],
+                      "evidenceRun": { "commit": "%s" }
+                    }
+                    """.formatted(sha),
+                    StandardCharsets.UTF_8);
+
+            when(dataCloudClient.query(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.any()))
+                    .thenReturn(Promise.of(List.of()));
+            when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
+                    .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+                            "release-readiness-phr", "product_release_readiness", invocation.getArgument(2))));
+
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+            request.attach(Principal.class, new Principal("tester", List.of("admin"), TENANT_ID));
+            putPathParameter(request, "productKey", "phr");
+
+            ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+            HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));
+
+            assertThat(response.getCode()).isEqualTo(200);
+            String body = response.getBody().asString(StandardCharsets.UTF_8);
+            assertThat(body).contains("\"commitMismatch\":false");
+        }
+
+        @Test
+        @DisplayName("resolveHeadCommit follows packed-refs when loose ref is absent")
+        void resolveHeadCommitFollowsPackedRefs() throws Exception {
+            String sha = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+            Path gitDir = tempDir.resolve(".git");
+            Files.createDirectories(gitDir);
+            Files.writeString(gitDir.resolve("HEAD"), "ref: refs/heads/packed-branch\n", StandardCharsets.UTF_8);
+            // No loose ref file; use packed-refs instead
+            Files.writeString(gitDir.resolve("packed-refs"),
+                    "# pack-refs with: peeled fully-peeled sorted\n" + sha + " refs/heads/packed-branch\n",
+                    StandardCharsets.UTF_8);
+
+            ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+            assertThat(controller.resolveHeadCommit()).isEqualTo(sha);
+        }
+
+        @Test
+        @DisplayName("resolveHeadCommit returns null when .git/HEAD is absent")
+        void resolveHeadCommitReturnsNullWithoutGit() throws Exception {
+            ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+            // No .git directory exists in tempDir
+            assertThat(controller.resolveHeadCommit()).isNull();
+        }
     }
 
     private ProductFamilyControlPlaneController controller() {

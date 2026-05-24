@@ -1,0 +1,59 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+gatePack: distributed-cache-validation
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+summary:
+  description: Validates that Tutorputor's learning-progress distributed cache (DistributedCachePort) is correctly wired to a durable external cache (Redis cluster) and that in-memory cache is disallowed in production.
+
+requirement:
+  distributedCachePort: required
+  inMemoryCacheAdapterInProduction: blocked
+  cacheBackend: redis-cluster
+  tlsRequired: true
+
+validationGates:
+  - gate: cache-port-injection-verified
+    description: DistributedCachePort is injected at construction time; no fallback to in-memory implementation
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: dist-cache-adapter-class-is-redis
+        description: The DistributedCachePort implementation class is RedisDistributedCacheAdapter (or equivalent)
+      - checkName: no-in-memory-cache-in-prod-profile
+        description: Production configuration profile has no InMemoryCacheAdapter binding
+
+  - gate: redis-connectivity-probe
+    description: Redis cluster is reachable and responds to SET/GET/DEL probes
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: redis-ping
+        description: Redis PING returns PONG
+      - checkName: redis-set-get-delete
+        description: SET learning:probe:val → GET → DEL round-trip succeeds
+      - checkName: redis-tls-handshake
+        description: TLS handshake with Redis server succeeds
+
+  - gate: learning-progress-cache-roundtrip
+    description: Learning progress data can be written to and read from cache with correct tenant scoping
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: tenant-key-prefix-isolation
+        description: Cache keys are prefixed with tenant ID; cross-tenant reads return empty
+      - checkName: learning-progress-write-then-read
+        description: Write then read a synthetic learning progress record; verify data integrity
+
+  - gate: cache-invalidation-on-rollback
+    description: Cache entries can be selectively invalidated on rollback without data loss in persistent store
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: cache-flush-does-not-lose-persistent-data
+        description: Flushing cache does not affect the durable learning_progress table
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/foundation-usage-profile.yaml
+  - products/tutorputor/lifecycle/rollback/rollback-approval-contract.yaml

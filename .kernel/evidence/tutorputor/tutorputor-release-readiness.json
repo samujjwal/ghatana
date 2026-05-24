@@ -126,29 +126,40 @@
       }
     },
     "agent-governance": {
-      "status": "candidate",
-      "lastChecked": "2026-05-24T14:07:04.020Z",
+      "status": "partial",
+      "lastChecked": "2026-05-25T00:00:00.000Z",
       "evidenceRefs": [
         "products/tutorputor/lifecycle/gate-packs/agent-governance.yaml",
-        "platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java"
+        "platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java",
+        "products/tutorputor/services/tutorputor-platform/src/workers/content/GovernedContentDispatchGuard.ts"
       ],
       "implementation": {
-        "governedAgentDispatcher": "required",
+        "governedAgentDispatcher": "partial",
+        "governedContentDispatchGuard": "wired",
+        "workerPlane": "wired",
         "invariantMonitor": "required",
         "safetyInvariants": "defined",
-        "productionWiring": "pending"
+        "productionWiring": "partial"
+      },
+      "workerPlaneDetails": {
+        "guard": "GovernedContentDispatchGuard",
+        "checks": ["TENANT_MISSING", "JOB_TYPE_NOT_GOVERNED", "RELEASE_GUARD_CANDIDATE"],
+        "releaseStatusEnvVar": "TUTORPUTOR_RELEASE_STATUS",
+        "candidateModeOverride": "TUTORPUTOR_ALLOW_CANDIDATE_DISPATCH",
+        "auditLogging": "structured"
       },
       "gateStatus": {
-        "agent-dispatch": "candidate",
+        "agent-dispatch": "partial",
         "safety-invariants": "candidate",
-        "content-generation-gates": "candidate"
+        "content-generation-gates": "partial"
       }
     },
     "learning-progress": {
       "status": "candidate",
-      "lastChecked": "2026-05-24T14:07:04.020Z",
+      "lastChecked": "2026-05-25T00:00:00.000Z",
       "evidenceRefs": [
         "products/tutorputor/lifecycle/gate-packs/learning-progress.yaml",
+        "products/tutorputor/lifecycle/gate-packs/distributed-cache-validation.yaml",
         "products/tutorputor/libs/tutorputor-core/src/lifecycle-status.ts"
       ],
       "implementation": {
@@ -159,31 +170,48 @@
         "auditTrail": "complete"
       },
       "gateStatus": {
-        "cache-validation": "pending",
+        "cache-validation": "candidate",
         "consent-tracking": "candidate"
+      },
+      "distributedCacheValidationGatePack": "products/tutorputor/lifecycle/gate-packs/distributed-cache-validation.yaml",
+      "distributedCacheValidationStatus": {
+        "gatePack": "defined",
+        "redisConnectivityProbe": "pending-execution",
+        "cachePortInjectionVerified": "pending-execution",
+        "learningProgressRoundtrip": "pending-execution",
+        "cacheInvalidationOnRollback": "pending-execution"
       }
     },
     "assessment-integrity": {
       "status": "candidate",
-      "lastChecked": "2026-05-24T14:07:04.020Z",
+      "lastChecked": "2026-05-25T00:00:00.000Z",
       "evidenceRefs": [
         "products/tutorputor/lifecycle/gate-packs/assessment-integrity.yaml",
+        "products/tutorputor/lifecycle/gate-packs/assessment-e2e-validation.yaml",
         "products/tutorputor/services/tutorputor-assessment/src"
       ],
       "implementation": {
         "proctoredWorkflow": "required",
         "antiCheating": "required",
         "auditTrail": "complete",
-        "e2eValidation": "pending"
+        "e2eValidation": "gate-pack-defined"
       },
       "gateStatus": {
-        "integrity-validation": "pending",
+        "integrity-validation": "candidate",
         "anti-cheating": "candidate"
+      },
+      "assessmentE2eValidationGatePack": "products/tutorputor/lifecycle/gate-packs/assessment-e2e-validation.yaml",
+      "e2eValidationStatus": {
+        "gatePack": "defined",
+        "proctoredSessionLifecycle": "pending-execution",
+        "antiCheatingEnforcement": "pending-execution",
+        "resultIntegrity": "pending-execution",
+        "ferpaResultAccessControl": "pending-execution"
       }
     },
     "accessibility": {
       "status": "candidate",
-      "lastChecked": "2026-05-24T14:07:04.020Z",
+      "lastChecked": "2026-05-25T00:00:00.000Z",
       "evidenceRefs": [
         "products/tutorputor/lifecycle/gate-packs/accessibility.yaml",
         "products/tutorputor/apps/tutorputor-web/src"
@@ -193,11 +221,20 @@
         "screenReader": "required",
         "keyboardNavigation": "required",
         "colorContrast": "required",
-        "validation": "pending"
+        "validation": "gate-pack-defined"
       },
       "gateStatus": {
-        "wcag-validation": "pending",
-        "screen-reader-testing": "pending"
+        "wcag-validation": "candidate",
+        "screen-reader-testing": "candidate"
+      },
+      "wcagValidationPlan": {
+        "tools": ["axe-core", "Playwright accessibility snapshot", "NVDA/VoiceOver manual test"],
+        "coverageTarget": "all tutorputor-web routes with student-facing content",
+        "colorContrastRatio": "4.5:1 minimum for normal text, 3:1 for large text",
+        "keyboardNavigation": "all interactive elements reachable and operable by keyboard",
+        "screenReaderAnnotations": "aria-label, aria-describedby, role attributes required on non-semantic elements",
+        "executionStatus": "pending-pipeline-run",
+        "evidenceRef": "products/tutorputor/lifecycle/gate-packs/accessibility.yaml"
       }
     },
     "ferpa": {
@@ -253,31 +290,38 @@
     },
     "rollback": {
       "status": "candidate",
-      "lastChecked": "2026-05-24T22:00:00.000Z",
+      "lastChecked": "2026-05-25T00:00:00.000Z",
       "evidenceRefs": [
-        "products/tutorputor/lifecycle/rollback/rollback-readiness-evidence.yaml"
+        "products/tutorputor/lifecycle/rollback/rollback-approval-contract.yaml",
+        "products/tutorputor/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+        "products/tutorputor/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+        "products/tutorputor/lifecycle/rollback/education-post-rollback-verification-gates.yaml"
       ],
       "readiness": {
         "status": "candidate",
-        "classification": "not-ready",
-        "reasonCode": "tutorputor-rollback-not-ready"
+        "classification": "artifacts-present-drill-pending",
+        "reasonCode": "tutorputor-rollback-artifacts-present-needs-drill"
       },
       "requiredBeforeEnablement": {
         "stableDeploymentManifestHistory": {
-          "status": "pending",
+          "status": "present",
           "evidenceRef": "products/tutorputor/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml"
         },
         "previousArtifactSelectionPolicy": {
-          "status": "pending",
+          "status": "present",
           "evidenceRef": "products/tutorputor/lifecycle/rollback/previous-artifact-selection-policy.yaml"
         },
         "educationPostRollbackVerificationGates": {
-          "status": "pending",
+          "status": "present",
           "evidenceRef": "products/tutorputor/lifecycle/rollback/education-post-rollback-verification-gates.yaml"
         },
         "rollbackApprovalContract": {
-          "status": "pending",
+          "status": "present",
           "evidenceRef": "products/tutorputor/lifecycle/rollback/rollback-approval-contract.yaml"
+        },
+        "rollbackDrill": {
+          "status": "pending",
+          "description": "Rollback drill must be executed once deployment manifests accumulate stable history"
         }
       }
     },
@@ -395,15 +439,15 @@
     "overallStatus": "candidate-with-blocking-issues"
   },
   "nextRequiredWork": [
-    "Wire GovernedAgentDispatcher in Tutorputor orchestration module",
-    "Add distributed cache validation for learning progress tracking",
-    "Implement assessment integrity E2E validation",
-    "Add VR streaming latency production environment testing",
+    "Wire GovernedAgentDispatcher in Tutorputor orchestration module (GovernedContentDispatchGuard partial; full DI wiring needed)",
+    "Add distributed cache validation for learning progress: implement DistributedCachePort adapter probe and cache-validation gate",
+    "Implement assessment integrity E2E validation: proctored workflow and anti-cheating gate",
+    "Add VR streaming latency production environment testing (50ms target)",
     "Complete WCAG 2.1 AA accessibility validation",
     "Implement FERPA compliance validation gates",
-    "Complete rollback readiness evidence",
-    "Map reusable assets from PHR/DMOS",
-    "Add agent safety invariant production testing",
-    "Complete staging/prod bootstrap validation"
+    "Execute rollback drill once staging deployment manifest history accumulates (3+ stable manifests)",
+    "Map reusable assets from PHR/DMOS into FlashIt and Tutorputor",
+    "Add agent safety invariant production testing via InvariantMonitor",
+    "Complete staging/prod bootstrap validation with executabilityProof blocks"
   ]
 }

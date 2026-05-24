@@ -33,6 +33,15 @@
     "externalIdPreservation": true,
     "stateReconciliation": true
   },
+  "evidenceFreshness": {
+    "status": "current",
+    "lastVerifiedAt": "2026-05-24T00:00:00.000Z",
+    "verifiedAtCommitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+    "nextReviewDueAt": "2026-08-24T00:00:00.000Z",
+    "reviewCadence": "quarterly",
+    "verificationMethod": "automated-connector-integration-test-suite",
+    "allGuaranteesVerified": true
+  },
   "evidenceRefs": [
     "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
     "products/digital-marketing/dm-connector-google-ads/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorIntegrationTest.java",

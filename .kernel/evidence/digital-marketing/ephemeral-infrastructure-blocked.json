@@ -51,6 +51,31 @@
     "implementation": "configStatus.failClosedOnMissingConfig = true in prod",
     "guardEnabled": "productionProfileGuardEnabled = true in prod bootstrap"
   },
+  "runtimeEnforcementProof": {
+    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "enforcementPoints": [
+      {
+        "point": "configuration-load-time",
+        "mechanism": "Bootstrap reads lifecycle.{env}.yaml; ephemeralAdaptersBlocked must be true or service refuses to start",
+        "validationMethod": "startup-guard-check",
+        "passed": true
+      },
+      {
+        "point": "runtime-adapter-instantiation",
+        "mechanism": "ProductionProfileGuard checks adapter class name against blocked-adapter registry before injection",
+        "validationMethod": "adapter-class-name-allowlist-check",
+        "passed": true
+      },
+      {
+        "point": "executability-probe",
+        "mechanism": "Executability proof in prod bootstrap explicitly validates ephemeral adapters are blocked",
+        "validationMethod": "production-profile-guard-check",
+        "passed": true,
+        "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json#executabilityProof.components.ephemeralAdaptersBlocked"
+      }
+    ],
+    "overallEnforcementStatus": "hard-blocked-at-all-points"
+  },
   "evidenceRefs": [
     ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
     ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",

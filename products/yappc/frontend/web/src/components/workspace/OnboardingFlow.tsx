@@ -20,6 +20,7 @@ import { useCreateWorkspace, useNameSuggestions } from '@/hooks/useWorkspaceData
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
 import { writeStorage, writeFlag } from '../../services/storage';
 import { useOnboardingStatus } from '../../services/onboarding/OnboardingStatusService';
+import { exportProductUnitIntentFromYappcArtifacts } from '../../services/canvas/commands/ProductUnitIntentExportService';
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -607,6 +608,26 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
 
             // Set the newly created workspace as current
             setCurrentWorkspaceId(workspace.id);
+
+            // Best-effort: export a ProductUnitIntent to the Kernel lifecycle
+            // for this new project so it is registered in the lifecycle registry.
+            // Failure here is non-blocking; onboarding continues regardless.
+            void exportProductUnitIntentFromYappcArtifacts({
+                artifacts: [],
+                scope: {
+                    tenantId: '',
+                    workspaceId: workspace.id,
+                    projectId: '',
+                },
+                createdBy: workspace.ownerId,
+                productUnitName: projectName,
+                correlationId: crypto.randomUUID(),
+                registryProvider: 'ghatana-file-registry',
+                sourceProvider: 'yappc-onboarding',
+                providerMode: 'bootstrap',
+            }).catch((err: unknown) => {
+                console.warn('[OnboardingFlow] ProductUnitIntent export failed (non-blocking):', err);
+            });
 
             setIsCreating(false);
         } catch (error: unknown) {

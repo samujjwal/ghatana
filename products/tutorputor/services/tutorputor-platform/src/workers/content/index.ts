@@ -44,6 +44,10 @@ import {
   type ContentGenerationFlags,
   loadFeatureFlags,
 } from "../../config/feature-flags.js";
+import {
+  GovernedContentDispatchGuard,
+  type GovernedContentDispatchGuardConfig,
+} from "./GovernedContentDispatchGuard";
 
 type BullConnection = NonNullable<ConstructorParameters<typeof Queue>[1]>["connection"];
 type ContentWorkerJobData =
@@ -144,6 +148,17 @@ export class ContentWorkerService {
     );
     const generationQueueDispatcher = new GenerationQueueDispatcher(this.prisma);
 
+    const releaseStatus = (
+      process.env["TUTORPUTOR_RELEASE_STATUS"] ?? "candidate"
+    ) as GovernedContentDispatchGuardConfig["productReleaseStatus"];
+    const allowCandidateMode =
+      process.env["TUTORPUTOR_ALLOW_CANDIDATE_DISPATCH"] === "true";
+    const dispatchGuard = new GovernedContentDispatchGuard({
+      productReleaseStatus: releaseStatus,
+      allowInCandidateMode: allowCandidateMode,
+      logger: this.logger,
+    });
+
     this.claimProcessor = new ClaimGenerationProcessor(
       this.grpcClient,
       this.prisma,
@@ -183,6 +198,7 @@ export class ContentWorkerService {
       generationExecutionService,
       generationQueueDispatcher,
       featureFlags,
+      dispatchGuard,
     );
 
     this.worker = new Worker(

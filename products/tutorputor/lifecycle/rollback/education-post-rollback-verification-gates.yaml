@@ -1,0 +1,71 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+policyType: education-post-rollback-verification-gates
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+allGatesMustPass: true
+
+gates:
+  - gate: learning-progress-integrity
+    description: Verify student learning progress records are intact and unmodified after rollback
+    required: true
+    timeoutSeconds: 180
+    checks:
+      - checkName: learning-progress-record-count-unchanged
+        description: Row count in learning_progress table matches pre-rollback snapshot
+      - checkName: learning-cache-rehydrated
+        description: Distributed cache successfully rehydrated from persistent store
+
+  - gate: assessment-integrity
+    description: Verify no assessment results were lost or corrupted during rollback
+    required: true
+    timeoutSeconds: 120
+    checks:
+      - checkName: assessment-result-audit-trail-continuous
+        description: Audit trail for all assessment events is continuous across rollback boundary
+      - checkName: no-open-proctored-sessions-abandoned
+        description: Confirm no proctored assessment sessions were left in invalid state
+
+  - gate: consent-tracking-continuity
+    description: Verify student/guardian consent records are intact post-rollback
+    required: true
+    timeoutSeconds: 90
+    checks:
+      - checkName: consent-record-count-unchanged
+        description: Consent record count matches pre-rollback snapshot
+      - checkName: consent-cache-valid
+        description: Consent cache entries match persistent store
+
+  - gate: ferpa-compliance-verification
+    description: Verify FERPA compliance controls are intact post-rollback
+    required: true
+    timeoutSeconds: 120
+    checks:
+      - checkName: phi-audit-log-continuous
+        description: Student data access audit log is continuous across rollback boundary
+      - checkName: encryption-keys-valid
+        description: Data-at-rest encryption keys are accessible post-rollback
+
+  - gate: api-contract-validation
+    description: Verify learning progress and assessment API contracts are honored
+    required: true
+    timeoutSeconds: 60
+    checks:
+      - checkName: learning-progress-api-golden-fixture
+        description: Learning progress API golden fixture re-validation passes
+      - checkName: assessment-api-contract-check
+        description: Assessment API contract conformance passes
+
+  - gate: agent-governance-resumption
+    description: Verify governed content dispatch resumes correctly after rollback
+    required: true
+    timeoutSeconds: 60
+    checks:
+      - checkName: governed-content-dispatch-guard-active
+        description: GovernedContentDispatchGuard is active and logging after rollback
+      - checkName: tenant-dispatch-routing-valid
+        description: Tenant-scoped dispatch routing works correctly post-rollback
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/rollback/rollback-approval-contract.yaml

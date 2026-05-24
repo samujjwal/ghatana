@@ -25,6 +25,12 @@ const ReleaseReadinessSchema = z.object({
   docTruthWarnings: z.array(z.unknown()),
   traceId: z.string(),
   updatedAt: z.string(),
+  // YAPPC-001: evidence commit alignment
+  evidenceCommit: z.string().optional().default(''),
+  targetCommit: z.string().optional().default(''),
+  commitMismatch: z.boolean().optional().default(false),
+  // YAPPC-002: per-environment readiness tier
+  environmentTier: z.enum(['local', 'dev', 'staging', 'production']).optional().default('local'),
 });
 
 const ProductAssetSchema = z.object({

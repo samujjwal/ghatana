@@ -1,0 +1,58 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+policyType: rollback-approval-contract
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+approvalRequired: true
+dualApprovalRequired: true
+failClosed: true
+
+approvers:
+  required:
+    - tutorputor-team-lead
+    - platform-oncall
+  optional:
+    - security-team
+    - data-protection-officer
+
+minimumApprovers: 2
+
+approvalConstraints:
+  - constraint: justification-required
+    description: Approver must provide a written justification for the rollback
+    required: true
+  - constraint: change-management-ticket-required
+    description: A change management ticket must be linked before rollback proceeds
+    required: true
+  - constraint: audit-trail-required
+    description: All approval actions must be appended to the immutable audit trail
+    required: true
+  - constraint: active-assessment-session-check
+    description: Approver must confirm no active proctored assessment sessions exist
+    required: true
+  - constraint: ferpa-impact-assessment
+    description: Approver must attest that FERPA data impact has been assessed
+    required: true
+
+educationSpecificApprovalChecks:
+  - check: no-students-in-active-exam
+    description: Approval gated on confirmation that no students are mid-exam
+    required: true
+  - check: guardian-notification-plan
+    description: If rollback may affect student data, a parent/guardian notification plan must be documented
+    required: false
+    notifyIfAffected: true
+
+rollbackWindowPolicy:
+  preferredWindow: off-peak-hours
+  offPeakStart: "22:00"
+  offPeakEnd: "06:00"
+  timezone: UTC
+  emergencyRollbackAllowed: true
+  emergencyRequiresPostHocReview: true
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/rollback/education-post-rollback-verification-gates.yaml
+  - products/tutorputor/lifecycle/rollback/previous-artifact-selection-policy.yaml
+  - products/tutorputor/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml

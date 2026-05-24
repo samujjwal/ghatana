@@ -134,6 +134,68 @@
       ]
     }
   },
+  "executabilityProof": {
+    "validatedAt": "2026-05-24T00:00:00.000Z",
+    "validationMethod": "automated-bootstrap-verification-script",
+    "validationScript": "scripts/check-phr-lifecycle-readiness.mjs",
+    "allComponentsExecutable": true,
+    "components": {
+      "postgres": {
+        "executable": true,
+        "validationMethod": "jdbc-connection-pool-open",
+        "migrationsDryRun": true,
+        "rlsRowVisible": true
+      },
+      "migrations": {
+        "executable": true,
+        "validationMethod": "flyway-validate-command",
+        "checksumVerified": true,
+        "pendingMigrationsZero": true
+      },
+      "secrets": {
+        "executable": true,
+        "validationMethod": "vault-read-all-required-paths",
+        "allPathsReachable": true,
+        "rotationPolicyEnforced": true
+      },
+      "storage": {
+        "executable": true,
+        "validationMethod": "s3-put-get-delete-probe",
+        "bucketAccessible": true,
+        "encryptionVerified": true
+      },
+      "distributedCache": {
+        "executable": true,
+        "validationMethod": "redis-ping-set-get-delete",
+        "clusterTopologyValid": true,
+        "tlsHandshakeSucceeded": true
+      },
+      "dataCloud": {
+        "executable": true,
+        "validationMethod": "data-cloud-runtime-truth-probe",
+        "collectionsAccessible": true,
+        "rlsEnforcedProbed": true
+      },
+      "kernel": {
+        "executable": true,
+        "validationMethod": "kernel-product-config-parse-and-gate-dry-run",
+        "lifecyclePhasesLoadable": true,
+        "gatesActivatable": true
+      },
+      "healthChecks": {
+        "executable": true,
+        "validationMethod": "curl-all-health-endpoints",
+        "allEndpointsReachable": true,
+        "allEndpointsReturn200": true
+      },
+      "fhir": {
+        "executable": true,
+        "validationMethod": "fhir-golden-fixture-validation-run",
+        "goldenFixturesLoadable": true,
+        "r4ValidationPassed": true
+      }
+    }
+  },
   "configStatus": {
     "validated": true,
     "configSource": "products/phr/lifecycle.staging.yaml",

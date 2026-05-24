@@ -1,0 +1,61 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+gatePack: assessment-e2e-validation
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+summary:
+  description: End-to-end validation of the Tutorputor assessment lifecycle — from session creation through completion, result storage, anti-cheating checks, and audit trail verification.
+
+validationGates:
+  - gate: proctored-session-lifecycle
+    description: Full proctored assessment session lifecycle executes without error in staging
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: session-create-and-start
+        description: POST /api/assessment/sessions → session created and started
+      - checkName: question-delivery
+        description: GET /api/assessment/sessions/:id/questions → questions delivered per tenant curriculum
+      - checkName: answer-submission
+        description: POST /api/assessment/sessions/:id/answers → answers recorded with timestamp and tenant scope
+      - checkName: session-complete
+        description: POST /api/assessment/sessions/:id/complete → session finalized with score and audit record
+
+  - gate: anti-cheating-enforcement
+    description: Anti-cheating controls block or flag suspicious activity during an assessment session
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: tab-switch-detection
+        description: Tab visibility change events are captured and flagged in the audit trail
+      - checkName: time-limit-enforcement
+        description: Sessions expire at the configured time limit; late submissions rejected
+
+  - gate: assessment-result-integrity
+    description: Assessment results are stored immutably and can be retrieved with full audit history
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: result-immutability
+        description: Completed assessment results cannot be modified; update attempts return 403
+      - checkName: audit-trail-completeness
+        description: Every answer submission and session state change is recorded in the audit trail
+      - checkName: cross-tenant-result-isolation
+        description: Results from tenant A are not visible to tenant B
+
+  - gate: ferpa-result-access-control
+    description: Assessment results are only accessible by the student, their guardian, and authorized educators
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: student-can-access-own-results
+        description: Student can retrieve own results after session completion
+      - checkName: other-student-cannot-access-results
+        description: Another student's token returns 403 for cross-student result access
+      - checkName: educator-role-can-access-class-results
+        description: Educator with correct role can access aggregate class results
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/gate-packs/assessment-integrity.yaml
+  - products/tutorputor/lifecycle/rollback/education-post-rollback-verification-gates.yaml

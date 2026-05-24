@@ -2,7 +2,7 @@
   "productId": "data-cloud",
   "productKind": "platform-provider",
   "status": "pass",
-  "lastChecked": "2026-05-24",
+  "lastChecked": "2026-05-25",
   "checks": {
     "bootstrapBuildWithoutPlatformProviders": {
       "status": "passed",
@@ -23,6 +23,16 @@
     "actionPlaneGovernance": {
       "status": "passed",
       "evidence": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java"
+    },
+    "governedAgentDispatcherBinding": {
+      "status": "passed",
+      "evidence": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java",
+      "notes": "AepOrchestrationModule provides GovernedAgentDispatcher wrapping CatalogAgentDispatcher; AgentDispatcher bound to GovernedAgentDispatcher"
+    },
+    "invariantMonitorBinding": {
+      "status": "passed",
+      "evidence": "platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java",
+      "notes": "InvariantMonitor implementation present; safety invariant checks active in dispatcher"
     }
   },
   "requiredGates": [

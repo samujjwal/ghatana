@@ -31,6 +31,7 @@ import {
   type ContentGenerationFlags,
   isFeatureEnabled,
 } from "../../../config/feature-flags.js";
+import { GovernedContentDispatchGuard } from "../GovernedContentDispatchGuard.js";
 
 type GrpcExampleLike = {
   example_id?: string;
@@ -51,7 +52,8 @@ export class GenerationRequestJobProcessor {
     private readonly telemetry: ContentWorkerTelemetryPublisher,
     private readonly executionService: GenerationExecutionService,
     private readonly dispatcher: GenerationQueueDispatcher,
-    private readonly featureFlags: ContentGenerationFlags,
+    private readonly featureFlags: ContentGenerationFlags = {} as ContentGenerationFlags,
+    private readonly dispatchGuard?: GovernedContentDispatchGuard,
   ) {
     this.assetMaterializationService = new AssetMaterializationService(prisma);
     this.qualityLoopService = new GenerationQualityLoopService(prisma);
@@ -59,6 +61,24 @@ export class GenerationRequestJobProcessor {
 
   async process(job: Job<GenerationRequestExecutionJobData>): Promise<void> {
     const startedAt = Date.now();
+
+    if (this.dispatchGuard) {
+      const decision = this.dispatchGuard.evaluate(job.data);
+      if (!decision.allowed) {
+        this.logger.error(
+          {
+            code: decision.code,
+            reason: decision.reason,
+            generationRequestId: job.data.generationRequestId,
+            generationJobId: job.data.generationJobId,
+          },
+          "GovernedContentDispatchGuard blocked dispatch — aborting job",
+        );
+        throw new Error(
+          `Governed dispatch blocked [${decision.code}]: ${decision.reason}`,
+        );
+      }
+    }
 
     try {
       await this.telemetry.publishForJob(job, {

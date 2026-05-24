@@ -21,13 +21,13 @@
       "file": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepRegistryModule.java",
       "providesAgentExecutionService": true,
       "injectsAgentDispatcher": true,
-      "lineNumber": 213-223
+      "lineNumber": "213-223"
     },
     "aepOrchestrationModule": {
       "file": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java",
       "providesGovernedAgentDispatcher": true,
       "bindsAgentDispatcherToGoverned": true,
-      "lineNumber": 673-776
+      "lineNumber": "673-776"
     },
     "governedAgentDispatcher": {
       "file": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
@@ -91,6 +91,36 @@
     "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
     "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/pipeline/AgentDispatchPipeline.java"
   ],
+  "integrationProgress": {
+    "lastUpdatedAt": "2026-05-25T00:00:00.000Z",
+    "phase9Completion": {
+      "productConformanceGates": {
+        "status": "completed",
+        "evidenceRef": "config/canonical-product-registry.json",
+        "productsEnabled": ["data-cloud", "yappc", "digital-marketing", "tutorputor", "finance"]
+      },
+      "masteryLearningUI": {
+        "status": "completed",
+        "evidenceRefs": [
+          "products/data-cloud/delivery/ui/src/api/mastery.service.ts",
+          "products/data-cloud/delivery/ui/src/pages/MasteryPage.tsx"
+        ]
+      },
+      "governedDispatcherBinding": {
+        "status": "completed",
+        "evidenceRef": "products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java"
+      },
+      "invariantMonitorImpl": {
+        "status": "completed",
+        "evidenceRef": "platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java"
+      }
+    },
+    "nextRequiredWork": [
+      "Remove AgentExecutionService LLM-gateway fallback path once all agents validated through GovernedAgentDispatcher",
+      "Wire Tutorputor orchestration module to GovernedAgentDispatcher (tutorputor-1)",
+      "Complete Tutorputor distributed cache validation for DistributedCachePort"
+    ]
+  },
   "summary": {
     "totalWiringPoints": 5,
     "pointsWired": 5,

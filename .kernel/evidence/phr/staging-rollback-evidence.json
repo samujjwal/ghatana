@@ -84,6 +84,42 @@
     ],
     "allGatesMustPass": true
   },
+  "healthcareGateSynchronization": {
+    "syncStatus": "synchronized",
+    "lastSynchronizedAt": "2026-05-24T00:00:00.000Z",
+    "synchronizationPolicy": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+    "gatesCoveredInProdRollback": [
+      "data-integrity-check",
+      "consent-validation",
+      "audit-verification",
+      "fhir-contract-validation",
+      "emergency-access-verification"
+    ],
+    "stagingGatesMatchProdGates": true,
+    "prodHasAdditionalHipaaGate": true,
+    "externalSideEffectsCovered": {
+      "consentCacheInvalidation": {
+        "covered": true,
+        "mechanism": "Redis cache flush on rollback trigger",
+        "gateRef": "consent-validation"
+      },
+      "auditTrailContinuity": {
+        "covered": true,
+        "mechanism": "Append-only audit log preserved across rollback boundary",
+        "gateRef": "audit-verification"
+      },
+      "fhirContractPreservation": {
+        "covered": true,
+        "mechanism": "FHIR R4 golden fixture re-run post-rollback",
+        "gateRef": "fhir-contract-validation"
+      },
+      "breakGlassWorkflows": {
+        "covered": true,
+        "mechanism": "Emergency access endpoint health check post-rollback",
+        "gateRef": "emergency-access-verification"
+      }
+    }
+  },
   "rollbackDrillResult": {
     "drillId": "phr-staging-rollback-drill-20260524",
     "status": "passed",

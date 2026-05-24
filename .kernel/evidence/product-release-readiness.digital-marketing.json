@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-24T21:16:55.475Z",
+  "generatedAt": "2026-05-24T22:03:21.072Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d"
+    "commit": "87af07992ba0be7fb4d97843df856fed11cd965c"
   },
   "productId": "digital-marketing",
   "releaseVerdict": "pass",

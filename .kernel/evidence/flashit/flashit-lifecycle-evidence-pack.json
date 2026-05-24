@@ -135,6 +135,83 @@
       "lifecycleEvents": "enabled"
     }
   },
+  "webLifecycleValidation": {
+    "status": "in-progress",
+    "lastCheckedAt": "2026-05-25T00:00:00.000Z",
+    "webPlatformLifecycleEnabled": true,
+    "gates": {
+      "privacy": {
+        "status": "required",
+        "description": "Personal data classification and consent coverage for flash card content",
+        "blocking": true
+      },
+      "preview-security": {
+        "status": "required",
+        "description": "Flash card preview API security gate — no unauthenticated access to private decks",
+        "blocking": true
+      },
+      "personal-data-classification": {
+        "status": "required",
+        "description": "All user-generated content classified for PII sensitivity",
+        "blocking": true
+      },
+      "tenant-isolation": {
+        "status": "mapped-from-phr",
+        "reusableAssetRef": "phr-tenant-scoped-repository-pattern",
+        "description": "Tenant-scoped repository pattern reused from PHR promoted asset",
+        "blocking": false
+      },
+      "distributed-cache": {
+        "status": "mapped-from-phr",
+        "reusableAssetRef": "phr-distributed-cache-adapter",
+        "description": "Distributed cache pattern from PHR; in-memory cache disallowed in production",
+        "blocking": false
+      },
+      "rate-limiting": {
+        "status": "mapped-from-dmos",
+        "reusableAssetRef": "dmos-retry-dlq-pattern",
+        "description": "Rate limiting and retry/DLQ pattern reused from DMOS promoted asset",
+        "blocking": false
+      }
+    },
+    "blockedByGates": ["privacy", "preview-security", "personal-data-classification"],
+    "validationNextSteps": [
+      "Implement privacy gate: run personal-data-classification scan on flash card content schema",
+      "Implement preview-security gate: ensure all deck preview routes require authentication",
+      "Confirm personal-data-classification tags on all user content tables"
+    ]
+  },
+  "mobileArtifactManifestPolicy": {
+    "status": "defined",
+    "mobileLifecycleCurrentlyDisabled": true,
+    "requiredArtifactsBeforeReenablement": [
+      {
+        "artifact": "mobile-ipa-artifact-manifest",
+        "platform": "ios",
+        "description": "IPA binary artifact contract with signing identity and bundle version",
+        "status": "not-present"
+      },
+      {
+        "artifact": "mobile-aab-artifact-manifest",
+        "platform": "android",
+        "description": "AAB binary artifact contract with keystore signing and version code",
+        "status": "not-present"
+      },
+      {
+        "artifact": "xcode-ios-adapter-readiness",
+        "platform": "ios",
+        "description": "xcode-ios Kernel adapter must reach execution-ready status",
+        "status": "not-present"
+      },
+      {
+        "artifact": "gradle-android-adapter-readiness",
+        "platform": "android",
+        "description": "gradle-android Kernel adapter must reach execution-ready status",
+        "status": "not-present"
+      }
+    ],
+    "reenablementGate": "all-required-artifacts-present-and-security-approved"
+  },
   "generalizationNotes": {
     "pattern": "FlashIt follows the same lifecycle evidence pattern as PHR and DMOS",
     "adaptations": [
