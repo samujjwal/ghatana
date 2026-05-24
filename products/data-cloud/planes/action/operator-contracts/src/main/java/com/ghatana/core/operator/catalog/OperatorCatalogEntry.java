@@ -1,10 +1,10 @@
 package com.ghatana.core.operator.catalog;
 
+import com.ghatana.aep.agent.capability.EventOperatorCapability;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorType;
 import com.ghatana.core.operator.UnifiedOperator;
-import com.ghatana.core.operator.agent.AgentOperator;
-import com.ghatana.core.operator.agent.AgentOperatorKind;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import java.util.Optional;
 public record OperatorCatalogEntry(
         OperatorId operatorId,
         OperatorType operatorType,
-        Optional<AgentOperatorKind> agentOperatorKind,
+        Optional<AgentCapabilityRole> agentCapabilityRole,
         String inputSchema,
         String outputSchema,
         Optional<AgentSideEffectProfile> sideEffectProfile,
@@ -38,7 +38,7 @@ public record OperatorCatalogEntry(
     public OperatorCatalogEntry {
         Objects.requireNonNull(operatorId, "operatorId");
         Objects.requireNonNull(operatorType, "operatorType");
-        agentOperatorKind = agentOperatorKind == null ? Optional.empty() : agentOperatorKind;
+        agentCapabilityRole = agentCapabilityRole == null ? Optional.empty() : agentCapabilityRole;
         inputSchema = inputSchema == null ? "" : inputSchema;
         outputSchema = outputSchema == null ? "" : outputSchema;
         sideEffectProfile = sideEffectProfile == null ? Optional.empty() : sideEffectProfile;
@@ -51,21 +51,21 @@ public record OperatorCatalogEntry(
 
     public static OperatorCatalogEntry fromOperator(UnifiedOperator operator) {
         Objects.requireNonNull(operator, "operator");
-        if (operator instanceof AgentOperator agentOperator) {
-            Map<String, String> metadata = new HashMap<>(agentOperator.getMetadata());
+        if (operator instanceof EventOperatorCapability<?, ?> capability) {
+            Map<String, String> metadata = new HashMap<>(operator.getMetadata());
             metadata.put(OperatorCatalogAdmissionPolicy.METADATA_TOOL_POLICY_DECLARED,
-                String.valueOf(!agentOperator.toolPolicy().isEmpty()));
+                String.valueOf(!capability.descriptor().policies().getOrDefault("toolPolicy", Map.of()).equals(Map.of())));
             return new OperatorCatalogEntry(
-                agentOperator.getId(),
-                agentOperator.getType(),
-                Optional.of(agentOperator.agentOperatorKind()),
-                agentOperator.inputSchema(),
-                agentOperator.outputSchema(),
-                Optional.of(agentOperator.sideEffectProfile()),
-                String.valueOf(agentOperator.replayPolicy().getOrDefault("mode", "")),
-                agentOperator.getMetadata().getOrDefault("owner", ""),
-                agentOperator.getVersion(),
-                agentOperator.getCapabilities(),
+                operator.getId(),
+                operator.getType(),
+                Optional.of(AgentCapabilityRole.valueOf(capability.kind().name())),
+                capability.descriptor().inputSchema(),
+                capability.descriptor().outputSchema(),
+                Optional.of(capability.descriptor().sideEffectProfile()),
+                replayProfile(capability),
+                operator.getMetadata().getOrDefault("owner", ""),
+                operator.getVersion(),
+                operator.getCapabilities(),
                 metadata);
         }
         return new OperatorCatalogEntry(
@@ -80,5 +80,16 @@ public record OperatorCatalogEntry(
             operator.getVersion(),
             operator.getCapabilities(),
             operator.getMetadata());
+    }
+
+    private static String replayProfile(EventOperatorCapability<?, ?> capability) {
+        Object replayPolicy = capability.descriptor().policies().get("replayPolicy");
+        if (replayPolicy instanceof Map) {
+            @SuppressWarnings("rawtypes")
+            Map map = (Map) replayPolicy;
+            Object mode = map.getOrDefault("mode", "");
+            return mode != null ? String.valueOf(mode) : "";
+        }
+        return "";
     }
 }

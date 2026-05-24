@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Immutable output record for a typed AgentOperator result.
+ * Immutable output record for a typed AgentCapabilityStep result.
  *
  * @doc.type record
  * @doc.purpose Records typed agent output hashes, confidence, and evidence for replay

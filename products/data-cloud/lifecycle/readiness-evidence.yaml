@@ -57,6 +57,7 @@ actionPlane:
     - products/data-cloud/planes/action/orchestrator/src/test/java/com/ghatana/orchestrator/executor/AgentExecutionPolicyTest.java
     - products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/runtime/safety/AgentExecutionSecurityIntegrationTest.java
     - products/data-cloud/planes/action/agent-runtime/src/test/java/com/ghatana/agent/audit/DataCloudAgentTraceLedgerTest.java
+    - .kernel/evidence/action-plane-boundaries.json
 conformance:
   updateFieldsOnlyWithExecutableProof: true
   keepStatusBlockedUntil:
@@ -68,5 +69,11 @@ conformance:
     - scripts/check-data-cloud-platform-providers.mjs
     - scripts/check-data-cloud-platform-provider-readiness.mjs
     - scripts/list-data-cloud-active-modules.mjs
+    - scripts/generate-data-cloud-active-modules-evidence.mjs
     - scripts/check-ai-governance-behavioral-proof.mjs
     - scripts/check-product-release-readiness.mjs
+    - scripts/check-action-plane-boundaries.mjs
+    - .kernel/evidence/product-release-readiness.json
+    - .kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json
+    - .kernel/evidence/data-cloud-active-modules.json
+    - .kernel/evidence/action-plane-boundaries.json

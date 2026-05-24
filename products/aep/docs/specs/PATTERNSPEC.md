@@ -56,25 +56,25 @@ PatternExpr :=
   | WINDOW(PatternExpr, WindowSpec)
   | ABSENCE(EventRef, WindowSpec)
   | FILTER(PatternExpr, Predicate)
-  | AGENT_PREDICATE(AgentOperatorSpec)
-  | AGENT_ENRICH(AgentOperatorSpec)
-  | AGENT_EXTRACT(AgentOperatorSpec)
-  | AGENT_PATTERN_SYNTHESIS(AgentOperatorSpec)
-  | AGENT_EXPLANATION(AgentOperatorSpec)
-  | AGENT_REVIEW(AgentOperatorSpec)
-  | AGENT_ACTION(AgentOperatorSpec)
-  | AGENT_REFLECTION(AgentOperatorSpec)
+  | AGENT_PREDICATE(EventOperatorCapabilityRef)
+  | AGENT_ENRICH(EventOperatorCapabilityRef)
+  | AGENT_EXTRACT(EventOperatorCapabilityRef)
+  | AGENT_PATTERN_SYNTHESIS(EventOperatorCapabilityRef)
+  | AGENT_EXPLANATION(EventOperatorCapabilityRef)
+  | AGENT_REVIEW(EventOperatorCapabilityRef)
+  | AGENT_ACTION(EventOperatorCapabilityRef)
+  | AGENT_REFLECTION(EventOperatorCapabilityRef)
 ```
 
 ## Production Requirements
 
-- Agent operators are valid `PatternExpr` nodes.
+- Agent capability roles are valid `PatternExpr` nodes when bound by `capabilityRef`.
 - Output event schema is mandatory.
 - Time and uncertainty semantics are mandatory for production patterns.
 - Pattern lifecycle metadata is mandatory.
 - Side-effecting operators must declare governance and approval policy.
 - Pattern compiler must reject unknown operators.
-- Pattern compiler must reject agent operators without output schemas.
+- Pattern compiler must reject agent capability roles without `capabilityRef` and output schemas.
 
 ## Example
 

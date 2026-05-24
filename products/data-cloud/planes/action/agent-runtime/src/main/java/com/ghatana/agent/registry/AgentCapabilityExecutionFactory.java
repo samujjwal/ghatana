@@ -45,13 +45,13 @@ import java.util.function.Function;
  * @doc.layer platform
  * @doc.pattern Factory
  */
-public class AgentOperatorFactory {
+public class AgentCapabilityExecutionFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(AgentOperatorFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(AgentCapabilityExecutionFactory.class);
 
     private final AgentRegistry registry;
     private final AgentExecutionStrategyRegistry strategyRegistry;
-    private final Map<String, OperatorMapping> customMappings = new LinkedHashMap<>();
+    private final Map<String, CapabilityExecutionMapping> customMappings = new LinkedHashMap<>();
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Operator Abstraction
@@ -63,7 +63,7 @@ public class AgentOperatorFactory {
      */
     @Value
     @Builder
-    public static class AgentOperator {
+    public static class AgentCapabilityStep {
         /** Operator name (typically agent-id). */
         @NotNull String name;
         /** The wrapped agent type. */
@@ -97,9 +97,9 @@ public class AgentOperatorFactory {
      */
     @Value
     @Builder
-    public static class OperatorTree {
+    public static class CapabilityExecutionTree {
         @NotNull String name;
-        @NotNull List<AgentOperator> operators;
+        @NotNull List<AgentCapabilityStep> operators;
         @Nullable String description;
 
         /**
@@ -122,7 +122,7 @@ public class AgentOperatorFactory {
                     operators.get(0).execute(ctx, initialInput);
 
             for (int i = 1; i < operators.size(); i++) {
-                final AgentOperator next = operators.get(i);
+                final AgentCapabilityStep next = operators.get(i);
                 chain = chain.then(result -> {
                     if (result.isFailed()) return Promise.of(result);
                     Map<String, Object> nextInput = result.getOutput() != null
@@ -139,13 +139,13 @@ public class AgentOperatorFactory {
      * Functional interface for operator mapping.
      */
     @FunctionalInterface
-    public interface OperatorMapping {
-        OperatorTree createTree(TypedAgent<?, ?> agent, AgentConfig config);
+    public interface CapabilityExecutionMapping {
+        CapabilityExecutionTree createTree(TypedAgent<?, ?> agent, AgentConfig config);
     }
 
     /** Type-specific strategy for operator-tree materialization. */
     public interface AgentExecutionStrategy {
-        OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config);
+        CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config);
     }
 
     /** Registry for explicit mappings from canonical AgentType to strategy. */
@@ -170,7 +170,7 @@ public class AgentOperatorFactory {
     // Construction
     // ═══════════════════════════════════════════════════════════════════════════
 
-    public AgentOperatorFactory(@NotNull AgentRegistry registry) {
+    public AgentCapabilityExecutionFactory(@NotNull AgentRegistry registry) {
         this.registry = Objects.requireNonNull(registry);
         this.strategyRegistry = registerDefaultStrategies();
     }
@@ -199,7 +199,7 @@ public class AgentOperatorFactory {
      * @return a Promise of the operator tree
      */
     @NotNull
-    public Promise<OperatorTree> createOperatorTree(@NotNull String agentId) {
+    public Promise<CapabilityExecutionTree> createCapabilityExecutionTree(@NotNull String agentId) {
         return registry.<Map<String, Object>, Map<String, Object>>resolve(agentId)
                 .map(optAgent -> optAgent.orElseThrow(() ->
                     new IllegalStateException("Agent not found: " + agentId)))
@@ -207,12 +207,12 @@ public class AgentOperatorFactory {
                     AgentType type = agent.descriptor().getType();
 
                     // Check custom mapping first
-                    OperatorMapping custom = customMappings.get(agentId);
+                    CapabilityExecutionMapping custom = customMappings.get(agentId);
                     if (custom != null) {
                         return custom.createTree(agent, null);
                     }
 
-                    return strategyRegistry.get(type).createOperatorTree(agent, null);
+                    return strategyRegistry.get(type).createCapabilityExecutionTree(agent, null);
                 });
     }
 
@@ -225,14 +225,14 @@ public class AgentOperatorFactory {
      */
     @NotNull
     @SuppressWarnings("unchecked")
-    public OperatorTree createOperatorTree(
+    public CapabilityExecutionTree createCapabilityExecutionTree(
             @NotNull TypedAgent<?, ?> agent, @NotNull AgentConfig config) {
         AgentType type = agent.descriptor().getType();
-        OperatorMapping mapping = customMappings.get(agent.descriptor().getAgentId());
+        CapabilityExecutionMapping mapping = customMappings.get(agent.descriptor().getAgentId());
         if (mapping != null) {
             return mapping.createTree(agent, config);
         }
-        return strategyRegistry.get(type).createOperatorTree(agent, config);
+        return strategyRegistry.get(type).createCapabilityExecutionTree(agent, config);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -242,7 +242,7 @@ public class AgentOperatorFactory {
     /**
      * Registers a custom operator mapping for a specific agent ID.
      */
-    public void registerMapping(@NotNull String agentId, @NotNull OperatorMapping mapping) {
+    public void registerMapping(@NotNull String agentId, @NotNull CapabilityExecutionMapping mapping) {
         customMappings.put(agentId, mapping);
         log.info("Registered custom operator mapping for agent: {}", agentId);
     }
@@ -250,16 +250,16 @@ public class AgentOperatorFactory {
     /**
      * Registers a custom operator mapping for an agent type (overrides default).
      */
-    public void registerTypeMapping(@NotNull AgentType type, @NotNull OperatorMapping mapping) {
+    public void registerTypeMapping(@NotNull AgentType type, @NotNull CapabilityExecutionMapping mapping) {
         strategyRegistry.register(type, (agent, config) -> mapping.createTree(agent, config));
         log.info("Registered custom operator mapping for type: {}", type);
     }
 
     @SuppressWarnings("unchecked")
-    private static AgentOperator baseOperator(TypedAgent<?, ?> agent, String strategyTag) {
+    private static AgentCapabilityStep baseOperator(TypedAgent<?, ?> agent, String strategyTag) {
         TypedAgent<Map<String, Object>, Map<String, Object>> typed =
                 (TypedAgent<Map<String, Object>, Map<String, Object>>) agent;
-        return AgentOperator.builder()
+        return AgentCapabilityStep.builder()
                 .name(agent.descriptor().getAgentId())
                 .agentType(agent.descriptor().getType())
                 .description(agent.descriptor().getDescription())
@@ -281,8 +281,8 @@ public class AgentOperatorFactory {
         return Map.copyOf(copy);
     }
 
-    private static OperatorTree tree(TypedAgent<?, ?> agent, String strategyTag, String description) {
-        return OperatorTree.builder()
+    private static CapabilityExecutionTree tree(TypedAgent<?, ?> agent, String strategyTag, String description) {
+        return CapabilityExecutionTree.builder()
                 .name(agent.descriptor().getAgentId() + "-" + strategyTag + "-tree")
                 .operators(List.of(baseOperator(agent, strategyTag)))
                 .description(description)
@@ -290,55 +290,55 @@ public class AgentOperatorFactory {
     }
 
     public static class DeterministicExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "deterministic", "Deterministic rule/policy operator tree");
         }
     }
 
     public static class ProbabilisticExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "probabilistic", "Probabilistic inference operator tree with confidence output");
         }
     }
 
     public static class HybridExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "hybrid-routing", "Hybrid routing tree for deterministic and probabilistic paths");
         }
     }
 
     public static class AdaptiveExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "adaptive-feedback", "Adaptive execution tree with feedback diagnostics");
         }
     }
 
     public static class CompositeExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "composite-fanout-fanin", "Composite fan-out/fan-in aggregation tree");
         }
     }
 
     public static class ReactiveExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "reactive-reflex", "Reactive stateless trigger/action tree");
         }
     }
 
     public static class StreamProcessorExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "stream-checkpoint", "Checkpoint-aware stream processor tree");
         }
     }
 
     public static class PlanningExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "planning-workflow", "Planning and workflow execution tree");
         }
     }
 
     public static class CustomExecutionStrategy implements AgentExecutionStrategy {
-        public OperatorTree createOperatorTree(TypedAgent<?, ?> agent, AgentConfig config) {
+        public CapabilityExecutionTree createCapabilityExecutionTree(TypedAgent<?, ?> agent, AgentConfig config) {
             return tree(agent, "custom-registered", "Custom registered execution tree");
         }
     }

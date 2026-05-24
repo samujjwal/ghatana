@@ -24,7 +24,7 @@ So the current state is:
 Architecture direction: strong
 Boundary clarity: improving and mostly coherent
 AEP-in-Data-Cloud migration structure: present
-Agent-as-operator foundation: present
+Event processing as agent capability foundation: present
 PatternSpec foundation: present
 Uncertainty foundation: present
 Production readiness: blocked / incomplete
@@ -105,15 +105,15 @@ This is much better than claiming full production readiness prematurely.
 
 That is exactly the framing needed for coherence.
 
-## 2.3 Agent-as-operator foundation exists
+## 2.3 Agent capability foundation exists
 
 The core `EventOperator` contract exists with `id`, `kind`, `version`, `validate`, `compile`, and `process`.
 
-The `AgentOperator` contract extends both `UnifiedOperator` and `EventOperator<Map<String,Object>, Map<String,Object>>`, and it declares agent reference, kind, side-effect profile, schemas, model/tool/memory/retrieval/guardrail/replay/uncertainty/human-review/observability policies.
+The canonical `EventOperatorCapability` contract extends `AgentCapability<EventContext<I>, EventOperatorResult<O>>` and implements the AEP `EventOperator<I, O>` execution contract. The runtime adapter declares agent reference, capability role, side-effect profile, schemas, model/tool/memory/retrieval/guardrail/replay/uncertainty/human-review/observability policies.
 
 The `OperatorKind` enum includes standard pattern operators and all agent operator kinds: `AGENT_PREDICATE`, `AGENT_ENRICH`, `AGENT_EXTRACT`, `AGENT_PATTERN_SYNTHESIS`, `AGENT_EXPLANATION`, `AGENT_REVIEW`, `AGENT_ACTION`, and `AGENT_REFLECTION`.
 
-There is also an architecture contract test verifying `AgentOperator` is assignable from `EventOperator`, and it checks canonical agent operator kinds plus governance requirements for side-effecting action operators.
+There is also an architecture contract test verifying `EventOperatorCapability` is an `AgentCapability` and implements `EventOperator`, and it checks canonical agent capability roles plus governance requirements for side-effecting action capabilities.
 
 This is a major positive. The architectural foundation for your two principles is already present.
 
@@ -209,7 +209,7 @@ The current validator/compiler are good anchors, but they are not yet enough for
 
 ## Gap 5 — Agent operator contracts exist, but runtime integration must be universal
 
-The contracts and tests exist. The next step is making every agent use in the Action Plane go through `AgentOperator`, not direct callbacks, detector-specific agents, ad hoc dispatchers, or service-level shortcuts.
+The contracts and tests exist. The next step is making every event-processing agent use in the Action Plane go through `EventOperatorCapability`, not direct callbacks, detector-specific agents, ad hoc dispatchers, or service-level shortcuts.
 
 ## Gap 6 — GovernedAgentDispatcher is too large
 
@@ -485,14 +485,14 @@ The current AEP boundary test blocks AEP from depending on Data-Cloud and other 
 
 ---
 
-## Phase 6 — Complete EventOperator/AgentOperator runtime
+## Phase 6 — Complete EventOperatorCapability runtime
 
 **Goal:** No bypasses.
 
 ### Tasks
 
 1. Find all direct agent dispatcher usage.
-2. Wrap all agent interactions as `AgentOperator`.
+2. Wrap all event-processing agent interactions as `EventOperatorCapability`.
 3. Find all old operator implementations not using `EventOperator`.
 4. Migrate old operators to unified contract.
 5. Add runtime adapter for:
@@ -512,7 +512,7 @@ The current AEP boundary test blocks AEP from depending on Data-Cloud and other 
 ### Exit criteria
 
 - All operator runtime paths use `EventOperator`.
-- All agent runtime paths use `AgentOperator`.
+- All event-processing agent runtime paths use `EventOperatorCapability`.
 - Side-effecting action cannot run without tool policy, approval policy, audit policy, and idempotency.
 
 ---
@@ -602,9 +602,9 @@ GovernedAgentDispatcher
 | Code organization             |  7/10 | Plane model and generated includes are strong, but Action Plane is large and mixed.                             |
 | Build/release discipline      |  6/10 | CI/release gates are broad, but module coverage appears incomplete and CI is partly advisory.                   |
 | Data-Cloud substrate maturity |  6/10 | Entity/event/governance/operations planes exist, but readiness is blocked and coverage/security need hardening. |
-| AEP semantic foundation       |  7/10 | EventOperator, AgentOperator, PatternSpec, uncertainty foundations exist.                                       |
+| AEP semantic foundation       |  7/10 | EventOperator, EventOperatorCapability, PatternSpec, uncertainty foundations exist.                             |
 | AEP runtime completeness      |  5/10 | Compiler/validator are structural; executable adaptive runtime path is not complete.                            |
-| Agent-as-operator maturity    |  7/10 | Contracts/tests exist; full runtime migration remains.                                                          |
+| Agent capability maturity     |  7/10 | Contracts/tests exist; full runtime migration remains.                                                          |
 | Production readiness          |  5/10 | Strong direction and gates, but readiness is explicitly blocked.                                                |
 
 Overall: **6.3/10 — architecturally promising, not yet production-ready.**
@@ -620,7 +620,7 @@ Do these in order:
 3. **Keep readiness blocked** until executable evidence passes.
 4. **Create Action Plane module inventory** and classify every module.
 5. **Add reverse boundary tests**: Data/Event/Context/Governance must not import AEP.
-6. **Migrate all agent execution through AgentOperator**.
+6. **Migrate all event-processing agent execution through EventOperatorCapability**.
 7. **Upgrade PatternSpec from structural validator to typed schema-backed compiler.**
 8. **Bind PatternSpec compiler output to executable runtime DAG.**
 9. **Add EventCloud/Data-Cloud bridge contract tests.**
@@ -645,4 +645,4 @@ products/aep/*
   = semantic architecture, specs, dissertation traceability, and eventual product boundary
 ```
 
-The current codebase is moving in the right direction. The next hardening step is not another conceptual rewrite; it is **executable proof**: complete module checks, boundary tests, strict release gates, typed PatternSpec runtime, and universal AgentOperator execution.
+The current codebase is moving in the right direction. The next hardening step is not another conceptual rewrite; it is **executable proof**: complete module checks, boundary tests, strict release gates, typed PatternSpec runtime, and universal capability-bound agent execution.

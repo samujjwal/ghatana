@@ -19,4 +19,4 @@ record EventContext<T>(
 ) {}
 ```
 
-Pattern operators, learning operators, and agent operators consume `EventContext`. Operators must not receive ad hoc raw payloads without context.
+Pattern operators, learning operators, and agent-backed event capabilities consume `EventContext`. Operators must not receive ad hoc raw payloads without context.

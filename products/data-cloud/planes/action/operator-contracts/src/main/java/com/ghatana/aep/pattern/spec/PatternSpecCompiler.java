@@ -61,6 +61,7 @@ public final class PatternSpecCompiler {
             operatorKind,
             optionalText(expression.get("event")),
             optionalText(expression.get("agentRef")),
+            optionalText(expression.get("capabilityRef")),
             optionalText(expression.get("outputSchema")),
             parameters(expression),
             children);

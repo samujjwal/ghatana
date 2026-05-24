@@ -10,7 +10,7 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
-import com.ghatana.agent.registry.AgentOperatorFactory.OperatorTree;
+import com.ghatana.agent.registry.AgentCapabilityExecutionFactory.CapabilityExecutionTree;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -73,8 +73,8 @@ class AgentRuntimeGoldenSetEvaluationTest extends EventloopTestBase {
         runPromise(() -> registry.register(agent, config));
         runPromise(() -> agent.initialize(config));
 
-        AgentOperatorFactory factory = new AgentOperatorFactory(registry);
-        OperatorTree tree = runPromise(() -> factory.createOperatorTree(agentId));
+        AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry);
+        CapabilityExecutionTree tree = runPromise(() -> factory.createCapabilityExecutionTree(agentId));
 
         AgentContext context = AgentContext.builder()
             .turnId("eval-turn")

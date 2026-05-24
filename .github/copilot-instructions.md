@@ -611,6 +611,10 @@ public class MyAgent extends AbstractTypedAgent<Input, Output> {
 | `/api/agents` | `/api/v1/agents` (AEP) |
 | `/api/agents/execute` | `/api/v1/agents/:agentId/execute` |
 
+### Event Processing as Agent Capability
+
+The agent is the root abstraction. Event processing is a capability an agent can expose through `EventOperatorCapability`, which extends `AgentCapability<EventContext<I>, EventOperatorResult<O>>` and implements the AEP `EventOperator<I, O>` execution contract. New AEP PatternSpec and PipelineSpec integrations must bind to capability references, not make agents inherit from event operators.
+
 ## 19. Observability Implementation
 
 ### Required Metrics

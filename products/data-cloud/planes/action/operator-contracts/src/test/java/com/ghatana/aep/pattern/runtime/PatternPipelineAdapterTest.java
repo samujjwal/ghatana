@@ -22,6 +22,7 @@ class PatternPipelineAdapterTest {
                 Map.of(
                     "operator", "AGENT_PREDICATE",
                     "agentRef", "agents/sre-risk-assessor@1.0.0",
+                    "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability",
                     "outputSchema", "RiskDecision")))));
 
         Pipeline pipeline = PatternPipelineAdapter.toPipeline(compiled);
@@ -32,9 +33,12 @@ class PatternPipelineAdapterTest {
             .containsExactly("eventcloud-source", "root", "root-0", "root-1", "eventcloud-sink");
         assertThat(pipeline.getStages()).anySatisfy(stage -> {
             assertThat(stage.stageId()).isEqualTo("root-1");
-            assertThat(stage.operatorId().getType()).isEqualTo("agent");
+            assertThat(stage.operatorId().getType()).isEqualTo("agent-capability");
             assertThat(stage.config()).containsEntry("operatorKind", "AGENT_PREDICATE");
             assertThat(stage.config()).containsEntry("agentRef", "agents/sre-risk-assessor@1.0.0");
+            assertThat(stage.config()).containsEntry(
+                "capabilityRef",
+                "agents/sre-risk-assessor@1.0.0/capability");
         });
         assertThat(pipeline.getEdges()).anySatisfy(edge -> {
             assertThat(edge.from()).isEqualTo("eventcloud-source");

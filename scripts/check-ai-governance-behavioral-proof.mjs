@@ -44,6 +44,27 @@ const requiredAIGovernanceScenarioPatterns = [
   ['prompt token budget', 'costBudgetMaxTokens'],
 ];
 
+function currentGitSha() {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+function evidenceRunMetadata() {
+  return {
+    generatedBy: 'scripts/check-ai-governance-behavioral-proof.mjs',
+    command: 'pnpm check:ai-governance-behavioral-proof',
+    source: 'scripts/check-ai-governance-behavioral-proof.mjs',
+    commit: currentGitSha(),
+  };
+}
+
 function resolveAIGovernanceProofPath(product) {
   if (product.productId === 'data-cloud') {
     return path.join(repoRoot, 'products/data-cloud/planes/action/orchestrator');
@@ -723,6 +744,8 @@ function generateEvidenceReport() {
 
   const report = {
     timestamp: stableGeneratedAt,
+    generatedAt: new Date().toISOString(),
+    evidenceRun: evidenceRunMetadata(),
     violations,
     warnings,
     evidence,

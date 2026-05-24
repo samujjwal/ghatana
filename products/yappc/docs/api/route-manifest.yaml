@@ -237,7 +237,7 @@ yappc-services:
     boundary: YAPPC
     operationId: promoteProductFamilyAsset
     auditEventType: PRODUCT_FAMILY_ASSET_PROMOTE
-    privacyClassification: CONFIDENTIAL
+    privacyClassification: RESTRICTED
   - method: GET
     path: /api/v1/yappc/product-family/doc-truth
     auth: required

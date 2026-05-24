@@ -1,14 +1,14 @@
 package com.ghatana.core.operator.agent;
 
 /**
- * Canonical AEP agent operator kinds.
+ * Canonical AEP agent capability roles.
  *
  * @doc.type enum
- * @doc.purpose Enumerates supported AgentOperator kinds for PatternSpec and PipelineSpec
+ * @doc.purpose Enumerates supported agent capability roles for PatternSpec and PipelineSpec
  * @doc.layer product
  * @doc.pattern Enumeration
  */
-public enum AgentOperatorKind {
+public enum AgentCapabilityRole {
     AGENT_PREDICATE,
     AGENT_ENRICH,
     AGENT_EXTRACT,

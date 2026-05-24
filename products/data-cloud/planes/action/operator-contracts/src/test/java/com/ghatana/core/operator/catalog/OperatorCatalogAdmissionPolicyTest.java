@@ -7,7 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
@@ -147,7 +149,8 @@ class OperatorCatalogAdmissionPolicyTest {
             OperatorCatalogEntry entry = createEntry(Map.of(
                 "owner", "platform",
                 "approvalStatus", "approved",
-                "commitSha", "7f84bc08e9e4e6d7e209cb49a855f199f7c90347"));
+                "commitSha", "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+                "evidencePolicy", "standard"));
 
             assertThatCode(() -> 
                 OperatorCatalogAdmissionPolicy.requireApproved(
@@ -161,7 +164,8 @@ class OperatorCatalogAdmissionPolicyTest {
             OperatorCatalogEntry entry = createEntry(Map.of(
                 "owner", "platform",
                 "approvalStatus", "approved",
-                "commitSha", "invalid-sha"));
+                "commitSha", "invalid-sha",
+                "evidencePolicy", "standard"));
 
             assertThatThrownBy(() -> 
                 OperatorCatalogAdmissionPolicy.requireApproved(entry, "invalid-sha", "production")
@@ -174,8 +178,8 @@ class OperatorCatalogAdmissionPolicyTest {
         void productionRequiresOperatorMetadataCommitSha() {
             OperatorCatalogEntry entry = createEntry(Map.of(
                 "owner", "platform",
-                "approvalStatus",
-                "approved"));
+                "approvalStatus", "approved",
+                "evidencePolicy", "standard"));
 
             assertThatThrownBy(() -> 
                 OperatorCatalogAdmissionPolicy.requireApproved(
@@ -190,7 +194,8 @@ class OperatorCatalogAdmissionPolicyTest {
             OperatorCatalogEntry entry = createEntry(Map.of(
                 "owner", "platform",
                 "approvalStatus", "approved",
-                "commitSha", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+                "commitSha", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "evidencePolicy", "standard"));
 
             assertThatThrownBy(() -> 
                 OperatorCatalogAdmissionPolicy.requireApproved(
@@ -264,15 +269,22 @@ class OperatorCatalogAdmissionPolicyTest {
     }
 
     private static OperatorCatalogEntry createEntry(Map<String, String> metadata, Set<AgentSideEffectProfile> sideEffectProfiles) {
+        Map<String, String> enhancedMetadata = new java.util.HashMap<>(metadata);
+        enhancedMetadata.putIfAbsent("owner", "test-owner");
+        enhancedMetadata.putIfAbsent("version", "1.0.0");
+        
         return new OperatorCatalogEntry(
             OperatorId.of("tenant-a", "stream", "test-operator", "1.0.0"),
             OperatorType.STREAM,
-            "Test Operator",
-            "1.0.0",
-            "Test operator for validation",
-            Set.of("stream.filter"),
-            sideEffectProfiles,
-            metadata
+            Optional.empty(),
+            "",
+            "",
+            sideEffectProfiles.isEmpty() ? Optional.empty() : Optional.of(sideEffectProfiles.iterator().next()),
+            "",
+            enhancedMetadata.get("owner"),
+            enhancedMetadata.get("version"),
+            List.of("stream.filter"),
+            enhancedMetadata
         );
     }
 }

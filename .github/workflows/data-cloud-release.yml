@@ -172,8 +172,12 @@ jobs:
         run: |
           set -euo pipefail
           node ./scripts/list-data-cloud-active-modules.mjs --validate
+          node ./scripts/check-agent-capability-duplicates.mjs
+          node ./scripts/check-agent-runtime-test-excludes.mjs
           TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=release-blocking --task=check --format=shell)"
           ./gradlew ${TASKS} --no-daemon
+          node ./scripts/generate-data-cloud-active-modules-evidence.mjs
+          node ./scripts/check-action-plane-boundaries.mjs
 
       - name: Data Cloud UI type-check and readiness tests
         run: |
@@ -428,6 +432,8 @@ jobs:
           test -s release-evidence/smoke/smoke-e2e-report.json
           test -s release-evidence/backup/backup-drill-report.json
           test -s .kernel/evidence/data-cloud-release-runtime-profile.json
+          test -s .kernel/evidence/data-cloud-active-modules.json
+          test -s .kernel/evidence/action-plane-boundaries.json
           test -s .kernel/evidence/action-plane-route-lifecycle.json
           test -s .kernel/evidence/data-cloud-maturity-proof.json
           test -s .kernel/evidence/atomic-workflow-posture.json
@@ -458,6 +464,8 @@ jobs:
             release-evidence/release-summary.md
             release-evidence/wave2-product-quality-scorecard.md
             .kernel/evidence/wave2-product-quality-scorecard.json
+            .kernel/evidence/data-cloud-active-modules.json
+            .kernel/evidence/action-plane-boundaries.json
             .kernel/evidence/action-plane-route-lifecycle.json
             .kernel/evidence/data-cloud-maturity-proof.json
             .kernel/evidence/product-a11y-route-matrix.json

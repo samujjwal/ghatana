@@ -77,9 +77,10 @@ public final class PatternPipelineAdapter {
     }
 
     private static OperatorId operatorId(String tenantId, PatternRuntimeNode node) {
-        String type = node.isAgentOperator() ? "agent" : operatorType(node.operatorKind());
-        String name = node.agentRef()
+        String type = node.isAgentCapability() ? "agent-capability" : operatorType(node.operatorKind());
+        String name = node.capabilityRef()
             .map(PatternPipelineAdapter::sanitize)
+            .or(() -> node.agentRef().map(PatternPipelineAdapter::sanitize))
             .orElseGet(() -> operatorName(node));
         return OperatorId.of(tenantId, type, name, DEFAULT_VERSION);
     }
@@ -105,6 +106,7 @@ public final class PatternPipelineAdapter {
         config.put("operatorKind", node.operatorKind().name());
         node.eventType().ifPresent(value -> config.put("eventType", value));
         node.agentRef().ifPresent(value -> config.put("agentRef", value));
+        node.capabilityRef().ifPresent(value -> config.put("capabilityRef", value));
         node.outputSchema().ifPresent(value -> config.put("outputSchema", value));
         return config;
     }

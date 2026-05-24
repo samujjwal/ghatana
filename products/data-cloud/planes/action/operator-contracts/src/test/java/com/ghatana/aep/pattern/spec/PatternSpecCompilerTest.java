@@ -25,6 +25,7 @@ class PatternSpecCompilerTest {
                 Map.of(
                     "operator", "AGENT_PREDICATE",
                     "agentRef", "agents/sre-risk-assessor@1.0.0",
+                    "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability",
                     "outputSchema", "RiskDecision")))));
 
         assertThat(compiled.patternId()).isEqualTo("sre-risk-sequence");
@@ -33,6 +34,8 @@ class PatternSpecCompilerTest {
         assertThat(compiled.root().operatorKind()).isEqualTo(OperatorKind.SEQ);
         assertThat(compiled.root().children().get(2).operatorKind()).isEqualTo(OperatorKind.AGENT_PREDICATE);
         assertThat(compiled.root().children().get(2).agentRef()).contains("agents/sre-risk-assessor@1.0.0");
+        assertThat(compiled.root().children().get(2).capabilityRef())
+            .contains("agents/sre-risk-assessor@1.0.0/capability");
     }
 
     @Test
@@ -40,6 +43,7 @@ class PatternSpecCompilerTest {
         Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/action@1.0.0",
+            "capabilityRef", "agents/action@1.0.0/capability",
             "outputSchema", "ActionResult"));
 
         assertThatThrownBy(() -> PatternSpecCompiler.compile(spec))

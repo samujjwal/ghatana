@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Phase 6: Audit script to identify direct agent usage that needs migration to AgentOperator.
+ * Phase 6: Audit script to identify direct agent usage that needs migration to agent capabilities.
  *
  * This script scans the codebase for:
  * - Direct TypedAgent.execute() calls
@@ -46,7 +46,7 @@ const EXCLUDED_PATTERNS = [
   // Node modules
   /\/node_modules\//,
   // Factory and adapter files (expected to use agents)
-  /AgentOperatorFactory/,
+  /AgentCapabilityExecutionFactory/,
   /AgentAdapter/,
   // Operator implementations (expected to use agents)
   /AbstractAgentInferenceOperator/,
@@ -165,10 +165,10 @@ function main() {
   }
 
   console.log('\nMigration recommendations:');
-  console.log('1. Replace direct agent.execute() with AgentOperator.execute()');
-  console.log('2. Use AgentOperatorFactory.createOperatorTree() instead of registry.resolve()');
-  console.log('3. Wrap agent instantiation in AgentOperator adapter');
-  console.log('4. Update imports to use AgentOperator interface from operator-contracts');
+  console.log('1. Replace direct agent.execute() with AgentCapability execution.');
+  console.log('2. Use AgentCapabilityExecutionFactory.createCapabilityExecutionTree() instead of registry.resolve().');
+  console.log('3. Wrap agent instantiation in AgentEventOperatorCapabilityAdapter when event processing is needed.');
+  console.log('4. Update imports to use EventOperatorCapability from operator-contracts.');
 
   process.exit(1);
 }

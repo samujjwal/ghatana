@@ -29,7 +29,7 @@ AEP modernizes the dissertation foundation with distributed stateful stream exec
 | Pattern learning | Learning-to-recommendation loop | Pattern score, candidate, suggestion, and recommendation contracts exist | Online learning services, score history, and review packet generation |
 | Pattern adaptation | Governed lifecycle transitions | Lifecycle policy prevents unsafe direct promotion | Shadow deployment and governed promotion/retirement automation |
 | Expert feedback | Review events and review operators | `AgentReviewOperator` contract blocks high-risk self-approval | Human review queues and auditable review event persistence |
-| Agents | `AgentOperator` | Agent operator subtype and all canonical agent operator implementations exist | Runtime-wide migration from callbacks/detectors to agent operator DAG nodes |
+| Agents | `EventOperatorCapability` | Agent capability contracts and canonical event-operator capability roles exist | Runtime-wide migration from callbacks/detectors to capability-bound DAG nodes |
 | Side-effecting action | `AgentActionOperator` | Approval, tool, audit, and idempotency checks exist at contract level | Tool execution gateway, policy engine integration, and audit event persistence |
 | Event storage substrate | EventCloud SPI | Append, tail, replay, checkpoint, watermark, offset, subscription, and partial-match SPI contracts exist | Data-Cloud storage bridge behind the AEP SPI |
 
@@ -38,13 +38,13 @@ AEP modernizes the dissertation foundation with distributed stateful stream exec
 - Stream runtime: EventCloud SPI, PatternSpec compiler, operator DAG runtime, checkpointing, watermarks, and replay.
 - Probabilistic inference: `UncertaintyContext`, operator propagation rules, model confidence, retrieval confidence, calibration, and evidence.
 - Online learning: correlated event groups, pattern extraction, score history, recommended patterns, and shadow evaluation.
-- Neuro-symbolic reasoning: PatternSpec/EPL plus typed agent operators and validated output schemas.
-- RAG-grounded agents: retrieval policy, evidence confidence, prompt/retrieval snapshots, replay policy, and typed operator outputs.
-- Governed tool use: `AgentActionOperator`, tool policy, approval policy, audit policy, idempotency keys, and side-effect profiles.
+- Neuro-symbolic reasoning: PatternSpec/EPL plus typed `EventOperatorCapability` bindings and validated output schemas.
+- RAG-grounded agents: retrieval policy, evidence confidence, prompt/retrieval snapshots, replay policy, and typed capability outputs.
+- Governed tool use: `AGENT_ACTION` capability role, tool policy, approval policy, audit policy, idempotency keys, and side-effect profiles.
 
 ## Coherence Rules
 
-- GenAI and agents participate through typed `AgentOperator` nodes.
+- GenAI and agents participate through typed `EventOperatorCapability` bindings.
 - Learning emits recommended or shadow pattern events; it does not mutate active rules directly.
 - Human and expert review are represented as events and review operators.
 - EventCloud and adaptive event semantics are AEP-owned.

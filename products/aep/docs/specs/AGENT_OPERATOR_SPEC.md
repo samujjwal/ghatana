@@ -1,18 +1,19 @@
-# AgentOperatorSpec
+# Agent Event Operator Capability Spec
 
 **Status:** Target specification  
 **Owner:** AEP maintainers
-**Schema:** `products/aep/contracts/schemas/agent-operator-spec.schema.json`
-**Current code contract:** `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/core/operator/agent/AgentOperator.java`
+**Schema:** `products/aep/contracts/schemas/agent-event-operator-capability.schema.json`
+**Current code contract:** `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java`
 **Current replay records:** `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/replay`
 
-`AgentOperatorSpec` defines how agents participate as event operators.
+This spec defines how agents expose event-processing capabilities. The agent remains the root abstraction; `EventOperatorCapability` is one capability an agent can expose.
 
 ## Required Fields
 
 - `operatorId`
 - `operatorKind`
 - `agentRef`
+- `capabilityRef`
 - `inputSchema`
 - `outputSchema`
 - `modelPolicy`
@@ -25,7 +26,7 @@
 - `humanReviewPolicy`
 - `observabilityPolicy`
 
-## Operator Kinds
+## Capability Roles
 
 ```text
 AGENT_PREDICATE
@@ -49,11 +50,11 @@ SIDE_EFFECTING       # calls external mutating tool
 
 ## Contract
 
-An `AgentOperator` extends `EventOperator` and `UnifiedOperator` during migration, and must consume `EventContext`. It emits typed operator results or typed events using the same envelope, metrics, tracing, replay, lifecycle, uncertainty, governance, and security contracts as every other operator.
+An `EventOperatorCapability` extends `AgentCapability` and consumes `EventContext`. It emits typed operator results or typed events using the same envelope, metrics, tracing, replay, lifecycle, uncertainty, governance, and security contracts as every other operator.
 
 ## Governance Requirements
 
-- Side-effecting agent operators require approval policy.
+- Side-effecting agent capabilities require approval policy.
 - Replay metadata is mandatory.
 - Tool calls emit audit events.
 - Agent outputs are typed events or typed operator results.

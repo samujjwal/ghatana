@@ -2,7 +2,7 @@
 
 **Status:** Target implementation plan  
 **Owner:** AEP maintainers  
-**Boundary:** Agents are EventOperators; Data-Cloud is storage substrate only.
+**Boundary:** Agents expose EventOperator capabilities; Data-Cloud is storage substrate only.
 
 ## Architecture Invariant
 
@@ -13,12 +13,12 @@ Every participant in event intelligence must be represented as either:
 3. An operator result.
 4. Governed metadata.
 
-Agents are `EventOperators`. Human review is represented as events and review operators. Tool calls are represented as `ActionOperator` or `AgentActionOperator` nodes.
+Agents are root abstractions. Event processing is exposed through `EventOperatorCapability` bindings. Human review is represented as events and review capabilities. Tool calls are represented as governed action capabilities.
 
 ## End-to-End Flow
 
 1. Register schemas, operators, agents, model policies, tool policies, and lifecycle policies.
-2. Author PatternSpec with standard operators and optional AgentOperator nodes.
+2. Author PatternSpec with standard operators and optional `capabilityRef` bindings.
 3. Compile PatternSpec into a deterministic operator DAG.
 4. Bind EventCloud sources, sinks, checkpoints, replay policy, and tenant isolation.
 5. Execute the DAG through the unified EventOperator runtime.
@@ -27,7 +27,7 @@ Agents are `EventOperators`. Human review is represented as events and review op
 8. Emit `pattern.suggested` for candidate patterns rather than mutating active rules directly.
 9. Promote only through governance policy, review, and auditable lifecycle events.
 
-## PatternSpec Example with Agent Operator
+## PatternSpec Example with Agent Capability
 
 ```yaml
 pattern:
@@ -41,13 +41,14 @@ pattern:
       within: PT10M
     - operator: AGENT_PREDICATE
       agentRef: agents/sre-risk-assessor@1.0.0
+      capabilityRef: agents/sre-risk-assessor@1.0.0/capabilities/agent_predicate
       outputSchema: RiskDecision
       condition: "$output.riskScore >= 0.85"
 ```
 
 ## Agentic Execution and Learning
 
-Agentic execution is not an external callback model. It is implemented through `AgentOperator` nodes in PatternSpec and PipelineSpec.
+Agentic execution is not an external callback model. It is implemented through `EventOperatorCapability` bindings in PatternSpec and PipelineSpec.
 
 Agent outputs are typed operator results or typed events. Pattern learning may synthesize candidate PatternSpecs, but those outputs emit `pattern.suggested` and enter lifecycle governance. Learning does not directly mutate active rules unless an explicit policy allows auto-promotion.
 

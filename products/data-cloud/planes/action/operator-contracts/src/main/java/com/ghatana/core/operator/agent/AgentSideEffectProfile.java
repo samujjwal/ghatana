@@ -1,10 +1,10 @@
 package com.ghatana.core.operator.agent;
 
 /**
- * Side-effect classification for agent operators.
+ * Side-effect classification for agent capabilities.
  *
  * @doc.type enum
- * @doc.purpose Defines side-effect levels used by AgentOperator governance and replay policy
+ * @doc.purpose Defines side-effect levels used by agent capability governance and replay policy
  * @doc.layer product
  * @doc.pattern Enumeration
  */

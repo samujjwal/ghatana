@@ -2,9 +2,9 @@ package com.ghatana.phr.healthcare.service;
 
 import com.ghatana.phr.healthcare.domain.Patient;
 import com.ghatana.phr.healthcare.port.PatientStore;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import io.activej.test.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -63,7 +64,7 @@ class RollbackSafetyCheckServiceTest extends EventloopTestBase {
         service = new RollbackSafetyCheckService(patientStore, executor, deploymentHistoryPath);
 
         // Lenient stubs for methods not used in all tests
-        lenient().when(patientStore.findByTenantId(anyString())).thenReturn(Promise.of(List.of()));
+        lenient().when(patientStore.findByTenant(anyString(), anyInt(), anyInt())).thenReturn(List.of());
     }
 
     @Test
@@ -142,119 +143,111 @@ class RollbackSafetyCheckServiceTest extends EventloopTestBase {
     @Test
     @DisplayName("Should require non-null tenant ID")
     void shouldRequireNonNullTenantId() {
-        try {
-            new RollbackSafetyCheckService.RollbackSafetyCheck(
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService.RollbackSafetyCheck(
                 null,
                 "current-artifact-001",
                 "phr-deploy-2026-05-23-001",
                 Instant.now(),
                 "staging"
-            );
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("tenantId must not be null");
-        }
+            )
+        );
+        assertThat(e.getMessage()).contains("tenantId must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null current artifact ID")
     void shouldRequireNonNullCurrentArtifactId() {
-        try {
-            new RollbackSafetyCheckService.RollbackSafetyCheck(
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService.RollbackSafetyCheck(
                 "tenant-123",
                 null,
                 "phr-deploy-2026-05-23-001",
                 Instant.now(),
                 "staging"
-            );
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("currentArtifactId must not be null");
-        }
+            )
+        );
+        assertThat(e.getMessage()).contains("currentArtifactId must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null target artifact ID")
     void shouldRequireNonNullTargetArtifactId() {
-        try {
-            new RollbackSafetyCheckService.RollbackSafetyCheck(
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService.RollbackSafetyCheck(
                 "tenant-123",
                 "current-artifact-001",
                 null,
                 Instant.now(),
                 "staging"
-            );
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("targetArtifactId must not be null");
-        }
+            )
+        );
+        assertThat(e.getMessage()).contains("targetArtifactId must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null check timestamp")
     void shouldRequireNonNullCheckTimestamp() {
-        try {
-            new RollbackSafetyCheckService.RollbackSafetyCheck(
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService.RollbackSafetyCheck(
                 "tenant-123",
                 "current-artifact-001",
                 "phr-deploy-2026-05-23-001",
                 null,
                 "staging"
-            );
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("checkTimestamp must not be null");
-        }
+            )
+        );
+        assertThat(e.getMessage()).contains("checkTimestamp must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null environment")
     void shouldRequireNonNullEnvironment() {
-        try {
-            new RollbackSafetyCheckService.RollbackSafetyCheck(
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService.RollbackSafetyCheck(
                 "tenant-123",
                 "current-artifact-001",
                 "phr-deploy-2026-05-23-001",
                 Instant.now(),
                 null
-            );
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("environment must not be null");
-        }
+            )
+        );
+        assertThat(e.getMessage()).contains("environment must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null patient store in constructor")
     void shouldRequireNonNullPatientStore() {
-        try {
-            new RollbackSafetyCheckService(null, executor, deploymentHistoryPath);
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("patientStore must not be null");
-        }
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService(null, executor, deploymentHistoryPath)
+        );
+        assertThat(e.getMessage()).contains("patientStore must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null executor in constructor")
     void shouldRequireNonNullExecutor() {
-        try {
-            new RollbackSafetyCheckService(patientStore, null, deploymentHistoryPath);
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("executor must not be null");
-        }
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService(patientStore, null, deploymentHistoryPath)
+        );
+        assertThat(e.getMessage()).contains("executor must not be null");
     }
 
     @Test
     @DisplayName("Should require non-null deployment history path in constructor")
     void shouldRequireNonNullDeploymentHistoryPath() {
-        try {
-            new RollbackSafetyCheckService(patientStore, executor, null);
-            org.junit.jupiter.api.Assertions.fail("Should have thrown NullPointerException");
-        } catch (NullPointerException e) {
-            assertThat(e.getMessage()).contains("deploymentHistoryPath must not be null");
-        }
+        NullPointerException e = org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new RollbackSafetyCheckService(patientStore, executor, null)
+        );
+        assertThat(e.getMessage()).contains("deploymentHistoryPath must not be null");
     }
 
     @Test

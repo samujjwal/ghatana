@@ -6,8 +6,8 @@
 
 ## Phase 0 - Build and Documentation Coherence
 
-- Verified: canonical ADRs exist for Data-Cloud/AEP/EventCloud boundaries, `AgentOperator`, and adaptive ESP foundation.
-- Verified: AEP, Data-Cloud, EventCloud, and agent-as-operator status language has been normalized across the core docs and specs.
+- Verified: canonical ADRs exist for Data-Cloud/AEP/EventCloud boundaries, `EventOperatorCapability`, and adaptive ESP foundation.
+- Verified: AEP, Data-Cloud, EventCloud, and event-processing-as-agent-capability status language has been normalized across the core docs and specs.
 - Verified: co-located AEP contract modules build and pass focused tests.
 - Verified: product-boundary architecture tests enforce Data-Cloud-to-AEP and AEP-contract-to-Data-Cloud implementation dependency rules.
 - Remaining: make standalone `products/aep` build wiring explicit or document it as intentionally docs/contracts-only.
@@ -19,9 +19,9 @@
 - Verified: `CanonicalEvent` envelope.
 - Verified: `EventContext`.
 - Verified: `EventOperator` contract.
-- Verified: `AgentOperator` subtype.
-- Verified: `OperatorCatalog` metadata for operator kind, agent kind, side-effect profile, replay profile, schema, cost, security, owner, and version.
-- Verified: operator catalog runtime admission rejects unknown or unapproved operators, requires declared tool policy metadata for side-effecting agent operators, and is enforced by the co-located pipeline stage executor when using `UnifiedOperatorCatalog`.
+- Verified: `EventOperatorCapability` subtype.
+- Verified: `OperatorCatalog` metadata for operator kind, agent capability role, side-effect profile, replay profile, schema, cost, security, owner, and version.
+- Verified: operator catalog runtime admission rejects unknown or unapproved operators, requires declared tool policy metadata for side-effecting agent capabilities, and is enforced by the co-located pipeline stage executor when using `UnifiedOperatorCatalog`.
 - Verified: time model contracts and late-event policy evaluation.
 - Verified: uncertainty model contracts and propagation helpers.
 - Remaining: migrate all legacy runtime operators to the unified `EventOperator` execution path.
@@ -29,7 +29,7 @@
 ## Phase 2 - PatternSpec / EPL
 
 - Verified: PatternSpec documentation, JSON Schema, examples, structural validator, operator-shape validation, and deterministic contract compiler.
-- Verified: agent operators are accepted as valid PatternSpec expression nodes when required schemas and policies are present.
+- Verified: agent capability references are accepted as valid PatternSpec expression nodes when required schemas and policies are present.
 - Verified: production patterns require explicit time, uncertainty, lifecycle, replay, and output event metadata.
 - Verified: compiler emits deterministic `CompiledPattern` runtime graph metadata.
 - Remaining: implement a formal text grammar/parser for EPL syntax.
@@ -41,7 +41,7 @@
 
 - Verified: EventCloud SPI contracts for append, tail, replay, subscription, checkpoint, partial-match state, offset, partition, tenant, watermark, and dead-letter metadata.
 - Verified: EventCloud SPI contract tests cover interface-level behavior and boundary expectations.
-- Verified: PatternSpec-to-pipeline adapter produces a DAG with EventCloud source/sink stages and agent operator stages.
+- Verified: PatternSpec-to-pipeline adapter produces a DAG with EventCloud source/sink stages and agent capability stages.
 - Verified: Data-Cloud-backed `EventCloudStore` bridge persists canonical AEP events through the Data-Cloud event log behind the AEP SPI.
 - Verified: EventCloud checkpoint and partial-match stores persist through provider-backed AEP state events, including restart-readable checkpoints and delete tombstones.
 - Remaining: wire replay, tailing, watermark, late-event handling, partial-match state, and checkpointing into the production runtime.
@@ -74,12 +74,12 @@
 - Remaining: full runtime integration for replay-safe agent execution.
 - Remaining: tool, memory, model, retrieval, guardrail, and human-review governance in the runtime.
 
-## Phase 5A - Remaining Agent Operator Types
+## Phase 5A - Remaining Agent Capability Roles
 
-- Migrate existing detector/callback integrations to the concrete agent operator implementations.
-- Add emitted-event contract tests for every agent operator kind that emits events; inference-only agent operators may return typed operator results without side-effect events.
-- Add runtime replay and audit integration tests for every agent operator kind.
-- Verified: contract-level catalog approval checks for side-effecting agent operators are connected to the co-located pipeline stage execution path.
+- Migrate existing detector/callback integrations to concrete `EventOperatorCapability` implementations.
+- Add emitted-event contract tests for every agent capability role that emits events; inference-only capabilities may return typed operator results without side-effect events.
+- Add runtime replay and audit integration tests for every agent capability role.
+- Verified: contract-level catalog approval checks for side-effecting agent capabilities are connected to the co-located pipeline stage execution path.
 - Remaining: connect catalog approval checks to any other production runtime lookup paths.
 
 ## Phase 6 - Production Hardening
@@ -104,12 +104,12 @@ Do not implement agent features before the core operator model is stable.
 3. Product-boundary architecture tests.
 4. `CanonicalEvent` and `EventContext`.
 5. `EventOperator` contract.
-6. `AgentOperator` contract.
+6. `EventOperatorCapability` contract.
 7. PatternSpec schema and compiler.
 8. EventCloud SPI.
 9. Pattern lifecycle.
 10. Learning and adaptation operators.
-11. Agent operators.
+11. Agent capabilities.
 12. Replay-safe agent execution.
 13. Governance, observability, and security hardening.
 14. Cross-product adoption examples.

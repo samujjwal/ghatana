@@ -24,7 +24,7 @@ calibrationScore
 
 ```text
 Every EventOperator must define how it propagates uncertainty.
-Every AgentOperator must emit model/retrieval/evidence confidence.
+Every EventOperatorCapability backed by an agent must emit model/retrieval/evidence confidence.
 Every PatternMatch must include confidence and evidence.
 ```
 

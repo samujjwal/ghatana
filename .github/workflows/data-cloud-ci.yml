@@ -60,11 +60,18 @@ jobs:
       - name: Validate active Data Cloud module classification
         run: node ./scripts/list-data-cloud-active-modules.mjs --validate
 
+      - name: Validate agent capability architecture gates
+        run: |
+          node ./scripts/check-agent-capability-duplicates.mjs
+          node ./scripts/check-agent-runtime-test-excludes.mjs
+
       - name: Compile active Data Cloud modules
         run: |
           set -euo pipefail
           TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=all-active --task=compileJava --format=shell)"
           ./gradlew ${TASKS} --no-daemon
+          node ./scripts/generate-data-cloud-active-modules-evidence.mjs
+          node ./scripts/check-action-plane-boundaries.mjs
 
       # Backend: Static analysis
       - name: Run backend SpotBugs

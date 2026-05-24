@@ -16,6 +16,7 @@ Data-Cloud does not own:
 - Pattern learning/adaptation.
 - EventCloud subscriptions, tailing, or windowing.
 - Agent orchestration.
+- EventOperatorCapability semantics.
 - PatternSpec/EPL.
 - Predictive/recommended pattern lifecycle.
 
@@ -38,17 +39,18 @@ For AEP, Data-Cloud provides:
 
 1. Durable entity metadata.
 2. Pattern registry metadata storage when called through AEP services.
-3. Storage plugins for EventCloud persistence.
-4. Schema metadata storage.
-5. Audit logging.
-6. Retention and encryption support.
-7. Queryable historical metadata.
+3. Agent and capability metadata plus audit evidence when called through AEP services.
+4. Storage plugins for EventCloud persistence.
+5. Schema metadata storage.
+6. Audit logging.
+7. Retention and encryption support.
+8. Queryable historical metadata.
 
 ## EventCloud Boundary
 
 EventCloud is AEP-owned.
 
-Data-Cloud may provide storage plugins used by AEP's EventCloud. These plugins are persistence implementations only. They must not leak CEP, PatternSpec, operator, or learning semantics into Data-Cloud.
+Data-Cloud may provide storage plugins used by AEP's EventCloud. These plugins are persistence implementations only. Data-Cloud may store capability metadata and audit evidence, but it must not own EventOperatorCapability, CEP, PatternSpec, operator, or learning semantics.
 
 ## Dependency Rule
 
@@ -56,6 +58,7 @@ Data-Cloud may provide storage plugins used by AEP's EventCloud. These plugins a
 Data-Cloud must not depend on AEP.
 AEP may use Data-Cloud storage plugins through stable SPI.
 Data-Cloud storage plugin examples must not include pattern matching logic.
+Data-Cloud capability metadata storage must not implement EventOperatorCapability behavior.
 ```
 
 ## Architecture Checks
@@ -63,6 +66,6 @@ Data-Cloud storage plugin examples must not include pattern matching logic.
 Boundary tests should enforce:
 
 - Data-Cloud must not import AEP modules.
-- Data-Cloud must not import PatternSpec, EPL, or EventOperator runtime.
+- Data-Cloud must not import PatternSpec, EPL, EventOperatorCapability, or EventOperator runtime.
 - AEP EventCloud SPI must not depend on Data-Cloud implementation classes.
 - Data-Cloud EventLog remains a storage-plane primitive, not EventCloud.

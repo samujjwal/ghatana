@@ -97,13 +97,22 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
                 .put(entity.id().value(), entity); 
             return Promise.of(entity); 
         });
-        when(mockEntityStore.findById(any(), any())).thenAnswer(invocation -> { 
-            EntityStore.EntityId entityId = invocation.getArgument(1); 
-            Optional<EntityStore.Entity> entity = entityState.values().stream() 
-                .map(collection -> collection.get(entityId.value())) 
-                .filter(java.util.Objects::nonNull) 
-                .findFirst(); 
-            return Promise.of(entity); 
+        when(mockEntityStore.findById(any(), any())).thenAnswer(invocation -> {
+            EntityStore.EntityId entityId = invocation.getArgument(1);
+            Optional<EntityStore.Entity> entity = entityState.values().stream()
+                .map(collection -> collection.get(entityId.value()))
+                .filter(java.util.Objects::nonNull)
+                .findFirst();
+            return Promise.of(entity);
+        });
+        when(mockEntityStore.findByRef(any(), any())).thenAnswer(invocation -> {
+            EntityStore.EntityRef ref = invocation.getArgument(1);
+            Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+            if (collection == null) {
+                return Promise.of(Optional.empty());
+            }
+            EntityStore.Entity entity = collection.get(ref.entityId().value());
+            return Promise.of(Optional.ofNullable(entity));
         });
         when(mockEntityStore.query(any(), any())).thenAnswer(invocation -> { 
             EntityStore.QuerySpec querySpec = invocation.getArgument(1); 

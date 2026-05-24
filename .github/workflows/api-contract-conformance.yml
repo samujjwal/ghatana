@@ -82,11 +82,22 @@ jobs:
   contract-conformance:
     name: ${{ matrix.product }} API Contract Conformance
     runs-on: ubuntu-latest
-    needs: [resolve-products]
-    if: needs.resolve-products.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.resolve-products.outputs.matrix) }}
+      matrix:
+        include:
+          - product: PHR
+            command: ./gradlew :products:phr:checkApiContractConformance --no-daemon --stacktrace
+            reportPath: products/phr/build/reports/tests/test/
+          - product: Finance
+            command: ./gradlew :products:finance:checkApiContractConformance --no-daemon --stacktrace
+            reportPath: products/finance/build/reports/tests/test/
+          - product: Digital Marketing
+            command: ./gradlew :products:digital-marketing:dm-api:test --tests "*ContractTest" --no-daemon --stacktrace
+            reportPath: products/digital-marketing/dm-api/build/reports/tests/test/
+          - product: FlashIt
+            command: pnpm --filter @ghatana/flashit-tests test:contract
+            reportPath: products/flashit/backend/gateway/test-results/
 
     steps:
       - uses: actions/checkout@v4

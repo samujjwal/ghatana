@@ -1,15 +1,15 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-24T17:17:40.798Z",
+  "generatedAt": "2026-05-24T21:16:39.695Z",
   "summary": {
     "dimensionCount": 47,
     "coveredDimensions": 47,
     "uncoveredDimensions": 0,
     "violationCount": 0,
     "wave1Complete": true,
-    "averageMaturityScore": 2.91,
+    "averageMaturityScore": 2.96,
     "criticalDimensionThreshold": 4,
-    "criticalDimensionsBelowThresholdCount": 36
+    "criticalDimensionsBelowThresholdCount": 35
   },
   "waveStatus": {
     "wave1": {
@@ -24,7 +24,7 @@
     "total": 47,
     "covered": 47,
     "uncovered": [],
-    "averageMaturityScore": 2.91,
+    "averageMaturityScore": 2.96,
     "criticalDimensionThreshold": 4,
     "criticalDimensionsBelowThreshold": [
       {
@@ -201,11 +201,6 @@
         "id": 45,
         "name": "Cost and operational efficiency",
         "score": 3
-      },
-      {
-        "id": 47,
-        "name": "Overall world-class maturity",
-        "score": 2
       }
     ]
   },
@@ -2136,7 +2131,7 @@
     },
     {
       "id": 47,
-      "name": "Overall world-class maturity",
+      "name": "Overall release maturity",
       "owner": {
         "dimensionId": 47,
         "dimensionName": "Overall world-class maturity",
@@ -2147,7 +2142,7 @@
       "covered": true,
       "gateChecks": [
         {
-          "gate": "check:world-class-platform-readiness",
+          "gate": "check:release",
           "exists": true
         }
       ],
@@ -2155,12 +2150,13 @@
         "artifactExists": true,
         "staticCheck": true,
         "behaviorTest": false,
-        "releaseEvidence": false,
+        "releaseEvidence": true,
         "runtimeProductionEvidence": false
       },
-      "maturityScore": 2,
+      "maturityScore": 4,
       "proofTypes": [
-        "static-analysis"
+        "static-analysis",
+        "release-evidence"
       ],
       "evidenceFreshness": {
         "freshEvidenceCount": 0,

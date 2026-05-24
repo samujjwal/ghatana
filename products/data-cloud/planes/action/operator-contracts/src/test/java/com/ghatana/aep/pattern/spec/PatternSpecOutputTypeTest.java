@@ -87,7 +87,8 @@ class PatternSpecOutputTypeTest {
                     Map.of("event", "test.event"),
                     Map.of(
                         "operator", "AGENT_PREDICATE",
-                        "agentRef", "agents/predicate@1.0.0")))));
+                        "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability")))));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -103,6 +104,7 @@ class PatternSpecOutputTypeTest {
                     Map.of(
                         "operator", "AGENT_PREDICATE",
                         "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                         "outputSchema", "PredicateResult")))));
 
             assertThat(result.valid()).isTrue();
@@ -121,7 +123,8 @@ class PatternSpecOutputTypeTest {
                             Map.of("event", "test.event2"),
                             Map.of(
                                 "operator", "AGENT_ENRICH",
-                                "agentRef", "agents/enricher@1.0.0")))))));
+                                "agentRef", "agents/enricher@1.0.0",
+                    "capabilityRef", "agents/enricher@1.0.0/capability")))))));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -142,6 +145,7 @@ class PatternSpecOutputTypeTest {
             Map<String, Object> spec = validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
                 "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                 "outputSchema", "PredicateResult"));
             spec.put("emit", Map.of("eventType", "test.matched", "outputSchema", "PatternMatched"));
 
@@ -161,10 +165,12 @@ class PatternSpecOutputTypeTest {
                     Map.of(
                         "operator", "AGENT_PREDICATE",
                         "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                         "outputSchema", "PredicateResult"),
                     Map.of(
                         "operator", "AGENT_ENRICH",
                         "agentRef", "agents/enricher@1.0.0",
+                    "capabilityRef", "agents/enricher@1.0.0/capability",
                         "outputSchema", "EnrichedResult")))));
 
             assertThat(result.valid()).isTrue();

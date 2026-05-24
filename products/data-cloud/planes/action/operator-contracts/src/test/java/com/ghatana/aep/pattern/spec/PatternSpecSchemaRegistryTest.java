@@ -39,7 +39,8 @@ class PatternSpecSchemaRegistryTest {
         void agentPredicateRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
-                "agentRef", "agents/predicate@1.0.0")));
+                "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -50,7 +51,8 @@ class PatternSpecSchemaRegistryTest {
         void agentEnrichRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_ENRICH",
-                "agentRef", "agents/enricher@1.0.0")));
+                "agentRef", "agents/enricher@1.0.0",
+                    "capabilityRef", "agents/enricher@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -61,7 +63,8 @@ class PatternSpecSchemaRegistryTest {
         void agentExtractRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_EXTRACT",
-                "agentRef", "agents/extractor@1.0.0")));
+                "agentRef", "agents/extractor@1.0.0",
+                    "capabilityRef", "agents/extractor@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -72,7 +75,8 @@ class PatternSpecSchemaRegistryTest {
         void agentPatternSynthesisRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PATTERN_SYNTHESIS",
-                "agentRef", "agents/synthesizer@1.0.0")));
+                "agentRef", "agents/synthesizer@1.0.0",
+                    "capabilityRef", "agents/synthesizer@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -83,7 +87,8 @@ class PatternSpecSchemaRegistryTest {
         void agentExplanationRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_EXPLANATION",
-                "agentRef", "agents/explainer@1.0.0")));
+                "agentRef", "agents/explainer@1.0.0",
+                    "capabilityRef", "agents/explainer@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -94,7 +99,8 @@ class PatternSpecSchemaRegistryTest {
         void agentReviewRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_REVIEW",
-                "agentRef", "agents/reviewer@1.0.0")));
+                "agentRef", "agents/reviewer@1.0.0",
+                    "capabilityRef", "agents/reviewer@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -106,6 +112,7 @@ class PatternSpecSchemaRegistryTest {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_ACTION",
                 "agentRef", "agents/action@1.0.0",
+                    "capabilityRef", "agents/action@1.0.0/capability",
                 "toolPolicy", Map.of("allowedTools", List.of("tool1")))));
 
             assertThat(result.valid()).isFalse();
@@ -117,7 +124,8 @@ class PatternSpecSchemaRegistryTest {
         void agentReflectionRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_REFLECTION",
-                "agentRef", "agents/reflector@1.0.0")));
+                "agentRef", "agents/reflector@1.0.0",
+                    "capabilityRef", "agents/reflector@1.0.0/capability")));
 
             assertThat(result.valid()).isFalse();
             assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -129,6 +137,7 @@ class PatternSpecSchemaRegistryTest {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
                 "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                 "outputSchema", "PredicateResult")));
 
             assertThat(result.valid()).isTrue();
@@ -181,6 +190,7 @@ class PatternSpecSchemaRegistryTest {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
                 "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                 "outputSchema", "PredicateResult")));
 
             assertThat(result.valid()).isTrue();
@@ -192,6 +202,7 @@ class PatternSpecSchemaRegistryTest {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
                 "agentRef", "agents/predicate@1.0.0",
+                    "capabilityRef", "agents/predicate@1.0.0/capability",
                 "outputSchema", Map.of(
                     "type", "object",
                     "properties", Map.of("result", Map.of("type", "boolean"))))));

@@ -50,7 +50,7 @@ class RuntimeTruthDriftDetectorTest {
             
             // Use custom config with very short threshold
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofSeconds(1), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofSeconds(1), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
             
             // Wait for threshold to pass
@@ -73,7 +73,7 @@ class RuntimeTruthDriftDetectorTest {
             
             // Disable missing plane detection for this test
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
 
             java.util.List<RuntimeTruthDriftDetector.DriftIssue> issues = detector.detectDrift();
@@ -97,7 +97,7 @@ class RuntimeTruthDriftDetectorTest {
             
             // Disable missing plane detection for this test
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
 
             java.util.List<RuntimeTruthDriftDetector.DriftIssue> issues = detector.detectDrift();
@@ -115,7 +115,7 @@ class RuntimeTruthDriftDetectorTest {
             
             // Disable missing plane detection for this test
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
 
             java.util.List<RuntimeTruthDriftDetector.DriftIssue> issues = detector.detectDrift();
@@ -168,7 +168,7 @@ class RuntimeTruthDriftDetectorTest {
         @DisplayName("can disable missing plane detection")
         void canDisableMissingPlaneDetection() {
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
 
             java.util.List<RuntimeTruthDriftDetector.DriftIssue> issues = detector.detectDrift();
@@ -204,7 +204,7 @@ class RuntimeTruthDriftDetectorTest {
             
             // Disable missing plane detection for this test
             RuntimeTruthDriftDetector.DriftDetectionConfig config = 
-                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false);
+                new RuntimeTruthDriftDetector.DriftDetectionConfig(Duration.ofMinutes(5), false, false, false, "test");
             RuntimeTruthDriftDetector detector = new RuntimeTruthDriftDetector(runtimeTruthService, config);
 
             assertThat(detector.hasDrift()).isFalse();

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Comprehensive tests for AgentRegistry + InMemoryAgentRegistry
- * and AgentOperatorFactory.
+ * and AgentCapabilityExecutionFactory.
  */
 @DisplayName("Registry & Operator Factory")
 class RegistryAndFactoryTest {
@@ -257,11 +257,11 @@ class RegistryAndFactoryTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // AgentOperatorFactory
+    // AgentCapabilityExecutionFactory
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AgentOperatorFactory")
+    @DisplayName("AgentCapabilityExecutionFactory")
     class FactoryTests {
 
         @Test void createTreeFromRegistryRegisteredAgent() { 
@@ -273,10 +273,10 @@ class RegistryAndFactoryTest {
             // Register in registry (no initialize needed for registration)
             runOnEventloop(() -> registry.register(agent, configFor("op-agent", AgentType.DETERMINISTIC))); 
 
-            AgentOperatorFactory factory = new AgentOperatorFactory(registry); 
+            AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry); 
             // Factory resolves agent from registry by ID
-            AgentOperatorFactory.OperatorTree tree = runOnEventloop(() -> 
-                    factory.createOperatorTree("op-agent"));
+            AgentCapabilityExecutionFactory.CapabilityExecutionTree tree = runOnEventloop(() -> 
+                    factory.createCapabilityExecutionTree("op-agent"));
 
             assertThat(tree).isNotNull(); 
             assertThat(tree.getOperators()).hasSize(1); 
@@ -293,9 +293,9 @@ class RegistryAndFactoryTest {
             // Initialize agent directly (actual SPI)
             runOnEventloop(() -> agent.initialize(configFor("exec-agent", AgentType.DETERMINISTIC))); 
 
-            AgentOperatorFactory factory = new AgentOperatorFactory(registry); 
-            AgentOperatorFactory.OperatorTree tree = runOnEventloop(() -> 
-                    factory.createOperatorTree("exec-agent"));
+            AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry); 
+            AgentCapabilityExecutionFactory.CapabilityExecutionTree tree = runOnEventloop(() -> 
+                    factory.createCapabilityExecutionTree("exec-agent"));
 
             AgentResult<Map<String, Object>> result = runOnEventloop(() -> 
                     tree.execute(ctx, Map.of("input", "test"))); 
@@ -312,8 +312,8 @@ class RegistryAndFactoryTest {
             // Initialize the agent first
             runOnEventloop(() -> agent.initialize(configFor("direct", AgentType.DETERMINISTIC))); 
 
-            AgentOperatorFactory factory = new AgentOperatorFactory(registry); 
-            AgentOperatorFactory.OperatorTree tree = factory.createOperatorTree( 
+            AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry); 
+            AgentCapabilityExecutionFactory.CapabilityExecutionTree tree = factory.createCapabilityExecutionTree( 
                     agent, configFor("direct", AgentType.DETERMINISTIC)); 
 
             assertThat(tree.getOperators()).hasSize(1); 
@@ -332,14 +332,14 @@ class RegistryAndFactoryTest {
             runOnEventloop(() -> registry.register(agent, configFor("custom", AgentType.DETERMINISTIC))); 
             runOnEventloop(() -> agent.initialize(configFor("custom", AgentType.DETERMINISTIC))); 
 
-            AgentOperatorFactory factory = new AgentOperatorFactory(registry); 
+            AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry); 
 
             // Register custom mapping that adds a post-processor
             factory.registerMapping("custom", (a, config) -> { 
                 @SuppressWarnings("unchecked")
                 TypedAgent<Map<String, Object>, Map<String, Object>> typed =
                         (TypedAgent<Map<String, Object>, Map<String, Object>>) a; 
-                AgentOperatorFactory.AgentOperator op = AgentOperatorFactory.AgentOperator.builder() 
+                AgentCapabilityExecutionFactory.AgentCapabilityStep op = AgentCapabilityExecutionFactory.AgentCapabilityStep.builder() 
                         .name("custom-op")
                         .agentType(a.descriptor().getType()) 
                         .agent(typed) 
@@ -349,14 +349,14 @@ class RegistryAndFactoryTest {
                                 }})
                                 .build()) 
                         .build(); 
-                return AgentOperatorFactory.OperatorTree.builder() 
+                return AgentCapabilityExecutionFactory.CapabilityExecutionTree.builder() 
                         .name("custom-tree")
                         .operators(List.of(op)) 
                         .build(); 
             });
 
-            AgentOperatorFactory.OperatorTree tree = runOnEventloop(() -> 
-                    factory.createOperatorTree("custom"));
+            AgentCapabilityExecutionFactory.CapabilityExecutionTree tree = runOnEventloop(() -> 
+                    factory.createCapabilityExecutionTree("custom"));
 
             var result = runOnEventloop(() -> tree.execute(ctx, Map.of())); 
             assertThat(result.getOutput()).containsEntry("enriched", true); 
@@ -372,12 +372,12 @@ class RegistryAndFactoryTest {
             runOnEventloop(() -> a1.initialize(configFor("s1", AgentType.DETERMINISTIC))); 
             runOnEventloop(() -> a2.initialize(configFor("s2", AgentType.DETERMINISTIC))); 
 
-            AgentOperatorFactory.AgentOperator op1 = AgentOperatorFactory.AgentOperator.builder() 
+            AgentCapabilityExecutionFactory.AgentCapabilityStep op1 = AgentCapabilityExecutionFactory.AgentCapabilityStep.builder() 
                     .name("op-1").agentType(AgentType.DETERMINISTIC).agent(a1).build();
-            AgentOperatorFactory.AgentOperator op2 = AgentOperatorFactory.AgentOperator.builder() 
+            AgentCapabilityExecutionFactory.AgentCapabilityStep op2 = AgentCapabilityExecutionFactory.AgentCapabilityStep.builder() 
                     .name("op-2").agentType(AgentType.DETERMINISTIC).agent(a2).build();
 
-            AgentOperatorFactory.OperatorTree tree = AgentOperatorFactory.OperatorTree.builder() 
+            AgentCapabilityExecutionFactory.CapabilityExecutionTree tree = AgentCapabilityExecutionFactory.CapabilityExecutionTree.builder() 
                     .name("pipeline")
                     .operators(List.of(op1, op2)) 
                     .build(); 

@@ -16,6 +16,24 @@ const wave2ScorecardPath = path.join(evidenceDir, 'wave2-product-quality-scoreca
 const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
 const platformLifecycleBuildScript = 'pnpm:build:kernel-lifecycle-platform';
 
+function currentGitSha() {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  return result.status === 0 ? result.stdout.trim() : 'unknown';
+}
+
+function evidenceRunMetadata() {
+  return {
+    generatedBy: 'scripts/check-product-release-readiness.mjs',
+    command: 'pnpm check:product-release-readiness',
+    source: 'scripts/check-product-release-readiness.mjs',
+    commit: currentGitSha(),
+  };
+}
+
 function sleepMs(durationMs) {
   const signal = new Int32Array(new SharedArrayBuffer(4));
   Atomics.wait(signal, 0, 0, durationMs);
@@ -816,6 +834,7 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
 
   return {
     generatedAt: new Date().toISOString(),
+    evidenceRun: evidenceRunMetadata(),
     productId,
     releaseVerdict: blockingGaps.length === 0 ? 'pass' : 'fail',
     releaseProfiles,
@@ -879,6 +898,7 @@ function runProductReleaseReadinessCli() {
     mkdirSync(evidenceDir, { recursive: true });
     writeJsonWithRetry(evidencePath, {
       generatedAt: new Date().toISOString(),
+      evidenceRun: evidenceRunMetadata(),
       pass: false,
       reason,
       failedScript,
@@ -979,6 +999,7 @@ function runProductReleaseReadinessCli() {
 
   const evidence = {
     generatedAt: new Date().toISOString(),
+    evidenceRun: evidenceRunMetadata(),
     pass: true,
     journeyResults,
     releaseAreaResults,

@@ -74,7 +74,7 @@ public final class GeneratedRouteRegistry {
             Boundary.YAPPC,
             "promoteProductFamilyAsset",
             "PRODUCT_FAMILY_ASSET_PROMOTE",
-            PrivacyClassification.CONFIDENTIAL
+            PrivacyClassification.RESTRICTED
         ));
         MANIFEST.addRoute("yappc-services", new RouteEntry(
             "GET",

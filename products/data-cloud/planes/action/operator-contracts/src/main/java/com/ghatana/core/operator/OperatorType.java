@@ -35,7 +35,7 @@ package com.ghatana.core.operator;
  *       ├── CorrelationAnalyzer
  *       ├── PatternSynthesizer
  *       └── Recommender (Collaborative Filtering)
- *   └── AgentOperator (AGENT)
+ *   └── agent capability (AGENT)
  *       ├── AgentPredicate
  *       ├── AgentEnrich
  *       ├── AgentReview
@@ -193,7 +193,7 @@ package com.ghatana.core.operator;
  *
  * <p><b>Design Decisions</b>
  * <ul>
- *   <li>Core types align with WORLD_CLASS_DESIGN_MASTER.md Section III plus AgentOperator ADR</li>
+ *   <li>Core types align with WORLD_CLASS_DESIGN_MASTER.md Section III plus agent capability ADR</li>
  *   <li>Enum (not interface) for type safety and exhaustive switch compatibility</li>
  *   <li>Uppercase constants follow Java enum convention</li>
  *   <li>No custom types allowed (closed set ensures catalog query correctness)</li>

@@ -18,4 +18,4 @@ interface EventOperator<I, O> {
 }
 ```
 
-Every operator reports metrics and traces through shared abstractions. Standard operators and agent operators use the same runtime contract.
+Every operator reports metrics and traces through shared abstractions. Standard operators and agent-backed `EventOperatorCapability` implementations use the same runtime contract.

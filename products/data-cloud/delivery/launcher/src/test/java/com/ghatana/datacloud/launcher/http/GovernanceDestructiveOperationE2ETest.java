@@ -132,6 +132,17 @@ class GovernanceDestructiveOperationE2ETest {
             return Promise.of(found);
         });
 
+        // entityStore.findByRef reads from entityState by collection and entity ID
+        when(mockEntityStore.findByRef(any(), any())).thenAnswer(inv -> {
+            EntityStore.EntityRef ref = inv.getArgument(1);
+            Map<String, EntityStore.Entity> collection = entityState.get(ref.collection());
+            if (collection == null) {
+                return Promise.of(Optional.empty());
+            }
+            EntityStore.Entity entity = collection.get(ref.entityId().value());
+            return Promise.of(Optional.ofNullable(entity));
+        });
+
         // entityStore.query filters entityState by collection
         when(mockEntityStore.query(any(), any())).thenAnswer(inv -> {
             EntityStore.QuerySpec spec = inv.getArgument(1);

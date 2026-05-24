@@ -1,7 +1,7 @@
 package com.ghatana.core.operator.catalog;
 
 import com.ghatana.core.operator.OperatorType;
-import com.ghatana.core.operator.agent.AgentOperatorKind;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 
 import java.util.Optional;
@@ -16,14 +16,14 @@ import java.util.Optional;
  */
 public record OperatorCatalogQuery(
         Optional<OperatorType> operatorType,
-        Optional<AgentOperatorKind> agentOperatorKind,
+        Optional<AgentCapabilityRole> agentCapabilityRole,
         Optional<AgentSideEffectProfile> sideEffectProfile,
         Optional<String> capability
 ) {
 
     public OperatorCatalogQuery {
         operatorType = operatorType == null ? Optional.empty() : operatorType;
-        agentOperatorKind = agentOperatorKind == null ? Optional.empty() : agentOperatorKind;
+        agentCapabilityRole = agentCapabilityRole == null ? Optional.empty() : agentCapabilityRole;
         sideEffectProfile = sideEffectProfile == null ? Optional.empty() : sideEffectProfile;
         capability = capability == null ? Optional.empty() : capability.filter(value -> !value.isBlank());
     }
@@ -32,7 +32,7 @@ public record OperatorCatalogQuery(
         return new OperatorCatalogQuery(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
-    public static OperatorCatalogQuery agentKind(AgentOperatorKind kind) {
+    public static OperatorCatalogQuery agentKind(AgentCapabilityRole kind) {
         return new OperatorCatalogQuery(Optional.empty(), Optional.of(kind), Optional.empty(), Optional.empty());
     }
 }

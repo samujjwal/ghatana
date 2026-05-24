@@ -92,10 +92,10 @@ dependencies {
     testAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
-// Exclude test files with outdated ActiveJ APIs (.await(), .join(), withCurrentThread(), metadata())
+// Temporary test exclusions must carry an issue reference and removal date.
+// GH-48210 / remove by 2026-07-15: legacy ActiveJ tests still use APIs removed from the runtime test harness.
 tasks.compileTestJava {
     exclude("**/RegistryAndFactoryTest.java")
-    exclude("**/AgentOperatorFactoryCanonicalTypeTest.java")
     exclude("**/GovernedMemoryPlaneMasteryTest.java")
     exclude("**/GaaMasteryLifecycleE2ETest.java")
     exclude("**/GovernedAgentDispatcherMasteryTest.java")

@@ -426,12 +426,33 @@ class WorkflowExecutionRealProviderIntegrationTest {
     }
 
     private HttpResponse<String> get(String path) throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-            .GET()
-            .uri(URI.create("http://127.0.0.1:" + port + path))
-            .header("X-Tenant-Id", TENANT_ID)
-            .build();
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+        return getWithRetry(path, 5, 200);
+    }
+
+    private HttpResponse<String> getWithRetry(String path, int maxRetries, int expectedStatus) throws Exception {
+        IOException lastException = null;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                HttpRequest req = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + path))
+                    .header("X-Tenant-Id", TENANT_ID)
+                    .build();
+                HttpResponse<String> response = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == expectedStatus || (expectedStatus == 200 && response.statusCode() < 500)) {
+                    return response;
+                }
+                if (i < maxRetries - 1) {
+                    Thread.sleep(100 * (i + 1));
+                }
+            } catch (IOException e) {
+                lastException = e;
+                if (i < maxRetries - 1) {
+                    Thread.sleep(100 * (i + 1));
+                }
+            }
+        }
+        throw new IOException("Failed to GET " + path + " after " + maxRetries + " retries", lastException);
     }
 
     private HttpResponse<String> post(String path, Map<String, Object> body) throws Exception {

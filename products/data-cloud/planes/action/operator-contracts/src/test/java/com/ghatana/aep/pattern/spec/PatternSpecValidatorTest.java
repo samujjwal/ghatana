@@ -18,6 +18,7 @@ class PatternSpecValidatorTest {
                 Map.of(
                     "operator", "AGENT_PREDICATE",
                     "agentRef", "agents/sre-risk-assessor@1.0.0",
+                    "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability",
                     "outputSchema", "RiskDecision")))));
 
         assertThat(result.valid()).isTrue();
@@ -37,7 +38,8 @@ class PatternSpecValidatorTest {
     void rejectsAgentOperatorWithoutOutputSchema() {
         PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
             "operator", "AGENT_ENRICH",
-            "agentRef", "agents/enricher@1.0.0")));
+            "agentRef", "agents/enricher@1.0.0",
+                    "capabilityRef", "agents/enricher@1.0.0/capability")));
 
         assertThat(result.valid()).isFalse();
         assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("outputSchema"));
@@ -48,6 +50,7 @@ class PatternSpecValidatorTest {
         Map<String, Object> spec = validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/action@1.0.0",
+                    "capabilityRef", "agents/action@1.0.0/capability",
             "outputSchema", "ActionResult",
             "toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create"))));
         spec.remove("governance");
@@ -63,6 +66,7 @@ class PatternSpecValidatorTest {
         PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/action@1.0.0",
+                    "capabilityRef", "agents/action@1.0.0/capability",
             "outputSchema", "ActionResult")));
 
         assertThat(result.valid()).isFalse();
@@ -74,6 +78,7 @@ class PatternSpecValidatorTest {
         PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
             "operator", "AGENT_ACTION",
             "agentRef", "agents/action@1.0.0",
+                    "capabilityRef", "agents/action@1.0.0/capability",
             "outputSchema", "ActionResult",
             "toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create")))));
 
@@ -136,6 +141,10 @@ class PatternSpecValidatorTest {
     @Test
     void productionAcceptsValidCommitSha() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -209,6 +218,10 @@ class PatternSpecValidatorTest {
     void productionAcceptsApprovalPolicy() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("governance", Map.of("owner", "sre", "approvalPolicy", "human_required"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -219,6 +232,10 @@ class PatternSpecValidatorTest {
     void productionAcceptsReviewPolicy() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("governance", Map.of("owner", "sre", "reviewPolicy", "human_required"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 

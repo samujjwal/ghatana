@@ -22,6 +22,26 @@ const advisoryModules = new Set([
   ':products:data-cloud:integration-tests',
 ]);
 
+const releaseBlockingModules = new Set([
+  ':products:data-cloud:planes:shared-spi',
+  ':products:data-cloud:planes:data:entity',
+  ':products:data-cloud:planes:event:core',
+  ':products:data-cloud:planes:operations:config',
+  ':products:data-cloud:planes:intelligence:analytics',
+  ':products:data-cloud:planes:governance:core',
+  ':products:data-cloud:delivery:runtime-composition',
+  ':products:data-cloud:extensions:plugins',
+  ':products:data-cloud:delivery:api',
+  ':products:data-cloud:delivery:launcher',
+  ':products:data-cloud:delivery:sdk',
+  ':products:data-cloud:contracts',
+  ':products:data-cloud:extensions:agent-registry',
+  ':products:data-cloud:extensions:agent-catalog',
+  ':products:data-cloud:planes:intelligence:feature-ingest',
+  ':products:data-cloud:planes:event:store',
+  ':products:data-cloud:extensions:kernel-bridge',
+]);
+
 const actionPlaneModules = new Set([
   ':products:data-cloud:planes:action',
   ':products:data-cloud:planes:action:operator-contracts',
@@ -77,7 +97,10 @@ export function classifyDataCloudModule(modulePath) {
   if (actionPlaneModules.has(modulePath)) {
     return { category: 'release-blocking', reason: 'AEP Action Plane module; compile and release checks are blocking' };
   }
-  return { category: 'release-blocking', reason: 'Active Data Cloud production module' };
+  if (releaseBlockingModules.has(modulePath)) {
+    return { category: 'release-blocking', reason: 'Active Data Cloud production module' };
+  }
+  return { category: 'invalid', reason: 'Data Cloud module is not classified as release-blocking or advisory' };
 }
 
 export function filterModulesByScope(modules, scope) {
@@ -97,12 +120,12 @@ export function gradleTasksForModules(modules, taskName) {
   return modules.map((modulePath) => `${modulePath}:${taskName}`);
 }
 
-function moduleBuildFilePath(modulePath) {
-  return path.join(repoRoot, ...modulePath.replace(/^:/, '').split(':'), 'build.gradle.kts');
+export function moduleBuildFilePath(modulePath, root = repoRoot) {
+  return path.join(root, ...modulePath.replace(/^:/, '').split(':'), 'build.gradle.kts');
 }
 
-function moduleHasJavaCompileTask(modulePath) {
-  const buildFilePath = moduleBuildFilePath(modulePath);
+export function moduleHasJavaCompileTask(modulePath, root = repoRoot) {
+  const buildFilePath = moduleBuildFilePath(modulePath, root);
   if (!existsSync(buildFilePath)) {
     return false;
   }
@@ -119,11 +142,12 @@ export function validateModuleClassification(modules) {
   });
 }
 
-function readSettingsSource() {
-  if (!existsSync(settingsPath)) {
+export function readSettingsSource(root = repoRoot) {
+  const generatedSettingsPath = path.join(root, 'config/generated/settings-gradle-includes.kts');
+  if (!existsSync(generatedSettingsPath)) {
     throw new Error('config/generated/settings-gradle-includes.kts not found; run node scripts/generate-product-registry-artifacts.mjs');
   }
-  return readFileSync(settingsPath, 'utf8');
+  return readFileSync(generatedSettingsPath, 'utf8');
 }
 
 function printJson(payload) {
@@ -154,7 +178,7 @@ function main() {
 
   const scopedModules = filterModulesByScope(modules, scopeArg);
   const taskModules = taskArg === 'compileJava'
-    ? scopedModules.filter(moduleHasJavaCompileTask)
+    ? scopedModules.filter((modulePath) => moduleHasJavaCompileTask(modulePath))
     : scopedModules;
   const values = taskArg ? gradleTasksForModules(taskModules, taskArg) : scopedModules;
 

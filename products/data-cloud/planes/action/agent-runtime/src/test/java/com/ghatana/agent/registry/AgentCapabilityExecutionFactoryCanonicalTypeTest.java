@@ -8,8 +8,8 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
-import com.ghatana.agent.registry.AgentOperatorFactory.OperatorTree;
-import io.activej.eventloop.Eventloop;
+import com.ghatana.agent.registry.AgentCapabilityExecutionFactory.CapabilityExecutionTree;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,13 +18,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("AgentOperatorFactory Canonical Types")
-class AgentOperatorFactoryCanonicalTypeTest {
+@DisplayName("AgentCapabilityExecutionFactory Canonical Types")
+class AgentCapabilityExecutionFactoryCanonicalTypeTest extends EventloopTestBase {
 
     private AgentContext context;
 
@@ -97,31 +96,19 @@ class AgentOperatorFactoryCanonicalTypeTest {
         CanonicalTypeAgent agent = new CanonicalTypeAgent(agentId, type);
         AgentConfig config = AgentConfig.builder().agentId(agentId).type(type).build();
 
-        runOnEventloop(() -> registry.register(agent, config));
-        runOnEventloop(() -> agent.initialize(config));
+        runPromise(() -> registry.register(agent, config));
+        runPromise(() -> agent.initialize(config));
 
-        AgentOperatorFactory factory = new AgentOperatorFactory(registry);
-        OperatorTree tree = runOnEventloop(() -> factory.createOperatorTree(agentId));
+        AgentCapabilityExecutionFactory factory = new AgentCapabilityExecutionFactory(registry);
+        CapabilityExecutionTree tree = runPromise(() -> factory.createCapabilityExecutionTree(agentId));
 
         assertThat(tree.getOperators()).hasSize(1);
         assertThat(tree.getOperators().getFirst().getAgentType()).isEqualTo(type);
 
-        AgentResult<Map<String, Object>> result = runOnEventloop(() -> tree.execute(context, Map.of("seed", "x")));
+        AgentResult<Map<String, Object>> result = runPromise(() -> tree.execute(context, Map.of("seed", "x")));
         assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS);
         assertThat(result.getOutput()).containsEntry("agentType", type.name());
         assertThat(result.getOutput()).containsEntry("agentId", agentId);
-    }
-
-    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) {
-        AtomicReference<T> result = new AtomicReference<>();
-        AtomicReference<Exception> error = new AtomicReference<>();
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build();
-        eventloop.post(() -> supplier.get().whenResult(result::set).whenException(error::set));
-        eventloop.run();
-        if (error.get() != null) {
-            throw new RuntimeException(error.get());
-        }
-        return result.get();
     }
 
     private static final class CanonicalTypeAgent extends AbstractTypedAgent<Map<String, Object>, Map<String, Object>> {
@@ -155,5 +142,4 @@ class AgentOperatorFactoryCanonicalTypeTest {
         }
     }
 }
-
 

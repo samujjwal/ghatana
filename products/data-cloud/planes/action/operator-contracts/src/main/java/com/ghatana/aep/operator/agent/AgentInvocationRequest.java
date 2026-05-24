@@ -5,10 +5,10 @@ import com.ghatana.aep.model.EventContext;
 import java.util.Map;
 
 /**
- * Invocation payload passed from an AgentOperator to an agent runtime.
+ * Invocation payload passed from an agent capability to an agent runtime.
  *
  * @doc.type record
- * @doc.purpose Carries typed event context and policies for one agent operator invocation
+ * @doc.purpose Carries typed event context and policies for one agent capability invocation
  * @doc.layer product
  * @doc.pattern Contract
  */

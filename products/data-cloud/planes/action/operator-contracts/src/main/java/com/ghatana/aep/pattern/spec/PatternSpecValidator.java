@@ -103,8 +103,13 @@ public final class PatternSpecValidator {
             return;
         }
 
-        if (AGENT_OPERATORS.contains(operatorKind) && isBlank(expression.get("outputSchema"))) {
-            errors.add(path + "." + operatorKind + " requires outputSchema");
+        if (AGENT_OPERATORS.contains(operatorKind)) {
+            if (isBlank(expression.get("capabilityRef"))) {
+                errors.add(path + "." + operatorKind + " requires capabilityRef");
+            }
+            if (isBlank(expression.get("outputSchema"))) {
+                errors.add(path + "." + operatorKind + " requires outputSchema");
+            }
         }
         validateOperatorShape(operatorKind, expression, path, errors);
         if (operatorKind == OperatorKind.AGENT_ACTION) {

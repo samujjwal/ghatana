@@ -4,6 +4,7 @@ import com.ghatana.agent.AgentDescriptor;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("AgentEventOperator Hardening Tests")
-class AgentEventOperatorTest {
+class AgentEventOperatorTest extends EventloopTestBase {
 
     private TypedAgent<Map<String, Object>, Map<String, Object>> mockAgent;
     private AgentDescriptor mockDescriptor;
@@ -236,9 +237,9 @@ class AgentEventOperatorTest {
             when(result.getOutput()).thenReturn(output);
             when(mockAgent.process(any(), any())).thenReturn(Promise.of(result));
 
-            Promise<Map<String, Object>> promise = operator.submit(mockContext, event);
+            Map<String, Object> actual = runPromise(() -> operator.submit(mockContext, event));
 
-            assertThat(promise.getResult()).isEqualTo(output);
+            assertThat(actual).isEqualTo(output);
         }
 
         @Test
@@ -248,9 +249,7 @@ class AgentEventOperatorTest {
             RuntimeException error = new RuntimeException("Agent failed");
             when(mockAgent.process(any(), any())).thenReturn(Promise.ofException(error));
 
-            Promise<Map<String, Object>> promise = operator.submit(mockContext, event);
-
-            assertThatThrownBy(() -> promise.getResult())
+            assertThatThrownBy(() -> runPromise(() -> operator.submit(mockContext, event)))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Agent failed");
         }

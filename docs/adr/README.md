@@ -23,7 +23,8 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 | [ADR-020](ADR-020-agent-system-five-layer-architecture.md) | Agent System Five-Layer Architecture | Accepted | 8 |
 | [ADR-026](ADR-026-workflow-terminology-and-ownership.md) | Workflow Terminology and Ownership Boundary | Accepted | 4 |
 | [ADR-aep-datacloud-eventcloud-boundaries](ADR-aep-datacloud-eventcloud-boundaries.md) | AEP, Data-Cloud, and EventCloud Product Boundaries | Accepted | Documentation coherence |
-| [ADR-agent-as-event-operator](ADR-agent-as-event-operator.md) | Agent as Event Operator | Accepted | Adaptive event intelligence foundation |
+| [ADR-agent-as-event-operator](ADR-agent-as-event-operator.md) | Agent as Event Operator | Superseded | See ADR-agent-capability-event-operator |
+| [ADR-agent-capability-event-operator](ADR-agent-capability-event-operator.md) | Agent Capability Event Operator | Accepted | Agent as root abstraction; event processing as capability |
 | [ADR-adaptive-esp-foundation](ADR-adaptive-esp-foundation.md) | Adaptive ESP as AEP Foundation | Accepted | Adaptive event intelligence foundation |
 
 ## ADR Format

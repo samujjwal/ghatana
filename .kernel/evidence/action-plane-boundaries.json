@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-05-24T21:49:48.349Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-action-plane-boundaries.mjs",
+    "source": "scripts/check-action-plane-boundaries.mjs",
+    "command": "pnpm check:action-plane-boundaries",
+    "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d"
+  },
+  "scope": {
+    "scannedRoots": [
+      "products/data-cloud/planes"
+    ],
+    "excludedRoots": [
+      "products/data-cloud/planes/action"
+    ],
+    "rule": "Non-action Data Cloud planes must not import AEP internals or depend on Action Plane modules.",
+    "publicAepPackageAllowlist": [
+      "com.ghatana.aep.api",
+      "com.ghatana.aep.client",
+      "com.ghatana.aep.event.spi",
+      "com.ghatana.aep.model",
+      "com.ghatana.aep.sdk"
+    ]
+  },
+  "summary": {
+    "scannedFiles": 504,
+    "violationCount": 0
+  },
+  "violations": []
+}

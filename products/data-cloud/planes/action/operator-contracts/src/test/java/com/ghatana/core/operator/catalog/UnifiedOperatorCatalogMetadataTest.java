@@ -1,5 +1,11 @@
 package com.ghatana.core.operator.catalog;
 
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.CapabilityInvocation;
+import com.ghatana.aep.agent.capability.CapabilityKind;
+import com.ghatana.aep.agent.capability.CapabilityResult;
+import com.ghatana.aep.agent.capability.EventOperatorCapability;
 import com.ghatana.aep.model.EventContext;
 import com.ghatana.aep.operator.contract.CompileContext;
 import com.ghatana.aep.operator.contract.EventOperatorResult;
@@ -15,8 +21,7 @@ import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.OperatorState;
 import com.ghatana.core.operator.OperatorType;
-import com.ghatana.core.operator.agent.AgentOperator;
-import com.ghatana.core.operator.agent.AgentOperatorKind;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
@@ -32,14 +37,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UnifiedOperatorCatalogMetadataTest {
 
     @Test
-    void indexesAgentOperatorMetadataForGovernanceQueries() {
+    void indexesAgentCapabilityMetadataForGovernanceQueries() {
         UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
-        AgentOperator operator = new StubAgentOperator();
+        StubAgentCapability operator = new StubAgentCapability();
 
         catalog.register(operator);
 
         List<OperatorCatalogEntry> entries = catalog.search(OperatorCatalogQuery.agentKind(
-            AgentOperatorKind.AGENT_ACTION));
+            AgentCapabilityRole.AGENT_ACTION));
         assertThat(entries).hasSize(1);
         assertThat(entries.get(0).sideEffectProfile())
             .contains(AgentSideEffectProfile.SIDE_EFFECTING);
@@ -50,7 +55,7 @@ class UnifiedOperatorCatalogMetadataTest {
     @Test
     void searchFiltersBySideEffectProfileAndCapability() {
         UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
-        catalog.register(new StubAgentOperator());
+        catalog.register(new StubAgentCapability());
 
         List<OperatorCatalogEntry> entries = catalog.search(new OperatorCatalogQuery(
             Optional.of(OperatorType.AGENT),
@@ -64,7 +69,8 @@ class UnifiedOperatorCatalogMetadataTest {
     @Test
     void requireApprovedReturnsApprovedOperatorMetadata() {
         UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
-        StubAgentOperator operator = new StubAgentOperator(Map.of("approvalStatus", "approved", "owner", "sre-platform"));
+        StubAgentCapability operator =
+            new StubAgentCapability(Map.of("approvalStatus", "approved", "owner", "sre-platform"));
         catalog.register(operator);
 
         OperatorCatalogEntry entry = catalog.requireApproved(operator.getId());
@@ -78,7 +84,7 @@ class UnifiedOperatorCatalogMetadataTest {
     @Test
     void requireApprovedRejectsUnknownAndUnapprovedOperators() {
         UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
-        StubAgentOperator operator = new StubAgentOperator();
+        StubAgentCapability operator = new StubAgentCapability();
         catalog.register(operator);
 
         assertThatThrownBy(() -> catalog.requireApproved(OperatorId.of("tenant-a", "agent", "missing", "1.0.0")))
@@ -89,87 +95,52 @@ class UnifiedOperatorCatalogMetadataTest {
             .hasMessageContaining("not approved");
     }
 
-    private static final class StubAgentOperator implements AgentOperator {
+    private static final class StubAgentCapability
+            implements EventOperatorCapability<Map<String, Object>, Map<String, Object>>,
+            com.ghatana.core.operator.UnifiedOperator {
 
         private final OperatorId id = OperatorId.of("tenant-a", "agent", "incident-action", "1.0.0");
         private final Map<String, String> metadata;
 
-        private StubAgentOperator() {
+        private StubAgentCapability() {
             this(Map.of("owner", "sre-platform"));
         }
 
-        private StubAgentOperator(Map<String, String> metadata) {
+        private StubAgentCapability(Map<String, String> metadata) {
             this.metadata = metadata;
         }
 
         @Override
-        public String agentRef() {
-            return "agents/incident-action@1.0.0";
+        public CapabilityId capabilityId() {
+            return CapabilityId.of("agents/incident-action@1.0.0/capabilities/action");
         }
 
         @Override
-        public AgentOperatorKind agentOperatorKind() {
-            return AgentOperatorKind.AGENT_ACTION;
+        public CapabilityDescriptor descriptor() {
+            return new CapabilityDescriptor(
+                capabilityId(),
+                CapabilityKind.EVENT_OPERATOR,
+                "agents/incident-action@1.0.0",
+                Optional.empty(),
+                "ActionRequest",
+                "ActionResult",
+                AgentSideEffectProfile.SIDE_EFFECTING,
+                List.of("agent.action"),
+                Map.of(
+                    "modelPolicy", Map.of("model", "gpt-5.1"),
+                    "toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create")),
+                    "replayPolicy", Map.of("mode", "recorded_output"),
+                    "uncertaintyPolicy", Map.of("minConfidence", 0.8),
+                    "humanReviewPolicy", Map.of("approvalPolicy", "human_required"),
+                    "observabilityPolicy", Map.of("metrics", true, "tracing", true)),
+                metadata);
         }
 
         @Override
-        public AgentSideEffectProfile sideEffectProfile() {
-            return AgentSideEffectProfile.SIDE_EFFECTING;
-        }
-
-        @Override
-        public String inputSchema() {
-            return "ActionRequest";
-        }
-
-        @Override
-        public String outputSchema() {
-            return "ActionResult";
-        }
-
-        @Override
-        public Map<String, Object> modelPolicy() {
-            return Map.of("model", "gpt-5.1");
-        }
-
-        @Override
-        public Map<String, Object> toolPolicy() {
-            return Map.of("allowedTools", List.of("pagerduty.incident.create"));
-        }
-
-        @Override
-        public Map<String, Object> memoryPolicy() {
-            return Map.of();
-        }
-
-        @Override
-        public Map<String, Object> retrievalPolicy() {
-            return Map.of();
-        }
-
-        @Override
-        public Map<String, Object> guardrailPolicy() {
-            return Map.of();
-        }
-
-        @Override
-        public Map<String, Object> replayPolicy() {
-            return Map.of("mode", "recorded_output");
-        }
-
-        @Override
-        public Map<String, Object> uncertaintyPolicy() {
-            return Map.of("minConfidence", 0.8);
-        }
-
-        @Override
-        public Map<String, Object> humanReviewPolicy() {
-            return Map.of("approvalPolicy", "human_required");
-        }
-
-        @Override
-        public Map<String, Object> observabilityPolicy() {
-            return Map.of("metrics", true, "tracing", true);
+        public Promise<CapabilityResult<EventOperatorResult<Map<String, Object>>>> invoke(
+                CapabilityInvocation<EventContext<Map<String, Object>>> invocation) {
+            return process(invocation.input(), null)
+                .map(result -> CapabilityResult.success(result, 1.0, java.time.Duration.ZERO, result.evidence()));
         }
 
         @Override

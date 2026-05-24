@@ -58,10 +58,12 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest first = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/secure/resource")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
         HttpRequest second = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/secure/resource")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         HttpResponse firstResponse = runPromise(() -> interceptor.intercept(first, request -> null));
@@ -97,6 +99,7 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/orders")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.2")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         HttpResponse response = runPromise(() -> interceptor.intercept(request, next -> null));
@@ -132,6 +135,7 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/orders")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-security-123")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         HttpResponse response = runPromise(() -> interceptor.intercept(request, next -> null));
@@ -375,10 +379,12 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest first = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/secure/resource")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-123")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
         HttpRequest second = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/secure/resource")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token")
                 .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-123")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         runPromise(() -> interceptor.intercept(first, request -> null));
@@ -417,10 +423,12 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest firstUser = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/data")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer token-user-1")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
         HttpRequest secondUser = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/data")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer token-user-2")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         HttpResponse firstResponse = runPromise(() -> interceptor.intercept(firstUser, request -> null));
@@ -497,11 +505,13 @@ class SecurityInterceptorTest extends EventloopTestBase {
         HttpRequest firstIp = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/data")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer token-alice")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
         // Second request from a completely different IP 10.0.0.2 — same user, must still be rejected
         HttpRequest secondIp = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/data")
                 .withHeader(HttpHeaders.AUTHORIZATION, "Bearer token-alice")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "10.0.0.2")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
                 .build();
 
         HttpResponse first = runPromise(() -> interceptor.intercept(firstIp, request -> null));

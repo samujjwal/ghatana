@@ -1,23 +1,42 @@
 package com.ghatana.aep.operator.agent;
 
+import com.ghatana.aep.agent.capability.AgentCapability;
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.CapabilityKind;
+import com.ghatana.aep.agent.capability.EventOperatorCapability;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentType;
 import com.ghatana.aep.operator.contract.EventOperator;
 import com.ghatana.aep.operator.contract.OperatorKind;
 import com.ghatana.aep.operator.contract.OperatorSpec;
 import com.ghatana.core.operator.OperatorId;
-import com.ghatana.core.operator.agent.AgentOperator;
+import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AgentOperatorArchitectureContractTest {
 
     @Test
-    void agentOperatorContractExtendsEventOperator() {
-        assertThat(EventOperator.class).isAssignableFrom(AgentOperator.class);
+    void eventOperatorCapabilityIsCapabilityAndEventOperator() {
+        assertThat(AgentCapability.class).isAssignableFrom(EventOperatorCapability.class);
+        assertThat(EventOperator.class).isAssignableFrom(EventOperatorCapability.class);
+    }
+
+    @Test
+    void capabilityDescriptorsRepresentCanonicalAgentTypes() {
+        assertDescriptor(CapabilityKind.DETERMINISTIC, AgentType.DETERMINISTIC);
+        assertDescriptor(CapabilityKind.PROBABILISTIC, AgentType.PROBABILISTIC);
+        assertDescriptor(CapabilityKind.STREAM_PROCESSOR, AgentType.STREAM_PROCESSOR);
+        assertDescriptor(CapabilityKind.PLANNING, AgentType.PLANNING);
+        assertDescriptor(CapabilityKind.EXTERNAL, AgentType.CUSTOM);
+        assertDescriptor(CapabilityKind.HUMAN_REVIEW, AgentType.CUSTOM);
     }
 
     @Test
@@ -110,5 +129,25 @@ class AgentOperatorArchitectureContractTest {
 
     private static OperatorKind agentOperator(EventOperator<Map<String, Object>, Map<String, Object>> operator) {
         return operator.kind();
+    }
+
+    private static void assertDescriptor(CapabilityKind capabilityKind, AgentType agentType) {
+        CapabilityDescriptor descriptor = new CapabilityDescriptor(
+            CapabilityId.of("agents/" + agentType.name().toLowerCase(java.util.Locale.ROOT) + "@1.0.0/capabilities/main"),
+            capabilityKind,
+            "agents/" + agentType.name().toLowerCase(java.util.Locale.ROOT) + "@1.0.0",
+            Optional.of(AgentDescriptor.builder()
+                .agentId(agentType.name().toLowerCase(java.util.Locale.ROOT))
+                .type(agentType)
+                .build()),
+            "schema://capability/input",
+            "schema://capability/output",
+            AgentSideEffectProfile.PURE_INFERENCE,
+            List.of("agent-capability"),
+            Map.of("policyRef", "required"),
+            Map.of("owner", "aep"));
+
+        assertThat(descriptor.kind()).isEqualTo(capabilityKind);
+        assertThat(descriptor.agentDescriptor().orElseThrow().getType()).isEqualTo(agentType);
     }
 }

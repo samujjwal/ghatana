@@ -1,0 +1,402 @@
+{
+  "generatedAt": "2026-05-24T21:49:48.409Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
+    "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
+    "command": "pnpm check:data-cloud-active-module-evidence",
+    "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d"
+  },
+  "source": {
+    "settings": "config/generated/settings-gradle-includes.kts",
+    "classifier": "scripts/list-data-cloud-active-modules.mjs",
+    "workflowTaskDiscovery": [
+      {
+        "scope": "all-active",
+        "task": "compileJava",
+        "workflow": ".github/workflows/data-cloud-ci.yml"
+      }
+    ]
+  },
+  "summary": {
+    "totalActiveModules": 36,
+    "releaseBlockingModules": 34,
+    "advisoryModules": 2,
+    "compileJavaTaskCount": 34,
+    "releaseBlockingCheckTaskCount": 34,
+    "invalidModuleCount": 0
+  },
+  "generatedTasks": {
+    "compileJava": [
+      ":products:data-cloud:planes:shared-spi:compileJava",
+      ":products:data-cloud:planes:data:entity:compileJava",
+      ":products:data-cloud:planes:event:core:compileJava",
+      ":products:data-cloud:planes:operations:config:compileJava",
+      ":products:data-cloud:planes:intelligence:analytics:compileJava",
+      ":products:data-cloud:planes:governance:core:compileJava",
+      ":products:data-cloud:delivery:runtime-composition:compileJava",
+      ":products:data-cloud:extensions:plugins:compileJava",
+      ":products:data-cloud:delivery:api:compileJava",
+      ":products:data-cloud:delivery:launcher:compileJava",
+      ":products:data-cloud:delivery:sdk:compileJava",
+      ":products:data-cloud:extensions:agent-registry:compileJava",
+      ":products:data-cloud:extensions:agent-catalog:compileJava",
+      ":products:data-cloud:delivery:api-contract-tests:compileJava",
+      ":products:data-cloud:planes:intelligence:feature-ingest:compileJava",
+      ":products:data-cloud:planes:event:store:compileJava",
+      ":products:data-cloud:integration-tests:compileJava",
+      ":products:data-cloud:planes:action:operator-contracts:compileJava",
+      ":products:data-cloud:planes:action:central-runtime:compileJava",
+      ":products:data-cloud:planes:action:engine:compileJava",
+      ":products:data-cloud:planes:action:registry:compileJava",
+      ":products:data-cloud:planes:action:analytics:compileJava",
+      ":products:data-cloud:planes:action:security:compileJava",
+      ":products:data-cloud:planes:action:event-bridge:compileJava",
+      ":products:data-cloud:planes:action:agent-runtime:compileJava",
+      ":products:data-cloud:planes:action:api:compileJava",
+      ":products:data-cloud:planes:action:scaling:compileJava",
+      ":products:data-cloud:planes:action:observability:compileJava",
+      ":products:data-cloud:planes:action:orchestrator:compileJava",
+      ":products:data-cloud:planes:action:server:compileJava",
+      ":products:data-cloud:planes:action:identity:compileJava",
+      ":products:data-cloud:planes:action:compliance:compileJava",
+      ":products:data-cloud:planes:action:kernel-bridge:compileJava",
+      ":products:data-cloud:extensions:kernel-bridge:compileJava"
+    ],
+    "releaseBlockingCheck": [
+      ":products:data-cloud:planes:shared-spi:check",
+      ":products:data-cloud:planes:data:entity:check",
+      ":products:data-cloud:planes:event:core:check",
+      ":products:data-cloud:planes:operations:config:check",
+      ":products:data-cloud:planes:intelligence:analytics:check",
+      ":products:data-cloud:planes:governance:core:check",
+      ":products:data-cloud:delivery:runtime-composition:check",
+      ":products:data-cloud:extensions:plugins:check",
+      ":products:data-cloud:delivery:api:check",
+      ":products:data-cloud:delivery:launcher:check",
+      ":products:data-cloud:delivery:sdk:check",
+      ":products:data-cloud:contracts:check",
+      ":products:data-cloud:extensions:agent-registry:check",
+      ":products:data-cloud:extensions:agent-catalog:check",
+      ":products:data-cloud:planes:intelligence:feature-ingest:check",
+      ":products:data-cloud:planes:event:store:check",
+      ":products:data-cloud:planes:action:check",
+      ":products:data-cloud:planes:action:operator-contracts:check",
+      ":products:data-cloud:planes:action:central-runtime:check",
+      ":products:data-cloud:planes:action:engine:check",
+      ":products:data-cloud:planes:action:registry:check",
+      ":products:data-cloud:planes:action:analytics:check",
+      ":products:data-cloud:planes:action:security:check",
+      ":products:data-cloud:planes:action:event-bridge:check",
+      ":products:data-cloud:planes:action:agent-runtime:check",
+      ":products:data-cloud:planes:action:api:check",
+      ":products:data-cloud:planes:action:scaling:check",
+      ":products:data-cloud:planes:action:observability:check",
+      ":products:data-cloud:planes:action:orchestrator:check",
+      ":products:data-cloud:planes:action:server:check",
+      ":products:data-cloud:planes:action:identity:check",
+      ":products:data-cloud:planes:action:compliance:check",
+      ":products:data-cloud:planes:action:kernel-bridge:check",
+      ":products:data-cloud:extensions:kernel-bridge:check"
+    ]
+  },
+  "execution": {
+    "evidenceScriptExitStatus": 0,
+    "compileJavaTasksAreGeneratedForCaller": true,
+    "releaseBlockingCheckTasksAreGeneratedForCaller": true
+  },
+  "modules": [
+    {
+      "module": ":products:data-cloud:planes:shared-spi",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:shared-spi:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:shared-spi:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:data:entity",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:data:entity:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:data:entity:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:event:core",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:event:core:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:event:core:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:operations:config",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:operations:config:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:operations:config:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:intelligence:analytics",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:intelligence:analytics:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:intelligence:analytics:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:governance:core",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:governance:core:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:governance:core:check"
+    },
+    {
+      "module": ":products:data-cloud:delivery:runtime-composition",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:delivery:runtime-composition:compileJava",
+      "releaseCheckTask": ":products:data-cloud:delivery:runtime-composition:check"
+    },
+    {
+      "module": ":products:data-cloud:extensions:plugins",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:extensions:plugins:compileJava",
+      "releaseCheckTask": ":products:data-cloud:extensions:plugins:check"
+    },
+    {
+      "module": ":products:data-cloud:delivery:api",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:delivery:api:compileJava",
+      "releaseCheckTask": ":products:data-cloud:delivery:api:check"
+    },
+    {
+      "module": ":products:data-cloud:delivery:launcher",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:delivery:launcher:compileJava",
+      "releaseCheckTask": ":products:data-cloud:delivery:launcher:check"
+    },
+    {
+      "module": ":products:data-cloud:delivery:sdk",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:delivery:sdk:compileJava",
+      "releaseCheckTask": ":products:data-cloud:delivery:sdk:check"
+    },
+    {
+      "module": ":products:data-cloud:contracts",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": false,
+      "compileJavaTask": null,
+      "releaseCheckTask": ":products:data-cloud:contracts:check"
+    },
+    {
+      "module": ":products:data-cloud:extensions:agent-registry",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:extensions:agent-registry:compileJava",
+      "releaseCheckTask": ":products:data-cloud:extensions:agent-registry:check"
+    },
+    {
+      "module": ":products:data-cloud:extensions:agent-catalog",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:extensions:agent-catalog:compileJava",
+      "releaseCheckTask": ":products:data-cloud:extensions:agent-catalog:check"
+    },
+    {
+      "module": ":products:data-cloud:delivery:api-contract-tests",
+      "category": "advisory",
+      "reason": "Integration or contract-test module; compile-gated, release-check optional",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:delivery:api-contract-tests:compileJava",
+      "releaseCheckTask": null
+    },
+    {
+      "module": ":products:data-cloud:planes:intelligence:feature-ingest",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:intelligence:feature-ingest:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:intelligence:feature-ingest:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:event:store",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:event:store:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:event:store:check"
+    },
+    {
+      "module": ":products:data-cloud:integration-tests",
+      "category": "advisory",
+      "reason": "Integration or contract-test module; compile-gated, release-check optional",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:integration-tests:compileJava",
+      "releaseCheckTask": null
+    },
+    {
+      "module": ":products:data-cloud:planes:action",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": false,
+      "compileJavaTask": null,
+      "releaseCheckTask": ":products:data-cloud:planes:action:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:operator-contracts",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:operator-contracts:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:operator-contracts:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:central-runtime",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:central-runtime:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:central-runtime:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:engine",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:engine:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:engine:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:registry",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:registry:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:registry:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:analytics",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:analytics:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:analytics:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:security",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:security:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:security:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:event-bridge",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:event-bridge:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:event-bridge:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:agent-runtime",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:agent-runtime:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:agent-runtime:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:api",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:api:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:api:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:scaling",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:scaling:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:scaling:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:observability",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:observability:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:observability:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:orchestrator",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:orchestrator:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:orchestrator:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:server",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:server:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:server:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:identity",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:identity:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:identity:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:compliance",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:compliance:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:compliance:check"
+    },
+    {
+      "module": ":products:data-cloud:planes:action:kernel-bridge",
+      "category": "release-blocking",
+      "reason": "AEP Action Plane module; compile and release checks are blocking",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:planes:action:kernel-bridge:compileJava",
+      "releaseCheckTask": ":products:data-cloud:planes:action:kernel-bridge:check"
+    },
+    {
+      "module": ":products:data-cloud:extensions:kernel-bridge",
+      "category": "release-blocking",
+      "reason": "Active Data Cloud production module",
+      "hasJavaCompileTask": true,
+      "compileJavaTask": ":products:data-cloud:extensions:kernel-bridge:compileJava",
+      "releaseCheckTask": ":products:data-cloud:extensions:kernel-bridge:check"
+    }
+  ],
+  "validation": {
+    "invalidModules": [],
+    "allActiveModulesClassified": true
+  }
+}

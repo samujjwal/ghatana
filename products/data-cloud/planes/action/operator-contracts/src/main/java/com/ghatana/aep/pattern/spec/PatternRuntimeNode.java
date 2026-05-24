@@ -17,6 +17,7 @@ public record PatternRuntimeNode(
         OperatorKind operatorKind,
         Optional<String> eventType,
         Optional<String> agentRef,
+        Optional<String> capabilityRef,
         Optional<String> outputSchema,
         Map<String, Object> parameters,
         List<PatternRuntimeNode> children) {
@@ -30,12 +31,13 @@ public record PatternRuntimeNode(
         }
         eventType = eventType != null ? eventType : Optional.empty();
         agentRef = agentRef != null ? agentRef : Optional.empty();
+        capabilityRef = capabilityRef != null ? capabilityRef : Optional.empty();
         outputSchema = outputSchema != null ? outputSchema : Optional.empty();
         parameters = Map.copyOf(parameters != null ? parameters : Map.of());
         children = List.copyOf(children != null ? children : List.of());
     }
 
-    public boolean isAgentOperator() {
+    public boolean isAgentCapability() {
         return operatorKind.name().startsWith("AGENT_");
     }
 }

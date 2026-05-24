@@ -65,6 +65,15 @@ if (!existsSync(behavioralProofPath)) {
   }
 
   if (proof) {
+    if (proof.evidenceRun?.generatedBy !== 'scripts/check-ai-governance-behavioral-proof.mjs') {
+      violations.push('AI governance behavioral proof must include script-generated evidenceRun.generatedBy metadata');
+    }
+    if (proof.evidenceRun?.source !== 'scripts/check-ai-governance-behavioral-proof.mjs') {
+      violations.push('AI governance behavioral proof must include evidenceRun.source metadata');
+    }
+    if (proof.evidenceRun?.command !== 'pnpm check:ai-governance-behavioral-proof') {
+      violations.push('AI governance behavioral proof must include evidenceRun.command metadata');
+    }
     if (Number(proof.summary?.totalWarnings ?? 0) !== 0) {
       violations.push('AI governance behavioral proof must have zero warnings');
     }

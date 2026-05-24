@@ -9,7 +9,7 @@
 AEP currently has strong foundations for event processing, pipelines, operators, state, ingestion, and learning concepts. However, the adaptive event intelligence vision is not complete until the following are implemented and verified:
 
 1. Unified operator model for validation and execution.
-2. `AgentOperator` as a first-class operator.
+2. `EventOperatorCapability` as an agent capability for event processing.
 3. PatternSpec/EPL with formal time, operator, and uncertainty semantics.
 4. Predictive, recommended, and shadow pattern lifecycle.
 5. Pattern registry and governance.
@@ -25,15 +25,15 @@ AEP currently has strong foundations for event processing, pipelines, operators,
 - Existing AEP runtime code includes operators, pipeline/runtime services, agent registry integration, event bridge code, learning concepts, metrics, tests, and Data-Cloud-backed persistence adapters.
 - `CanonicalEvent`, `EventContext`, event time context, replay context, uncertainty context, pattern match, and partial-match contracts exist in the co-located AEP operator-contracts module.
 - `EventOperator` defines the unified validation, compilation, and execution contract for AEP operators.
-- `AgentOperator` extends `EventOperator`; canonical agent operator kinds and side-effect classification are contract-tested.
+- `EventOperatorCapability` extends `AgentCapability` and implements the event-operator execution contract; canonical agent capability roles and side-effect classification are contract-tested.
 - `AgentPredicateOperator`, `AgentEnrichmentOperator`, `AgentExtractOperator`, `AgentPatternSynthesisOperator`, `AgentExplanationOperator`, `AgentReviewOperator`, `AgentActionOperator`, and `AgentReflectionOperator` exist as contract-level operator implementations.
 - Contract-level agent operators include replay behavior, schema validation, typed outputs, confidence propagation, pattern suggestion guardrails, review guardrails, approval, tool, audit, and idempotency checks where applicable.
 - `AgentActionOperator` emits canonical `action.failed`, `action.requested`, and `action.executed` audit events around governed action execution.
 - EventCloud SPI contracts exist for append, tail, replay, subscription, checkpoint, partial-match state, offset, partition, tenant, watermark, and dead-letter metadata.
 - Data-Cloud-backed `EventCloudStore` bridge exists in the AEP event-bridge module; it uses Data-Cloud event-log persistence behind the AEP SPI without putting PatternSpec or CEP semantics into Data-Cloud storage modules.
 - EventCloud checkpoint and partial-match stores are persisted as AEP-owned state events through the Data-Cloud event log, including restart-readable checkpoints and partial-match delete tombstones.
-- PatternSpec schema, structural validation, operator-shape validation, and deterministic contract compiler exist for core operators, nested patterns, agent operators, production semantics, and side-effect governance checks.
-- A PatternSpec-to-pipeline adapter exists at the contract layer; it converts compiled patterns into a DAG with EventCloud source/sink stages and agent operator stages.
+- PatternSpec schema, structural validation, operator-shape validation, and deterministic contract compiler exist for core operators, nested patterns, agent capability references, production semantics, and side-effect governance checks.
+- A PatternSpec-to-pipeline adapter exists at the contract layer; it converts compiled patterns into a DAG with EventCloud source/sink stages and agent capability stages.
 - Pattern lifecycle transition policy, lifecycle event service, and lifecycle registry exist; stored lifecycle state rejects invalid transitions and recommended patterns cannot become active without approval.
 - Learning recommendation contracts emit `pattern.suggested` events and prevent direct activation from learning outputs.
 - Correlated event group mining contracts discover correlation-id groups inside bounded windows and report support, correlation, and search-space reduction metrics.
@@ -42,7 +42,7 @@ AEP currently has strong foundations for event processing, pipelines, operators,
 - Shadow deployment evaluation contracts compute false positives, false negatives, precision, recall, matched outcomes, and review packets while enforcing no production side effects.
 - `AepOperatorMetrics` centralizes canonical AEP event, operator, pattern, agent, replay, EventCloud lag, and DLQ metric names over the shared `MetricsCollector`.
 - Agent replay records, prompt snapshots, retrieval snapshots, tool-call records, output records, replay policy, and replay planner exist in the co-located agent runtime module.
-- Operator catalog admission policy can reject unknown or unapproved operators, side-effecting agent operators require declared tool policy metadata, and the pipeline stage executor checks admission before invoking operators from `UnifiedOperatorCatalog`.
+- Operator catalog admission policy can reject unknown or unapproved operators, side-effecting agent capabilities require declared tool policy metadata, and the pipeline stage executor checks admission before invoking operators from `UnifiedOperatorCatalog`.
 - Product-boundary architecture tests verify foundational Data-Cloud planes do not depend on AEP implementation packages, and AEP EventCloud/PatternSpec contracts do not depend on Data-Cloud implementation packages.
 - Focused AEP contract, replay, lifecycle, learning, and product-boundary tests pass for the co-located implementation.
 - Data-Cloud runtime-composition includes a field-level AES-GCM encryption/redaction helper for sensitive payload fields; full connector/application write-path adoption remains pending.
@@ -64,15 +64,15 @@ The canonical target is adaptive event intelligence:
 - PatternSpec/EPL compiler that emits deterministic runtime plans.
 - EventCloud runtime backed by an implementation-neutral SPI and optional Data-Cloud persistence plugins.
 - Learning-to-recommended-pattern loop with shadow evaluation, review, promotion, rollback, and audit events.
-- Agent operators represented only as typed operator nodes, never as out-of-band detector callbacks.
+- Agent event-processing behavior represented only as capability-bound DAG nodes, never as out-of-band detector callbacks.
 
-## Agent Operator Current State
+## Agent Capability Current State
 
-Agents are first-class at the contract layer: `AgentOperator` extends `EventOperator`, agent kinds are catalogable, and predicate/action operators are covered by focused tests. Existing runtime integrations must still be refactored so every agent interaction flows through `AgentOperator` DAG nodes and emits typed events or typed results.
+Agents are first-class at the contract layer: `EventOperatorCapability` exposes event processing as an `AgentCapability`, agent capability roles are catalogable, and predicate/action capability roles are covered by focused tests. Existing runtime integrations must still be refactored so every agent interaction flows through capability-bound DAG nodes and emits typed events or typed results.
 
 ## Known Gaps
 
-- Agent callbacks and detector-style flows must be normalized into operator DAG nodes.
+- Agent callbacks and detector-style flows must be normalized into capability-bound DAG nodes.
 - Current documents and module names still contain Data-Cloud/AEP boundary drift.
 - Pattern learning must emit recommended or shadow patterns instead of mutating active runtime behavior directly.
 - Side-effecting agent execution has contract-level approval, replay, tool, audit, idempotency, and catalog admission checks, but those controls must still be enforced consistently across all production runtime entrypoints.

@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Side-effecting agent operator for approved governed actions.
+ * Side-effecting agent capability role for approved governed actions.
  *
  * @doc.type class
  * @doc.purpose Implements AGENT_ACTION with mandatory tool, approval, idempotency, audit, and replay controls
