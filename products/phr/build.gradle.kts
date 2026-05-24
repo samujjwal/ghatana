@@ -65,9 +65,6 @@ dependencies {
     // Platform Core (JsonUtils)
     api(project(":platform:java:core"))
 
-    // Data Cloud product release readiness contract
-    implementation(project(":products:data-cloud:delivery:api"))
-
     // Observability
     implementation(libs.bundles.observability.core)
 

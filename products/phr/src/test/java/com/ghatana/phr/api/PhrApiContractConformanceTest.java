@@ -27,7 +27,7 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
 
     @Override
     protected String getOpenApiSpecPath() {
-        return "products/phr/docs/openapi.yaml";
+        return "docs/openapi.yaml";
     }
 
     @Override

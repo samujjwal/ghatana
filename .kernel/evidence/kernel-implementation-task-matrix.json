@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-24T02:45:39.108Z",
+  "generatedAt": "2026-05-24T03:52:15.930Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 8,
@@ -13,12 +13,21 @@
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-24T02:45:39.109Z",
+    "generatedAt": "2026-05-24T03:52:15.932Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 8,
     "deferredTaskIds": [],
     "waveBuckets": {
-      "wave-1-foundation": [8, 5, 7, 1, 2, 3, 4, 6]
+      "wave-1-foundation": [
+        8,
+        5,
+        7,
+        1,
+        2,
+        3,
+        4,
+        6
+      ]
     },
     "tasks": [
       {
@@ -164,7 +173,9 @@
       "evidenceRefs": [],
       "id": 2,
       "title": "Make PHR event evidence durable",
-      "whereRefs": ["PhrKernelModule"]
+      "whereRefs": [
+        "PhrKernelModule"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -175,7 +186,9 @@
       "evidenceRefs": [],
       "id": 3,
       "title": "Close rollback readiness",
-      "whereRefs": ["products/phr/lifecycle/rollback/*"]
+      "whereRefs": [
+        "products/phr/lifecycle/rollback/*"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -186,7 +199,9 @@
       "evidenceRefs": [],
       "id": 4,
       "title": "Prove consent cache production behavior",
-      "whereRefs": ["PhrKernelModuleTest"]
+      "whereRefs": [
+        "PhrKernelModuleTest"
+      ]
     },
     {
       "ownerTeam": "Product Family Platform",
@@ -197,7 +212,9 @@
       "evidenceRefs": [],
       "id": 5,
       "title": "Healthcare gate execution",
-      "whereRefs": ["products/phr/lifecycle/gate-packs/*"]
+      "whereRefs": [
+        "products/phr/lifecycle/gate-packs/*"
+      ]
     },
     {
       "ownerTeam": "Kernel Release Engineering",

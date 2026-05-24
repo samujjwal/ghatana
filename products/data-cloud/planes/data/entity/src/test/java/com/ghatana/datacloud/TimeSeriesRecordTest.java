@@ -54,15 +54,17 @@ class TimeSeriesRecordTest {
         }
 
         @Test
-        @DisplayName("builder generates timestamp when not provided")
-        void builderGeneratesTimestampWhenNotProvided() {
+        @DisplayName("builder requires timestamp to be provided")
+        void builderRequiresTimestamp() {
+            Instant timestamp = Instant.now();
             TimeSeriesRecord metric = TimeSeriesRecord.builder()
                 .tenantId("tenant-123")
                 .collectionName("metrics")
                 .metricName("test")
+                .timestamp(timestamp)
                 .build();
 
-            assertThat(metric.getTimestamp()).isNotNull();
+            assertThat(metric.getTimestamp()).isEqualTo(timestamp);
         }
 
         @Test

@@ -185,7 +185,8 @@ for (const productId of strictTargetProducts) {
   });
 
   const deploymentTargets = normalizeDeploymentTargets(product);
-  const releaseCandidateLike = hasReleaseReadySurface(product) || hasReleaseReadyLifecycle(product);
+  const lifecycleEnabled = product.lifecycleExecutionAllowed === true || hasReleaseReadyLifecycle(product);
+  const releaseCandidateLike = lifecycleEnabled && hasReleaseReadySurface(product);
   if (affectedProductSet.has(productId) && releaseCandidateLike && !hasNonLocalTarget(deploymentTargets)) {
     violations.push(
       `Strict target product ${productId} declares release-ready status but deployment.targets are local-only (${deploymentTargets.join(', ') || 'none'})`,
@@ -225,7 +226,8 @@ for (const productId of affectedProducts) {
   }
 
   const deploymentTargets = normalizeDeploymentTargets(product);
-  const releaseCandidateLike = hasReleaseReadySurface(product) || hasReleaseReadyLifecycle(product);
+  const lifecycleEnabled = product.lifecycleExecutionAllowed === true || hasReleaseReadyLifecycle(product);
+  const releaseCandidateLike = lifecycleEnabled && hasReleaseReadySurface(product);
   if (releaseCandidateLike && !hasNonLocalTarget(deploymentTargets)) {
     violations.push(
       `Affected product ${productId} declares release-ready status but deployment.targets are local-only (${deploymentTargets.join(', ') || 'none'})`,
@@ -247,18 +249,20 @@ for (const productId of affectedProducts) {
   }
 
   const usageProfile = foundationUsageProfiles?.[productId];
-  if (!usageProfile) {
-    violations.push(`Affected product ${productId} is missing foundation usage profile in config/product-foundation-usage-profiles.json`);
-  } else {
-    const requiredSlices = asArray(usageProfile.requiredSlices).filter((slice) => slice?.requiredForRelease === true);
-    if (requiredSlices.length === 0) {
-      violations.push(`Affected product ${productId} foundation usage profile must declare at least one required release slice`);
-    }
-    const nonReadyRequiredSlices = requiredSlices.filter((slice) => slice?.productionReady !== true);
-    if (nonReadyRequiredSlices.length > 0) {
-      violations.push(
-        `Affected product ${productId} has non-production required slices: ${nonReadyRequiredSlices.map((slice) => slice.id ?? 'unknown').join(', ')}`,
-      );
+  if (releaseCandidateLike) {
+    if (!usageProfile) {
+      violations.push(`Affected product ${productId} is missing foundation usage profile in config/product-foundation-usage-profiles.json`);
+    } else {
+      const requiredSlices = asArray(usageProfile.requiredSlices).filter((slice) => slice?.requiredForRelease === true);
+      if (requiredSlices.length === 0) {
+        violations.push(`Affected product ${productId} foundation usage profile must declare at least one required release slice`);
+      }
+      const nonReadyRequiredSlices = requiredSlices.filter((slice) => slice?.productionReady !== true);
+      if (nonReadyRequiredSlices.length > 0) {
+        violations.push(
+          `Affected product ${productId} has non-production required slices: ${nonReadyRequiredSlices.map((slice) => slice.id ?? 'unknown').join(', ')}`,
+        );
+      }
     }
   }
 

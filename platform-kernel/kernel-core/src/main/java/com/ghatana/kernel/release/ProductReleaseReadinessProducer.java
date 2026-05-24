@@ -14,7 +14,7 @@ import java.util.ArrayList;
 /**
  * Product release readiness producer.
  *
- * <p>Generates release readiness evidence for products (PHR, DMOS, etc.) by
+ * <p>Generates release readiness evidence for products by
  * collecting build, test, API, FHIR, consent, audit, tenant, cache, rollback, and
  * deployment evidence from lifecycle execution outputs.</p>
  *
@@ -41,7 +41,7 @@ public class ProductReleaseReadinessProducer {
     /**
      * Generate release readiness evidence for a product.
      *
-     * @param productId The product ID (e.g., "phr", "digital-marketing")
+     * @param productId The product ID
      * @param environment The environment (e.g., "local", "staging", "prod")
      * @return Promise containing the release readiness evidence
      */
@@ -225,20 +225,8 @@ public class ProductReleaseReadinessProducer {
     private List<String> extractNextRequiredWork(String productId, Map<String, Object> evidence) {
         List<String> nextWork = new ArrayList<>();
 
-        if ("phr".equals(productId)) {
-            if (!evidence.containsKey("fhir") || !"passed".equals(extractStatus(evidence, "fhir"))) {
-                nextWork.add("Complete FHIR R4 validation");
-            }
-            if (!evidence.containsKey("cache") || !"passed".equals(extractStatus(evidence, "cache"))) {
-                nextWork.add("Add staging/prod cache proof");
-            }
-        }
-
-        if ("digital-marketing".equals(productId)) {
-            if (!evidence.containsKey("connector") || !"passed".equals(extractStatus(evidence, "connector"))) {
-                nextWork.add("Complete Google Ads connector proof");
-            }
-        }
+        // Product-specific evidence checks are handled by product implementations
+        // This method only extracts generic next work from evidence
 
         @SuppressWarnings("unchecked")
         List<String> evidenceNextWork = (List<String>) evidence.get("nextRequiredWork");
@@ -317,13 +305,9 @@ public class ProductReleaseReadinessProducer {
     }
 
     private String getProductName(String productId) {
-        return switch (productId) {
-            case "phr" -> "Personal Health Records";
-            case "digital-marketing" -> "Digital Marketing Operations System";
-            case "data-cloud" -> "Data Cloud";
-            case "yappc" -> "YAPPC";
-            default -> productId;
-        };
+        // Product name mapping is handled by product implementations
+        // This method returns the productId as a fallback
+        return productId;
     }
 
     /**

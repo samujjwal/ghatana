@@ -318,13 +318,13 @@ function generatePackageScripts(registry, lifecycleExclusions) {
       const surfaceFlag = surface.type === 'backend-api' ? 'backend-api' : surface.type;
       
       if (useLifecycle) {
-        scripts[`build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product build ${productId} --surface ${surfaceFlag}`;
-        scripts[`test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product test ${productId} --surface ${surfaceFlag}`;
-        scripts[`plan:build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} build --surface ${surfaceFlag}`;
-        scripts[`plan:test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} test --surface ${surfaceFlag}`;
+        scripts[`build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} build --surface ${surfaceFlag}`;
+        scripts[`test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} test --surface ${surfaceFlag}`;
+        scripts[`plan:build:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} plan build --surface ${surfaceFlag}`;
+        scripts[`plan:test:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} plan test --surface ${surfaceFlag}`;
         if (surface.packagePath) {
-          scripts[`dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product dev ${productId} --surface ${surfaceFlag}`;
-          scripts[`plan:dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product plan ${productId} dev --surface ${surfaceFlag}`;
+          scripts[`dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} dev --surface ${surfaceFlag}`;
+          scripts[`plan:dev:${productId}-${surfaceName}`] = `node scripts/kernel-product.mjs product ${productId} plan dev --surface ${surfaceFlag}`;
         }
       } else {
         scripts[`build:${productId}-${surfaceName}`] = `pnpm product ${productId} build ${surfaceName}`;
@@ -336,27 +336,27 @@ function generatePackageScripts(registry, lifecycleExclusions) {
     }
     
     if (useLifecycle) {
-      scripts[`build:${productId}`] = `node scripts/kernel-product.mjs product build ${productId}`;
-      scripts[`test:${productId}`] = `node scripts/kernel-product.mjs product test ${productId}`;
-      scripts[`dev:${productId}`] = `node scripts/kernel-product.mjs product dev ${productId}`;
-      scripts[`validate:${productId}`] = `node scripts/kernel-product.mjs product validate ${productId}`;
-      scripts[`package:${productId}`] = `node scripts/kernel-product.mjs product package ${productId}`;
-      scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs product deploy ${productId} --env local`;
-      scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs product verify ${productId} --env local`;
+      scripts[`build:${productId}`] = `node scripts/kernel-product.mjs product ${productId} build`;
+      scripts[`test:${productId}`] = `node scripts/kernel-product.mjs product ${productId} test`;
+      scripts[`dev:${productId}`] = `node scripts/kernel-product.mjs product ${productId} dev`;
+      scripts[`validate:${productId}`] = `node scripts/kernel-product.mjs product ${productId} validate`;
+      scripts[`package:${productId}`] = `node scripts/kernel-product.mjs product ${productId} package`;
+      scripts[`deploy:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} deploy --env local`;
+      scripts[`verify:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} verify --env local`;
       if (productId === 'digital-marketing') {
-        scripts[`promote:local:${productId}`] = `node scripts/kernel-product.mjs product promote ${productId} --env local`;
-        scripts[`rollback:local:${productId}`] = `node scripts/kernel-product.mjs product rollback ${productId} --env local`;
+        scripts[`promote:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} promote --env local`;
+        scripts[`rollback:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} rollback --env local`;
       }
-      scripts[`plan:build:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} build`;
-      scripts[`plan:test:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} test`;
-      scripts[`plan:dev:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} dev`;
-      scripts[`plan:validate:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} validate`;
-      scripts[`plan:package:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} package`;
-      scripts[`plan:deploy:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} deploy --env local`;
-      scripts[`plan:verify:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} verify --env local`;
+      scripts[`plan:build:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan build`;
+      scripts[`plan:test:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan test`;
+      scripts[`plan:dev:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan dev`;
+      scripts[`plan:validate:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan validate`;
+      scripts[`plan:package:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan package`;
+      scripts[`plan:deploy:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan deploy --env local`;
+      scripts[`plan:verify:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan verify --env local`;
       if (productId === 'digital-marketing') {
-        scripts[`plan:promote:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} promote --env local`;
-        scripts[`plan:rollback:local:${productId}`] = `node scripts/kernel-product.mjs product plan ${productId} rollback --env local`;
+        scripts[`plan:promote:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan promote --env local`;
+        scripts[`plan:rollback:local:${productId}`] = `node scripts/kernel-product.mjs product ${productId} plan rollback --env local`;
       }
     } else {
       scripts[`build:${productId}`] = `pnpm product ${productId} build`;

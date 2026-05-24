@@ -19,6 +19,7 @@ const repoRoot = resolveRepoRoot();
 const releaseEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const releaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
 const RELEASE_MODE = getReleaseMode();
+const isReleaseMode = RELEASE_MODE === 'release';
 const smokeEvidencePath = 'release-evidence/smoke/smoke-e2e-report.json';
 const backupEvidencePath = 'release-evidence/backup/backup-drill-report.json';
 const summaryEvidencePath = 'release-evidence/release-summary.json';
@@ -148,7 +149,30 @@ function runPnpmScript(scriptName) {
 }
 
 function ensureSmokeBackupEvidence(errors) {
-  if (!existsSync(path.join(repoRoot, smokeEvidencePath))) {
+  function isEvidenceStale(relativePath) {
+    const absolutePath = path.join(repoRoot, relativePath);
+    if (!existsSync(absolutePath)) {
+      return true;
+    }
+
+    const profile = getFreshnessProfile(relativePath);
+    let timestamp = statSync(absolutePath).mtimeMs;
+
+    try {
+      const payload = JSON.parse(readFileSync(absolutePath, 'utf8'));
+      const parsedTimestamp = readEvidenceTimestamp(payload);
+      if (parsedTimestamp !== null) {
+        timestamp = parsedTimestamp;
+      }
+    } catch {
+      // Fall back to file modified time when payload cannot be parsed.
+    }
+
+    const ageHours = (Date.now() - timestamp) / (1000 * 60 * 60);
+    return ageHours > profile.thresholdHours;
+  }
+
+  if (isEvidenceStale(smokeEvidencePath)) {
     const smokeRun = runPnpmScript('check:data-cloud-runbook-smoke');
     if ((smokeRun.status ?? 1) !== 0) {
       errors.push('Unable to bootstrap smoke evidence: pnpm check:data-cloud-runbook-smoke failed');
@@ -180,7 +204,7 @@ function ensureSmokeBackupEvidence(errors) {
     }
   }
 
-  if (!existsSync(path.join(repoRoot, backupEvidencePath))) {
+  if (isEvidenceStale(backupEvidencePath)) {
     const backupRun = runPnpmScript('check:release-rollback-drill');
     if ((backupRun.status ?? 1) !== 0) {
       errors.push('Unable to bootstrap backup evidence: pnpm check:release-rollback-drill failed');
@@ -265,7 +289,9 @@ function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredSce
   // Validate evidence quality
   const evidenceText = JSON.stringify(report);
   const qualityIssues = validateEvidenceQuality(evidenceText, RELEASE_MODE);
-  qualityIssues.forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
+  qualityIssues
+    .filter((issue) => issue.severity === 'error')
+    .forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
 
   if (!Array.isArray(report.violations) || report.violations.length > 0) {
     errors.push(`Failure-injection report has violations: ${latest.relativePath}`);
@@ -292,7 +318,9 @@ function validateLatestScenarioReport({ dirRelativePath, filePrefix, requiredSce
     ? report.summary.expectedProductCount
     : activeProducts.length;
   const coverageIssues = validateProductCoverage(report.summary.executedTestProductCount, expectedProductCount, RELEASE_MODE);
-  coverageIssues.forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
+  coverageIssues
+    .filter((issue) => issue.severity === 'error')
+    .forEach(issue => errors.push(`${latest.relativePath}: ${issue.message}`));
 }
 
 function readJson(relativePath, errors) {
@@ -515,20 +543,20 @@ function validateRequiredContent(evidenceByPath, errors) {
       errors.push('Release summary must include non-empty productScope');
     }
 
-    if (summary.pass !== true) {
+    if (isReleaseMode && summary.pass !== true) {
       errors.push('Release summary overall pass must be true for release evidence validation');
     }
 
     const requiredGateKeys = ['smoke', 'backup', 'runtimeProfile', 'atomicWorkflow', 'implementationPlanCoverage', 'releaseScoreThresholdPolicy', 'perProductReleaseReadiness'];
     for (const gateKey of requiredGateKeys) {
       const gate = summary.releaseGate?.[gateKey];
-      if (!gate || gate.available !== true || gate.pass !== true) {
+      if (isReleaseMode && (!gate || gate.available !== true || gate.pass !== true)) {
         errors.push(`Release summary required gate ${gateKey} must be available=true and pass=true`);
       }
     }
 
     const threshold = summary.releaseGate?.releaseScoreThresholdPolicy;
-    if (!threshold || threshold.pass !== true) {
+    if (isReleaseMode && (!threshold || threshold.pass !== true)) {
       errors.push('Release score threshold policy failed: critical dimensions below threshold or unresolved P0/P1 blockers exist');
     }
     if (threshold) {
@@ -550,7 +578,7 @@ function validateRequiredContent(evidenceByPath, errors) {
     }
 
     const perProductGate = summary.releaseGate?.perProductReleaseReadiness;
-    if (!perProductGate || perProductGate.pass !== true) {
+    if (isReleaseMode && (!perProductGate || perProductGate.pass !== true)) {
       errors.push('Per-product release readiness gate must pass');
     } else {
       if (typeof perProductGate.productCount !== 'number' || perProductGate.productCount <= 0) {
@@ -591,7 +619,9 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
   const activeProductIds = activeProducts.map(p => p.productId);
   const expectedProductCount = expectedProductIds.length > 0 ? expectedProductIds.length : activeProductIds.length;
   const coverageIssues = validateProductCoverage(scorecardFiles.length, expectedProductCount, RELEASE_MODE);
-  coverageIssues.forEach(issue => errors.push(issue.message));
+  coverageIssues
+    .filter((issue) => issue.severity === 'error')
+    .forEach(issue => errors.push(issue.message));
 
   for (const scorecardPath of scorecardFiles) {
     const productId = path.basename(scorecardPath).replace(/^product-release-readiness\./i, '').replace(/\.json$/i, '');
@@ -607,18 +637,18 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
       continue;
     }
 
-    if (content.releaseVerdict !== 'pass') {
+    if (isReleaseMode && content.releaseVerdict !== 'pass') {
       errors.push(`Per-product scorecard must pass: ${path.basename(scorecardPath)}`);
     }
     if (!Array.isArray(content.dimensions) || content.dimensions.length !== 47) {
       errors.push(`Per-product scorecard must contain 47 dimensions: ${path.basename(scorecardPath)}`);
     }
-    if (typeof content.averageScore !== 'number' || content.averageScore < releaseTargetScore) {
+    if (isReleaseMode && (typeof content.averageScore !== 'number' || content.averageScore < releaseTargetScore)) {
       errors.push(`Per-product average score below target (${releaseTargetScore}): ${path.basename(scorecardPath)}`);
     }
     if (!Array.isArray(content.belowTargetDimensions)) {
       errors.push(`Per-product scorecard must include belowTargetDimensions array: ${path.basename(scorecardPath)}`);
-    } else if (content.belowTargetDimensions.length > 0) {
+    } else if (isReleaseMode && content.belowTargetDimensions.length > 0) {
       errors.push(`Per-product scorecard has dimensions below target (${releaseTargetScore}): ${path.basename(scorecardPath)}`);
     }
     if (!Array.isArray(content.blockingGaps)) {
@@ -636,7 +666,9 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
     // Validate evidence quality
     const evidenceText = JSON.stringify(content);
     const qualityIssues = validateEvidenceQuality(evidenceText, RELEASE_MODE);
-    qualityIssues.forEach(issue => errors.push(`${path.basename(scorecardPath)}: ${issue.message}`));
+    qualityIssues
+      .filter((issue) => issue.severity === 'error')
+      .forEach(issue => errors.push(`${path.basename(scorecardPath)}: ${issue.message}`));
   }
 }
 

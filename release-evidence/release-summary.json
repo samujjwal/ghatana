@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-23T19:13:42.928Z",
-  "sourceCommit": "5323e76480f52d237d7adb4142d1258a82b2dc4d",
+  "generatedAt": "2026-05-24T03:42:43.186Z",
+  "sourceCommit": "19fe467601ab80c94dd4a0f2883afa8c333e20ff",
   "sourceBranch": "main",
   "productScope": [
     "digital-marketing",
@@ -63,11 +63,11 @@
     },
     "releaseScoreThresholdPolicy": {
       "available": true,
-      "pass": true,
+      "pass": false,
       "implementationAverageScore": 5,
       "releaseTargetScore": 4,
       "criticalDimensionsBelowThreshold": 0,
-      "unresolvedP0P1Blockers": 0,
+      "unresolvedP0P1Blockers": 8,
       "productSloBudgetsPass": true,
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
@@ -76,9 +76,9 @@
     },
     "perProductReleaseReadiness": {
       "available": true,
-      "pass": true,
+      "pass": false,
       "productCount": 2,
-      "failedProductCount": 0,
+      "failedProductCount": 2,
       "releaseTargetScore": 4,
       "dimensionValidation": {
         "requiredDimensionCount": 47,
@@ -87,7 +87,20 @@
         "allProductsHaveAllDimensions": true,
         "allDimensionsScored": true
       },
-      "failedProducts": []
+      "failedProducts": [
+        {
+          "productId": "digital-marketing",
+          "releaseVerdict": "fail",
+          "averageScore": 5,
+          "dimensionCount": 47
+        },
+        {
+          "productId": "phr",
+          "releaseVerdict": "fail",
+          "averageScore": 5,
+          "dimensionCount": 47
+        }
+      ]
     },
     "requiredGates": [
       {
@@ -118,14 +131,14 @@
       {
         "gateKey": "releaseScoreThresholdPolicy",
         "available": true,
-        "pass": true
+        "pass": false
       },
       {
         "gateKey": "perProductReleaseReadiness",
         "available": true,
-        "pass": true
+        "pass": false
       }
     ]
   },
-  "pass": true
+  "pass": false
 }

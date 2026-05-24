@@ -83,12 +83,12 @@ const REQUIRED_MANIFEST_SCHEMA_VERSIONS = [
   'verify-health-report',
 ];
 const SMOKE_PHASES = [
-  { phase: 'validate', args: ['product', 'validate', PRODUCT_ID, '--dry-run', '--json'] },
-  { phase: 'test', args: ['product', 'test', PRODUCT_ID, '--dry-run', '--json'] },
-  { phase: 'build', args: ['product', 'build', PRODUCT_ID, '--dry-run', '--json'] },
-  { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
-  { phase: 'deploy', args: ['product', 'deploy', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
-  { phase: 'verify', args: ['product', 'verify', PRODUCT_ID, '--env', 'local', '--dry-run', '--json'] },
+  { phase: 'validate', args: ['product', PRODUCT_ID, 'validate', '--dry-run', '--json'] },
+  { phase: 'test', args: ['product', PRODUCT_ID, 'test', '--dry-run', '--json'] },
+  { phase: 'build', args: ['product', PRODUCT_ID, 'build', '--dry-run', '--json'] },
+  { phase: 'package', args: ['product', PRODUCT_ID, 'package', '--dry-run', '--json'] },
+  { phase: 'deploy', args: ['product', PRODUCT_ID, 'deploy', '--env', 'local', '--dry-run', '--json'] },
+  { phase: 'verify', args: ['product', PRODUCT_ID, 'verify', '--env', 'local', '--dry-run', '--json'] },
 ];
 const KERNEL_ROOTS = [
   'platform-kernel',

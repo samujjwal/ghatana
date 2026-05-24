@@ -835,18 +835,18 @@ async function runLifecycleSmoke() {
   const phases = [];
   const { ArtifactManifestSchema, DeploymentManifestSchema } = await loadManifestValidators();
   const smokeRuns = [
-    { phase: 'validate', args: ['product', 'validate', PRODUCT_ID, '--dry-run', '--json'] },
-    { phase: 'test', args: ['product', 'test', PRODUCT_ID, '--dry-run', '--json'] },
-    { phase: 'build', args: ['product', 'build', PRODUCT_ID, '--dry-run', '--json'] },
-    { phase: 'package', args: ['product', 'package', PRODUCT_ID, '--dry-run', '--json'] },
+    { phase: 'validate', args: ['product', PRODUCT_ID, 'validate', '--dry-run', '--json'] },
+    { phase: 'test', args: ['product', PRODUCT_ID, 'test', '--dry-run', '--json'] },
+    { phase: 'build', args: ['product', PRODUCT_ID, 'build', '--dry-run', '--json'] },
+    { phase: 'package', args: ['product', PRODUCT_ID, 'package', '--dry-run', '--json'] },
     { phase: 'deploy', args: ['product', PRODUCT_ID, 'deploy', '--env', 'local', '--dry-run', '--json'] },
     { phase: 'verify', args: ['product', PRODUCT_ID, 'verify', '--env', 'local', '--dry-run', '--json'] },
     {
       phase: 'rollback',
       args: [
         'product',
-        'rollback',
         PRODUCT_ID,
+        'rollback',
         '--env',
         'local',
         '--dry-run',

@@ -101,29 +101,28 @@ class FieldUiConfigTest {
         @Test
         @DisplayName("fromMap populates all fields")
         void fromMapPopulatesAllFields() {
-            Map<String, Object> map = Map.of(
-                "visible", true,
-                "hidden", false,
-                "readOnly", true,
-                "disabled", false,
-                "order", 5,
-                "span", 6,
-                "width", "100%",
-                "placeholder", "Enter value",
-                "helpText", "Help text",
-                "tooltip", "Tooltip",
-                "icon", "icon-name",
-                "inputType", "text",
-                "rows", 3,
-                "multiline", true,
-                "format", "MM/dd/yyyy",
-                "prefix", "$",
-                "suffix", "USD",
-                "section", "Section 1",
-                "group", "Group A",
-                "showWhen", "field1 == 'value'",
-                "hideWhen", "field2 == 'other'"
-            );
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("visible", true);
+            map.put("hidden", false);
+            map.put("readOnly", true);
+            map.put("disabled", false);
+            map.put("order", 5);
+            map.put("span", 6);
+            map.put("width", "100%");
+            map.put("placeholder", "Enter value");
+            map.put("helpText", "Help text");
+            map.put("tooltip", "Tooltip");
+            map.put("icon", "icon-name");
+            map.put("inputType", "text");
+            map.put("rows", 3);
+            map.put("multiline", true);
+            map.put("format", "MM/dd/yyyy");
+            map.put("prefix", "$");
+            map.put("suffix", "USD");
+            map.put("section", "Section 1");
+            map.put("group", "Group A");
+            map.put("showWhen", "field1 == 'value'");
+            map.put("hideWhen", "field2 == 'other'");
 
             FieldUiConfig config = FieldUiConfig.fromMap(map);
 

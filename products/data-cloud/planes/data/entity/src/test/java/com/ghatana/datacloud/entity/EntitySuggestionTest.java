@@ -8,8 +8,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,95 +32,41 @@ class EntitySuggestionTest {
         @DisplayName("valid suggestion is created successfully")
         void validSuggestionIsCreated() {
             Map<String, Object> data = Map.of("name", "Test Product", "price", 99.99);
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "Generated from description"
-            );
+            List<String> reasoning = List.of("Generated from description");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
-            assertThat(suggestion.tenantId()).isEqualTo("tenant-123");
-            assertThat(suggestion.collectionName()).isEqualTo("products");
-            assertThat(suggestion.generatedData()).isEqualTo(data);
+            assertThat(suggestion.suggestedData()).isEqualTo(data);
             assertThat(suggestion.confidence()).isEqualTo(0.85);
-            assertThat(suggestion.reason()).isEqualTo("Generated from description");
+            assertThat(suggestion.reasoning()).isEqualTo(reasoning);
         }
 
         @Test
-        @DisplayName("blank tenant ID is rejected")
-        void blankTenantIdIsRejected() {
+        @DisplayName("null suggested data is rejected")
+        void nullSuggestedDataIsRejected() {
+            List<String> reasoning = List.of("reason");
+            
+            assertThatThrownBy(() -> new EntitySuggestion(null, 0.85, reasoning))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Suggested data must not be null");
+        }
+
+        @Test
+        @DisplayName("null reasoning is rejected")
+        void nullReasoningIsRejected() {
             Map<String, Object> data = Map.of("name", "Test");
             
-            assertThatThrownBy(() -> new EntitySuggestion(
-                "",
-                "products",
-                data,
-                0.85,
-                "reason"
-            ))
+            assertThatThrownBy(() -> new EntitySuggestion(data, 0.85, null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Tenant ID must not be blank");
-        }
-
-        @Test
-        @DisplayName("null tenant ID is rejected")
-        void nullTenantIdIsRejected() {
-            Map<String, Object> data = Map.of("name", "Test");
-            
-            assertThatThrownBy(() -> new EntitySuggestion(
-                null,
-                "products",
-                data,
-                0.85,
-                "reason"
-            ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Tenant ID must not be blank");
-        }
-
-        @Test
-        @DisplayName("blank collection name is rejected")
-        void blankCollectionNameIsRejected() {
-            Map<String, Object> data = Map.of("name", "Test");
-            
-            assertThatThrownBy(() -> new EntitySuggestion(
-                "tenant-123",
-                "",
-                data,
-                0.85,
-                "reason"
-            ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Collection name must not be blank");
-        }
-
-        @Test
-        @DisplayName("null generated data is rejected")
-        void nullGeneratedDataIsRejected() {
-            assertThatThrownBy(() -> new EntitySuggestion(
-                "tenant-123",
-                "products",
-                null,
-                0.85,
-                "reason"
-            ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Generated data must not be null");
+                .hasMessageContaining("Reasoning must not be null");
         }
 
         @Test
         @DisplayName("confidence below 0.0 is rejected")
         void confidenceBelowZeroIsRejected() {
             Map<String, Object> data = Map.of("name", "Test");
+            List<String> reasoning = List.of("reason");
             
-            assertThatThrownBy(() -> new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                -0.1,
-                "reason"
-            ))
+            assertThatThrownBy(() -> new EntitySuggestion(data, -0.1, reasoning))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Confidence must be between 0.0 and 1.0");
         }
@@ -129,14 +75,9 @@ class EntitySuggestionTest {
         @DisplayName("confidence above 1.0 is rejected")
         void confidenceAboveOneIsRejected() {
             Map<String, Object> data = Map.of("name", "Test");
+            List<String> reasoning = List.of("reason");
             
-            assertThatThrownBy(() -> new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                1.1,
-                "reason"
-            ))
+            assertThatThrownBy(() -> new EntitySuggestion(data, 1.1, reasoning))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Confidence must be between 0.0 and 1.0");
         }
@@ -150,13 +91,8 @@ class EntitySuggestionTest {
         @DisplayName("isHighConfidence returns true for confidence >= 0.8")
         void isHighConfidenceReturnsTrueForHighValues() {
             Map<String, Object> data = Map.of("name", "Test");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
             assertThat(suggestion.isHighConfidence()).isTrue();
         }
@@ -165,45 +101,50 @@ class EntitySuggestionTest {
         @DisplayName("isHighConfidence returns false for confidence < 0.8")
         void isHighConfidenceReturnsFalseForLowValues() {
             Map<String, Object> data = Map.of("name", "Test");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.75,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.75, reasoning);
 
             assertThat(suggestion.isHighConfidence()).isFalse();
         }
 
         @Test
-        @DisplayName("shouldAutoAccept returns true for confidence >= 0.9")
-        void shouldAutoAcceptReturnsTrueForVeryHighValues() {
+        @DisplayName("isMediumConfidence returns true for confidence between 0.5 and 0.8")
+        void isMediumConfidenceReturnsTrueForMediumValues() {
             Map<String, Object> data = Map.of("name", "Test");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.95,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.65, reasoning);
 
-            assertThat(suggestion.shouldAutoAccept()).isTrue();
+            assertThat(suggestion.isMediumConfidence()).isTrue();
         }
 
         @Test
-        @DisplayName("shouldAutoAccept returns false for confidence < 0.9")
-        void shouldAutoAcceptReturnsFalseForLowerValues() {
+        @DisplayName("isMediumConfidence returns false for confidence outside range")
+        void isMediumConfidenceReturnsFalseForOutOfRangeValues() {
             Map<String, Object> data = Map.of("name", "Test");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
-            assertThat(suggestion.shouldAutoAccept()).isFalse();
+            assertThat(suggestion.isMediumConfidence()).isFalse();
+        }
+
+        @Test
+        @DisplayName("isLowConfidence returns true for confidence < 0.5")
+        void isLowConfidenceReturnsTrueForLowValues() {
+            Map<String, Object> data = Map.of("name", "Test");
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.35, reasoning);
+
+            assertThat(suggestion.isLowConfidence()).isTrue();
+        }
+
+        @Test
+        @DisplayName("isLowConfidence returns false for confidence >= 0.5")
+        void isLowConfidenceReturnsFalseForHighValues() {
+            Map<String, Object> data = Map.of("name", "Test");
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.65, reasoning);
+
+            assertThat(suggestion.isLowConfidence()).isFalse();
         }
     }
 
@@ -212,64 +153,26 @@ class EntitySuggestionTest {
     class DataAccessTests {
 
         @Test
-        @DisplayName("getFieldValue returns value for existing field")
-        void getFieldValueReturnsValueForExistingField() {
+        @DisplayName("suggestedData returns the data map")
+        void suggestedDataReturnsDataMap() {
             Map<String, Object> data = Map.of("name", "Test Product", "price", 99.99);
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
-            assertThat(suggestion.getFieldValue("name")).isEqualTo("Test Product");
-            assertThat(suggestion.getFieldValue("price")).isEqualTo(99.99);
+            assertThat(suggestion.suggestedData()).isEqualTo(data);
+            assertThat(suggestion.suggestedData()).containsEntry("name", "Test Product");
+            assertThat(suggestion.suggestedData()).containsEntry("price", 99.99);
         }
 
         @Test
-        @DisplayName("getFieldValue returns null for missing field")
-        void getFieldValueReturnsNullForMissingField() {
-            Map<String, Object> data = Map.of("name", "Test Product");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
+        @DisplayName("reasoning returns the reasoning list")
+        void reasoningReturnsReasoningList() {
+            Map<String, Object> data = Map.of("name", "Test");
+            List<String> reasoning = List.of("Reason 1", "Reason 2");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
-            assertThat(suggestion.getFieldValue("price")).isNull();
-        }
-
-        @Test
-        @DisplayName("hasField returns true for existing field")
-        void hasFieldReturnsTrueForExistingField() {
-            Map<String, Object> data = Map.of("name", "Test Product");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
-
-            assertThat(suggestion.hasField("name")).isTrue();
-        }
-
-        @Test
-        @DisplayName("hasField returns false for missing field")
-        void hasFieldReturnsFalseForMissingField() {
-            Map<String, Object> data = Map.of("name", "Test Product");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
-
-            assertThat(suggestion.hasField("price")).isFalse();
+            assertThat(suggestion.reasoning()).isEqualTo(reasoning);
+            assertThat(suggestion.reasoning()).hasSize(2);
         }
     }
 
@@ -281,16 +184,43 @@ class EntitySuggestionTest {
         @DisplayName("record is immutable")
         void recordIsImmutable() {
             Map<String, Object> data = Map.of("name", "Test");
-            EntitySuggestion suggestion = new EntitySuggestion(
-                "tenant-123",
-                "products",
-                data,
-                0.85,
-                "reason"
-            );
+            List<String> reasoning = List.of("reason");
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, reasoning);
 
             // Records are immutable by design
             assertThat(suggestion).isNotNull();
+        }
+
+        @Test
+        @DisplayName("suggestedData is defensively copied")
+        void suggestedDataIsDefensivelyCopied() {
+            Map<String, Object> originalData = new java.util.HashMap<>();
+            originalData.put("name", "Test");
+            List<String> reasoning = List.of("reason");
+            
+            EntitySuggestion suggestion = new EntitySuggestion(originalData, 0.85, reasoning);
+            
+            // Modify original map
+            originalData.put("name", "Modified");
+            
+            // Suggestion should not be affected
+            assertThat(suggestion.suggestedData().get("name")).isEqualTo("Test");
+        }
+
+        @Test
+        @DisplayName("reasoning is defensively copied")
+        void reasoningIsDefensivelyCopied() {
+            Map<String, Object> data = Map.of("name", "Test");
+            List<String> originalReasoning = new java.util.ArrayList<>();
+            originalReasoning.add("reason");
+            
+            EntitySuggestion suggestion = new EntitySuggestion(data, 0.85, originalReasoning);
+            
+            // Modify original list
+            originalReasoning.add("another reason");
+            
+            // Suggestion should not be affected
+            assertThat(suggestion.reasoning()).hasSize(1);
         }
     }
 }

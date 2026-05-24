@@ -27,6 +27,26 @@ function loadKernelProductConfig(productId, lifecycleConfigPath) {
   return yaml.parse(readFileSync(absolutePath, 'utf8'));
 }
 
+function resolveDeploymentTargetId(target, deploymentTargets) {
+  if (deploymentTargets[target]) {
+    return target;
+  }
+
+  const aliases = {
+    local: 'compose-local',
+    dev: 'kubernetes-dev',
+    staging: 'kubernetes-staging',
+    prod: 'kubernetes-prod',
+  };
+
+  const alias = aliases[target];
+  if (alias && deploymentTargets[alias]) {
+    return alias;
+  }
+
+  return null;
+}
+
 function checkProductDeploymentContracts(registry, deploymentTargets) {
   const errors = [];
   const warnings = [];
@@ -49,7 +69,7 @@ function checkProductDeploymentContracts(registry, deploymentTargets) {
     }
 
     for (const target of registryTargets) {
-      if (!deploymentTargets[target]) {
+      if (!resolveDeploymentTargetId(target, deploymentTargets)) {
         errors.push(`Product ${productId}: deployment target "${target}" not found`);
       }
     }

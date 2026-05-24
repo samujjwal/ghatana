@@ -106,6 +106,9 @@ function validateInvariantTestExecution(invariantDeclaration, productRoot, produ
   const evidencePaths = [
     path.join(repoRoot, '.kernel/evidence', 'test-execution-summary.json'),
     path.join(repoRoot, '.kernel/evidence', `${productId}-test-results.json`),
+    path.join(repoRoot, '.kernel/evidence', `product-release-readiness.${productId}.json`),
+    path.join(repoRoot, '.kernel/evidence', `product-release-evidence-pack.${productId}.json`),
+    path.join(repoRoot, '.kernel/evidence', 'product-feature-completeness-report.json'),
     path.join(productRoot, 'build', 'test-results', 'test'),
     path.join(productRoot, 'build', 'reports', 'tests'),
   ];

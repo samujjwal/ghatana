@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.*;
 
 /**
@@ -64,58 +63,6 @@ public class PhrReleaseReadinessProducer {
             LOG.error("Failed to read PHR release evidence", e);
             return Promise.ofException(e);
         }
-    }
-
-    /**
-     * Converts PHR release evidence to Data Cloud ProductReleaseReadiness format.
-     *
-     * @param evidence the PHR release evidence
-     * @param tenantId the tenant ID
-     * @return ProductReleaseReadiness in Data Cloud format
-     */
-    public com.ghatana.datacloud.application.ProductReleaseReadinessService.ProductReleaseReadiness 
-            toDataCloudFormat(PhrReleaseEvidence evidence, String tenantId) {
-        
-        Map<String, Object> evidenceMap = new HashMap<>();
-        evidenceMap.put("categories", evidence.categories());
-        evidenceMap.put("generatedAt", evidence.generatedAt());
-
-        List<Map<String, Object>> blockingGaps = new ArrayList<>();
-        List<Map<String, Object>> belowTargetDimensions = new ArrayList<>();
-
-        // Extract blocking gaps and below-target dimensions from categories
-        for (Map.Entry<String, CategoryEvidence> entry : evidence.categories().entrySet()) {
-            CategoryEvidence category = entry.getValue();
-            if ("failed".equals(category.status())) {
-                blockingGaps.add(Map.of(
-                    "category", entry.getKey(),
-                    "refs", category.refs(),
-                    "missing", category.missing()
-                ));
-            }
-        }
-
-        double averageScore = "passed".equals(evidence.status()) ? 1.0 : 0.0;
-        double releaseTargetScore = "passed".equals(evidence.status()) ? 0.90 : 0.0;
-
-        return com.ghatana.datacloud.application.ProductReleaseReadinessService.ProductReleaseReadiness.builder()
-            .productId(evidence.productId())
-            .productVersion(getPhrVersion())
-            .releaseTarget("production")
-            .releaseVerdict("passed".equals(evidence.status()) ? "pass" : "fail")
-            .averageScore(averageScore)
-            .releaseTargetScore(releaseTargetScore)
-            .generatedAt(Instant.parse(evidence.generatedAt()))
-            .evidence(evidenceMap)
-            .blockingGaps(blockingGaps)
-            .belowTargetDimensions(belowTargetDimensions)
-            .tenantId(tenantId)
-            .build();
-    }
-
-    private String getPhrVersion() {
-        // In production, this would read from build.gradle.kts or a version file
-        return "1.0.0";
     }
 
     /**

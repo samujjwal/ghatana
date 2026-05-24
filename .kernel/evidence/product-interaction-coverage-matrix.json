@@ -166,18 +166,24 @@
           "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/DigitalMarketingDomainInvariantTest.java",
           "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/KernelBridgeWiringIT.java",
           "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java",
           "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationPreferenceInteractionHandlerTest.java",
           "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
           "products/finance/domains/integration/src/test/java/com/ghatana/products/finance/domains/integration/PHRComplianceTest.java",
           "products/flashit/backend/gateway/src/__tests__/privacy.test.ts",
           "products/flashit/backend/gateway/src/routes/__tests__/privacy.test.ts",
           "products/phr/apps/mobile/src/__tests__/App.test.tsx",
+          "products/phr/apps/web/src/__tests__/PhrPrivacyHardeningTest.tsx",
           "products/phr/apps/web/src/__tests__/phrApi.integration.test.ts",
           "products/phr/apps/web/src/__tests__/phrApp.test.tsx",
           "products/phr/apps/web/tests/e2e/phr-visual-regression.spec.ts",
           "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/ConsentEnforcementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrApiContractConformanceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
           "products/phr/src/test/java/com/ghatana/phr/extension/HealthcareConsentKernelExtensionTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrDomainInvariantTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleEventEvidenceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrPackContractTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/consent/PatientDataAccessMatrixTest.java",
@@ -187,6 +193,7 @@
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/CaregiverServiceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/DurablePhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessBreakGlassE2EIT.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationOutboxDispatcherTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationSendersTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationTestSupport.java",
@@ -215,14 +222,14 @@
           "products/tutorputor/services/tutorputor-platform/src/modules/policy/__tests__/abac-policy-engine.test.ts",
           "products/tutorputor/tests/e2e/PrivacyWorkflow.spec.ts",
           "products/yappc/core/yappc-domain-impl/src/test/java/com/ghatana/yappc/domain/pageartifact/PageArtifactValidatorTest.java",
-          "products/yappc/core/yappc-services/bin/test/builder-document-v1.schema.json",
-          "products/yappc/core/yappc-services/bin/test/builder-document/valid-minimal.builder-document.json",
+          "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ProductFamilyControlPlaneControllerTest.java",
           "products/yappc/core/yappc-services/src/test/resources/builder-document-v1.schema.json",
           "products/yappc/core/yappc-services/src/test/resources/builder-document/valid-minimal.builder-document.json",
           "products/yappc/frontend/web/src/components/canvas/page/__tests__/PropertyForm.test.tsx",
           "products/yappc/frontend/web/src/components/canvas/page/__tests__/pageBuilderE2E.test.tsx",
           "products/yappc/frontend/web/src/lib/api/__tests__/client.telemetry.test.ts",
-          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx"
+          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx",
+          "products/yappc/frontend/web/src/pages/product-family/__tests__/ProductFamilyControlPlanePage.accessibility.test.tsx"
         ]
       }
     },
@@ -267,7 +274,8 @@
         "required": true,
         "status": "covered",
         "files": [
-          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/lead/LeadServiceImplTest.java"
+          "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/lead/LeadServiceImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java"
         ]
       }
     },
@@ -321,7 +329,8 @@
           "integration-tests/cross-service-workflow/src/productInteractionTest/java/com/ghatana/integration/crossservice/PhrDmosProductInteractionContractTest.java",
           "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/interaction/ConsentServiceAdapterTest.java",
           "platform-kernel/kernel-core/src/test/java/com/ghatana/kernel/telemetry/KernelLifecycleTelemetryTest.java",
-          "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java"
+          "products/data-cloud/extensions/kernel-bridge/src/test/java/com/ghatana/datacloud/kernel/DataCloudProviderTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java"
         ]
       }
     },
@@ -429,17 +438,23 @@
           "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/DigitalMarketingDomainInvariantTest.java",
           "products/digital-marketing/dm-integration-tests/src/test/java/com/ghatana/digitalmarketing/integration/KernelBridgeWiringIT.java",
           "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java",
+          "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingLifecycleGateTest.java",
           "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
           "products/finance/domains/integration/src/test/java/com/ghatana/products/finance/domains/integration/PHRComplianceTest.java",
           "products/flashit/backend/gateway/src/__tests__/privacy.test.ts",
           "products/flashit/backend/gateway/src/routes/__tests__/privacy.test.ts",
           "products/phr/apps/mobile/src/__tests__/App.test.tsx",
+          "products/phr/apps/web/src/__tests__/PhrPrivacyHardeningTest.tsx",
           "products/phr/apps/web/src/__tests__/phrApi.integration.test.ts",
           "products/phr/apps/web/src/__tests__/phrApp.test.tsx",
           "products/phr/apps/web/tests/e2e/phr-visual-regression.spec.ts",
           "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/ConsentEnforcementServiceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/api/PhrApiContractConformanceTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
           "products/phr/src/test/java/com/ghatana/phr/extension/HealthcareConsentKernelExtensionTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrDomainInvariantTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleEventEvidenceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrKernelModuleTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/PhrPackContractTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/consent/PatientDataAccessMatrixTest.java",
@@ -449,6 +464,7 @@
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/CaregiverServiceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/DurablePhrNotificationSenderTest.java",
+          "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessBreakGlassE2EIT.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationOutboxDispatcherTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationSendersTest.java",
           "products/phr/src/test/java/com/ghatana/phr/kernel/service/PhrNotificationTestSupport.java",
@@ -477,14 +493,14 @@
           "products/tutorputor/services/tutorputor-platform/src/modules/policy/__tests__/abac-policy-engine.test.ts",
           "products/tutorputor/tests/e2e/PrivacyWorkflow.spec.ts",
           "products/yappc/core/yappc-domain-impl/src/test/java/com/ghatana/yappc/domain/pageartifact/PageArtifactValidatorTest.java",
-          "products/yappc/core/yappc-services/bin/test/builder-document-v1.schema.json",
-          "products/yappc/core/yappc-services/bin/test/builder-document/valid-minimal.builder-document.json",
+          "products/yappc/core/yappc-services/src/test/java/com/ghatana/yappc/api/ProductFamilyControlPlaneControllerTest.java",
           "products/yappc/core/yappc-services/src/test/resources/builder-document-v1.schema.json",
           "products/yappc/core/yappc-services/src/test/resources/builder-document/valid-minimal.builder-document.json",
           "products/yappc/frontend/web/src/components/canvas/page/__tests__/PropertyForm.test.tsx",
           "products/yappc/frontend/web/src/components/canvas/page/__tests__/pageBuilderE2E.test.tsx",
           "products/yappc/frontend/web/src/lib/api/__tests__/client.telemetry.test.ts",
-          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx"
+          "products/yappc/frontend/web/src/pages/kernel-health/__tests__/GateHealthPanel.test.tsx",
+          "products/yappc/frontend/web/src/pages/product-family/__tests__/ProductFamilyControlPlanePage.accessibility.test.tsx"
         ]
       }
     }

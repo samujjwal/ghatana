@@ -44,7 +44,7 @@ export async function checkProductLifecycleContracts(registry, lifecycleProfiles
     ((productId, planPhase, extraArgs) => {
       execFileSync(
         process.execPath,
-        [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', 'plan', productId, planPhase, '--json', ...extraArgs],
+        [join(repoRoot, 'scripts', 'kernel-product.mjs'), 'product', productId, 'plan', planPhase, '--json', ...extraArgs],
         { cwd: repoRoot, stdio: 'pipe', encoding: 'utf8' },
       );
     });

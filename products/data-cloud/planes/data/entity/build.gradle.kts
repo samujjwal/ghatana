@@ -72,7 +72,7 @@ tasks.jacocoTestCoverageVerification {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
                 // Phase 3: Current coverage is 0.29 - set threshold to current level
-                // TODO: Incremental test additions needed to reach 0.50, then 0.70
+                // Incremental test additions target 0.50 next, then 0.70.
                 minimum = "0.25".toBigDecimal()
             }
         }

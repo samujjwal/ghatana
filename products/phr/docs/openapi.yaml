@@ -3,14 +3,162 @@ info:
   title: Ghatana PHR API
   version: 1.0.0
   description: Contract-first API surface for PHR billing and encounter workflows.
+  x-sensitivity: healthcare
 servers:
   - url: /api/v1
+security:
+  - bearerAuth: []
 paths:
+  /patients:
+    get:
+      operationId: listPatients
+      summary: List patients
+      tags: [Patients]
+      x-pii: true
+      responses:
+        "200":
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+  /patients/{patientId}:
+    get:
+      operationId: getPatient
+      summary: Get patient by ID
+      tags: [Patients]
+      x-pii: true
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Patient details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+  /consent:
+    get:
+      operationId: listConsents
+      summary: List patient consents
+      tags: [Consent]
+      x-pii: true
+      responses:
+        "200":
+          description: List of consents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consent"
+  /consent/{consentId}:
+    post:
+      operationId: updateConsent
+      summary: Update patient consent
+      tags: [Consent]
+      x-pii: true
+      parameters:
+        - in: path
+          name: consentId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConsentRequest"
+      responses:
+        "200":
+          description: Consent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consent"
+  /fhir/{resourceType}:
+    get:
+      operationId: searchFhirResources
+      summary: Search FHIR resources
+      tags: [FHIR]
+      x-pii: true
+      parameters:
+        - in: path
+          name: resourceType
+          required: true
+          schema:
+            type: string
+            enum: [Patient, Encounter, Observation]
+      responses:
+        "200":
+          description: FHIR bundle
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+    post:
+      operationId: createFhirResource
+      summary: Create FHIR resource
+      tags: [FHIR]
+      x-pii: true
+      parameters:
+        - in: path
+          name: resourceType
+          required: true
+          schema:
+            type: string
+            enum: [Patient, Encounter, Observation]
+      requestBody:
+        required: true
+        content:
+          application/fhir+json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Resource created
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+  /fhir/{resourceType}/{id}:
+    get:
+      operationId: getFhirResource
+      summary: Get FHIR resource by ID
+      tags: [FHIR]
+      x-pii: true
+      parameters:
+        - in: path
+          name: resourceType
+          required: true
+          schema:
+            type: string
+            enum: [Patient, Encounter, Observation]
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: FHIR resource
+          content:
+            application/fhir+json:
+              schema:
+                type: object
   /phr/billing/encounters:
     post:
       operationId: createBillingEncounter
       summary: Create a healthcare billing encounter
       tags: [PHR Billing]
+      x-pii: true
       requestBody:
         required: true
         content:
@@ -29,6 +177,7 @@ paths:
       operationId: closeBillingEncounter
       summary: Close an encounter and trigger ledger posting
       tags: [PHR Billing]
+      x-pii: true
       parameters:
         - in: path
           name: encounterId
@@ -43,7 +192,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/BillingEncounter"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token for authentication
   schemas:
+    Patient:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+          x-pii: true
+    Consent:
+      type: object
+      required: [id, patientId, type, status]
+      properties:
+        id:
+          type: string
+        patientId:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [GRANTED, REVOKED, EXPIRED]
+        grantedAt:
+          type: string
+          format: date-time
+    UpdateConsentRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [GRANTED, REVOKED]
     CreateEncounterRequest:
       type: object
       required: [patientId, providerId, currency, totalAmount]

@@ -287,13 +287,13 @@ CREATE POLICY product_family_release_readiness_tenant_isolation
 - Access controls for evidence operations
 - Evidence integrity verification
 
-### HIPAA (for healthcare products)
+### Healthcare Compliance (for healthcare products)
 - PHI-free evidence storage
 - Encrypted evidence at rest
 - Audit trail for PHI access
 - Data sovereignty enforcement
 
-### GDPR
+### Data Privacy Compliance
 - Data minimization in evidence
 - Right to erasure support
 - Data portability support

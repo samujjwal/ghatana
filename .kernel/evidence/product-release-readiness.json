@@ -1,163 +1,63 @@
 {
-  "generatedAt": "2026-05-24T02:58:38.056Z",
+  "generatedAt": "2026-05-24T03:53:51.354Z",
   "pass": false,
   "reason": "script-failure",
-  "failedScript": "./scripts/check-release-profile-local-targets.mjs",
+  "failedScript": "./scripts/check-data-cloud-release-runtime-profile.mjs",
   "runs": [
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 31115
+      "durationMs": 27329
     },
     {
       "script": "./scripts/check-product-shape-capability-matrix.mjs",
       "status": 0,
-      "durationMs": 122
+      "durationMs": 93
     },
     {
       "script": "./scripts/check-product-registry-drift.mjs",
       "status": 0,
-      "durationMs": 101
+      "durationMs": 78
     },
     {
       "script": "pnpm:check:product-registry",
       "status": 0,
-      "durationMs": 9129
+      "durationMs": 7767
     },
     {
       "script": "./scripts/check-platform-product-boundaries.mjs",
       "status": 0,
-      "durationMs": 1084
+      "durationMs": 1257
     },
     {
       "script": "./scripts/check-cross-product-interaction-boundaries.mjs",
       "status": 0,
-      "durationMs": 1812
+      "durationMs": 1151
     },
     {
       "script": "./scripts/check-product-ui-contracts.mjs",
       "status": 0,
-      "durationMs": 367
+      "durationMs": 370
     },
     {
       "script": "./scripts/check-audited-e2e-workflow.mjs",
       "status": 0,
-      "durationMs": 72
+      "durationMs": 86
     },
     {
       "script": "pnpm:check:cross-product-interaction-flows",
       "status": 0,
-      "durationMs": 14429
+      "durationMs": 25179
     },
     {
       "script": "./scripts/check-interaction-runtime-truth.mjs",
       "status": 0,
-      "durationMs": 10872
+      "durationMs": 11208
     },
     {
       "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
-      "status": 0,
-      "durationMs": 182245
-    },
-    {
-      "script": "./scripts/check-runtime-dependency-failure-injection.mjs",
-      "status": 0,
-      "durationMs": 93108
-    },
-    {
-      "script": "./scripts/check-atomic-workflow-failure-injection.mjs",
-      "status": 0,
-      "durationMs": 51290
-    },
-    {
-      "script": "./scripts/check-runtime-failure-injection.mjs",
-      "status": 0,
-      "durationMs": 83
-    },
-    {
-      "script": "./scripts/check-atomic-workflow-proof.mjs",
-      "status": 0,
-      "durationMs": 81
-    },
-    {
-      "script": "./scripts/check-secret-default-credentials.mjs",
-      "status": 0,
-      "durationMs": 345
-    },
-    {
-      "script": "./scripts/check-production-stubs.mjs",
-      "status": 0,
-      "durationMs": 105494
-    },
-    {
-      "script": "./scripts/check-route-entitlement-contracts.mjs",
-      "status": 0,
-      "durationMs": 54503
-    },
-    {
-      "script": "./scripts/check-observability-conformance.mjs",
-      "status": 0,
-      "durationMs": 2508
-    },
-    {
-      "script": "./scripts/check-doc-claims-evidence.mjs",
-      "status": 0,
-      "durationMs": 92
-    },
-    {
-      "script": "./scripts/check-current-state-claims.mjs",
-      "status": 0,
-      "durationMs": 94
-    },
-    {
-      "script": "./scripts/check-doc-truth.mjs",
-      "status": 0,
-      "durationMs": 82
-    },
-    {
-      "script": "./scripts/check-data-cloud-ui-a11y.mjs",
-      "status": 0,
-      "durationMs": 66
-    },
-    {
-      "script": "./scripts/check-product-a11y-route-matrix.mjs",
-      "status": 0,
-      "durationMs": 94
-    },
-    {
-      "script": "./scripts/check-i18n-conformance.mjs",
-      "status": 0,
-      "durationMs": 77
-    },
-    {
-      "script": "./scripts/check-ai-governance-conformance.mjs",
-      "status": 0,
-      "durationMs": 95
-    },
-    {
-      "script": "./scripts/check-audited-performance-workflows.mjs",
-      "status": 0,
-      "durationMs": 72
-    },
-    {
-      "script": "./scripts/check-product-slo-budgets.mjs",
-      "status": 0,
-      "durationMs": 86
-    },
-    {
-      "script": "./scripts/check-product-cost-budgets.mjs",
-      "status": 0,
-      "durationMs": 91
-    },
-    {
-      "script": "./scripts/check-product-domain-invariants.mjs",
-      "status": 0,
-      "durationMs": 775
-    },
-    {
-      "script": "./scripts/check-release-profile-local-targets.mjs",
       "status": 1,
-      "durationMs": 72
+      "durationMs": 146577
     }
   ],
   "journeyMatrix": [
@@ -322,5 +222,8 @@
     "backend-only-release",
     "polyglot-service-release"
   ],
-  "affectedProducts": ["digital-marketing", "phr"]
+  "affectedProducts": [
+    "digital-marketing",
+    "phr"
+  ]
 }

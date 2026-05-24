@@ -578,7 +578,7 @@ class WorkflowExecutionTest {
         void allStatusValuesAreDefined() {
             WorkflowExecution.Status[] statuses = WorkflowExecution.Status.values();
             
-            assertThat(statuss).containsExactlyInAnyOrder(
+            assertThat(statuses).containsExactlyInAnyOrder(
                 WorkflowExecution.Status.PENDING,
                 WorkflowExecution.Status.RUNNING,
                 WorkflowExecution.Status.COMPLETED,

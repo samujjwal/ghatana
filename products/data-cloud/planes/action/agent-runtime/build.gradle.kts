@@ -52,6 +52,7 @@ dependencies {
     api(project(":platform:contracts"))
     api(project(":platform:java:tool-runtime"))
     api(project(":platform:java:data-governance"))
+    api(project(":products:data-cloud:planes:action:operator-contracts"))
 
     // ── ActiveJ ────────────────────────────────────────────────────────────────
     api(libs.activej.promise)
