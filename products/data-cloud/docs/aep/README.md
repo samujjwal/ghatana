@@ -1,52 +1,55 @@
-# AEP Runtime Implementation
+# AEP Integration Boundary
 
-**Plane:** Data Cloud Action Plane  
-**Runtime implementation:** AEP  
-**Status:** Active during Action Plane migration  
+**Plane:** Data Cloud integration and storage substrate
+**External platform:** AEP
+**Status:** Boundary cleanup in progress
 **Canonical product architecture:** `../architecture/PLANE_ARCHITECTURE.md`
 
 ## Purpose
 
-The Agentic Event Processor is the current runtime implementation behind Data Cloud's Action Plane. It is not a separate customer-facing product boundary.
+The Agentic Event Processor is the adaptive event intelligence platform. Data-Cloud is the governed data/storage substrate that may persist AEP-owned metadata, checkpoints, memory, audit records, and EventCloud storage records through public contracts or stable SPI.
 
-Product positioning, plane hierarchy, module migration, and dependency rules are defined in `../architecture/PLANE_ARCHITECTURE.md`. This folder is retained only for runtime implementation details that are still AEP-named during migration.
+Product positioning, plane hierarchy, module migration, and dependency rules are defined in `../architecture/PLANE_ARCHITECTURE.md`. This folder is retained for Data-Cloud/AEP integration notes during boundary cleanup.
+
+During migration, some AEP implementation modules may remain under `products/data-cloud/planes/action/*`. That is an implementation-location compromise only. AEP semantics remain owned by AEP, and Data-Cloud storage planes must not import or expose those semantics.
 
 ## Terminology Boundary
 
-- Data Cloud is the product.
-- The Action Plane owns governed automation, pipelines, patterns, agents, reviews, runs, and learning.
-- AEP implements Action Plane runtime behavior today.
+- Data-Cloud is the governed data/storage product.
+- AEP owns EventCloud, PatternSpec/EPL, operator runtime, pattern lifecycle, adaptive learning, agents-as-operators, and adaptive event governance.
+- Data-Cloud may provide EventCloud persistence plugins, not EventCloud semantics.
 - Data, Event, Context, Governance, Intelligence, and Operations planes must not import AEP implementation internals.
 
 ## Runtime Surfaces
 
 | Surface | Runtime responsibility |
 | --- | --- |
-| Agent runtime | Agent listing, execution, memory views, and runtime metadata |
-| Pipeline runtime | Pipeline CRUD, versioning, publish/rollback, run listing, run detail, and cancellation |
-| Human review | Review queue, approve/reject/escalate flows, and learning triggers |
-| Governance evidence | Kill switch, degraded mode, policy evaluation, compliance summary, audit summary, and security scans |
-| Runtime analytics | Anomalies, forecasting, reports, deployment lifecycle, and operational summaries |
+| Agent metadata persistence | Store agent definitions, memory, execution records, and audit evidence when called through public contracts |
+| Pattern metadata persistence | Store pattern registry metadata when called through AEP services |
+| EventCloud persistence plugin | Persist AEP-owned EventCloud records behind AEP SPI |
+| Governance evidence | Store audit, policy, retention, encryption, and review evidence |
+| Runtime analytics substrate | Provide queryable historical metadata and storage-plane metrics |
 
 ## Public Contracts
 
-The target Action Plane contract is:
+Data-Cloud canonical contracts are:
 
 ```text
-products/data-cloud/contracts/openapi/action-plane.yaml
+products/data-cloud/contracts/openapi/data-cloud.yaml
 ```
 
-The compatibility contract remains:
+Compatibility contracts may remain for existing callers:
 
 ```text
 products/data-cloud/contracts/openapi/aep.yaml
+products/data-cloud/contracts/openapi/action-plane.yaml
 ```
 
-Both must remain equivalent until the AEP-named contract is retired.
+Compatibility contracts must not become the canonical home for AEP-owned PatternSpec, EventCloud, operator-runtime, or learning semantics.
 
 ## Runtime Truth
 
-Action Plane surfaces must publish runtime truth:
+Data-Cloud surfaces must publish runtime truth:
 
 ```text
 LIVE
@@ -61,8 +64,8 @@ The UI and SDK must use runtime truth to decide whether a surface is visible, en
 
 ## Production Rules
 
-- Production run history must use durable Data Cloud event storage.
+- Production AEP persistence through Data-Cloud must use durable Data-Cloud storage contracts or plugins.
 - Production startup must fail closed when required security, policy, audit, or durability dependencies are absent.
-- Sensitive actions must emit audit evidence.
-- Human-review and rollback paths must remain available for governed automation.
+- Sensitive storage operations must emit audit evidence.
+- Human-review and rollback evidence can be stored in Data-Cloud, but review semantics belong to AEP.
 - Runtime metrics, traces, and logs must be exposed through the Operations Plane.

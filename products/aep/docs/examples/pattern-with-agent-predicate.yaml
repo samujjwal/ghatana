@@ -1,0 +1,39 @@
+apiVersion: aep.ghatana.io/v1
+kind: PatternSpec
+metadata:
+  name: deploy-risk-agent-predicate
+  tenantId: tenant-a
+  owner: sre-platform
+  description: Detect risky deployments using sequence semantics and an agent predicate.
+semantics:
+  timePolicy:
+    mode: event_time
+    allowedLateness: PT2M
+  uncertaintyPolicy:
+    minPatternConfidence: 0.85
+  replayPolicy:
+    mode: recorded_agent_output
+pattern:
+  operator: SEQ
+  within: PT30M
+  operands:
+    - event: deploy.started
+    - operator: TIMES
+      event: service.error_rate_elevated
+      min: 3
+      within: PT10M
+    - operator: AGENT_PREDICATE
+      agentRef: agents/sre-risk-assessor@1.0.0
+      inputSchema: DeployRiskContext
+      outputSchema: RiskDecision
+      condition: "$output.riskScore >= 0.85"
+emit:
+  eventType: incident.risk_detected
+  outputSchema: IncidentRiskDetected
+lifecycle:
+  state: SHADOW
+governance:
+  reviewPolicy: human_required_for_promotion
+observability:
+  metrics: true
+  tracing: true

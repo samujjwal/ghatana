@@ -1,0 +1,37 @@
+apiVersion: aep.ghatana.io/v1
+kind: PatternSpec
+metadata:
+  name: learning-to-recommended-pattern
+  tenantId: tenant-a
+  owner: adaptive-learning
+  description: Convert discovered event groups into reviewed recommended patterns.
+semantics:
+  timePolicy:
+    mode: event_time
+    allowedLateness: PT5M
+  uncertaintyPolicy:
+    minPatternConfidence: 0.8
+  replayPolicy:
+    mode: recorded_agent_output
+pattern:
+  operator: SEQ
+  operands:
+    - event: event_group.discovered
+    - operator: AGENT_PATTERN_SYNTHESIS
+      agentRef: agents/pattern-synthesizer@1.0.0
+      inputSchema: DiscoveredEventGroup
+      outputSchema: CandidatePatternSpec
+    - operator: AGENT_REVIEW
+      agentRef: agents/pattern-reviewer@1.0.0
+      inputSchema: CandidatePatternSpec
+      outputSchema: PatternReviewRecommendation
+emit:
+  eventType: pattern.suggested
+  outputSchema: PatternSuggested
+lifecycle:
+  state: CANDIDATE
+governance:
+  reviewPolicy: human_required_for_promotion
+observability:
+  metrics: true
+  tracing: true

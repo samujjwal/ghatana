@@ -35,6 +35,11 @@ package com.ghatana.core.operator;
  *       ├── CorrelationAnalyzer
  *       ├── PatternSynthesizer
  *       └── Recommender (Collaborative Filtering)
+ *   └── AgentOperator (AGENT)
+ *       ├── AgentPredicate
+ *       ├── AgentEnrich
+ *       ├── AgentReview
+ *       └── AgentAction
  * </pre>
  *
  * <p><b>Usage Examples</b>
@@ -188,7 +193,7 @@ package com.ghatana.core.operator;
  *
  * <p><b>Design Decisions</b>
  * <ul>
- *   <li>Three types chosen to align with WORLD_CLASS_DESIGN_MASTER.md Section III</li>
+ *   <li>Core types align with WORLD_CLASS_DESIGN_MASTER.md Section III plus AgentOperator ADR</li>
  *   <li>Enum (not interface) for type safety and exhaustive switch compatibility</li>
  *   <li>Uppercase constants follow Java enum convention</li>
  *   <li>No custom types allowed (closed set ensures catalog query correctness)</li>
@@ -228,5 +233,12 @@ public enum OperatorType {
      *
      * <p>Examples: FrequentSequenceMiner, CorrelationAnalyzer, PatternSynthesizer, Recommender
      */
-    LEARNING
+    LEARNING,
+
+    /**
+     * Agent operators (governed agent execution as first-class event operators).
+     *
+     * <p>Examples: AgentPredicate, AgentEnrich, AgentReview, AgentAction
+     */
+    AGENT
 }

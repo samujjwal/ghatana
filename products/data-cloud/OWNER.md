@@ -8,17 +8,18 @@
 
 ## Responsibility
 
-Data-Cloud is an **independent AI/ML-native data product** for Ghatana. It:
+Data-Cloud is an **independent governed data/storage product** for Ghatana. It:
 
-- Manages the four-tier event log (journal, hot, warm, cold)
-- Provides entity, event, analytics, reporting, governance, and memory data services
+- Manages entity storage, metadata, schemas, retention, audit, and pluggable persistence
+- Provides storage-plane event logs for append, replay, audit, and integration records
+- Provides analytics, reporting, governance, and memory persistence services
 - Hosts the feature store, model metadata, and plugin-driven capability platform
 - Supports standalone and integrated deployment modes
 - Exposes public contracts consumed by AEP and other products
 
-**Domain boundary:** Data-Cloud owns data storage, event streaming, analytics, reporting, AI/ML-native assistance, feature engineering, plugin lifecycle, execution metadata persistence, and plugin-backed pipeline execution inside the standalone runtime. It does NOT own broader agentic orchestration; that remains an AEP concern.
+**Domain boundary:** Data-Cloud owns governed data storage, metadata, schemas, audit, retention, encryption support, feature engineering substrate, plugin lifecycle, and execution metadata persistence. It does not own complex event processing, EventCloud semantics, PatternSpec/EPL, pattern matching, pattern learning/adaptation, or agent orchestration; those remain AEP concerns.
 
-**AEP integration rule:** Data-Cloud may publish agentic work requests and persist agent definitions, memory, checkpoints, results, and locally executed pipeline state, but it must not import AEP modules. AEP depends on Data-Cloud public APIs/contracts and event-cloud to perform higher-level agentic processing without creating a circular dependency.
+**AEP integration rule:** Data-Cloud may persist AEP-owned metadata, events, checkpoints, results, memory, and EventCloud storage records when called through public contracts or stable SPI, but it must not import AEP modules. AEP may depend on Data-Cloud public APIs/contracts and storage plugins to perform higher-level adaptive event processing without creating a circular dependency.
 
 ## Key Product-Owned Shared Libraries
 
@@ -31,4 +32,4 @@ Data-Cloud is an **independent AI/ML-native data product** for Ghatana. It:
 
 ## Consumers
 
-All products may consume Data-Cloud data and event services. AEP is the primary agentic-processing consumer through event-cloud and public Data-Cloud contracts.
+All products may consume Data-Cloud data and storage-plane event services. AEP is the primary adaptive event intelligence consumer through public Data-Cloud contracts and optional Data-Cloud-backed EventCloud persistence plugins.

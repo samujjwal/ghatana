@@ -1,0 +1,64 @@
+schemaVersion: 1.0.0
+productId: digital-marketing
+status: enabled
+lifecycleExecutionAllowed: true
+truthSource:
+  registry: config/canonical-product-registry.json
+  lifecycleConfig: products/digital-marketing/kernel-product.yaml
+  productManifest: products/digital-marketing/domain-pack-manifest.yaml
+moduleGraph:
+  requiredModules:
+    - module: backend-api
+      gradleModule: :products:digital-marketing
+      buildFile: products/digital-marketing/build.gradle.kts
+      adapter: gradle-java-service
+    - module: dm-kernel-bridge
+      gradleModule: :products:digital-marketing:dm-kernel-bridge
+      buildFile: products/digital-marketing/dm-kernel-bridge/build.gradle.kts
+      adapter: gradle-java-service
+    - module: dm-domain
+      gradleModule: :products:digital-marketing:dm-domain
+      buildFile: products/digital-marketing/dm-domain/build.gradle.kts
+      adapter: gradle-java-service
+    - module: dm-persistence
+      gradleModule: :products:digital-marketing:dm-persistence
+      buildFile: products/digital-marketing/dm-persistence/build.gradle.kts
+      adapter: gradle-java-service
+    - module: dm-connector-google-ads
+      gradleModule: :products:digital-marketing:dm-connector-google-ads
+      buildFile: products/digital-marketing/dm-connector-google-ads/build.gradle.kts
+      adapter: gradle-java-service
+gatePacks:
+  - gateId: registry-validation
+    path: products/digital-marketing/lifecycle/gate-packs/registry-validation.yaml
+    executionMode: evidence-backed
+  - gateId: manifest-validation
+    path: products/digital-marketing/lifecycle/gate-packs/manifest-validation.yaml
+    executionMode: evidence-backed
+  - gateId: lifecycle-contract-validation
+    path: products/digital-marketing/lifecycle/gate-packs/lifecycle-contract-validation.yaml
+    executionMode: evidence-backed
+  - gateId: bridge-compliance
+    path: products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml
+    executionMode: evidence-backed
+  - gateId: marketing-consent-boundary
+    path: products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml
+    executionMode: evidence-backed
+  - gateId: persistence-proof
+    path: products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml
+    executionMode: evidence-backed
+  - gateId: connector-google-ads-proof
+    path: products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml
+    executionMode: evidence-backed
+blockers: []
+validationCommands:
+  - ./gradlew :products:digital-marketing:build
+  - ./gradlew :products:digital-marketing:dm-kernel-bridge:build
+  - ./gradlew :products:digital-marketing:dm-domain:build
+  - ./gradlew :products:digital-marketing:dm-persistence:build
+  - ./gradlew :products:digital-marketing:dm-connector-google-ads:build
+  - ./gradlew :products:digital-marketing:dm-kernel-bridge:test
+  - ./gradlew :products:digital-marketing:dm-domain:test
+  - ./gradlew :products:digital-marketing:dm-persistence:test
+  - ./gradlew :products:digital-marketing:dm-connector-google-ads:test
+  - node scripts/check-product-release-readiness.mjs --products digital-marketing

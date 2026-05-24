@@ -52,10 +52,7 @@ public class ProductReleaseReadinessProducer {
         logger.info("Generating release readiness evidence for product: {} in environment: {}", productId, environment);
 
         return evidenceCollector.collectEvidence(productId, environment)
-            .thenMap(evidence -> {
-                ProductReleaseReadinessEvidence releaseEvidence = buildReleaseEvidence(productId, environment, evidence);
-                return Promise.of(releaseEvidence);
-            });
+            .map(evidence -> buildReleaseEvidence(productId, environment, evidence));
     }
 
     private ProductReleaseReadinessEvidence buildReleaseEvidence(
@@ -122,8 +119,9 @@ public class ProductReleaseReadinessProducer {
             extractStatus(evidence, "build"),
             extractTimestamp(evidence, "build"),
             extractEvidenceRefs(evidence, "build"),
-            extractArtifacts(evidence, "build"),
-            extractQualityMetrics(evidence, "build")
+            buildEvidenceData(
+                "artifacts", extractArtifacts(evidence, "build"),
+                "qualityMetrics", extractQualityMetrics(evidence, "build"))
         ));
 
         // Test evidence
@@ -181,6 +179,18 @@ public class ProductReleaseReadinessProducer {
         }
         
         return gates;
+    }
+
+    private Map<String, Object> buildEvidenceData(
+        String firstKey,
+        Map<String, Object> firstValue,
+        String secondKey,
+        Map<String, Object> secondValue
+    ) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(firstKey, firstValue);
+        data.put(secondKey, secondValue);
+        return data;
     }
 
     private ProductReleaseReadinessEvidence.Summary calculateSummary(

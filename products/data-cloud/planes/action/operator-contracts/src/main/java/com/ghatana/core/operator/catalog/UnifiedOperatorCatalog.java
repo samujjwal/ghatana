@@ -47,6 +47,7 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
     private static final Logger logger = LoggerFactory.getLogger(UnifiedOperatorCatalog.class);
 
     private final ConcurrentHashMap<OperatorId, UnifiedOperator> operators = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<OperatorId, OperatorCatalogEntry> metadata = new ConcurrentHashMap<>();
 
     /**
      * Creates an empty catalog. Operators must be added via {@link #register(UnifiedOperator)}.
@@ -72,6 +73,7 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
                     UnifiedOperator op = provider.createOperator(operatorId,
                         com.ghatana.core.operator.OperatorConfig.empty());
                     catalog.operators.put(op.getId(), op);
+                    catalog.metadata.put(op.getId(), OperatorCatalogEntry.fromOperator(op));
                     loaded++;
                 } catch (Exception e) {
                     logger.warn("OperatorProvider {} failed to create operator {}: {}",
@@ -94,6 +96,7 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
             logger.warn("Operator already registered, replacing: {}", id);
             operators.put(id, operator);
         }
+        metadata.put(id, OperatorCatalogEntry.fromOperator(operator));
         logger.info("Registered operator: {} (type={}, name={})", id, operator.getType(), operator.getName());
         return Promise.complete();
     }
@@ -102,6 +105,7 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
     public Promise<Void> unregister(OperatorId operatorId) {
         Objects.requireNonNull(operatorId, "operatorId must not be null");
         UnifiedOperator removed = operators.remove(operatorId);
+        metadata.remove(operatorId);
         if (removed != null) {
             logger.info("Unregistered operator: {}", operatorId);
         } else {
@@ -142,9 +146,39 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
         return Collections.unmodifiableCollection(operators.values());
     }
 
+    /** @return unmodifiable view of all operator catalog metadata entries */
+    public Collection<OperatorCatalogEntry> getEntries() {
+        return Collections.unmodifiableCollection(metadata.values());
+    }
+
+    /**
+     * Searches operator metadata without materializing operator implementations.
+     *
+     * @param query catalog filter; {@link OperatorCatalogQuery#all()} is used when null
+     * @return matching metadata entries
+     */
+    public List<OperatorCatalogEntry> search(OperatorCatalogQuery query) {
+        OperatorCatalogQuery effectiveQuery = query == null ? OperatorCatalogQuery.all() : query;
+        return metadata.values().stream()
+            .filter(entry -> effectiveQuery.operatorType()
+                .map(type -> entry.operatorType() == type)
+                .orElse(true))
+            .filter(entry -> effectiveQuery.agentOperatorKind()
+                .map(kind -> entry.agentOperatorKind().filter(value -> value == kind).isPresent())
+                .orElse(true))
+            .filter(entry -> effectiveQuery.sideEffectProfile()
+                .map(profile -> entry.sideEffectProfile().filter(value -> value == profile).isPresent())
+                .orElse(true))
+            .filter(entry -> effectiveQuery.capability()
+                .map(capability -> entry.capabilities().contains(capability))
+                .orElse(true))
+            .toList();
+    }
+
     /** Removes all registered operators. Primarily for testing. */
     public void clear() {
         operators.clear();
+        metadata.clear();
         logger.info("Cleared all operators from UnifiedOperatorCatalog");
     }
 

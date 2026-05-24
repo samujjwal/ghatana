@@ -1,0 +1,31 @@
+operatorId: notify-on-risky-deploy
+operatorKind: AGENT_ACTION
+agentRef: agents/sre-action-planner@1.0.0
+inputSchema: IncidentRiskDetected
+outputSchema: ActionRequestResult
+modelPolicy:
+  modelClass: approved-sre-action-model
+toolPolicy:
+  allowedTools:
+    - pagerduty.create_incident
+    - slack.post_message
+memoryPolicy:
+  mode: tenant_scoped
+retrievalPolicy:
+  allowedIndexes:
+    - runbooks
+replayPolicy:
+  mode: recorded_output
+uncertaintyPolicy:
+  minModelConfidence: 0.9
+guardrails:
+  requireSafeToolArguments: true
+humanReviewPolicy:
+  approvalRequired: true
+observabilityPolicy:
+  emitMetrics: true
+  emitTraces: true
+sideEffectProfile: SIDE_EFFECTING
+approvalPolicy:
+  approvalEvent: pattern.review_completed
+idempotencyKey: "$event.correlationId:$operator.operatorId"

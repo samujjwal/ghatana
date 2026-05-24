@@ -184,8 +184,8 @@ public class SecurityInterceptor {
         // Check authorization
         String requiredPermission = determineRequiredPermission(request);
         if (requiredPermission != null) {
-            // Create a Principal for PolicyService (using "default" as tenantId; extract from header if available)
-            String tenantId = TenantExtractor.fromHttpOrDefault(request, "default");
+            // Create a Principal for PolicyService (extract from header, fail if missing)
+            String tenantId = TenantExtractor.fromHttpOrThrow(request);
             Principal principal = new Principal(userId, userRoles.stream().toList(), tenantId);
 
             // Use the request path as the resource (can be customized based on your needs)

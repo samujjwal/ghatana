@@ -45,7 +45,7 @@ flowchart TB
             Context["context"]
             Intelligence["intelligence"]
             Governance["governance"]
-            Action["action<br/>AEP runtime implementation"]
+            Action["action<br/>AEP integration metadata"]
             Operations["operations"]
         end
     end
@@ -162,7 +162,7 @@ flowchart TB
 | Runtime Truth | Data Cloud planes + Action Plane probes | Plane state, surface state, dependency state, degraded behavior |
 | Data Plane | Data Cloud core | Entity/event/query/analytics persistence |
 | Context Plane | Data Cloud core | Lineage, freshness, provenance, memory, RAG |
-| Action Plane | AEP runtime implementation | Pipelines, agents, patterns, runs, HITL, learning |
+| Action Plane | AEP integration metadata and compatibility adapters | Stored execution metadata, checkpoints, review evidence, and storage adapters; adaptive event semantics belong to AEP |
 | Governance Plane | Data Cloud core + Action Plane evidence emitters | Tenant isolation, policy, audit, compliance evidence |
 | Operations | Shared platform + product runtime | Metrics, traces, logs, alerts, backup/restore |
 
@@ -183,7 +183,7 @@ The canonical module map lives in `docs/architecture/PLANE_ARCHITECTURE.md`. Thi
 | `planes/context/` | Context | Lineage, freshness, provenance, memory, and RAG |
 | `planes/intelligence/analytics/` | Intelligence | Query, reports, recommendations, and analytics |
 | `planes/governance/core/` | Governance | Policy, privacy, retention, redaction, and audit support |
-| `planes/action/*` | Action | Pipelines, patterns, agents, reviews, runs, learning, and AEP runtime implementation |
+| `planes/action/*` | Action | Compatibility area for stored execution metadata, checkpoints, review evidence, and AEP integration adapters; adaptive event semantics belong to AEP |
 | `planes/operations/*` | Operations | Configuration, health, runtime truth, alerts, and diagnostics |
 
 ### 4.2 Delivery and extension modules
@@ -875,12 +875,12 @@ flowchart TB
 ## 16. Architecture Acceptance Criteria
 
 ```text
-- Data Cloud remains the only top-level product folder.
-- AEP lives under products/data-cloud/planes/action.
+- Data-Cloud remains the governed data/storage product.
+- AEP-owned adaptive event intelligence architecture lives under `products/aep` docs and stable AEP-owned contracts/specs.
 - Public contracts live under products/data-cloud/contracts.
 - Data Cloud core has no AEP implementation dependency.
-- AEP consumes Data Cloud contracts/SPI/event APIs.
-- Launcher/distribution composes core + AEP.
+- AEP consumes Data Cloud contracts, storage SPI, and storage-plane event APIs.
+- Launcher/distribution composes Data-Cloud planes; AEP integration remains behind public contracts or stable SPI.
 - Runtime Truth Registry controls runtime truth.
 - All critical paths emit audit and telemetry.
 - Production profiles fail closed for trust-critical dependencies.

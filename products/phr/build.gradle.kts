@@ -88,6 +88,7 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.bundles.testing.containers)
+    testImplementation(libs.swagger.parser)
 
     // JMH for benchmarking
     testImplementation("org.openjdk.jmh:jmh-core:1.37")

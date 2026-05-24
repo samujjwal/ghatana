@@ -133,7 +133,7 @@ public class FeatureToggleController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
+        return TenantExtractor.fromHttpOrThrow(request);
     }
 
     private FeatureFlagService.FeatureFlag parseFlag(String json) {

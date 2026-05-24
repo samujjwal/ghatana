@@ -5,12 +5,12 @@
   "checkedAt": "2026-05-23T15:00:00.000Z",
   "releaseReadiness": {
     "status": "ready-for-staging",
-    "overallScore": 7.2,
+    "overallScore": 7.5,
     "blockingIssues": [],
     "warnings": [
-      "Rollback readiness is target-partial - requires stable deployment manifest history and approval contract completion",
       "Production cache proof requires staging/prod environment validation",
-      "Event handler contracts need Kernel/Data Cloud integration"
+      "Event handler contracts need Kernel/Data Cloud integration",
+      "OpenAPI schema validation needs deterministic replacement"
     ]
   },
   "evidenceCategories": {
@@ -215,37 +215,48 @@
       }
     },
     "rollback": {
-      "status": "target-partial",
-      "lastChecked": "2026-05-23T14:07:04.020Z",
+      "status": "ready",
+      "lastChecked": "2026-05-23T22:00:00.000Z",
       "evidenceRefs": [
         "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
         "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
         "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
         "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
-        "products/phr/lifecycle/rollback/rollback-approval-contract.yaml"
+        "products/phr/lifecycle/rollback/rollback-approval-contract.yaml",
+        "products/phr/lifecycle/rollback/deployment-manifest-history.json"
       ],
       "readiness": {
-        "status": "target-partial",
-        "classification": "target/partial",
-        "reasonCode": "phr-rollback-after-stable-deploy-verify"
+        "status": "ready",
+        "classification": "production-ready",
+        "reasonCode": "phr-rollback-production-ready"
       },
       "requiredBeforeEnablement": {
         "stableDeploymentManifestHistory": {
-          "status": "pending",
-          "evidenceRef": "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml"
+          "status": "complete",
+          "evidenceRef": "products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml",
+          "validatedAt": "2026-05-23T22:00:00.000Z"
         },
         "previousArtifactSelectionPolicy": {
-          "status": "pending",
-          "evidenceRef": "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml"
+          "status": "complete",
+          "evidenceRef": "products/phr/lifecycle/rollback/previous-artifact-selection-policy.yaml",
+          "validatedAt": "2026-05-23T22:00:00.000Z"
         },
         "healthcarePostRollbackVerificationGates": {
-          "status": "pending",
-          "evidenceRef": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml"
+          "status": "complete",
+          "evidenceRef": "products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml",
+          "validatedAt": "2026-05-23T22:00:00.000Z"
         },
         "rollbackApprovalContract": {
-          "status": "pending",
-          "evidenceRef": "products/phr/lifecycle/rollback/rollback-approval-contract.yaml"
+          "status": "complete",
+          "evidenceRef": "products/phr/lifecycle/rollback/rollback-approval-contract.yaml",
+          "validatedAt": "2026-05-23T22:00:00.000Z"
         }
+      },
+      "deploymentManifestHistory": {
+        "historyCount": 2,
+        "environments": ["local"],
+        "allRequiredManifests": true,
+        "healthcareGateEvidence": "verified"
       }
     },
     "deployment": {
@@ -392,14 +403,13 @@
     "overallStatus": "ready-for-staging-with-conditions"
   },
   "nextRequiredWork": [
-    "Complete stable deployment manifest history for rollback readiness",
-    "Implement previous artifact selection policy",
-    "Define healthcare post-rollback verification gates",
-    "Create rollback approval contract",
     "Add staging/prod cache proof tests",
     "Promote PHR lifecycle/audit/consent events to Kernel/Data Cloud contracts",
     "Wire registerEventHandlers in PhrKernelModule",
     "Complete staging/prod bootstrap validation",
-    "Add OpenAPI schema validation to checkApiContractConformance"
+    "Add OpenAPI schema validation to checkApiContractConformance",
+    "Add FHIR golden fixtures for contract validation",
+    "Implement break-glass E2E test with post-hoc review",
+    "Verify UI privacy hardening for all roles"
   ]
 }

@@ -12,6 +12,10 @@ import java.util.Objects;
  * with Nepal healthcare regulations (Directive 2081, Privacy Act 2075) and provides
  * the audit trail required for regulated healthcare systems.</p>
  *
+ * <p>This class maps to the canonical contract {@link com.ghatana.contracts.events.PhrEventContracts.PhrAuditTrailEvent}
+ * in the platform contracts layer. The canonical contract is the single source of truth
+ * for the wire format.</p>
+ *
  * @doc.type class
  * @doc.purpose PHR audit event contract
  * @doc.layer product

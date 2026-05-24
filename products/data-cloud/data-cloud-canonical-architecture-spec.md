@@ -27,7 +27,7 @@ Data Cloud product
 └─ Operations Plane
 ```
 
-AEP is the current runtime implementation behind the Action Plane. It is not a separate customer-facing product boundary and should not be described as a capability area.
+AEP is a separate adaptive event intelligence platform. Data-Cloud may provide storage plugins used by AEP's EventCloud, but EventCloud, PatternSpec/EPL, operator runtime, pattern learning/adaptation, and agent orchestration are AEP-owned.
 
 ## Required Vocabulary
 
@@ -40,7 +40,8 @@ Runtime Truth Registry
 plane state
 surface state
 Action Plane
-AEP runtime implementation
+Data-Cloud storage substrate
+AEP integration through public contracts and stable SPI
 ```
 
 Avoid using capability-area terminology in product and architecture documentation.
@@ -54,4 +55,4 @@ products/data-cloud/contracts/openapi/data-cloud.yaml
 products/data-cloud/contracts/openapi/action-plane.yaml
 ```
 
-`products/data-cloud/contracts/openapi/aep.yaml` remains a compatibility copy until the Action Plane contract rename is complete.
+`products/data-cloud/contracts/openapi/aep.yaml` remains a compatibility contract for existing callers during boundary cleanup. It must not become the canonical home for AEP-owned PatternSpec, EventCloud, operator-runtime, or learning semantics.

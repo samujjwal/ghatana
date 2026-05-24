@@ -10,6 +10,10 @@ import java.util.Objects;
  * (validate, test, build, package, deploy, verify). It enables cross-product
  * coordination and evidence collection for regulated healthcare deployments.</p>
  *
+ * <p>This class maps to the canonical contract {@link com.ghatana.contracts.events.PhrEventContracts.PhrLifecyclePhaseEvent}
+ * in the platform contracts layer. The canonical contract is the single source of truth
+ * for the wire format.</p>
+ *
  * @doc.type class
  * @doc.purpose PHR lifecycle event contract
  * @doc.layer product

@@ -272,13 +272,20 @@ public class TenantExtractor {
      * Extracts tenant ID using fallback strategy: header → JWT → path →
      * subdomain.
      *
+     * <p><b>DEPRECATED</b> - Use {@link #extractForUserPath(HttpRequest, JwtTokenProvider)}
+     * for user-facing paths. This method allows unsigned path-based extraction
+     * which is insecure for user-facing endpoints. Path-based extraction should
+     * only be used for internal system paths where tenant context is optional.</p>
+     *
      * GIVEN: HTTP request WHEN: extract() is called THEN: Tenant ID extracted
      * using first successful strategy
      *
      * @param request HTTP request
      * @param tokenProvider JWT token provider (optional, can be null)
      * @return tenant ID or null if not found
+     * @deprecated Use {@link #extractForUserPath(HttpRequest, JwtTokenProvider)} for user-facing paths
      */
+    @Deprecated
     public String extract(HttpRequest request, JwtTokenProvider tokenProvider) {
         Objects.requireNonNull(request, "request must not be null");
 
@@ -296,19 +303,78 @@ public class TenantExtractor {
             }
         }
 
-        // Try path
+        // Try path (insecure for user-facing paths)
         tenantId = extractFromPath(request);
         if (tenantId != null) {
             return tenantId;
         }
 
-        // Try subdomain
+        // Try subdomain (insecure for user-facing paths)
         tenantId = extractFromSubdomain(request);
         if (tenantId != null) {
             return tenantId;
         }
 
         LOGGER.warn("Failed to extract tenant ID from request: {}", request.getPath());
+        return null;
+    }
+
+    /**
+     * Extracts tenant ID for user-facing paths using only signed sources.
+     *
+     * <p><b>Security Requirement</b><br>
+     * For user-facing paths, tenant ID MUST come from signed sources only:
+     * <ul>
+     * <li>JWT token claims (signed by auth provider)</li>
+     * <li>X-Tenant-Id header (signed/trusted by gateway)</li>
+     * </ul>
+     * Path-based and subdomain-based extraction are NOT allowed for user-facing
+     * paths as they are unsigned and can be spoofed.</p>
+     *
+     * <p><b>Usage</b><br>
+     * Use this method for all user-facing API endpoints. Use {@link #extract(HttpRequest, JwtTokenProvider)}
+     * only for internal system paths where tenant context is optional.</p>
+     *
+     * GIVEN: HTTP request WHEN: extractForUserPath() is called THEN: Tenant ID
+     * extracted only from signed sources (JWT or header)
+     *
+     * @param request HTTP request
+     * @param tokenProvider JWT token provider (optional, can be null)
+     * @return tenant ID from signed sources, or null if not found
+     * @throws SecurityException if path-based or subdomain-based tenant is detected
+     */
+    public String extractForUserPath(HttpRequest request, JwtTokenProvider tokenProvider) {
+        Objects.requireNonNull(request, "request must not be null");
+
+        // Try header first (signed/trusted by gateway)
+        String tenantId = extractFromHeader(request);
+        if (tenantId != null) {
+            return tenantId;
+        }
+
+        // Try JWT if provider available (signed by auth provider)
+        if (tokenProvider != null) {
+            tenantId = extractFromJwt(request, tokenProvider);
+            if (tenantId != null) {
+                return tenantId;
+            }
+        }
+
+        // Reject path-based tenant extraction for user-facing paths
+        String pathTenant = extractFromPath(request);
+        if (pathTenant != null) {
+            LOGGER.error("SECURITY: Path-based tenant extraction rejected for user-facing path: {}", request.getPath());
+            throw new SecurityException("Path-based tenant extraction not allowed for user-facing paths. Use signed JWT or X-Tenant-Id header.");
+        }
+
+        // Reject subdomain-based tenant extraction for user-facing paths
+        String subdomainTenant = extractFromSubdomain(request);
+        if (subdomainTenant != null) {
+            LOGGER.error("SECURITY: Subdomain-based tenant extraction rejected for user-facing path: {}", request.getPath());
+            throw new SecurityException("Subdomain-based tenant extraction not allowed for user-facing paths. Use signed JWT or X-Tenant-Id header.");
+        }
+
+        LOGGER.warn("Failed to extract tenant ID from signed sources for user-facing path: {}", request.getPath());
         return null;
     }
 }

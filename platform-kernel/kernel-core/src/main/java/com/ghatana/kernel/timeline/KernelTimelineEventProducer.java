@@ -64,10 +64,10 @@ public class KernelTimelineEventProducer {
         );
 
         return eventStore.store(event)
-            .thenMap(eventId -> {
+            .map(eventId -> {
                 // Link trace to evidence
                 traceLinker.linkToEvidence(traceId, eventId, "lifecycle_phase", phase);
-                return Promise.of(eventId);
+                return eventId;
             });
     }
 
@@ -103,10 +103,10 @@ public class KernelTimelineEventProducer {
         );
 
         return eventStore.store(event)
-            .thenMap(eventId -> {
+            .map(eventId -> {
                 // Link trace to evidence
                 traceLinker.linkToEvidence(traceId, eventId, "evidence", evidenceRef);
-                return Promise.of(eventId);
+                return eventId;
             });
     }
 
@@ -142,10 +142,10 @@ public class KernelTimelineEventProducer {
         );
 
         return eventStore.store(event)
-            .thenMap(eventId -> {
+            .map(eventId -> {
                 // Link trace to evidence
                 traceLinker.linkToEvidence(traceId, eventId, "gate", gateName);
-                return Promise.of(eventId);
+                return eventId;
             });
     }
 
@@ -181,10 +181,10 @@ public class KernelTimelineEventProducer {
         );
 
         return eventStore.store(event)
-            .thenMap(eventId -> {
+            .map(eventId -> {
                 // Link trace to evidence
                 traceLinker.linkToEvidence(traceId, eventId, "promotion", assetId);
-                return Promise.of(eventId);
+                return eventId;
             });
     }
 

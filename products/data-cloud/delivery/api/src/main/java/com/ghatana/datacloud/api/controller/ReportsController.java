@@ -179,7 +179,7 @@ public class ReportsController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
+        return TenantExtractor.fromHttpOrThrow(request);
     }
 
     private GenerateReportRequest parseRequest(String json) {

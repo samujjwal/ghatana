@@ -1,8 +1,8 @@
 # Data Cloud
 
-Data Cloud is Ghatana's AI-native operational data fabric. It unifies trusted operational data, durable events, governed context, intelligence, policy, and action in one product.
+Data Cloud is Ghatana's governed operational data fabric. It unifies trusted operational data, metadata, schemas, durable storage-plane events, governed context, intelligence substrate, policy evidence, and pluggable persistence.
 
-The product is organized by planes, not capability areas. AEP is the current runtime implementation behind the Action Plane; it is not a separate customer-facing product boundary.
+The product is organized by planes, not capability areas. AEP is a separate adaptive event intelligence platform. Data-Cloud may provide storage plugins used by AEP's EventCloud, but Data-Cloud does not own EventCloud, CEP semantics, PatternSpec/EPL, pattern learning, or agent orchestration.
 
 ## Canonical Docs
 
@@ -57,7 +57,7 @@ The active repository layout is plane-based.
 | `planes/intelligence/analytics/`, `planes/intelligence/feature-ingest/` | Intelligence Plane |
 | `planes/governance/core/` | Governance Plane |
 | `planes/operations/config/` | Operations Plane |
-| `planes/action/*` | Action Plane runtime implementation powered by AEP |
+| `planes/action/*` | Compatibility and migration area for AEP-related integration; adaptive event semantics belong to AEP |
 | `delivery/api/`, `delivery/launcher/`, `delivery/runtime-composition/`, `delivery/sdk/`, `delivery/ui/` | Delivery and Experience surfaces |
 | `extensions/connectors/`, `extensions/plugins/`, `extensions/agent-catalog/`, `extensions/agent-registry/`, `extensions/kernel-bridge/` | Extension modules |
 | `deploy/helm/`, `deploy/k8s/`, `deploy/terraform/` | Deployment assets |
@@ -116,8 +116,8 @@ Default HTTP port:
 ## Architecture Rules
 
 ```text
-Data/Event/Context/Governance/Intelligence planes must not import Action Plane implementation internals.
-Action Plane may consume public contracts/SPI from Data, Event, Context, Governance, and Operations.
+Data/Event/Context/Governance/Intelligence planes must not import AEP or Action Plane implementation internals.
+AEP-related integration may consume public contracts/SPI from Data, Event, Context, Governance, and Operations.
 Delivery runtime composition may compose all planes.
 Contracts must not depend on runtime implementation modules.
 UI must use generated clients and frontend adapters, not backend internals.
@@ -125,4 +125,4 @@ UI must use generated clients and frontend adapters, not backend internals.
 
 ## Shared Platform Review
 
-Shared platform modules should remain shared only when they are genuinely cross-product infrastructure. If a platform module mainly exists because Data Cloud and AEP were previously separate products, migrate or split the Data Cloud/Action Plane-specific behavior into `products/data-cloud`.
+Shared platform modules should remain shared only when they are genuinely cross-product infrastructure. If a module mainly exists to bridge Data-Cloud storage and AEP adaptive event processing, keep the stable SPI boundary explicit and avoid moving AEP-owned semantics into Data-Cloud.

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.ghatana.io/aep/agent-operator-spec.schema.json",
+  "title": "AgentOperatorSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operatorId",
+    "operatorKind",
+    "agentRef",
+    "inputSchema",
+    "outputSchema",
+    "modelPolicy",
+    "toolPolicy",
+    "memoryPolicy",
+    "retrievalPolicy",
+    "replayPolicy",
+    "uncertaintyPolicy",
+    "guardrails",
+    "humanReviewPolicy",
+    "observabilityPolicy",
+    "sideEffectProfile"
+  ],
+  "properties": {
+    "operatorId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operatorKind": {
+      "type": "string",
+      "enum": [
+        "AGENT_PREDICATE",
+        "AGENT_ENRICH",
+        "AGENT_EXTRACT",
+        "AGENT_PATTERN_SYNTHESIS",
+        "AGENT_EXPLANATION",
+        "AGENT_REVIEW",
+        "AGENT_ACTION",
+        "AGENT_REFLECTION"
+      ]
+    },
+    "agentRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]+@[A-Za-z0-9._-]+$"
+    },
+    "inputSchema": {
+      "$ref": "#/$defs/schemaRef"
+    },
+    "outputSchema": {
+      "$ref": "#/$defs/schemaRef"
+    },
+    "modelPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "toolPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "memoryPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "retrievalPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "replayPolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "recorded_output",
+            "recorded_prompt_and_retrieval",
+            "live_model_opt_in",
+            "blocked"
+          ]
+        }
+      }
+    },
+    "uncertaintyPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "guardrails": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "humanReviewPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "observabilityPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "sideEffectProfile": {
+      "type": "string",
+      "enum": [
+        "PURE_INFERENCE",
+        "READ_ONLY_TOOL_USE",
+        "PROPOSE_ACTION",
+        "SIDE_EFFECTING"
+      ]
+    },
+    "approvalPolicy": {
+      "$ref": "#/$defs/policyObject"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "sideEffectProfile": {
+            "const": "SIDE_EFFECTING"
+          }
+        },
+        "required": ["sideEffectProfile"]
+      },
+      "then": {
+        "required": ["approvalPolicy", "idempotencyKey"]
+      }
+    }
+  ],
+  "$defs": {
+    "schemaRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyObject": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

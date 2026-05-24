@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.ghatana.phr;
+
+option java_package = "com.ghatana.phr.event";
+option java_outer_classname = "PhrLifecycleEventProto";
+
+/**
+ * PHR lifecycle event for tracking product lifecycle state changes.
+ * 
+ * This event is published when PHR transitions between lifecycle phases
+ * (validate, test, build, package, deploy, verify). It enables cross-product
+ * coordination and evidence collection for regulated healthcare deployments.
+ */
+message PhrLifecycleEvent {
+  string event_id = 1;
+  string product_id = 2;
+  string phase = 3;
+  string status = 4;
+  string run_id = 5;
+  string correlation_id = 6;
+  string environment = 7;
+  int64 timestamp = 8;
+  string tenant_id = 9;
+}

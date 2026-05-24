@@ -217,7 +217,7 @@ public class SecurityController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
+        return TenantExtractor.fromHttpOrThrow(request);
     }
 
     private RBACService.Role parseRole(String json) throws JsonProcessingException {

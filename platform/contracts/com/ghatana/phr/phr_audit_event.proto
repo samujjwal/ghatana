@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.ghatana.phr;
+
+option java_package = "com.ghatana.phr.event";
+option java_outer_classname = "PhrAuditEventProto";
+
+/**
+ * PHR audit event for tracking healthcare data access and modifications.
+ * 
+ * This event is published for all PHI (Protected Health Information) access,
+ * consent changes, emergency access, and data modifications. It enables compliance
+ * with Nepal healthcare regulations (Directive 2081, Privacy Act 2075) and provides
+ * the audit trail required for regulated healthcare systems.
+ */
+message PhrAuditEvent {
+  string event_id = 1;
+  string product_id = 2;
+  string audit_type = 3;
+  string action = 4;
+  string resource_type = 5;
+  string resource_id = 6;
+  string actor_id = 7;
+  string actor_role = 8;
+  string tenant_id = 9;
+  string patient_id = 10;
+  map<string, string> metadata = 11;
+  int64 timestamp = 12;
+  string correlation_id = 13;
+}

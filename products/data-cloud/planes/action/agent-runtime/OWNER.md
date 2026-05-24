@@ -7,9 +7,9 @@
 
 ## Responsibility
 
-Agent execution runtime for Data Cloud Action Plane. Provides the execution environment for agents within pipelines and workflows. This module is the product-specific agent runtime implementation within Data Cloud.
+Agent execution runtime currently co-located in the Data-Cloud Action Plane. It provides the execution environment for agents within pipelines and workflows while AEP remains the semantic owner for EventCloud, PatternSpec, EventOperator, AgentOperator, pattern learning, and replay semantics.
 
-**Note:** This module was historically part of AEP (Agentic Event Processor). AEP is now the runtime implementation within Data Cloud Action Plane, not a standalone product.
+**Boundary note:** Keep this implementation here for now, but do not describe AEP as retired into Data-Cloud. Data-Cloud may host compatibility/runtime code during migration; AEP owns adaptive event intelligence semantics and may later move to its canonical product tree.
 
 - Agent execution context management
 - Agent lifecycle (initialize, execute, cleanup)
@@ -39,7 +39,7 @@ Agent execution runtime for Data Cloud Action Plane. Provides the execution envi
 ## Migration Note
 
 - **DEPRECATED:** `products:aep:aep-operator-contracts` — Migrated to `products:data-cloud:planes:action:operator-contracts`
-- The AEP standalone product boundary has been retired; all AEP functionality is now part of Data Cloud Action Plane.
+- Current implementation is temporarily co-located under Data-Cloud Action Plane. Product docs must still preserve the AEP/Data-Cloud/EventCloud boundary from `docs/adr/ADR-aep-datacloud-eventcloud-boundaries.md`.
 
 ## Audit Status
 

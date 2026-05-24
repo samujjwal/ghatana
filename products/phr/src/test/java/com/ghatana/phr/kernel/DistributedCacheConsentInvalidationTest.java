@@ -1,17 +1,24 @@
 package com.ghatana.phr.kernel;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.cache.DistributedCachePort;
+import com.ghatana.platform.cache.RedisDistributedCacheAdapter;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.test.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
+import redis.clients.jedis.JedisPool;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,36 +29,77 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Production-grade test proving DistributedCachePort is real and consent invalidation
- * propagates across simulated nodes.
+ * propagates across distributed cache nodes using Testcontainers Redis.
  *
- * <p>This test simulates multiple cache nodes to verify that consent invalidation
- * events propagate correctly across the distributed cache layer. In production,
- * this would use real Redis or another distributed cache implementation.</p>
+ * <p>This test uses a real Redis instance via Testcontainers to verify that consent
+ * invalidation events propagate correctly across the distributed cache layer. This
+ * provides production-grade evidence that the cache implementation is not in-memory
+ * and supports real distributed scenarios.</p>
  *
  * @doc.type class
- * @doc.purpose Production cache proof for PHR consent invalidation
+ * @doc.purpose Production cache proof for PHR consent invalidation using Testcontainers Redis
  * @doc.layer product
  * @doc.pattern Integration test
  */
-@DisplayName("Distributed Cache Consent Invalidation Tests")
+@DisplayName("Distributed Cache Consent Invalidation Tests (Production-Grade)")
 class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
+
+    private static final String REDIS_IMAGE = "redis:7-alpine";
+    private static final int REDIS_PORT = 6379;
 
     private DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> cache;
     private ExecutorService executorService;
+    private JedisPool jedisPool;
+    private GenericContainer<?> redisContainer;
 
     @BeforeEach
     void setUp() {
         executorService = Executors.newFixedThreadPool(4);
-        // In production, this would be a real distributed cache (Redis, etc.)
-        // For testing, we simulate distributed behavior with a thread-safe map
-        cache = new SimulatedDistributedCache();
+        
+        // Start Redis container for production-grade testing
+        redisContainer = new GenericContainer<>(DockerImageName.parse(REDIS_IMAGE))
+            .withExposedPorts(REDIS_PORT)
+            .waitingFor(Wait.forLogMessage("Ready to accept connections", 1));
+        redisContainer.start();
+        
+        // Create JedisPool connected to container
+        String redisHost = redisContainer.getHost();
+        Integer redisPort = redisContainer.getMappedPort(REDIS_PORT);
+        jedisPool = new JedisPool(redisHost, redisPort);
+        
+        // Create production-grade Redis cache adapter
+        ObjectMapper mapper = new ObjectMapper();
+        cache = new RedisDistributedCacheAdapter<>(
+            jedisPool,
+            mapper,
+            ConsentManagementService.ConsentCacheEntry.class,
+            executorService,
+            "phr.consent",
+            Duration.ofHours(1)
+        );
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
+        if (redisContainer != null) {
+            redisContainer.stop();
+        }
+        if (executorService != null) {
+            executorService.shutdown();
+        }
     }
 
     @Test
-    @DisplayName("DistributedCachePort should not be in-memory implementation")
+    @DisplayName("DistributedCachePort should be Redis-backed, not in-memory")
     void testCacheIsNotInMemory() {
         assertThat(cache)
-            .as("DistributedCachePort should be a real distributed cache, not InMemoryCache")
+            .as("DistributedCachePort should be RedisDistributedCacheAdapter, not InMemoryCache")
+            .isInstanceOf(RedisDistributedCacheAdapter.class);
+        assertThat(cache)
+            .as("DistributedCachePort should not be InMemoryCache")
             .isNotInstanceOfAny(
                 com.ghatana.platform.cache.InMemoryCache.class,
                 com.ghatana.platform.cache.NoopCache.class
@@ -59,7 +107,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Consent cache entry should be stored and retrieved correctly")
+    @DisplayName("Consent cache entry should be stored and retrieved correctly from Redis")
     void testConsentCacheStorage() throws Exception {
         String patientId = "patient-123";
         String recipientId = "recipient-456";
@@ -85,7 +133,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Consent invalidation should propagate across simulated nodes")
+    @DisplayName("Consent invalidation should propagate across Redis nodes")
     void testConsentInvalidationPropagation() throws Exception {
         String patientId = "patient-789";
         String recipientId = "recipient-101";
@@ -116,17 +164,18 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         // Verify invalidation propagated
         ConsentManagementService.ConsentCacheEntry finalEntry = runPromise(() -> cache.get(cacheKey));
 
+        assertThat(finalEntry).isNotNull();
         assertThat(finalEntry.status()).isEqualTo("revoked");
     }
 
     @Test
-    @DisplayName("Multiple simulated nodes should observe consent changes")
+    @DisplayName("Multiple connections should observe consent changes from Redis")
     void testMultiNodeConsentObservation() throws Exception {
         String patientId = "patient-multi";
         String recipientId = "recipient-multi";
         String cacheKey = patientId + ":" + recipientId;
 
-        // Simulate 3 nodes observing the same consent
+        // Simulate 3 connections observing the same consent
         int nodeCount = 3;
         CountDownLatch latch = new CountDownLatch(nodeCount);
         AtomicInteger successCount = new AtomicInteger(0);
@@ -139,10 +188,10 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
             "clinical-care"
         );
 
-        // Store consent from one node
+        // Store consent from one connection
         runPromise(() -> cache.put(cacheKey, entry));
 
-        // Simulate multiple nodes reading the consent
+        // Simulate multiple connections reading the consent
         for (int i = 0; i < nodeCount; i++) {
             final int nodeId = i;
             executorService.submit(() -> {
@@ -166,12 +215,12 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         }
 
         boolean completed = latch.await(5, TimeUnit.SECONDS);
-        assertThat(completed).as("All nodes should complete within timeout").isTrue();
-        assertThat(successCount.get()).as("All nodes should observe the consent change").isEqualTo(nodeCount);
+        assertThat(completed).as("All connections should complete within timeout").isTrue();
+        assertThat(successCount.get()).as("All connections should observe the consent change").isEqualTo(nodeCount);
     }
 
     @Test
-    @DisplayName("Cache should handle concurrent consent updates")
+    @DisplayName("Redis should handle concurrent consent updates")
     void testConcurrentConsentUpdates() throws Exception {
         String patientId = "patient-concurrent";
         String recipientId = "recipient-concurrent";
@@ -214,7 +263,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Cache should support TTL for consent entries")
+    @DisplayName("Redis should support TTL for consent entries")
     void testConsentCacheTTL() throws Exception {
         String patientId = "patient-ttl";
         String recipientId = "recipient-ttl";
@@ -238,52 +287,15 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         // Wait for TTL to expire
         Thread.sleep(1500);
 
-        // Verify entry is expired
+        // Verify entry is expired (Redis TTL)
         ConsentManagementService.ConsentCacheEntry expired = runPromise(() -> cache.get(cacheKey));
-        // In a real distributed cache, this would be null after TTL
-        // For simulation, we just verify the mechanism exists
-        assertThat(expired).isNotNull(); // Simulation keeps it
+        // Redis should have expired the entry
+        assertThat(expired).isNull();
     }
 
-    /**
-     * Simulated distributed cache for testing purposes.
-     * In production, this would be replaced with Redis or another real distributed cache.
-     */
-    private static class SimulatedDistributedCache implements DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> {
-        private final ConcurrentHashMap<String, ConsentManagementService.ConsentCacheEntry> storage = new ConcurrentHashMap<>();
-
-        @Override
-        public Promise<Void> put(String key, ConsentManagementService.ConsentCacheEntry value) {
-            storage.put(key, value);
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<ConsentManagementService.ConsentCacheEntry> get(String key) {
-            return Promise.of(storage.get(key));
-        }
-
-        @Override
-        public Promise<Void> invalidate(String key) {
-            storage.remove(key);
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Void> invalidatePattern(String pattern) {
-            storage.keySet().removeIf(key -> key.matches(pattern));
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Void> clear() {
-            storage.clear();
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Boolean> exists(String key) {
-            return Promise.of(storage.containsKey(key));
-        }
+    @Test
+    @DisplayName("Redis health check should pass")
+    void testRedisHealthCheck() {
+        assertThat(cache.isHealthy()).isTrue();
     }
 }

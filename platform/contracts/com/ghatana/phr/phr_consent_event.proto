@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.ghatana.phr;
+
+option java_package = "com.ghatana.phr.event";
+option java_outer_classname = "PhrConsentEventProto";
+
+/**
+ * PHR consent event for tracking consent grants, revocations, and modifications.
+ * 
+ * This event is published when patient consent is granted, revoked, or modified.
+ * It enables consent invalidation across distributed cache nodes and provides the
+ * evidence trail required for healthcare compliance. Consent events trigger cache
+ * invalidation to ensure stale consent data is not used.
+ */
+message PhrConsentEvent {
+  string event_id = 1;
+  string product_id = 2;
+  string consent_type = 3;
+  string action = 4; // granted, revoked, modified, expired
+  string patient_id = 5;
+  string recipient_id = 6;
+  string resource_type = 7;
+  string purpose = 8;
+  int64 expires_at = 9;
+  string tenant_id = 10;
+  map<string, string> metadata = 11;
+  int64 timestamp = 12;
+  string correlation_id = 13;
+}

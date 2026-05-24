@@ -11,7 +11,7 @@ The Contract Plane is the source of truth for public shapes. Runtime implementat
 | File | Role |
 | --- | --- |
 | `openapi/data-cloud.yaml` | Canonical non-Action Data Cloud REST API contract |
-| `openapi/action-plane.yaml` | Active canonical Action Plane REST contract |
+| `openapi/action-plane.yaml` | Compatibility Action Plane REST contract during boundary cleanup |
 | `openapi/aep.yaml` | Compatibility-only AEP contract for legacy clients and migration evidence |
 
 ## Boundaries
@@ -30,4 +30,4 @@ The Contract Plane is the source of truth for public shapes. Runtime implementat
 
 ## Migration Note
 
-The product language is now plane-based. Canonical Action Plane routes live under `/api/v1/action/*` and are owned by `action-plane.yaml`. Legacy AEP/root paths belong in `aep.yaml` or a compatibility registry, not in the canonical Action Plane contract. `data-cloud.yaml` owns non-Action Data Cloud surfaces.
+The product language is now boundary-based. `data-cloud.yaml` owns canonical Data-Cloud storage, metadata, governance, schema, audit, and plugin surfaces. `action-plane.yaml` and `aep.yaml` are compatibility contracts during boundary cleanup and must not become the canonical home for AEP-owned EventCloud, PatternSpec/EPL, operator-runtime, pattern learning/adaptation, or agent orchestration semantics.

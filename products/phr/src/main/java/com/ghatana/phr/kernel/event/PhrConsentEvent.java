@@ -12,6 +12,10 @@ import java.util.Objects;
  * evidence trail required for healthcare compliance. Consent events trigger cache
  * invalidation to ensure stale consent data is not used.</p>
  *
+ * <p>This class maps to the canonical contract {@link com.ghatana.contracts.events.PhrEventContracts.PhrConsentChangeEvent}
+ * in the platform contracts layer. The canonical contract is the single source of truth
+ * for the wire format.</p>
+ *
  * @doc.type class
  * @doc.purpose PHR consent event contract
  * @doc.layer product

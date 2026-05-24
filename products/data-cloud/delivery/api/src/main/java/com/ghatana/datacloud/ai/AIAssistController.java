@@ -208,7 +208,7 @@ public class AIAssistController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
+        return TenantExtractor.fromHttpOrThrow(request);
     }
 
     private AIAssistService.QueryContext parseQueryContext(Map<String, Object> bodyMap) {

@@ -145,4 +145,63 @@ class TenantExtractorTest extends EventloopTestBase {
             assertThat(entry.getValue()).isNotNull(); 
         }
     }
+
+    @Test
+    @DisplayName("Should extract tenant from signed header for user path")
+    void testExtractForUserPathWithHeader() throws Exception { 
+        HttpRequest request = HttpRequest.get("http://localhost:8080/api/users")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
+            .build(); 
+
+        String tenantId = extractor.extractForUserPath(request, null);
+
+        assertThat(tenantId).isEqualTo("tenant-123");
+    }
+
+    @Test
+    @DisplayName("Should extract tenant from JWT for user path")
+    void testExtractForUserPathWithJwt() throws Exception { 
+        // Mock JWT with tenant claim
+        String mockJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRJZCI6ImFjbWUtY29ycCJ9.mock";
+
+        HttpRequest request = HttpRequest.get("http://localhost:8080/api/users")
+            .withHeader(HttpHeaders.of("Authorization"), "Bearer " + mockJwt)
+            .build(); 
+
+        // In real implementation, would decode JWT and extract tenant
+        // For now, we test that the method doesn't throw for JWT path
+        String tenantId = extractor.extractForUserPath(request, null);
+        // Returns null since we don't have a real token provider
+        assertThat(tenantId).isNull();
+    }
+
+    @Test
+    @DisplayName("Should reject path-based tenant for user path")
+    void testExtractForUserPathRejectsPath() throws Exception { 
+        HttpRequest request = HttpRequest.get("http://localhost:8080/tenants/acme-corp/api/users").build();
+
+        assertThatThrownBy(() -> extractor.extractForUserPath(request, null))
+            .isInstanceOf(SecurityException.class)
+            .hasMessageContaining("Path-based tenant extraction not allowed");
+    }
+
+    @Test
+    @DisplayName("Should reject subdomain-based tenant for user path")
+    void testExtractForUserPathRejectsSubdomain() throws Exception { 
+        HttpRequest request = HttpRequest.get("http://acme-corp.localhost:8080/api/users").build();
+
+        assertThatThrownBy(() -> extractor.extractForUserPath(request, null))
+            .isInstanceOf(SecurityException.class)
+            .hasMessageContaining("Subdomain-based tenant extraction not allowed");
+    }
+
+    @Test
+    @DisplayName("Should return null when no signed tenant found for user path")
+    void testExtractForUserPathNoTenant() throws Exception { 
+        HttpRequest request = HttpRequest.get("http://localhost:8080/api/users").build();
+
+        String tenantId = extractor.extractForUserPath(request, null);
+
+        assertThat(tenantId).isNull();
+    }
 }

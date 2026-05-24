@@ -31,9 +31,9 @@ readiness:
     - products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml
 
 rollbackReadiness:
-  status: target-partial
-  classification: target/partial
-  reasonCode: phr-rollback-after-stable-deploy-verify
+  status: ready-local
+  classification: ready/local
+  reasonCode: phr-rollback-ready-local-production
   currentScope:
     - validate
     - test
@@ -41,6 +41,31 @@ rollbackReadiness:
     - package
     - deploy
     - verify
+  environments:
+    local:
+      status: ready
+      stableDeploymentManifestHistory: satisfied
+      previousArtifactSelectionPolicy: satisfied
+      healthcarePostRollbackVerificationGates: satisfied
+      rollbackApprovalContract: satisfied
+    dev:
+      status: pending
+      stableDeploymentManifestHistory: required
+      previousArtifactSelectionPolicy: required
+      healthcarePostRollbackVerificationGates: required
+      rollbackApprovalContract: required
+    staging:
+      status: pending
+      stableDeploymentManifestHistory: required
+      previousArtifactSelectionPolicy: required
+      healthcarePostRollbackVerificationGates: required
+      rollbackApprovalContract: required
+    prod:
+      status: pending
+      stableDeploymentManifestHistory: required
+      previousArtifactSelectionPolicy: required
+      healthcarePostRollbackVerificationGates: required
+      rollbackApprovalContract: required
   requiredBeforeEnablement:
     - stable-deployment-manifest-history
     - previous-artifact-selection-policy

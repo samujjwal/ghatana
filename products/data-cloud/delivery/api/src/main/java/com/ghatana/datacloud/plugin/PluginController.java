@@ -160,7 +160,7 @@ public class PluginController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
+        return TenantExtractor.fromHttpOrThrow(request);
     }
 
     private PluginRegistry.PluginMetadata parsePlugin(String json) throws JsonProcessingException {

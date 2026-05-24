@@ -150,38 +150,92 @@ public final class RollbackSafetyCheckService {
     }
 
     /**
-     * Checks patient data consistency.
+     * Checks patient data consistency by verifying foreign key constraints,
+     * data integrity, and no orphaned records.
+     *
+     * @param tenantId the tenant ID to check
+     * @return true if data is consistent, false otherwise
      */
     private boolean checkDataConsistency(String tenantId) {
-        // In a real implementation, this would run data integrity checks
-        // For now, we assume data is consistent
+        // TODO: Implement production-grade data consistency checks:
+        // 1. Verify foreign key constraints in patient_records, consent_grants, audit_events
+        // 2. Check for orphaned records (records without valid parent references)
+        // 3. Validate data type constraints and nullability
+        // 4. Run checksum validation on critical patient data
+        // 5. Verify tenant isolation (no cross-tenant data leakage)
+        //
+        // Current implementation assumes data is consistent for rollback safety.
+        // This must be replaced with real database integrity checks before production.
         return true;
     }
 
     /**
-     * Checks if there are active treatments in progress.
+     * Checks if there are active treatments in progress that would be disrupted by rollback.
+     * Active treatments include:
+     * - Emergency access sessions
+     * - Active consent revocations
+     * - In-progress FHIR exports
+     * - Active patient data modifications
+     *
+     * @param tenantId the tenant ID to check
+     * @return true if there are active treatments, false otherwise
      */
     private boolean checkActiveTreatments(String tenantId) {
-        // In a real implementation, this would check for active patient treatments
-        // For now, we assume no active treatments
+        // TODO: Implement production-grade active treatment checks:
+        // 1. Query for active emergency access sessions in the last 30 minutes
+        // 2. Check for in-progress consent revocation operations
+        // 3. Verify no active FHIR export jobs
+        // 4. Check for uncommitted patient data modifications
+        // 5. Verify no active healthcare gate validations in progress
+        //
+        // Current implementation assumes no active treatments for rollback safety.
+        // This must be replaced with real treatment tracking before production.
         return false;
     }
 
     /**
-     * Checks audit trail integrity.
+     * Checks audit trail integrity by verifying:
+     * - Audit log sequence continuity
+     * - No gaps in audit event timestamps
+     * - Audit event signature validation (if signed)
+     * - Audit log tamper detection
+     *
+     * @param tenantId the tenant ID to check
+     * @return true if audit trail is intact, false otherwise
      */
     private boolean checkAuditTrailIntegrity(String tenantId) {
-        // In a real implementation, this would verify audit log integrity
-        // For now, we assume audit integrity is good
+        // TODO: Implement production-grade audit integrity checks:
+        // 1. Verify audit event sequence numbers are continuous
+        // 2. Check for gaps in audit event timestamps
+        // 3. Validate audit event signatures if signing is enabled
+        // 4. Run tamper detection on audit log storage
+        // 5. Verify audit log retention policy compliance
+        //
+        // Current implementation assumes audit integrity is good for rollback safety.
+        // This must be replaced with real audit verification before production.
         return true;
     }
 
     /**
-     * Checks consent record consistency.
+     * Checks consent record consistency by verifying:
+     * - Consent grants match patient records
+     * - No orphaned consent records
+     * - Consent revocation timestamps are valid
+     * - Emergency consent grants have proper audit trails
+     *
+     * @param tenantId the tenant ID to check
+     * @return true if consent records are consistent, false otherwise
      */
     private boolean checkConsentConsistency(String tenantId) {
-        // In a real implementation, this would verify consent state consistency
-        // For now, we assume consent is consistent
+        // TODO: Implement production-grade consent consistency checks:
+        // 1. Verify all consent grants have valid patient references
+        // 2. Check for orphaned consent records (no patient reference)
+        // 3. Validate consent revocation timestamps are monotonic
+        // 4. Verify emergency consent grants have required audit trails
+        // 5. Check consent cache consistency with database state
+        //
+        // Current implementation assumes consent is consistent for rollback safety.
+        // This must be replaced with real consent verification before production.
         return true;
     }
 }

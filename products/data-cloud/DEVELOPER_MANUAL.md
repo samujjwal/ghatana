@@ -12,18 +12,16 @@ This manual is the practical developer guide for working on and integrating with
 Data Cloud is Ghatana's data foundation product. It owns:
 
 - entity storage and query
-- event append, replay, and streaming
-- pipeline definitions, execution state, and checkpoints
+- storage-plane event append, replay, and audit records
+- execution metadata and checkpoint persistence when called through public contracts or stable SPI
 - lineage, governance, and context APIs
-- agent memory persistence and plugin-backed extensions
+- agent memory persistence and plugin-backed storage extensions
 - generated SDKs for downstream consumers
 - a React UI for operators and data users
 
-Data Cloud does not own higher-level agent orchestration. AEP integrates with Data Cloud through contracts, events, and persistence APIs.
+Data Cloud does not own higher-level agent orchestration, complex event processing, EventCloud semantics, PatternSpec/EPL, pattern learning/adaptation, or predictive/recommended pattern lifecycle. AEP integrates with Data Cloud through contracts, storage-plane events, persistence APIs, and stable storage SPI.
 
-> **Canonical boundary (2026):** AEP is the Action Plane runtime implementation inside Data Cloud.
-> The Action Plane handles agent execution, workflow orchestration, memory management, and plugin dispatch.
-> Data Cloud planes (Data, Event, Context, Governance, Intelligence) provide the durable infrastructure the Action Plane depends on.
+> **Canonical boundary (2026):** Data-Cloud is the governed data/storage substrate. AEP is the adaptive event intelligence platform. EventCloud and adaptive event semantics belong to AEP. Data-Cloud may provide EventCloud persistence plugins, but those plugins must not expose CEP, PatternSpec, operator-runtime, or learning semantics.
 
 ## 2. Repository Map
 
@@ -34,9 +32,9 @@ Use these modules as the main starting points:
 | `delivery/launcher/` | ActiveJ HTTP server, route wiring, transport handlers |
 | `delivery/runtime-composition/` | runtime composition, profiles, embedded services |
 | `planes/data/entity/` | entity contracts, schema, and storage-facing types |
-| `planes/event/core/` | event-log abstractions and persistence contracts |
+| `planes/event/core/` | storage-plane event-log abstractions and persistence contracts |
 | `planes/intelligence/analytics/` | analytics and reporting services |
-| `extensions/plugins/` | pluggable providers, lineage, vector search, durable stores |
+| `extensions/plugins/` | pluggable providers, lineage, vector search, durable stores, and optional AEP storage adapters |
 | `planes/shared-spi/` | stable SPI and client-facing contracts |
 | `delivery/sdk/` | generated Java, TypeScript, and Python SDKs |
 | `delivery/ui/` | React application |

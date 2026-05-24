@@ -2,6 +2,7 @@ package com.ghatana.kernel.validation;
 
 import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,32 +51,33 @@ public class AssetSchemaValidator {
     public Promise<AssetValidationResult> validateForPromotion(Asset asset) {
         logger.info("Validating asset for promotion: {}", asset.assetId());
 
-        List<ValidationGateResult> gateResults = new ArrayList<>();
+        List<Promise<ValidationGateResult>> gatePromises = new ArrayList<>();
 
         // Mandatory gates
-        gateResults.add(validateSchemaConformance(asset));
-        gateResults.add(validateProductionSafety(asset));
-        gateResults.add(validateTestCoverage(asset));
-        gateResults.add(validateDocumentation(asset));
-        gateResults.add(validateTenantIsolation(asset));
+        gatePromises.add(Promise.of(validateSchemaConformance(asset)));
+        gatePromises.add(validateProductionSafety(asset));
+        gatePromises.add(validateTestCoverage(asset));
+        gatePromises.add(Promise.of(validateDocumentation(asset)));
+        gatePromises.add(validateTenantIsolation(asset));
 
         // Recommended gates
-        gateResults.add(validateObservability(asset));
-        gateResults.add(validateErrorHandling(asset));
-        gateResults.add(validatePerformance(asset));
+        gatePromises.add(Promise.of(validateObservability(asset)));
+        gatePromises.add(Promise.of(validateErrorHandling(asset)));
+        gatePromises.add(Promise.of(validatePerformance(asset)));
 
-        boolean allMandatoryPassed = gateResults.stream()
-            .filter(r -> r.gate().severity() == GateSeverity.BLOCKING)
-            .allMatch(ValidationGateResult::passed);
+        return Promises.toList(gatePromises)
+            .map(gateResults -> {
+                boolean allMandatoryPassed = gateResults.stream()
+                    .filter(r -> r.severity() == GateSeverity.BLOCKING)
+                    .allMatch(ValidationGateResult::passed);
 
-        AssetValidationResult result = new AssetValidationResult(
-            asset.assetId(),
-            allMandatoryPassed ? ValidationStatus.PASSED : ValidationStatus.FAILED,
-            gateResults,
-            calculateOverallScore(gateResults)
-        );
-
-        return Promise.of(result);
+                return new AssetValidationResult(
+                    asset.assetId(),
+                    allMandatoryPassed ? ValidationStatus.PASSED : ValidationStatus.FAILED,
+                    gateResults,
+                    calculateOverallScore(gateResults)
+                );
+            });
     }
 
     private ValidationGateResult validateSchemaConformance(Asset asset) {
@@ -100,36 +102,30 @@ public class AssetSchemaValidator {
         }
     }
 
-    private ValidationGateResult validateProductionSafety(Asset asset) {
+    private Promise<ValidationGateResult> validateProductionSafety(Asset asset) {
         try {
             return productionSafetyValidator.validate(asset.sourceFilePath())
-                .thenMap(safe -> new ValidationGateResult(
+                .map(safe -> new ValidationGateResult(
                     ValidationGate.PRODUCTION_SAFETY,
                     safe,
                     safe ? "No production-unsafe patterns detected" : "Production-unsafe patterns detected",
                     GateSeverity.BLOCKING
-                ))
-                .orElse(new ValidationGateResult(
-                    ValidationGate.PRODUCTION_SAFETY,
-                    false,
-                    "Production safety validation failed",
-                    GateSeverity.BLOCKING
                 ));
         } catch (Exception e) {
             logger.error("Production safety validation failed for asset: {}", asset.assetId(), e);
-            return new ValidationGateResult(
+            return Promise.of(new ValidationGateResult(
                 ValidationGate.PRODUCTION_SAFETY,
                 false,
                 "Validation error: " + e.getMessage(),
                 GateSeverity.BLOCKING
-            );
+            ));
         }
     }
 
-    private ValidationGateResult validateTestCoverage(Asset asset) {
+    private Promise<ValidationGateResult> validateTestCoverage(Asset asset) {
         try {
             return testCoverageValidator.validate(asset.sourceFilePath())
-                .thenMap(coverage -> {
+                .map(coverage -> {
                     boolean passed = coverage >= 80.0;
                     return new ValidationGateResult(
                         ValidationGate.TEST_COVERAGE,
@@ -137,21 +133,15 @@ public class AssetSchemaValidator {
                         String.format("Test coverage: %.1f%%", coverage),
                         GateSeverity.BLOCKING
                     );
-                })
-                .orElse(new ValidationGateResult(
-                    ValidationGate.TEST_COVERAGE,
-                    false,
-                    "Test coverage validation failed",
-                    GateSeverity.BLOCKING
-                ));
+                });
         } catch (Exception e) {
             logger.error("Test coverage validation failed for asset: {}", asset.assetId(), e);
-            return new ValidationGateResult(
+            return Promise.of(new ValidationGateResult(
                 ValidationGate.TEST_COVERAGE,
                 false,
                 "Validation error: " + e.getMessage(),
                 GateSeverity.BLOCKING
-            );
+            ));
         }
     }
 
@@ -178,29 +168,23 @@ public class AssetSchemaValidator {
         }
     }
 
-    private ValidationGateResult validateTenantIsolation(Asset asset) {
+    private Promise<ValidationGateResult> validateTenantIsolation(Asset asset) {
         try {
             return tenantIsolationValidator.validate(asset.sourceFilePath())
-                .thenMap(isolated -> new ValidationGateResult(
+                .map(isolated -> new ValidationGateResult(
                     ValidationGate.TENANT_ISOLATION,
                     isolated,
                     isolated ? "Tenant context properly scoped" : "Tenant isolation issues detected",
                     GateSeverity.BLOCKING
-                ))
-                .orElse(new ValidationGateResult(
-                    ValidationGate.TENANT_ISOLATION,
-                    false,
-                    "Tenant isolation validation failed",
-                    GateSeverity.BLOCKING
                 ));
         } catch (Exception e) {
             logger.error("Tenant isolation validation failed for asset: {}", asset.assetId(), e);
-            return new ValidationGateResult(
+            return Promise.of(new ValidationGateResult(
                 ValidationGate.TENANT_ISOLATION,
                 false,
                 "Validation error: " + e.getMessage(),
                 GateSeverity.BLOCKING
-            );
+            ));
         }
     }
 

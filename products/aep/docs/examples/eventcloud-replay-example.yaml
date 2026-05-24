@@ -1,0 +1,15 @@
+replay:
+  tenantId: tenant-a
+  source: eventcloud
+  patternRef: patterns/deploy-risk-agent-predicate@1.0.0
+  fromOffset: "partition-0:0000001000"
+  toOffset: "partition-0:0000002500"
+  timePolicy:
+    mode: event_time
+    allowedLateness: PT2M
+  agentReplayPolicy:
+    mode: recorded_output
+  output:
+    emitMatches: true
+    emitCorrections: true
+    traceReplay: true

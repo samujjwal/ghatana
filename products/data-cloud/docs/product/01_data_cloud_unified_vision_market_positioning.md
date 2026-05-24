@@ -701,7 +701,7 @@ not as a competing SKU.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Data Cloud core imports Action Plane internals | God product and circular coupling | ArchUnit and Gradle boundary checks |
-| AEP remains documented as a separate product | Market/product confusion | Rewrite docs to Action Plane wording |
+| Data-Cloud and AEP boundaries remain blurred | Ownership, dependency, and runtime-governance confusion | Keep Data-Cloud as storage substrate and AEP as adaptive event intelligence; enforce with ADRs and architecture checks |
 | Public contracts split across folders | SDK/API drift | Centralize under `products/data-cloud/contracts` |
 | Action Plane silently creates non-durable production state | Data loss/compliance risk | Production fail-closed |
 | UI exposes unavailable Action Plane | False runtime claims | Runtime Truth Registry gating |
@@ -713,9 +713,10 @@ not as a competing SKU.
 ## 14. Final Product Narrative
 
 ```text
-Data Cloud is the product.
-The Action Plane is where Data Cloud turns trusted data and events into governed automation, pattern detection, pipelines, human review, learning, and auditable outcomes.
-AEP is the current runtime implementation behind that plane.
+Data-Cloud is the governed data/storage substrate.
+AEP is the adaptive event intelligence platform.
+Data-Cloud provides trusted data, metadata, storage-plane events, audit, retention, schemas, and persistence plugins.
+AEP owns EventCloud, PatternSpec/EPL, operators, pattern detection, learning, agents-as-operators, and pattern governance.
 
 Every operational entity has history.
 Every event has context.
