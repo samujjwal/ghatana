@@ -7,7 +7,7 @@ import com.ghatana.core.operator.OperatorId;
  * Agent operator that explains matches, evidence, confidence, and uncertainty.
  *
  * @doc.type class
- * @doc.purpose Implements AGENT_EXPLANATION as a first-class EventOperator
+ * @doc.purpose Implements AGENT_EXPLANATION as an event-operator capability role
  * @doc.layer product
  * @doc.pattern Operator
  */

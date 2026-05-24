@@ -7,7 +7,7 @@ import com.ghatana.core.operator.OperatorId;
  * Agent operator that emits typed reflection and learning feedback.
  *
  * @doc.type class
- * @doc.purpose Implements AGENT_REFLECTION as a first-class EventOperator
+ * @doc.purpose Implements AGENT_REFLECTION as an event-operator capability role
  * @doc.layer product
  * @doc.pattern Operator
  */

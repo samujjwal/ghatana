@@ -23,7 +23,7 @@ import java.util.Objects;
  * Agent operator that returns a typed decision used as a pattern predicate.
  *
  * @doc.type class
- * @doc.purpose Implements AGENT_PREDICATE as a first-class EventOperator
+ * @doc.purpose Implements AGENT_PREDICATE as an event-operator capability role
  * @doc.layer product
  * @doc.pattern Operator
  */

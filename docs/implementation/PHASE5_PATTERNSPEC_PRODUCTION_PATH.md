@@ -140,7 +140,7 @@ According to the implementation tracker, PatternSpec needs:
 
 - `OperatorSpec` defines operator contracts
 - `OperatorKind` defines operator types
-- `AgentOperator` implements agent operators
+- `EventOperatorCapability` implements event-processing agent capabilities
 
 **Required**:
 
@@ -256,7 +256,7 @@ According to the implementation tracker, PatternSpec needs:
 ## Dependencies
 
 - Phase 4: Action Plane boundary tests (completed)
-- Phase 6: EventOperator/AgentOperator runtime (pending)
+- Phase 6: EventOperatorCapability runtime (pending)
 
 ## Related Files
 

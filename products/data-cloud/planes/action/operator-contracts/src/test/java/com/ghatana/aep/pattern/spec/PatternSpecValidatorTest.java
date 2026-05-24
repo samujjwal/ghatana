@@ -35,7 +35,7 @@ class PatternSpecValidatorTest {
     }
 
     @Test
-    void rejectsAgentOperatorWithoutOutputSchema() {
+    void rejectsAgentCapabilityWithoutOutputSchema() {
         PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
             "operator", "AGENT_ENRICH",
             "agentRef", "agents/enricher@1.0.0",

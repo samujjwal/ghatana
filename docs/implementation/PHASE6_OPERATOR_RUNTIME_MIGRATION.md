@@ -1,4 +1,4 @@
-# Phase 6: EventOperator/AgentOperator Runtime Universal Migration
+# Phase 6: EventOperatorCapability Runtime Universal Migration
 
 ## Current State
 
@@ -7,8 +7,8 @@ The operator runtime has comprehensive contracts and implementations:
 ### Existing Components
 
 - ✅ **EventOperator Contract** - Base event operator interface
-- ✅ **AgentOperator Contract** - Base agent operator interface
-- ✅ **AgentOperator Implementations**:
+- ✅ **EventOperatorCapability Contract** - Event processing as an agent capability
+- ✅ **Agent Capability Implementations**:
   - `AgentActionOperator` - Action execution
   - `AgentPredicateOperator` - Predicate evaluation
   - `AgentEnrichmentOperator` - Data enrichment
@@ -22,12 +22,12 @@ The operator runtime has comprehensive contracts and implementations:
   - `OperatorCatalogQuery` - Catalog query
 - ✅ **Operator Registry**:
   - `OperatorRegistry` - Operator registration
-  - `AgentOperatorFactory` - Agent operator factory
+  - `AgentCapabilityExecutionFactory` - Agent capability execution factory
 - ✅ **Operator Runtime Context**:
   - `OperatorRuntimeContext` - Runtime context
   - `EventOperatorResult` - Operator result
 - ✅ **Operator Tests**:
-  - `AgentOperatorArchitectureContractTest`
+  - `EventOperatorCapabilityArchitectureContractTest`
   - `AgentActionOperatorTest`
   - `AgentPredicateOperatorTest`
   - `AgentInferenceOperatorsTest`
@@ -37,7 +37,7 @@ The operator runtime has comprehensive contracts and implementations:
 ## Target State
 
 According to the implementation tracker, the next step is:
-**Making every agent use in the Action Plane go through AgentOperator, not direct callbacks, detector-specific agents, ad hoc dispatchers, or service-level shortcuts.**
+**Making every event-processing agent use in the Action Plane go through `EventOperatorCapability`, not direct callbacks, detector-specific agents, ad hoc dispatchers, or service-level shortcuts.**
 
 ## Implementation Tasks
 
@@ -60,7 +60,7 @@ According to the implementation tracker, the next step is:
 - Search for ad hoc dispatchers
 - Document findings in migration inventory
 
-### 2. Create AgentOperator Adapter Layer
+### 2. Create EventOperatorCapability Adapter Layer
 
 **Status**: Pending
 
@@ -73,10 +73,10 @@ According to the implementation tracker, the next step is:
 
 **Implementation**:
 
-- Create `AgentOperatorAdapter` service
+- Create `AgentEventOperatorCapabilityAdapter` service
 - Add adapter tests
 - Add migration path documentation
-- Ensure adapter delegates to AgentOperator
+- Ensure adapter invokes an agent capability through the event-operator execution contract
 
 ### 3. Migrate Direct Agent Calls
 
@@ -84,7 +84,7 @@ According to the implementation tracker, the next step is:
 
 **Required**:
 
-- Replace direct agent calls with AgentOperator invocations
+- Replace direct agent calls with `EventOperatorCapability` invocations
 - Update call sites to use operator catalog
 - Ensure operator context is passed
 - Add migration tests
@@ -92,7 +92,7 @@ According to the implementation tracker, the next step is:
 **Implementation**:
 
 - Identify call sites from audit
-- Replace with AgentOperator calls
+- Replace with `EventOperatorCapability` calls
 - Add operator context
 - Add regression tests
 
@@ -102,7 +102,7 @@ According to the implementation tracker, the next step is:
 
 **Required**:
 
-- Convert detector-specific agents to AgentOperator implementations
+- Convert detector-specific agents to `EventOperatorCapability` implementations
 - Register in operator catalog
 - Update detector logic to use operators
 - Add migration tests
@@ -110,7 +110,7 @@ According to the implementation tracker, the next step is:
 **Implementation**:
 
 - Identify detector-specific agents
-- Create AgentOperator implementations
+- Create `EventOperatorCapability` implementations
 - Register in catalog
 - Update detector logic
 
@@ -156,7 +156,7 @@ According to the implementation tracker, the next step is:
 
 **Required**:
 
-- Verify all agent uses go through AgentOperator
+- Verify all event-processing agent uses go through `EventOperatorCapability`
 - Verify no direct agent calls remain
 - Verify no detector-specific agents remain
 - Verify no ad hoc dispatchers remain
@@ -172,7 +172,7 @@ According to the implementation tracker, the next step is:
 
 ## Exit Criteria
 
-- [ ] All agent uses go through AgentOperator
+- [ ] All event-processing agent uses go through `EventOperatorCapability`
 - [ ] No direct agent calls remain
 - [ ] No detector-specific agents remain
 - [ ] No ad hoc dispatchers remain
@@ -187,9 +187,9 @@ According to the implementation tracker, the next step is:
 ## Related Files
 
 - `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/operator/contract/EventOperator.java`
-- `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/core/operator/agent/AgentOperator.java`
+- `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java`
 - `products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/core/operator/catalog/UnifiedOperatorCatalog.java`
-- `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentOperatorFactory.java`
+- `products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentCapabilityExecutionFactory.java`
 
 ## Notes
 
@@ -197,7 +197,7 @@ The operator runtime has excellent contracts and implementations. The main task 
 
 1. Audit all agent usage patterns in the Action Plane
 2. Create adapter layer for backward compatibility
-3. Migrate all agent uses to go through AgentOperator
+3. Migrate all event-processing agent uses to go through `EventOperatorCapability`
 4. Validate universal migration with CI checks
 
 This is a significant refactoring that should be done incrementally with each migration having corresponding tests and validation.

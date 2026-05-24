@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AgentOperatorArchitectureContractTest {
+class EventOperatorCapabilityArchitectureContractTest {
 
     @Test
     void eventOperatorCapabilityIsCapabilityAndEventOperator() {
@@ -40,7 +40,7 @@ class AgentOperatorArchitectureContractTest {
     }
 
     @Test
-    void concreteAgentOperatorsExposeCanonicalOperatorKinds() {
+    void concreteAgentCapabilitiesExposeCanonicalCapabilityRoles() {
         AgentPredicateOperator predicate = new AgentPredicateOperator(
             OperatorId.of("tenant-a", "agent", "predicate", "1.0.0"),
             "agents/predicate@1.0.0",

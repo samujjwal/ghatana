@@ -10,6 +10,11 @@ const DEFAULT_SCOPES = [
   'products/aep/ARCHITECTURE.md',
   'products/aep/docs/DISSERTATION_TRACEABILITY.md',
   'products/data-cloud/ARCHITECTURE.md',
+  'docs/03-architecture',
+  'docs/implementation',
+  'docs/agent-system',
+  'products/data-cloud/planes/action/agent-runtime/README.md',
+  'products/data-cloud/planes/action/agent-runtime/OWNER.md',
   '.github/copilot-instructions.md',
 ];
 
@@ -43,6 +48,11 @@ const FORBIDDEN_PATTERNS = [
     id: 'pattern-agent-operator-helper',
     pattern: /\bisAgentOperator\s*\(/,
     message: 'Pattern runtime nodes must expose agent capabilities',
+  },
+  {
+    id: 'stale-agent-as-event-operator-language',
+    pattern: /agent-as-operator|Agent-as-operator|first-class EventOperator|AgentOperator\s+extends\s+EventOperator/i,
+    message: 'Docs must describe event processing as an AgentCapability',
   },
 ];
 

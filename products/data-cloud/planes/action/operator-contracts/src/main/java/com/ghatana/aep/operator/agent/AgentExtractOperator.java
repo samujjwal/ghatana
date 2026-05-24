@@ -7,7 +7,7 @@ import com.ghatana.core.operator.OperatorId;
  * Agent operator that extracts typed facts or entities from event context.
  *
  * @doc.type class
- * @doc.purpose Implements AGENT_EXTRACT as a first-class EventOperator
+ * @doc.purpose Implements AGENT_EXTRACT as an event-operator capability role
  * @doc.layer product
  * @doc.pattern Operator
  */

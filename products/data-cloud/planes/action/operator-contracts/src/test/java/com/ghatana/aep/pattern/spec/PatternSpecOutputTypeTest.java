@@ -79,8 +79,8 @@ class PatternSpecOutputTypeTest {
     class NestedPatternOutputTypeTests {
 
         @Test
-        @DisplayName("nested agent operator requires outputSchema")
-        void nestedAgentOperatorRequiresOutputSchema() {
+        @DisplayName("nested agent capability requires outputSchema")
+        void nestedAgentCapabilityRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "SEQ",
                 "operands", List.of(
@@ -95,8 +95,8 @@ class PatternSpecOutputTypeTest {
         }
 
         @Test
-        @DisplayName("nested agent operator with outputSchema is valid")
-        void nestedAgentOperatorWithOutputSchemaIsValid() {
+        @DisplayName("nested agent capability with outputSchema is valid")
+        void nestedAgentCapabilityWithOutputSchemaIsValid() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "SEQ",
                 "operands", List.of(
@@ -111,8 +111,8 @@ class PatternSpecOutputTypeTest {
         }
 
         @Test
-        @DisplayName("deeply nested agent operator requires outputSchema")
-        void deeplyNestedAgentOperatorRequiresOutputSchema() {
+        @DisplayName("deeply nested agent capability requires outputSchema")
+        void deeplyNestedAgentCapabilityRequiresOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "SEQ",
                 "operands", List.of(
@@ -157,8 +157,8 @@ class PatternSpecOutputTypeTest {
         }
 
         @Test
-        @DisplayName("multiple agent operators each require outputSchema")
-        void multipleAgentOperatorsRequireOutputSchema() {
+        @DisplayName("multiple agent capabilities each require outputSchema")
+        void multipleAgentCapabilitiesRequireOutputSchema() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "SEQ",
                 "operands", List.of(

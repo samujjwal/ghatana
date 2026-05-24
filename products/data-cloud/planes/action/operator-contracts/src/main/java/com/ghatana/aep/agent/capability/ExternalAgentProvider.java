@@ -12,5 +12,7 @@ public interface ExternalAgentProvider {
 
     String providerId();
 
+    CapabilityProviderHealth health();
+
     List<CapabilityDescriptor> capabilities();
 }

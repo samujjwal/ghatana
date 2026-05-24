@@ -7,7 +7,7 @@ import com.ghatana.core.operator.OperatorId;
  * Agent operator that enriches event or match context with typed derived fields.
  *
  * @doc.type class
- * @doc.purpose Implements AGENT_ENRICH as a first-class EventOperator
+ * @doc.purpose Implements AGENT_ENRICH as an event-operator capability role
  * @doc.layer product
  * @doc.pattern Operator
  */

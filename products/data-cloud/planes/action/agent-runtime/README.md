@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`products/data-cloud/planes/action/agent-runtime` is the secure agent execution sandbox currently co-located in Data-Cloud. It implements AEP-owned AgentOperator runtime behavior while the repo keeps the Data-Cloud/AEP code split in transition.
+`products/data-cloud/planes/action/agent-runtime` is the secure agent execution sandbox currently co-located in Data-Cloud. It implements AEP-owned `EventOperatorCapability` runtime behavior while the repo keeps the Data-Cloud/AEP code split in transition.
 
 - Memory security management for agent contexts (`MemorySecurityManager`)
 - PII/secret redaction for agent inputs and outputs (`RedactionPatternProvider`, `YamlRedactionPatternProvider`)

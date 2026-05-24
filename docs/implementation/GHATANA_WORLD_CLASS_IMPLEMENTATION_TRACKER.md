@@ -111,7 +111,7 @@ The core `EventOperator` contract exists with `id`, `kind`, `version`, `validate
 
 The canonical `EventOperatorCapability` contract extends `AgentCapability<EventContext<I>, EventOperatorResult<O>>` and implements the AEP `EventOperator<I, O>` execution contract. The runtime adapter declares agent reference, capability role, side-effect profile, schemas, model/tool/memory/retrieval/guardrail/replay/uncertainty/human-review/observability policies.
 
-The `OperatorKind` enum includes standard pattern operators and all agent operator kinds: `AGENT_PREDICATE`, `AGENT_ENRICH`, `AGENT_EXTRACT`, `AGENT_PATTERN_SYNTHESIS`, `AGENT_EXPLANATION`, `AGENT_REVIEW`, `AGENT_ACTION`, and `AGENT_REFLECTION`.
+The `OperatorKind` enum includes standard pattern operators and all agent capability roles: `AGENT_PREDICATE`, `AGENT_ENRICH`, `AGENT_EXTRACT`, `AGENT_PATTERN_SYNTHESIS`, `AGENT_EXPLANATION`, `AGENT_REVIEW`, `AGENT_ACTION`, and `AGENT_REFLECTION`.
 
 There is also an architecture contract test verifying `EventOperatorCapability` is an `AgentCapability` and implements `EventOperator`, and it checks canonical agent capability roles plus governance requirements for side-effecting action capabilities.
 
@@ -119,7 +119,7 @@ This is a major positive. The architectural foundation for your two principles i
 
 ## 2.4 PatternSpec foundation exists but is still lightweight
 
-`PatternSpecValidator` validates required sections, semantics, emit, lifecycle, operator shape, agent operator output schemas, and `AGENT_ACTION` governance/tool policy requirements.
+`PatternSpecValidator` validates required sections, semantics, emit, lifecycle, operator shape, agent capability output schemas, and `AGENT_ACTION` governance/tool policy requirements.
 
 `PatternSpecCompiler` compiles structurally valid PatternSpec maps into deterministic runtime graph contracts, producing a `CompiledPattern` with root runtime node, node order, metadata, semantics, emit, lifecycle, and governance.
 
@@ -127,7 +127,7 @@ This is good, but it is still mostly structural. It is not yet a complete produc
 
 ## 2.5 Uncertainty foundation exists but needs production calibration
 
-`UncertaintyPropagator` implements deterministic propagation rules across AND, OR, SEQ, NOT/ABSENCE, WITHIN/WINDOW, TIMES/REPEAT, and all agent operators. It tracks event detection confidence, attribute confidence, temporal confidence, source reliability, pattern confidence, model confidence, retrieval confidence, input completeness, and calibration score.
+`UncertaintyPropagator` implements deterministic propagation rules across AND, OR, SEQ, NOT/ABSENCE, WITHIN/WINDOW, TIMES/REPEAT, and all agent capabilities. It tracks event detection confidence, attribute confidence, temporal confidence, source reliability, pattern confidence, model confidence, retrieval confidence, input completeness, and calibration score.
 
 This is a strong foundation. But production readiness still requires calibration, thresholds, golden datasets, replay validation, and operator-wide enforcement.
 

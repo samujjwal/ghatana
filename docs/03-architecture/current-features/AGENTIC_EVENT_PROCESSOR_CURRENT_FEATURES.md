@@ -15,7 +15,7 @@ AEP currently has strong foundations for event processing, pipelines, operators,
 5. Pattern registry and governance.
 6. Learning outputs connected to pattern recommendation and promotion.
 7. Consistent observability through `MetricsCollector` and tracing.
-8. Replay-safe execution for agent operators.
+8. Replay-safe execution for agent capabilities.
 9. CI, build, and test gates for AEP.
 
 ## Verified Implemented
@@ -27,7 +27,7 @@ AEP currently has strong foundations for event processing, pipelines, operators,
 - `EventOperator` defines the unified validation, compilation, and execution contract for AEP operators.
 - `EventOperatorCapability` extends `AgentCapability` and implements the event-operator execution contract; canonical agent capability roles and side-effect classification are contract-tested.
 - `AgentPredicateOperator`, `AgentEnrichmentOperator`, `AgentExtractOperator`, `AgentPatternSynthesisOperator`, `AgentExplanationOperator`, `AgentReviewOperator`, `AgentActionOperator`, and `AgentReflectionOperator` exist as contract-level operator implementations.
-- Contract-level agent operators include replay behavior, schema validation, typed outputs, confidence propagation, pattern suggestion guardrails, review guardrails, approval, tool, audit, and idempotency checks where applicable.
+- Contract-level agent capabilities include replay behavior, schema validation, typed outputs, confidence propagation, pattern suggestion guardrails, review guardrails, approval, tool, audit, and idempotency checks where applicable.
 - `AgentActionOperator` emits canonical `action.failed`, `action.requested`, and `action.executed` audit events around governed action execution.
 - EventCloud SPI contracts exist for append, tail, replay, subscription, checkpoint, partial-match state, offset, partition, tenant, watermark, and dead-letter metadata.
 - Data-Cloud-backed `EventCloudStore` bridge exists in the AEP event-bridge module; it uses Data-Cloud event-log persistence behind the AEP SPI without putting PatternSpec or CEP semantics into Data-Cloud storage modules.

@@ -7,7 +7,7 @@
 
 ## Responsibility
 
-Agent execution runtime currently co-located in the Data-Cloud Action Plane. It provides the execution environment for agents within pipelines and workflows while AEP remains the semantic owner for EventCloud, PatternSpec, EventOperator, AgentOperator, pattern learning, and replay semantics.
+Agent execution runtime currently co-located in the Data-Cloud Action Plane. It provides the execution environment for agents within pipelines and workflows while AEP remains the semantic owner for EventCloud, PatternSpec, EventOperator, EventOperatorCapability, pattern learning, and replay semantics.
 
 **Boundary note:** Keep this implementation here for now, but do not describe AEP as retired into Data-Cloud. Data-Cloud may host compatibility/runtime code during migration; AEP owns adaptive event intelligence semantics and may later move to its canonical product tree.
 

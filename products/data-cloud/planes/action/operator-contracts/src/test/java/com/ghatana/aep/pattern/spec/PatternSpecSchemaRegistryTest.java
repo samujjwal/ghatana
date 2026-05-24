@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>These tests enforce:
  * <ul>
- *   <li>Output schema is required for all agent operators</li>
+ *   <li>Output schema is required for all agent capabilities</li>
  *   <li>Output schema must be a valid schema reference</li>
  *   <li>Emit section requires output schema</li>
  * </ul>
@@ -27,12 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PatternSpecSchemaRegistryTest {
 
     // =========================================================================
-    //  Agent Operator Output Schema Requirements
+    //  Agent Capability Output Schema Requirements
     // =========================================================================
 
     @Nested
-    @DisplayName("Agent Operator Output Schema")
-    class AgentOperatorSchemaTests {
+    @DisplayName("Agent Capability Output Schema")
+    class AgentCapabilitySchemaTests {
 
         @Test
         @DisplayName("AGENT_PREDICATE requires outputSchema")
@@ -132,7 +132,7 @@ class PatternSpecSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("agent operator with outputSchema is valid")
+        @DisplayName("agent capability with outputSchema is valid")
         void agentOperatorWithOutputSchemaIsValid() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",

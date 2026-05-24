@@ -54,7 +54,10 @@ class ExternalAgentCapabilityContractTest extends EventloopTestBase {
             invocation,
             mapOutputType()));
 
+        assertThat(registry.providers()).containsExactly("external-helpdesk");
         assertThat(registry.list()).containsExactly(descriptor);
+        assertThat(registry.providerHealth("external-helpdesk"))
+            .isEqualTo(CapabilityProviderHealth.healthy("provider ready"));
         assertThat(result.success()).isTrue();
         assertThat(result.output()).contains(Map.of("category", "account-access", "priority", "p2"));
         assertThat(result.confidence()).isEqualTo(0.91);
@@ -76,13 +79,20 @@ class ExternalAgentCapabilityContractTest extends EventloopTestBase {
         private FakeExternalProvider {
             capabilities = List.copyOf(capabilities);
         }
+
+        @Override
+        public CapabilityProviderHealth health() {
+            return CapabilityProviderHealth.healthy("provider ready");
+        }
     }
 
     private static final class FakeExternalCapabilityRegistry implements ExternalAgentCapabilityRegistry {
         private final Map<CapabilityId, CapabilityDescriptor> descriptors = new LinkedHashMap<>();
+        private final Map<String, CapabilityProviderHealth> providerHealth = new LinkedHashMap<>();
 
         @Override
         public void register(ExternalAgentProvider provider) {
+            providerHealth.put(provider.providerId(), provider.health());
             for (CapabilityDescriptor descriptor : provider.capabilities()) {
                 descriptors.put(descriptor.id(), descriptor);
             }
@@ -96,6 +106,14 @@ class ExternalAgentCapabilityContractTest extends EventloopTestBase {
         @Override
         public List<CapabilityDescriptor> list() {
             return new ArrayList<>(descriptors.values());
+        }
+
+        private List<String> providers() {
+            return new ArrayList<>(providerHealth.keySet());
+        }
+
+        private CapabilityProviderHealth providerHealth(String providerId) {
+            return providerHealth.get(providerId);
         }
     }
 

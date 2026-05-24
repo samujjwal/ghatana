@@ -157,7 +157,7 @@ From ADR-020 (adopted 2026-04):
 |---------|-------------------|-----------------|
 | Runtime interface | `TypedAgent<I,O>` | `aep-agent-runtime` execution |
 | Registry metadata | `AgentDescriptor` | `aep-registry` catalog |
-| Pipeline step | `AgentOperator` wrapper | `aep-engine` pipeline steps |
+| Pipeline step | `EventOperatorCapability` binding | `aep-engine` pipeline steps |
 | Safety | Invariant checking | `GovernedAgentDispatcher` |
 | Learning | Learning levels L0–L5 | `aep-analytics` feedback loop |
 | Memory | `platform/java/agent-memory` SPI | Data Cloud `evidence-store` |
