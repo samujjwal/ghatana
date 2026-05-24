@@ -7,6 +7,7 @@ import com.ghatana.core.operator.agent.AgentOperator;
 import com.ghatana.core.operator.agent.AgentOperatorKind;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +52,9 @@ public record OperatorCatalogEntry(
     public static OperatorCatalogEntry fromOperator(UnifiedOperator operator) {
         Objects.requireNonNull(operator, "operator");
         if (operator instanceof AgentOperator agentOperator) {
+            Map<String, String> metadata = new HashMap<>(agentOperator.getMetadata());
+            metadata.put(OperatorCatalogAdmissionPolicy.METADATA_TOOL_POLICY_DECLARED,
+                String.valueOf(!agentOperator.toolPolicy().isEmpty()));
             return new OperatorCatalogEntry(
                 agentOperator.getId(),
                 agentOperator.getType(),
@@ -62,7 +66,7 @@ public record OperatorCatalogEntry(
                 agentOperator.getMetadata().getOrDefault("owner", ""),
                 agentOperator.getVersion(),
                 agentOperator.getCapabilities(),
-                agentOperator.getMetadata());
+                metadata);
         }
         return new OperatorCatalogEntry(
             operator.getId(),

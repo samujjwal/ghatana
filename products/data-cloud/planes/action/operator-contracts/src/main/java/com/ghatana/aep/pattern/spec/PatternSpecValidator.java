@@ -84,6 +84,7 @@ public final class PatternSpecValidator {
         if (AGENT_OPERATORS.contains(operatorKind) && isBlank(expression.get("outputSchema"))) {
             errors.add(path + "." + operatorKind + " requires outputSchema");
         }
+        validateOperatorShape(operatorKind, expression, path, errors);
         if (operatorKind == OperatorKind.AGENT_ACTION) {
             validateAgentAction(expression, path, governance, errors);
         }
@@ -104,6 +105,71 @@ public final class PatternSpecValidator {
         if (nestedPattern instanceof Map<?, ?> nestedMap) {
             validateExpression(nestedMap, path + ".pattern", governance, errors);
         }
+    }
+
+    private static void validateOperatorShape(
+            OperatorKind operatorKind,
+            Map<?, ?> expression,
+            String path,
+            List<String> errors) {
+        switch (operatorKind) {
+            case AND, OR, SEQ -> requireOperandCount(expression, path, 2, errors);
+            case NOT -> requireNestedPattern(expression, path, errors);
+            case WITHIN -> {
+                requireNestedPattern(expression, path, errors);
+                requireAny(expression, path, errors, "within", "duration");
+            }
+            case TIMES, REPEAT -> {
+                requireNestedPatternOrEvent(expression, path, errors);
+                requireAny(expression, path, errors, "min", "bounds");
+            }
+            case WINDOW -> {
+                requireNestedPattern(expression, path, errors);
+                requireAny(expression, path, errors, "window", "windowSpec");
+            }
+            case ABSENCE -> {
+                if (isBlank(expression.get("event"))) {
+                    errors.add(path + ".ABSENCE requires event");
+                }
+                requireAny(expression, path, errors, "window", "windowSpec");
+            }
+            case FILTER -> requireNestedPatternOrEvent(expression, path, errors);
+            default -> {
+                // Leaf/event/agent/learning operators are validated by their specific contracts.
+            }
+        }
+    }
+
+    private static void requireOperandCount(
+            Map<?, ?> expression,
+            String path,
+            int minimum,
+            List<String> errors) {
+        Object operands = expression.get("operands");
+        if (!(operands instanceof List<?> list) || list.size() < minimum) {
+            errors.add(path + "." + expression.get("operator") + " requires at least " + minimum + " operands");
+        }
+    }
+
+    private static void requireNestedPattern(Map<?, ?> expression, String path, List<String> errors) {
+        if (!(expression.get("pattern") instanceof Map<?, ?>)) {
+            errors.add(path + "." + expression.get("operator") + " requires nested pattern");
+        }
+    }
+
+    private static void requireNestedPatternOrEvent(Map<?, ?> expression, String path, List<String> errors) {
+        if (!(expression.get("pattern") instanceof Map<?, ?>) && isBlank(expression.get("event"))) {
+            errors.add(path + "." + expression.get("operator") + " requires nested pattern or event");
+        }
+    }
+
+    private static void requireAny(Map<?, ?> expression, String path, List<String> errors, String... keys) {
+        for (String key : keys) {
+            if (!isBlank(expression.get(key))) {
+                return;
+            }
+        }
+        errors.add(path + "." + expression.get("operator") + " requires one of " + String.join(", ", keys));
     }
 
     private static void validateSemantics(Object semantics, List<String> errors) {

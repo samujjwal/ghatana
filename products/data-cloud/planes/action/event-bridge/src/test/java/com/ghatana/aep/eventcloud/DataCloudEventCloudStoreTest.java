@@ -58,7 +58,8 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
 
     @Test
     void persistsCheckpointsAndPartialMatchesBehindAepSpi() {
-        DataCloudEventCloudStore store = store();
+        InMemoryEventLogStoreProvider provider = new InMemoryEventLogStoreProvider();
+        DataCloudEventCloudStore store = store(provider);
         EventCloudOffset offset = new EventCloudOffset("tenant-a", "partition-a", 42L);
         EventCloudCheckpoint checkpoint = new EventCloudCheckpoint(
             "tenant-a",
@@ -83,11 +84,43 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
             .contains(checkpoint);
         assertThat(runPromise(() -> store.partialMatches().loadForPattern("tenant-a", "pattern-1")))
             .containsExactly(partialMatch);
+
+        DataCloudEventCloudStore restartedStore = store(provider);
+        assertThat(runPromise(() -> restartedStore.checkpoints().load("tenant-a", "consumer-1")))
+            .contains(checkpoint);
+        assertThat(runPromise(() -> restartedStore.partialMatches().load("tenant-a", "partial-1")))
+            .contains(partialMatch);
+    }
+
+    @Test
+    void partialMatchDeletePersistsAsStateEvent() {
+        InMemoryEventLogStoreProvider provider = new InMemoryEventLogStoreProvider();
+        DataCloudEventCloudStore store = store(provider);
+        PatternPartialMatch partialMatch = new PatternPartialMatch(
+            "partial-1",
+            "pattern-1",
+            "tenant-a",
+            Instant.parse("2026-05-23T00:00:00Z"),
+            Instant.parse("2026-05-23T01:00:00Z"),
+            List.of(event("event-1", "deploy.started", "partition-a")),
+            Map.of("service", "checkout"),
+            0.88);
+
+        runPromise(() -> store.partialMatches().save(partialMatch));
+        runPromise(() -> store.partialMatches().delete("tenant-a", "partial-1"));
+
+        DataCloudEventCloudStore restartedStore = store(provider);
+        assertThat(runPromise(() -> restartedStore.partialMatches().load("tenant-a", "partial-1")))
+            .isEmpty();
     }
 
     private static DataCloudEventCloudStore store() {
+        return store(new InMemoryEventLogStoreProvider());
+    }
+
+    private static DataCloudEventCloudStore store(InMemoryEventLogStoreProvider provider) {
         return new DataCloudEventCloudStore(
-            EventLogStoreAdapters.toPlatformStore(new InMemoryEventLogStoreProvider()));
+            EventLogStoreAdapters.toPlatformStore(provider));
     }
 
     private static CanonicalEvent event(String eventId, String eventType, String partition) {

@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 /**
  * Data-Cloud-backed implementation of the AEP {@link EventCloudStore} SPI.
@@ -52,11 +52,15 @@ public final class DataCloudEventCloudStore implements EventCloudStore {
     private static final String HEADER_PARTITION = "aep.partition";
     private static final String DEFAULT_PARTITION = "default";
     private static final int REPLAY_BATCH_LIMIT = 1_000;
+    private static final int STATE_READ_LIMIT = 10_000;
+    private static final String CHECKPOINT_SAVED = "aep.eventcloud.checkpoint.saved";
+    private static final String PARTIAL_MATCH_SAVED = "aep.eventcloud.partial_match.saved";
+    private static final String PARTIAL_MATCH_DELETED = "aep.eventcloud.partial_match.deleted";
 
     private final EventLogStore eventLogStore;
     private final ObjectMapper objectMapper;
-    private final EventCloudCheckpointStore checkpointStore = new InMemoryCheckpointStore();
-    private final EventCloudPartialMatchStore partialMatchStore = new InMemoryPartialMatchStore();
+    private final EventCloudCheckpointStore checkpointStore;
+    private final EventCloudPartialMatchStore partialMatchStore;
 
     public DataCloudEventCloudStore(EventLogStore eventLogStore) {
         this(eventLogStore, new ObjectMapper());
@@ -65,6 +69,8 @@ public final class DataCloudEventCloudStore implements EventCloudStore {
     public DataCloudEventCloudStore(EventLogStore eventLogStore, ObjectMapper objectMapper) {
         this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper required");
+        this.checkpointStore = new EventLogCheckpointStore();
+        this.partialMatchStore = new EventLogPartialMatchStore();
     }
 
     @Override
@@ -319,51 +325,209 @@ public final class DataCloudEventCloudStore implements EventCloudStore {
         return result;
     }
 
-    private static final class InMemoryCheckpointStore implements EventCloudCheckpointStore {
-        private final Map<String, EventCloudCheckpoint> checkpoints = new ConcurrentHashMap<>();
-
+    private final class EventLogCheckpointStore implements EventCloudCheckpointStore {
         @Override
         public Promise<Void> save(EventCloudCheckpoint checkpoint) {
-            checkpoints.put(checkpoint.tenantId() + ":" + checkpoint.consumerId(), checkpoint);
-            return Promise.complete();
+            return appendStateEvent(
+                checkpoint.tenantId(),
+                CHECKPOINT_SAVED,
+                checkpointPayload(checkpoint),
+                "checkpoint:" + checkpoint.consumerId())
+                .map(ignored -> null);
         }
 
         @Override
         public Promise<Optional<EventCloudCheckpoint>> load(String tenantId, String consumerId) {
-            return Promise.of(Optional.ofNullable(checkpoints.get(tenantId + ":" + consumerId)));
+            return eventLogStore.readByType(TenantContext.of(tenantId), CHECKPOINT_SAVED, Offset.zero(), STATE_READ_LIMIT)
+                .map(entries -> entries.stream()
+                    .map(DataCloudEventCloudStore.this::checkpointFromEntry)
+                    .filter(checkpoint -> consumerId.equals(checkpoint.consumerId()))
+                    .reduce((ignored, latest) -> latest));
         }
     }
 
-    private static final class InMemoryPartialMatchStore implements EventCloudPartialMatchStore {
-        private final Map<String, PatternPartialMatch> partialMatches = new ConcurrentHashMap<>();
-
+    private final class EventLogPartialMatchStore implements EventCloudPartialMatchStore {
         @Override
         public Promise<Void> save(PatternPartialMatch partialMatch) {
-            partialMatches.put(key(partialMatch.tenantId(), partialMatch.partialMatchId()), partialMatch);
-            return Promise.complete();
+            return appendStateEvent(
+                partialMatch.tenantId(),
+                PARTIAL_MATCH_SAVED,
+                partialMatchPayload(partialMatch),
+                "partial-match:" + partialMatch.partialMatchId())
+                .map(ignored -> null);
         }
 
         @Override
         public Promise<Optional<PatternPartialMatch>> load(String tenantId, String partialMatchId) {
-            return Promise.of(Optional.ofNullable(partialMatches.get(key(tenantId, partialMatchId))));
+            return latestPartialMatches(tenantId)
+                .map(matches -> Optional.ofNullable(matches.get(partialMatchId)));
         }
 
         @Override
         public Promise<List<PatternPartialMatch>> loadForPattern(String tenantId, String patternId) {
-            return Promise.of(partialMatches.values().stream()
-                .filter(match -> tenantId.equals(match.tenantId()))
+            return latestPartialMatches(tenantId)
+                .map(matches -> matches.values().stream()
                 .filter(match -> patternId.equals(match.patternId()))
                 .toList());
         }
 
         @Override
         public Promise<Void> delete(String tenantId, String partialMatchId) {
-            partialMatches.remove(key(tenantId, partialMatchId));
-            return Promise.complete();
+            return appendStateEvent(
+                tenantId,
+                PARTIAL_MATCH_DELETED,
+                Map.of("partialMatchId", partialMatchId),
+                "partial-match-delete:" + partialMatchId)
+                .map(ignored -> null);
         }
+    }
 
-        private static String key(String tenantId, String partialMatchId) {
-            return tenantId + ":" + partialMatchId;
+    private Promise<Offset> appendStateEvent(
+            String tenantId,
+            String eventType,
+            Map<String, Object> payload,
+            String idempotencyKey) {
+        return eventLogStore.append(TenantContext.of(tenantId), EventEntry.builder()
+            .eventId(UUID.randomUUID())
+            .eventType(eventType)
+            .payload(writeJson(payload))
+            .contentType("application/json")
+            .headers(Map.of("aep.stateType", eventType))
+            .idempotencyKey(idempotencyKey)
+            .build());
+    }
+
+    private byte[] writeJson(Map<String, Object> payload) {
+        try {
+            return objectMapper.writeValueAsBytes(payload);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unable to serialize EventCloud state", ex);
         }
+    }
+
+    private Map<String, Object> readJson(EventEntry entry) {
+        try {
+            return objectMapper.readValue(bytes(entry.payload()), new TypeReference<>() {
+            });
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unable to deserialize EventCloud state", ex);
+        }
+    }
+
+    private Map<String, Object> checkpointPayload(EventCloudCheckpoint checkpoint) {
+        return Map.of(
+            "tenantId", checkpoint.tenantId(),
+            "consumerId", checkpoint.consumerId(),
+            "partition", checkpoint.offset().partition(),
+            "offset", checkpoint.offset().offset(),
+            "checkpointedAt", checkpoint.checkpointedAt().toString(),
+            "metadata", checkpoint.metadata());
+    }
+
+    private EventCloudCheckpoint checkpointFromEntry(EventEntry entry) {
+        Map<String, Object> payload = readJson(entry);
+        String tenantId = string(payload, "tenantId");
+        return new EventCloudCheckpoint(
+            tenantId,
+            string(payload, "consumerId"),
+            new EventCloudOffset(
+                tenantId,
+                string(payload, "partition"),
+                longValue(payload.get("offset"))),
+            Instant.parse(string(payload, "checkpointedAt")),
+            stringObjectMap(payload.get("metadata")));
+    }
+
+    private Map<String, Object> partialMatchPayload(PatternPartialMatch partialMatch) {
+        return Map.of(
+            "partialMatchId", partialMatch.partialMatchId(),
+            "patternId", partialMatch.patternId(),
+            "tenantId", partialMatch.tenantId(),
+            "startedAt", partialMatch.startedAt().toString(),
+            "expiresAt", partialMatch.expiresAt().toString(),
+            "events", partialMatch.events().stream().map(DataCloudEventCloudStore::toEnvelope).toList(),
+            "bindings", partialMatch.bindings(),
+            "confidence", partialMatch.confidence());
+    }
+
+    private PatternPartialMatch partialMatchFromEntry(EventEntry entry) {
+        Map<String, Object> payload = readJson(entry);
+        return new PatternPartialMatch(
+            string(payload, "partialMatchId"),
+            string(payload, "patternId"),
+            string(payload, "tenantId"),
+            Instant.parse(string(payload, "startedAt")),
+            Instant.parse(string(payload, "expiresAt")),
+            canonicalEvents(payload.get("events")),
+            stringObjectMap(payload.get("bindings")),
+            doubleValue(payload.get("confidence")));
+    }
+
+    private Promise<Map<String, PatternPartialMatch>> latestPartialMatches(String tenantId) {
+        return eventLogStore.readByType(TenantContext.of(tenantId), PARTIAL_MATCH_SAVED, Offset.zero(), STATE_READ_LIMIT)
+            .then(saved -> eventLogStore.readByType(TenantContext.of(tenantId), PARTIAL_MATCH_DELETED, Offset.zero(), STATE_READ_LIMIT)
+                .map(deleted -> {
+                    Map<String, PatternPartialMatch> matches = new LinkedHashMap<>();
+                    for (EventEntry entry : saved) {
+                        PatternPartialMatch partialMatch = partialMatchFromEntry(entry);
+                        matches.put(partialMatch.partialMatchId(), partialMatch);
+                    }
+                    for (EventEntry entry : deleted) {
+                        matches.remove(string(readJson(entry), "partialMatchId"));
+                    }
+                    return matches;
+                }));
+    }
+
+    private List<CanonicalEvent> canonicalEvents(Object value) {
+        if (!(value instanceof List<?> source)) {
+            return List.of();
+        }
+        return source.stream()
+            .filter(Map.class::isInstance)
+            .map(item -> canonicalEventFromEnvelope(stringObjectMap(item)))
+            .toList();
+    }
+
+    private CanonicalEvent canonicalEventFromEnvelope(Map<String, Object> envelope) {
+        Optional<EventInterval> interval = Optional.empty();
+        Object intervalValue = envelope.get("interval");
+        if (intervalValue instanceof Map<?, ?> intervalMap) {
+            interval = Optional.of(new EventInterval(
+                Instant.parse(String.valueOf(intervalMap.get("start"))),
+                Instant.parse(String.valueOf(intervalMap.get("end")))));
+        }
+        return new CanonicalEvent(
+            string(envelope, "eventId"),
+            string(envelope, "tenantId"),
+            string(envelope, "eventType"),
+            string(envelope, "schemaVersion"),
+            Instant.parse(string(envelope, "eventTime")),
+            optionalInstant(envelope.get("processingTime")),
+            optionalInstant(envelope.get("detectionTime")),
+            interval,
+            stringObjectMap(envelope.get("source")),
+            stringList(envelope.get("entityRefs")),
+            string(envelope, "correlationId"),
+            optionalString(envelope.get("causationId")),
+            stringObjectMap(envelope.get("payload")),
+            stringObjectMap(envelope.get("confidence")),
+            stringObjectMap(envelope.get("provenance")),
+            stringList(envelope.get("policyTags")),
+            string(envelope, "idempotencyKey"));
+    }
+
+    private static long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(String.valueOf(value));
+    }
+
+    private static double doubleValue(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return Double.parseDouble(String.valueOf(value));
     }
 }

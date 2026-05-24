@@ -61,6 +61,9 @@ class AgentActionOperatorTest extends EventloopTestBase {
 
         assertThat(result.success()).isFalse();
         assertThat(result.errors()).contains("AGENT_ACTION requires runtime approval");
+        assertThat(result.emittedEvents())
+            .extracting("eventType")
+            .containsExactly("action.failed");
     }
 
     @Test
@@ -75,6 +78,9 @@ class AgentActionOperatorTest extends EventloopTestBase {
 
         assertThat(result.success()).isFalse();
         assertThat(result.errors()).contains("AGENT_ACTION requires idempotencyKey");
+        assertThat(result.emittedEvents())
+            .extracting("eventType")
+            .containsExactly("action.failed");
     }
 
     @Test
@@ -89,6 +95,12 @@ class AgentActionOperatorTest extends EventloopTestBase {
         assertThat(result.success()).isTrue();
         assertThat(result.output()).hasValueSatisfying(output ->
             assertThat(output).containsEntry("auditEventType", "action.executed"));
+        assertThat(result.emittedEvents())
+            .extracting("eventType")
+            .containsExactly("action.requested", "action.executed");
+        assertThat(result.emittedEvents().get(1).payload())
+            .containsEntry("operatorId", operator.id().toString())
+            .containsKey("output");
     }
 
     private static AgentActionOperator operator(AgentInvocationClient client) {

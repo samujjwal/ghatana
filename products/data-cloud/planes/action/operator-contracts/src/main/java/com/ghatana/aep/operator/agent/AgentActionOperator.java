@@ -1,5 +1,6 @@
 package com.ghatana.aep.operator.agent;
 
+import com.ghatana.aep.model.CanonicalEvent;
 import com.ghatana.aep.model.EventContext;
 import com.ghatana.aep.operator.contract.CompileContext;
 import com.ghatana.aep.operator.contract.EventOperator;
@@ -14,9 +15,13 @@ import com.ghatana.aep.operator.contract.ValidationResult;
 import com.ghatana.core.operator.OperatorId;
 import io.activej.promise.Promise;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Side-effecting agent operator for approved governed actions.
@@ -99,10 +104,10 @@ public final class AgentActionOperator implements EventOperator<Map<String, Obje
         Objects.requireNonNull(input, "input");
         Map<String, Object> policies = ctx != null ? ctx.policies() : Map.of();
         if (!Boolean.TRUE.equals(policies.get("approved"))) {
-            return Promise.of(EventOperatorResult.failure(List.of("AGENT_ACTION requires runtime approval")));
+            return Promise.of(failure(input, ctx, policies, "AGENT_ACTION requires runtime approval"));
         }
         if (isBlank(policies.get("idempotencyKey"))) {
-            return Promise.of(EventOperatorResult.failure(List.of("AGENT_ACTION requires idempotencyKey")));
+            return Promise.of(failure(input, ctx, policies, "AGENT_ACTION requires idempotencyKey"));
         }
 
         AgentInvocationRequest request = new AgentInvocationRequest(
@@ -112,7 +117,83 @@ public final class AgentActionOperator implements EventOperator<Map<String, Obje
             input,
             policies);
         return invocationClient.invoke(request)
-            .map(output -> EventOperatorResult.success(output, input.uncertainty()));
+            .map(output -> {
+                List<CanonicalEvent> emittedEvents = new ArrayList<>();
+                emittedEvents.add(auditEvent("action.requested", input, ctx, policies, Map.of(
+                    "operatorId", operatorId.toString(),
+                    "agentRef", agentRef)));
+                emittedEvents.add(auditEvent(actionEventType(output), input, ctx, policies, Map.of(
+                    "operatorId", operatorId.toString(),
+                    "agentRef", agentRef,
+                    "output", output)));
+                return new EventOperatorResult<>(
+                    true,
+                    Optional.of(output),
+                    emittedEvents,
+                    input.uncertainty(),
+                    Map.of("agentRef", agentRef, "operatorKind", kind().name()),
+                    List.of());
+            });
+    }
+
+    private EventOperatorResult<Map<String, Object>> failure(
+            EventContext<Map<String, Object>> input,
+            OperatorRuntimeContext ctx,
+            Map<String, Object> policies,
+            String error) {
+        return new EventOperatorResult<>(
+            false,
+            Optional.empty(),
+            List.of(auditEvent("action.failed", input, ctx, policies, Map.of(
+                "operatorId", operatorId.toString(),
+                "agentRef", agentRef,
+                "error", error))),
+            input.uncertainty(),
+            Map.of("agentRef", agentRef, "operatorKind", kind().name()),
+            List.of(error));
+    }
+
+    private CanonicalEvent auditEvent(
+            String eventType,
+            EventContext<Map<String, Object>> input,
+            OperatorRuntimeContext ctx,
+            Map<String, Object> policies,
+            Map<String, Object> payload) {
+        String tenantId = ctx != null ? ctx.tenantId() : input.tenantId();
+        String correlationId = ctx != null && ctx.correlationId().isPresent()
+            ? ctx.correlationId().get()
+            : UUID.randomUUID().toString();
+        String idempotencyKey = String.valueOf(policies.getOrDefault("idempotencyKey", UUID.randomUUID().toString()));
+        return new CanonicalEvent(
+            UUID.randomUUID().toString(),
+            tenantId,
+            eventType,
+            "v1",
+            Instant.now(),
+            Optional.of(Instant.now()),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of("system", "aep", "operatorKind", kind().name()),
+            List.of(),
+            correlationId,
+            Optional.of(operatorId.toString()),
+            payload,
+            Map.of("modelConfidence", input.uncertainty().modelConfidence()),
+            Map.of("agentRef", agentRef, "operatorId", operatorId.toString()),
+            List.of("audit", "agent-action"),
+            idempotencyKey);
+    }
+
+    private static String actionEventType(Map<String, Object> output) {
+        Object auditEventType = output.get("auditEventType");
+        if (auditEventType != null && !String.valueOf(auditEventType).isBlank()) {
+            return String.valueOf(auditEventType);
+        }
+        Object status = output.get("status");
+        if ("FAILED".equals(status)) {
+            return "action.failed";
+        }
+        return "action.executed";
     }
 
     private static boolean hasPolicy(Map<String, Object> policies, String key) {

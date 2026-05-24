@@ -175,6 +175,22 @@ public final class UnifiedOperatorCatalog implements OperatorCatalog {
             .toList();
     }
 
+    /**
+     * Returns catalog metadata only when an operator is registered and approved for runtime use.
+     *
+     * @param operatorId operator to admit
+     * @return approved operator metadata
+     */
+    public OperatorCatalogEntry requireApproved(OperatorId operatorId) {
+        Objects.requireNonNull(operatorId, "operatorId must not be null");
+        OperatorCatalogEntry entry = metadata.get(operatorId);
+        if (entry == null) {
+            throw new IllegalStateException("Unknown operator: " + operatorId);
+        }
+        OperatorCatalogAdmissionPolicy.requireApproved(entry);
+        return entry;
+    }
+
     /** Removes all registered operators. Primarily for testing. */
     public void clear() {
         operators.clear();

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UnifiedOperatorCatalogMetadataTest {
 
@@ -60,9 +61,46 @@ class UnifiedOperatorCatalogMetadataTest {
         assertThat(entries).hasSize(1);
     }
 
+    @Test
+    void requireApprovedReturnsApprovedOperatorMetadata() {
+        UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
+        StubAgentOperator operator = new StubAgentOperator(Map.of("approvalStatus", "approved", "owner", "sre-platform"));
+        catalog.register(operator);
+
+        OperatorCatalogEntry entry = catalog.requireApproved(operator.getId());
+
+        assertThat(entry.operatorId()).isEqualTo(operator.getId());
+        assertThat(entry.metadata())
+            .containsEntry("approvalStatus", "approved")
+            .containsEntry("toolPolicyDeclared", "true");
+    }
+
+    @Test
+    void requireApprovedRejectsUnknownAndUnapprovedOperators() {
+        UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
+        StubAgentOperator operator = new StubAgentOperator();
+        catalog.register(operator);
+
+        assertThatThrownBy(() -> catalog.requireApproved(OperatorId.of("tenant-a", "agent", "missing", "1.0.0")))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Unknown operator");
+        assertThatThrownBy(() -> catalog.requireApproved(operator.getId()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("not approved");
+    }
+
     private static final class StubAgentOperator implements AgentOperator {
 
         private final OperatorId id = OperatorId.of("tenant-a", "agent", "incident-action", "1.0.0");
+        private final Map<String, String> metadata;
+
+        private StubAgentOperator() {
+            this(Map.of("owner", "sre-platform"));
+        }
+
+        private StubAgentOperator(Map<String, String> metadata) {
+            this.metadata = metadata;
+        }
 
         @Override
         public String agentRef() {
@@ -248,7 +286,7 @@ class UnifiedOperatorCatalogMetadataTest {
 
         @Override
         public Map<String, String> getMetadata() {
-            return Map.of("owner", "sre-platform");
+            return metadata;
         }
     }
 }

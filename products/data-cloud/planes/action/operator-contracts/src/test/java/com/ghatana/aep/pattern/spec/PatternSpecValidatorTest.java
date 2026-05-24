@@ -92,6 +92,37 @@ class PatternSpecValidatorTest {
         assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("replayPolicy"));
     }
 
+    @Test
+    void rejectsSequenceWithoutEnoughOperands() {
+        PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
+            "operator", "SEQ",
+            "operands", List.of(Map.of("event", "deploy.started")))));
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("at least 2 operands"));
+    }
+
+    @Test
+    void rejectsWindowWithoutNestedPatternOrWindowSpec() {
+        PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
+            "operator", "WINDOW",
+            "event", "service.error_rate_elevated")));
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("nested pattern"));
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("window"));
+    }
+
+    @Test
+    void acceptsTimedWindowAroundEventReference() {
+        PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
+            "operator", "WINDOW",
+            "window", "PT10M",
+            "pattern", Map.of("event", "service.error_rate_elevated"))));
+
+        assertThat(result.valid()).isTrue();
+    }
+
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",

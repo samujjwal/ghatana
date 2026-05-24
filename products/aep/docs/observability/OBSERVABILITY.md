@@ -1,7 +1,11 @@
 # AEP Observability
 
-**Status:** Target standard  
+**Status:** Partially implemented standard
 **Owner:** AEP maintainers
+
+## Current Implementation
+
+The co-located AEP contract module includes `AepOperatorMetrics`, a non-throwing facade over the platform `MetricsCollector`. It centralizes canonical metric names and tags for event ingestion, operator processing, pattern matches, agent calls, replay mode, EventCloud lag, and EventCloud DLQ counters. Full runtime adoption is still pending.
 
 ## Required Metrics
 

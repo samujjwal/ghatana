@@ -5,6 +5,7 @@ import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.OperatorState;
 import com.ghatana.core.operator.UnifiedOperator;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -33,6 +34,11 @@ final class PipelineStageExecutor {
 
         logger.debug("Executing stage '{}' with operator {} ({} input event(s))",
             stageId, operatorId, inputs.size());
+
+        StageExecutionResult admissionFailure = requireRuntimeAdmission(stageId, operatorId, inputs, catalog, stageStart);
+        if (admissionFailure != null) {
+            return Promise.of(admissionFailure);
+        }
 
         return catalog.get(operatorId)
             .then(optionalOperator -> {
@@ -100,6 +106,30 @@ final class PipelineStageExecutor {
                         ex.getMessage()));
                 }
             );
+    }
+
+    private StageExecutionResult requireRuntimeAdmission(
+            String stageId,
+            OperatorId operatorId,
+            List<Event> inputs,
+            OperatorCatalog catalog,
+            Instant stageStart) {
+        if (!(catalog instanceof UnifiedOperatorCatalog unifiedCatalog)) {
+            return null;
+        }
+        try {
+            unifiedCatalog.requireApproved(operatorId);
+            return null;
+        } catch (RuntimeException e) {
+            Duration duration = Duration.between(stageStart, Instant.now());
+            String message = String.format(
+                "Operator admission rejected for %s (stage: %s): %s",
+                operatorId,
+                stageId,
+                e.getMessage());
+            logger.error(message);
+            return StageExecutionResult.failure(stageId, operatorId, inputs, duration, message);
+        }
     }
 
     private Promise<OperatorResult> processInputEvents(UnifiedOperator operator, List<Event> inputs) {
