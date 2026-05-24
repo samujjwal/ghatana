@@ -135,7 +135,8 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                         entry.actionType(), entry.status(), entry.actor(),
                         entry.initiatedByAi(), entry.provider(), entry.modelVersion(), entry.humanEdited(), entry.confidence(), entry.evidenceLinks(),
                         entry.policyChecks(), entry.summary(), entry.details(),
-                        entry.relatedEntityId(), entry.occurredAt(), 1L);
+                        entry.relatedEntityId(), entry.occurredAt(), 1L,
+                        entry.rationale(), entry.policyDecision(), entry.approvalOutcome());
                 } catch (DmPersistenceException e) {
                     throw e;
                 } catch (SQLException e) {
@@ -184,7 +185,8 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                         entry.actionType(), entry.status(), entry.actor(),
                         entry.initiatedByAi(), entry.provider(), entry.modelVersion(), entry.humanEdited(), entry.confidence(), entry.evidenceLinks(),
                         entry.policyChecks(), entry.summary(), entry.details(),
-                        entry.relatedEntityId(), entry.occurredAt(), newVersion);
+                        entry.relatedEntityId(), entry.occurredAt(), newVersion,
+                        entry.rationale(), entry.policyDecision(), entry.approvalOutcome());
                 } catch (DmPersistenceException e) {
                     throw e;
                 } catch (SQLException e) {
@@ -290,7 +292,10 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
             rs.getString("details"),
             rs.getString("related_entity_id"),
             rs.getTimestamp("occurred_at").toInstant(),
-            rs.getLong("version")
+            rs.getLong("version"),
+            null,
+            null,
+            null
         );
     }
 

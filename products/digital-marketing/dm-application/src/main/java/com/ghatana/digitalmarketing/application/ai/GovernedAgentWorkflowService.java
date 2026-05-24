@@ -232,7 +232,10 @@ public final class GovernedAgentWorkflowService {
             details,
             null,
             Instant.now(),
-            0L
+            0L,
+            null,
+            null,
+            null
         );
     }
 

@@ -29,13 +29,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmMediaMixModelServiceImpl")
 class DmMediaMixModelServiceImplTest extends EventloopTestBase {
 
-    private InMemoryMixModelRepository repository;
+    private EphemeralMixModelRepository repository;
     private DmMediaMixModelServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryMixModelRepository();
+        repository = new EphemeralMixModelRepository();
         service = new DmMediaMixModelServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -168,7 +168,7 @@ class DmMediaMixModelServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryMixModelRepository implements DmMediaMixModelRepository {
+    static final class EphemeralMixModelRepository implements DmMediaMixModelRepository {
         private final Map<String, DmMediaMixModel> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmMediaMixModel> save(DmMediaMixModel m) { store.put(m.getId(), m); return Promise.of(m); }

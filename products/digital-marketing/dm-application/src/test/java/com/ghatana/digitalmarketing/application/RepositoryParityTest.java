@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.fail;
  * <ul>
  *   <li>Find all repository interfaces in application layer</li>
  *   <li>Verify each has a Postgres* implementation in dm-persistence</li>
- *   <li>Verify each has an InMemory* implementation in dm-infra</li>
+ *   <li>Verify each has an Ephemeral* implementation in dm-infra</li>
  *   <li>Fail if any production adapter is missing</li>
  * </ul>
  */
@@ -44,13 +44,13 @@ class RepositoryParityTest {
         // Given: Find all repository interfaces in application layer
         Set<String> repositoryInterfaces = findRepositoryInterfaces();
 
-        // Then: Each repo that has an InMemory implementation must also have a Postgres one (parity)
+        // Then: Each repo that has an Ephemeral implementation must also have a Postgres one (parity)
         for (String repoInterface : repositoryInterfaces) {
             String expectedPostgresClass = "Postgres" + repoInterface;
-            String expectedInMemoryClass = "InMemory" + repoInterface;
+            String expectedEphemeralClass = "Ephemeral" + repoInterface;
 
-            // Only enforce parity for repos that have an InMemory implementation already
-            if (!classExistsInModule(INFRA_PATH, expectedInMemoryClass)) {
+            // Only enforce parity for repos that have an Ephemeral implementation already
+            if (!classExistsInModule(INFRA_PATH, expectedEphemeralClass)) {
                 continue; // Not yet in-scope for parity enforcement
             }
 
@@ -70,13 +70,13 @@ class RepositoryParityTest {
 
     @Test
     @DisplayName("P1-005: All repository ports have in-memory implementation for tests")
-    void allRepositoryPortsHaveInMemoryImplementation() throws IOException {
+    void allRepositoryPortsHaveEphemeralImplementation() throws IOException {
         // Given: Find all repository interfaces in application layer
         Set<String> repositoryInterfaces = findRepositoryInterfaces();
 
-        // Then: Each repo that has a Postgres implementation must also have an InMemory one (parity)
+        // Then: Each repo that has a Postgres implementation must also have an Ephemeral one (parity)
         for (String repoInterface : repositoryInterfaces) {
-            String expectedInMemoryClass = "InMemory" + repoInterface;
+            String expectedEphemeralClass = "Ephemeral" + repoInterface;
             String expectedPostgresClass = "Postgres" + repoInterface;
 
             // Only enforce parity for repos that have a Postgres implementation already
@@ -89,11 +89,11 @@ class RepositoryParityTest {
                 continue;
             }
 
-            boolean hasInMemoryImpl = classExistsInModule(INFRA_PATH, expectedInMemoryClass);
+            boolean hasEphemeralImpl = classExistsInModule(INFRA_PATH, expectedEphemeralClass);
 
-            assertThat(hasInMemoryImpl)
-                .as("P1-005: Repository %s should have InMemory implementation %s in dm-infra for testing",
-                    repoInterface, expectedInMemoryClass)
+            assertThat(hasEphemeralImpl)
+                .as("P1-005: Repository %s should have Ephemeral implementation %s in dm-infra for testing",
+                    repoInterface, expectedEphemeralClass)
                 .isTrue();
         }
     }
@@ -111,25 +111,25 @@ class RepositoryParityTest {
             .as("P1-005: CampaignRepository must have PostgresCampaignRepository production adapter")
             .isTrue();
 
-        boolean hasInMemoryCampaignRepo = classExistsInModule(
+        boolean hasEphemeralCampaignRepo = classExistsInModule(
             INFRA_PATH,
-            "InMemoryCampaignRepository"
+            "EphemeralCampaignRepository"
         );
 
-        assertThat(hasInMemoryCampaignRepo)
-            .as("P1-005: CampaignRepository should have InMemoryCampaignRepository for local/test use")
+        assertThat(hasEphemeralCampaignRepo)
+            .as("P1-005: CampaignRepository should have EphemeralCampaignRepository for local/test use")
             .isTrue();
     }
 
     @Test
     @DisplayName("P1-005: No production port has only in-memory implementation")
-    void noProductionPortHasOnlyInMemoryImplementation() throws IOException {
+    void noProductionPortHasOnlyEphemeralImplementation() throws IOException {
         // Find all repository interfaces
         Set<String> repositoryInterfaces = findRepositoryInterfaces();
 
-        // Verify that any repo with an InMemory impl also has a production (PostgreSQL) implementation
+        // Verify that any repo with an Ephemeral impl also has a production (PostgreSQL) implementation
         List<String> missingProductionImpls = repositoryInterfaces.stream()
-            .filter(repo -> classExistsInModule(INFRA_PATH, "InMemory" + repo)) // Has InMemory
+            .filter(repo -> classExistsInModule(INFRA_PATH, "Ephemeral" + repo)) // Has Ephemeral
             .filter(repo -> !classExistsInModule(PERSISTENCE_PATH, "Postgres" + repo)) // Missing Postgres
             .filter(repo -> !isExternalRepository(repo)) // Skip external/Kernel repositories
             .toList();
@@ -160,7 +160,7 @@ class RepositoryParityTest {
 
         assertThat(validatorSource)
             .as("P1-005: ProductionBootstrapValidator must validate repository is not in-memory")
-            .contains("InMemory")
+            .contains("Ephemeral")
             .contains("PERSISTENCE");
     }
 
@@ -235,11 +235,11 @@ class RepositoryParityTest {
             "IdentityRepository",   // Provided by platform identity service
             "FeatureFlagRepository", // Provided by platform feature flag service
             "TenantRepository",      // Provided by platform tenant service
-            // Pending production adapters — InMemory only, Postgres adapter to be added
+            // Pending production adapters — Ephemeral only, Postgres adapter to be added
             "ContentVersionRepository",     // DMOS-TODO: add PostgresContentVersionRepository
             "ContentItemRepository",        // DMOS-TODO: add PostgresContentItemRepository
             "CompetitorResearchRepository", // DMOS-TODO: add PostgresCompetitorResearchRepository
-            // Infrastructure repos with Postgres only — InMemory test doubles not required
+            // Infrastructure repos with Postgres only — Ephemeral test doubles not required
             "AgencyApprovalSLARepository",
             "AgencyClientRepository",
             "AgencyContractRepository",

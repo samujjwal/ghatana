@@ -101,6 +101,13 @@ const STALE_AEP_PATTERNS = [
   /X-Tenant-ID.*authoritative/i,
   /tenantId.*query.*authoritative/i,
   /tenantId.*header.*authoritative/i,
+  
+  // Phase 0: Forbidden boundary language (outside migration notes)
+  /Data-Cloud owns EventCloud/i,
+  /Data-Cloud owns PatternSpec/i,
+  /Data-Cloud owns CEP/i,
+  /Data-Cloud owns complex event processing/i,
+  /AEP is a Data-Cloud plane/i,
 ];
 
 // DC-P1-11: Allowed AEP patterns (only in compatibility/deprecation sections)
@@ -113,6 +120,10 @@ const ALLOWED_AEP_CONTEXTS = [
   /AEP.*legacy/i,
   /migration.*AEP/i,
   /AEP.*migration/i,
+  // Phase 0: Allow boundary language in migration notes
+  /migration.*note/i,
+  /temporary.*co-located/i,
+  /code-location.*reality/i,
 ];
 
 // DC-P1-11: Correct terminology patterns (Action Plane)
@@ -134,12 +145,15 @@ function isInCompatibilitySection(lines, lineIndex) {
   const lookback = Math.min(10, lineIndex);
   for (let i = lineIndex - 1; i >= Math.max(0, lineIndex - lookback); i--) {
     const line = lines[i].toLowerCase();
-    if (line.includes('compatibility') || 
-        line.includes('deprecated') || 
+    if (line.includes('compatibility') ||
+        line.includes('deprecated') ||
         line.includes('legacy') ||
         line.includes('migration') ||
         line.includes('note:') ||
-        line.includes('note:')) {
+        line.includes('note:') ||
+        // Phase 0: Allow in migration notes
+        line.includes('temporary co-located') ||
+        line.includes('code-location reality')) {
       return true;
     }
   }

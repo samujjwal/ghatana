@@ -43,13 +43,13 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 class CampaignServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryCampaignRepository repository;
+    private EphemeralCampaignRepository repository;
     private ToggleCompliancePlugin compliancePlugin;
     private CampaignServiceImpl service;
     private DmOperationContext ctx;
 
-    private InMemoryKillSwitchService killSwitchService;
-    private InMemoryCommandService commandService;
+    private EphemeralKillSwitchService killSwitchService;
+    private EphemeralCommandService commandService;
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private TestEventLogStore eventStore;
     private CampaignEventSourcingAdapter eventSourcingAdapter;
@@ -58,10 +58,10 @@ class CampaignServiceImplTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryCampaignRepository();
+        repository = new EphemeralCampaignRepository();
         compliancePlugin = new ToggleCompliancePlugin();
-        killSwitchService = new InMemoryKillSwitchService();
-        commandService = new InMemoryCommandService();
+        killSwitchService = new EphemeralKillSwitchService();
+        commandService = new EphemeralCommandService();
         objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         eventStore = new TestEventLogStore();
         eventSourcingAdapter = new CampaignEventSourcingAdapter(eventStore);
@@ -79,7 +79,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
                 true,
                 "campaign-activation"
             )),
-            DmosMetricsCollector.noop(),
+            DmosMetricsCollector.disabled(),
             killSwitchService,
             commandService,
             objectMapper,
@@ -115,13 +115,13 @@ class CampaignServiceImplTest extends EventloopTestBase {
         );
 
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.disabled(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.disabled(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.disabled(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.disabled(), killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService));
         assertThatNullPointerException()
             .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null, killSwitchService, commandService, objectMapper, eventSourcingAdapter, transitionService))
             .withMessageContaining("metrics");
@@ -338,7 +338,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
         return new CampaignService.CreateCampaignCommand(name, type, null, null, null, null, null, null);
     }
 
-    private static final class InMemoryCampaignRepository implements CampaignRepository {
+    private static final class EphemeralCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override
@@ -530,7 +530,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     /**
      * In-memory kill switch service for testing.
      */
-    private static class InMemoryKillSwitchService implements com.ghatana.digitalmarketing.application.governance.DmKillSwitchService {
+    private static class EphemeralKillSwitchService implements com.ghatana.digitalmarketing.application.governance.DmKillSwitchService {
         private final java.util.Set<String> activeSwitches = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
         @Override
@@ -563,7 +563,7 @@ class CampaignServiceImplTest extends EventloopTestBase {
     /**
      * In-memory command service for testing.
      */
-    private static class InMemoryCommandService implements com.ghatana.digitalmarketing.application.command.DmCommandService {
+    private static class EphemeralCommandService implements com.ghatana.digitalmarketing.application.command.DmCommandService {
         private final java.util.List<com.ghatana.digitalmarketing.domain.command.DmCommand> commands = new java.util.ArrayList<>();
 
         @Override

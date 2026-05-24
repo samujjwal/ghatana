@@ -71,7 +71,7 @@ public final class DmosApiRateLimiter {
     * <p>The 429 response body uses the canonical DMOS error envelope.</p>
      *
      * @param delegate  the inner servlet
-     * @param metrics   business KPI collector — use {@link DmosMetricsCollector#noop()} in tests
+    * @param metrics   business KPI collector — use {@link DmosMetricsCollector#disabled()} in tests
      * @param servletId stable logical name for the {@code servlet} label (e.g. {@code "campaign"})
      * @return the wrapped servlet
      */
@@ -101,7 +101,7 @@ public final class DmosApiRateLimiter {
 
     /**
      * Backwards-compatible overload that delegates to
-     * {@link #wrap(AsyncServlet, DmosMetricsCollector, String)} with a noop collector
+    * {@link #wrap(AsyncServlet, DmosMetricsCollector, String)} with a disabled collector
      * and an {@code "unknown"} servlet label.
      *
      * @deprecated Prefer {@link #wrap(AsyncServlet, DmosMetricsCollector, String)} to get
@@ -109,7 +109,7 @@ public final class DmosApiRateLimiter {
      */
     @Deprecated
     public static AsyncServlet wrap(AsyncServlet delegate) {
-        return wrap(delegate, DmosMetricsCollector.noop(), "unknown");
+        return wrap(delegate, DmosMetricsCollector.disabled(), "unknown");
     }
 
     // -------------------------------------------------------------------------

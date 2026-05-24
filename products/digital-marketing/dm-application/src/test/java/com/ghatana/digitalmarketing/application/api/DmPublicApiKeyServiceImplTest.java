@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmPublicApiKeyServiceImpl")
 class DmPublicApiKeyServiceImplTest extends EventloopTestBase {
 
-    private InMemoryApiKeyRepository repository;
+    private EphemeralApiKeyRepository repository;
     private DmPublicApiKeyServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryApiKeyRepository();
+        repository = new EphemeralApiKeyRepository();
         service = new DmPublicApiKeyServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -151,7 +151,7 @@ class DmPublicApiKeyServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryApiKeyRepository implements DmPublicApiKeyRepository {
+    static final class EphemeralApiKeyRepository implements DmPublicApiKeyRepository {
         private final Map<String, DmPublicApiKey> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmPublicApiKey> save(DmPublicApiKey k) { store.put(k.getId(), k); return Promise.of(k); }

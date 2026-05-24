@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CompetitorResearchServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryRepository repository;
+    private EphemeralRepository repository;
     private CompetitorResearchServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryRepository();
+        repository = new EphemeralRepository();
         service = new CompetitorResearchServiceImpl(kernelAdapter, repository);
 
         ctx = DmOperationContext.builder()
@@ -223,7 +223,7 @@ class CompetitorResearchServiceImplTest extends EventloopTestBase {
 
     // ---- test doubles ----
 
-    private static final class InMemoryRepository implements CompetitorResearchRepository {
+    private static final class EphemeralRepository implements CompetitorResearchRepository {
         private final ConcurrentHashMap<String, CompetitorResearchSnapshot> store = new ConcurrentHashMap<>();
 
         @Override

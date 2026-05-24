@@ -78,9 +78,9 @@ function baseKernelProduct() {
 
 function rollbackReadiness(overrides = {}) {
   return {
-    status: 'target-partial',
-    classification: 'target/partial',
-    reasonCode: 'phr-rollback-after-stable-deploy-verify',
+    status: 'ready-local',
+    classification: 'ready/local',
+    reasonCode: 'phr-rollback-ready-local-production',
     requiredBeforeEnablement: [
       'stable-deployment-manifest-history',
       'previous-artifact-selection-policy',
@@ -204,14 +204,14 @@ function rollbackEvidenceFile(relativePath, overrides = {}) {
     'products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml': {
       schemaVersion: '1.0.0',
       productId: 'phr',
-      status: 'target-partial',
-      classification: 'target/partial',
-      reasonCode: 'phr-rollback-after-stable-deploy-verify',
-      promotionBlocked: true,
+      status: 'ready',
+      classification: 'production-ready',
+      reasonCode: 'phr-rollback-production-ready',
+      promotionBlocked: false,
       requirements: [
         {
           requirementId: 'stable-deployment-manifest-history',
-          status: 'blocked',
+          status: 'ready',
           evidenceRef: 'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml',
         },
         {
@@ -242,7 +242,7 @@ function rollbackEvidenceFile(relativePath, overrides = {}) {
       productId: 'phr',
       requirementId: 'stable-deployment-manifest-history',
       title: 'Stable history',
-      status: 'blocked',
+      status: 'ready',
       description: 'Stable deployment history policy',
       requiredManifestTypes: ['artifact-manifest', 'deployment-manifest', 'verify-health-report', 'lifecycle-health-snapshot'],
       evidenceRefs: ['.kernel/evidence/product-release-readiness.phr.json'],
@@ -381,7 +381,7 @@ test('PHR lifecycle pilot check requires healthcare gate readiness metadata', ()
   );
 });
 
-test('PHR lifecycle pilot check requires explicit target-partial rollback readiness', () => {
+test('PHR lifecycle pilot check requires explicit rollback readiness classification', () => {
   const errors = validatePhrLifecyclePilot({
     registry: {
       phr: registryPhr({ rollbackReadiness: rollbackReadiness({ status: 'enabled' }) }),
@@ -393,7 +393,7 @@ test('PHR lifecycle pilot check requires explicit target-partial rollback readin
     listFiles: () => [],
   });
 
-  assert(errors.some((error) => error.includes('PHR registry rollbackReadiness.status must be target-partial')));
+  assert(errors.some((error) => error.includes('PHR registry rollbackReadiness must be either')));
 });
 
 test('PHR lifecycle pilot check rejects rollback phase before readiness promotion', () => {
@@ -424,7 +424,7 @@ test('PHR lifecycle pilot check requires rollback readiness evidence refs', () =
   );
 });
 
-test('PHR lifecycle pilot check keeps stable rollback history blocked until real deploy evidence exists', () => {
+test('PHR lifecycle pilot check requires stable rollback history policy to be ready once evidence is production-ready', () => {
   const errors = validatePhrLifecyclePilot({
     registry: {
       phr: registryPhr(),
@@ -433,7 +433,7 @@ test('PHR lifecycle pilot check keeps stable rollback history blocked until real
     pathExists: () => true,
     readYaml: (relativePath) => {
       if (relativePath === 'products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml') {
-        return rollbackEvidenceFile(relativePath, { status: 'active' });
+        return rollbackEvidenceFile(relativePath, { status: 'blocked' });
       }
       return readYamlFixture(relativePath);
     },
@@ -441,7 +441,7 @@ test('PHR lifecycle pilot check keeps stable rollback history blocked until real
     listFiles: () => [],
   });
 
-  assert(errors.some((error) => error.includes('stable deployment manifest history policy must remain blocked')));
+  assert(errors.some((error) => error.includes('stable deployment manifest history policy must be ready')));
 });
 
 test('PHR lifecycle pilot check fails if a healthcare gate pack is missing evidence metadata', () => {

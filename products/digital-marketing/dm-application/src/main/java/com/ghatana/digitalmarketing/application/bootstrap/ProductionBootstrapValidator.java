@@ -158,7 +158,7 @@ public final class ProductionBootstrapValidator {
 
         // Verify campaign repository is PostgreSQL-backed (not in-memory)
         String repoClassName = campaignRepository.getClass().getName();
-        if (repoClassName.contains("InMemory") || repoClassName.contains("Memory")) {
+        if (repoClassName.contains("Ephemeral") || repoClassName.contains("Memory")) {
             violations.add("PERSISTENCE-002: CampaignRepository is in-memory (" + repoClassName + "). " +
                 "PostgreSQL repository required in production.");
         }

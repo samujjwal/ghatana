@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmBudgetAlertServiceImpl")
 class DmBudgetAlertServiceImplTest extends EventloopTestBase {
 
-    private InMemoryAlertRepository repository;
+    private EphemeralAlertRepository repository;
     private DmBudgetAlertServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAlertRepository();
+        repository = new EphemeralAlertRepository();
         service = new DmBudgetAlertServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -152,7 +152,7 @@ class DmBudgetAlertServiceImplTest extends EventloopTestBase {
             "campaign-1", 10_000_000L, 8_500_000L, 0.85, DmBudgetAlertLevel.WARNING, "Over 85% spent");
     }
 
-    static final class InMemoryAlertRepository implements DmBudgetAlertRepository {
+    static final class EphemeralAlertRepository implements DmBudgetAlertRepository {
         private final Map<String, DmBudgetAlert> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmBudgetAlert> save(DmBudgetAlert a) { store.put(a.getId(), a); return Promise.of(a); }

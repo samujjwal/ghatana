@@ -31,10 +31,10 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmGoogleAdsPerformanceSyncServiceImpl Tests")
 class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
 
-    private InMemoryConnectorRepository connectorRepository;
-    private InMemoryCredentialRepository credentialRepository;
-    private InMemoryCampaignLinkRepository linkRepository;
-    private InMemoryPerformanceSnapshotRepository snapshotRepository;
+    private EphemeralConnectorRepository connectorRepository;
+    private EphemeralCredentialRepository credentialRepository;
+    private EphemeralCampaignLinkRepository linkRepository;
+    private EphemeralPerformanceSnapshotRepository snapshotRepository;
     private FakePerformanceApiClient performanceApiClient;
     private DmGoogleAdsPerformanceSyncServiceImpl service;
     private DmOperationContext ctx;
@@ -43,10 +43,10 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        connectorRepository = new InMemoryConnectorRepository();
-        credentialRepository = new InMemoryCredentialRepository();
-        linkRepository = new InMemoryCampaignLinkRepository();
-        snapshotRepository = new InMemoryPerformanceSnapshotRepository();
+        connectorRepository = new EphemeralConnectorRepository();
+        credentialRepository = new EphemeralCredentialRepository();
+        linkRepository = new EphemeralCampaignLinkRepository();
+        snapshotRepository = new EphemeralPerformanceSnapshotRepository();
         performanceApiClient = new FakePerformanceApiClient();
         service = new DmGoogleAdsPerformanceSyncServiceImpl(
             connectorRepository,
@@ -456,7 +456,7 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> service.findLatestSnapshot(ctx, "   ")));
     }
 
-    static final class InMemoryConnectorRepository implements DmConnectorRepository {
+    static final class EphemeralConnectorRepository implements DmConnectorRepository {
         private final Map<String, DmConnectorConfig> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -492,7 +492,7 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCredentialRepository implements DmGoogleAdsCredentialRepository {
+    static final class EphemeralCredentialRepository implements DmGoogleAdsCredentialRepository {
         private final Map<String, DmGoogleAdsCredential> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -524,7 +524,7 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
+    static final class EphemeralCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
         private final Map<String, DmGoogleAdsCampaignLink> byCampaignId = new ConcurrentHashMap<>();
 
         @Override
@@ -539,7 +539,7 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryPerformanceSnapshotRepository implements DmGoogleAdsPerformanceSnapshotRepository {
+    static final class EphemeralPerformanceSnapshotRepository implements DmGoogleAdsPerformanceSnapshotRepository {
         private final Map<String, DmCampaignPerformanceSnapshot> byExternalCampaignId = new ConcurrentHashMap<>();
 
         @Override

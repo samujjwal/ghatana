@@ -83,7 +83,7 @@ public final class DmosAdCopyServlet {
     }
 
     public DmosAdCopyServlet(AdCopyGeneratorService generatorService, Eventloop eventloop) {
-        this(generatorService, eventloop, DmosMetricsCollector.noop());
+        this(generatorService, eventloop, DmosMetricsCollector.disabled());
     }
 
     /**

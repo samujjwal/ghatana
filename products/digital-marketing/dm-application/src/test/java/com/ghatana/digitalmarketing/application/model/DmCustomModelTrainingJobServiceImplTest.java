@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmCustomModelTrainingJobServiceImpl")
 class DmCustomModelTrainingJobServiceImplTest extends EventloopTestBase {
 
-    private InMemoryJobRepository repository;
+    private EphemeralJobRepository repository;
     private DmCustomModelTrainingJobServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryJobRepository();
+        repository = new EphemeralJobRepository();
         service = new DmCustomModelTrainingJobServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -125,7 +125,7 @@ class DmCustomModelTrainingJobServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryJobRepository implements DmCustomModelTrainingJobRepository {
+    static final class EphemeralJobRepository implements DmCustomModelTrainingJobRepository {
         private final Map<String, DmCustomModelTrainingJob> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmCustomModelTrainingJob> save(DmCustomModelTrainingJob j) { store.put(j.getId(), j); return Promise.of(j); }

@@ -36,13 +36,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmConnectorServiceImpl Tests")
 class DmConnectorServiceImplTest extends EventloopTestBase {
 
-    private InMemoryConnectorRepository repo;
+    private EphemeralConnectorRepository repo;
     private DmConnectorServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repo    = new InMemoryConnectorRepository();
+        repo    = new EphemeralConnectorRepository();
         service = new DmConnectorServiceImpl(repo, new AllowingKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -306,7 +306,7 @@ class DmConnectorServiceImplTest extends EventloopTestBase {
 
     // ── Test Doubles ──────────────────────────────────────────────────────────
 
-    private static final class InMemoryConnectorRepository implements DmConnectorRepository {
+    private static final class EphemeralConnectorRepository implements DmConnectorRepository {
         private final ConcurrentHashMap<String, DmConnectorConfig> store = new ConcurrentHashMap<>();
 
         @Override

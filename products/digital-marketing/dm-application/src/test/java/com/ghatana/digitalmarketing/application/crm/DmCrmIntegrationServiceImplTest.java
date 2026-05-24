@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmCrmIntegrationServiceImpl")
 class DmCrmIntegrationServiceImplTest extends EventloopTestBase {
 
-    private InMemoryCrmRepository repository;
+    private EphemeralCrmRepository repository;
     private DmCrmIntegrationServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryCrmRepository();
+        repository = new EphemeralCrmRepository();
         service = new DmCrmIntegrationServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -174,7 +174,7 @@ class DmCrmIntegrationServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryCrmRepository implements DmCrmIntegrationRepository {
+    static final class EphemeralCrmRepository implements DmCrmIntegrationRepository {
         private final Map<String, DmCrmIntegration> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmCrmIntegration> save(DmCrmIntegration i) { store.put(i.getId(), i); return Promise.of(i); }

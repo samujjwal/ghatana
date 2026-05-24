@@ -32,8 +32,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("GoogleAdsCampaignRollbackCommandHandler")
 class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
 
-    private InMemoryCampaignLinkRepository linkRepository;
-    private InMemoryCredentialRepository credentialRepository;
+    private EphemeralCampaignLinkRepository linkRepository;
+    private EphemeralCredentialRepository credentialRepository;
     private RecordingApiClient apiClient;
     private ObjectMapper objectMapper;
     private DmosObservability observability;
@@ -41,8 +41,8 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        linkRepository = new InMemoryCampaignLinkRepository();
-        credentialRepository = new InMemoryCredentialRepository();
+        linkRepository = new EphemeralCampaignLinkRepository();
+        credentialRepository = new EphemeralCredentialRepository();
         apiClient = new RecordingApiClient();
         objectMapper = new ObjectMapper();
         observability = new DmosObservability(
@@ -195,7 +195,7 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
+    static final class EphemeralCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
         private final Map<String, DmGoogleAdsCampaignLink> byCampaignId = new ConcurrentHashMap<>();
 
         @Override
@@ -210,7 +210,7 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCredentialRepository implements DmGoogleAdsCredentialRepository {
+    static final class EphemeralCredentialRepository implements DmGoogleAdsCredentialRepository {
         private final Map<String, DmGoogleAdsCredential> byId = new ConcurrentHashMap<>();
 
         @Override

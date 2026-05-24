@@ -27,14 +27,14 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 @DisplayName("DmosPublicIntakeServlet")
 class DmosPublicIntakeServletTest extends EventloopTestBase {
 
-    private InMemoryLeadService leadService;
-    private InMemorySuppressionService suppressionService;
+    private EphemeralLeadService leadService;
+    private EphemeralSuppressionService suppressionService;
     private AsyncServlet servlet;
 
     @BeforeEach
     void setUp() {
-        leadService = new InMemoryLeadService();
-        suppressionService = new InMemorySuppressionService();
+        leadService = new EphemeralLeadService();
+        suppressionService = new EphemeralSuppressionService();
         servlet = new DmosPublicIntakeServlet(leadService, suppressionService, Eventloop.create()).getServlet();
     }
 
@@ -234,7 +234,7 @@ class DmosPublicIntakeServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(500);
     }
 
-    private static final class InMemorySuppressionService implements SuppressionService {
+    private static final class EphemeralSuppressionService implements SuppressionService {
         private boolean suppressed;
 
         @Override
@@ -277,7 +277,7 @@ class DmosPublicIntakeServletTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryLeadService implements LeadService {
+    private static final class EphemeralLeadService implements LeadService {
         private CaptureLeadCommand lastCommand;
         private RuntimeException captureError;
         private DmOperationContext lastContext;

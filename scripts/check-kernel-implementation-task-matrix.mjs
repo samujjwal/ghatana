@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,7 @@ const repoRoot = process.cwd();
 const configPath = path.join(repoRoot, 'config/kernel-implementation-task-matrix.json');
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'kernel-implementation-task-matrix.json');
+const RETRYABLE_WRITE_CODES = new Set(['UNKNOWN', 'EACCES', 'EBUSY', 'EPERM']);
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
@@ -17,6 +18,11 @@ function parsePlanTasks(planSource) {
   const tableTasks = parsePlanTasksFromTodoTable(planSource);
   if (tableTasks.length > 0) {
     return tableTasks;
+  }
+
+  const phrPriorityTableTasks = parsePlanTasksFromPhrPriorityTable(planSource);
+  if (phrPriorityTableTasks.length > 0) {
+    return phrPriorityTableTasks;
   }
 
   // Backward-compatible parser for the legacy numbered-list plan format.
@@ -55,6 +61,63 @@ function parsePlanTasks(planSource) {
       whereRefs,
     };
   });
+}
+
+function parsePlanTasksFromPhrPriorityTable(planSource) {
+  const sectionHeader = '## PHR implementation plan';
+  const sectionStart = planSource.indexOf(sectionHeader);
+  if (sectionStart < 0) {
+    return [];
+  }
+
+  const sectionBodyStart = sectionStart + sectionHeader.length;
+  const nextHeadingMatch = /^##\s+/m.exec(planSource.slice(sectionBodyStart));
+  const sectionEnd = nextHeadingMatch
+    ? sectionBodyStart + nextHeadingMatch.index
+    : planSource.length;
+
+  const section = planSource.slice(sectionBodyStart, sectionEnd);
+  const rows = section.split(/\r?\n/);
+  const tasks = [];
+  let id = 1;
+
+  for (const row of rows) {
+    const trimmed = row.trim();
+    if (!trimmed.startsWith('|')) {
+      continue;
+    }
+    if (/^\|\s*-+/.test(trimmed)) {
+      continue;
+    }
+
+    const columns = trimmed
+      .split('|')
+      .slice(1, -1)
+      .map((column) => column.trim());
+
+    if (columns.length < 4) {
+      continue;
+    }
+    if (columns[0] === 'Priority' || columns[1] === 'Work item') {
+      continue;
+    }
+
+    // The task matrix tracks current release work; keep P0/P1 tasks from the PHR section.
+    if (!['P0', 'P1'].includes(columns[0])) {
+      continue;
+    }
+
+    const whereColumn = columns[3] ?? '';
+    const whereRefs = [...whereColumn.matchAll(/`([^`]+)`/g)].map((token) => token[1].trim());
+    tasks.push({
+      id,
+      title: columns[1],
+      whereRefs,
+    });
+    id += 1;
+  }
+
+  return tasks;
 }
 
 function parsePlanTasksFromTodoTable(planSource) {
@@ -216,6 +279,38 @@ function buildIncrementalRoadmap(resolvedTasks) {
   };
 }
 
+function writeJsonAtomicWithRetry(filePath, content, maxAttempts = 5) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const tempPath = `${filePath}.tmp-${process.pid}-${Date.now()}-${attempt}`;
+    try {
+      writeFileSync(tempPath, content, 'utf8');
+      renameSync(tempPath, filePath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        rmSync(tempPath, { force: true });
+      } catch {
+        // Best-effort cleanup only.
+      }
+
+      const retryable =
+        error
+        && typeof error === 'object'
+        && 'code' in error
+        && RETRYABLE_WRITE_CODES.has(error.code);
+      if (!retryable || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+}
+
 export function runTaskMatrixCheck({ writeEvidence = true } = {}) {
   const violations = [];
   const warnings = [];
@@ -336,7 +431,7 @@ export function runTaskMatrixCheck({ writeEvidence = true } = {}) {
 
   if (writeEvidence) {
     mkdirSync(evidenceDir, { recursive: true });
-    writeFileSync(evidencePath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    writeJsonAtomicWithRetry(evidencePath, `${JSON.stringify(report, null, 2)}\n`);
   }
 
   return { violations, warnings, report };

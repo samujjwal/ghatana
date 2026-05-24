@@ -34,16 +34,16 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 class LeadServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryLeadRepository repository;
-    private InMemorySuppressionRepository suppressionRepository;
+    private EphemeralLeadRepository repository;
+    private EphemeralSuppressionRepository suppressionRepository;
     private LeadServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository    = new InMemoryLeadRepository();
-        suppressionRepository = new InMemorySuppressionRepository();
+        repository    = new EphemeralLeadRepository();
+        suppressionRepository = new EphemeralSuppressionRepository();
         HashingPort hashingPort = new MockHashingPort();
         service = new LeadServiceImpl(kernelAdapter, repository, suppressionRepository, hashingPort);
 
@@ -218,7 +218,7 @@ class LeadServiceImplTest extends EventloopTestBase {
     // Test doubles
     // -----------------------------------------------------------------------
 
-    private static final class InMemoryLeadRepository implements LeadRepository {
+    private static final class EphemeralLeadRepository implements LeadRepository {
         private final ConcurrentHashMap<String, Lead> store = new ConcurrentHashMap<>();
 
         @Override
@@ -251,7 +251,7 @@ class LeadServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemorySuppressionRepository implements SuppressionRepository {
+    private static final class EphemeralSuppressionRepository implements SuppressionRepository {
         private final ConcurrentHashMap<String, SuppressionEntry> store = new ConcurrentHashMap<>();
 
         void setSuppressed(DmWorkspaceId workspaceId, String email) {

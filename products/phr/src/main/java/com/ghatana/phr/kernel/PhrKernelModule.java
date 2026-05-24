@@ -1,5 +1,8 @@
 package com.ghatana.phr.kernel;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.contracts.ContractRegistry;
 import com.ghatana.kernel.contracts.ModuleContract;
@@ -38,9 +41,13 @@ import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.EmergencyAccessNotificationSender;
+import com.ghatana.phr.kernel.service.EmergencyAccessReviewAuditLogger;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
 import com.ghatana.phr.kernel.service.ImagingService;
 import com.ghatana.phr.kernel.service.ImmunizationService;
+import com.ghatana.phr.kernel.service.KernelEventEmergencyAccessNotificationSender;
+import com.ghatana.phr.kernel.service.KernelEventEmergencyAccessReviewAuditLogger;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
@@ -53,7 +60,11 @@ import com.ghatana.phr.kernel.service.TelemedicineService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,8 +95,13 @@ import java.net.http.HttpClient;
  */
 public class PhrKernelModule implements KernelModule {
 
+    private static final Logger LOG = LoggerFactory.getLogger(PhrKernelModule.class);
     private static final String MODULE_ID = "phr-core";
     private static final String VERSION = "1.0.0";
+    private static final String DATASET_LIFECYCLE = "phr.lifecycle.evidence";
+    private static final String DATASET_AUDIT = "phr.audit.evidence";
+    private static final String DATASET_CONSENT = "phr.consent.evidence";
+    private static final ObjectMapper EVENT_OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -232,13 +248,20 @@ public class PhrKernelModule implements KernelModule {
         context.registerEventHandler(
             PhrLifecycleEvent.class,
             (PhrLifecycleEvent event) -> {
-                // Log lifecycle phase transitions for evidence collection
-                // In production, this would write to Data Cloud evidence store
-                // For now, we log to the kernel event system
-                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
-                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
-                    eventBus.publish("phr.lifecycle." + event.phase(), event);
-                }
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("schemaVersion", "1.0.0");
+                payload.put("eventType", "phr.lifecycle.phase-transition");
+                payload.put("eventId", nullable(event.eventId()));
+                payload.put("productId", nullable(event.productId()));
+                payload.put("phase", nullable(event.phase()));
+                payload.put("status", nullable(event.status()));
+                payload.put("runId", nullable(event.runId()));
+                payload.put("correlationId", nullable(event.correlationId()));
+                payload.put("environment", nullable(event.environment()));
+                payload.put("tenantId", nullable(event.tenantId()));
+                payload.put("occurredAt", toIso(event.timestamp()));
+
+                persistEventEvidence(context, DATASET_LIFECYCLE, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
             }
         );
 
@@ -246,12 +269,24 @@ public class PhrKernelModule implements KernelModule {
         context.registerEventHandler(
             PhrAuditEvent.class,
             (PhrAuditEvent event) -> {
-                // Log audit events for compliance evidence
-                // In production, this would write to audit sink (Elasticsearch/Data Cloud)
-                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
-                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
-                    eventBus.publish("phr.audit." + event.auditType(), event);
-                }
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("schemaVersion", "1.0.0");
+                payload.put("eventType", "phr.audit.trail");
+                payload.put("eventId", nullable(event.eventId()));
+                payload.put("productId", nullable(event.productId()));
+                payload.put("auditType", nullable(event.auditType()));
+                payload.put("action", nullable(event.action()));
+                payload.put("resourceType", nullable(event.resourceType()));
+                payload.put("resourceId", nullable(event.resourceId()));
+                payload.put("actorId", nullable(event.actorId()));
+                payload.put("actorRole", nullable(event.actorRole()));
+                payload.put("tenantId", nullable(event.tenantId()));
+                payload.put("patientId", nullable(event.patientId()));
+                payload.put("metadata", event.metadata() == null ? Map.of() : event.metadata());
+                payload.put("correlationId", nullable(event.correlationId()));
+                payload.put("occurredAt", toIso(event.timestamp()));
+
+                persistEventEvidence(context, DATASET_AUDIT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
             }
         );
 
@@ -259,16 +294,28 @@ public class PhrKernelModule implements KernelModule {
         context.registerEventHandler(
             PhrConsentEvent.class,
             (PhrConsentEvent event) -> {
-                // Handle consent changes and trigger cache invalidation
-                // In production, this would invalidate distributed cache entries
-                if (context.hasDependency(com.ghatana.kernel.event.KernelEventBus.class)) {
-                    com.ghatana.kernel.event.KernelEventBus eventBus = context.getDependency(com.ghatana.kernel.event.KernelEventBus.class);
-                    eventBus.publish("phr.consent." + event.action(), event);
-                }
-                
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("schemaVersion", "1.0.0");
+                payload.put("eventType", "phr.consent.change");
+                payload.put("eventId", nullable(event.eventId()));
+                payload.put("productId", nullable(event.productId()));
+                payload.put("consentType", nullable(event.consentType()));
+                payload.put("action", nullable(event.action()));
+                payload.put("patientId", nullable(event.patientId()));
+                payload.put("recipientId", nullable(event.recipientId()));
+                payload.put("resourceType", nullable(event.resourceType()));
+                payload.put("purpose", nullable(event.purpose()));
+                payload.put("expiresAt", event.expiresAt() == null ? "" : event.expiresAt().toString());
+                payload.put("tenantId", nullable(event.tenantId()));
+                payload.put("metadata", event.metadata() == null ? Map.of() : event.metadata());
+                payload.put("correlationId", nullable(event.correlationId()));
+                payload.put("occurredAt", toIso(event.timestamp()));
+
+                persistEventEvidence(context, DATASET_CONSENT, event.eventId(), payload, event.timestamp(), event.correlationId(), event.tenantId());
+
                 // Trigger cache invalidation for the affected consent
                 if (context.hasDependency(DistributedCachePort.class)) {
-                    DistributedCachePort<?, ?> cache = context.getDependency(DistributedCachePort.class);
+                    DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> cache = resolveConsentCache(context);
                     String cacheKey = event.patientId() + ":" + event.recipientId();
                     cache.invalidate(cacheKey);
                 }
@@ -278,12 +325,16 @@ public class PhrKernelModule implements KernelModule {
 
     private void registerServices(KernelContext context) {
         DurablePhrNotificationSender notificationSender = new DurablePhrNotificationSender(context);
+        EmergencyAccessNotificationSender emergencyNotificationSender = new KernelEventEmergencyAccessNotificationSender(context);
+        EmergencyAccessReviewAuditLogger emergencyAuditLogger = new KernelEventEmergencyAccessReviewAuditLogger(context);
         PhrNotificationOutboxDispatcher notificationDispatcher = new PhrNotificationOutboxDispatcher(
             context,
             PhrNotificationDeliveryChannelsFactory.fromContext(context)
         );
         DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> consentCache = resolveConsentCache(context);
         context.registerService(PhrNotificationSender.class, notificationSender);
+        context.registerService(EmergencyAccessNotificationSender.class, emergencyNotificationSender);
+        context.registerService(EmergencyAccessReviewAuditLogger.class, emergencyAuditLogger);
         context.registerService(PhrNotificationOutboxDispatcher.class, notificationDispatcher);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
@@ -467,6 +518,44 @@ public class PhrKernelModule implements KernelModule {
             Map.of("fields", List.of("id", "patientId", "accessorId", "reviewStatus", "accessedAt")),
             Map.of("owner", MODULE_ID, "retention", "permanent")
         ));
+    }
+
+    private void persistEventEvidence(
+            KernelContext context,
+            String datasetId,
+            String eventId,
+            Map<String, Object> payload,
+            Instant timestamp,
+            String correlationId,
+            String tenantId) {
+        if (!context.hasDependency(DataCloudKernelAdapter.class)) {
+            LOG.warn("PHR event evidence persistence skipped because DataCloudKernelAdapter is unavailable: dataset={} eventId={}", datasetId, eventId);
+            return;
+        }
+
+        try {
+            DataCloudKernelAdapter dataCloud = context.getDependency(DataCloudKernelAdapter.class);
+            byte[] body = EVENT_OBJECT_MAPPER.writeValueAsBytes(payload);
+            Map<String, String> metadata = Map.of(
+                "productId", "phr",
+                "eventId", eventId,
+                "tenantId", tenantId == null ? "" : tenantId,
+                "correlationId", correlationId == null ? "" : correlationId,
+                "occurredAt", toIso(timestamp),
+                "contentType", "application/json"
+            );
+            dataCloud.writeData(new DataWriteRequest(datasetId, eventId, body, metadata));
+        } catch (Exception error) {
+            LOG.error("Failed to persist PHR event evidence to Data Cloud for dataset={} eventId={}", datasetId, eventId, error);
+        }
+    }
+
+    private String nullable(String value) {
+        return value == null ? "" : value;
+    }
+
+    private String toIso(Instant timestamp) {
+        return timestamp == null ? Instant.now().toString() : timestamp.toString();
     }
 
     public PhrServiceCatalog getServiceCatalog() {

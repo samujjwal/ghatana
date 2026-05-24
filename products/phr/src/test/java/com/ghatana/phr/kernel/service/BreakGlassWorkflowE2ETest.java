@@ -110,7 +110,7 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
             }
 
             @Override
-            public java.util.logging.Logger getParentLogger() throws SQLException {
+            public java.util.logging.Logger getParentLogger() {
                 return null;
             }
 
@@ -211,44 +211,44 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         String providerId = "provider-" + UUID.randomUUID();
         
         PatientOperationContext ctx = new PatientOperationContext(
+            "tenant-" + UUID.randomUUID(),
+            "default",
             providerId,
             patientId,
-            "tenant-" + UUID.randomUUID(),
             UUID.randomUUID().toString()
         );
 
-        com.ghatana.phr.application.emergency.EmergencyAccessRequest request = 
-            new com.ghatana.phr.application.emergency.EmergencyAccessRequest(
+        EmergencyAccessService.EmergencyAccessRequest request = 
+            new EmergencyAccessService.EmergencyAccessRequest(
                 patientId,
                 providerId,
-                "EMERGENCY_PHYSICIAN",
                 "Patient unconscious in emergency room",
                 "Clinical emergency requiring immediate access"
             );
 
-        com.ghatana.phr.application.emergency.EmergencyAccess emergencyAccess = 
+        EmergencyAccessService.EmergencyAccess emergencyAccess = 
             runPromise(() -> emergencyAccessService.requestEmergencyAccess(ctx, request));
 
         // Verify emergency access granted
         assertThat(emergencyAccess).isNotNull();
         assertThat(emergencyAccess.patientId()).isEqualTo(patientId);
         assertThat(emergencyAccess.accessorId()).isEqualTo(providerId);
-        assertThat(emergencyAccess.status()).isEqualTo(com.ghatana.phr.application.emergency.EmergencyAccessStatus.ACTIVE);
+        assertThat(emergencyAccess.status()).isEqualTo(EmergencyAccessService.EmergencyAccessStatus.ACTIVE);
 
         // Step 2: Persist emergency access to database
         persistEmergencyAccess(emergencyAccess);
 
         // Step 3: Create patient notification record
-        persistPatientNotification(emergencyAccess.id(), patientId, "EMERGENCY_ACCESS_GRANTED");
+        persistPatientNotification(emergencyAccess.emergencyAccessId(), patientId, "EMERGENCY_ACCESS_GRANTED");
 
         // Step 4: Create audit event
-        persistAuditEvent("EMERGENCY_ACCESS_INITIATED", patientId, providerId, emergencyAccess.id());
+        persistAuditEvent("EMERGENCY_ACCESS_INITIATED", patientId, providerId, emergencyAccess.emergencyAccessId());
 
         // Step 5: Create compliance evidence
-        persistComplianceEvidence("EMERGENCY_ACCESS_EVIDENCE", emergencyAccess.id(), patientId);
+        persistComplianceEvidence("EMERGENCY_ACCESS_EVIDENCE", emergencyAccess.emergencyAccessId(), patientId);
 
         // Step 6: Create review case
-        persistReviewCase(emergencyAccess.id(), emergencyAccess.reviewDueAt());
+        persistReviewCase(emergencyAccess.emergencyAccessId(), emergencyAccess.reviewDueAt());
 
         // Verify all records persisted to database
         assertThat(countRecords("emergency_access")).isGreaterThan(0);
@@ -258,22 +258,23 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         assertThat(countRecords("review_cases")).isGreaterThan(0);
 
         // Step 7: Complete review
-        com.ghatana.phr.application.emergency.ReviewResult reviewResult = 
-            new com.ghatana.phr.application.emergency.ReviewResult(
+        EmergencyAccessService.ReviewResult reviewResult = 
+            new EmergencyAccessService.ReviewResult(
                 "APPROVED",
+                providerId,
                 "Clinically justified - patient was unconscious and required immediate treatment"
             );
 
-        com.ghatana.phr.application.emergency.EmergencyAccess reviewedAccess = 
-            runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.id(), reviewResult));
+        EmergencyAccessService.EmergencyAccess reviewedAccess = 
+            runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.emergencyAccessId(), reviewResult));
 
         // Verify review completed
-        assertThat(reviewedAccess.status()).isEqualTo(com.ghatana.phr.application.emergency.EmergencyAccessStatus.REVIEWED);
+        assertThat(reviewedAccess.status()).isEqualTo(EmergencyAccessService.EmergencyAccessStatus.REVIEWED);
 
         // Step 8: Update database with review completion
-        updateReviewCase(emergencyAccess.id(), "APPROVED", reviewResult.reviewNotes());
-        persistAuditEvent("EMERGENCY_ACCESS_REVIEW_COMPLETED", patientId, providerId, emergencyAccess.id());
-        persistComplianceEvidence("REVIEW_COMPLETION_EVIDENCE", emergencyAccess.id(), patientId);
+        updateReviewCase(emergencyAccess.emergencyAccessId(), "APPROVED", reviewResult.notes());
+        persistAuditEvent("EMERGENCY_ACCESS_REVIEW_COMPLETED", patientId, providerId, emergencyAccess.emergencyAccessId());
+        persistComplianceEvidence("REVIEW_COMPLETION_EVIDENCE", emergencyAccess.emergencyAccessId(), patientId);
 
         // Verify final state
         assertThat(countRecords("audit_events")).isEqualTo(2); // access + review
@@ -287,57 +288,58 @@ class BreakGlassWorkflowE2ETest extends EventloopTestBase {
         String providerId = "provider-" + UUID.randomUUID();
         
         PatientOperationContext ctx = new PatientOperationContext(
+            "tenant-" + UUID.randomUUID(),
+            "default",
             providerId,
             patientId,
-            "tenant-" + UUID.randomUUID(),
             UUID.randomUUID().toString()
         );
 
-        com.ghatana.phr.application.emergency.EmergencyAccessRequest request = 
-            new com.ghatana.phr.application.emergency.EmergencyAccessRequest(
+        EmergencyAccessService.EmergencyAccessRequest request = 
+            new EmergencyAccessService.EmergencyAccessRequest(
                 patientId,
                 providerId,
-                "EMERGENCY_PHYSICIAN",
                 "Patient unconscious in emergency room",
                 "Clinical emergency requiring immediate access"
             );
 
-        com.ghatana.phr.application.emergency.EmergencyAccess emergencyAccess = 
+        EmergencyAccessService.EmergencyAccess emergencyAccess = 
             runPromise(() -> emergencyAccessService.requestEmergencyAccess(ctx, request));
 
         persistEmergencyAccess(emergencyAccess);
-        persistPatientNotification(emergencyAccess.id(), patientId, "EMERGENCY_ACCESS_GRANTED");
-        persistAuditEvent("EMERGENCY_ACCESS_INITIATED", patientId, providerId, emergencyAccess.id());
-        persistComplianceEvidence("EMERGENCY_ACCESS_EVIDENCE", emergencyAccess.id(), patientId);
-        persistReviewCase(emergencyAccess.id(), emergencyAccess.reviewDueAt());
+        persistPatientNotification(emergencyAccess.emergencyAccessId(), patientId, "EMERGENCY_ACCESS_GRANTED");
+        persistAuditEvent("EMERGENCY_ACCESS_INITIATED", patientId, providerId, emergencyAccess.emergencyAccessId());
+        persistComplianceEvidence("EMERGENCY_ACCESS_EVIDENCE", emergencyAccess.emergencyAccessId(), patientId);
+        persistReviewCase(emergencyAccess.emergencyAccessId(), emergencyAccess.reviewDueAt());
 
         // Complete review with escalation
-        com.ghatana.phr.application.emergency.ReviewResult reviewResult = 
-            new com.ghatana.phr.application.emergency.ReviewResult(
+        EmergencyAccessService.ReviewResult reviewResult = 
+            new EmergencyAccessService.ReviewResult(
                 "ESCALATED",
+                providerId,
                 "Access not clinically justified - requires disciplinary review"
             );
 
-        com.ghatana.phr.application.emergency.EmergencyAccess reviewedAccess = 
-            runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.id(), reviewResult));
+        EmergencyAccessService.EmergencyAccess reviewedAccess = 
+            runPromise(() -> emergencyAccessService.completeReview(ctx, emergencyAccess.emergencyAccessId(), reviewResult));
 
         // Verify escalation
-        assertThat(reviewedAccess.status()).isEqualTo(com.ghatana.phr.application.emergency.EmergencyAccessStatus.ESCALATED);
+        assertThat(reviewedAccess.status()).isEqualTo(EmergencyAccessService.EmergencyAccessStatus.ESCALATED);
 
-        updateReviewCase(emergencyAccess.id(), "ESCALATED", reviewResult.reviewNotes());
-        persistAuditEvent("EMERGENCY_ACCESS_ESCALATED", patientId, providerId, emergencyAccess.id());
+        updateReviewCase(emergencyAccess.emergencyAccessId(), "ESCALATED", reviewResult.notes());
+        persistAuditEvent("EMERGENCY_ACCESS_ESCALATED", patientId, providerId, emergencyAccess.emergencyAccessId());
     }
 
     // Database helper methods
 
-    private void persistEmergencyAccess(com.ghatana.phr.application.emergency.EmergencyAccess access) throws SQLException {
+    private void persistEmergencyAccess(EmergencyAccessService.EmergencyAccess access) throws SQLException {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("""
                  INSERT INTO emergency_access (id, patient_id, accessor_id, justification, reason, 
                      accessed_at, access_expires_at, review_due_at, status, review_case_id)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              """)) {
-            stmt.setString(1, access.id());
+            stmt.setString(1, access.emergencyAccessId());
             stmt.setString(2, access.patientId());
             stmt.setString(3, access.accessorId());
             stmt.setString(4, access.justification());

@@ -25,13 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmAnalyticsDashboardServiceImpl")
 class DmAnalyticsDashboardServiceImplTest extends EventloopTestBase {
 
-    private InMemoryDashboardRepository repository;
+    private EphemeralDashboardRepository repository;
     private DmAnalyticsDashboardServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryDashboardRepository();
+        repository = new EphemeralDashboardRepository();
         service = new DmAnalyticsDashboardServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -126,7 +126,7 @@ class DmAnalyticsDashboardServiceImplTest extends EventloopTestBase {
         return new DmAnalyticsDashboardService.CreateDashboardCommand("My Dashboard", "Desc", List.of());
     }
 
-    static final class InMemoryDashboardRepository implements DmAnalyticsDashboardRepository {
+    static final class EphemeralDashboardRepository implements DmAnalyticsDashboardRepository {
         private final Map<String, DmAnalyticsDashboard> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmAnalyticsDashboard> save(DmAnalyticsDashboard d) { store.put(d.getId(), d); return Promise.of(d); }

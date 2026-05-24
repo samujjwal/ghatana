@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class BudgetRecommendationServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryBudgetRecommendationRepository repository;
+    private EphemeralBudgetRecommendationRepository repository;
     private BudgetRecommendationServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryBudgetRecommendationRepository();
+        repository = new EphemeralBudgetRecommendationRepository();
         service = new BudgetRecommendationServiceImpl(kernelAdapter, repository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -245,7 +245,7 @@ class BudgetRecommendationServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryBudgetRecommendationRepository
+    private static final class EphemeralBudgetRecommendationRepository
             implements BudgetRecommendationRepository {
         private final ConcurrentHashMap<String, BudgetRecommendation> store = new ConcurrentHashMap<>();
         private volatile String latestId;

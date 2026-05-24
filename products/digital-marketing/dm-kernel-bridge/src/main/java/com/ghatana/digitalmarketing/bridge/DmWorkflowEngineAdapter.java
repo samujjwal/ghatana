@@ -99,17 +99,4 @@ public final class DmWorkflowEngineAdapter {
             });
     }
 
-    /**
-     * Creates a new {@link DmWorkflowEngineAdapter} backed by an in-memory
-     * {@link DurableWorkflowEngine} suitable for testing or single-node deployments.
-     *
-     * @return a new adapter instance
-     */
-    public static DmWorkflowEngineAdapter inMemory() {
-        DurableWorkflowEngine engine = DurableWorkflowEngine.builder()
-            .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
-            .defaultTimeout(Duration.ofMinutes(10))
-            .build();
-        return new DmWorkflowEngineAdapter(engine);
-    }
 }

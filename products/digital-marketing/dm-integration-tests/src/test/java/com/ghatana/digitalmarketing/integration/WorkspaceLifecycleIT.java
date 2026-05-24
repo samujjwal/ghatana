@@ -325,7 +325,7 @@ class WorkspaceLifecycleIT extends EventloopTestBase {
     // In-memory test doubles
     // -----------------------------------------------------------------------
 
-    private static final class InMemoryWorkspaceRepository implements WorkspaceRepository {
+    private static final class EphemeralWorkspaceRepository implements WorkspaceRepository {
         private final ConcurrentHashMap<String, Workspace> store = new ConcurrentHashMap<>();
 
         @Override

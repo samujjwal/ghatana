@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,39 @@ const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'openapi-breaking-changes.json');
 const waiversPath = path.join(repoRoot, 'config/openapi-breaking-change-waivers.json');
+const RETRYABLE_WRITE_CODES = new Set(['UNKNOWN', 'EACCES', 'EBUSY', 'EPERM']);
+
+function writeEvidenceAtomicWithRetry(filePath, content, maxAttempts = 5) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const tempPath = `${filePath}.tmp-${process.pid}-${Date.now()}-${attempt}`;
+    try {
+      writeFileSync(tempPath, content, 'utf8');
+      renameSync(tempPath, filePath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        rmSync(tempPath, { force: true });
+      } catch {
+        // Best-effort cleanup.
+      }
+
+      const retryable =
+        error
+        && typeof error === 'object'
+        && 'code' in error
+        && RETRYABLE_WRITE_CODES.has(error.code);
+      if (!retryable || attempt === maxAttempts) {
+        throw error;
+      }
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+}
 
 // Breaking change categories
 const BREAKING_CHANGE_TYPES = {
@@ -644,7 +677,7 @@ export function runOpenApiBreakingChangeCheck() {
   }
 
   mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
+  writeEvidenceAtomicWithRetry(
     evidencePath,
     `${JSON.stringify({
       generatedAt: new Date().toISOString(),
@@ -652,7 +685,6 @@ export function runOpenApiBreakingChangeCheck() {
       details,
       violations,
     }, null, 2)}\n`,
-    'utf8',
   );
 
   return {

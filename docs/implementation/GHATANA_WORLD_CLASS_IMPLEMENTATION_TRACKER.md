@@ -1,551 +1,648 @@
-# Deep & Wide Production-Readiness Audit and Implementation Plan
+## Review scope
 
-**Repo:** `samujjwal/ghatana`  
-**Target commit:** `5323e76480f52d237d7adb4142d1258a82b2dc4d`  
-**Commit message:** `daf fdsa f`  
-**Audit mode:** static expert review and implementation planning; long-running verification intentionally deferred  
-**Primary goal:** progress Ghatana toward an extremely easy-to-use, highly effective, performant, production-ready Product Development Kernel that can develop, build, test, package, deploy, verify, promote, rollback, observe, and evolve diverse applications while keeping product teams focused on business logic only.
+I reviewed `samujjwal/ghatana` at commit `30a4e4427298f3f42290188e0947de7a7d2c0299`, treating the **snapshot at this commit** as source of truth, not the diff. The commit itself is a merge commit, and the fetched commit metadata shows only a YAPPC changelog diff, so the meaningful review is the repository state at that ref, not that merge diff.
+
+I ignored archived/legacy/temporal planning docs and focused on active code/docs under `products/data-cloud`, `products/aep`, generated product registry/build includes, CI/release gates, and current implementation anchors.
 
 ---
 
-## 1. Executive Summary
+# Executive assessment
 
-The current snapshot is materially more advanced than earlier lifecycle-only states. The Kernel platform now has:
+The direction is now much more coherent than before. The active docs already encode the right boundary:
 
-- broader world-class gates in root scripts, including product interaction broker, plugin interaction broker, interaction performance, Rust/Python adapter conformance, polyglot fixture checks, lifecycle explain/recover, lifecycle run history, and Studio production profile checks;
-- execution-ready Java, TypeScript web, TypeScript Node API, Rust/Cargo, Python/pyproject, Docker Buildx, and Compose adapters registered in the toolchain registry;
-- ProductInteraction request/response and event brokers in Kernel core;
-- manifest-declared PHR and Digital Marketing interactions;
-- Data Cloud-backed product interaction evidence provider;
-- plugin interaction bus with typed envelopes, policy evaluation hooks, evidence writer support, audit records, and metrics;
-- CLI support for `plan`, `explain`, `recover`, lifecycle aliases, JSON output, dry-run, approval flags, tenant/workspace/project context, and adapter contract compliance checks.
+> **Data-Cloud is the governed data/storage substrate. AEP is the adaptive event intelligence layer. EventCloud and adaptive event semantics belong to AEP. For now, AEP implementation may live under `products/data-cloud/planes/action/*`, but that is a temporary code-location reality, not product ownership.**
 
-This is strong progress toward a production-grade platform. The main remaining issue is not “missing everything”; it is **production depth and consistency**. Several capabilities are now present but still need hardening so they can be trusted for real products and diverse languages:
+This is explicitly stated in the Data-Cloud architecture and plane architecture docs. Data-Cloud’s current `ARCHITECTURE.md` says Data-Cloud owns entity storage, metadata, schemas, audit, retention, encryption support, queryable historical metadata, and pluggable persistence, while complex event processing, PatternSpec/EPL, EventCloud subscriptions/tailing/windowing, pattern learning/adaptation, agent orchestration, and predictive/recommended lifecycle belong to AEP.
 
-1. **World-class scripts may be brittle because many Gradle npm scripts use `gradlew` instead of `./gradlew`.** This is a static stability bug that can break local/CI execution depending on PATH.
-2. **Adapters are execution-ready but not yet production-ready.** Rust/Python/Node support exists, but production packaging, runtime service conventions, report parsing, SLO evidence, and cross-platform details still need depth.
-3. **Product interaction brokers exist, but the production runtime path must be completed end-to-end.** Broker logic, policy, evidence, and event paths exist; now they must be wired to real product services, observability backends, Data Cloud runtime truth, and Studio UX.
-4. **PHR and Digital Marketing interaction handlers still need real domain backing.** Earlier handlers were simple; even if tests pass, production readiness requires real consent and preference services, not static outcomes.
-5. **Platform mode remains incomplete.** The CLI still rejects platform mode unless a Data Cloud-backed provider bridge is registered; production systems need platform mode as a first-class path.
-6. **Studio must become the default easy path.** CLI has improved, but Studio still needs guided product registration, lifecycle action launcher, interaction graph, recovery UX, and production-profile status.
-7. **Evidence quality must move from “files exist and gates run” to “behavior is proven.”** Verification should remain deferred during this audit, but the implementation plan must target behavior-level proof.
+The plane architecture also clearly says that during migration, AEP modules may remain under `products/data-cloud/planes/action/*`, but Data-Cloud planes must not import AEP semantics, and AEP integration must go through public contracts or stable SPI.
 
----
+However, **Data-Cloud is not production-ready yet**. The readiness evidence marks `status: blocked`, disables ordinary lifecycle execution, and requires platform-provider mode, bootstrap separation, runtime-truth providers, product neutrality, and Action Plane governance.
 
-## 2. Current-State Classification
+So the current state is:
 
-| Area | State | Expert assessment |
-|---|---:|---|
-| Kernel CLI lifecycle UX | Existing but partial | CLI supports product/phase, plan, explain, recover, aliases, JSON, dry-run, approval and context flags. Needs UX polish, stable commands, and fewer script variants. |
-| ProductUnit surface model | Existing but partial | Product surfaces now include optional `language`, `runtime`, `buildSystem`, `cratePath`, `cargoToml`, `pyprojectPath`. Needs stricter enum contracts and guided detection. |
-| Java adapter | Existing and executable | Gradle Java adapter is execution-ready, but production report parsing, SLO, doc/ArchUnit integration, and error taxonomy need depth. |
-| TypeScript web adapter | Existing and executable | Vite/React path exists. Needs stronger route/a11y/i18n/report evidence and Playwright integration as an adapter, not only script gate. |
-| TypeScript Node adapter | Existing and executable | `PnpmNodeApiAdapter` exists. Needs service runtime/dev orchestration, health/readiness conventions, and Node package metadata manifests. |
-| Rust adapter | Existing but partial | `CargoRustAdapter` runs fmt/check/clippy/test/build. Needs cargo metadata parsing, cross-platform binary naming, workspace support, test report extraction, and production service packaging. |
-| Python adapter | Existing but partial | `PythonPyprojectAdapter` exists. Needs venv/package-manager strategy, pyproject tool discovery, pytest report parsing, mypy/ruff/pyright policy, and production service packaging. |
-| Docker Buildx adapter | Existing but partial | Execution-ready. Must keep environment-blocked Docker failures honest and add image digest/SBOM/provenance only when real. |
-| Compose adapter | Existing but partial | Local deploy/verify/promotion/rollback support exists. Production/staging are intentionally blocked. Needs env validation and rollback depth. |
-| Product interaction request broker | Existing but partial | Broker validates request, policy, timeout, handler, evidence writer, metrics. Needs central registry, auth integration, runtime evidence, and real product services. |
-| Product interaction event broker | Existing but partial | Event broker publishes to subscribers with evidence and metrics. Needs durable event provider, idempotency, replay, DLQ, and backpressure. |
-| Plugin interaction bus | Existing but partial | Typed envelopes, policy, audit, evidence writer, metrics exist in default bus. Needs production-grade broker semantics, durable pub/sub, dependency graph, circuit breaking. |
-| Data Cloud interaction evidence | Existing but partial | Provider exists and persists typed interaction evidence through Data Cloud adapter. Needs schema lifecycle, retention, query/readback, and runtime-truth visualization. |
-| PHR pilot | Existing but partial | Enabled with lifecycle, healthcare gates, interactions. Needs real domain-backed interactions, FHIR/consent completeness, healthcare UI/E2E depth. |
-| Digital Marketing pilot | Existing but partial | Enabled with lifecycle, interactions, DMOS bridge. Needs complete campaign workflows, connector readiness, consent enforcement, reporting, UI journeys. |
-| Studio | Existing but partial | Strong artifact/lifecycle packages exist, but must become the primary low-cognitive-load UI for registration, lifecycle, evidence, interactions, and recovery. |
-| Data Cloud bridge | Existing but partial | Kernel bridge and evidence provider exist. Must avoid plane internals and support production provider mode. |
-| YAPPC handoff | Existing but partial | Boundary checks exist. Must remain ProductUnitIntent/artifact-evidence handoff only. |
-| Long-running verification | Deferred by request | Do not spend time running full gates here; use static review and prescribe focused verification. |
-
----
-
-## 3. Critical Static Bugs and Stability Risks
-
-### 3.1 Root scripts call `gradlew` without `./gradlew`
-
-Several npm scripts use `gradlew ...` instead of `./gradlew ...`. On common Unix shells, the current working directory is not automatically on `PATH`, so these commands can fail even when `gradlew` exists in the repo root.
-
-**Impact:** phase8/world-class checks can fail for environment/path reasons unrelated to code quality.
-
-**Fix:** update all root package scripts that invoke Gradle to call `./gradlew` unless a cross-platform wrapper abstraction is introduced.
-
-**Likely touched:**
-
-- `package.json`
-- scripts that generate package scripts
-- docs mentioning commands
-
-**Regression:** add `scripts/check-gradle-wrapper-script-usage.mjs` to fail on root scripts containing `"gradlew ` without `"./gradlew `.
-
-### 3.2 CLI platform mode is explicitly not registered
-
-`scripts/kernel-product.mjs` rejects `--mode platform` with an error stating that platform mode requires the Data Cloud-backed provider bridge not registered in the snapshot.
-
-**Impact:** production-grade Kernel cannot be considered complete while the primary production provider mode is unavailable.
-
-**Fix:** implement provider mode registry with bootstrap and platform implementations, allowing platform mode to use Data Cloud-backed providers for registry, events, artifacts, health, approvals, provenance, runtime truth, and interaction evidence.
-
-### 3.3 Interaction brokers are present but not yet product-service complete
-
-The broker infrastructure is the right abstraction, but product handlers must be backed by real domain services. Static or simplified handler responses are unacceptable for production.
-
-**Fix:** make PHR `ConsentStatusInteractionHandler` call the real consent domain service and audit trail. Make DMOS `NotificationPreferenceInteractionHandler` call the real notification preference service/persistence layer.
-
-### 3.4 Adapter registry mixes execution-ready and declared-only adapters
-
-The registry correctly marks some adapters `declared-only` or `planned`, but the UX and validation must ensure product teams never believe declared-only adapters are usable.
-
-**Fix:** Kernel plan/explain must show `execution-ready`, `declared-only`, and `blocked` clearly. Product registration should hide or disable declared-only adapters by default.
-
-### 3.5 Surface model is extensible but weakly typed
-
-`ProductSurface` permits `language?: string`, `runtime?: string`, `buildSystem?: string` and arbitrary keys. This is flexible, but production-grade product registration needs enums and validation.
-
-**Fix:** add strict Zod/TS schema for `language`, `runtime`, `buildSystem`, and per-language config fields.
-
----
-
-## 4. Feature Completeness Audit by Capability
-
-### 4.1 Kernel ease-of-use
-
-**Current:** CLI has aliases (`develop`, `ship-local`, `verify-local`), `status`, `recover`, `explain`, JSON output, context flags, and dry-run.
-
-**Missing:**
-
-- canonical user-facing command docs
-- one-command product creation/registration
-- Studio wizard parity with CLI
-- stable command grammar that does not require remembering positional variants
-- consistent failure/recovery taxonomy
-- product registration validation with auto-fixes
-- generated registry update flow
-
-**Target:**
-
-```bash
-pnpm kernel product create
-pnpm kernel product <productId> plan <phase>
-pnpm kernel product <productId> explain <phase>
-pnpm kernel product <productId> <phase>
-pnpm kernel product <productId> recover <phase>
-```
-
-### 4.2 Polyglot adapters
-
-**Current:** Java, TS web, TS Node, Rust, Python adapters exist and are registered as execution-ready.
-
-**Missing production depth:**
-
-- standard test report parsing across languages
-- standard coverage parsing across languages
-- language-specific artifact fingerprints
-- service health/readiness conventions for Rust/Python/Node
-- package manager lockfile validation
-- dependency vulnerability hooks
-- caching and affected-surface execution
-- cross-platform path/command behavior
-- generated fixtures proving adapter behavior in a representative polyglot product
-
-**Target:** each adapter must emit:
-
-- preflight report
-- execution plan
-- step results
-- artifact manifest
-- evidence refs
-- failure classifier
-- recovery actions
-- performance timings
-
-### 4.3 Product interaction broker
-
-**Current:** `ProductInteractionBroker` exists with fail-closed preflight, handler lookup, contract version check, payload type check, timeout handling, idempotent replay cache, evidence writer, metrics, and outcome normalization.
-
-**Missing production depth:**
-
-- contract registry loading from ProductUnits/manifests
-- external auth/authorization integration
-- tenant/workspace policy integration
-- circuit breaker and backoff
-- provider health integration
-- Data Cloud evidence writer default for platform mode
-- structured audit events
-- OpenTelemetry spans and metrics export
-- Studio interaction graph
-- async event parity with request/response
-- version compatibility negotiation beyond exact handler schema equality
-
-### 4.4 Product interaction event broker
-
-**Current:** `ProductInteractionEventBroker` supports topic subscribers, policy checks, sequential dispatch, evidence writer, and metrics.
-
-**Missing production depth:**
-
-- durable event storage
-- event replay
-- idempotency keys
-- DLQ
-- subscriber backpressure
-- retry policy
-- event schema validation
-- parallel delivery where safe
-- ordering guarantees declaration
-
-### 4.5 Plugin interaction
-
-**Current:** `PluginInteractionBus` and `DefaultPluginInteractionBus` provide typed request/response and pub/sub with envelopes, policy evaluator, evidence writer, audit records, and metrics.
-
-**Missing production depth:**
-
-- lifecycle dependency resolver integrated into startup
-- cycle detection and compatibility matrix
-- plugin-level health impact
-- durable event provider for plugin pub/sub
-- timeout enforcement in default implementation
-- circuit breaker and backpressure
-- Studio plugin interaction graph
-- plugin permission model and contract registry
-
-### 4.6 Shared platform feature bridge
-
-**Current:** root scripts and platform packages show many common gates and plugins, including identity, audit, consent, notification, risk, runtime truth, observability, design system, and product shell.
-
-**Missing production depth:**
-
-- single consumption pattern for each common capability
-- product examples for each capability
-- no duplicate local product implementations
-- cross-language client contracts for common capabilities
-- Data Cloud-backed runtime truth in platform mode
-- production evidence for all common feature gates
-
----
-
-## 5. Product Pilot Completeness
-
-### 5.1 Digital Marketing
-
-**Current:** enabled lifecycle product with backend-api and web surfaces, interaction declarations, policy packs, local environment, telemetry, and lifecycle phases. It publishes marketing lead-captured events, consumes PHR consent status, and provides notification preferences.
-
-**Missing:**
-
-- complete campaign activation path with broker-mediated PHR consent check
-- real notification preference persistence/service
-- Google Ads connector readiness and failure modes
-- lead capture and conversion tracking domain invariants
-- audience/segment consent boundaries
-- dashboards/reports with backend-owned data contracts
-- UI degraded states for interaction/provider failures
-- Playwright journeys covering campaigns, leads, reports, admin, connector, and consent failures
-
-### 5.2 PHR
-
-**Current:** enabled lifecycle product with backend-api and web surfaces, healthcare gates, interaction declarations, package/deploy/verify contracts, and rollback readiness marked target-partial. It provides consent status and consumes DMOS notification preferences.
-
-**Missing:**
-
-- real consent status backed by patient consent domain
-- FHIR R4 validation depth and golden resources
-- patient data access controls
-- audit access history UI and service path
-- data sovereignty evidence generated from real persistence/routing
-- healthcare gate outputs tied to runtime evidence
-- rollback enablement after stable deploy history, artifact selection policy, healthcare post-rollback gates, and approval contract
-
----
-
-## 6. Data Cloud and YAPPC Boundaries
-
-### 6.1 Data Cloud
-
-**Correct direction:** Data Cloud has Kernel bridge and interaction evidence provider. This keeps Kernel dependent on contracts/adapters, not plane internals.
-
-**Gaps:**
-
-- platform mode is not fully wired from CLI
-- evidence provider needs schema lifecycle, readback, retention, and health checks
-- interaction evidence should be queryable and visible in Studio
-- Data Cloud runtime truth should not be bypassed by local files in production
-
-### 6.2 YAPPC
-
-**Correct direction:** YAPPC should own artifact intelligence and ProductUnitIntent creation, while Kernel consumes contracts/evidence only.
-
-**Gaps:**
-
-- keep Kernel free of YAPPC compiler/decompiler internals
-- ProductUnitIntent handoff must be versioned, validated, and evidence-backed
-- generated change-set/risk/dependency evidence should feed Kernel lifecycle, not bypass it
-
----
-
-## 7. Deep Gap Matrix
-
-| ID | Area | Severity | Current state | Desired state | Concrete task | Owner modules | Validation |
-|---|---|---:|---|---|---|---|---|
-| BUG-001 | Script stability | P0 | Gradle scripts use `gradlew` | Stable wrapper invocation | Replace with `./gradlew` or wrapper abstraction | `package.json`, generator scripts | new `check:gradle-wrapper-script-usage` |
-| KUX-001 | CLI simplicity | P0 | Many aliases/scripts | One canonical mental model | Normalize `product <id> <phase>` grammar and docs | `scripts/kernel-product.mjs` | CLI tests |
-| KUX-002 | Recovery UX | P0 | `recover` exists | actionable recovery by failure code | Map every failure code to recovery action | kernel-lifecycle, CLI, Studio | `check:lifecycle-explain-recover` |
-| KUX-003 | Studio lifecycle | P0 | partial | guided one-click lifecycle | Lifecycle launcher, plan/explain/result/recover views | `ghatana-studio` | Studio E2E |
-| POLY-001 | Surface typing | P0 | strings + arbitrary keys | strict language/runtime/buildSystem model | Add schemas and validation | kernel contracts/lifecycle | contract tests |
-| POLY-002 | Rust depth | P1 | adapter exists | production-ready Rust support | cargo metadata, report parsing, SLO, cross-platform binary handling | kernel-toolchains | rust conformance |
-| POLY-003 | Python depth | P1 | adapter exists | production-ready Python support | venv/tool discovery, pytest report, type/lint policy, FastAPI worker conventions | kernel-toolchains | python conformance |
-| POLY-004 | Node depth | P1 | Node adapter exists | production Node service support | health/readiness/dev process conventions | kernel-toolchains | Node adapter tests |
-| INT-001 | Product interaction broker | P0 | broker exists | production broker | registry, auth, policy, provider health, evidence, observability | kernel-core | product broker tests |
-| INT-002 | Event broker | P0 | in-process sequential broker | durable event path | persistence, retry, DLQ, replay, idempotency | kernel-core/Data Cloud | event broker tests |
-| INT-003 | Interaction evidence | P0 | Data Cloud provider exists | durable queryable evidence | schema lifecycle, retention, readback, Studio viewer | Data Cloud bridge, Studio | interaction runtime truth |
-| INT-004 | DMOS real consent | P0 | manifest consumes PHR | campaign activation uses broker | Wire activation workflow through broker | DMOS app/api | campaign E2E |
-| INT-005 | PHR real consent | P0 | consent handler exists | domain-backed consent | Replace static logic with consent service | PHR backend | consent tests |
-| PLUG-001 | Plugin broker | P0 | bus exists | governed production broker | timeout/circuit breaker/durable pubsub/dependency graph | kernel-plugin | plugin broker tests |
-| PLUG-002 | Plugin cycles | P0 | not fully proven | no hidden cyclic deps | graph cycle/startup validation | kernel-plugin | resolver tests |
-| DC-001 | Platform mode | P0 | CLI rejects platform mode | Data Cloud-backed platform mode | register provider bridge | kernel-providers/Data Cloud | platform mode tests |
-| STU-001 | Interaction Studio | P1 | absent/partial | graph/timeline/evidence viewer | Product interaction views | Studio | UI tests |
-| STU-002 | Product registration | P0 | partial | wizard with surface detection | registration wizard + generated registry workflow | Studio/scripts | E2E |
-| PERF-001 | Affected surface execution | P1 | checks exist | skip unchanged safely | surface dependency/hash graph | kernel-lifecycle | performance tests |
-| PERF-002 | Interaction SLO | P1 | metrics counters | enforce SLO budgets | latency budget config + regression gate | kernel-core/scripts | interaction performance |
-| GOV-001 | Evidence freshness | P0 | evidence files exist | evidence commit/source validation | add freshness and source-ref checks | scripts/kernel evidence | release evidence check |
-| GOV-002 | Current-state truth | P0 | many docs/gates | no target-state claims | doc claim evidence gate by product | scripts/docs | doc truth |
-| SEC-001 | Tenant isolation | P0 | fail-closed checks exist | full wrong tenant/workspace tests | expand broker and product tests | kernel/integration | cross-product tests |
-| OBS-001 | OTel | P1 | metrics counters | logs/metrics/traces | add structured telemetry export | kernel/platform | o11y conformance |
-| REL-001 | PHR rollback | P0 | target-partial | enabled safe rollback | artifact history, approval, healthcare post-rollback gates | PHR/Kernel | rollback tests |
-
----
-
-## 8. Phased Roadmap
-
-### Phase 0 — Stabilize execution foundation
-
-**Build/fix:**
-
-- Fix `gradlew` script invocations.
-- Verify command spelling and wrappers statically.
-- Confirm phase8 no longer depends on environment-specific accidental PATH.
-- Generate baseline current-state matrix for adapters, brokers, providers, and products.
-
-**Validation:** static checks only first; defer full phase8 run until fixes are in.
-
-### Phase 1 — Make Kernel easy by default
-
-**Build/fix:**
-
-- simplify CLI grammar
-- add `explain` and `recover` docs
-- expose failure recovery table
-- add product registration wizard design and initial implementation
-- hide adapter/provider internals from default output
-
-### Phase 2 — Harden polyglot adapters
-
-**Build/fix:**
-
-- enrich Java/TS/Rust/Python adapters with report parsing and artifact evidence
-- add language/runtime/buildSystem schema
-- add fixture product covering Java + TS + Rust + Python
-- add affected-surface execution graph
-
-### Phase 3 — Production broker hardening
-
-**Build/fix:**
-
-- finish ProductInteractionBroker registry/policy/evidence/observability path
-- finish ProductInteractionEventBroker durable event path
-- replace direct handler tests with broker-mediated tests
-- add Data Cloud evidence readback and Studio viewer
-
-### Phase 4 — Plugin interaction hardening
-
-**Build/fix:**
-
-- add plugin dependency graph and cycle checks
-- add timeout/circuit breaker/backpressure
-- make plugin pub/sub durable where required
-- add plugin interaction evidence and Studio view
-
-### Phase 5 — Product pilot completion
-
-**Build/fix:**
-
-- DMOS real campaign/customer/lead/analytics/connector workflows
-- DMOS consent-driven campaign activation
-- PHR real consent/FHIR/audit/data-sovereignty workflows
-- PHR notification-preference consumption
-- full UI journeys and degraded states
-
-### Phase 6 — Platform mode and production operations
-
-**Build/fix:**
-
-- Data Cloud-backed provider mode
-- evidence freshness/source-ref checks
-- release scorecards
-- SLO and cost budgets
-- observability dashboards
-- production/staging deployment target contracts
-
----
-
-## 9. Testing Strategy
-
-### Static and contract tests first
-
-- product registry
-- domain registry
-- architecture boundaries
-- current-state claims
-- product interaction contracts
-- plugin interaction contracts
-- adapter registry conformance
-- gradle wrapper script usage
-
-### Focused behavior tests
-
-- Rust adapter fixture
-- Python adapter fixture
-- Node API adapter fixture
-- broker request/response success, denied, blocked, timeout, evidence failure
-- event broker publish, no subscriber, denied, delivery failure
-- plugin interaction typed request and pub/sub
-- cross-product PHR ↔ DMOS broker-mediated tests
-
-### Deferred long-running verification
-
-Per request, defer:
-
-- full `pnpm check:phase8`
-- full `pnpm check:world-class-platform-readiness`
-- full product E2E suites
-- full Docker/Buildx packaging
-- full Compose deploy/verify
-- full performance/load suites
-
-Run these only after static bugs and missing capabilities above are addressed.
-
----
-
-## 10. Validation Strategy
-
-### Immediate static/focused commands
-
-```bash
-pnpm check:product-registry
-pnpm check:domain-registry
-pnpm check:architecture-boundaries
-pnpm check:toolchain-adapter-contracts
-pnpm check:product-interaction-contracts
-pnpm check:cross-product-interaction-boundaries
-pnpm check:interaction-runtime-truth
-pnpm check:java-adapter-conformance
-pnpm check:typescript-web-adapter-conformance
-pnpm check:rust-adapter-conformance
-pnpm check:python-adapter-conformance
-pnpm check:kernel-product-cli
-pnpm check:lifecycle-explain-recover
-pnpm check:lifecycle-run-history
-```
-
-### Add missing focused commands
-
-```bash
-pnpm check:gradle-wrapper-script-usage
-pnpm check:product-interaction-evidence-readback
-pnpm check:plugin-interaction-cycles
-pnpm check:studio-lifecycle-ux
-pnpm check:polyglot-fixture-behavior
-```
-
-### Later long-running gates
-
-```bash
-pnpm check:phase8
-pnpm check:world-class-platform-readiness
-pnpm package:digital-marketing
-pnpm deploy:local:digital-marketing
-pnpm verify:local:digital-marketing
-pnpm package:phr
-pnpm deploy:local:phr
-pnpm verify:local:phr
+```text
+Architecture direction: strong
+Boundary clarity: improving and mostly coherent
+AEP-in-Data-Cloud migration structure: present
+Agent-as-operator foundation: present
+PatternSpec foundation: present
+Uncertainty foundation: present
+Production readiness: blocked / incomplete
+Runtime execution completeness: partial
+Release gates: strong but split between advisory and strict workflows
 ```
 
 ---
 
-## 11. Expert Implementation Tickets
+# 1. Current organization analysis
 
-### Ticket 1 — Fix Gradle wrapper script invocation
+## 1.1 Root build organization
 
-**Where:** `package.json`, generator scripts.  
-**Task:** replace `gradlew` with `./gradlew` in Unix shell npm scripts or introduce a cross-platform Gradle wrapper command abstraction.  
-**Done:** static gate prevents regression.
+The root Gradle settings require Java 21, use a build-logic included build, central dependency resolution, build cache configuration, and generated product includes from `config/generated/settings-gradle-includes.kts`.
 
-### Ticket 2 — Strict product surface schema
+That is good because it gives the monorepo a central build model instead of each product inventing local build patterns. But it also means Data-Cloud production readiness depends on generated registry consistency, not only local module health.
 
-**Where:** `platform/typescript/kernel-product-contracts`, `kernel-lifecycle`.  
-**Task:** add enum-backed schemas for `language`, `runtime`, `buildSystem`, adapter compatibility, and required path fields.  
-**Done:** invalid language/runtime combos fail with recovery guidance.
+## 1.2 Data-Cloud module organization
 
-### Ticket 3 — ProductInteractionBroker production registry
+The generated settings includes show Data-Cloud as a `platform-provider` with these active modules:
 
-**Where:** `platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/interaction`.  
-**Task:** load handlers/contracts from ProductUnit manifest registry and enforce provider/consumer compatibility.  
-**Done:** consumers cannot call undeclared provider contracts.
+```text
+products:data-cloud:planes:shared-spi
+products:data-cloud:planes:data:entity
+products:data-cloud:planes:event:core
+products:data-cloud:planes:operations:config
+products:data-cloud:planes:intelligence:analytics
+products:data-cloud:planes:governance:core
+products:data-cloud:delivery:runtime-composition
+products:data-cloud:extensions:plugins
+products:data-cloud:delivery:api
+products:data-cloud:delivery:launcher
+products:data-cloud:delivery:sdk
+products:data-cloud:contracts
+products:data-cloud:extensions:agent-registry
+products:data-cloud:extensions:agent-catalog
+products:data-cloud:delivery:api-contract-tests
+products:data-cloud:planes:intelligence:feature-ingest
+products:data-cloud:planes:event:store
+products:data-cloud:integration-tests
+products:data-cloud:planes:action:*
+products:data-cloud:extensions:kernel-bridge
+```
 
-### Ticket 4 — Product interaction evidence readback
+The important observation is that **AEP is effectively co-located under Data-Cloud’s Action Plane** through many `planes:action:*` modules: operator contracts, central runtime, engine, registry, analytics, security, event bridge, agent runtime, API, scaling, observability, orchestrator, server, identity, compliance, and kernel bridge.
 
-**Where:** Data Cloud bridge and scripts.  
-**Task:** persist and read back interaction evidence records with tenant/workspace/product/contract indexes.  
-**Done:** runtime truth validates evidence content, not only evidence ref existence.
+That matches your current instruction: **for now, AEP inside Data-Cloud**. The structure is acceptable if the docs and architecture tests keep enforcing that this is a migration/deployment convenience, not a semantic ownership reversal.
 
-### Ticket 5 — Replace static PHR consent handler behavior
+## 1.3 Plane model
 
-**Where:** `products/phr/src/main/java/.../ConsentStatusInteractionHandler.java`.  
-**Task:** call real consent service, verify patient/subject scope, write audit evidence.  
-**Done:** wrong patient/tenant/workspace/purpose fails closed; valid consent succeeds.
+The active plane architecture is a strong organizing model. It defines planes, surfaces, modules, and runtime truth, and explicitly rejects vague “capability area” language. It also defines a target repo layout with `planes`, `delivery`, `extensions`, `contracts`, `deploy`, and `integration-tests`.
 
-### Ticket 6 — Replace static DMOS notification preference handler behavior
+This is the right organization for a production product suite because it separates:
 
-**Where:** `products/digital-marketing/dm-kernel-bridge`.  
-**Task:** call real notification preference service and persistence layer.  
-**Done:** preference result is tenant-scoped and evidence-backed.
+- product architecture boundaries,
+- user/API surfaces,
+- implementation modules,
+- runtime truth,
+- migration rules.
 
-### Ticket 7 — Rust adapter production hardening
-
-**Where:** `CargoRustAdapter.ts`.  
-**Task:** parse cargo metadata/test output, support workspaces/target triples, handle binary naming, emit manifest details.  
-**Done:** fixture proves build/test/package across service and library shapes.
-
-### Ticket 8 — Python adapter production hardening
-
-**Where:** `PythonPyprojectAdapter.ts`.  
-**Task:** define Python env strategy, parse pytest reports, support type/lint configured tools, package service/worker/library.  
-**Done:** fixture proves validate/test/build/package.
-
-### Ticket 9 — Studio lifecycle and interaction UX
-
-**Where:** `platform/typescript/ghatana-studio`.  
-**Task:** add product registration wizard, lifecycle launcher, interaction graph, evidence viewer, recovery summaries.  
-**Done:** product team can run lifecycle without understanding adapters/providers.
-
-### Ticket 10 — Platform provider mode
-
-**Where:** `kernel-providers`, Data Cloud bridge, CLI.  
-**Task:** register platform-mode providers and make `--mode platform` executable in production profiles.  
-**Done:** platform mode no longer throws not-registered error.
+Keep this model. Do not revert to capability-area naming.
 
 ---
 
-## 12. Production Readiness Definition of Done
+# 2. AEP inside Data-Cloud: current state
 
-Ghatana Kernel becomes production-ready when:
+## 2.1 Boundary clarity is good
 
-- product teams can register Java, TypeScript, Rust, and Python surfaces without lifecycle internals;
-- every phase supports plan, explain, execute, summarize, and recover;
-- Studio and CLI both provide simple, consistent, low-cognitive-load workflows;
-- Java/TS/Rust/Python adapters produce trustworthy artifacts, evidence, failures, and recovery actions;
-- product interaction broker is the only supported product-to-product request path;
-- product event broker is durable, replayable, and evidence-backed;
-- plugin interactions are typed, governed, observable, and cycle-safe;
-- Data Cloud-backed platform mode is available for production runtime truth and evidence;
-- PHR and Digital Marketing use real business services behind their interaction handlers;
-- no product imports another product’s internals;
-- no product owns platform lifecycle code;
-- all critical evidence is fresh, source-ref-bound, and behavior-backed;
-- full phase8/world-class gates pass after static blockers are fixed.
+The AEP architecture doc is now explicit: AEP is a formal, adaptive, agentic event processing platform grounded in adaptive ESP, and Data-Cloud remains the governed data/storage substrate.
+
+It also correctly states that AEP has “partially implemented foundations” and that much implementation remains co-located under `products/data-cloud/planes/action/*` for migration compatibility.
+
+This is much better than claiming full production readiness prematurely.
+
+## 2.2 Dissertation traceability exists and is useful
+
+`products/aep/docs/DISSERTATION_TRACEABILITY.md` maps dissertation concepts to AEP concepts and implementation anchors. It explicitly says modern advancements extend typed event operators and do not replace PatternSpec/EPL/operator graphs/governed lifecycle.
+
+That is exactly the framing needed for coherence.
+
+## 2.3 Agent-as-operator foundation exists
+
+The core `EventOperator` contract exists with `id`, `kind`, `version`, `validate`, `compile`, and `process`.
+
+The `AgentOperator` contract extends both `UnifiedOperator` and `EventOperator<Map<String,Object>, Map<String,Object>>`, and it declares agent reference, kind, side-effect profile, schemas, model/tool/memory/retrieval/guardrail/replay/uncertainty/human-review/observability policies.
+
+The `OperatorKind` enum includes standard pattern operators and all agent operator kinds: `AGENT_PREDICATE`, `AGENT_ENRICH`, `AGENT_EXTRACT`, `AGENT_PATTERN_SYNTHESIS`, `AGENT_EXPLANATION`, `AGENT_REVIEW`, `AGENT_ACTION`, and `AGENT_REFLECTION`.
+
+There is also an architecture contract test verifying `AgentOperator` is assignable from `EventOperator`, and it checks canonical agent operator kinds plus governance requirements for side-effecting action operators.
+
+This is a major positive. The architectural foundation for your two principles is already present.
+
+## 2.4 PatternSpec foundation exists but is still lightweight
+
+`PatternSpecValidator` validates required sections, semantics, emit, lifecycle, operator shape, agent operator output schemas, and `AGENT_ACTION` governance/tool policy requirements.
+
+`PatternSpecCompiler` compiles structurally valid PatternSpec maps into deterministic runtime graph contracts, producing a `CompiledPattern` with root runtime node, node order, metadata, semantics, emit, lifecycle, and governance.
+
+This is good, but it is still mostly structural. It is not yet a complete production-grade EPL compiler with deep type checking, schema compatibility, executable graph binding, time semantics, uncertainty enforcement, replay guarantees, policy checks, and runtime deployment.
+
+## 2.5 Uncertainty foundation exists but needs production calibration
+
+`UncertaintyPropagator` implements deterministic propagation rules across AND, OR, SEQ, NOT/ABSENCE, WITHIN/WINDOW, TIMES/REPEAT, and all agent operators. It tracks event detection confidence, attribute confidence, temporal confidence, source reliability, pattern confidence, model confidence, retrieval confidence, input completeness, and calibration score.
+
+This is a strong foundation. But production readiness still requires calibration, thresholds, golden datasets, replay validation, and operator-wide enforcement.
+
+## 2.6 Agent runtime governance exists but is complex and needs productization
+
+`GovernedAgentDispatcher` is a substantial governance-aware decorator over agent dispatch. It handles release guard, grant validation, invariant monitoring, mastery checks, version context checks, task classification, mode selection, trace recording, and OpenTelemetry spans.
+
+It also records denial events and governance decisions when dispatch is denied, and it blocks execution based on release state, mastery state, approval proof, verification proof, and mode-selection decisions.
+
+This is directionally strong, but the class is doing a lot. It should be decomposed into smaller policy/evaluator components before being treated as production stable.
+
+---
+
+# 3. Production readiness state
+
+## 3.1 Readiness is explicitly blocked
+
+The readiness file says:
+
+```yaml
+status: blocked
+lifecycleExecutionAllowed: false
+ordinaryLifecycleProductEnabled: false
+```
+
+It also requires platform-provider mode, bootstrap separation, runtime-truth providers, product neutrality, and Action Plane governance.
+
+This is correct and should remain blocked until the product-provider gates have executable evidence.
+
+## 3.2 CI is broad but advisory in places
+
+`.github/workflows/data-cloud-ci.yml` is named “Data Cloud CI (Advisory).” It compiles selected modules, runs backend tests, frontend type checks/tests, architecture tests, route manifest drift, doc boundary lint, tenant isolation audit, connector validation, agent governance validation, boundary-language checks, maturity proof gate, SDK generation, smoke E2E advisory, backup drill advisory, Helm/k8s render validation, security-scan advisory, and bundle budget checks.
+
+That is a strong gate set, but the initial build matrix does **not** compile/check every active Data-Cloud and Action Plane module. It focuses on shared-spi, runtime-composition, launcher, sdk, agent-registry, integration-tests, and some checks. Given the generated settings include many more modules, production readiness needs an all-active-module check.
+
+## 3.3 Release workflow is stricter
+
+`data-cloud-release.yml` validates release environment variables/secrets, blocks localhost release URLs, builds/checks selected modules, runs UI readiness, strict runtime profile checks, strict smoke E2E, strict backup drill, blocking dependency vulnerability check, and SBOM generation.
+
+This is good, but the release workflow also checks only selected modules in its main build/test step. It should include all active Data-Cloud and co-located Action Plane modules, or explicitly justify excluded modules as non-release artifacts.
+
+---
+
+# 4. Key gaps to close
+
+## Gap 1 — Data-Cloud is still blocked as platform-provider
+
+The readiness file is honest. Keep it blocked until:
+
+- platform-provider mode proof passes,
+- runtime-truth provider proof passes,
+- product-neutrality proof passes,
+- Action Plane governance proof passes,
+- release gates are strict and complete,
+- all active modules compile/test/check,
+- Data-Cloud is not enabled as ordinary lifecycle product.
+
+## Gap 2 — AEP co-location is not yet migration-complete
+
+The plane architecture says AEP modules may remain under `products/data-cloud/planes/action/*`, but this is temporary.
+
+For now, that is acceptable. But production docs must distinguish:
+
+```text
+Code location: products/data-cloud/planes/action/*
+Semantic ownership: AEP
+Persistence/data substrate: Data-Cloud
+```
+
+## Gap 3 — Build/release gates do not cover all active modules
+
+Generated settings include many Data-Cloud modules, but CI/release build commands cover only a subset.
+
+This is the biggest practical production risk.
+
+## Gap 4 — PatternSpec is still structural
+
+The current validator/compiler are good anchors, but they are not yet enough for production-grade adaptive ESP. They must gain schema registry integration, output type checks, operator compatibility checks, time semantics enforcement, uncertainty propagation enforcement, replay semantics, and runtime DAG binding.
+
+## Gap 5 — Agent operator contracts exist, but runtime integration must be universal
+
+The contracts and tests exist. The next step is making every agent use in the Action Plane go through `AgentOperator`, not direct callbacks, detector-specific agents, ad hoc dispatchers, or service-level shortcuts.
+
+## Gap 6 — GovernedAgentDispatcher is too large
+
+`GovernedAgentDispatcher` includes release checks, grants/invariants, mastery, version context, task classification, mode selection, memory retrieval, trace ledger, and OTel.
+
+That is a lot for one class. It should be decomposed into:
+
+```text
+AgentReleaseGate
+AgentGrantGate
+AgentInvariantGate
+AgentMasteryGate
+AgentVersionGate
+AgentModeSelectionGate
+AgentMemoryRetrievalStage
+AgentTraceStage
+AgentDispatchPipeline
+```
+
+## Gap 7 — Data-Cloud production security must be enforced, not just documented
+
+Data-Cloud owns audit, retention, encryption support, and governance. The production suite needs hard tests proving:
+
+- tenant isolation,
+- audit completeness,
+- encryption/redaction,
+- policy enforcement,
+- route auth metadata,
+- storage plugin behavior,
+- backup/restore,
+- runtime truth drift.
+
+Some of these checks exist, but they must become strict release criteria for all active surfaces.
+
+---
+
+# 5. Production-ready product suite plan
+
+## Phase 0 — Freeze coherent boundaries
+
+**Goal:** Prevent future drift.
+
+### Tasks
+
+1. Keep `products/data-cloud/ARCHITECTURE.md` as canonical boundary summary.
+2. Keep `products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md` as canonical target organization.
+3. Keep `products/aep/ARCHITECTURE.md` as canonical AEP semantic architecture.
+4. Update any active docs that still imply Data-Cloud owns AEP/EventCloud semantics.
+5. Add CI doc-boundary lint for:
+   - “Data-Cloud owns EventCloud”
+   - “Data-Cloud owns PatternSpec”
+   - “Data-Cloud owns CEP”
+   - “AEP is a Data-Cloud plane” outside migration notes.
+
+6. Keep `AEP = separate adaptive event intelligence platform` even while code is co-located under `planes/action`.
+
+### Exit criteria
+
+- No active doc contradicts Data-Cloud/AEP/EventCloud ownership.
+- Boundary lint passes.
+- Plane architecture is the single source of organization language.
+
+---
+
+## Phase 1 — Make build coverage complete
+
+**Goal:** The suite must compile/test all active modules, not just selected ones.
+
+### Tasks
+
+1. Generate a canonical Data-Cloud module list from `config/generated/settings-gradle-includes.kts`.
+2. Add a Gradle task/script:
+
+```bash
+pnpm check:data-cloud-all-active-modules
+```
+
+or:
+
+```bash
+./gradlew $(node scripts/list-data-cloud-gradle-modules.mjs --check-tasks)
+```
+
+3. Include all active modules:
+   - all `planes:data:*`,
+   - all `planes:event:*`,
+   - all `planes:context:*` when added,
+   - all `planes:intelligence:*`,
+   - all `planes:governance:*`,
+   - all `planes:operations:*`,
+   - all `planes:action:*`,
+   - all `delivery:*`,
+   - all `extensions:*`,
+   - `contracts`,
+   - `integration-tests`.
+
+4. Mark modules as one of:
+   - `release-blocking`,
+   - `advisory`,
+   - `experimental`,
+   - `deprecated`,
+   - `excluded with reason`.
+
+5. CI must fail if an active release-blocking module is omitted.
+
+### Exit criteria
+
+- CI has a strict all-active-module compile check.
+- Release gate has a strict all-release-module `check`.
+- Every excluded module has an explicit reason.
+
+---
+
+## Phase 2 — Product-provider readiness unblock
+
+**Goal:** Change readiness from `blocked` to `ready` only with executable proof.
+
+### Tasks
+
+1. Keep `lifecycleExecutionAllowed: false`.
+2. Keep Data-Cloud as `platform-provider`, not ordinary lifecycle product.
+3. Run and enforce:
+   - `scripts/check-data-cloud-platform-provider-readiness.mjs`
+   - `scripts/check-data-cloud-platform-providers.mjs`
+   - `scripts/check-kernel-provider-mode.mjs`
+
+4. Add proof artifacts under `.kernel/evidence/data-cloud/`.
+5. Validate all evidence refs exist.
+6. Ensure Data-Cloud core fallback catalog roots do not hardcode business product roots.
+
+The readiness script already checks required gates, required runtime signals, evidence refs, Action Plane governance requirements, conformance proof, and product neutrality.
+
+### Exit criteria
+
+- `products/data-cloud/lifecycle/readiness-evidence.yaml` can move from `blocked` to `ready`.
+- All checks are executable, not manually asserted.
+- Product neutrality test blocks hardcoded business product roots.
+
+---
+
+## Phase 3 — Harden Data-Cloud planes
+
+**Goal:** Make Data-Cloud independently production-grade as a governed storage/data platform.
+
+### Data Plane
+
+Tasks:
+
+1. Enforce tenant-scoped entity operations.
+2. Add contract tests for entity CRUD.
+3. Add data-quality checks.
+4. Add schema evolution and compatibility tests.
+5. Raise coverage threshold above the current lowered baseline.
+
+The entity module’s coverage threshold is explicitly lowered to 0.20 to match actual coverage, which is not production-grade.
+
+Exit criteria:
+
+- Entity/Data Plane coverage target moves toward 0.70+ for critical code.
+- All data operations require tenant context.
+- Data-quality failures produce structured evidence.
+
+### Event Plane
+
+Tasks:
+
+1. Clarify Data-Cloud EventLog vs AEP EventCloud.
+2. Add contract tests for append/read/tail/replay.
+3. Add offset and idempotency tests.
+4. Add Postgres Testcontainers coverage.
+5. Add replay consistency tests.
+
+The event store module already describes itself as warm-tier event log store and includes Testcontainers dependencies.
+
+Exit criteria:
+
+- Data-Cloud EventLog contract is stable.
+- EventLog does not expose CEP or PatternSpec semantics.
+- EventLog is suitable as persistence substrate.
+
+### Governance Plane
+
+Tasks:
+
+1. Centralize tenant isolation.
+2. Add policy checks for every route category.
+3. Ensure audit events for all mutating operations.
+4. Add retention/redaction/encryption tests.
+5. Add legal hold and deletion lifecycle tests.
+
+Exit criteria:
+
+- No production route without auth/tenant/policy metadata.
+- Audit coverage is measurable.
+- Encryption/redaction is test-backed.
+
+### Operations Plane
+
+Tasks:
+
+1. Runtime truth registry.
+2. Health/degraded/unavailable states.
+3. Dependency probes.
+4. Backup/restore runbooks.
+5. SLO/cost budgets.
+6. Alert rules.
+
+Exit criteria:
+
+- Runtime truth is queryable by UI/API.
+- Strict release smoke and backup drills pass.
+- Degraded dependencies are surfaced correctly.
+
+---
+
+## Phase 4 — Harden co-located AEP Action Plane
+
+**Goal:** Make AEP-in-Data-Cloud production-ready without confusing ownership.
+
+### Tasks
+
+1. Keep Action Plane as compatibility/migration area.
+2. Enforce AEP package boundary tests.
+3. Keep `com.ghatana.aep` from depending on `com.ghatana.datacloud`.
+4. Add reverse rule: Data-Cloud core planes must not import `com.ghatana.aep`.
+5. Move shared contracts to stable `operator-contracts`.
+6. Document every Action Plane module as:
+   - AEP semantic module,
+   - Data-Cloud persistence bridge,
+   - Action compatibility API,
+   - or migration-only.
+
+The current AEP boundary test blocks AEP from depending on Data-Cloud and other product namespaces.
+
+### Exit criteria
+
+- Action Plane module inventory is explicit.
+- Boundary tests cover both directions.
+- AEP semantics stay isolated even while physically co-located.
+
+---
+
+## Phase 5 — Complete PatternSpec production path
+
+**Goal:** Move from structural PatternSpec to executable governed PatternSpec.
+
+### Tasks
+
+1. Convert map-based PatternSpec to typed model.
+2. Add JSON Schema/protobuf for PatternSpec.
+3. Integrate schema registry.
+4. Add operator compatibility checks.
+5. Add time semantics validation.
+6. Add uncertainty semantics validation.
+7. Add agent replay-policy validation.
+8. Add lifecycle state validation.
+9. Add governance policy validation.
+10. Compile PatternSpec into runtime DAG.
+11. Bind DAG to EventCloud source/sink and operator runtime.
+12. Add golden tests:
+    - valid patterns,
+    - invalid patterns,
+    - agent predicate inside `SEQ`,
+    - action operator without approval rejected,
+    - uncertainty threshold enforced,
+    - replay deterministic.
+
+### Exit criteria
+
+- PatternSpec compiler produces executable DAG.
+- Every PatternSpec execution is observable and replayable.
+- Agent operators work seamlessly in pattern definitions.
+
+---
+
+## Phase 6 — Complete EventOperator/AgentOperator runtime
+
+**Goal:** No bypasses.
+
+### Tasks
+
+1. Find all direct agent dispatcher usage.
+2. Wrap all agent interactions as `AgentOperator`.
+3. Find all old operator implementations not using `EventOperator`.
+4. Migrate old operators to unified contract.
+5. Add runtime adapter for:
+   - `AGENT_PREDICATE`,
+   - `AGENT_ENRICH`,
+   - `AGENT_EXTRACT`,
+   - `AGENT_PATTERN_SYNTHESIS`,
+   - `AGENT_EXPLANATION`,
+   - `AGENT_REVIEW`,
+   - `AGENT_ACTION`,
+   - `AGENT_REFLECTION`.
+
+6. Split side-effecting actions from pure inference.
+7. Enforce policy for side-effecting operators.
+8. Add replay-safe agent execution records.
+
+### Exit criteria
+
+- All operator runtime paths use `EventOperator`.
+- All agent runtime paths use `AgentOperator`.
+- Side-effecting action cannot run without tool policy, approval policy, audit policy, and idempotency.
+
+---
+
+## Phase 7 — Decompose GovernedAgentDispatcher
+
+**Goal:** Production maintainability.
+
+### Tasks
+
+Refactor:
+
+```text
+GovernedAgentDispatcher
+  -> AgentDispatchPipeline
+  -> AgentReleaseGate
+  -> AgentCapabilityGate
+  -> AgentMasteryGate
+  -> AgentVersionGate
+  -> AgentApprovalGate
+  -> AgentVerificationGate
+  -> AgentModeSelectionStage
+  -> AgentMemoryRetrievalStage
+  -> AgentTraceStage
+  -> AgentDelegateInvoker
+```
+
+### Exit criteria
+
+- Each gate has isolated unit tests.
+- Dispatcher orchestration has integration tests.
+- No single class owns all governance logic.
+- Trace ledger behavior remains identical.
+
+---
+
+## Phase 8 — Production release gates
+
+**Goal:** Make release workflow authoritative.
+
+### Tasks
+
+1. Rename advisory CI language where appropriate.
+2. Keep advisory jobs for developer feedback.
+3. Make release workflow strict for:
+   - all active module checks,
+   - route/runtime truth drift,
+   - OpenAPI drift,
+   - SDK generation,
+   - architecture tests,
+   - tenant isolation,
+   - connector validation,
+   - agent governance validation,
+   - maturity proof,
+   - security scan,
+   - SBOM,
+   - smoke E2E,
+   - backup/restore drill,
+   - Helm/k8s render,
+   - UI a11y/i18n,
+   - SLO/cost/domain invariant checks.
+
+4. Add release artifact bundle:
+   - readiness evidence,
+   - route manifest,
+   - OpenAPI spec,
+   - SBOM,
+   - smoke report,
+   - backup report,
+   - security scan,
+   - architecture test report,
+   - coverage report.
+
+### Exit criteria
+
+- No production/staging release without strict evidence.
+- Advisory CI cannot be mistaken as release certification.
+- Release gate blocks missing environment secrets and localhost release endpoints, as it already begins doing.
+
+---
+
+# 6. Recommended maturity score at commit `30a4e442`
+
+| Area                          | Score | Rationale                                                                                                       |
+| ----------------------------- | ----: | --------------------------------------------------------------------------------------------------------------- |
+| Vision coherence              |  8/10 | Active docs now clearly separate Data-Cloud/AEP/EventCloud and support temporary co-location.                   |
+| Code organization             |  7/10 | Plane model and generated includes are strong, but Action Plane is large and mixed.                             |
+| Build/release discipline      |  6/10 | CI/release gates are broad, but module coverage appears incomplete and CI is partly advisory.                   |
+| Data-Cloud substrate maturity |  6/10 | Entity/event/governance/operations planes exist, but readiness is blocked and coverage/security need hardening. |
+| AEP semantic foundation       |  7/10 | EventOperator, AgentOperator, PatternSpec, uncertainty foundations exist.                                       |
+| AEP runtime completeness      |  5/10 | Compiler/validator are structural; executable adaptive runtime path is not complete.                            |
+| Agent-as-operator maturity    |  7/10 | Contracts/tests exist; full runtime migration remains.                                                          |
+| Production readiness          |  5/10 | Strong direction and gates, but readiness is explicitly blocked.                                                |
+
+Overall: **6.3/10 — architecturally promising, not yet production-ready.**
+
+---
+
+# 7. Immediate next todo list
+
+Do these in order:
+
+1. **Add all-active Data-Cloud module check** from generated settings.
+2. **Update CI/release workflows** so active module coverage is explicit and complete.
+3. **Keep readiness blocked** until executable evidence passes.
+4. **Create Action Plane module inventory** and classify every module.
+5. **Add reverse boundary tests**: Data/Event/Context/Governance must not import AEP.
+6. **Migrate all agent execution through AgentOperator**.
+7. **Upgrade PatternSpec from structural validator to typed schema-backed compiler.**
+8. **Bind PatternSpec compiler output to executable runtime DAG.**
+9. **Add EventCloud/Data-Cloud bridge contract tests.**
+10. **Decompose GovernedAgentDispatcher.**
+11. **Raise low coverage thresholds for critical modules.**
+12. **Make release workflow the only production certification gate.**
+
+---
+
+# Final recommendation
+
+Keep AEP inside Data-Cloud for now, but formalize it as:
+
+```text
+products/data-cloud/planes/action/*
+  = temporary co-located AEP/action implementation area
+
+products/data-cloud/*
+  = governed storage/data/product-provider substrate
+
+products/aep/*
+  = semantic architecture, specs, dissertation traceability, and eventual product boundary
+```
+
+The current codebase is moving in the right direction. The next hardening step is not another conceptual rewrite; it is **executable proof**: complete module checks, boundary tests, strict release gates, typed PatternSpec runtime, and universal AgentOperator execution.

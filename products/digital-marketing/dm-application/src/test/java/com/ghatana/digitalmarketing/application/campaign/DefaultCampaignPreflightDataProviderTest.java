@@ -31,9 +31,9 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 @DisplayName("DefaultCampaignPreflightDataProvider")
 class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
 
-    private InMemoryBudgetRepository budgetRepo;
-    private InMemoryAudienceRepository audienceRepo;
-    private InMemoryContentAssetRepository contentRepo;
+    private EphemeralBudgetRepository budgetRepo;
+    private EphemeralAudienceRepository audienceRepo;
+    private EphemeralContentAssetRepository contentRepo;
     private StubConsentInteractionBroker consentBroker;
     private DefaultCampaignPreflightDataProvider provider;
 
@@ -42,9 +42,9 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        budgetRepo   = new InMemoryBudgetRepository();
-        audienceRepo = new InMemoryAudienceRepository();
-        contentRepo  = new InMemoryContentAssetRepository();
+        budgetRepo   = new EphemeralBudgetRepository();
+        audienceRepo = new EphemeralAudienceRepository();
+        contentRepo  = new EphemeralContentAssetRepository();
         consentBroker = new StubConsentInteractionBroker();
         provider     = new DefaultCampaignPreflightDataProvider(budgetRepo, audienceRepo, contentRepo, consentBroker);
 
@@ -222,7 +222,7 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
     // Deterministic in-memory repository fixtures
     // -----------------------------------------------------------------------
 
-    private static final class InMemoryBudgetRepository implements BudgetRepository {
+    private static final class EphemeralBudgetRepository implements BudgetRepository {
         private Budget approvedBudget;
 
         void setApprovedBudget(Budget budget) {
@@ -250,7 +250,7 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryAudienceRepository implements AudienceRepository {
+    private static final class EphemeralAudienceRepository implements AudienceRepository {
         private Audience audience;
 
         void setAudience(Audience audience) {
@@ -283,7 +283,7 @@ class DefaultCampaignPreflightDataProviderTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryContentAssetRepository implements ContentAssetRepository {
+    private static final class EphemeralContentAssetRepository implements ContentAssetRepository {
         private int approvedCount;
 
         void setApprovedCount(int count) {

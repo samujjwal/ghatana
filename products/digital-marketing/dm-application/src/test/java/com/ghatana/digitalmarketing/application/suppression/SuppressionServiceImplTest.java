@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class SuppressionServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemorySuppressionRepository repository;
+    private EphemeralSuppressionRepository repository;
     private SuppressionServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemorySuppressionRepository();
+        repository = new EphemeralSuppressionRepository();
         HashingPort hashingPort = new MockHashingPort();
         service = new SuppressionServiceImpl(kernelAdapter, repository, hashingPort);
 
@@ -115,7 +115,7 @@ class SuppressionServiceImplTest extends EventloopTestBase {
         assertThat(afterRemoval).isFalse();
     }
 
-    private static final class InMemorySuppressionRepository implements SuppressionRepository {
+    private static final class EphemeralSuppressionRepository implements SuppressionRepository {
         private final ConcurrentHashMap<String, SuppressionEntry> store = new ConcurrentHashMap<>();
 
         @Override

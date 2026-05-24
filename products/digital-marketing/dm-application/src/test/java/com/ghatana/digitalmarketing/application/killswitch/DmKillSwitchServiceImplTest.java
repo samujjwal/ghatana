@@ -25,13 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmKillSwitchServiceImpl")
 class DmKillSwitchServiceImplTest extends EventloopTestBase {
 
-    private InMemoryKillSwitchRepository repository;
+    private EphemeralKillSwitchRepository repository;
     private DmKillSwitchServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryKillSwitchRepository();
+        repository = new EphemeralKillSwitchRepository();
         service = new DmKillSwitchServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -136,7 +136,7 @@ class DmKillSwitchServiceImplTest extends EventloopTestBase {
         return new DmKillSwitchService.ActivateKillSwitchCommand("campaign", "camp-1", "Emergency: budget exceeded");
     }
 
-    static final class InMemoryKillSwitchRepository implements DmKillSwitchRepository {
+    static final class EphemeralKillSwitchRepository implements DmKillSwitchRepository {
         private final Map<String, DmKillSwitch> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmKillSwitch> save(DmKillSwitch ks) { store.put(ks.getId(), ks); return Promise.of(ks); }

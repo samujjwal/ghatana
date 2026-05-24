@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmNarrativeReviewServiceImpl")
 class DmNarrativeReviewServiceImplTest extends EventloopTestBase {
 
-    private InMemoryNarrativeRepository repository;
+    private EphemeralNarrativeRepository repository;
     private DmNarrativeReviewServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryNarrativeRepository();
+        repository = new EphemeralNarrativeRepository();
         service = new DmNarrativeReviewServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -165,7 +165,7 @@ class DmNarrativeReviewServiceImplTest extends EventloopTestBase {
             now);
     }
 
-    static final class InMemoryNarrativeRepository implements DmNarrativeReviewRepository {
+    static final class EphemeralNarrativeRepository implements DmNarrativeReviewRepository {
         private final Map<String, DmNarrativeReview> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmNarrativeReview> save(DmNarrativeReview r) { store.put(r.getId(), r); return Promise.of(r); }

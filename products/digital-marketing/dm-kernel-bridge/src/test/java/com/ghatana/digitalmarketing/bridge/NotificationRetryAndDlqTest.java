@@ -237,10 +237,10 @@ class NotificationRetryAndDlqTest {
             new AlwaysAuthorizedService(),
             new NoOpAuditEmitter(),
             com.ghatana.kernel.testing.TestBridgePorts.noOpHealthIndicator(),
-            new InMemoryConsentPlugin(),
-            new InMemoryApprovalPlugin(),
-            new InMemoryAuditTrailPlugin(),
-            new InMemoryRiskManagementPlugin(),
+            new EphemeralConsentPlugin(),
+            new EphemeralApprovalPlugin(),
+            new EphemeralAuditTrailPlugin(),
+            new EphemeralRiskManagementPlugin(),
             notifPlugin,
             new NoOpFeatureFlagPlugin(),
             productionMode
@@ -367,7 +367,7 @@ class NotificationRetryAndDlqTest {
         public void emit(BridgeAuditEvent event) { /* discard */ }
     }
 
-    private static final class InMemoryConsentPlugin implements ConsentPlugin {
+    private static final class EphemeralConsentPlugin implements ConsentPlugin {
         @Override
         public Promise<ConsentRecord> recordConsent(String subjectId, String purpose, ConsentAction action) {
             return Promise.of(new ConsentRecord(
@@ -396,7 +396,7 @@ class NotificationRetryAndDlqTest {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryApprovalPlugin implements HumanApprovalPlugin {
+    private static final class EphemeralApprovalPlugin implements HumanApprovalPlugin {
         @Override
         public Promise<ApprovalRecord> requestApproval(ApprovalRequest request) {
             return Promise.of(new ApprovalRecord(
@@ -442,7 +442,7 @@ class NotificationRetryAndDlqTest {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryAuditTrailPlugin implements AuditTrailPlugin {
+    private static final class EphemeralAuditTrailPlugin implements AuditTrailPlugin {
         @Override
         public Promise<AuditEntry> logEvent(String entityId, String action, Map<String, Object> details) {
             return Promise.of(new AuditEntry(
@@ -474,7 +474,7 @@ class NotificationRetryAndDlqTest {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryRiskManagementPlugin implements RiskManagementPlugin {
+    private static final class EphemeralRiskManagementPlugin implements RiskManagementPlugin {
         @Override public Promise<RiskScore> calculateRisk(String entityId, RiskModelId modelId,
                 Map<String, Object> features) {
             return Promise.of(new RiskScore(entityId, modelId, 0.1,

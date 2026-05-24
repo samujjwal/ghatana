@@ -12,7 +12,9 @@ final class PhrNotificationSenders {
         Eventloop eventloop = Objects.requireNonNull(context.getEventloop(), "eventloop must not be null");
         PhrNotificationSender sender = context
             .getOptionalDependency(PhrNotificationSender.class)
-            .orElse(NoOpPhrNotificationSender.INSTANCE);
+            .orElseThrow(() -> new IllegalStateException(
+                "PhrNotificationSender dependency is required for PHR runtime notification flows"
+            ));
         return new ResilientPhrNotificationSender(eventloop, sender);
     }
 }

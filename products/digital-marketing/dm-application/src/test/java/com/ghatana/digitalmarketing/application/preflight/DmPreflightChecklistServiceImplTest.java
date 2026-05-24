@@ -29,13 +29,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmPreflightChecklistServiceImpl")
 class DmPreflightChecklistServiceImplTest extends EventloopTestBase {
 
-    private InMemoryPreflightRepository repository;
+    private EphemeralPreflightRepository repository;
     private DmPreflightChecklistServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryPreflightRepository();
+        repository = new EphemeralPreflightRepository();
         service = new DmPreflightChecklistServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -151,7 +151,7 @@ class DmPreflightChecklistServiceImplTest extends EventloopTestBase {
         return new DmPreflightChecklist.DmPreflightCheckItem("audience-check", "Audience validated", true, DmPreflightCheckResult.PASSED, null);
     }
 
-    static final class InMemoryPreflightRepository implements DmPreflightChecklistRepository {
+    static final class EphemeralPreflightRepository implements DmPreflightChecklistRepository {
         private final Map<String, DmPreflightChecklist> store = new ConcurrentHashMap<>();
         private final List<DmPreflightChecklist> ordered = new ArrayList<>();
 

@@ -6,6 +6,7 @@ import com.ghatana.kernel.security.TenantSecurityContext;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.observability.PHRAuditTrailServiceImpl;
 import com.ghatana.phr.observability.PHRTelemetryManagerImpl;
+import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.repository.PatientRecordRepository;
 import com.ghatana.phr.security.SecurityContextHolder;
 import com.ghatana.phr.support.PhrPersistenceTestSupport;
@@ -51,7 +52,7 @@ class PatientServicePersistenceTest {
     @Test
     void createRecordPersistsAcrossRepositoryInstances() {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
-        AuditTrailService auditTrail = new PHRAuditTrailServiceImpl();
+        AuditTrailService auditTrail = new PHRAuditTrailServiceImpl(new PhrTestInfrastructure.StubDataCloudAdapter());
         PatientRecordRepository repository = new PatientRecordRepository(connectionPool.getDataSource());
         PatientService patientService = new PatientService(telemetry, auditTrail, repository);
 

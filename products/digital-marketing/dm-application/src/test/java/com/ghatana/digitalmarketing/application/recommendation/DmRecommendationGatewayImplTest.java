@@ -40,16 +40,16 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmRecommendationGatewayImpl Tests")
 class DmRecommendationGatewayImplTest extends EventloopTestBase {
 
-    private InMemoryRecommendationRepository recRepo;
-    private InMemoryCommandRepository cmdRepo;
+    private EphemeralRecommendationRepository recRepo;
+    private EphemeralCommandRepository cmdRepo;
     private AllowingKernelAdapter kernelAdapter;
     private DmRecommendationGatewayImpl gateway;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        recRepo       = new InMemoryRecommendationRepository();
-        cmdRepo       = new InMemoryCommandRepository();
+        recRepo       = new EphemeralRecommendationRepository();
+        cmdRepo       = new EphemeralCommandRepository();
         kernelAdapter = new AllowingKernelAdapter(true);
         gateway       = new DmRecommendationGatewayImpl(recRepo, cmdRepo, kernelAdapter);
 
@@ -288,7 +288,7 @@ class DmRecommendationGatewayImplTest extends EventloopTestBase {
 
     // ── Test Doubles ──────────────────────────────────────────────────────────
 
-    private static final class InMemoryRecommendationRepository implements DmRecommendationRepository {
+    private static final class EphemeralRecommendationRepository implements DmRecommendationRepository {
         private final ConcurrentHashMap<String, DmAgentRecommendation> store = new ConcurrentHashMap<>();
 
         @Override
@@ -330,7 +330,7 @@ class DmRecommendationGatewayImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCommandRepository implements DmCommandRepository {
+    private static final class EphemeralCommandRepository implements DmCommandRepository {
         final ConcurrentHashMap<String, DmCommand> store = new ConcurrentHashMap<>();
 
         @Override

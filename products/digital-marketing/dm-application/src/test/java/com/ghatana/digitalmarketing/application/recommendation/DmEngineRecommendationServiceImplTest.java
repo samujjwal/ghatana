@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmEngineRecommendationServiceImpl")
 class DmEngineRecommendationServiceImplTest extends EventloopTestBase {
 
-    private InMemoryRecRepository repository;
+    private EphemeralRecRepository repository;
     private DmEngineRecommendationServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryRecRepository();
+        repository = new EphemeralRecRepository();
         service = new DmEngineRecommendationServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -214,7 +214,7 @@ class DmEngineRecommendationServiceImplTest extends EventloopTestBase {
             "budget-reallocation", "Low ROAS detected", 0.87, List.of(), List.of(), null);
     }
 
-    static final class InMemoryRecRepository implements DmEngineRecommendationRepository {
+    static final class EphemeralRecRepository implements DmEngineRecommendationRepository {
         private final Map<String, DmEngineRecommendation> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmEngineRecommendation> save(DmEngineRecommendation r) { store.put(r.getId(), r); return Promise.of(r); }

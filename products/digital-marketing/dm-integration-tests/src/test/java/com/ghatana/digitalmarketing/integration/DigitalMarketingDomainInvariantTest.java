@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("Digital Marketing Domain Invariant Tests")
 class DigitalMarketingDomainInvariantTest extends EventloopTestBase {
 
-    private InMemoryCampaignRepository repository;
+    private EphemeralCampaignRepository repository;
     private RecordingKernelAdapter kernelAdapter;
     private CampaignService campaignService;
     private DmOperationContext writeCtx;
@@ -66,12 +66,12 @@ class DigitalMarketingDomainInvariantTest extends EventloopTestBase {
     void setUp() {
         eventloop = Eventloop.create();
         executor = Executors.newSingleThreadExecutor();
-        repository = new InMemoryCampaignRepository();
+        repository = new EphemeralCampaignRepository();
         kernelAdapter = new RecordingKernelAdapter();
         campaignService = new CampaignServiceImpl(
             kernelAdapter,
             repository,
-            new InMemoryCompliancePlugin(),
+            new EphemeralCompliancePlugin(),
             (opCtx, campaign) -> Promise.of(new com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider.CampaignPreflightData(
                 true,
                 1,
@@ -79,7 +79,7 @@ class DigitalMarketingDomainInvariantTest extends EventloopTestBase {
                 0.0,
                 1000.0
             )),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.disabled()
         );
 
         writeCtx = DmOperationContext.builder()
@@ -196,7 +196,7 @@ class DigitalMarketingDomainInvariantTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> campaignService.getCampaign(wsBReadCtx, inWsA.getId())));
     }
 
-    private static final class InMemoryCampaignRepository implements CampaignRepository {
+    private static final class EphemeralCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override
@@ -275,7 +275,7 @@ class DigitalMarketingDomainInvariantTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCompliancePlugin implements com.ghatana.plugin.compliance.CompliancePlugin {
+    private static final class EphemeralCompliancePlugin implements com.ghatana.plugin.compliance.CompliancePlugin {
         @Override
         public Promise<com.ghatana.plugin.compliance.ComplianceResult> evaluate(
             String ruleSetId,

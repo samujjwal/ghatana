@@ -14,7 +14,7 @@ import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionLogEntry;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionStatus;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionType;
-import com.ghatana.digitalmarketing.infra.transparency.InMemoryAiActionLogRepository;
+import com.ghatana.digitalmarketing.infra.transparency.EphemeralAiActionLogRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
@@ -41,16 +41,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("RecommendationToCommandGateway")
 class RecommendationToCommandGatewayTest extends EventloopTestBase {
 
-    private InMemoryCommandRepository commandRepository;
+    private EphemeralCommandRepository commandRepository;
     private DmCommandService commandService;
     private AiActionLogRepository aiActionLogRepository;
     private RecommendationToCommandGateway gateway;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        commandRepository = new InMemoryCommandRepository();
+        commandRepository = new EphemeralCommandRepository();
         commandService = new DmCommandServiceImpl(commandRepository, new AllowingKernelAdapter(true));
-        aiActionLogRepository = new InMemoryAiActionLogRepository();
+        aiActionLogRepository = new EphemeralAiActionLogRepository();
         gateway = new RecommendationToCommandGateway(commandService, aiActionLogRepository, new AllowingCompliancePlugin(true));
     }
 
@@ -379,7 +379,7 @@ class RecommendationToCommandGatewayTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCommandRepository implements DmCommandRepository {
+    private static final class EphemeralCommandRepository implements DmCommandRepository {
         private final ConcurrentHashMap<String, DmCommand> store = new ConcurrentHashMap<>();
 
         @Override

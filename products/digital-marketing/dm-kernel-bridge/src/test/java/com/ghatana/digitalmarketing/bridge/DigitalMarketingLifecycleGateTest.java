@@ -1,10 +1,5 @@
 package com.ghatana.digitalmarketing.bridge;
 
-import com.ghatana.digitalmarketing.bridge.adapter.DigitalMarketingKernelBridge;
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
-import io.activej.test.EventloopTestBase;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Integration test
  */
 @DisplayName("Digital Marketing Lifecycle Gate Tests")
-class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
+class DigitalMarketingLifecycleGateTest {
 
     private static final String PRODUCT_ID = "digital-marketing";
     private static final String REGISTRY_PATH = "config/canonical-product-registry.json";
@@ -34,7 +29,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @DisplayName("Registry validation gate should have required evidence files")
     void testRegistryValidationGateEvidence() throws Exception {
         // Verify canonical product registry exists
-        Path registryPath = Paths.get(REGISTRY_PATH);
+        Path registryPath = resolveRepoPath(REGISTRY_PATH);
         assertThat(Files.exists(registryPath))
             .as("Canonical product registry should exist at " + REGISTRY_PATH)
             .isTrue();
@@ -45,7 +40,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
             .contains("\"digital-marketing\"");
 
         // Verify kernel-product.yaml exists
-        Path kernelProductPath = Paths.get(KERNEL_PRODUCT_PATH);
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
         assertThat(Files.exists(kernelProductPath))
             .as("Kernel product file should exist at " + KERNEL_PRODUCT_PATH)
             .isTrue();
@@ -60,7 +55,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @DisplayName("Manifest validation gate should have required evidence files")
     void testManifestValidationGateEvidence() throws Exception {
         // Verify kernel-product.yaml contains required manifest declarations
-        Path kernelProductPath = Paths.get(KERNEL_PRODUCT_PATH);
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
         String content = Files.readString(kernelProductPath);
 
         assertThat(content)
@@ -83,7 +78,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @Test
     @DisplayName("Lifecycle contract validation gate should validate plugins and adapters")
     void testLifecycleContractValidationGate() throws Exception {
-        Path kernelProductPath = Paths.get(KERNEL_PRODUCT_PATH);
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
         String content = Files.readString(kernelProductPath);
 
         // Verify required plugins are declared
@@ -109,29 +104,29 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @DisplayName("Bridge compliance gate should have kernel bridge implementation")
     void testBridgeComplianceGateEvidence() throws Exception {
         // Verify kernel bridge module exists
-        Path bridgePath = Paths.get("products/digital-marketing/dm-kernel-bridge");
+        Path bridgePath = resolveRepoPath("products/digital-marketing/dm-kernel-bridge");
         assertThat(Files.exists(bridgePath))
             .as("Kernel bridge module should exist")
             .isTrue();
 
         // Verify bridge implementation class exists
-        Path bridgeImplPath = Paths.get(
-            "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/adapter/DigitalMarketingKernelBridge.java"
+        Path bridgeImplPath = resolveRepoPath(
+            "products/digital-marketing/dm-kernel-bridge/src/main/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImpl.java"
         );
         assertThat(Files.exists(bridgeImplPath))
-            .as("DigitalMarketingKernelBridge implementation should exist")
+            .as("DigitalMarketingKernelAdapterImpl implementation should exist")
             .isTrue();
 
         String bridgeContent = Files.readString(bridgeImplPath);
         assertThat(bridgeContent)
             .as("Bridge should implement required interface")
-            .contains("implements");
+            .contains("implements DigitalMarketingKernelAdapter");
     }
 
     @Test
     @DisplayName("Marketing consent boundary gate should have consent boundary policy")
     void testMarketingConsentBoundaryGateEvidence() throws Exception {
-        Path kernelProductPath = Paths.get(KERNEL_PRODUCT_PATH);
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
         String content = Files.readString(kernelProductPath);
 
         // Verify marketing consent boundary policy is declared
@@ -149,13 +144,13 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @DisplayName("Persistence proof gate should have persistence implementation")
     void testPersistenceProofGateEvidence() throws Exception {
         // Verify persistence module exists
-        Path persistencePath = Paths.get("products/digital-marketing/dm-persistence");
+        Path persistencePath = resolveRepoPath("products/digital-marketing/dm-persistence");
         assertThat(Files.exists(persistencePath))
             .as("Persistence module should exist")
             .isTrue();
 
         // Verify persistence implementation exists
-        Path persistenceImplPath = Paths.get(
+        Path persistenceImplPath = resolveRepoPath(
             "products/digital-marketing/dm-persistence/src/main/java"
         );
         assertThat(Files.exists(persistenceImplPath))
@@ -167,14 +162,14 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @DisplayName("Google Ads connector proof gate should have connector implementation")
     void testGoogleAdsConnectorProofGateEvidence() throws Exception {
         // Verify Google Ads connector module exists
-        Path connectorPath = Paths.get("products/digital-marketing/dm-connectors/google-ads-connector");
+        Path connectorPath = resolveRepoPath("products/digital-marketing/dm-connector-google-ads");
         assertThat(Files.exists(connectorPath))
             .as("Google Ads connector module should exist")
             .isTrue();
 
         // Verify connector implementation exists
-        Path connectorImplPath = Paths.get(
-            "products/digital-marketing/dm-connectors/google-ads-connector/src/main/java"
+        Path connectorImplPath = resolveRepoPath(
+            "products/digital-marketing/dm-connector-google-ads/src/main/java"
         );
         assertThat(Files.exists(connectorImplPath))
             .as("Google Ads connector implementation should exist")
@@ -184,7 +179,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @Test
     @DisplayName("All required gates should be declared in kernel-product.yaml")
     void testAllRequiredGatesDeclared() throws Exception {
-        Path kernelProductPath = Paths.get(KERNEL_PRODUCT_PATH);
+        Path kernelProductPath = resolveRepoPath(KERNEL_PRODUCT_PATH);
         String content = Files.readString(kernelProductPath);
 
         // Verify all required gates are declared
@@ -220,7 +215,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @Test
     @DisplayName("Gate pack files should exist for all required gates")
     void testGatePackFilesExist() throws Exception {
-        Path gatePacksPath = Paths.get("products/digital-marketing/lifecycle/gate-packs");
+        Path gatePacksPath = resolveRepoPath("products/digital-marketing/lifecycle/gate-packs");
         assertThat(Files.exists(gatePacksPath))
             .as("Gate packs directory should exist")
             .isTrue();
@@ -247,7 +242,7 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
     @Test
     @DisplayName("Gate pack files should have required structure")
     void testGatePackFileStructure() throws Exception {
-        Path gatePacksPath = Paths.get("products/digital-marketing/lifecycle/gate-packs");
+        Path gatePacksPath = resolveRepoPath("products/digital-marketing/lifecycle/gate-packs");
         Path registryValidationPath = gatePacksPath.resolve("registry-validation.yaml");
         String content = Files.readString(registryValidationPath);
 
@@ -271,5 +266,20 @@ class DigitalMarketingLifecycleGateTest extends EventloopTestBase {
         assertThat(content)
             .as("Gate pack should have requiredEvidenceRefs")
             .contains("requiredEvidenceRefs:");
+    }
+
+    private static Path resolveRepoPath(String relativePath) {
+        return resolveRepoRoot().resolve(relativePath);
+    }
+
+    private static Path resolveRepoRoot() {
+        Path cursor = Paths.get("").toAbsolutePath();
+        while (cursor != null) {
+            if (Files.exists(cursor.resolve(REGISTRY_PATH))) {
+                return cursor;
+            }
+            cursor = cursor.getParent();
+        }
+        throw new IllegalStateException("Unable to resolve repository root containing " + REGISTRY_PATH);
     }
 }

@@ -1,0 +1,31 @@
+package com.ghatana.digitalmarketing.connector.googleads;
+
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
+import io.activej.promise.Promise;
+
+/**
+ * In-memory no-op implementation of DmGoogleAdsCampaignApiClient for dev/test.
+ *
+ * @doc.type class
+ * @doc.purpose Provides no-op implementation for development and testing when Google Ads credentials are not configured
+ * @doc.layer product
+ * @doc.pattern Ephemeral
+ */
+public final class EphemeralDmGoogleAdsCampaignApiClient implements DmGoogleAdsCampaignApiClient {
+
+    @Override
+    public Promise<String> createSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request) {
+        return Promise.of("PENDING:" + request.campaignName());
+    }
+
+    @Override
+    public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
+        return Promise.of("PAUSED:" + externalCampaignId);
+    }
+
+    @Override
+    public Promise<GoogleAdsConnectorReadinessState> checkReadiness(String accessToken) {
+        // In-memory implementation always returns NOT_READY since it doesn't have real credentials
+        return Promise.of(GoogleAdsConnectorReadinessState.NOT_READY);
+    }
+}

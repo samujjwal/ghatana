@@ -76,7 +76,7 @@ public final class ProductionProfileGuard {
      *
      * @return {@code true} if in-memory adapters are allowed
      */
-    public static boolean isInMemoryAllowed() {
+    public static boolean isEphemeralAllowed() {
         return !isProduction();
     }
 }

@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmAttributionRecordServiceImpl")
 class DmAttributionRecordServiceImplTest extends EventloopTestBase {
 
-    private InMemoryAttributionRepository repository;
+    private EphemeralAttributionRepository repository;
     private DmAttributionRecordServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAttributionRepository();
+        repository = new EphemeralAttributionRepository();
         service = new DmAttributionRecordServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -112,7 +112,7 @@ class DmAttributionRecordServiceImplTest extends EventloopTestBase {
             DmAttributionModel.LAST_CLICK, 1.0);
     }
 
-    static final class InMemoryAttributionRepository implements DmAttributionRecordRepository {
+    static final class EphemeralAttributionRepository implements DmAttributionRecordRepository {
         private final Map<String, DmAttributionRecord> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmAttributionRecord> save(DmAttributionRecord r) { store.put(r.getId(), r); return Promise.of(r); }

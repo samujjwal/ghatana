@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmIndustryPlaybookPackServiceImpl")
 class DmIndustryPlaybookPackServiceImplTest extends EventloopTestBase {
 
-    private InMemoryPackRepository repository;
+    private EphemeralPackRepository repository;
     private DmIndustryPlaybookPackServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryPackRepository();
+        repository = new EphemeralPackRepository();
         service = new DmIndustryPlaybookPackServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -148,7 +148,7 @@ class DmIndustryPlaybookPackServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryPackRepository implements DmIndustryPlaybookPackRepository {
+    static final class EphemeralPackRepository implements DmIndustryPlaybookPackRepository {
         private final Map<String, DmIndustryPlaybookPack> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmIndustryPlaybookPack> save(DmIndustryPlaybookPack p) { store.put(p.getId(), p); return Promise.of(p); }

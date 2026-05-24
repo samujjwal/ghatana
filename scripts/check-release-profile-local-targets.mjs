@@ -66,7 +66,8 @@ function main() {
     }
 
     const targets = normalizeTargets(product);
-    const releaseCandidateLike = hasReleaseReadySurface(product) || hasReleaseReadyLifecycle(product);
+    const lifecycleEnabled = product?.lifecycleExecutionAllowed === true || hasReleaseReadyLifecycle(product);
+    const releaseCandidateLike = lifecycleEnabled && hasReleaseReadySurface(product);
     if (releaseCandidateLike && !hasNonLocalTarget(targets)) {
       violations.push(
         `Product ${productId} declares release-ready status but deployment.targets are local-only (${targets.join(', ') || 'none'})`,

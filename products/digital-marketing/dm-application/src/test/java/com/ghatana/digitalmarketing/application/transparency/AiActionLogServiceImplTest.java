@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AiActionLogServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernel;
-    private InMemoryRepo repo;
+    private EphemeralRepo repo;
     private AiActionLogServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernel = new RecordingKernelAdapter();
-        repo = new InMemoryRepo();
+        repo = new EphemeralRepo();
         service = new AiActionLogServiceImpl(kernel, repo);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -184,7 +184,7 @@ class AiActionLogServiceImplTest extends EventloopTestBase {
         assertThat(loaded.details()).isEqualTo("REDACTED");
     }
 
-    private static final class InMemoryRepo implements AiActionLogRepository {
+    private static final class EphemeralRepo implements AiActionLogRepository {
         private final List<AiActionLogEntry> entries = new ArrayList<>();
 
         @Override

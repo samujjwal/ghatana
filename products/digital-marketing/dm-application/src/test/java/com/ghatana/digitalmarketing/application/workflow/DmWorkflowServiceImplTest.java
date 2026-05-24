@@ -37,14 +37,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmWorkflowServiceImpl Tests")
 class DmWorkflowServiceImplTest extends EventloopTestBase {
 
-    private InMemoryWorkflowRepository repo;
+    private EphemeralWorkflowRepository repo;
     private AllowingKernelAdapter kernelAdapter;
     private DmWorkflowServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repo          = new InMemoryWorkflowRepository();
+        repo          = new EphemeralWorkflowRepository();
         kernelAdapter = new AllowingKernelAdapter(true);
         service       = new DmWorkflowServiceImpl(repo, kernelAdapter);
 
@@ -342,7 +342,7 @@ class DmWorkflowServiceImplTest extends EventloopTestBase {
 
     // ── Test Doubles ──────────────────────────────────────────────────────────
 
-    private static final class InMemoryWorkflowRepository implements DmWorkflowRepository {
+    private static final class EphemeralWorkflowRepository implements DmWorkflowRepository {
         private final ConcurrentHashMap<String, DmWorkflowExecution> store = new ConcurrentHashMap<>();
 
         @Override

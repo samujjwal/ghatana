@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmPerformanceReportServiceImpl")
 class DmPerformanceReportServiceImplTest extends EventloopTestBase {
 
-    private InMemoryReportRepository repository;
+    private EphemeralReportRepository repository;
     private DmPerformanceReportServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryReportRepository();
+        repository = new EphemeralReportRepository();
         service = new DmPerformanceReportServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -157,7 +157,7 @@ class DmPerformanceReportServiceImplTest extends EventloopTestBase {
             "Q1 Report", new DmReportPeriod(now.minusSeconds(86400), now));
     }
 
-    static final class InMemoryReportRepository implements DmPerformanceReportRepository {
+    static final class EphemeralReportRepository implements DmPerformanceReportRepository {
         private final Map<String, DmPerformanceReport> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmPerformanceReport> save(DmPerformanceReport r) { store.put(r.getId(), r); return Promise.of(r); }

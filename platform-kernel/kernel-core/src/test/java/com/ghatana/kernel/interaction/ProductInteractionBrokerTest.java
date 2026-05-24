@@ -583,7 +583,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver((request, contract) -> 
-                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "actor", "kernel-test-runner"))
                 .brokerMode(BrokerMode.TEST)
                 .build();
         try {
@@ -618,7 +618,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver((request, contract) -> 
-                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "actor", "kernel-test-runner"))
                 .brokerMode(BrokerMode.TEST)
                 .build();
         try {
@@ -653,7 +653,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver((request, contract) -> 
-                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "actor", "kernel-test-runner"))
                 .brokerMode(BrokerMode.TEST)
                 .build();
         try {
@@ -689,7 +689,7 @@ class ProductInteractionBrokerTest extends EventloopTestBase {
         ProductInteractionBroker broker = brokerBuilder()
                 .register(new EchoHandler())
                 .policyContextResolver((request, contract) -> 
-                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "authorized", "true"))
+                    Map.of("tenantId", "tenant-1", "workspaceId", "workspace-1", "purpose", "test", "actor", "kernel-test-runner"))
                 .brokerMode(BrokerMode.TEST)
                 .build();
         try {

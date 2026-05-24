@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ProposalServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryProposalRepository repository;
+    private EphemeralProposalRepository repository;
     private ProposalServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryProposalRepository();
+        repository = new EphemeralProposalRepository();
         service = new ProposalServiceImpl(kernelAdapter, repository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -285,7 +285,7 @@ class ProposalServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryProposalRepository implements ProposalRepository {
+    private static final class EphemeralProposalRepository implements ProposalRepository {
         private final ConcurrentHashMap<String, Proposal> store = new ConcurrentHashMap<>();
         private volatile String latestId;
 

@@ -25,13 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmEnterpriseSecurityConfigServiceImpl")
 class DmEnterpriseSecurityConfigServiceImplTest extends EventloopTestBase {
 
-    private InMemorySecurityConfigRepository repository;
+    private EphemeralSecurityConfigRepository repository;
     private DmEnterpriseSecurityConfigServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemorySecurityConfigRepository();
+        repository = new EphemeralSecurityConfigRepository();
         service = new DmEnterpriseSecurityConfigServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -130,7 +130,7 @@ class DmEnterpriseSecurityConfigServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemorySecurityConfigRepository implements DmEnterpriseSecurityConfigRepository {
+    static final class EphemeralSecurityConfigRepository implements DmEnterpriseSecurityConfigRepository {
         private final Map<String, DmEnterpriseSecurityConfig> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmEnterpriseSecurityConfig> save(DmEnterpriseSecurityConfig c) { store.put(c.getId(), c); return Promise.of(c); }

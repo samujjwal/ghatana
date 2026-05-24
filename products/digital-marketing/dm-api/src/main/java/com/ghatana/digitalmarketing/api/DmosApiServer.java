@@ -55,20 +55,20 @@ import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
 import com.ghatana.digitalmarketing.bridge.DmosRiskEvaluatorRegistrar;
 import com.ghatana.digitalmarketing.connector.googleads.GoogleAdsConnectorReadinessState;
 import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
-import com.ghatana.digitalmarketing.connector.googleads.InMemoryDmGoogleAdsCampaignApiClient;
+import com.ghatana.digitalmarketing.connector.googleads.EphemeralDmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.infra.ProductionProfileGuard;
-import com.ghatana.digitalmarketing.infra.approval.InMemoryApprovalSnapshotRepository;
-import com.ghatana.digitalmarketing.infra.audit.InMemoryWebsiteAuditReportRepository;
-import com.ghatana.digitalmarketing.infra.budget.InMemoryBudgetRecommendationRepository;
-import com.ghatana.digitalmarketing.infra.campaign.InMemoryCampaignRepository;
-import com.ghatana.digitalmarketing.infra.connector.DmConnectorInMemoryRepository;
-import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCampaignLinkInMemoryRepository;
-import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCredentialInMemoryRepository;
-import com.ghatana.digitalmarketing.infra.research.InMemoryCompetitorResearchRepository;
-import com.ghatana.digitalmarketing.infra.suppression.InMemorySuppressionRepository;
-import com.ghatana.digitalmarketing.infra.strategy.InMemoryMarketingStrategyRepository;
-import com.ghatana.digitalmarketing.infra.transparency.InMemoryAiActionLogRepository;
-import com.ghatana.digitalmarketing.infra.workspace.InMemoryWorkspaceRepository;
+import com.ghatana.digitalmarketing.infra.approval.EphemeralApprovalSnapshotRepository;
+import com.ghatana.digitalmarketing.infra.audit.EphemeralWebsiteAuditReportRepository;
+import com.ghatana.digitalmarketing.infra.budget.EphemeralBudgetRecommendationRepository;
+import com.ghatana.digitalmarketing.infra.campaign.EphemeralCampaignRepository;
+import com.ghatana.digitalmarketing.infra.connector.DmConnectorEphemeralRepository;
+import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCampaignLinkEphemeralRepository;
+import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCredentialEphemeralRepository;
+import com.ghatana.digitalmarketing.infra.research.EphemeralCompetitorResearchRepository;
+import com.ghatana.digitalmarketing.infra.suppression.EphemeralSuppressionRepository;
+import com.ghatana.digitalmarketing.infra.strategy.EphemeralMarketingStrategyRepository;
+import com.ghatana.digitalmarketing.infra.transparency.EphemeralAiActionLogRepository;
+import com.ghatana.digitalmarketing.infra.workspace.EphemeralWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.approval.PostgresApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.persistence.audit.PostgresWebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.persistence.budget.PostgresBudgetRecommendationRepository;
@@ -113,7 +113,7 @@ import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
 import com.ghatana.plugin.consent.impl.StandardConsentPlugin;
 import com.ghatana.plugin.featureflag.FeatureFlagPlugin;
 import com.ghatana.plugin.notification.impl.DurableNotificationPlugin;
-import com.ghatana.plugin.notification.impl.InMemoryNotificationPlugin;
+import com.ghatana.plugin.notification.impl.EphemeralNotificationPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.governance.DmKillSwitchService;
 import com.ghatana.platform.security.encryption.HashingService;
@@ -459,7 +459,7 @@ public final class DmosApiServer extends Launcher {
         if (usePostgres()) {
             wirePostgresRepositories();
         } else {
-            wireInMemoryRepositories();
+            wireEphemeralRepositories();
         }
 
         // Wire compliance plugin
@@ -602,9 +602,9 @@ public final class DmosApiServer extends Launcher {
                 executor);
             linkRepo = new PostgresDmGoogleAdsCampaignLinkRepository(dataSource, executor);
         } else {
-            connectorRepo = new DmConnectorInMemoryRepository();
-            credentialRepo = new DmGoogleAdsCredentialInMemoryRepository();
-            linkRepo = new DmGoogleAdsCampaignLinkInMemoryRepository();
+            connectorRepo = new DmConnectorEphemeralRepository();
+            credentialRepo = new DmGoogleAdsCredentialEphemeralRepository();
+            linkRepo = new DmGoogleAdsCampaignLinkEphemeralRepository();
         }
 
         CampaignRepository campaignRepo = get(CampaignRepository.class);
@@ -644,7 +644,7 @@ public final class DmosApiServer extends Launcher {
             };
         } else {
             // Dev/test uses an in-memory connector until credentials are configured.
-            apiClient = new InMemoryDmGoogleAdsCampaignApiClient();
+            apiClient = new EphemeralDmGoogleAdsCampaignApiClient();
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -695,17 +695,17 @@ public final class DmosApiServer extends Launcher {
         LOG.info("PostgreSQL repositories wired successfully");
     }
 
-    private void wireInMemoryRepositories() {
+    private void wireEphemeralRepositories() {
         ProductionProfileGuard.validate();
 
-        register(WorkspaceRepository.class, new InMemoryWorkspaceRepository());
-        register(CampaignRepository.class, new InMemoryCampaignRepository());
-        register(ApprovalSnapshotRepository.class, new InMemoryApprovalSnapshotRepository());
-        register(AiActionLogRepository.class, new InMemoryAiActionLogRepository());
-        register(SuppressionRepository.class, new InMemorySuppressionRepository());
-        register(MarketingStrategyRepository.class, new InMemoryMarketingStrategyRepository());
-        register(BudgetRecommendationRepository.class, new InMemoryBudgetRecommendationRepository());
-        register(WebsiteAuditReportRepository.class, new InMemoryWebsiteAuditReportRepository());
+        register(WorkspaceRepository.class, new EphemeralWorkspaceRepository());
+        register(CampaignRepository.class, new EphemeralCampaignRepository());
+        register(ApprovalSnapshotRepository.class, new EphemeralApprovalSnapshotRepository());
+        register(AiActionLogRepository.class, new EphemeralAiActionLogRepository());
+        register(SuppressionRepository.class, new EphemeralSuppressionRepository());
+        register(MarketingStrategyRepository.class, new EphemeralMarketingStrategyRepository());
+        register(BudgetRecommendationRepository.class, new EphemeralBudgetRecommendationRepository());
+        register(WebsiteAuditReportRepository.class, new EphemeralWebsiteAuditReportRepository());
 
         LOG.warn("MarketingStrategyRepository, BudgetRecommendationRepository, and WebsiteAuditReportRepository using forward implementations - in-memory adapters pending");
     }
@@ -1230,8 +1230,8 @@ public final class DmosApiServer extends Launcher {
             LOG.info("[{}] Using DurableNotificationPlugin with PostgreSQL", environment);
             return plugin;
         }
-        LOG.info("[{}] Using InMemoryNotificationPlugin", environment);
-        return new InMemoryNotificationPlugin();
+        LOG.info("[{}] Using EphemeralNotificationPlugin", environment);
+        return new EphemeralNotificationPlugin();
     }
 
     /**

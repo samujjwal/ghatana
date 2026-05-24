@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmEmailFollowUpServiceImpl")
 class DmEmailFollowUpServiceImplTest extends EventloopTestBase {
 
-    private InMemoryRepository repository;
+    private EphemeralRepository repository;
     private DmEmailFollowUpServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryRepository();
+        repository = new EphemeralRepository();
         service = new DmEmailFollowUpServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -172,7 +172,7 @@ class DmEmailFollowUpServiceImplTest extends EventloopTestBase {
         );
     }
 
-    static final class InMemoryRepository implements DmEmailFollowUpRepository {
+    static final class EphemeralRepository implements DmEmailFollowUpRepository {
         private final Map<String, DmEmailFollowUp> store = new ConcurrentHashMap<>();
 
         @Override

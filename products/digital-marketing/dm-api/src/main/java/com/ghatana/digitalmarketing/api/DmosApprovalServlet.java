@@ -92,8 +92,8 @@ public final class DmosApprovalServlet {
             approvalService,
             eventloop,
             null,
-            DmosMetricsCollector.noop(),
-            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            DmosMetricsCollector.disabled(),
+            DmosTelemetry.disabled(),
             new DmosHttpContextFactory(false, null)
         );
     }

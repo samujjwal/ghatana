@@ -57,12 +57,12 @@ class ProductionPersistenceWiringProofTest {
 
     @Test
     @DisplayName("P1-049: production validator rejects in-memory repository wiring")
-    void shouldRejectInMemoryRepositoryInProduction() throws Exception {
+    void shouldRejectEphemeralRepositoryInProduction() throws Exception {
         DataSource dataSource = new AlwaysValidDataSource();
         ProductionBootstrapValidator validator = new ProductionBootstrapValidator.Builder()
             .isProduction(true)
             .dataSource(dataSource)
-            .campaignRepository(new InMemoryCampaignRepositoryStub())
+            .campaignRepository(new EphemeralCampaignRepositoryStub())
             .kernelAdapter(new MinimalKernelAdapterDouble())
             .piiHmacKey(LONG_KEY)
             .contactEncryptionKey(LONG_KEY)
@@ -167,7 +167,7 @@ class ProductionPersistenceWiringProofTest {
         @Override public boolean isWrapperFor(Class<?> i) { return false; }
     }
 
-    /** CampaignRepository double whose class name does not contain "InMemory". */
+    /** CampaignRepository double whose class name does not contain "Ephemeral". */
     private static final class PostgresCampaignRepositoryDouble implements CampaignRepository {
         @Override public Promise<Campaign> save(Campaign c) { throw new UnsupportedOperationException(); }
         @Override public Promise<Optional<Campaign>> findById(DmWorkspaceId w, String id) { return Promise.of(Optional.empty()); }
@@ -185,7 +185,7 @@ class ProductionPersistenceWiringProofTest {
         @Override public Promise<String> recordAudit(DmOperationContext ctx, String entityId, String action, Map<String, Object> attrs) { return Promise.of("recorded"); }
     }
 
-    private static final class InMemoryCampaignRepositoryStub implements CampaignRepository {
+    private static final class EphemeralCampaignRepositoryStub implements CampaignRepository {
         @Override
         public io.activej.promise.Promise<com.ghatana.digitalmarketing.domain.campaign.Campaign> save(
                 com.ghatana.digitalmarketing.domain.campaign.Campaign campaign) {

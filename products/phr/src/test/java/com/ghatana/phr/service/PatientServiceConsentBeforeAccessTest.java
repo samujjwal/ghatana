@@ -5,6 +5,7 @@ import com.ghatana.kernel.observability.KernelTelemetryManager;
 import com.ghatana.phr.kernel.consent.ConsentAccessDeniedException;
 import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.kernel.policy.PhrDataClassification;
+import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.observability.PHRAuditTrailServiceImpl;
 import com.ghatana.phr.observability.PHRTelemetryManagerImpl;
@@ -70,7 +71,7 @@ class PatientServiceConsentBeforeAccessTest {
     @BeforeEach
     void setUp() {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
-        AuditTrailService auditTrail = new PHRAuditTrailServiceImpl();
+                AuditTrailService auditTrail = new PHRAuditTrailServiceImpl(new PhrTestInfrastructure.StubDataCloudAdapter());
         service = new PatientService(telemetry, auditTrail, repository, consentService);
 
         TenantSecurityContext context = TenantSecurityContext.builder()

@@ -32,14 +32,14 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 class ContactServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryContactRepository repository;
+    private EphemeralContactRepository repository;
     private ContactServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository    = new InMemoryContactRepository();
+        repository    = new EphemeralContactRepository();
         service       = new ContactServiceImpl(kernelAdapter, repository);
 
         ctx = DmOperationContext.builder()
@@ -247,7 +247,7 @@ class ContactServiceImplTest extends EventloopTestBase {
     // Test doubles
     // -----------------------------------------------------------------------
 
-    private static final class InMemoryContactRepository implements ContactRepository {
+    private static final class EphemeralContactRepository implements ContactRepository {
         private final ConcurrentHashMap<String, Contact> store = new ConcurrentHashMap<>();
 
         @Override

@@ -20,7 +20,7 @@ public final class PhrNotificationOutboxDispatcher extends PhrServiceBase {
     private final PhrNotificationDeliveryChannels deliveryChannels;
 
     public PhrNotificationOutboxDispatcher(KernelContext context) {
-        this(context, NoOpPhrNotificationDeliveryChannels.INSTANCE);
+        this(context, PhrNotificationDeliveryChannelsFactory.fromContext(context));
     }
 
     public PhrNotificationOutboxDispatcher(KernelContext context, PhrNotificationDeliveryChannels deliveryChannels) {

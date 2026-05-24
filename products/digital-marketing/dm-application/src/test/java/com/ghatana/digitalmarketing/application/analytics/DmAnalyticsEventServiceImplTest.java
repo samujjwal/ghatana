@@ -25,13 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmAnalyticsEventServiceImpl")
 class DmAnalyticsEventServiceImplTest extends EventloopTestBase {
 
-    private InMemoryAnalyticsEventRepository repository;
+    private EphemeralAnalyticsEventRepository repository;
     private DmAnalyticsEventServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAnalyticsEventRepository();
+        repository = new EphemeralAnalyticsEventRepository();
         service = new DmAnalyticsEventServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -132,7 +132,7 @@ class DmAnalyticsEventServiceImplTest extends EventloopTestBase {
             "google", "cpc", "summer-sale", null, null, "visitor-1", Map.of());
     }
 
-    static final class InMemoryAnalyticsEventRepository implements DmAnalyticsEventRepository {
+    static final class EphemeralAnalyticsEventRepository implements DmAnalyticsEventRepository {
         private final Map<String, DmAnalyticsEvent> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmAnalyticsEvent> save(DmAnalyticsEvent e) { store.put(e.getId(), e); return Promise.of(e); }

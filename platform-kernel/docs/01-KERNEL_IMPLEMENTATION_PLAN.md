@@ -1,136 +1,129 @@
-# Doc 1 — PHR + Digital Marketing release-readiness review with Kernel/Data Cloud/foundations
+I executed the review statically against commit `4bfa0c28edf05ca714ba56a936628874a3673622`. I did **not** run tests locally; I inspected repo code, manifests, registry, and checked-in release evidence. The commit itself is a changelog-only `[skip ci]` commit, but the snapshot includes meaningful prior changes referenced by the changelog.
 
-## 1. Release strategy decision
+## Score summary versus last run
 
-Use **PHR as the first production-release hardening driver**, then **Digital Marketing as the second production-release hardening driver**.
+| Review area                                    |                 Last run score |  Current score | Direction              | Release verdict          |
+| ---------------------------------------------- | -----------------------------: | -------------: | ---------------------- | ------------------------ |
+| PHR + used foundations                         |                         6.4/10 |     **7.2/10** | Improved               | Still blocked            |
+| Digital Marketing + used foundations           |                         6.8/10 |     **7.5/10** | Improved               | Still blocked            |
+| YAPPC-only                                     |                         6.0/10 |     **6.9/10** | Improved               | Not production-ready yet |
+| Repo release evidence score: PHR               | Not used in prior static score | **4.84/5 avg** | Good, but failing gate | Fail                     |
+| Repo release evidence score: Digital Marketing | Not used in prior static score | **4.84/5 avg** | Good, but failing gate | Fail                     |
 
-The rule should be:
+The checked-in release evidence gives both PHR and Digital Marketing an average score of `4.84/5` with no below-target dimensions, but both still fail because `./scripts/check-production-stubs.mjs` failed.
 
-> A product release is allowed only when every Kernel, Data Cloud, plugin, shared library, contract, UI foundation, and runtime capability used by that product’s production path is production-ready for that product’s usage profile. Unused foundation capabilities may remain incomplete only if they are disabled, hidden, and not advertised as live.
+# Doc 1 — PHR + Digital Marketing implementation plan with Kernel/Data Cloud/foundations
 
-This avoids blocking PHR on all future platform capabilities, while also preventing PHR from shipping on top of non-production Kernel/Data Cloud/foundation slices.
+## Current state
 
-## 2. Current maturity scorecard
+The biggest improvement since the last run is that PHR and Digital Marketing are no longer registry-local-only. Both now list `compose-local`, `dev`, `staging`, and `prod`, with `dev` as default.
 
-| Area                                    |  Score | Current state                                                                                                                                                                                                                                                                                    |
-| --------------------------------------- | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PHR product readiness                   | 6.4/10 | Strong product architecture, Kernel composition, schema contracts, release gate tasks, consent/break-glass flow. Blocked by production-safety gaps such as default `test-tenant`/`test-user`, in-memory consent cache defaults, local-only deployment target, and incomplete rollback readiness. |
-| Digital Marketing readiness             | 6.8/10 | Cleaner modular architecture and stronger Kernel bridge adapter. Still local-only deployment target, coverage threshold reductions, disabled feature-flag generation, runtime module false, and unproven full UI→API→domain→persistence→connector→audit flow.                                    |
-| Kernel usage readiness for PHR/DMOS     | 6.2/10 | Correct layered architecture and plugin boundary intent, but product releases need stricter evidence that used lifecycle/plugin slices are production-ready.                                                                                                                                     |
-| Data Cloud usage readiness for PHR/DMOS | 6.1/10 | Correct product-family positioning: Data Cloud is the customer-facing operational data fabric and AEP is Action Plane runtime. Need stronger proof that product-used durable state, policy, evidence, and runtime truth are production-grade.                                                    |
-| Foundation/platform library readiness   | 6.3/10 | Platform modules and plugin model are directionally right. Must harden only the slices used by PHR/DMOS releases first.                                                                                                                                                                          |
-| Release evidence maturity               | 5.8/10 | There are release gate scripts and product registry metadata, but local-only deployment and partial rollback evidence prevent production confidence.                                                                                                                                             |
-| Reusable asset inventory maturity       | 3.5/10 | Conceptually needed; not yet a first-class inventory with maturity, usage, tests, promotion path, and product lineage.                                                                                                                                                                           |
+PHR also improved materially: `PhrServiceBase` no longer injects default `test-tenant` and `test-user` into production service mutations, removing a major fail-closed blocker from the last review.
 
-## 3. PHR findings
+PHR Kernel wiring now resolves a required `DistributedCachePort` for consent cache and throws if it is unavailable, instead of wiring the consent service through the in-memory convenience path. That is a real production-readiness improvement.
 
-### What is strong
+Digital Marketing also improved: feature-flag generation is re-enabled and `compileJava` now depends on `generateFeatureFlags`; app coverage thresholds were restored to `0.85` line and `0.70` branch.
 
-PHR is clearly intended as a Kernel-backed healthcare product. Its architecture describes FHIR R4 interoperability, Nepal healthcare compliance, consent, emergency break-glass, patient/provider/admin surfaces, AI clinical decision support, audit, and Kernel/DataCloud integration. 
+Digital Marketing persistence also improved: coverage verification is no longer CI-only, and `validateFlywayMigrations` is now part of `check`.
 
-The registry marks PHR as an active business product with backend and web surfaces implemented, lifecycle enabled, required healthcare gates, and lifecycle execution allowed. It also records required gates such as consent, PII classification, audit evidence, FHIR contract validation, and tenant data sovereignty. 
+## Remaining blockers
 
-`PhrKernelModule` is a real composition root: it declares PHR capabilities, Kernel dependencies, optional FHIR/HL7 external dependencies, creates domain services, starts/stops lifecycle-aware services, registers HTTP/FHIR/HIE routes, and registers schema contracts for patient records, consent, medications, labs, immunizations, notes, imaging, referrals, billing, telemedicine, caregivers, and emergency access.  
+The shared release verdict is still **fail**, caused by `check-production-stubs.mjs`. This should be treated as the current P0 release blocker for both PHR and Digital Marketing, even though the average score is strong.
 
-The PHR Gradle build has explicit Kernel/platform/plugin dependencies and release-oriented tasks: `phrReleaseGate`, `checkApiContractConformance`, benchmark task, product-pack validation, and policy pack test patterns. 
+PHR has new event handlers for lifecycle, audit, and consent, but code comments still say “in production, this would write to Data Cloud evidence store/audit sink” and currently publish to Kernel event bus. That is better than nothing, but not yet durable evidence.
 
-### Production blockers
+PHR still has rollback readiness as `target-partial`, with prerequisites like stable deployment manifest history, previous artifact selection policy, healthcare post-rollback gates, and rollback approval contract.
 
-The biggest PHR blocker is that `PhrServiceBase` silently injects default `tenantId = test-tenant` and `principalId = test-user` when metadata is absent. That is acceptable only in isolated tests, not production product code. It directly conflicts with the product-family rule that production foundations must fail closed on missing tenant/principal. 
+Digital Marketing has stronger registry readiness now, including explicit lifecycle gates for bridge compliance, marketing consent boundary, persistence proof, and Google Ads connector proof. Those must become executable release gates with concrete evidence, not just declared metadata.
 
-`ConsentManagementService` has strong consent behavior: distributed-cache constructor, rate limiting, grant creation/revocation, access decisions, emergency access, notifications, and audit calls. But the public convenience constructor still defaults to `InMemoryCacheAdapter`, and `PhrKernelModule` uses `new ConsentManagementService(context)` instead of explicitly requiring a production distributed cache.  
+## PHR implementation plan
 
-PHR’s registry deployment target is only `compose-local`, supported environment is only `local`, and rollback readiness is `target-partial`. That means PHR is not yet production-deployable even if many functional components exist. 
+| Priority | Work item                               | What to do                                                                                                                                        | Where                                                     |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| P0       | Fix production-stubs gate               | Open the failing `check-production-stubs.mjs` output and remove or quarantine every production-reachable stub/fallback/sample path.               | Repo-wide, starting with PHR + used foundations           |
+| P0       | Make PHR event evidence durable         | Replace “would write to Data Cloud” event comments with actual Data Cloud evidence/audit writes for lifecycle, audit, and consent events.         | `PhrKernelModule`, PHR event handlers, Data Cloud adapter |
+| P0       | Close rollback readiness                | Implement stable deployment manifest history, previous artifact selection policy, healthcare post-rollback gates, and rollback approval contract. | `products/phr/lifecycle/rollback/*`, Kernel lifecycle     |
+| P0       | Prove consent cache production behavior | Add tests proving PHR fails startup without `DistributedCachePort` in production and uses distributed cache in release profile.                   | `PhrKernelModuleTest`, consent tests                      |
+| P0       | Healthcare gate execution               | Ensure consent, PII classification, audit evidence, FHIR validation, and tenant data sovereignty are executable gates with checked-in evidence.   | `products/phr/lifecycle/gate-packs/*`                     |
+| P1       | FHIR golden contract tests              | Add/expand FHIR R4 fixtures for Patient, Observation, Medication, Immunization, ImagingStudy, DocumentReference, Encounter.                       | PHR FHIR tests                                            |
+| P1       | Patient/provider/admin journeys         | Add UI/API tests for patient self-access, provider consent access, denied access, break-glass access, caregiver delegation.                       | PHR web + API tests                                       |
+| P1       | Observability trace                     | Add end-to-end correlation across API → PHR service → Data Cloud/Kernel → audit/evidence.                                                         | PHR API/services/foundations                              |
+| P2       | Reusable asset extraction               | Register reusable PHR assets: consent gate, audit panel, break-glass workflow, FHIR validation gate, tenant-scoped data pattern.                  | Product Family Asset Registry                             |
 
-PHR’s build file says OpenAPI validation task was removed because the plugin is unavailable. There is a contract conformance test task, which is good, but release readiness should not depend on a removed OpenAPI gate without an equivalent enforced replacement. 
+## Digital Marketing implementation plan
 
-### PHR implementation plan
+| Priority | Work item                       | What to do                                                                                                                                                                                        | Where                                                           |
+| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| P0       | Fix production-stubs gate       | Remove/quarantine production-reachable stubs in DMOS and used foundations.                                                                                                                        | DMOS + shared foundations                                       |
+| P0       | Make lifecycle gates executable | Convert registry gates into deterministic tests/evidence: registry validation, manifest validation, lifecycle contract, bridge compliance, consent boundary, persistence proof, Google Ads proof. | `products/digital-marketing/lifecycle/gate-packs/*`             |
+| P0       | Complete connector proof        | Prove Google Ads OAuth, idempotency, retry, DLQ, external ID persistence, audit, and compensation/rollback.                                                                                       | `dm-connector-google-ads`, `dm-application`, `dm-persistence`   |
+| P0       | Production bootstrap validation | Fail startup if prod profile lacks DB, secrets, feature flag backend, OTLP, connector credentials, encryption/HMAC keys.                                                                          | `dm-api`, `dm-application`, deployment config                   |
+| P1       | Runtime module decision         | Registry still has `runtimeModule: false`; decide if DMOS release requires runtime module. Implement or explicitly justify.                                                                       | `config/canonical-product-registry.json`, `kernel-product.yaml` |
+| P1       | UI runtime truth                | Ensure pages/actions/cards are backend capability-driven and show locked/degraded states from backend, not local assumptions.                                                                     | `products/digital-marketing/ui`                                 |
+| P1       | AI action evidence              | Persist prompt/input/model/provider/confidence/rationale/risk/policy/approval/action outcome.                                                                                                     | `dm-domain`, `dm-application`, `dm-persistence`                 |
+| P2       | Reusable asset extraction       | Register campaign dashboard, approval queue, connector adapter pattern, notification retry/DLQ, AI transparency panel.                                                                            | Product Family Asset Registry                                   |
 
-| Priority | Area                            | What to change                                                                                                                                                                             | Where                                                                           |
-| -------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| P0       | Tenant/principal fail-closed    | Remove production fallback to `test-tenant` and `test-user`. Move test defaults into test fixtures only. Production mutations must require explicit tenant/principal from trusted context. | `products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java` |
-| P0       | Consent cache production wiring | Require distributed cache for production. Make in-memory cache available only through test/dev profile with explicit flag and health warning.                                              | `ConsentManagementService`, `PhrKernelModule`                                   |
-| P0       | PHR release profile             | Replace registry `local`-only deployment with staged targets: local, dev, staging, prod. Keep prod disabled until all evidence gates pass.                                                 | `config/canonical-product-registry.json`, `products/phr/kernel-product.yaml`    |
-| P0       | Healthcare gate evidence        | Make consent, PII, audit, FHIR, and data-sovereignty gates executable and evidence-backed, not only manifest-backed.                                                                       | `products/phr/lifecycle/gate-packs/*`, `.kernel/evidence/phr/*`                 |
-| P0       | Contract parity                 | Reinstate or replace OpenAPI validation with enforced route↔OpenAPI↔handler parity.                                                                                                        | `products/phr/build.gradle.kts`, PHR API tests                                  |
-| P1       | Emergency access workflow       | Ensure break-glass requires post-hoc review, immutable audit, notification, and patient visibility. Add negative-path tests.                                                               | `EmergencyAccessLogService`, `EmergencyAccessReviewWorkflow`, consent tests     |
-| P1       | FHIR production proof           | Add FHIR R4 golden fixtures and contract tests for patient, observation, medication, immunization, imaging, notes, referrals.                                                              | `products/phr/src/test`, schema packs                                           |
-| P1       | Observability                   | Add end-to-end trace/correlation from PHR API → service → Data Cloud/Kernel → audit.                                                                                                       | PHR HTTP/API/services, platform observability                                   |
-| P1       | UI readiness                    | Verify patient/provider/admin route access, consent states, empty/error/unauthorized/degraded states, i18n/a11y.                                                                           | `products/phr/apps/web`                                                         |
-| P2       | Reusable extraction             | Promote PHR consent panel, audit trail, FHIR validation gate, break-glass workflow, tenant-scoped repository pattern into asset registry candidates.                                       | New Product Family Asset Registry                                               |
+## Foundation tasks for both products
 
-## 4. Digital Marketing findings
+| Priority | Foundation     | Task                                                                                                                                  |
+| -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | Release gates  | Make `check-production-stubs.mjs` failure actionable in product-specific evidence: exact file, symbol, production path, required fix. |
+| P0       | Kernel         | Product release should fail if any used Kernel/plugin slice is in-memory/noop/local-only without explicit non-prod profile.           |
+| P0       | Data Cloud     | Used product evidence/audit/runtime truth must be durable and tenant-scoped.                                                          |
+| P1       | Registry       | Add `foundationUsageProfile` for PHR and Digital Marketing.                                                                           |
+| P1       | YAPPC          | Surface release readiness, blockers, foundation usage, doc-truth warnings, and asset candidates in YAPPC.                             |
+| P1       | Asset registry | Store reusable asset records in Data Cloud with maturity, source paths, tests, dependencies, promotion path.                          |
 
-### What is strong
+# Doc 2 — YAPPC-only implementation plan
 
-Digital Marketing has a clearer product-boundary document than PHR. It explicitly says DMOS owns marketing domain logic, routes, contracts, persistence, connector adapters, tests, runbooks, and dashboards, while Kernel/platform owns generic identity, feature flags, audit, approvals, telemetry, notification, compliance, and policy primitives. 
+## Current state
 
-The registry marks Digital Marketing as active, lifecycle enabled, backend/web implemented, bridge conformance true, bridge adapter tests present, agent definitions true, mastery bindings true, evaluation packs true, and lifecycle execution allowed. 
+YAPPC improved significantly. `YappcLifecycleService` now wires `ProductFamilyControlPlaneController`, and the API exposes product-family routes for release readiness, assets, asset promotion, doc-truth warnings, guided reuse, and Kernel timeline.
 
-`DigitalMarketingKernelAdapterImpl` is a strong product-owned adapter over Kernel/plugin ports. It constructor-injects authorization, audit, consent, approval, audit trail, risk, notification, and feature-flag plugins. It uses authorization checks before consent, approval, audit, risk, feature flag, and notification operations. It also redacts sensitive values and has production-mode fail-closed behavior for risk and notification failures.  
+The old explicit SLF4J-only audit fallback binding is gone from `YappcLifecycleService`, which addresses a prior audit concern.
 
-### Production blockers
+`ProductFamilyControlPlaneController` is now a real Data Cloud-backed controller for product release readiness, product-family assets, doc-truth checks, reuse recommendations, and asset promotion history. It requires tenant context and returns blocked/not-ready states when release records are missing.
 
-Digital Marketing is still registry-local only: deployment target is `compose-local`, supported environment is `local`, even though the architecture describes production deployment with PostgreSQL, secrets, OTLP, rate limits, retention/DSAR, connector credentials, and production bootstrap validation.  
+## YAPPC current score
 
-`dm-application` has feature flag generation disabled “temporarily due to build issues,” and application coverage gates are reduced to 60% line / 50% branch. That is not production-grade for a release candidate. 
+| Area                         | Last run |    Current | Direction          |
+| ---------------------------- | -------: | ---------: | ------------------ |
+| Product-family control plane |   3.5/10 | **6.5/10** | Major improvement  |
+| Release cockpit backend      |   4.5/10 | **6.8/10** | Improved           |
+| Asset registry backend       |   3.5/10 | **6.3/10** | Improved           |
+| Kernel timeline visibility   |   4.0/10 | **5.8/10** | Improved           |
+| Lifecycle phase maturity     |   6.0/10 | **6.3/10** | Slight improvement |
+| Overall YAPPC                |   6.0/10 | **6.9/10** | Improved           |
 
-`dm-persistence` has PostgreSQL/Flyway/Testcontainers dependencies, which is good, but coverage verification is only enabled when `CI=true`. Production release gates should not depend on environment ambiguity; release profile should enforce persistence coverage and migration validation deterministically. 
+## Remaining YAPPC blockers
 
-The registry says `runtimeModule: false` for Digital Marketing, which means the product is not yet a full Kernel runtime module even though it is a lifecycle pilot. 
+The product-family control plane is backend-present, but it still depends on Data Cloud records being populated. If no release readiness record exists, it returns `NOT_READY` and `BLOCKED`, which is correct behavior but means ingestion/population pipelines are now required.
 
-### Digital Marketing implementation plan
+Asset promotion has useful validation, but it needs stronger lifecycle integration: promotion should require evidence packs, test gates, compatibility checks, and owner approval before becoming production/shared.
 
-| Priority | Area                       | What to change                                                                                                                                                            | Where                                                                                      |
-| -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| P0       | Production release profile | Add staging/prod profiles, secrets validation, PostgreSQL/Flyway migration gate, connector credential validation, OTLP config, rollback readiness.                        | `config/canonical-product-registry.json`, `products/digital-marketing/kernel-product.yaml` |
-| P0       | Feature flags              | Re-enable canonical feature flag generation and make compile/check depend on it.                                                                                          | `products/digital-marketing/dm-application/build.gradle.kts`                               |
-| P0       | Coverage gate              | Restore production-grade thresholds for app/domain/bridge/persistence, or define strict per-package gates with evidence.                                                  | `dm-application`, `dm-domain`, `dm-kernel-bridge`, `dm-persistence` builds                 |
-| P0       | Persistence proof          | Make migration validation, tenant/workspace query enforcement, idempotency constraints, external ID constraints, and repository integration tests required release gates. | `dm-persistence`                                                                           |
-| P0       | Connector execution        | Prove Google Ads connector: OAuth validation, idempotency, retries, DLQ, compensation, external ID persistence, audit.                                                    | `dm-connector-google-ads`, `dm-application`                                                |
-| P1       | Runtime module             | Decide whether DMOS needs `runtimeModule: true` for release. If yes, implement; if no, document why lifecycle execution works without it.                                 | Registry + Kernel product config                                                           |
-| P1       | UI runtime truth           | Ensure UI route/cards/actions come from backend capabilities, not frontend assumptions. Add empty/error/unauthorized/locked/degraded states.                              | `products/digital-marketing/ui`                                                            |
-| P1       | AI action evidence         | Persist prompt/input/model/provider/confidence/rationale/risk/policy/approval outcome.                                                                                    | `dm-domain`, `dm-application`, `dm-persistence`                                            |
-| P1       | Observability              | Add trace/correlation across UI → API → app → persistence/connector → Kernel bridge → audit/notification.                                                                 | API/application/bridge                                                                     |
-| P2       | Reusable extraction        | Promote approval queue, connector adapter pattern, AI transparency panel, campaign dashboard, notification retry/DLQ pattern into asset registry candidates.              | Product Family Asset Registry                                                              |
+The lifecycle phase endpoints still include direct route definitions and hardcoded phase lists in the service. That is acceptable short-term but should move to generated manifest-backed routing to avoid drift.
 
-## 5. Kernel/Data Cloud/foundation usage plan for PHR and Digital Marketing
+## YAPPC-only implementation plan
 
-### Required production slices for PHR release
+| Priority | Work item                          | What to do                                                                                                                | Where                                                 |
+| -------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| P0       | Populate release readiness records | Build ingestion from `.kernel/evidence/product-release-readiness.*.json` into Data Cloud `product_release_readiness`.     | YAPPC services + Data Cloud                           |
+| P0       | Product-family cockpit UI          | Add UI for PHR and Digital Marketing release readiness: score, verdict, blockers, gates, foundation usage, evidence refs. | YAPPC frontend                                        |
+| P0       | Production-stub visibility         | Show `check-production-stubs.mjs` failure with exact files, symbols, product ownership, and required fix.                 | YAPPC product-family release view                     |
+| P0       | Asset registry ingestion           | Ingest candidate assets from PHR/DMOS manifests or generated scan output into Data Cloud `product_family_assets`.         | `ProductFamilyControlPlaneController`, ingestion jobs |
+| P1       | Asset promotion governance         | Require tests, evidence refs, owner, dependencies, compatibility, and approval for production/shared promotion.           | Asset promotion workflow                              |
+| P1       | Kernel timeline population         | Populate `kernel-timeline` from Kernel lifecycle events, not static/local artifacts.                                      | Kernel events + YAPPC control plane                   |
+| P1       | Doc-truth warnings                 | Connect doc/registry/code truth checker output into `yappc_truth_checks` and UI.                                          | YAPPC control plane                                   |
+| P1       | Guided reuse                       | For new products like Tutorputor/FlashIt, recommend reusable assets by domain, surface, capabilities, and maturity.       | `product_family_reuse_recommendations`                |
+| P1       | Manifest-backed routes             | Generate product-family routes from YAPPC route manifest/OpenAPI, not manually maintained route strings.                  | YAPPC API routing                                     |
+| P2       | Product onboarding experience      | Add flow: choose archetype → select assets → generate ProductUnitIntent → Kernel lifecycle → release evidence.            | YAPPC UX                                              |
 
-| Foundation             | Required slice                                                                                                                |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Kernel                 | lifecycle validate/build/package/deploy/verify; product manifest; capability registry; schema registration; rollback evidence |
-| Kernel plugins         | consent, audit, compliance, human approval, ledger only if billing is in release                                              |
-| Data Cloud             | patient/consent/audit/evidence records; tenant-scoped mutations and queries; runtime truth for product surfaces               |
-| Platform security      | auth, route entitlements, RBAC, tenant isolation, rate limiting                                                               |
-| Platform observability | correlation IDs, health, metrics, audit trail                                                                                 |
-| YAPPC                  | release visibility only if used; must not claim runtime truth from local/fake data                                            |
-| Audio-Video            | exclude unless PHR uses telemedicine/media in production                                                                      |
+## Most important next step
 
-### Required production slices for Digital Marketing release
+Fix the **one current release blocker** first:
 
-| Foundation             | Required slice                                                                                               |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Kernel                 | lifecycle profile, plugin bridge, capability/feature flag gates                                              |
-| Kernel plugins         | audit, approval, notification, risk, feature flag, compliance                                                |
-| Data Cloud             | campaign/activity/event/evidence/runtime truth if used; otherwise product-owned PostgreSQL must be canonical |
-| Platform security      | trusted server identity, backend authZ, tenant/workspace scope                                               |
-| Platform observability | campaign/connector/AI action traceability                                                                    |
-| AEP/agents             | only recommendation/action flows used by release                                                             |
-| YAPPC                  | onboarding/visibility/control only if used by release                                                        |
+```text
+./scripts/check-production-stubs.mjs
+```
 
-## 6. Cross-product TODO list
-
-| ID      | Priority | TODO                                                                                                                                                                                  |
-| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| FND-001 | P0       | Add Product Foundation Usage Profile files for `phr` and `digital-marketing`; release gates should evaluate only used production slices, but fail any used non-production capability. |
-| FND-002 | P0       | Update release readiness script to fail if registry says `implemented/ready/enabled` but deployment target is only `local` for a release candidate.                                   |
-| FND-003 | P0       | Add a production-fallback scanner for `test-tenant`, `test-user`, `InMemory*`, `Noop*`, `fallback`, `disabled`, `sample`, and `local-only` in production paths.                       |
-| FND-004 | P0       | Make docs/registry/code truth consistent: `implemented` must mean executable and evidence-backed, not merely present.                                                                 |
-| FND-005 | P1       | Implement Product Family Asset Registry schema and begin extracting PHR + DMOS reusable assets.                                                                                       |
-| FND-006 | P1       | Add release evidence pack per product: build/test, API parity, tenant isolation, auth matrix, policy gates, audit, observability, i18n/a11y, deployment, rollback.                    |
-| FND-007 | P1       | Add reusable asset promotion policy: candidate → hardened → production → shared package/plugin/template/schema.                                                                       |
-| FND-008 | P2       | Add YAPPC UI for reusable asset discovery, compatibility, maturity, and guided reuse.                                                                                                 |
-
----
+Both checked-in release evidence files have strong average scores and no below-target dimensions, but both fail on this gate. Until that gate is clean, neither PHR nor Digital Marketing should be treated as releasable.

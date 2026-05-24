@@ -1,16 +1,10 @@
 {
-  "generatedAt": "2026-05-23T22:10:18.673Z",
+  "generatedAt": "2026-05-24T02:58:26.636Z",
   "status": "failed",
   "mode": "execute",
   "includeHeavy": false,
-  "selectedWaves": [
-    "wave-3-quality-performance",
-    "wave-4-release-ops"
-  ],
-  "scopedProducts": [
-    "digital-marketing",
-    "phr"
-  ],
+  "selectedWaves": ["wave-3-quality-performance", "wave-4-release-ops"],
+  "scopedProducts": ["digital-marketing", "phr"],
   "deferredHeavyCommands": [
     "pnpm:check:phase8:integration",
     "pnpm:check:phase8:e2e",
@@ -38,62 +32,62 @@
     {
       "command": "pnpm:check:data-cloud-ui-a11y",
       "status": 0,
-      "durationMs": 857
+      "durationMs": 1208
     },
     {
       "command": "pnpm:check:product-a11y-route-matrix",
       "status": 0,
-      "durationMs": 860
+      "durationMs": 1148
     },
     {
       "command": "pnpm:check:i18n-conformance",
       "status": 0,
-      "durationMs": 1142
+      "durationMs": 1394
     },
     {
       "command": "pnpm:check:product-slo-budgets",
       "status": 0,
-      "durationMs": 881
+      "durationMs": 904
     },
     {
       "command": "pnpm:check:product-cost-budgets",
       "status": 0,
-      "durationMs": 876
+      "durationMs": 878
     },
     {
       "command": "pnpm:check:product-domain-invariants",
       "status": 0,
-      "durationMs": 1341
+      "durationMs": 1735
     },
     {
       "command": "pnpm:check:openapi-release-quality",
       "status": 0,
-      "durationMs": 834
+      "durationMs": 927
     },
     {
       "command": "pnpm:check:openapi-breaking-changes",
       "status": 0,
-      "durationMs": 1476
+      "durationMs": 906
     },
     {
       "command": "pnpm:check:data-cloud-runbook-smoke",
       "status": 0,
-      "durationMs": 4636
+      "durationMs": 2174
     },
     {
       "command": "pnpm:check:release-rollback-drill",
       "status": 0,
-      "durationMs": 1398
+      "durationMs": 998
     },
     {
       "command": "pnpm:check:affected-product-strict-release-profile",
       "status": 0,
-      "durationMs": 1655
+      "durationMs": 1133
     },
     {
       "command": "pnpm:check:product-release-readiness",
       "status": 1,
-      "durationMs": 818423
+      "durationMs": 974646
     }
   ],
   "taskMatrixSummary": {
@@ -104,30 +98,21 @@
       "Planned": 3
     },
     "averageMaturityDepth": 2.5,
-    "warningCount": 0,
+    "warningCount": 6,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-23T21:56:24.294Z",
+    "generatedAt": "2026-05-24T02:41:58.580Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 8,
     "deferredTaskIds": [],
     "waveBuckets": {
-      "wave-1-foundation": [
-        8,
-        5,
-        7,
-        1,
-        2,
-        3,
-        4,
-        6
-      ]
+      "wave-1-foundation": [8, 5, 7, 1, 2, 3, 4, 6]
     },
     "tasks": [
       {
         "id": 8,
-        "title": "FND-008",
+        "title": "Observability trace",
         "status": "Planned",
         "maturityDepth": 1,
         "targetDepth": 5,
@@ -142,7 +127,7 @@
       },
       {
         "id": 5,
-        "title": "FND-005",
+        "title": "Healthcare gate execution",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -157,7 +142,7 @@
       },
       {
         "id": 7,
-        "title": "FND-007",
+        "title": "Patient/provider/admin journeys",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -172,7 +157,7 @@
       },
       {
         "id": 1,
-        "title": "FND-001",
+        "title": "Fix production-stubs gate",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -187,7 +172,7 @@
       },
       {
         "id": 2,
-        "title": "FND-002",
+        "title": "Make PHR event evidence durable",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -202,7 +187,7 @@
       },
       {
         "id": 3,
-        "title": "FND-003",
+        "title": "Close rollback readiness",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -217,7 +202,7 @@
       },
       {
         "id": 4,
-        "title": "FND-004",
+        "title": "Prove consent cache production behavior",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -232,7 +217,7 @@
       },
       {
         "id": 6,
-        "title": "FND-006",
+        "title": "FHIR golden contract tests",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,

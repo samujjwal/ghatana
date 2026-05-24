@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.RedisDistributedCacheAdapter;
-import com.ghatana.phr.kernel.service.ConsentManagementService;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import io.activej.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +18,7 @@ import redis.clients.jedis.JedisPool;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +47,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
     private static final String REDIS_IMAGE = "redis:7-alpine";
     private static final int REDIS_PORT = 6379;
 
-    private DistributedCachePort<String, ConsentManagementService.ConsentCacheEntry> cache;
+    private DistributedCachePort<String, String> cache;
     private ExecutorService executorService;
     private JedisPool jedisPool;
     private GenericContainer<?> redisContainer;
@@ -72,7 +72,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         cache = new RedisDistributedCacheAdapter<>(
             jedisPool,
             mapper,
-            ConsentManagementService.ConsentCacheEntry.class,
+            String.class,
             executorService,
             "phr.consent",
             Duration.ofHours(1)
@@ -98,12 +98,6 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         assertThat(cache)
             .as("DistributedCachePort should be RedisDistributedCacheAdapter, not InMemoryCache")
             .isInstanceOf(RedisDistributedCacheAdapter.class);
-        assertThat(cache)
-            .as("DistributedCachePort should not be InMemoryCache")
-            .isNotInstanceOfAny(
-                com.ghatana.platform.cache.InMemoryCache.class,
-                com.ghatana.platform.cache.NoopCache.class
-            );
     }
 
     @Test
@@ -112,24 +106,16 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         String patientId = "patient-123";
         String recipientId = "recipient-456";
         
-        ConsentManagementService.ConsentCacheEntry entry = new ConsentManagementService.ConsentCacheEntry(
-            patientId,
-            recipientId,
-            "granted",
-            Instant.now().plusSeconds(3600),
-            "clinical-care"
-        );
+        String entry = "granted";
 
         Promise<Void> storePromise = cache.put(patientId + ":" + recipientId, entry);
         runPromise(() -> storePromise);
 
-        Promise<ConsentManagementService.ConsentCacheEntry> getPromise = cache.get(patientId + ":" + recipientId);
-        ConsentManagementService.ConsentCacheEntry retrieved = runPromise(() -> getPromise);
+        Optional<String> retrieved =
+            runPromise(() -> cache.get(patientId + ":" + recipientId));
 
-        assertThat(retrieved).isNotNull();
-        assertThat(retrieved.patientId()).isEqualTo(patientId);
-        assertThat(retrieved.recipientId()).isEqualTo(recipientId);
-        assertThat(retrieved.status()).isEqualTo("granted");
+        assertThat(retrieved).isPresent();
+        assertThat(retrieved.orElseThrow()).isEqualTo("granted");
     }
 
     @Test
@@ -140,32 +126,20 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         String cacheKey = patientId + ":" + recipientId;
 
         // Store initial consent
-        ConsentManagementService.ConsentCacheEntry initialEntry = new ConsentManagementService.ConsentCacheEntry(
-            patientId,
-            recipientId,
-            "granted",
-            Instant.now().plusSeconds(3600),
-            "clinical-care"
-        );
+        String initialEntry = "granted";
 
         runPromise(() -> cache.put(cacheKey, initialEntry));
 
         // Simulate consent revocation
-        ConsentManagementService.ConsentCacheEntry revokedEntry = new ConsentManagementService.ConsentCacheEntry(
-            patientId,
-            recipientId,
-            "revoked",
-            Instant.now().plusSeconds(3600),
-            "clinical-care"
-        );
+        String revokedEntry = "revoked";
 
         runPromise(() -> cache.put(cacheKey, revokedEntry));
 
         // Verify invalidation propagated
-        ConsentManagementService.ConsentCacheEntry finalEntry = runPromise(() -> cache.get(cacheKey));
+        Optional<String> finalEntry = runPromise(() -> cache.get(cacheKey));
 
-        assertThat(finalEntry).isNotNull();
-        assertThat(finalEntry.status()).isEqualTo("revoked");
+        assertThat(finalEntry).isPresent();
+        assertThat(finalEntry.orElseThrow()).isEqualTo("revoked");
     }
 
     @Test
@@ -180,13 +154,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         CountDownLatch latch = new CountDownLatch(nodeCount);
         AtomicInteger successCount = new AtomicInteger(0);
 
-        ConsentManagementService.ConsentCacheEntry entry = new ConsentManagementService.ConsentCacheEntry(
-            patientId,
-            recipientId,
-            "granted",
-            Instant.now().plusSeconds(3600),
-            "clinical-care"
-        );
+        String entry = "granted";
 
         // Store consent from one connection
         runPromise(() -> cache.put(cacheKey, entry));
@@ -200,7 +168,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
                     eventloop.submit(() -> {
                         return cache.get(cacheKey)
                             .whenResult(retrieved -> {
-                                if (retrieved != null && "granted".equals(retrieved.status())) {
+                                if (retrieved.isPresent() && "granted".equals(retrieved.orElseThrow())) {
                                     successCount.incrementAndGet();
                                 }
                             });
@@ -234,13 +202,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
             final int iteration = i;
             executorService.submit(() -> {
                 try {
-                    ConsentManagementService.ConsentCacheEntry entry = new ConsentManagementService.ConsentCacheEntry(
-                        patientId,
-                        recipientId,
-                        iteration % 2 == 0 ? "granted" : "revoked",
-                        Instant.now().plusSeconds(3600),
-                        "clinical-care"
-                    );
+                    String entry = iteration % 2 == 0 ? "granted" : "revoked";
 
                     Eventloop eventloop = Eventloop.create();
                     eventloop.submit(() -> cache.put(cacheKey, entry));
@@ -257,9 +219,9 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         assertThat(completed).as("All updates should complete within timeout").isTrue();
 
         // Verify final state is consistent
-        ConsentManagementService.ConsentCacheEntry finalEntry = runPromise(() -> cache.get(cacheKey));
-        assertThat(finalEntry).isNotNull();
-        assertThat(finalEntry.status()).isIn("granted", "revoked");
+        Optional<String> finalEntry = runPromise(() -> cache.get(cacheKey));
+        assertThat(finalEntry).isPresent();
+        assertThat(finalEntry.orElseThrow()).isIn("granted", "revoked");
     }
 
     @Test
@@ -270,27 +232,21 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         String cacheKey = patientId + ":" + recipientId;
 
         // Store consent with short TTL
-        ConsentManagementService.ConsentCacheEntry entry = new ConsentManagementService.ConsentCacheEntry(
-            patientId,
-            recipientId,
-            "granted",
-            Instant.now().plusSeconds(1), // 1 second TTL
-            "clinical-care"
-        );
+        String entry = "granted";
 
         runPromise(() -> cache.put(cacheKey, entry));
 
         // Verify entry exists immediately
-        ConsentManagementService.ConsentCacheEntry immediate = runPromise(() -> cache.get(cacheKey));
-        assertThat(immediate).isNotNull();
+        Optional<String> immediate = runPromise(() -> cache.get(cacheKey));
+        assertThat(immediate).isPresent();
 
         // Wait for TTL to expire
         Thread.sleep(1500);
 
         // Verify entry is expired (Redis TTL)
-        ConsentManagementService.ConsentCacheEntry expired = runPromise(() -> cache.get(cacheKey));
+        Optional<String> expired = runPromise(() -> cache.get(cacheKey));
         // Redis should have expired the entry
-        assertThat(expired).isNull();
+        assertThat(expired).isEmpty();
     }
 
     @Test

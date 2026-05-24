@@ -40,12 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CampaignLoadPerfIT extends EventloopTestBase {
 
     private CampaignService campaignService;
-    private InMemoryCampaignRepository campaignRepository;
+    private EphemeralCampaignRepository campaignRepository;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        campaignRepository = new InMemoryCampaignRepository();
+        campaignRepository = new EphemeralCampaignRepository();
         campaignService = new CampaignServiceImpl(
             new AllowAllKernelAdapter(),
             campaignRepository,
@@ -57,7 +57,7 @@ class CampaignLoadPerfIT extends EventloopTestBase {
                 0.0,
                 1000.0
             )),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.disabled()
         );
 
         ctx = DmOperationContext.builder()
@@ -117,7 +117,7 @@ class CampaignLoadPerfIT extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCampaignRepository implements CampaignRepository {
+    private static final class EphemeralCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         int size() {

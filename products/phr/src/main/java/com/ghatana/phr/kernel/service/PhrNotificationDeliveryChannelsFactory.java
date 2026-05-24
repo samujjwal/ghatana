@@ -19,9 +19,13 @@ public final class PhrNotificationDeliveryChannelsFactory {
     public static PhrNotificationDeliveryChannels fromContext(KernelContext context) {
         Eventloop eventloop = Objects.requireNonNull(context.getEventloop(), "eventloop must not be null");
         PhrNotificationProviderConfig providerConfig = PhrNotificationProviderConfig.fromContext(context);
-        PhrNotificationDeliveryChannels baseChannels = providerConfig.hasAnyEndpoint()
-            ? createHttpChannels(context, providerConfig)
-            : NoOpPhrNotificationDeliveryChannels.INSTANCE;
+        if (!providerConfig.hasAnyEndpoint()) {
+            throw new IllegalStateException(
+                "PHR notification provider endpoints are required: configure one of "
+                    + "phr.notification.email.endpoint, phr.notification.sms.endpoint, or phr.notification.push.endpoint"
+            );
+        }
+        PhrNotificationDeliveryChannels baseChannels = createHttpChannels(context, providerConfig);
         return new ResilientPhrNotificationDeliveryChannels(eventloop, baseChannels);
     }
 

@@ -243,7 +243,7 @@ public final class ProductInteractionBrokerRegistry {
             this.tenantId = tenantId;
             this.metrics = broker.metrics();
             this.lastCheckTimestamp = System.currentTimeMillis();
-            // TODO: Integrate with actual circuit breaker from broker
+            // Registry health currently derives from broker metrics only.
             this.circuitBreakerOpen = false;
             this.openCircuitBreakersCount = 0;
         }

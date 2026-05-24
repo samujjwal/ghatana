@@ -12,6 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -39,12 +42,21 @@ public final class ProductFamilyControlPlaneController {
 
     private final DataCloudClient dataCloudClient;
     private final ObjectMapper objectMapper;
+    private final Path repoRoot;
 
     public ProductFamilyControlPlaneController(
             @NotNull DataCloudClient dataCloudClient,
             @NotNull ObjectMapper objectMapper) {
+        this(dataCloudClient, objectMapper, Path.of("."));
+    }
+
+    ProductFamilyControlPlaneController(
+            @NotNull DataCloudClient dataCloudClient,
+            @NotNull ObjectMapper objectMapper,
+            @NotNull Path repoRoot) {
         this.dataCloudClient = dataCloudClient;
         this.objectMapper = objectMapper;
+        this.repoRoot = repoRoot.toAbsolutePath().normalize();
     }
 
     public Promise<HttpResponse> getReleaseReadiness(HttpRequest request) {
@@ -64,19 +76,26 @@ public final class ProductFamilyControlPlaneController {
         String correlationId = request.getHeader(HttpHeaders.of("X-Correlation-ID"));
         String traceId = correlationId == null || correlationId.isBlank() ? "" : correlationId;
         return dataCloudClient.query(tenantId, RELEASE_COLLECTION, query)
-                .map(records -> records.isEmpty()
-                        ? Map.of(
-                                "productKey", productKey.toLowerCase(),
-                                "status", "NOT_READY",
-                                "verdict", "BLOCKED",
-                                "gateStatus", List.of(),
-                                "blockers", List.of("No Data Cloud release readiness record found"),
-                                "evidenceRefs", List.of(),
-                                "foundationReadiness", List.of(),
-                                "docTruthWarnings", List.of("release-readiness-record-missing"),
-                                "traceId", traceId,
-                                "updatedAt", Instant.now().toString())
-                        : normalizeReleaseRecord(productKey, records.get(0).data()))
+            .then(records -> {
+                if (!records.isEmpty()) {
+                return Promise.of(normalizeReleaseRecord(productKey, records.get(0).data()));
+                }
+
+                return ingestReleaseReadinessFromEvidence(tenantId, productKey)
+                    .map(ingested -> ingested
+                        .map(data -> normalizeReleaseRecord(productKey, data))
+                        .orElseGet(() -> Map.of(
+                            "productKey", productKey.toLowerCase(),
+                            "status", "NOT_READY",
+                            "verdict", "BLOCKED",
+                            "gateStatus", List.of(),
+                            "blockers", List.of("No Data Cloud release readiness record found"),
+                            "evidenceRefs", List.of(),
+                            "foundationReadiness", List.of(),
+                            "docTruthWarnings", List.of("release-readiness-record-missing"),
+                            "traceId", traceId,
+                            "updatedAt", Instant.now().toString())));
+            })
                 .map(this::jsonResponse)
                 .then((response, error) -> errorResponse(response, error, "release readiness", tenantId, productKey));
     }
@@ -91,6 +110,13 @@ public final class ProductFamilyControlPlaneController {
                 .limit(500)
                 .build();
         return dataCloudClient.query(tenantId, ASSET_COLLECTION, query)
+                .then(records -> {
+                    if (!records.isEmpty()) {
+                        return Promise.of(records);
+                    }
+                    return ingestAssetCandidatesFromEvidence(tenantId)
+                            .then(ignored -> dataCloudClient.query(tenantId, ASSET_COLLECTION, query));
+                })
                 .map(records -> {
                     List<Map<String, Object>> allAssets = records.stream()
                             .map(record -> normalizeAssetRecord(record.id(), record.data()))
@@ -99,13 +125,141 @@ public final class ProductFamilyControlPlaneController {
                             .filter(asset -> assetMatches(asset, filters))
                             .toList();
                     return Map.of(
-                        "status", assetRegistryStatus(allAssets, matchedAssets, filters),
-                        "assets", matchedAssets,
-                        "appliedFilters", filters,
-                        "warnings", assetRegistryWarnings(allAssets, matchedAssets, filters));
+                            "status", assetRegistryStatus(allAssets, matchedAssets, filters),
+                            "assets", matchedAssets,
+                            "appliedFilters", filters,
+                            "warnings", assetRegistryWarnings(allAssets, matchedAssets, filters));
                 })
                 .map(this::jsonResponse)
                 .then((response, error) -> errorResponse(response, error, "asset registry", tenantId, null));
+    }
+
+    private Promise<Optional<Map<String, Object>>> ingestReleaseReadinessFromEvidence(String tenantId, String productKey) {
+        Optional<Map<String, Object>> evidence = loadReleaseReadinessEvidence(productKey.toLowerCase(java.util.Locale.ROOT));
+        if (evidence.isEmpty()) {
+            return Promise.of(Optional.empty());
+        }
+
+        Map<String, Object> record = evidence.get();
+        return dataCloudClient.save(tenantId, RELEASE_COLLECTION, record)
+                .map(saved -> Optional.of(saved.data()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<Map<String, Object>> loadReleaseReadinessEvidence(String productKey) {
+        Path productSpecific = repoRoot.resolve(".kernel/evidence/product-release-readiness." + productKey + ".json");
+        Path fallback = repoRoot.resolve(".kernel/evidence/product-release-readiness.json");
+
+        List<Path> candidates = List.of(productSpecific, fallback);
+        for (Path candidate : candidates) {
+            if (!Files.exists(candidate)) {
+                continue;
+            }
+            try {
+                Map<String, Object> json = objectMapper.readValue(Files.readString(candidate, StandardCharsets.UTF_8), Map.class);
+                String evidenceProduct = String.valueOf(json.getOrDefault("productId", "")).toLowerCase(java.util.Locale.ROOT);
+                if (!evidenceProduct.isBlank() && !productKey.equals(evidenceProduct)) {
+                    continue;
+                }
+                List<Object> blockers = coerceList(json.get("blockingGaps"));
+                List<String> blockerMessages = blockers.stream()
+                        .map(v -> v instanceof Map<?, ?> m
+                        ? String.valueOf(getOrDefaultRaw(m, "gate", "unknown-gate")) + ":" + String.valueOf(getOrDefaultRaw(m, "reason", "unknown"))
+                                : String.valueOf(v))
+                        .toList();
+
+                Map<String, Object> record = new LinkedHashMap<>();
+                record.put("id", "release-readiness-" + productKey);
+                record.put("product_key", productKey);
+                record.put("verdict", String.valueOf(json.getOrDefault("releaseVerdict", "BLOCKED")).toUpperCase(java.util.Locale.ROOT));
+                record.put("gate_status", coerceList(json.get("dimensions")));
+                record.put("blockers", blockerMessages);
+                record.put("evidence_refs", coerceList(json.get("evidencePaths")));
+                record.put("foundation_readiness", coerceList(json.get("releaseProfiles")));
+                record.put("doc_truth_warnings", List.of());
+                record.put("trace_id", "evidence:" + productKey);
+                record.put("updated_at", String.valueOf(json.getOrDefault("generatedAt", Instant.now().toString())));
+                return Optional.of(Map.copyOf(record));
+            } catch (IOException error) {
+                log.warn("Failed to parse release readiness evidence file: {}", candidate, error);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Promise<Void> ingestAssetCandidatesFromEvidence(String tenantId) {
+        Path phrAssets = repoRoot.resolve(".kernel/evidence/phr/reusable-assets-registration.json");
+        Path dmosAssets = repoRoot.resolve(".kernel/evidence/digital-marketing/reusable-assets-registration.json");
+
+        return Promise.complete()
+                .then(() -> ingestAssetFile(tenantId, phrAssets))
+                .then(() -> ingestAssetFile(tenantId, dmosAssets));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Promise<Void> ingestAssetFile(String tenantId, Path filePath) {
+        if (!Files.exists(filePath)) {
+            return Promise.complete();
+        }
+
+        try {
+            Map<String, Object> payload = objectMapper.readValue(Files.readString(filePath, StandardCharsets.UTF_8), Map.class);
+            List<Object> assets = coerceList(payload.get("assets"));
+            Promise<Void> chain = Promise.complete();
+            for (Object value : assets) {
+                if (!(value instanceof Map<?, ?> raw)) {
+                    continue;
+                }
+                Map<String, Object> asset = new LinkedHashMap<>();
+                String assetId = String.valueOf(getOrDefaultRaw(raw, "asset_id", UUID.randomUUID().toString()));
+                asset.put("id", assetId);
+                asset.put("asset_id", assetId);
+                asset.put("asset_type", String.valueOf(getOrDefaultRaw(raw, "asset_type", "unknown")));
+                asset.put("source_product", String.valueOf(getOrDefaultRaw(raw, "source_product", "unknown")));
+                asset.put("display_name", String.valueOf(getOrDefaultRaw(raw, "asset_name", assetId)));
+                asset.put("domain", String.valueOf(getOrDefaultRaw(raw, "domain", "unknown")));
+                asset.put("paths", coerceList(raw.get("paths")));
+                asset.put("maturity", String.valueOf(getOrDefaultRaw(raw, "maturity_level", "candidate")));
+                asset.put("reuse_mode", String.valueOf(getOrDefaultRaw(raw, "reuse_mode", "reference")));
+                asset.put("dependencies", coerceList(raw.get("dependencies")));
+                asset.put("tests", coerceList(raw.get("tests")));
+                asset.put("product_usage", coerceList(raw.get("product_usage")));
+                asset.put("owner", String.valueOf(getOrDefaultRaw(raw, "owner", "unassigned")));
+                asset.put("promotion_target", String.valueOf(getOrDefaultRaw(raw, "promotion_target", "")));
+                asset.put("promotion_state", String.valueOf(getOrDefaultRaw(raw, "promotion_status", "candidate")));
+                asset.put("compatibility", getOrDefaultRaw(raw, "compatibility", Map.of()));
+                asset.put("evidence_refs", extractEvidenceRefs(raw.get("promotion_evidence")));
+
+                chain = chain.then(() -> dataCloudClient.save(tenantId, ASSET_COLLECTION, asset).map(ignored -> null));
+            }
+            return chain;
+        } catch (IOException error) {
+            log.warn("Failed to parse asset registration evidence file: {}", filePath, error);
+            return Promise.complete();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object> extractEvidenceRefs(Object promotionEvidence) {
+        if (!(promotionEvidence instanceof Map<?, ?> evidenceMap)) {
+            return List.of();
+        }
+        Object refs = evidenceMap.get("evidence_refs");
+        return coerceList(refs);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object> coerceList(Object value) {
+        if (value instanceof List<?> list) {
+            return (List<Object>) list;
+        }
+        return List.of();
+    }
+
+    private Object getOrDefaultRaw(Map<?, ?> map, String key, Object defaultValue) {
+        Object value = map.get(key);
+        return value != null ? value : defaultValue;
     }
 
     public Promise<HttpResponse> promoteAsset(HttpRequest request) {

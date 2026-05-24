@@ -39,18 +39,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter      kernelAdapter;
-    private InMemoryApprovalPlugin      approvalPlugin;
-    private InMemorySnapshotRepository  snapshotRepository;
+    private EphemeralApprovalPlugin      approvalPlugin;
+    private EphemeralSnapshotRepository  snapshotRepository;
     private ApprovalWorkflowServiceImpl service;
     private DmOperationContext          ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter      = new RecordingKernelAdapter();
-        approvalPlugin     = new InMemoryApprovalPlugin();
-        snapshotRepository = new InMemorySnapshotRepository();
+        approvalPlugin     = new EphemeralApprovalPlugin();
+        snapshotRepository = new EphemeralSnapshotRepository();
         service = new ApprovalWorkflowServiceImpl(
-            kernelAdapter, approvalPlugin, snapshotRepository, DmosMetricsCollector.noop());
+            kernelAdapter, approvalPlugin, snapshotRepository, DmosMetricsCollector.disabled());
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -472,7 +472,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryApprovalPlugin implements HumanApprovalPlugin {
+    static final class EphemeralApprovalPlugin implements HumanApprovalPlugin {
         private final Map<String, ApprovalRecord> store = new HashMap<>();
 
         /** Seeds a PENDING record for testing decision operations. */
@@ -489,7 +489,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
         public com.ghatana.platform.plugin.PluginMetadata metadata() {
             return com.ghatana.platform.plugin.PluginMetadata.builder()
                 .id("com.ghatana.test.in-memory-approval")
-                .name("InMemoryApprovalPlugin")
+                .name("EphemeralApprovalPlugin")
                 .version("0.0.1")
                 .description("Test double")
                 .type(com.ghatana.platform.plugin.PluginType.GOVERNANCE)
@@ -570,7 +570,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemorySnapshotRepository implements ApprovalSnapshotRepository {
+    static final class EphemeralSnapshotRepository implements ApprovalSnapshotRepository {
         private final Map<String, ApprovalSnapshot> store = new HashMap<>();
 
         @Override

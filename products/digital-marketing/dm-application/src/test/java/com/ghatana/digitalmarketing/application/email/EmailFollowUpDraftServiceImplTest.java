@@ -43,8 +43,8 @@ class EmailFollowUpDraftServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
     private FakeSuppressionService suppressionService;
-    private InMemoryContentItemRepository itemRepository;
-    private InMemoryContentItemVersionRepository versionRepository;
+    private EphemeralContentItemRepository itemRepository;
+    private EphemeralContentItemVersionRepository versionRepository;
     private EmailFollowUpDraftServiceImpl service;
     private DmOperationContext ctx;
 
@@ -55,8 +55,8 @@ class EmailFollowUpDraftServiceImplTest extends EventloopTestBase {
     void setUp() {
         kernelAdapter     = new RecordingKernelAdapter();
         suppressionService = new FakeSuppressionService();
-        itemRepository    = new InMemoryContentItemRepository();
-        versionRepository = new InMemoryContentItemVersionRepository();
+        itemRepository    = new EphemeralContentItemRepository();
+        versionRepository = new EphemeralContentItemVersionRepository();
 
         ContentItemService contentItemService =
             new ContentItemServiceImpl(kernelAdapter, itemRepository, versionRepository);
@@ -541,7 +541,7 @@ class EmailFollowUpDraftServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryContentItemRepository implements ContentItemRepository {
+    private static final class EphemeralContentItemRepository implements ContentItemRepository {
         private final Map<String, ContentItem> store = new HashMap<>();
 
         void store(ContentItem item) {
@@ -563,7 +563,7 @@ class EmailFollowUpDraftServiceImplTest extends EventloopTestBase {
 
     }
 
-    private static final class InMemoryContentItemVersionRepository
+    private static final class EphemeralContentItemVersionRepository
             implements ContentItemVersionRepository {
         private final Map<String, ContentVersion> store = new HashMap<>();
 

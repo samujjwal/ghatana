@@ -26,12 +26,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ConsentProofServiceImplTest extends EventloopTestBase {
 
     private ConsentProofServiceImpl service;
-    private InMemoryConsentProofRepository repository;
+    private EphemeralConsentProofRepository repository;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryConsentProofRepository();
+        repository = new EphemeralConsentProofRepository();
         service = new ConsentProofServiceImpl(new AllowingKernelAdapter(), repository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -89,7 +89,7 @@ class ConsentProofServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> deniedService.listSnapshots(ctx, "contact-1")));
     }
 
-    private static final class InMemoryConsentProofRepository implements ConsentProofRepository {
+    private static final class EphemeralConsentProofRepository implements ConsentProofRepository {
         private final List<ConsentProofSnapshot> store = new CopyOnWriteArrayList<>();
 
         @Override

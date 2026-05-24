@@ -76,7 +76,7 @@ public final class DmosNextBestActionRecommendationServlet {
     }
 
     public DmosNextBestActionRecommendationServlet(NextBestActionRecommendationService service, Eventloop eventloop) {
-        this(service, eventloop, DmosMetricsCollector.noop(), new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()), new DmosHttpContextFactory(false, null));
+        this(service, eventloop, DmosMetricsCollector.disabled(), DmosTelemetry.disabled(), new DmosHttpContextFactory(false, null));
     }
 
     public AsyncServlet getServlet() {

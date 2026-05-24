@@ -26,12 +26,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ContactIdentityServiceImplTest extends EventloopTestBase {
 
     private ContactIdentityServiceImpl service;
-    private InMemoryRepository repository;
+    private EphemeralRepository repository;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        service = new ContactIdentityServiceImpl(new AllowingKernelAdapter(), repository = new InMemoryRepository());
+        service = new ContactIdentityServiceImpl(new AllowingKernelAdapter(), repository = new EphemeralRepository());
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("ws-1"))
@@ -88,7 +88,7 @@ class ContactIdentityServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> deniedService.getIdentity(ctx, "contact-1")));
     }
 
-    private static final class InMemoryRepository implements ContactIdentityRepository {
+    private static final class EphemeralRepository implements ContactIdentityRepository {
         private final ConcurrentHashMap<String, ContactIdentityProfile> store = new ConcurrentHashMap<>();
 
         @Override

@@ -34,16 +34,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SowServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryClauseRepository clauseRepository;
-    private InMemorySowDraftRepository draftRepository;
+    private EphemeralClauseRepository clauseRepository;
+    private EphemeralSowDraftRepository draftRepository;
     private SowServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        clauseRepository = new InMemoryClauseRepository();
-        draftRepository = new InMemorySowDraftRepository();
+        clauseRepository = new EphemeralClauseRepository();
+        draftRepository = new EphemeralSowDraftRepository();
         service = new SowServiceImpl(kernelAdapter, clauseRepository, draftRepository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -436,7 +436,7 @@ class SowServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryClauseRepository implements SowClauseRepository {
+    private static final class EphemeralClauseRepository implements SowClauseRepository {
         final List<SowClause> clauses = new ArrayList<>();
 
         @Override
@@ -445,7 +445,7 @@ class SowServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemorySowDraftRepository implements SowDraftRepository {
+    private static final class EphemeralSowDraftRepository implements SowDraftRepository {
         private final ConcurrentHashMap<String, SowDraft> store = new ConcurrentHashMap<>();
         private volatile String latestId;
 

@@ -274,7 +274,7 @@ class EmergencyAccessBreakGlassE2EIT extends EventloopTestBase {
             "reviewer-002",
             ReviewStatus.REVIEWED,
             "Second review"
-        ).map($ -> (Object) null).then((result, error) -> Promise.of(error)));
+        ).map($ -> (Object) null).then((result, throwable) -> Promise.of(throwable)));
 
         assertThat(error).isNotNull();
         assertThat(error).isInstanceOf(IllegalStateException.class);
@@ -424,14 +424,34 @@ class EmergencyAccessBreakGlassE2EIT extends EventloopTestBase {
             new java.util.concurrent.ConcurrentHashMap<>();
 
         @Override
-        public Promise<ConsentManagementService.ConsentCacheEntry> get(String key) {
-            return Promise.of(cache.get(key));
+        public Promise<java.util.Optional<ConsentManagementService.ConsentCacheEntry>> get(String key) {
+            return Promise.of(java.util.Optional.ofNullable(cache.get(key)));
         }
 
         @Override
-        public Promise<Void> set(String key, ConsentManagementService.ConsentCacheEntry value) {
+        public Promise<Void> put(String key, ConsentManagementService.ConsentCacheEntry value) {
             cache.put(key, value);
             return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> put(String key, ConsentManagementService.ConsentCacheEntry value, java.time.Duration ttl) {
+            cache.put(key, value);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<ConsentManagementService.ConsentCacheEntry> getOrLoad(
+                String key,
+                java.util.function.Function<String, Promise<ConsentManagementService.ConsentCacheEntry>> loader) {
+            ConsentManagementService.ConsentCacheEntry existing = cache.get(key);
+            if (existing != null) {
+                return Promise.of(existing);
+            }
+            return loader.apply(key).then(value -> {
+                cache.put(key, value);
+                return Promise.of(value);
+            });
         }
 
         @Override
@@ -444,6 +464,11 @@ class EmergencyAccessBreakGlassE2EIT extends EventloopTestBase {
         public Promise<Void> invalidateAll() {
             cache.clear();
             return Promise.complete();
+        }
+
+        @Override
+        public boolean isHealthy() {
+            return true;
         }
     }
 }

@@ -35,10 +35,14 @@ public class EmergencyAccessReviewWorkflow {
         Eventloop eventloop = Objects.requireNonNull(context.getEventloop(), "eventloop must not be null");
         EmergencyAccessNotificationSender notificationSender = context
             .getOptionalDependency(EmergencyAccessNotificationSender.class)
-            .orElse(NoOpNotificationSender.INSTANCE);
+            .orElseThrow(() -> new IllegalStateException(
+                "EmergencyAccessNotificationSender dependency is required for emergency review workflow"
+            ));
         EmergencyAccessReviewAuditLogger auditLogger = context
             .getOptionalDependency(EmergencyAccessReviewAuditLogger.class)
-            .orElse(NoOpAuditLogger.INSTANCE);
+            .orElseThrow(() -> new IllegalStateException(
+                "EmergencyAccessReviewAuditLogger dependency is required for emergency review workflow"
+            ));
         return new EmergencyAccessReviewWorkflow(
             new ResilientEmergencyAccessNotificationSender(eventloop, notificationSender),
             new ResilientEmergencyAccessReviewAuditLogger(eventloop, auditLogger)
@@ -89,38 +93,5 @@ public class EmergencyAccessReviewWorkflow {
             case REVIEWED -> EmergencyAccessReviewCase.ReviewCaseStatus.REVIEWED;
             case ESCALATED -> EmergencyAccessReviewCase.ReviewCaseStatus.ESCALATED;
         };
-    }
-
-    private enum NoOpNotificationSender implements EmergencyAccessNotificationSender {
-        INSTANCE;
-
-        @Override
-        public Promise<Void> notifyComplianceLead(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Void> scheduleMandatoryReview(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Void> notifyEscalation(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
-            return Promise.complete();
-        }
-    }
-
-    private enum NoOpAuditLogger implements EmergencyAccessReviewAuditLogger {
-        INSTANCE;
-
-        @Override
-        public Promise<Void> logReviewQueued(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
-            return Promise.complete();
-        }
-
-        @Override
-        public Promise<Void> logReviewCompleted(EmergencyAccessReviewCase reviewCase, EmergencyAccessEvent event) {
-            return Promise.complete();
-        }
     }
 }

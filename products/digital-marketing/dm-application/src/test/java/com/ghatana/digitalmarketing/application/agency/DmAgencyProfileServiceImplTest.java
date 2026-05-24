@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmAgencyProfileServiceImpl")
 class DmAgencyProfileServiceImplTest extends EventloopTestBase {
 
-    private InMemoryAgencyRepository repository;
+    private EphemeralAgencyRepository repository;
     private DmAgencyProfileServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAgencyRepository();
+        repository = new EphemeralAgencyRepository();
         service = new DmAgencyProfileServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("agency-tenant-1"))
@@ -123,7 +123,7 @@ class DmAgencyProfileServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryAgencyRepository implements DmAgencyProfileRepository {
+    static final class EphemeralAgencyRepository implements DmAgencyProfileRepository {
         private final Map<String, DmAgencyProfile> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmAgencyProfile> save(DmAgencyProfile p) { store.put(p.getId(), p); return Promise.of(p); }

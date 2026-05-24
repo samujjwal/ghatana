@@ -11,12 +11,16 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +50,128 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
 
     @Mock
     private DataCloudClient dataCloudClient;
+
+    @TempDir
+    Path tempDir;
+
+    @Test
+    @DisplayName("release readiness ingests product evidence when Data Cloud has no record")
+    void getReleaseReadinessIngestsEvidenceWhenMissing() throws Exception {
+        Path evidenceDir = tempDir.resolve(".kernel/evidence");
+        Files.createDirectories(evidenceDir);
+        Files.writeString(
+                evidenceDir.resolve("product-release-readiness.phr.json"),
+                """
+                {
+                  "generatedAt": "2026-05-23T22:10:18.389Z",
+                  "productId": "phr",
+                  "releaseVerdict": "fail",
+                  "releaseProfiles": ["standard-web-api-release"],
+                  "blockingGaps": [{"severity":"P0","gate":"./scripts/check-production-stubs.mjs","reason":"script-failure"}],
+                  "evidencePaths": [".kernel/evidence/product-release-readiness.phr.json"],
+                  "dimensions": [{"dimensionName":"Runtime correctness","score":4.8}]
+                }
+                """,
+                StandardCharsets.UTF_8);
+
+        when(dataCloudClient.query(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Promise.of(List.of()));
+        when(dataCloudClient.save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
+                .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+                        "release-readiness-phr",
+                        "product_release_readiness",
+                        invocation.getArgument(2))));
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/releases/phr").build();
+        request.attach(Principal.class, new Principal("asset-admin", List.of("admin"), TENANT_ID));
+        putPathParameter(request, "productKey", "phr");
+
+        ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+        HttpResponse response = runPromise(() -> controller.getReleaseReadiness(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        String body = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(body).contains("\"productKey\":\"phr\"");
+        assertThat(body).contains("\"status\":\"READY\"");
+        assertThat(body).contains("check-production-stubs.mjs");
+        verify(dataCloudClient).save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
+    }
+
+    @Test
+    @DisplayName("asset list ingests reusable asset evidence when Data Cloud is empty")
+    void listAssetsIngestsEvidenceWhenMissing() throws Exception {
+        Path phrEvidenceDir = tempDir.resolve(".kernel/evidence/phr");
+        Files.createDirectories(phrEvidenceDir);
+        Files.writeString(
+                phrEvidenceDir.resolve("reusable-assets-registration.json"),
+                """
+                {
+                  "productId": "phr",
+                  "assets": [
+                    {
+                      "asset_id": "phr-consent-panel",
+                      "asset_name": "PHR Consent Panel",
+                      "asset_type": "ui-component",
+                      "source_product": "phr",
+                      "maturity_level": "hardened",
+                      "reuse_mode": "reference",
+                      "paths": ["products/phr/frontend/src/components/consent/ConsentPanel.tsx"],
+                      "tests": ["products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx"],
+                      "dependencies": ["platform:typescript:design-system"],
+                      "product_usage": [],
+                      "owner": "phr-team",
+                      "promotion_target": "shared-package",
+                      "compatibility": {"framework":"react"},
+                      "promotion_evidence": {"evidence_refs": [".kernel/evidence/phr/reusable-assets-registration.json"]}
+                    }
+                  ]
+                }
+                """,
+                StandardCharsets.UTF_8);
+        Path dmEvidenceDir = tempDir.resolve(".kernel/evidence/digital-marketing");
+        Files.createDirectories(dmEvidenceDir);
+        Files.writeString(dmEvidenceDir.resolve("reusable-assets-registration.json"), "{\"productId\":\"digital-marketing\",\"assets\":[]}", StandardCharsets.UTF_8);
+
+        when(dataCloudClient.query(eq(TENANT_ID), eq("product_family_assets"), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Promise.of(List.of()))
+                .thenReturn(Promise.of(List.of(DataCloudClient.Entity.of(
+                        "phr-consent-panel",
+                        "product_family_assets",
+                        Map.ofEntries(
+                                Map.entry("asset_id", "phr-consent-panel"),
+                                Map.entry("asset_type", "ui-component"),
+                                Map.entry("source_product", "phr"),
+                                Map.entry("display_name", "PHR Consent Panel"),
+                                Map.entry("domain", "unknown"),
+                                Map.entry("paths", List.of("products/phr/frontend/src/components/consent/ConsentPanel.tsx")),
+                                Map.entry("maturity", "hardened"),
+                                Map.entry("reuse_mode", "reference"),
+                                Map.entry("dependencies", List.of("platform:typescript:design-system")),
+                                Map.entry("tests", List.of("products/phr/frontend/src/components/consent/__tests__/ConsentPanel.test.tsx")),
+                                Map.entry("product_usage", List.of()),
+                                Map.entry("owner", "phr-team"),
+                                Map.entry("promotion_target", "shared-package"),
+                                Map.entry("promotion_state", "proposed"),
+                                Map.entry("compatibility", Map.of("framework", "react")))))));
+
+        when(dataCloudClient.save(eq(TENANT_ID), eq("product_family_assets"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
+                .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of(
+                        String.valueOf(((Map<?, ?>) invocation.getArgument(2)).get("id")),
+                        "product_family_assets",
+                        invocation.getArgument(2))));
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/yappc/product-family/assets").build();
+        request.attach(Principal.class, new Principal("asset-admin", List.of("admin"), TENANT_ID));
+
+        ProductFamilyControlPlaneController controller = new ProductFamilyControlPlaneController(dataCloudClient, objectMapper, tempDir);
+        HttpResponse response = runPromise(() -> controller.listAssets(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        String body = response.getBody().asString(StandardCharsets.UTF_8);
+        assertThat(body).contains("phr-consent-panel");
+        assertThat(body).contains("\"status\":\"READY\"");
+        verify(dataCloudClient).save(eq(TENANT_ID), eq("product_family_assets"), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
+    }
 
     @Test
     @DisplayName("asset promotion persists updated asset and history")

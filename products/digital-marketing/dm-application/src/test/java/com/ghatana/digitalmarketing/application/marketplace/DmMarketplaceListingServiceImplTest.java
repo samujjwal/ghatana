@@ -27,13 +27,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmMarketplaceListingServiceImpl")
 class DmMarketplaceListingServiceImplTest extends EventloopTestBase {
 
-    private InMemoryListingRepository repository;
+    private EphemeralListingRepository repository;
     private DmMarketplaceListingServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryListingRepository();
+        repository = new EphemeralListingRepository();
         service = new DmMarketplaceListingServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -154,7 +154,7 @@ class DmMarketplaceListingServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryListingRepository implements DmMarketplaceListingRepository {
+    static final class EphemeralListingRepository implements DmMarketplaceListingRepository {
         private final Map<String, DmMarketplaceListing> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmMarketplaceListing> save(DmMarketplaceListing l) { store.put(l.getId(), l); return Promise.of(l); }

@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.WorkflowStep;
+import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +30,10 @@ class DmWorkflowEngineAdapterTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        adapter = DmWorkflowEngineAdapter.inMemory();
+        DurableWorkflowEngine engine = DurableWorkflowEngine.builder()
+            .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
+            .build();
+        adapter = new DmWorkflowEngineAdapter(engine);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("ws-1"))
@@ -69,10 +73,15 @@ class DmWorkflowEngineAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("inMemory() factory creates a functional adapter backed by InMemoryWorkflowStateStore")
-    void inMemoryFactoryCreatesAdapter() {
-        DmWorkflowEngineAdapter inMemoryAdapter = DmWorkflowEngineAdapter.inMemory();
-        assertThat(inMemoryAdapter).isNotNull();
+    @DisplayName("adapter can be constructed with a test in-memory state store")
+    void adapterCanBeConstructedWithInMemoryStateStoreInTests() {
+        DurableWorkflowEngine engine = DurableWorkflowEngine.builder()
+            .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
+            .build();
+
+        DmWorkflowEngineAdapter localAdapter = new DmWorkflowEngineAdapter(engine);
+
+        assertThat(localAdapter).isNotNull();
     }
 
     @Test

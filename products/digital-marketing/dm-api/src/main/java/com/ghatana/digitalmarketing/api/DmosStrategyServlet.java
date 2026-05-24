@@ -79,8 +79,8 @@ public final class DmosStrategyServlet {
         this(
             strategyService,
             eventloop,
-            DmosMetricsCollector.noop(),
-            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            DmosMetricsCollector.disabled(),
+            DmosTelemetry.disabled(),
             new DmosHttpContextFactory(false, null)
         );
     }

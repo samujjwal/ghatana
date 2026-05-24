@@ -26,12 +26,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("AgencyClientServiceImpl")
 class AgencyClientServiceImplTest {
 
-    private InMemoryAgencyClientRepository repository;
+    private EphemeralAgencyClientRepository repository;
     private AgencyClientServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAgencyClientRepository();
+        repository = new EphemeralAgencyClientRepository();
         service = new AgencyClientServiceImpl(repository);
     }
 
@@ -91,7 +91,7 @@ class AgencyClientServiceImplTest {
 
     // ── test doubles ─────────────────────────────────────────────────────────
 
-    private static final class InMemoryAgencyClientRepository implements AgencyClientRepository {
+    private static final class EphemeralAgencyClientRepository implements AgencyClientRepository {
         private final ConcurrentHashMap<String, AgencyClient> store = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<String, List<AgencyClient>> tenantIndex = new ConcurrentHashMap<>();
 

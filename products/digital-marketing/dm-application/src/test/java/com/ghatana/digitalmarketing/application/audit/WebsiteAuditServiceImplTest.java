@@ -26,14 +26,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class WebsiteAuditServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryRepository repository;
+    private EphemeralRepository repository;
     private WebsiteAuditServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryRepository();
+        repository = new EphemeralRepository();
         service = new WebsiteAuditServiceImpl(kernelAdapter, repository);
 
         ctx = DmOperationContext.builder()
@@ -206,7 +206,7 @@ class WebsiteAuditServiceImplTest extends EventloopTestBase {
             .hasMessageContaining("ctx");
     }
 
-    private static final class InMemoryRepository implements WebsiteAuditReportRepository {
+    private static final class EphemeralRepository implements WebsiteAuditReportRepository {
         private final ConcurrentHashMap<String, WebsiteAuditReport> store = new ConcurrentHashMap<>();
 
         @Override

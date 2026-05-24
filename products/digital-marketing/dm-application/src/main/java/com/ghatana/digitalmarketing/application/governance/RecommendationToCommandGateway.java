@@ -339,13 +339,16 @@ public final class RecommendationToCommandGateway {
             recommendation.model(),
             false,
             recommendation.confidence(),
-            java.util.List.of(),
-            java.util.List.of(),
+            java.util.List.<String>of(),
+            java.util.List.<String>of(),
             "AI recommendation: " + recommendation.targetType(),
             recommendation.output(),
             recommendation.targetId(),
             Instant.now(),
-            0L
+            0L,
+            null,
+            null,
+            null
         );
     }
 

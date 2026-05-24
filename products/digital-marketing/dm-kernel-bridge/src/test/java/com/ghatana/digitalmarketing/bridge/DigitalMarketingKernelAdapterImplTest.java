@@ -46,12 +46,12 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     private RecordingBridgeAuthorizationService authService;
     private RecordingBridgeAuditEmitter auditEmitter;
     private RecordingBridgeHealthIndicator healthIndicator;
-    private InMemoryConsentPlugin consentPlugin;
-    private InMemoryApprovalPlugin approvalPlugin;
-    private InMemoryAuditTrailPlugin auditTrailPlugin;
-    private InMemoryRiskManagementPlugin riskManagementPlugin;
-    private InMemoryNotificationPlugin notificationPlugin;
-    private InMemoryFeatureFlagPlugin featureFlagPlugin;
+    private EphemeralConsentPlugin consentPlugin;
+    private EphemeralApprovalPlugin approvalPlugin;
+    private EphemeralAuditTrailPlugin auditTrailPlugin;
+    private EphemeralRiskManagementPlugin riskManagementPlugin;
+    private EphemeralNotificationPlugin notificationPlugin;
+    private EphemeralFeatureFlagPlugin featureFlagPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private static final DmTenantId TENANT = DmTenantId.of("acme-corp");
@@ -66,12 +66,12 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         authService = new RecordingBridgeAuthorizationService();
         auditEmitter = new RecordingBridgeAuditEmitter();
         healthIndicator = new RecordingBridgeHealthIndicator();
-        consentPlugin = new InMemoryConsentPlugin();
-        approvalPlugin = new InMemoryApprovalPlugin();
-        auditTrailPlugin = new InMemoryAuditTrailPlugin();
-        riskManagementPlugin = new InMemoryRiskManagementPlugin();
-        notificationPlugin = new InMemoryNotificationPlugin();
-        featureFlagPlugin = new InMemoryFeatureFlagPlugin();
+        consentPlugin = new EphemeralConsentPlugin();
+        approvalPlugin = new EphemeralApprovalPlugin();
+        auditTrailPlugin = new EphemeralAuditTrailPlugin();
+        riskManagementPlugin = new EphemeralRiskManagementPlugin();
+        notificationPlugin = new EphemeralNotificationPlugin();
+        featureFlagPlugin = new EphemeralFeatureFlagPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -380,7 +380,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryConsentPlugin implements ConsentPlugin {
+    private static final class EphemeralConsentPlugin implements ConsentPlugin {
         private final Map<String, Boolean> consents = new java.util.HashMap<>();
 
         void setConsent(String subjectId, String purpose, boolean granted) {
@@ -459,7 +459,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryApprovalPlugin implements HumanApprovalPlugin {
+    private static final class EphemeralApprovalPlugin implements HumanApprovalPlugin {
         private ApprovalRequest lastRequest;
 
         ApprovalRequest lastRequest() {
@@ -556,7 +556,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryRiskManagementPlugin implements RiskManagementPlugin {
+    private static final class EphemeralRiskManagementPlugin implements RiskManagementPlugin {
         private double score = 0.1d;
 
         void setScore(double score) {
@@ -620,7 +620,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryFeatureFlagPlugin implements FeatureFlagPlugin {
+    private static final class EphemeralFeatureFlagPlugin implements FeatureFlagPlugin {
         private final Map<String, Boolean> flags = new java.util.HashMap<>();
         private String lastScope;
 
@@ -659,7 +659,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryAuditTrailPlugin implements AuditTrailPlugin {
+    private static final class EphemeralAuditTrailPlugin implements AuditTrailPlugin {
         private Map<String, Object> lastDetails = Map.of();
 
         Map<String, Object> lastDetails() {
@@ -731,7 +731,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryNotificationPlugin implements NotificationPlugin {
+    private static final class EphemeralNotificationPlugin implements NotificationPlugin {
 
         @Override
         public Promise<String> dispatch(String recipientId, String template, Map<String, String> attributes) {

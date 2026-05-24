@@ -7,6 +7,7 @@ import com.ghatana.kernel.security.TenantSecurityContext;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.observability.PHRAuditTrailServiceImpl;
 import com.ghatana.phr.observability.PHRTelemetryManagerImpl;
+import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.phr.repository.PatientRecordRepository;
 import com.ghatana.phr.security.SecurityContextHolder;
 import org.junit.jupiter.api.AfterEach;
@@ -29,7 +30,7 @@ class PatientServiceTest {
     @BeforeEach
     void setUp() {
         KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
-        AuditTrailService auditTrail = new PHRAuditTrailServiceImpl();
+        AuditTrailService auditTrail = new PHRAuditTrailServiceImpl(new PhrTestInfrastructure.StubDataCloudAdapter());
         recordsRepository = new PatientRecordRepository();
 
         patientService = new PatientService(telemetry, auditTrail, recordsRepository);

@@ -43,7 +43,7 @@ class CampaignE2EIT extends EventloopTestBase {
     void shouldCompleteCampaignHappyPath() {
         CampaignService service = new CampaignServiceImpl(
             new AllowAllKernelAdapter(),
-            new InMemoryCampaignRepository(),
+            new EphemeralCampaignRepository(),
             new AlwaysCompliantPlugin(),
             (opCtx, campaign) -> Promise.of(new com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider.CampaignPreflightData(
                 true,
@@ -52,7 +52,7 @@ class CampaignE2EIT extends EventloopTestBase {
                 0.0,
                 1000.0
             )),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.disabled()
         );
 
         DmOperationContext ctx = DmOperationContext.builder()
@@ -75,7 +75,7 @@ class CampaignE2EIT extends EventloopTestBase {
         assertThat(paused.getStatus()).isEqualTo(CampaignStatus.PAUSED);
     }
 
-    private static final class InMemoryCampaignRepository implements CampaignRepository {
+    private static final class EphemeralCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override

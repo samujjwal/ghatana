@@ -5,7 +5,10 @@
 package com.ghatana.datacloud.governance;
 
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Domain contract for data governance policy management.
@@ -17,7 +20,39 @@ import java.util.List;
  */
 public final class PolicyService {
 
-    private PolicyService() {}
+    private final Map<RouteCategory, List<Policy>> policiesByCategory;
+
+    private PolicyService(Map<RouteCategory, List<Policy>> policiesByCategory) {
+        this.policiesByCategory = Map.copyOf(policiesByCategory);
+    }
+
+    /**
+     * Creates a new PolicyService instance.
+     *
+     * @return a new PolicyService instance
+     */
+    public static PolicyService create() {
+        return new PolicyService(defaultPolicyIndex());
+    }
+
+    /**
+     * Gets policies applicable to a specific route category.
+     *
+     * @param category the route category
+     * @return immutable list of policies configured for the category
+     */
+    public List<Policy> getPoliciesForCategory(RouteCategory category) {
+        Objects.requireNonNull(category, "category must not be null");
+        return policiesByCategory.get(category);
+    }
+
+    private static Map<RouteCategory, List<Policy>> defaultPolicyIndex() {
+        EnumMap<RouteCategory, List<Policy>> policyIndex = new EnumMap<>(RouteCategory.class);
+        for (RouteCategory category : RouteCategory.values()) {
+            policyIndex.put(category, List.of());
+        }
+        return policyIndex;
+    }
 
         /**
          * Represents a governance policy record.

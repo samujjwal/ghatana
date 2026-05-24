@@ -71,7 +71,7 @@ public final class DmosAiActionLogServlet {
     }
 
     public DmosAiActionLogServlet(AiActionLogService service, Eventloop eventloop) {
-        this(service, eventloop, DmosMetricsCollector.noop(), new DmosHttpContextFactory(false, null));
+        this(service, eventloop, DmosMetricsCollector.disabled(), new DmosHttpContextFactory(false, null));
     }
 
     public AsyncServlet routes() {
@@ -110,7 +110,10 @@ public final class DmosAiActionLogServlet {
                     body.policyChecks(),
                     body.summary(),
                     body.details(),
-                    body.relatedEntityId()
+                    body.relatedEntityId(),
+                    null,
+                    null,
+                    null
                 );
                 return service.recordAction(ctx, command)
                     .map(entry -> jsonResponse(201, EntryResponse.from(entry)))

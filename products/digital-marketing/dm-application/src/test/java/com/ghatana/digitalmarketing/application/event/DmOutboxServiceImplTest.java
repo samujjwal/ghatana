@@ -38,16 +38,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("F2-002: DmOutboxService tests")
 class DmOutboxServiceImplTest extends EventloopTestBase {
 
-    private InMemoryOutboxRepository outboxRepo;
-    private InMemoryDeadLetterRepository dlqRepo;
+    private EphemeralOutboxRepository outboxRepo;
+    private EphemeralDeadLetterRepository dlqRepo;
     private CapturingDispatcher dispatcher;
     private DmOutboxService service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        outboxRepo = new InMemoryOutboxRepository();
-        dlqRepo = new InMemoryDeadLetterRepository();
+        outboxRepo = new EphemeralOutboxRepository();
+        dlqRepo = new EphemeralDeadLetterRepository();
         dispatcher = new CapturingDispatcher(false);
         service = new DmOutboxServiceImpl(outboxRepo, dlqRepo, dispatcher, new ObjectMapper());
 
@@ -289,7 +289,7 @@ class DmOutboxServiceImplTest extends EventloopTestBase {
 
     // ── In-memory doubles ────────────────────────────────────────────────────
 
-    static final class InMemoryOutboxRepository implements DmOutboxRepository {
+    static final class EphemeralOutboxRepository implements DmOutboxRepository {
         final Map<String, DmOutboxEntry> store = new ConcurrentHashMap<>();
 
         @Override
@@ -337,7 +337,7 @@ class DmOutboxServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryDeadLetterRepository implements DmDeadLetterRepository {
+    static final class EphemeralDeadLetterRepository implements DmDeadLetterRepository {
         final Map<String, DmDeadLetterEntry> store = new ConcurrentHashMap<>();
 
         @Override

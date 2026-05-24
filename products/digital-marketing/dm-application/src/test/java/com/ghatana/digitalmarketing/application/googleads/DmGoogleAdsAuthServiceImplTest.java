@@ -40,8 +40,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 @DisplayName("DmGoogleAdsAuthServiceImpl Tests")
 class DmGoogleAdsAuthServiceImplTest extends EventloopTestBase {
 
-    private InMemoryCredentialRepository credentialRepository;
-    private InMemoryConnectorRepository connectorRepository;
+    private EphemeralCredentialRepository credentialRepository;
+    private EphemeralConnectorRepository connectorRepository;
     private FakeOAuthClient oauthClient;
     private DmGoogleAdsAuthServiceImpl service;
     private DmOperationContext ctx;
@@ -49,8 +49,8 @@ class DmGoogleAdsAuthServiceImplTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        credentialRepository = new InMemoryCredentialRepository();
-        connectorRepository = new InMemoryConnectorRepository();
+        credentialRepository = new EphemeralCredentialRepository();
+        connectorRepository = new EphemeralConnectorRepository();
         oauthClient = new FakeOAuthClient();
         service = new DmGoogleAdsAuthServiceImpl(
             credentialRepository,
@@ -315,7 +315,7 @@ class DmGoogleAdsAuthServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> service.revokeAccess(null, "cred")));
     }
 
-    static final class InMemoryCredentialRepository implements DmGoogleAdsCredentialRepository {
+    static final class EphemeralCredentialRepository implements DmGoogleAdsCredentialRepository {
         private final Map<String, DmGoogleAdsCredential> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -349,7 +349,7 @@ class DmGoogleAdsAuthServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryConnectorRepository implements DmConnectorRepository {
+    static final class EphemeralConnectorRepository implements DmConnectorRepository {
         private final Map<String, DmConnectorConfig> byId = new ConcurrentHashMap<>();
 
         @Override

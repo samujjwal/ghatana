@@ -30,14 +30,14 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 class WorkspaceServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryWorkspaceRepository repository;
+    private EphemeralWorkspaceRepository repository;
     private WorkspaceServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryWorkspaceRepository();
+        repository = new EphemeralWorkspaceRepository();
         service = new WorkspaceServiceImpl(kernelAdapter, repository);
 
         ctx = DmOperationContext.builder()
@@ -232,7 +232,7 @@ class WorkspaceServiceImplTest extends EventloopTestBase {
     // Test doubles
     // -----------------------------------------------------------------------
 
-    private static final class InMemoryWorkspaceRepository implements WorkspaceRepository {
+    private static final class EphemeralWorkspaceRepository implements WorkspaceRepository {
         private final ConcurrentHashMap<String, Workspace> store = new ConcurrentHashMap<>();
 
         @Override

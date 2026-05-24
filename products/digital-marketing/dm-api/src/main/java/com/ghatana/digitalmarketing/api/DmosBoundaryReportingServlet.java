@@ -46,7 +46,7 @@ public final class DmosBoundaryReportingServlet {
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/roi-roas", request ->
                     handleLockedReportingRoute(request, "ROI/ROAS reporting"))
                 .build(),
-            DmosMetricsCollector.noop(),
+            DmosMetricsCollector.disabled(),
             "boundary-reporting"
         );
     }

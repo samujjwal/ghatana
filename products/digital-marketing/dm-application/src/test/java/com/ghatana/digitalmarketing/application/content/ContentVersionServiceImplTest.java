@@ -29,14 +29,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ContentVersionServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryVersionRepository repository;
+    private EphemeralVersionRepository repository;
     private ContentVersionServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryVersionRepository();
+        repository = new EphemeralVersionRepository();
         service = new ContentVersionServiceImpl(kernelAdapter, repository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -96,7 +96,7 @@ class ContentVersionServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> deniedService.listVersions(ctx, "asset-1")));
     }
 
-    private static final class InMemoryVersionRepository implements ContentVersionRepository {
+    private static final class EphemeralVersionRepository implements ContentVersionRepository {
         private final ConcurrentHashMap<String, List<ContentAssetVersion>> store = new ConcurrentHashMap<>();
 
         @Override

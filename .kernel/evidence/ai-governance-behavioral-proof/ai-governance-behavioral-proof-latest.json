@@ -1,13 +1,52 @@
 {
   "timestamp": "generated-on-demand",
   "violations": [],
-  "warnings": [],
+  "warnings": [
+    "Data Cloud: Failed to execute test AgentExecutionServiceTest: Command failed: C:\\Program Files\\nodejs\\node.exe ./scripts/run-gradle-wrapper.mjs :products:data-cloud:planes:action:orchestrator:test --tests com.ghatana.aep.engine.registry.AgentExecutionServiceTest --no-daemon --max-workers=1\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:10: error: package com.ghatana.core.operator.agent does not exist\nimport com.ghatana.core.operator.agent.AgentOperator;\n                                      ^\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:11: error: package com.ghatana.core.operator.agent does not exist\nimport com.ghatana.core.operator.agent.AgentOperatorKind;\n                                      ^\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:12: error: package com.ghatana.core.operator.agent does not exist\nimport com.ghatana.core.operator.agent.AgentSideEffectProfile;\n                                      ^\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:30: error: cannot find symbol\npublic final class AgentOperatorAdapter implements AgentOperator {\n                                                   ^\n  symbol: class AgentOperator\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:34: error: cannot find symbol\n    private final AgentOperatorKind kind;\n                  ^\n  symbol:   class AgentOperatorKind\n  location: class AgentOperatorAdapter\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:39: error: cannot find symbol\n            @NotNull AgentOperatorKind kind) {\n                     ^\n  symbol:   class AgentOperatorKind\n  location: class AgentOperatorAdapter\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:62: error: cannot find symbol\n    public AgentOperatorKind agentOperatorKind() {\n           ^\n  symbol:   class AgentOperatorKind\n  location: class AgentOperatorAdapter\r\nD:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:68: error: cannot find symbol\n    public AgentSideEffectProfile sideEffectProfile() {\n           ^\n  symbol:   class AgentSideEffectProfile\n  location: class AgentOperatorAdapter\r\n8 errors\r\n\r\nFAILURE: Build failed with an exception.\r\n\r\n* What went wrong:\r\nExecution failed for task ':products:data-cloud:planes:action:agent-runtime:compileJava'.\r\n> Compilation failed; see the compiler output below.\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:34: error: cannot find symbol\n      private final AgentOperatorKind kind;\n                    ^\n    symbol:   class AgentOperatorKind\n    location: class AgentOperatorAdapter\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:39: error: cannot find symbol\n              @NotNull AgentOperatorKind kind) {\n                       ^\n    symbol:   class AgentOperatorKind\n    location: class AgentOperatorAdapter\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:62: error: cannot find symbol\n      public AgentOperatorKind agentOperatorKind() {\n             ^\n    symbol:   class AgentOperatorKind\n    location: class AgentOperatorAdapter\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:68: error: cannot find symbol\n      public AgentSideEffectProfile sideEffectProfile() {\n             ^\n    symbol:   class AgentSideEffectProfile\n    location: class AgentOperatorAdapter\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:30: error: cannot find symbol\n  public final class AgentOperatorAdapter implements AgentOperator {\n                                                     ^\n    symbol: class AgentOperator\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:10: error: package com.ghatana.core.operator.agent does not exist\n  import com.ghatana.core.operator.agent.AgentOperator;\n                                        ^\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:11: error: package com.ghatana.core.operator.agent does not exist\n  import com.ghatana.core.operator.agent.AgentOperatorKind;\n                                        ^\r\n  D:\\samuj\\Developments\\ghatana\\products\\data-cloud\\planes\\action\\agent-runtime\\src\\main\\java\\com\\ghatana\\agent\\registry\\AgentOperatorAdapter.java:12: error: package com.ghatana.core.operator.agent does not exist\n  import com.ghatana.core.operator.agent.AgentSideEffectProfile;\n                                        ^\r\n  8 errors\r\n\r\n* Try:\r\n> Check your code and dependencies to fix the compilation error(s)\r\n> Run with --scan to generate a Build Scan (powered by Develocity).\r\n\r\nBUILD FAILED in 20s\r\n",
+    "Data Cloud: Test execution failed, falling back to posture checks",
+    "Data Cloud: Missing AI governance infrastructure",
+    "Data Cloud: Missing model registry",
+    "Data Cloud: Missing evaluation quality thresholds proof",
+    "Data Cloud: Missing human approval proof"
+  ],
   "evidence": [
-    "Data Cloud: Executed real AI governance behavioral scenarios"
+    "Data Cloud: Has model availability check",
+    "Data Cloud: Has model availability check",
+    "Data Cloud: Has model availability check",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has fallback prevention logic",
+    "Data Cloud: Has privacy redaction before model calls",
+    "Data Cloud: Has privacy redaction before model calls",
+    "Data Cloud: Has privacy redaction before model calls",
+    "Data Cloud: Has provenance tracking",
+    "Data Cloud: Has provenance tracking",
+    "Data Cloud: Has cost budget enforcement",
+    "Data Cloud: Has cost budget enforcement",
+    "Data Cloud: Has cost budget enforcement",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI audit evidence tracking",
+    "Data Cloud: Has AI safety guardrails",
+    "Data Cloud: Has AI safety guardrails",
+    "Data Cloud: Has AI safety guardrails",
+    "Data Cloud: Has AI safety guardrails",
+    "Data Cloud: Has AI safety guardrails",
+    "Data Cloud: Has AI safety guardrails"
   ],
   "summary": {
     "totalViolations": 0,
-    "totalWarnings": 0,
-    "totalEvidence": 1
+    "totalWarnings": 6,
+    "totalEvidence": 33
   }
 }

@@ -100,12 +100,12 @@ public interface DmosMetricsCollector {
     }
 
     /**
-     * Returns a no-op collector suitable for unit tests and integration test fixtures
+     * Returns a disabled collector suitable for unit tests and integration test fixtures
      * that do not exercise observability paths.
      *
-     * @return no-op implementation
+     * @return disabled implementation
      */
-    static DmosMetricsCollector noop() {
+    static DmosMetricsCollector disabled() {
         return (counterName, labels) -> { /* intentionally empty */ };
     }
 }

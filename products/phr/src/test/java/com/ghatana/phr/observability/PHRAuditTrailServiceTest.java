@@ -29,10 +29,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PHRAuditTrailServiceTest {
     private AuditTrailService auditTrailService;
+    private InMemoryAuditAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        auditTrailService = new PHRAuditTrailServiceImpl();
+        adapter = new InMemoryAuditAdapter();
+        auditTrailService = new PHRAuditTrailServiceImpl(adapter);
     }
 
     @Test

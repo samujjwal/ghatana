@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmMetaAdsConnectorServiceImpl")
 class DmMetaAdsConnectorServiceImplTest extends EventloopTestBase {
 
-    private InMemoryConnectorRepository repository;
+    private EphemeralConnectorRepository repository;
     private DmMetaAdsConnectorServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryConnectorRepository();
+        repository = new EphemeralConnectorRepository();
         service = new DmMetaAdsConnectorServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -176,7 +176,7 @@ class DmMetaAdsConnectorServiceImplTest extends EventloopTestBase {
 
     // ── In-memory repository ──────────────────────────────────────────────────
 
-    static final class InMemoryConnectorRepository implements DmMetaAdsConnectorRepository {
+    static final class EphemeralConnectorRepository implements DmMetaAdsConnectorRepository {
         private final Map<String, DmMetaAdsConnector> store = new ConcurrentHashMap<>();
 
         @Override

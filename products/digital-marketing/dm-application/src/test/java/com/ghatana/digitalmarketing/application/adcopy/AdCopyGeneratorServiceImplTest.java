@@ -38,16 +38,16 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class AdCopyGeneratorServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryContentItemRepository itemRepository;
-    private InMemoryContentItemVersionRepository versionRepository;
+    private EphemeralContentItemRepository itemRepository;
+    private EphemeralContentItemVersionRepository versionRepository;
     private AdCopyGeneratorServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter     = new RecordingKernelAdapter();
-        itemRepository    = new InMemoryContentItemRepository();
-        versionRepository = new InMemoryContentItemVersionRepository();
+        itemRepository    = new EphemeralContentItemRepository();
+        versionRepository = new EphemeralContentItemVersionRepository();
         ContentItemService contentItemService =
             new ContentItemServiceImpl(kernelAdapter, itemRepository, versionRepository);
         service = new AdCopyGeneratorServiceImpl(kernelAdapter, contentItemService);
@@ -529,7 +529,7 @@ class AdCopyGeneratorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryContentItemRepository implements ContentItemRepository {
+    private static final class EphemeralContentItemRepository implements ContentItemRepository {
         private final Map<String, ContentItem> store = new HashMap<>();
 
         void store(ContentItem item) {
@@ -548,7 +548,7 @@ class AdCopyGeneratorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryContentItemVersionRepository implements ContentItemVersionRepository {
+    private static final class EphemeralContentItemVersionRepository implements ContentItemVersionRepository {
         private final Map<String, ContentVersion> store = new HashMap<>();
 
         void store(ContentVersion version) {

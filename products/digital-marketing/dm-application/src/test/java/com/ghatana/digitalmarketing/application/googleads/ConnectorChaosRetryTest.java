@@ -53,9 +53,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("P1-053: Connector Chaos/Retry Tests")
 class ConnectorChaosRetryTest extends EventloopTestBase {
 
-    private InMemoryConnectorRepository connectorRepository;
-    private InMemoryCampaignRepository campaignRepository;
-    private InMemoryCommandRepository commandRepository;
+    private EphemeralConnectorRepository connectorRepository;
+    private EphemeralCampaignRepository campaignRepository;
+    private EphemeralCommandRepository commandRepository;
     private DmCommandService commandService;
     private DmGoogleAdsCampaignConnectorServiceImpl service;
     private DmOperationContext ctx;
@@ -65,9 +65,9 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        connectorRepository = new InMemoryConnectorRepository();
-        campaignRepository = new InMemoryCampaignRepository();
-        commandRepository = new InMemoryCommandRepository();
+        connectorRepository = new EphemeralConnectorRepository();
+        campaignRepository = new EphemeralCampaignRepository();
+        commandRepository = new EphemeralCommandRepository();
         chaosApiClient = new ChaosApiClient();
         commandService = new ChaosCommandService(commandRepository, new AllowingKernelAdapter(), chaosApiClient);
 
@@ -232,7 +232,7 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
 
     // Test infrastructure
 
-    static class InMemoryConnectorRepository implements DmConnectorRepository {
+    static class EphemeralConnectorRepository implements DmConnectorRepository {
         private final Map<String, DmConnectorConfig> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -268,7 +268,7 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
         }
     }
 
-    static class InMemoryCampaignRepository implements CampaignRepository {
+    static class EphemeralCampaignRepository implements CampaignRepository {
         private final Map<String, Campaign> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -303,7 +303,7 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
         }
     }
 
-    static class InMemoryCommandRepository implements DmCommandRepository {
+    static class EphemeralCommandRepository implements DmCommandRepository {
         private final ConcurrentHashMap<String, com.ghatana.digitalmarketing.domain.command.DmCommand> store = new ConcurrentHashMap<>();
 
         @Override
@@ -378,7 +378,7 @@ class ConnectorChaosRetryTest extends EventloopTestBase {
         private final DmCommandServiceImpl delegate;
         private final ChaosApiClient chaosApiClient;
 
-        ChaosCommandService(InMemoryCommandRepository commandRepository, AllowingKernelAdapter kernelAdapter, ChaosApiClient chaosApiClient) {
+        ChaosCommandService(EphemeralCommandRepository commandRepository, AllowingKernelAdapter kernelAdapter, ChaosApiClient chaosApiClient) {
             this.delegate = new DmCommandServiceImpl(commandRepository, kernelAdapter);
             this.chaosApiClient = chaosApiClient;
         }

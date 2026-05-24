@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmRollbackActionServiceImpl")
 class DmRollbackActionServiceImplTest extends EventloopTestBase {
 
-    private InMemoryRollbackRepository repository;
+    private EphemeralRollbackRepository repository;
     private DmRollbackActionServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryRollbackRepository();
+        repository = new EphemeralRollbackRepository();
         service = new DmRollbackActionServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -168,7 +168,7 @@ class DmRollbackActionServiceImplTest extends EventloopTestBase {
             "cmd-1", "REVERT_BUDGET", "entity-1", "Campaign");
     }
 
-    static final class InMemoryRollbackRepository implements DmRollbackActionRepository {
+    static final class EphemeralRollbackRepository implements DmRollbackActionRepository {
         private final Map<String, DmRollbackAction> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmRollbackAction> save(DmRollbackAction a) {

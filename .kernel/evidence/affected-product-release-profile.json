@@ -1,9 +1,6 @@
 {
-  "generatedAt": "2026-05-23T21:56:40.195Z",
-  "affectedProducts": [
-    "digital-marketing",
-    "phr"
-  ],
+  "generatedAt": "2026-05-24T02:45:57.172Z",
+  "affectedProducts": ["digital-marketing", "phr"],
   "strictTargetCoverage": [
     {
       "productId": "data-cloud",
@@ -51,10 +48,7 @@
   "perProductCoverage": [
     {
       "productId": "digital-marketing",
-      "requiredScripts": [
-        "build:digital-marketing",
-        "test:digital-marketing"
-      ],
+      "requiredScripts": ["build:digital-marketing", "test:digital-marketing"],
       "optionalCore": [
         "validate:digital-marketing",
         "package:digital-marketing"
@@ -62,33 +56,17 @@
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,
       "hasBackendSurface": true,
-      "deploymentTargets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
+      "deploymentTargets": ["compose-local", "dev", "staging", "prod"],
       "hasFoundationUsageProfile": true
     },
     {
       "productId": "phr",
-      "requiredScripts": [
-        "build:phr",
-        "test:phr"
-      ],
-      "optionalCore": [
-        "validate:phr",
-        "package:phr"
-      ],
+      "requiredScripts": ["build:phr", "test:phr"],
+      "optionalCore": ["validate:phr", "package:phr"],
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,
       "hasBackendSurface": true,
-      "deploymentTargets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
+      "deploymentTargets": ["compose-local", "dev", "staging", "prod"],
       "hasFoundationUsageProfile": true
     }
   ],

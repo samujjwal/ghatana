@@ -71,8 +71,9 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                // Lowered from 0.50 to 0.20 to match actual coverage (0.24)
-                minimum = "0.20".toBigDecimal()
+                // Phase 3: Current coverage is 0.29 - set threshold to current level
+                // TODO: Incremental test additions needed to reach 0.50, then 0.70
+                minimum = "0.25".toBigDecimal()
             }
         }
     }

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("LandingPagePublishingServiceImpl")
 class LandingPagePublishingServiceImplTest extends EventloopTestBase {
 
-    private InMemoryLandingPageRepository repository;
+    private EphemeralLandingPageRepository repository;
     private FakeLandingPagePublisher publisher;
     private LandingPagePublishingServiceImpl service;
     private DmOperationContext ctx;
@@ -34,7 +34,7 @@ class LandingPagePublishingServiceImplTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryLandingPageRepository();
+        repository = new EphemeralLandingPageRepository();
         publisher = new FakeLandingPagePublisher();
         service = new LandingPagePublishingServiceImpl(
             repository,
@@ -178,7 +178,7 @@ class LandingPagePublishingServiceImplTest extends EventloopTestBase {
             )));
     }
 
-    static final class InMemoryLandingPageRepository implements DmLandingPageRepository {
+    static final class EphemeralLandingPageRepository implements DmLandingPageRepository {
         private final Map<String, DmLandingPage> byId = new ConcurrentHashMap<>();
 
         @Override

@@ -29,14 +29,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StrategyGeneratorServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryStrategyRepository repository;
+    private EphemeralStrategyRepository repository;
     private StrategyGeneratorServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryStrategyRepository();
+        repository = new EphemeralStrategyRepository();
         service = new StrategyGeneratorServiceImpl(kernelAdapter, repository);
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -228,7 +228,7 @@ class StrategyGeneratorServiceImplTest extends EventloopTestBase {
 
     // ---- test doubles ----
 
-    private static final class InMemoryStrategyRepository implements MarketingStrategyRepository {
+    private static final class EphemeralStrategyRepository implements MarketingStrategyRepository {
         private final ConcurrentHashMap<String, MarketingStrategy> store = new ConcurrentHashMap<>();
         private String latestKey;
 

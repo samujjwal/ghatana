@@ -95,7 +95,7 @@ describe("ToolchainAdapterRegistry", () => {
 });
 
 describe("createDefaultToolchainAdapterRegistry", () => {
-  it("registers all seven canonical execution-ready adapters", () => {
+  it("registers all eight canonical execution-ready adapters", () => {
     const { registry } = createDefaultToolchainAdapterRegistry({
       repoRoot: "/repo",
     });
@@ -107,7 +107,8 @@ describe("createDefaultToolchainAdapterRegistry", () => {
     expect(registry.has("python-pyproject")).toBe(true);
     expect(registry.has("docker-buildx")).toBe(true);
     expect(registry.has("compose-local")).toBe(true);
-    expect(registry.getAll()).toHaveLength(7);
+    expect(registry.has("kernel-product-interaction-broker")).toBe(true);
+    expect(registry.getAll()).toHaveLength(8);
   });
 
   it("docker-buildx supports only the package phase", () => {

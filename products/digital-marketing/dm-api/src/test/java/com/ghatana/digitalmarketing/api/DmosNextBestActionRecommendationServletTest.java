@@ -48,8 +48,8 @@ class DmosNextBestActionRecommendationServletTest extends EventloopTestBase {
         servlet = new DmosNextBestActionRecommendationServlet(
             service,
             Eventloop.create(),
-            DmosMetricsCollector.noop(),
-            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            DmosMetricsCollector.disabled(),
+            DmosTelemetry.disabled(),
             new DmosHttpContextFactory(true, identityProvider)
         ).getServlet();
     }
@@ -115,8 +115,8 @@ class DmosNextBestActionRecommendationServletTest extends EventloopTestBase {
         servlet = new DmosNextBestActionRecommendationServlet(
             service,
             Eventloop.create(),
-            DmosMetricsCollector.noop(),
-            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            DmosMetricsCollector.disabled(),
+            DmosTelemetry.disabled(),
             new DmosHttpContextFactory(true, noOptimizationPermission)
         ).getServlet();
 

@@ -24,13 +24,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmTenantProfileServiceImpl")
 class DmTenantProfileServiceImplTest extends EventloopTestBase {
 
-    private InMemoryProfileRepository repository;
+    private EphemeralProfileRepository repository;
     private DmTenantProfileServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryProfileRepository();
+        repository = new EphemeralProfileRepository();
         service = new DmTenantProfileServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -112,7 +112,7 @@ class DmTenantProfileServiceImplTest extends EventloopTestBase {
             "Acme Corp Updated", "Tech", "UTC", "USD", true, 5, 10, 10_000_000_000L);
     }
 
-    static final class InMemoryProfileRepository implements DmTenantProfileRepository {
+    static final class EphemeralProfileRepository implements DmTenantProfileRepository {
         private final Map<String, DmSelfMarketingTenantProfile> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmSelfMarketingTenantProfile> save(DmSelfMarketingTenantProfile p) {

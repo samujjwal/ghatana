@@ -41,16 +41,16 @@ class ContentValidationServiceImplTest extends EventloopTestBase {
     private static final String VERSION_ID = "ver-val-1";
     private static final String ITEM_ID    = "item-val-1";
 
-    private InMemoryContentItemVersionRepository versionRepository;
-    private InMemoryValidationResultRepository    resultRepository;
+    private EphemeralContentItemVersionRepository versionRepository;
+    private EphemeralValidationResultRepository    resultRepository;
     private RecordingKernelAdapter                kernelAdapter;
     private ContentValidationServiceImpl          service;
     private DmOperationContext                    ctx;
 
     @BeforeEach
     void setUp() {
-        versionRepository = new InMemoryContentItemVersionRepository();
-        resultRepository  = new InMemoryValidationResultRepository();
+        versionRepository = new EphemeralContentItemVersionRepository();
+        resultRepository  = new EphemeralValidationResultRepository();
         kernelAdapter     = new RecordingKernelAdapter();
         service           = new ContentValidationServiceImpl(kernelAdapter, versionRepository, resultRepository);
         ctx = DmOperationContext.builder()
@@ -395,7 +395,7 @@ class ContentValidationServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryContentItemVersionRepository implements ContentItemVersionRepository {
+    static final class EphemeralContentItemVersionRepository implements ContentItemVersionRepository {
         private final Map<String, ContentVersion> store = new HashMap<>();
 
         void store(ContentVersion version) {
@@ -436,7 +436,7 @@ class ContentValidationServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryValidationResultRepository implements ContentValidationResultRepository {
+    static final class EphemeralValidationResultRepository implements ContentValidationResultRepository {
         private final List<ContentValidationResult> store = new CopyOnWriteArrayList<>();
 
         List<ContentValidationResult> findAll() {

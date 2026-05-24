@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 class DataSubjectRequestServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryContactRepository contactRepository;
+    private EphemeralContactRepository contactRepository;
     private TestConsentPlugin consentPlugin;
     private DataSubjectRequestServiceImpl service;
     private DmOperationContext ctx;
@@ -39,7 +39,7 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        contactRepository = new InMemoryContactRepository();
+        contactRepository = new EphemeralContactRepository();
         consentPlugin = new TestConsentPlugin();
         service = new DataSubjectRequestServiceImpl(kernelAdapter, contactRepository, new NoopSuppressionRepository(), consentPlugin);
         ctx = DmOperationContext.builder()
@@ -194,7 +194,7 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryContactRepository implements ContactRepository {
+    private static final class EphemeralContactRepository implements ContactRepository {
         private final java.util.Map<String, Contact> byId = new java.util.HashMap<>();
         private final java.util.Map<String, Contact> byHash = new java.util.HashMap<>();
 

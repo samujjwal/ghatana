@@ -25,12 +25,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("MarketplaceListingServiceImpl")
 class MarketplaceListingServiceImplTest {
 
-    private InMemoryMarketplaceListingRepository repository;
+    private EphemeralMarketplaceListingRepository repository;
     private MarketplaceListingServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryMarketplaceListingRepository();
+        repository = new EphemeralMarketplaceListingRepository();
         service = new MarketplaceListingServiceImpl(repository);
     }
 
@@ -106,7 +106,7 @@ class MarketplaceListingServiceImplTest {
 
     // ── test doubles ─────────────────────────────────────────────────────────
 
-    private static final class InMemoryMarketplaceListingRepository implements MarketplaceListingRepository {
+    private static final class EphemeralMarketplaceListingRepository implements MarketplaceListingRepository {
         private final ConcurrentHashMap<String, MarketplaceListing> store = new ConcurrentHashMap<>();
 
         @Override

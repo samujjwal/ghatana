@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmLeadCaptureServiceImpl")
 class DmLeadCaptureServiceImplTest extends EventloopTestBase {
 
-    private InMemoryLeadCaptureRepository repository;
+    private EphemeralLeadCaptureRepository repository;
     private DmLeadCaptureServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryLeadCaptureRepository();
+        repository = new EphemeralLeadCaptureRepository();
         service = new DmLeadCaptureServiceImpl(repository, new AllowingKernelAdapter(true));
 
         ctx = DmOperationContext.builder()
@@ -241,7 +241,7 @@ class DmLeadCaptureServiceImplTest extends EventloopTestBase {
             )));
     }
 
-    static final class InMemoryLeadCaptureRepository implements DmLeadCaptureRepository {
+    static final class EphemeralLeadCaptureRepository implements DmLeadCaptureRepository {
         private final Map<String, DmLeadCapture> byId = new ConcurrentHashMap<>();
 
         @Override

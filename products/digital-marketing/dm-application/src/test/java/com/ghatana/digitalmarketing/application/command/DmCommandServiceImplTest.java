@@ -36,14 +36,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmCommandServiceImpl Tests")
 class DmCommandServiceImplTest extends EventloopTestBase {
 
-    private InMemoryCommandRepository repo;
+    private EphemeralCommandRepository repo;
     private AllowingKernelAdapter kernelAdapter;
     private DmCommandServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repo          = new InMemoryCommandRepository();
+        repo          = new EphemeralCommandRepository();
         kernelAdapter = new AllowingKernelAdapter(true);
         service       = new DmCommandServiceImpl(repo, kernelAdapter);
 
@@ -277,7 +277,7 @@ class DmCommandServiceImplTest extends EventloopTestBase {
 
     // ── test doubles ─────────────────────────────────────────────────────────
 
-    private static final class InMemoryCommandRepository implements DmCommandRepository {
+    private static final class EphemeralCommandRepository implements DmCommandRepository {
         private final ConcurrentHashMap<String, DmCommand> store = new ConcurrentHashMap<>();
 
         @Override

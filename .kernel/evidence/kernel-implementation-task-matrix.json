@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-23T21:56:24.293Z",
+  "generatedAt": "2026-05-24T02:45:39.108Z",
   "status": "passed",
   "summary": {
     "requiredTaskCount": 8,
@@ -9,30 +9,21 @@
       "Planned": 3
     },
     "averageMaturityDepth": 2.5,
-    "warningCount": 0,
+    "warningCount": 6,
     "violationCount": 0
   },
   "incrementalRoadmap": {
-    "generatedAt": "2026-05-23T21:56:24.294Z",
+    "generatedAt": "2026-05-24T02:45:39.109Z",
     "targetMaturityDepth": 5,
     "remainingTaskCount": 8,
     "deferredTaskIds": [],
     "waveBuckets": {
-      "wave-1-foundation": [
-        8,
-        5,
-        7,
-        1,
-        2,
-        3,
-        4,
-        6
-      ]
+      "wave-1-foundation": [8, 5, 7, 1, 2, 3, 4, 6]
     },
     "tasks": [
       {
         "id": 8,
-        "title": "FND-008",
+        "title": "Observability trace",
         "status": "Planned",
         "maturityDepth": 1,
         "targetDepth": 5,
@@ -47,7 +38,7 @@
       },
       {
         "id": 5,
-        "title": "FND-005",
+        "title": "Healthcare gate execution",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -62,7 +53,7 @@
       },
       {
         "id": 7,
-        "title": "FND-007",
+        "title": "Patient/provider/admin journeys",
         "status": "Planned",
         "maturityDepth": 2,
         "targetDepth": 5,
@@ -77,7 +68,7 @@
       },
       {
         "id": 1,
-        "title": "FND-001",
+        "title": "Fix production-stubs gate",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -92,7 +83,7 @@
       },
       {
         "id": 2,
-        "title": "FND-002",
+        "title": "Make PHR event evidence durable",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -107,7 +98,7 @@
       },
       {
         "id": 3,
-        "title": "FND-003",
+        "title": "Close rollback readiness",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -122,7 +113,7 @@
       },
       {
         "id": 4,
-        "title": "FND-004",
+        "title": "Prove consent cache production behavior",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -137,7 +128,7 @@
       },
       {
         "id": 6,
-        "title": "FND-006",
+        "title": "FHIR golden contract tests",
         "status": "Partial",
         "maturityDepth": 3,
         "targetDepth": 5,
@@ -161,11 +152,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 1,
-      "title": "FND-001",
-      "whereRefs": [
-        "phr",
-        "digital-marketing"
-      ]
+      "title": "Fix production-stubs gate",
+      "whereRefs": []
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -175,11 +163,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 2,
-      "title": "FND-002",
-      "whereRefs": [
-        "implemented/ready/enabled",
-        "local"
-      ]
+      "title": "Make PHR event evidence durable",
+      "whereRefs": ["PhrKernelModule"]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -189,17 +174,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 3,
-      "title": "FND-003",
-      "whereRefs": [
-        "test-tenant",
-        "test-user",
-        "InMemory*",
-        "Noop*",
-        "fallback",
-        "disabled",
-        "sample",
-        "local-only"
-      ]
+      "title": "Close rollback readiness",
+      "whereRefs": ["products/phr/lifecycle/rollback/*"]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -209,10 +185,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 4,
-      "title": "FND-004",
-      "whereRefs": [
-        "implemented"
-      ]
+      "title": "Prove consent cache production behavior",
+      "whereRefs": ["PhrKernelModuleTest"]
     },
     {
       "ownerTeam": "Product Family Platform",
@@ -222,8 +196,8 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 5,
-      "title": "FND-005",
-      "whereRefs": []
+      "title": "Healthcare gate execution",
+      "whereRefs": ["products/phr/lifecycle/gate-packs/*"]
     },
     {
       "ownerTeam": "Kernel Release Engineering",
@@ -233,7 +207,7 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 6,
-      "title": "FND-006",
+      "title": "FHIR golden contract tests",
       "whereRefs": []
     },
     {
@@ -244,7 +218,7 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 7,
-      "title": "FND-007",
+      "title": "Patient/provider/admin journeys",
       "whereRefs": []
     },
     {
@@ -255,10 +229,17 @@
       "requiredForRelease": true,
       "evidenceRefs": [],
       "id": 8,
-      "title": "FND-008",
+      "title": "Observability trace",
       "whereRefs": []
     }
   ],
-  "warnings": [],
+  "warnings": [
+    "Task 1 has no parsed Where references in implementation plan",
+    "Task 3 references non-existing path \"products/phr/lifecycle/rollback/*\"",
+    "Task 5 references non-existing path \"products/phr/lifecycle/gate-packs/*\"",
+    "Task 6 has no parsed Where references in implementation plan",
+    "Task 7 has no parsed Where references in implementation plan",
+    "Task 8 has no parsed Where references in implementation plan"
+  ],
   "violations": []
 }

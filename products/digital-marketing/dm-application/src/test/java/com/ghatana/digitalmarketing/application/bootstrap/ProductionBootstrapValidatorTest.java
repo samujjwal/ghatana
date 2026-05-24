@@ -136,12 +136,12 @@ class ProductionBootstrapValidatorTest {
 
     @Test
     @DisplayName("P1-004: Rejects in-memory repository in production")
-    void shouldRejectInMemoryRepositoryInProduction() {
+    void shouldRejectEphemeralRepositoryInProduction() {
         // Given
         ProductionBootstrapValidator validator = new ProductionBootstrapValidator.Builder()
             .isProduction(true)
             .dataSource(new AlwaysValidDataSource())
-            .campaignRepository(new InMemoryCampaignRepository())
+            .campaignRepository(new EphemeralCampaignRepository())
             .piiHmacKey("valid-hmac-key-that-is-32-chars-long-for-test")
             .build();
 
@@ -300,7 +300,7 @@ class ProductionBootstrapValidatorTest {
         @Override public boolean isWrapperFor(Class<?> i) { return false; }
     }
 
-    /** CampaignRepository backed by a PostgreSQL-type class name (no "InMemory"). */
+    /** CampaignRepository backed by a PostgreSQL-type class name (no "Ephemeral"). */
     private static class PostgresCampaignRepository implements CampaignRepository {
         @Override public Promise<Campaign> save(Campaign c) { throw new UnsupportedOperationException(); }
         @Override public Promise<java.util.Optional<Campaign>> findById(DmWorkspaceId w, String id) { return Promise.of(java.util.Optional.empty()); }
@@ -308,8 +308,8 @@ class ProductionBootstrapValidatorTest {
         @Override public Promise<Long> countByWorkspace(DmWorkspaceId w) { return Promise.of(0L); }
     }
 
-    /** CampaignRepository whose class name contains "InMemory" — triggers PERSISTENCE-002. */
-    private static class InMemoryCampaignRepository implements CampaignRepository {
+    /** CampaignRepository whose class name contains "Ephemeral" — triggers PERSISTENCE-002. */
+    private static class EphemeralCampaignRepository implements CampaignRepository {
         @Override public Promise<Campaign> save(Campaign c) { throw new UnsupportedOperationException(); }
         @Override public Promise<java.util.Optional<Campaign>> findById(DmWorkspaceId w, String id) { return Promise.of(java.util.Optional.empty()); }
         @Override public Promise<java.util.List<Campaign>> listByWorkspace(DmWorkspaceId w, int limit, int offset) { return Promise.of(java.util.List.of()); }

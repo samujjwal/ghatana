@@ -77,12 +77,12 @@ class KernelBridgeWiringIT extends EventloopTestBase {
 
     private RecordingAuthService authService;
     private RecordingAuditEmitter auditEmitter;
-    private InMemoryConsentPlugin consentPlugin;
-    private InMemoryApprovalPlugin approvalPlugin;
+    private EphemeralConsentPlugin consentPlugin;
+    private EphemeralApprovalPlugin approvalPlugin;
     private RecordingAuditTrailPlugin auditTrailPlugin;
-    private InMemoryRiskPlugin riskPlugin;
-    private InMemoryNotificationPlugin notificationPlugin;
-    private InMemoryFeatureFlagPlugin featureFlagPlugin;
+    private EphemeralRiskPlugin riskPlugin;
+    private EphemeralNotificationPlugin notificationPlugin;
+    private EphemeralFeatureFlagPlugin featureFlagPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private DmOperationContext ctx;
@@ -91,12 +91,12 @@ class KernelBridgeWiringIT extends EventloopTestBase {
     void setUp() {
         authService = new RecordingAuthService();
         auditEmitter = new RecordingAuditEmitter();
-        consentPlugin = new InMemoryConsentPlugin();
-        approvalPlugin = new InMemoryApprovalPlugin();
+        consentPlugin = new EphemeralConsentPlugin();
+        approvalPlugin = new EphemeralApprovalPlugin();
         auditTrailPlugin = new RecordingAuditTrailPlugin();
-        riskPlugin = new InMemoryRiskPlugin();
-        notificationPlugin = new InMemoryNotificationPlugin();
-        featureFlagPlugin = new InMemoryFeatureFlagPlugin();
+        riskPlugin = new EphemeralRiskPlugin();
+        notificationPlugin = new EphemeralNotificationPlugin();
+        featureFlagPlugin = new EphemeralFeatureFlagPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -343,7 +343,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         public void reportUnhealthy(String bridgeId, String reason) { }
     }
 
-    private static final class InMemoryFeatureFlagPlugin implements FeatureFlagPlugin {
+    private static final class EphemeralFeatureFlagPlugin implements FeatureFlagPlugin {
         private final Map<String, Boolean> flags = new ConcurrentHashMap<>();
 
         @Override
@@ -372,7 +372,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryConsentPlugin implements ConsentPlugin {
+    private static final class EphemeralConsentPlugin implements ConsentPlugin {
         private final Map<String, Boolean> consents = new ConcurrentHashMap<>();
 
         void setConsent(String subjectId, String purpose, boolean granted) {
@@ -411,7 +411,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryApprovalPlugin implements HumanApprovalPlugin {
+    private static final class EphemeralApprovalPlugin implements HumanApprovalPlugin {
         private volatile ApprovalRequest lastRequest;
 
         ApprovalRequest lastRequest() { return lastRequest; }
@@ -477,7 +477,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryRiskPlugin implements RiskManagementPlugin {
+    private static final class EphemeralRiskPlugin implements RiskManagementPlugin {
         private volatile double score = 0.1d;
 
         void setScore(double score) { this.score = score; }
@@ -505,7 +505,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         @Override public Promise<Void> stop() { return Promise.of(null); }
     }
 
-    private static final class InMemoryNotificationPlugin implements NotificationPlugin {
+    private static final class EphemeralNotificationPlugin implements NotificationPlugin {
         @Override
         public Promise<String> dispatch(String recipientId, String template, Map<String, String> attributes) {
             return Promise.of("notif-" + recipientId);

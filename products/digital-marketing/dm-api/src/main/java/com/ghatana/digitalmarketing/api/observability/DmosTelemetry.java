@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.api.observability;
 
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
@@ -390,11 +391,11 @@ public final class DmosTelemetry {
     }
 
     /**
-     * P1-026: Creates a noop telemetry instance for testing.
+     * P1-026: Creates a disabled telemetry instance for tests and local fixtures.
      *
-     * @return a telemetry instance with no-op OpenTelemetry
+     * @return a telemetry instance backed by the globally configured OpenTelemetry
      */
-    public static DmosTelemetry noop() {
-        return new DmosTelemetry(OpenTelemetry.noop());
+    public static DmosTelemetry disabled() {
+        return new DmosTelemetry(GlobalOpenTelemetry.get());
     }
 }

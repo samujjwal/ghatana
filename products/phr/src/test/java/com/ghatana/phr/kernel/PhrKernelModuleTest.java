@@ -131,6 +131,17 @@ class PhrKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Should fail initialization when DistributedCachePort is unavailable")
+    void shouldFailInitializationWhenDistributedCachePortUnavailable() {
+        KernelContext contextWithoutDistributedCache = createMockContextWithoutDistributedCache();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+            () -> module.initialize(contextWithoutDistributedCache));
+
+        assertTrue(exception.getMessage().contains("DistributedCachePort dependency not available"));
+    }
+
+    @Test
     @DisplayName("Should start successfully after initialization")
     void shouldStartSuccessfullyAfterInitialization() {
         module.initialize(mockContext);
@@ -325,7 +336,15 @@ class PhrKernelModuleTest extends EventloopTestBase {
             @Override public java.util.Set<KernelCapability> getAvailableCapabilities() { return java.util.Set.of(); }
             @Override public boolean hasCapability(KernelCapability capability) { return false; }
             @Override public <T> T getConfig(String key, Class<T> type) { return null; }
-            @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) { return java.util.Optional.empty(); }
+            @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) {
+                if (type == String.class && "phr.notification.email.endpoint".equals(key)) {
+                    return java.util.Optional.of(type.cast("https://notifications.local/email"));
+                }
+                if (type == Long.class && "phr.notification.provider.timeoutMillis".equals(key)) {
+                    return java.util.Optional.of(type.cast(5000L));
+                }
+                return java.util.Optional.empty();
+            }
             @Override public String getKernelVersion() { return "1.0.0"; }
             @Override public String getEnvironment() { return "test"; }
             @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
@@ -355,6 +374,80 @@ class PhrKernelModuleTest extends EventloopTestBase {
             @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
             @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
             @Override public <T> void registerService(Class<T> type, T service) {}
+        };
+    }
+
+    private KernelContext createMockContextWithoutDistributedCache() {
+        ConcurrentHashMap<Class<?>, Object> registeredServices = new ConcurrentHashMap<>();
+        return new KernelContext() {
+            @Override public <T> T getDependency(Class<T> type) {
+                Object registered = registeredServices.get(type);
+                if (registered != null) {
+                    return type.cast(registered);
+                }
+                if (type == KernelConfigResolver.class) {
+                    return type.cast(new KernelConfigResolver() {
+                        @Override public <R> R resolve(String key, Class<R> type, KernelTenantContext tenantContext) { return null; }
+                        @Override public <R> R resolveWithDefault(String key, Class<R> type, R defaultValue, KernelTenantContext tenantContext) { return defaultValue; }
+                        @Override public <R> java.util.Optional<R> resolveOptional(String key, Class<R> type, KernelTenantContext tenantContext) { return java.util.Optional.empty(); }
+                        @Override public void addConfigProvider(KernelConfigResolver.ConfigProvider provider) {}
+                        @Override public Promise<Void> reloadConfig(String tenantId) { return Promise.complete(); }
+                        @Override public java.util.List<String> getAvailableKeys(KernelTenantContext tenantContext) { return java.util.List.of(); }
+                    });
+                }
+                if (type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class) {
+                    return type.cast(new com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter() {
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataResult> readData(com.ghatana.kernel.adapter.datacloud.DataReadRequest r) { return Promise.of(null); }
+                        @Override public Promise<Void> writeData(com.ghatana.kernel.adapter.datacloud.DataWriteRequest r) { return Promise.complete(); }
+                        @Override public Promise<Void> deleteData(com.ghatana.kernel.adapter.datacloud.DataDeleteRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.QueryResult> queryData(com.ghatana.kernel.adapter.datacloud.DataQueryRequest r) { return Promise.of(new com.ghatana.kernel.adapter.datacloud.QueryResult(java.util.List.of(), 0, false)); }
+                        @Override public Promise<Void> createSchema(com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest r) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.SchemaInfo> getSchema(com.ghatana.kernel.bridge.port.BridgeContext c, String datasetId) { return Promise.of(null); }
+                        @Override public Promise<java.util.List<com.ghatana.kernel.adapter.datacloud.DatasetInfo>> listDatasets(com.ghatana.kernel.bridge.port.BridgeContext c) { return Promise.of(java.util.List.of()); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.TransactionHandle> beginTransaction(com.ghatana.kernel.bridge.port.BridgeContext c) { return Promise.of(null); }
+                        @Override public Promise<Void> commitTransaction(com.ghatana.kernel.bridge.port.BridgeContext c, com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<Void> rollbackTransaction(com.ghatana.kernel.bridge.port.BridgeContext c, com.ghatana.kernel.adapter.datacloud.TransactionHandle h) { return Promise.complete(); }
+                        @Override public Promise<com.ghatana.kernel.adapter.datacloud.DataStream> openStream(com.ghatana.kernel.adapter.datacloud.DataStreamRequest r) { return Promise.of(null); }
+                    });
+                }
+                throw new IllegalStateException("Dependency not found: " + type);
+            }
+            @Override public <T> java.util.Optional<T> getOptionalDependency(Class<T> type) {
+                Object registered = registeredServices.get(type);
+                if (registered != null) {
+                    return java.util.Optional.of(type.cast(registered));
+                }
+                return java.util.Optional.empty();
+            }
+            @Override public <T> boolean hasDependency(Class<T> type) {
+                return registeredServices.containsKey(type)
+                    || type == KernelConfigResolver.class
+                    || type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class;
+            }
+            @Override public <T> T getDependency(String name, Class<T> type) { return null; }
+            @Override public <E> void registerEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {}
+            @Override public <E> void unregisterEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {}
+            @Override public <E> void publishEvent(E event) {}
+            @Override public KernelTenantContext getTenantContext() { return null; }
+            @Override public KernelTenantContext getTenantContext(String tenantId) { return null; }
+            @Override public io.activej.eventloop.Eventloop getEventloop() { return io.activej.eventloop.Eventloop.create(); }
+            @Override public java.util.Set<KernelCapability> getAvailableCapabilities() { return java.util.Set.of(); }
+            @Override public boolean hasCapability(KernelCapability capability) { return false; }
+            @Override public <T> T getConfig(String key, Class<T> type) { return null; }
+            @Override public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) {
+                if (type == String.class && "phr.notification.email.endpoint".equals(key)) {
+                    return java.util.Optional.of(type.cast("https://notifications.local/email"));
+                }
+                if (type == Long.class && "phr.notification.provider.timeoutMillis".equals(key)) {
+                    return java.util.Optional.of(type.cast(5000L));
+                }
+                return java.util.Optional.empty();
+            }
+            @Override public String getKernelVersion() { return "1.0.0"; }
+            @Override public String getEnvironment() { return "test"; }
+            @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
+            @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
+            @Override public <T> void registerService(Class<T> type, T service) { registeredServices.put(type, service); }
         };
     }
 }

@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -24,15 +25,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EmergencyAccessReviewWorkflowContextTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("uses no-op dependencies when optional ports are absent")
-    void usesNoOpDependencies() {
-        EmergencyAccessReviewWorkflow workflow = EmergencyAccessReviewWorkflow.fromContext(new EmptyKernelContext());
-        EmergencyAccessLogService.EmergencyAccessEvent event = event();
-
-        EmergencyAccessReviewCase reviewCase = runPromise(() -> workflow.initiate(event));
-
-        assertThat(reviewCase.caseId()).isEqualTo("EMR-CONTEXT");
-        assertThat(reviewCase.status()).isEqualTo(EmergencyAccessReviewCase.ReviewCaseStatus.QUEUED);
+    @DisplayName("fails closed when required dependencies are absent")
+    void failsClosedWhenDependenciesMissing() {
+        assertThatThrownBy(() -> EmergencyAccessReviewWorkflow.fromContext(new EmptyKernelContext()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("EmergencyAccessNotificationSender dependency is required");
     }
 
     @Test

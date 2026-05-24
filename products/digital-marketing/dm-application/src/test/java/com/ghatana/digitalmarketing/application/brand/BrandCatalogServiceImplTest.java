@@ -32,16 +32,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class BrandCatalogServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryBrandProfileRepository brandRepository;
-    private InMemoryProductOfferRepository offerRepository;
+    private EphemeralBrandProfileRepository brandRepository;
+    private EphemeralProductOfferRepository offerRepository;
     private BrandCatalogServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        brandRepository = new InMemoryBrandProfileRepository();
-        offerRepository = new InMemoryProductOfferRepository();
+        brandRepository = new EphemeralBrandProfileRepository();
+        offerRepository = new EphemeralProductOfferRepository();
         service = new BrandCatalogServiceImpl(kernelAdapter, brandRepository, offerRepository);
 
         ctx = DmOperationContext.builder()
@@ -184,7 +184,7 @@ class BrandCatalogServiceImplTest extends EventloopTestBase {
         )).isInstanceOf(IllegalArgumentException.class);
     }
 
-    private static final class InMemoryBrandProfileRepository implements BrandProfileRepository {
+    private static final class EphemeralBrandProfileRepository implements BrandProfileRepository {
         private final ConcurrentHashMap<String, BrandProfile> store = new ConcurrentHashMap<>();
 
         @Override
@@ -199,7 +199,7 @@ class BrandCatalogServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryProductOfferRepository implements ProductOfferRepository {
+    private static final class EphemeralProductOfferRepository implements ProductOfferRepository {
         private final ConcurrentHashMap<String, ProductOffer> store = new ConcurrentHashMap<>();
 
         @Override

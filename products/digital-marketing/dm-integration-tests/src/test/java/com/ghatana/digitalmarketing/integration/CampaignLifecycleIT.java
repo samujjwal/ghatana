@@ -66,7 +66,7 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .withPassword("dmos_password");
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryCompliancePlugin compliancePlugin;
+    private EphemeralCompliancePlugin compliancePlugin;
     private CampaignService campaignService;
     private DmOperationContext writeCtx;
     private DmOperationContext readCtx;
@@ -78,12 +78,12 @@ class CampaignLifecycleIT extends EventloopTestBase {
         eventloop = Eventloop.create();
         executor = Executors.newSingleThreadExecutor();
         DataSource dataSource = createPostgresDataSource();
-        CampaignRepository inMemoryRepo = new PostgresCampaignRepository(dataSource, executor);
+        CampaignRepository EphemeralRepo = new PostgresCampaignRepository(dataSource, executor);
         kernelAdapter = new RecordingKernelAdapter();
-        compliancePlugin = new InMemoryCompliancePlugin();
+        compliancePlugin = new EphemeralCompliancePlugin();
         campaignService = new CampaignServiceImpl(
             kernelAdapter,
-            inMemoryRepo,
+            EphemeralRepo,
             compliancePlugin,
             (opCtx, campaign) -> Promise.of(new com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider.CampaignPreflightData(
                 true,
@@ -92,7 +92,7 @@ class CampaignLifecycleIT extends EventloopTestBase {
                 0.0,
                 1000.0
             )),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.disabled()
         );
 
         writeCtx = DmOperationContext.builder()
@@ -228,7 +228,7 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> campaignService.getCampaign(wsBReadCtx, inA.getId())));
     }
 
-    private static final class InMemoryCampaignRepository implements CampaignRepository {
+    private static final class EphemeralCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override
@@ -306,7 +306,7 @@ class CampaignLifecycleIT extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCompliancePlugin implements CompliancePlugin {
+    private static final class EphemeralCompliancePlugin implements CompliancePlugin {
         private volatile boolean compliant = true;
 
         void setCompliant(boolean value) {

@@ -17,13 +17,13 @@ class ProductionProfileGuardTest {
 
     @Test
     @DisplayName("development/default environment allows in-memory adapters")
-    void developmentEnvironmentAllowsInMemory() {
+    void developmentEnvironmentAllowsEphemeral() {
         System.clearProperty("DMOS_ENV");
 
         ProductionProfileGuard.validate();
 
         assertThat(ProductionProfileGuard.isProduction()).isFalse();
-        assertThat(ProductionProfileGuard.isInMemoryAllowed()).isTrue();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isTrue();
     }
 
     @Test
@@ -36,6 +36,6 @@ class ProductionProfileGuardTest {
             .withMessageContaining("cannot be used in production");
 
         assertThat(ProductionProfileGuard.isProduction()).isTrue();
-        assertThat(ProductionProfileGuard.isInMemoryAllowed()).isFalse();
+        assertThat(ProductionProfileGuard.isEphemeralAllowed()).isFalse();
     }
 }

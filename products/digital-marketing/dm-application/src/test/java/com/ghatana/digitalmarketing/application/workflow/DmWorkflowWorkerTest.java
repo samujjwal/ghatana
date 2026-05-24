@@ -45,21 +45,21 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmWorkflowWorker")
 class DmWorkflowWorkerTest extends EventloopTestBase {
 
-    private InMemoryWorkflowRepository workflowRepo;
-    private InMemoryCommandRepository commandRepo;
-    private InMemoryDeadLetterQueue deadLetterQueue;
+    private EphemeralWorkflowRepository workflowRepo;
+    private EphemeralCommandRepository commandRepo;
+    private EphemeralDeadLetterQueue deadLetterQueue;
     private DmWorkflowWorker worker;
     private DmosObservability observability;
 
     @BeforeEach
     void setUp() {
-        workflowRepo = new InMemoryWorkflowRepository();
-        commandRepo  = new InMemoryCommandRepository();
+        workflowRepo = new EphemeralWorkflowRepository();
+        commandRepo  = new EphemeralCommandRepository();
         MeterRegistry meterRegistry = new SimpleMeterRegistry();
         Metrics metrics = new Metrics(meterRegistry);
         TracingManager tracingManager = TracingManager.createNoOp();
         observability = new DmosObservability(metrics, tracingManager);
-        deadLetterQueue = new InMemoryDeadLetterQueue();
+        deadLetterQueue = new EphemeralDeadLetterQueue();
         DmCommandDispatcher dispatcher = new DmCommandDispatcher(Map.of(
             DmCommandType.CAMPAIGN_CREATE, cmd -> Promise.of(null),
             DmCommandType.BUDGET_ADJUST,   cmd -> Promise.of(null)
@@ -219,7 +219,7 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
 
     // ── Test Doubles ──────────────────────────────────────────────────────────
 
-    private static final class InMemoryWorkflowRepository implements DmWorkflowRepository {
+    private static final class EphemeralWorkflowRepository implements DmWorkflowRepository {
         final ConcurrentHashMap<String, DmWorkflowExecution> store = new ConcurrentHashMap<>();
 
         @Override
@@ -275,7 +275,7 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCommandRepository implements DmCommandRepository {
+    private static final class EphemeralCommandRepository implements DmCommandRepository {
         final ConcurrentHashMap<String, DmCommand> store = new ConcurrentHashMap<>();
 
         @Override
@@ -331,7 +331,7 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryDeadLetterQueue implements DmDeadLetterQueue {
+    private static final class EphemeralDeadLetterQueue implements DmDeadLetterQueue {
         @Override
         public Promise<Void> moveToDlq(DmOperationContext ctx, DmCommand command, String finalFailureReason) {
             return Promise.complete();

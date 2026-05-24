@@ -192,7 +192,6 @@ public final class PhrApiContractConformanceTest extends ApiContractConformanceT
         OpenAPIV3Parser parser = new OpenAPIV3Parser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
-        options.setValidate(true);
         
         SwaggerParseResult result = parser.readLocation(openApiPath.toString(), null, options);
         

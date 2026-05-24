@@ -7,7 +7,6 @@ import com.ghatana.kernel.observability.AuditTrailService;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,10 +31,6 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
     private final AuditTrailPersistence persistence;
     // Note: recordedEvents is NOT persisted across instances; use persistence layer for durability
     private final Map<String, AuditTrailService.AuditTrailEvent> recordedEvents = new ConcurrentHashMap<>();
-
-    public PHRAuditTrailServiceImpl() {
-        this(new ObjectMapper().findAndRegisterModules(), new InMemoryAuditTrailPersistence());
-    }
 
     public PHRAuditTrailServiceImpl(DataCloudKernelAdapter dataCloud) {
         this(new ObjectMapper().findAndRegisterModules(), new DataCloudAuditTrailPersistence(dataCloud, DATASET_ID));
@@ -108,35 +103,27 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
         List<AuditTrailService.AuditTrailEvent> loadAll();
     }
 
-    private static final class InMemoryAuditTrailPersistence implements AuditTrailPersistence {
-        private final Map<String, AuditTrailService.AuditTrailEvent> entries = new ConcurrentHashMap<>();
-
-        @Override
-        public void persist(AuditTrailService.AuditTrailEvent event) {
-            // De-duplicate based on event ID (prevents duplicate storage)
-            entries.putIfAbsent(event.getEventId(), event);
-        }
-
-        @Override
-        public List<AuditTrailService.AuditTrailEvent> loadAll() {
-            return List.copyOf(entries.values());
-        }
-    }
-
     private static final class DataCloudAuditTrailPersistence implements AuditTrailPersistence {
         private static final Map<String, List<AuditTrailService.AuditTrailEvent>> DURABLE_ENTRIES = new ConcurrentHashMap<>();
 
         private final DataCloudKernelAdapter dataCloud;
         private final String datasetId;
+        private final String storageKey;
 
         private DataCloudAuditTrailPersistence(DataCloudKernelAdapter dataCloud, String datasetId) {
             this.dataCloud = Objects.requireNonNull(dataCloud, "dataCloud cannot be null");
             this.datasetId = Objects.requireNonNull(datasetId, "datasetId cannot be null");
+            this.storageKey = datasetId + "#" + System.identityHashCode(dataCloud);
         }
 
         @Override
         public void persist(AuditTrailService.AuditTrailEvent event) {
-            DURABLE_ENTRIES.computeIfAbsent(datasetId, ignored -> new CopyOnWriteArrayList<>()).add(event);
+            List<AuditTrailService.AuditTrailEvent> entries =
+                DURABLE_ENTRIES.computeIfAbsent(storageKey, ignored -> new CopyOnWriteArrayList<>());
+            boolean exists = entries.stream().anyMatch(existing -> existing.getEventId().equals(event.getEventId()));
+            if (!exists) {
+                entries.add(event);
+            }
 
             byte[] payload = (
                 event.getEventId() + "|" +
@@ -160,7 +147,7 @@ public class PHRAuditTrailServiceImpl implements AuditTrailService {
 
         @Override
         public List<AuditTrailService.AuditTrailEvent> loadAll() {
-            return List.copyOf(DURABLE_ENTRIES.getOrDefault(datasetId, List.of()));
+            return List.copyOf(DURABLE_ENTRIES.getOrDefault(storageKey, List.of()));
         }
     }
 }

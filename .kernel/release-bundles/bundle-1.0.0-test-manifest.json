@@ -1,0 +1,338 @@
+{
+  "version": "1.0.0-test",
+  "timestamp": "2026-05-24T01:42:52.119Z",
+  "artifacts": [
+    {
+      "type": "evidence",
+      "path": "action-plane-route-lifecycle.json",
+      "checksum": "ade5e1f3dabebe278003e6a1c51cb8cf5df875e196e3f8341b9c31b92bfcc397"
+    },
+    {
+      "type": "evidence",
+      "path": "affected-product-release-profile.json",
+      "checksum": "657f26ac864690df28d3a5a2e57a0f06c185c1e530455d2ac7900840f2ee9e54"
+    },
+    {
+      "type": "evidence",
+      "path": "atomic-workflow-posture.json",
+      "checksum": "4c63a9065ee247a9bea1988aae690dbae73644bed1027ffbafb9fa6029641bea"
+    },
+    {
+      "type": "evidence",
+      "path": "data-cloud-maturity-proof.json",
+      "checksum": "250dbaf38917f1afca51e47c60fc07b4bfbcc41aa4b295cff226c002f3e8a4fd"
+    },
+    {
+      "type": "evidence",
+      "path": "data-cloud-release-runtime-profile.json",
+      "checksum": "3207da15f18e9f77cb6a2f425612c724a14f737dcc4016864d284443ccace2f4"
+    },
+    {
+      "type": "evidence",
+      "path": "guided-reuse-recommendations.json",
+      "checksum": "b7c1fa0d87c0cb60ec2bcae189940d4f1070be6024eefc13cfe252aa43538c22"
+    },
+    {
+      "type": "evidence",
+      "path": "guided-reuse-recommendations.yaml",
+      "checksum": "0d9b3b346f793c6c91d396c8e32368b9c3a7f88ae0301fe57d3aa874399130f8"
+    },
+    {
+      "type": "evidence",
+      "path": "kernel-implementation-plan-coverage.json",
+      "checksum": "3777f6e6b7398c58dca1d77d504465e28f81f507b69289f1b066b2a480d020bc"
+    },
+    {
+      "type": "evidence",
+      "path": "kernel-implementation-plan-progress.json",
+      "checksum": "14b7b6a63646b4ca663a68115836fd3246f2f695a795249c07d7f75ae6217454"
+    },
+    {
+      "type": "evidence",
+      "path": "kernel-implementation-task-matrix.json",
+      "checksum": "8c2a6ecad11c0e2a0ac9e27b3e6879ab5a04e556a2807f784632e180442bc8c3"
+    },
+    {
+      "type": "evidence",
+      "path": "kernel-implementation-wave-run.json",
+      "checksum": "7079e76a9c8a842e23206b06b9118a9298d732fd38724db949c6e9e6cb1d969b"
+    },
+    {
+      "type": "evidence",
+      "path": "openapi-breaking-changes.json",
+      "checksum": "ab3122d265d5febae9d54a7a8740447afcdc90a9e16c25e6552b00aabfa0dc4c"
+    },
+    {
+      "type": "evidence",
+      "path": "product-a11y-route-matrix.json",
+      "checksum": "900e74a8b20337487bf80d7df45ff3e8cbeff569abe15b7759b81d2b9e5e206e"
+    },
+    {
+      "type": "evidence",
+      "path": "product-capability-matrix-validation.json",
+      "checksum": "a26fc41e652aded7da928aeb35af8e994f611e8012594a175dc78f4488f6acb9"
+    },
+    {
+      "type": "evidence",
+      "path": "product-cost-budgets.json",
+      "checksum": "022a56271e7e64f1e7bf68942096d8b5559031b35e23d4f744b3c4a9352de05b"
+    },
+    {
+      "type": "evidence",
+      "path": "product-domain-invariants.json",
+      "checksum": "fcf30c7ab0df0133c18fef8fc3c35ac3db237c234e5d42aa589eabbb40cf255a"
+    },
+    {
+      "type": "evidence",
+      "path": "product-family-asset-promotion-policy.json",
+      "checksum": "c881793bab98a2b98fbe834f64e34dfd782839deab6d43b1b2ff8b0b0d266cff"
+    },
+    {
+      "type": "evidence",
+      "path": "product-feature-completeness-report.json",
+      "checksum": "3fe9687d7b5e29f2546e6b79f8e81d3370ea1f6bcd906bc51c81157a2ae6faca"
+    },
+    {
+      "type": "evidence",
+      "path": "product-interaction-coverage-matrix.json",
+      "checksum": "f73df01ab7184594572cb21f49bf40a25315322a7d8248fc99e97f64277116e1"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-evidence-pack.digital-marketing.json",
+      "checksum": "74fd58d51f0f4c01b98aae1c90e3b245bd2ec04e2127c1ecf448d77ee786077c"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-evidence-pack.phr.json",
+      "checksum": "4b12974fab5e19232c5eb893376cd7049cdf39af19b7975d3c169bb2d9f567c4"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-evidence-packs.json",
+      "checksum": "211eb23d8d72b9de1f2872c3102a175abed57c2149849b32cd274eece13320b0"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-readiness.digital-marketing.json",
+      "checksum": "1f6172a7985cec5b15289fc5cdd883428d96214b112f1b4f46d9cc764a6f6f2a"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-readiness.json",
+      "checksum": "1cce8425d94e53b2b0b2188a114da3af6b534638e8001e4d975106a9637259c3"
+    },
+    {
+      "type": "evidence",
+      "path": "product-release-readiness.phr.json",
+      "checksum": "7c8a19d8f0487f55568981cc02cc05d75596b36d382c093b1130e8ea159e10f0"
+    },
+    {
+      "type": "evidence",
+      "path": "product-slo-budgets.json",
+      "checksum": "9f3a666b9437338be7a34bb06006f5d123a9335da9fec258e9438da552128a4f"
+    },
+    {
+      "type": "evidence",
+      "path": "slo-dashboard-evidence.json",
+      "checksum": "3b7dd92e7ea4b68f52f763928755265dbd6bbfbf2faab80a1e3db4c2ede08ad7"
+    },
+    {
+      "type": "evidence",
+      "path": "wave2-product-quality-scorecard.json",
+      "checksum": "990e9c0a630edb3f337d1ffc8c6fd32d464b0fe90d88ddf5c6a979b9877ca26e"
+    },
+    {
+      "type": "evidence",
+      "path": "a11y-behavioral-proof\\a11y-behavioral-proof-latest.json",
+      "checksum": "3e8dd0048a51586e937236cb5abcfd1c52dc31f304f0b6b39a23c3b19899ff7d"
+    },
+    {
+      "type": "evidence",
+      "path": "ai-governance-behavioral-proof\\ai-governance-behavioral-proof-latest.json",
+      "checksum": "278a6e8eb3899e4c8a92c88bc690f01959289e534cc12173650e73c0fcbac2d2"
+    },
+    {
+      "type": "evidence",
+      "path": "atomic-workflow-failure-injection\\atomic-workflow-failure-injection-latest.json",
+      "checksum": "bc6ab955435847adf13e3c29890240b6a727221b358c87d7d96a31bbc6a292c8"
+    },
+    {
+      "type": "evidence",
+      "path": "data-cloud\\platform-provider-readiness.json",
+      "checksum": "4d6d8799ecb576e3c41da79e67a840d5dfdb9c089ba620bff15429e817f3f2cd"
+    },
+    {
+      "type": "evidence",
+      "path": "digital-marketing\\digital-marketing-lifecycle-evidence-pack.json",
+      "checksum": "c6d57244603201d586293880bc63dc8b9b82881b1fa268be0b4a74d250ada511"
+    },
+    {
+      "type": "evidence",
+      "path": "digital-marketing\\dmos-release-readiness.json",
+      "checksum": "6dffcc05292b053919f402244c66d1cbe9c12a3aea64fdbe288f0cf87bfad0c2"
+    },
+    {
+      "type": "evidence",
+      "path": "digital-marketing\\foundation-usage-profile.json",
+      "checksum": "7a5f8225deb55667bb6015f0d2d642d2ff95e5ed4516274233e5b1d8be056dd6"
+    },
+    {
+      "type": "evidence",
+      "path": "digital-marketing\\reusable-assets-registration.json",
+      "checksum": "6bd1d7bcc761dcaa493635feba639f3c16b79e9d612a6639270690f16efba335"
+    },
+    {
+      "type": "evidence",
+      "path": "digital-marketing\\reusable-assets.yaml",
+      "checksum": "74a990775665b7665daff5b993fce20b3c7132a8025034b17ee2e0fe4ed89a9b"
+    },
+    {
+      "type": "evidence",
+      "path": "i18n-behavioral-proof\\i18n-behavioral-proof-latest.json",
+      "checksum": "4f6776b8ff98d4262358067ce7fbc0307cd90acdb2676cb33f13100726c3fabe"
+    },
+    {
+      "type": "evidence",
+      "path": "phr\\foundation-usage-profile.json",
+      "checksum": "937a3d810d3c4e7ab60350f0e889f65fabf07a0132bcb9686610b64c60477dc0"
+    },
+    {
+      "type": "evidence",
+      "path": "phr\\phr-lifecycle-evidence-pack.json",
+      "checksum": "461977e5ffea7a37b4e770d6b81908be318ea337e1b1b4cbae1874abc6b5b3da"
+    },
+    {
+      "type": "evidence",
+      "path": "phr\\phr-release-readiness.json",
+      "checksum": "ceb9b467fa02d9aad16f9569bea6fe71f54b5c55e1f0c1ce3e20463bc2e8e3c7"
+    },
+    {
+      "type": "evidence",
+      "path": "phr\\reusable-assets-registration.json",
+      "checksum": "046ae662edd92681275795c87f490316f65db7cffd6a9e5cd91c3debdeafd64b"
+    },
+    {
+      "type": "evidence",
+      "path": "phr\\reusable-assets.yaml",
+      "checksum": "19800fa4cade73df653fa8f43fcb1efb4dd577f3e60c4ecbfc47d69fa5cd39e9"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\data-cloud.md",
+      "checksum": "6550168be994f0cf464c1848cdc4e64f48ca9f2d73ce50382ee3cdf37a182dbd"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\digital-marketing.md",
+      "checksum": "214770ffc9d1f860dd48fc0c8052235012fa2299ecdbe4a8f9a9cb2bcd1fa83c"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\finance.md",
+      "checksum": "c19aebd382a774aa59aaff02c1bf71ec260c799119d23bebd4bd60e73a6612cb"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\flashit.md",
+      "checksum": "b08c5e2bb73bf414cbed6a6a87a75a52eb3180404b606f389247f7fcb1c6b8c0"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\phr.md",
+      "checksum": "4846fcfd9ed56e74de80024809d0f1adf10cbe58086bc28949f48831de95d201"
+    },
+    {
+      "type": "evidence",
+      "path": "product-scorecards\\yappc.md",
+      "checksum": "22ec24bf66f67fdcf955210ab8edbe7bd283d2eb097177a02c166c36f745158c"
+    },
+    {
+      "type": "evidence",
+      "path": "runtime-dependency-failure-injection\\runtime-dependency-failure-injection-latest.json",
+      "checksum": "69440dfa5187e9c1349515c162e2fd4b7ac1c8c134f6ad06440992efec8046bb"
+    },
+    {
+      "type": "evidence",
+      "path": "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\domain-registry-summary.json",
+      "checksum": "5a6261f8fac5387ab105792b7ced4b5826a1264e6f48f29fde8360ce551927e5"
+    },
+    {
+      "type": "evidence",
+      "path": "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\failing-checks.json",
+      "checksum": "a048329809fac4d47df4f8c9e91a0a7659708f5eb095064b5ff7dce5480e18e8"
+    },
+    {
+      "type": "evidence",
+      "path": "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\kernel-package-build-summary.json",
+      "checksum": "1e912f1b8ae053697a667509b1e9b166de1b0e3d68318160044dcfef0e77dc68"
+    },
+    {
+      "type": "evidence",
+      "path": "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\platform-checks.md",
+      "checksum": "df77b6b5fbfd7de899ea4b66f1c6d160b9d6458575cb128aa4327154de35826c"
+    },
+    {
+      "type": "evidence",
+      "path": "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\product-registry-summary.json",
+      "checksum": "4901512fa4542d6f789003a09fb85d782cd3fe89e3c825ec161399b0fd5411a1"
+    }
+  ],
+  "checksums": {
+    "action-plane-route-lifecycle.json": "ade5e1f3dabebe278003e6a1c51cb8cf5df875e196e3f8341b9c31b92bfcc397",
+    "affected-product-release-profile.json": "657f26ac864690df28d3a5a2e57a0f06c185c1e530455d2ac7900840f2ee9e54",
+    "atomic-workflow-posture.json": "4c63a9065ee247a9bea1988aae690dbae73644bed1027ffbafb9fa6029641bea",
+    "data-cloud-maturity-proof.json": "250dbaf38917f1afca51e47c60fc07b4bfbcc41aa4b295cff226c002f3e8a4fd",
+    "data-cloud-release-runtime-profile.json": "3207da15f18e9f77cb6a2f425612c724a14f737dcc4016864d284443ccace2f4",
+    "guided-reuse-recommendations.json": "b7c1fa0d87c0cb60ec2bcae189940d4f1070be6024eefc13cfe252aa43538c22",
+    "guided-reuse-recommendations.yaml": "0d9b3b346f793c6c91d396c8e32368b9c3a7f88ae0301fe57d3aa874399130f8",
+    "kernel-implementation-plan-coverage.json": "3777f6e6b7398c58dca1d77d504465e28f81f507b69289f1b066b2a480d020bc",
+    "kernel-implementation-plan-progress.json": "14b7b6a63646b4ca663a68115836fd3246f2f695a795249c07d7f75ae6217454",
+    "kernel-implementation-task-matrix.json": "8c2a6ecad11c0e2a0ac9e27b3e6879ab5a04e556a2807f784632e180442bc8c3",
+    "kernel-implementation-wave-run.json": "7079e76a9c8a842e23206b06b9118a9298d732fd38724db949c6e9e6cb1d969b",
+    "openapi-breaking-changes.json": "ab3122d265d5febae9d54a7a8740447afcdc90a9e16c25e6552b00aabfa0dc4c",
+    "product-a11y-route-matrix.json": "900e74a8b20337487bf80d7df45ff3e8cbeff569abe15b7759b81d2b9e5e206e",
+    "product-capability-matrix-validation.json": "a26fc41e652aded7da928aeb35af8e994f611e8012594a175dc78f4488f6acb9",
+    "product-cost-budgets.json": "022a56271e7e64f1e7bf68942096d8b5559031b35e23d4f744b3c4a9352de05b",
+    "product-domain-invariants.json": "fcf30c7ab0df0133c18fef8fc3c35ac3db237c234e5d42aa589eabbb40cf255a",
+    "product-family-asset-promotion-policy.json": "c881793bab98a2b98fbe834f64e34dfd782839deab6d43b1b2ff8b0b0d266cff",
+    "product-feature-completeness-report.json": "3fe9687d7b5e29f2546e6b79f8e81d3370ea1f6bcd906bc51c81157a2ae6faca",
+    "product-interaction-coverage-matrix.json": "f73df01ab7184594572cb21f49bf40a25315322a7d8248fc99e97f64277116e1",
+    "product-release-evidence-pack.digital-marketing.json": "74fd58d51f0f4c01b98aae1c90e3b245bd2ec04e2127c1ecf448d77ee786077c",
+    "product-release-evidence-pack.phr.json": "4b12974fab5e19232c5eb893376cd7049cdf39af19b7975d3c169bb2d9f567c4",
+    "product-release-evidence-packs.json": "211eb23d8d72b9de1f2872c3102a175abed57c2149849b32cd274eece13320b0",
+    "product-release-readiness.digital-marketing.json": "1f6172a7985cec5b15289fc5cdd883428d96214b112f1b4f46d9cc764a6f6f2a",
+    "product-release-readiness.json": "1cce8425d94e53b2b0b2188a114da3af6b534638e8001e4d975106a9637259c3",
+    "product-release-readiness.phr.json": "7c8a19d8f0487f55568981cc02cc05d75596b36d382c093b1130e8ea159e10f0",
+    "product-slo-budgets.json": "9f3a666b9437338be7a34bb06006f5d123a9335da9fec258e9438da552128a4f",
+    "slo-dashboard-evidence.json": "3b7dd92e7ea4b68f52f763928755265dbd6bbfbf2faab80a1e3db4c2ede08ad7",
+    "wave2-product-quality-scorecard.json": "990e9c0a630edb3f337d1ffc8c6fd32d464b0fe90d88ddf5c6a979b9877ca26e",
+    "a11y-behavioral-proof\\a11y-behavioral-proof-latest.json": "3e8dd0048a51586e937236cb5abcfd1c52dc31f304f0b6b39a23c3b19899ff7d",
+    "ai-governance-behavioral-proof\\ai-governance-behavioral-proof-latest.json": "278a6e8eb3899e4c8a92c88bc690f01959289e534cc12173650e73c0fcbac2d2",
+    "atomic-workflow-failure-injection\\atomic-workflow-failure-injection-latest.json": "bc6ab955435847adf13e3c29890240b6a727221b358c87d7d96a31bbc6a292c8",
+    "data-cloud\\platform-provider-readiness.json": "4d6d8799ecb576e3c41da79e67a840d5dfdb9c089ba620bff15429e817f3f2cd",
+    "digital-marketing\\digital-marketing-lifecycle-evidence-pack.json": "c6d57244603201d586293880bc63dc8b9b82881b1fa268be0b4a74d250ada511",
+    "digital-marketing\\dmos-release-readiness.json": "6dffcc05292b053919f402244c66d1cbe9c12a3aea64fdbe288f0cf87bfad0c2",
+    "digital-marketing\\foundation-usage-profile.json": "7a5f8225deb55667bb6015f0d2d642d2ff95e5ed4516274233e5b1d8be056dd6",
+    "digital-marketing\\reusable-assets-registration.json": "6bd1d7bcc761dcaa493635feba639f3c16b79e9d612a6639270690f16efba335",
+    "digital-marketing\\reusable-assets.yaml": "74a990775665b7665daff5b993fce20b3c7132a8025034b17ee2e0fe4ed89a9b",
+    "i18n-behavioral-proof\\i18n-behavioral-proof-latest.json": "4f6776b8ff98d4262358067ce7fbc0307cd90acdb2676cb33f13100726c3fabe",
+    "phr\\foundation-usage-profile.json": "937a3d810d3c4e7ab60350f0e889f65fabf07a0132bcb9686610b64c60477dc0",
+    "phr\\phr-lifecycle-evidence-pack.json": "461977e5ffea7a37b4e770d6b81908be318ea337e1b1b4cbae1874abc6b5b3da",
+    "phr\\phr-release-readiness.json": "ceb9b467fa02d9aad16f9569bea6fe71f54b5c55e1f0c1ce3e20463bc2e8e3c7",
+    "phr\\reusable-assets-registration.json": "046ae662edd92681275795c87f490316f65db7cffd6a9e5cd91c3debdeafd64b",
+    "phr\\reusable-assets.yaml": "19800fa4cade73df653fa8f43fcb1efb4dd577f3e60c4ecbfc47d69fa5cd39e9",
+    "product-scorecards\\data-cloud.md": "6550168be994f0cf464c1848cdc4e64f48ca9f2d73ce50382ee3cdf37a182dbd",
+    "product-scorecards\\digital-marketing.md": "214770ffc9d1f860dd48fc0c8052235012fa2299ecdbe4a8f9a9cb2bcd1fa83c",
+    "product-scorecards\\finance.md": "c19aebd382a774aa59aaff02c1bf71ec260c799119d23bebd4bd60e73a6612cb",
+    "product-scorecards\\flashit.md": "b08c5e2bb73bf414cbed6a6a87a75a52eb3180404b606f389247f7fcb1c6b8c0",
+    "product-scorecards\\phr.md": "4846fcfd9ed56e74de80024809d0f1adf10cbe58086bc28949f48831de95d201",
+    "product-scorecards\\yappc.md": "22ec24bf66f67fdcf955210ab8edbe7bd283d2eb097177a02c166c36f745158c",
+    "runtime-dependency-failure-injection\\runtime-dependency-failure-injection-latest.json": "69440dfa5187e9c1349515c162e2fd4b7ac1c8c134f6ad06440992efec8046bb",
+    "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\domain-registry-summary.json": "5a6261f8fac5387ab105792b7ced4b5826a1264e6f48f29fde8360ce551927e5",
+    "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\failing-checks.json": "a048329809fac4d47df4f8c9e91a0a7659708f5eb095064b5ff7dce5480e18e8",
+    "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\kernel-package-build-summary.json": "1e912f1b8ae053697a667509b1e9b166de1b0e3d68318160044dcfef0e77dc68",
+    "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\platform-checks.md": "df77b6b5fbfd7de899ea4b66f1c6d160b9d6458575cb128aa4327154de35826c",
+    "04f03168e597cca638110f0025bd6231ac636fe5\\baseline\\product-registry-summary.json": "4901512fa4542d6f789003a09fb85d782cd3fe89e3c825ec161399b0fd5411a1"
+  }
+}

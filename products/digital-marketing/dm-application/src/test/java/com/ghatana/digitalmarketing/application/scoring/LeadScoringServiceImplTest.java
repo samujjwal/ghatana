@@ -27,14 +27,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LeadScoringServiceImplTest extends EventloopTestBase {
 
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryLeadScoreRepository repository;
+    private EphemeralLeadScoreRepository repository;
     private LeadScoringServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
-        repository = new InMemoryLeadScoreRepository();
+        repository = new EphemeralLeadScoreRepository();
         service = new LeadScoringServiceImpl(kernelAdapter, repository);
 
         ctx = DmOperationContext.builder()
@@ -259,7 +259,7 @@ class LeadScoringServiceImplTest extends EventloopTestBase {
 
     // ---- test doubles ----
 
-    private static final class InMemoryLeadScoreRepository implements LeadScoreRepository {
+    private static final class EphemeralLeadScoreRepository implements LeadScoreRepository {
         private final ConcurrentHashMap<String, LeadScore> store = new ConcurrentHashMap<>();
 
         @Override

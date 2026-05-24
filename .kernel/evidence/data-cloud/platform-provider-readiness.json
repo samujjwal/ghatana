@@ -1,0 +1,47 @@
+{
+  "productId": "data-cloud",
+  "productKind": "platform-provider",
+  "status": "blocked",
+  "lastChecked": "2026-05-23",
+  "checks": {
+    "bootstrapBuildWithoutPlatformProviders": {
+      "status": "passed",
+      "evidence": "platform/typescript/kernel-lifecycle/src/providers/LifecycleProviderContext.ts"
+    },
+    "platformProviderHealth": {
+      "status": "passed",
+      "evidence": "scripts/check-kernel-provider-mode.mjs"
+    },
+    "runtimeTruthProvider": {
+      "status": "passed",
+      "evidence": "products/data-cloud/extensions/kernel-bridge/src/main/java/com/ghatana/datacloud/kernel/DataCloudRuntimeTruthProvider.java"
+    },
+    "productNeutrality": {
+      "status": "passed",
+      "evidence": "products/data-cloud/planes/action/engine/src/main/java/com/ghatana/aep/catalog/AepCentralCatalogService.java"
+    },
+    "actionPlaneGovernance": {
+      "status": "passed",
+      "evidence": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java"
+    }
+  },
+  "requiredGates": [
+    "bootstrap-build-without-platform-providers",
+    "platform-provider-health",
+    "runtime-truth-provider"
+  ],
+  "requiredRuntimeSignals": [
+    "lifecycle-events",
+    "artifact-refs",
+    "health-snapshots",
+    "provenance-refs",
+    "tenant-scoping"
+  ],
+  "prohibitedBusinessProductRoots": [
+    "products/digital-marketing",
+    "products/finance",
+    "products/phr",
+    "products/flashit"
+  ],
+  "notes": "Data-Cloud remains blocked until all platform-provider gates have executable proof and evidence refs are validated."
+}

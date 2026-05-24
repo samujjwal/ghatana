@@ -113,8 +113,8 @@ public final class DmosCampaignServlet {
             campaignService,
             null,
             eventloop,
-            DmosMetricsCollector.noop(),
-            new DmosTelemetry(io.opentelemetry.api.OpenTelemetry.noop()),
+            DmosMetricsCollector.disabled(),
+            DmosTelemetry.disabled(),
             new DmosHttpContextFactory(false, null)
         );
     }

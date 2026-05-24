@@ -9,6 +9,7 @@ description = "Data Cloud Platform Governance — PII masking, field redaction, 
 
 dependencies {
     api(project(":platform:java:core"))
+    implementation(project(":products:data-cloud:planes:data:entity"))
 
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

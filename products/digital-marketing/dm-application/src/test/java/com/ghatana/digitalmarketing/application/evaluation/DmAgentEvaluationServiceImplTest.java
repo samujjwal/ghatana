@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmAgentEvaluationServiceImpl")
 class DmAgentEvaluationServiceImplTest extends EventloopTestBase {
 
-    private InMemoryEvaluationRepository repository;
+    private EphemeralEvaluationRepository repository;
     private DmAgentEvaluationServiceImpl service;
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryEvaluationRepository();
+        repository = new EphemeralEvaluationRepository();
         service = new DmAgentEvaluationServiceImpl(repository, new StubKernelAdapter(true));
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -109,7 +109,7 @@ class DmAgentEvaluationServiceImplTest extends EventloopTestBase {
             0.95, "PASS");
     }
 
-    static final class InMemoryEvaluationRepository implements DmAgentEvaluationRepository {
+    static final class EphemeralEvaluationRepository implements DmAgentEvaluationRepository {
         private final Map<String, DmAgentEvaluation> store = new ConcurrentHashMap<>();
 
         @Override public Promise<DmAgentEvaluation> save(DmAgentEvaluation e) { store.put(e.getId(), e); return Promise.of(e); }

@@ -2,12 +2,12 @@ package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @doc.type class
@@ -46,23 +46,13 @@ class PhrNotificationSendersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("falls back to a no-op sender when no dependency is registered")
-    void fallsBackToNoOpSender() {
+    @DisplayName("fails closed when no sender dependency is registered")
+    void failsClosedWhenSenderMissing() {
         PhrTestInfrastructure.StubDataCloudAdapter dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
         KernelContext context = PhrTestInfrastructure.createTestContext(dataCloud);
 
-        PhrNotificationSender sender = PhrNotificationSenders.fromContext(context);
-
-        runPromise(() -> sender.scheduleAppointmentReminder(new PhrNotificationSender.AppointmentReminderNotification(
-            "appointment-1",
-            "patient-1",
-            "provider-1",
-            Instant.now().plusSeconds(3600),
-            PhrNotificationSender.DEFAULT_CHANNELS,
-            "corr-appointment-1",
-            "phr_appointment_reminder_schedule"
-        )));
-
-        assertThat(sender).isInstanceOf(ResilientPhrNotificationSender.class);
+        assertThatThrownBy(() -> PhrNotificationSenders.fromContext(context))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("PhrNotificationSender dependency is required");
     }
 }

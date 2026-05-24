@@ -44,6 +44,16 @@ const REQUIRED_ROLLBACK_EVIDENCE_REFS = [
   'products/phr/lifecycle/rollback/healthcare-post-rollback-verification-gates.yaml',
   'products/phr/lifecycle/rollback/rollback-approval-contract.yaml',
 ];
+const ROLLBACK_READY_LOCAL = {
+  status: 'ready-local',
+  classification: 'ready/local',
+  reasonCode: 'phr-rollback-ready-local-production',
+};
+const ROLLBACK_TARGET_PARTIAL = {
+  status: 'target-partial',
+  classification: 'target/partial',
+  reasonCode: 'phr-rollback-after-stable-deploy-verify',
+};
 const REQUIRED_NON_LOCAL_TARGETS = ['dev', 'staging', 'prod'];
 
 function readJson(relativePath) {
@@ -166,14 +176,20 @@ function validateRollbackReadiness(label, rollbackReadiness) {
   if (!rollbackReadiness || typeof rollbackReadiness !== 'object') {
     fail(`${label} must classify PHR rollback readiness while rollback is absent`);
   }
-  if (rollbackReadiness.status !== 'target-partial') {
-    fail(`${label}.status must be target-partial`);
-  }
-  if (rollbackReadiness.classification !== 'target/partial') {
-    fail(`${label}.classification must be target/partial`);
-  }
-  if (rollbackReadiness.reasonCode !== 'phr-rollback-after-stable-deploy-verify') {
-    fail(`${label}.reasonCode must be phr-rollback-after-stable-deploy-verify`);
+
+  const isReadyLocal =
+    rollbackReadiness.status === ROLLBACK_READY_LOCAL.status
+    && rollbackReadiness.classification === ROLLBACK_READY_LOCAL.classification
+    && rollbackReadiness.reasonCode === ROLLBACK_READY_LOCAL.reasonCode;
+  const isTargetPartial =
+    rollbackReadiness.status === ROLLBACK_TARGET_PARTIAL.status
+    && rollbackReadiness.classification === ROLLBACK_TARGET_PARTIAL.classification
+    && rollbackReadiness.reasonCode === ROLLBACK_TARGET_PARTIAL.reasonCode;
+
+  if (!isReadyLocal && !isTargetPartial) {
+    fail(
+      `${label} must be either ${ROLLBACK_READY_LOCAL.status}/${ROLLBACK_READY_LOCAL.classification}/${ROLLBACK_READY_LOCAL.reasonCode} or ${ROLLBACK_TARGET_PARTIAL.status}/${ROLLBACK_TARGET_PARTIAL.classification}/${ROLLBACK_TARGET_PARTIAL.reasonCode}`,
+    );
   }
   assertIncludesAll(
     `${label}.requiredBeforeEnablement`,
@@ -221,11 +237,17 @@ function validateRollbackEvidence() {
   if (readiness.productId !== PRODUCT_ID) {
     fail(`${readinessPath} must declare productId: phr`);
   }
-  if (readiness.status !== 'target-partial' || readiness.classification !== 'target/partial') {
-    fail(`${readinessPath} must preserve target-partial classification until stable deploy history exists`);
+
+  const readinessIsReady = readiness.status === 'ready' && readiness.classification === 'production-ready';
+  const readinessIsTargetPartial = readiness.status === 'target-partial' && readiness.classification === 'target/partial';
+  if (!readinessIsReady && !readinessIsTargetPartial) {
+    fail(`${readinessPath} must declare either ready/production-ready or target-partial/target/partial classification`);
   }
-  if (readiness.promotionBlocked !== true) {
-    fail(`${readinessPath} must declare promotionBlocked: true`);
+  if (readinessIsReady && readiness.promotionBlocked !== false) {
+    fail(`${readinessPath} must declare promotionBlocked: false when readiness is production-ready`);
+  }
+  if (readinessIsTargetPartial && readiness.promotionBlocked !== true) {
+    fail(`${readinessPath} must declare promotionBlocked: true when readiness is target-partial`);
   }
   assertIncludesAll(`${readinessPath}.evidenceRefs`, readiness.evidenceRefs, REQUIRED_ROLLBACK_EVIDENCE_REFS.filter((ref) => ref !== readinessPath));
 
@@ -239,7 +261,10 @@ function validateRollbackEvidence() {
   }
 
   const stablePolicy = readYaml('products/phr/lifecycle/rollback/stable-deployment-manifest-history-policy.yaml');
-  if (stablePolicy.status !== 'blocked') {
+  if (readinessIsReady && stablePolicy.status !== 'ready') {
+    fail('PHR stable deployment manifest history policy must be ready when rollback readiness evidence is production-ready');
+  }
+  if (readinessIsTargetPartial && stablePolicy.status !== 'blocked') {
     fail('PHR stable deployment manifest history policy must remain blocked until real deploy/verify evidence exists');
   }
   assertIncludesAll(
@@ -319,7 +344,7 @@ function main() {
   validateRollbackReadiness('PHR registry rollbackReadiness', phr.rollbackReadiness);
   validateRollbackEvidence();
   if (kernelProduct.phases?.rollback || kernelProduct.requiredManifests?.rollback) {
-    fail('PHR rollback phase/manifests must remain absent until rollbackReadiness is promoted from target-partial');
+    fail('PHR rollback phase/manifests must remain absent until rollbackReadiness is enabled for non-local environments');
   }
 
   const readinessEvidencePath = 'products/phr/lifecycle/readiness-evidence.yaml';

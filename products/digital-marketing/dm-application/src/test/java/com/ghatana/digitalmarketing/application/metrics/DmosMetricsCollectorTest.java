@@ -16,12 +16,12 @@ class DmosMetricsCollectorTest {
     @Test
     @DisplayName("noop returns no-op implementation")
     void noop_returnsNoOpImplementation() {
-        DmosMetricsCollector collector = DmosMetricsCollector.noop();
+        DmosMetricsCollector collector = DmosMetricsCollector.disabled();
 
         // Should not throw any exception
         collector.increment(DmosMetricsCollector.CAMPAIGN_CREATED, Map.of("tenantId", "test"));
 
-        DmosMetricsCollector noop = DmosMetricsCollector.noop();
+        DmosMetricsCollector noop = DmosMetricsCollector.disabled();
         assertThat(noop).isNotNull();
     }
 

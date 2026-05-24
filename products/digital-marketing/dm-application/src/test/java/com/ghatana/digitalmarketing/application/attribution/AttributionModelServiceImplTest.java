@@ -27,12 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("AttributionModelServiceImpl")
 class AttributionModelServiceImplTest {
 
-    private InMemoryAttributionModelRepository repository;
+    private EphemeralAttributionModelRepository repository;
     private AttributionModelServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryAttributionModelRepository();
+        repository = new EphemeralAttributionModelRepository();
         service = new AttributionModelServiceImpl(repository);
     }
 
@@ -107,7 +107,7 @@ class AttributionModelServiceImplTest {
 
     // ── test doubles ─────────────────────────────────────────────────────────
 
-    private static final class InMemoryAttributionModelRepository implements AttributionModelRepository {
+    private static final class EphemeralAttributionModelRepository implements AttributionModelRepository {
         private final ConcurrentHashMap<String, AttributionModel> store = new ConcurrentHashMap<>();
 
         @Override

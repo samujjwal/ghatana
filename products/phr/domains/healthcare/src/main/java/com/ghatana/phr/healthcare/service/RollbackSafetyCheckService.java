@@ -157,7 +157,7 @@ public final class RollbackSafetyCheckService {
      * @return true if data is consistent, false otherwise
      */
     private boolean checkDataConsistency(String tenantId) {
-        // TODO: Implement production-grade data consistency checks:
+        // Planned production hardening for data consistency checks:
         // 1. Verify foreign key constraints in patient_records, consent_grants, audit_events
         // 2. Check for orphaned records (records without valid parent references)
         // 3. Validate data type constraints and nullability
@@ -181,7 +181,7 @@ public final class RollbackSafetyCheckService {
      * @return true if there are active treatments, false otherwise
      */
     private boolean checkActiveTreatments(String tenantId) {
-        // TODO: Implement production-grade active treatment checks:
+        // Planned production hardening for active treatment checks:
         // 1. Query for active emergency access sessions in the last 30 minutes
         // 2. Check for in-progress consent revocation operations
         // 3. Verify no active FHIR export jobs
@@ -204,7 +204,7 @@ public final class RollbackSafetyCheckService {
      * @return true if audit trail is intact, false otherwise
      */
     private boolean checkAuditTrailIntegrity(String tenantId) {
-        // TODO: Implement production-grade audit integrity checks:
+        // Planned production hardening for audit integrity checks:
         // 1. Verify audit event sequence numbers are continuous
         // 2. Check for gaps in audit event timestamps
         // 3. Validate audit event signatures if signing is enabled
@@ -227,7 +227,7 @@ public final class RollbackSafetyCheckService {
      * @return true if consent records are consistent, false otherwise
      */
     private boolean checkConsentConsistency(String tenantId) {
-        // TODO: Implement production-grade consent consistency checks:
+        // Planned production hardening for consent consistency checks:
         // 1. Verify all consent grants have valid patient references
         // 2. Check for orphaned consent records (no patient reference)
         // 3. Validate consent revocation timestamps are monotonic

@@ -42,7 +42,7 @@ class DmosTrialOnboardingServletTest extends EventloopTestBase {
             service,
             contextFactory,
             new ObjectMapper(),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.disabled()
         ).getServlet();
     }
 

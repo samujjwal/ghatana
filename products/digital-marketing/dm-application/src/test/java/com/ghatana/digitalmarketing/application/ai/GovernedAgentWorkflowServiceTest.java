@@ -7,7 +7,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionLogEntry;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
-import com.ghatana.digitalmarketing.infra.transparency.InMemoryAiActionLogRepository;
+import com.ghatana.digitalmarketing.infra.transparency.EphemeralAiActionLogRepository;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,13 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GovernedAgentWorkflowServiceTest {
 
     private AiActionLogRepository aiActionLogRepository;
-    private InMemoryAgentPort agentPort;
+    private EphemeralAgentPort agentPort;
     private GovernedAgentWorkflowService service;
 
     @BeforeEach
     void setUp() {
-        aiActionLogRepository = new InMemoryAiActionLogRepository();
-        agentPort = new InMemoryAgentPort();
+        aiActionLogRepository = new EphemeralAiActionLogRepository();
+        agentPort = new EphemeralAgentPort();
         service = new GovernedAgentWorkflowService(agentPort, aiActionLogRepository, new AiPolicyCheckServiceImpl());
     }
 
@@ -127,7 +127,7 @@ class GovernedAgentWorkflowServiceTest {
 
     // ── test doubles ─────────────────────────────────────────────────────────
 
-    private static final class InMemoryAgentPort implements DmAgentOrchestrationPort {
+    private static final class EphemeralAgentPort implements DmAgentOrchestrationPort {
         private DmAgentOrchestrationPort.AgentResponse response;
 
         void setResponse(DmAgentOrchestrationPort.AgentResponse response) {

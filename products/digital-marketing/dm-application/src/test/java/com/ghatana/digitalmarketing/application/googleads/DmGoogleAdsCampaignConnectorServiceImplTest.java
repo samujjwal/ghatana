@@ -47,9 +47,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 @DisplayName("DmGoogleAdsCampaignConnectorServiceImpl Tests")
 class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
 
-    private InMemoryConnectorRepository connectorRepository;
-    private InMemoryCampaignRepository campaignRepository;
-    private InMemoryCommandRepository commandRepository;
+    private EphemeralConnectorRepository connectorRepository;
+    private EphemeralCampaignRepository campaignRepository;
+    private EphemeralCommandRepository commandRepository;
     private DmCommandService commandService;
     private ObjectMapper objectMapper;
     private DmGoogleAdsCampaignConnectorServiceImpl service;
@@ -59,9 +59,9 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        connectorRepository = new InMemoryConnectorRepository();
-        campaignRepository = new InMemoryCampaignRepository();
-        commandRepository = new InMemoryCommandRepository();
+        connectorRepository = new EphemeralConnectorRepository();
+        campaignRepository = new EphemeralCampaignRepository();
+        commandRepository = new EphemeralCommandRepository();
         commandService = new DmCommandServiceImpl(commandRepository, new AllowingKernelAdapter(true));
         objectMapper = new ObjectMapper();
         DigitalMarketingKernelAdapter kernelAdapter = new AllowingKernelAdapter(true);
@@ -326,7 +326,7 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
                 ))));
     }
 
-    static final class InMemoryConnectorRepository implements DmConnectorRepository {
+    static final class EphemeralConnectorRepository implements DmConnectorRepository {
         private final Map<String, DmConnectorConfig> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -362,7 +362,7 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCredentialRepository implements DmGoogleAdsCredentialRepository {
+    static final class EphemeralCredentialRepository implements DmGoogleAdsCredentialRepository {
         private final Map<String, DmGoogleAdsCredential> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -394,7 +394,7 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
+    static final class EphemeralCampaignLinkRepository implements DmGoogleAdsCampaignLinkRepository {
         private final Map<String, DmGoogleAdsCampaignLink> byCampaignId = new ConcurrentHashMap<>();
 
         @Override
@@ -409,7 +409,7 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    static final class InMemoryCampaignRepository implements CampaignRepository {
+    static final class EphemeralCampaignRepository implements CampaignRepository {
         private final Map<String, Campaign> byId = new ConcurrentHashMap<>();
 
         @Override
@@ -516,7 +516,7 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCommandRepository implements DmCommandRepository {
+    private static final class EphemeralCommandRepository implements DmCommandRepository {
         private final ConcurrentHashMap<String, DmCommand> store = new ConcurrentHashMap<>();
 
         @Override
