@@ -70,6 +70,11 @@ const ROLLBACK_READY_LOCAL = {
   classification: 'ready/local',
   reasonCode: 'phr-rollback-ready-local-production',
 };
+const ROLLBACK_READY_ENV_SPECIFIC = {
+  status: 'ready-env-specific',
+  classification: 'ready/env-specific',
+  reasonCode: 'phr-rollback-ready-staging-prod-validated',
+};
 const ROLLBACK_TARGET_PARTIAL = {
   status: 'target-partial',
   classification: 'target/partial',
@@ -214,15 +219,28 @@ function validateRollbackReadiness(label, rollbackReadiness, errors) {
     rollbackReadiness.status === ROLLBACK_READY_LOCAL.status
     && rollbackReadiness.classification === ROLLBACK_READY_LOCAL.classification
     && rollbackReadiness.reasonCode === ROLLBACK_READY_LOCAL.reasonCode;
+  const isReadyEnvSpecific =
+    rollbackReadiness.status === ROLLBACK_READY_ENV_SPECIFIC.status
+    && rollbackReadiness.classification === ROLLBACK_READY_ENV_SPECIFIC.classification
+    && rollbackReadiness.reasonCode === ROLLBACK_READY_ENV_SPECIFIC.reasonCode;
   const isTargetPartial =
     rollbackReadiness.status === ROLLBACK_TARGET_PARTIAL.status
     && rollbackReadiness.classification === ROLLBACK_TARGET_PARTIAL.classification
     && rollbackReadiness.reasonCode === ROLLBACK_TARGET_PARTIAL.reasonCode;
 
-  if (!isReadyLocal && !isTargetPartial) {
+  if (!isReadyLocal && !isReadyEnvSpecific && !isTargetPartial) {
     errors.push(
-      `${label} must be either ${ROLLBACK_READY_LOCAL.status}/${ROLLBACK_READY_LOCAL.classification}/${ROLLBACK_READY_LOCAL.reasonCode} or ${ROLLBACK_TARGET_PARTIAL.status}/${ROLLBACK_TARGET_PARTIAL.classification}/${ROLLBACK_TARGET_PARTIAL.reasonCode}`,
+      `${label} must be either ${ROLLBACK_READY_LOCAL.status}/${ROLLBACK_READY_LOCAL.classification}/${ROLLBACK_READY_LOCAL.reasonCode}, ${ROLLBACK_READY_ENV_SPECIFIC.status}/${ROLLBACK_READY_ENV_SPECIFIC.classification}/${ROLLBACK_READY_ENV_SPECIFIC.reasonCode}, or ${ROLLBACK_TARGET_PARTIAL.status}/${ROLLBACK_TARGET_PARTIAL.classification}/${ROLLBACK_TARGET_PARTIAL.reasonCode}`,
     );
+  }
+  if (isReadyEnvSpecific) {
+    const envReadiness = rollbackReadiness.environmentReadiness;
+    const requiredEnvs = ['local', 'dev', 'staging', 'prod'];
+    for (const env of requiredEnvs) {
+      if (String(envReadiness?.[env] ?? '').toLowerCase() !== 'ready') {
+        errors.push(`${label}.environmentReadiness.${env} must be ready for env-specific rollback readiness`);
+      }
+    }
   }
   includesAll(
     `${label}.requiredBeforeEnablement`,

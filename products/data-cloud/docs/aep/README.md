@@ -16,7 +16,7 @@ During migration, some AEP implementation modules may remain under `products/dat
 ## Terminology Boundary
 
 - Data-Cloud is the governed data/storage product.
-- AEP owns EventCloud, PatternSpec/EPL, operator runtime, pattern lifecycle, adaptive learning, agents-as-operators, and adaptive event governance.
+- AEP owns EventCloud, PatternSpec/EPL, operator runtime, pattern lifecycle, adaptive learning, agent capabilities, and adaptive event governance.
 - Data-Cloud may provide EventCloud persistence plugins, not EventCloud semantics.
 - Data, Event, Context, Governance, Intelligence, and Operations planes must not import AEP implementation internals.
 

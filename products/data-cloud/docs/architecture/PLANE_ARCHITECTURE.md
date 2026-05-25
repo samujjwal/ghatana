@@ -31,7 +31,7 @@ Data-Cloud product
 AEP product
   EventCloud
   PatternSpec/EPL
-  EventOperator and AgentOperator runtime
+  EventOperatorCapability runtime
   adaptive learning and pattern governance
 ```
 
@@ -155,7 +155,7 @@ products/data-cloud/
 | `aep/operator-contracts/` | `planes/action/operator-contracts/` | Action | Compatibility area; AEP operator semantics should move to AEP-owned contracts/specs |
 | `aep/engine/` | `planes/action/engine/` | Action | Compatibility area for existing runtime code; PatternSpec and operator runtime semantics are AEP-owned |
 | `aep/orchestrator/` | `planes/action/orchestrator/` | Action | Compatibility area for orchestration code; agent orchestration semantics are AEP-owned |
-| `aep/agent-runtime/` | `planes/action/agent-runtime/` | Action | Compatibility area; AgentOperator runtime semantics are AEP-owned |
+| `aep/agent-runtime/` | `planes/action/agent-runtime/` | Action | Compatibility area; EventOperatorCapability runtime semantics are AEP-owned |
 | `aep/event-cloud-bridge/` | `planes/action/event-bridge/` | Action/Event | Persistence bridge only; EventCloud semantics are AEP-owned |
 | `aep/server/` | `planes/action/server/` | Action/Delivery | Compatibility server during boundary cleanup |
 | `platform-api/` | `delivery/api/` | Delivery | Data Cloud API handlers and route adapters |
@@ -226,7 +226,7 @@ Initial candidates:
 
 | Platform Module | Recommendation |
 | --- | --- |
-| `platform:java:agent-core` | Keep minimal generic interfaces in platform; move AEP-specific runtime, dispatch, review, and AgentOperator semantics to AEP. Data-Cloud may keep persistence models only. |
+| `platform:java:agent-core` | Keep minimal generic interfaces in platform; move AEP-specific runtime, dispatch, review, and EventOperatorCapability semantics to AEP. Data-Cloud may keep persistence models only. |
 | `platform:java:workflow` | Keep generic workflow primitives if other products use them; keep Data-Cloud persistence metadata separate from AEP runtime semantics. |
 | `platform:java:messaging` | Keep generic messaging abstractions in platform; move Data-Cloud storage-plane event routing into `planes/event`; keep EventCloud semantics in AEP. |
 | `platform:java:ai-integration` | Keep provider abstractions in platform; move query assist, schema inference, recommendations, and action suggestions into `planes/intelligence`. |

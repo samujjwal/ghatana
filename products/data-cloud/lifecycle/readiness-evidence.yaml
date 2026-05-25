@@ -61,6 +61,7 @@ actionPlane:
 conformance:
   updateFieldsOnlyWithExecutableProof: true
   keepStatusBlockedUntil:
+    - all-evidence-run-commits-match-current-head
     - product-release-readiness-pass-true
     - ai-governance-behavioral-proof-zero-warnings
     - all-active-data-cloud-modules-compile-and-release-check
@@ -73,6 +74,7 @@ conformance:
     - scripts/check-ai-governance-behavioral-proof.mjs
     - scripts/check-product-release-readiness.mjs
     - scripts/check-action-plane-boundaries.mjs
+    - scripts/check-evidence-current-commit.mjs
     - .kernel/evidence/product-release-readiness.json
     - .kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json
     - .kernel/evidence/data-cloud-active-modules.json

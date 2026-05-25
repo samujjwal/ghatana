@@ -58,31 +58,5 @@
       "ok": true
     }
   ],
-  "pass": true,
-  "envSpecificEvidenceEnforcement": {
-    "status": "enforced",
-    "lastVerifiedAt": "2026-05-25T00:00:00.000Z",
-    "environments": {
-      "staging": {
-        "bootstrapEvidencePresent": true,
-        "bootstrapEvidenceExecutable": true,
-        "rollbackEvidencePresent": true,
-        "rollbackExternalSideEffectsCovered": true,
-        "evidenceRefs": [
-          ".kernel/evidence/data-cloud/staging-release-readiness.json"
-        ]
-      },
-      "prod": {
-        "bootstrapEvidencePresent": true,
-        "bootstrapEvidenceExecutable": true,
-        "rollbackEvidencePresent": true,
-        "rollbackExternalSideEffectsCovered": true,
-        "failClosedOnMissingEvidence": true,
-        "evidenceRefs": [
-          ".kernel/evidence/data-cloud/prod-release-readiness.json"
-        ]
-      }
-    },
-    "enforcementPolicy": "bootstrap-and-rollback-evidence-required-per-env"
-  }
+  "pass": true
 }

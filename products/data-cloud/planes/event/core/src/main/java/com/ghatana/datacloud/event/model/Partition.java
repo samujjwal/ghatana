@@ -60,7 +60,7 @@ import java.util.UUID;
  * @see Event
  * @see ConsumerGroup
  *
- * @author EventCloud Team
+ * @author Data-Cloud Event Plane Team
  * @since 1.0.0
  */
 @jakarta.persistence.Entity

@@ -587,7 +587,7 @@ public interface UnifiedOperator {
     OperatorState getState();
 
     // ============================================================================
-    // OPERATOR-AS-AGENT EVENT REPRESENTATION
+    // OPERATOR EVENT REPRESENTATION
     // ============================================================================
 
     /**

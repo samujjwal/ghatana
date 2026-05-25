@@ -8,8 +8,11 @@ const DEFAULT_SCOPES = [
   'products/data-cloud/planes/action/operator-contracts/src/main/java',
   'products/data-cloud/planes/action/agent-runtime/src/main/java',
   'products/aep/ARCHITECTURE.md',
+  'products/aep/contracts',
   'products/aep/docs/DISSERTATION_TRACEABILITY.md',
+  'products/aep/docs/specs',
   'products/data-cloud/ARCHITECTURE.md',
+  'products/data-cloud/docs',
   'docs/03-architecture',
   'docs/implementation',
   'docs/agent-system',
@@ -57,6 +60,8 @@ const FORBIDDEN_PATTERNS = [
 ];
 
 const TEXT_EXTENSIONS = new Set(['.java', '.md', '.kts', '.gradle', '.mjs', '.js', '.json', '.yaml', '.yml']);
+const UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE = '2026-06-30';
+const COMPATIBILITY_ISSUE_REF = /\b(?:AEP|GHATANA|DATA-CLOUD)-[A-Z0-9-]*\d+\b/;
 
 function walk(root, relativePath, files) {
   const fullPath = path.join(root, relativePath);
@@ -78,13 +83,15 @@ function walk(root, relativePath, files) {
   }
 }
 
-export function findAgentCapabilityDuplicateViolations(root = process.cwd(), scopes = DEFAULT_SCOPES) {
+export function findAgentCapabilityDuplicateViolations(root = process.cwd(), scopes = DEFAULT_SCOPES, options = {}) {
   const files = [];
   for (const scope of scopes) {
     walk(root, scope, files);
   }
 
   const violations = [];
+  const now = options.now instanceof Date ? options.now : new Date();
+  const compatibilityDeadline = new Date(`${UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE}T00:00:00.000Z`);
   for (const file of files) {
     const source = readFileSync(path.join(root, file), 'utf8');
     for (const rule of FORBIDDEN_PATTERNS) {
@@ -96,6 +103,67 @@ export function findAgentCapabilityDuplicateViolations(root = process.cwd(), sco
           message: rule.message,
           match: match[0],
         });
+      }
+    }
+    if (
+      file.endsWith('AgentEventOperatorCapabilityAdapter.java')
+      && /\bPromise\s*<\s*OperatorResult\s*>\s+process\s*\(\s*Event\s+\w+\s*\)/.test(source)
+    ) {
+      if (!COMPATIBILITY_ISSUE_REF.test(source) || !source.includes(UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE)) {
+        violations.push({
+          file,
+          rule: 'agent-event-process-compatibility-missing-tracker',
+          message: `Temporary process(Event) compatibility must include an issue ref and ${UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE} removal deadline`,
+          match: 'process(Event)',
+        });
+      }
+      if (now >= compatibilityDeadline) {
+        violations.push({
+          file,
+          rule: 'agent-event-process-compatibility-expired',
+          message: `Temporary process(Event) compatibility expired on ${UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE}`,
+          match: 'process(Event)',
+        });
+      }
+    }
+    if (file.endsWith('AgentEventOperatorCapabilityAdapter.java')) {
+      const adapterRules = [
+        {
+          rule: 'agent-capability-memory-noop',
+          pattern: /\bMemoryStore\.noOp\s*\(/,
+          message: 'Agent event operator capabilities must receive an injected production memory store',
+        },
+        {
+          rule: 'agent-capability-default-tenant',
+          pattern: /\bdefault-tenant\b|tenantId\s*\(\s*"default"\s*\)/,
+          message: 'Agent event operator capabilities must not use fallback tenant identities',
+        },
+        {
+          rule: 'agent-capability-empty-metrics',
+          pattern: /getMetrics\s*\(\s*\)[\s\S]{0,160}return\s+Map\.of\s*\(\s*\)\s*;/,
+          message: 'Agent event operator capabilities must expose non-empty runtime metrics',
+        },
+        {
+          rule: 'agent-capability-return-null',
+          pattern: /\breturn\s+null\s*;/,
+          message: 'Agent event operator capabilities must fail explicitly instead of returning null',
+        },
+        {
+          rule: 'agent-capability-operator-type-agent',
+          pattern: /\bOperatorType\.AGENT\b/,
+          message: 'Agent event operator capabilities must use a capability-specific operator type',
+        },
+      ];
+      for (const rule of adapterRules) {
+        const match = source.match(rule.pattern);
+        if (match) {
+          violations.push({
+            file,
+            rule: rule.rule,
+            message: rule.message,
+            match: match[0],
+          });
+        }
       }
     }
   }

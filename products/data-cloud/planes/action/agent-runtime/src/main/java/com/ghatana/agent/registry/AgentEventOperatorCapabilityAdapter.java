@@ -122,6 +122,7 @@ public final class AgentEventOperatorCapabilityAdapter
         this.humanReviewPolicy = requirePolicy(humanReviewPolicy, "humanReviewPolicy");
         this.observabilityPolicy = requirePolicy(observabilityPolicy, "observabilityPolicy");
         this.memoryStore = Objects.requireNonNull(memoryStore, "memoryStore");
+        requireDurableMemoryStore(this.memoryStore, this.memoryPolicy);
         requireSideEffectControls(sideEffectProfile, this.toolPolicy, this.humanReviewPolicy, this.observabilityPolicy, this.replayPolicy);
 
         AgentDescriptor agentDescriptor = agent.descriptor();
@@ -253,7 +254,7 @@ public final class AgentEventOperatorCapabilityAdapter
 
     @Override
     public OperatorType getType() {
-        return OperatorType.AGENT;
+        return OperatorType.EVENT_OPERATOR_CAPABILITY;
     }
 
     @Override
@@ -273,6 +274,8 @@ public final class AgentEventOperatorCapabilityAdapter
 
     @Override
     public Promise<OperatorResult> process(Event event) {
+        // AEP-AGENT-CAP-001: temporary UnifiedOperator bridge; remove by 2026-06-30
+        // after callers use process(EventContext, OperatorRuntimeContext).
         EventContext<Map<String, Object>> eventContext = eventContextFromEvent(event);
         OperatorRuntimeContext runtimeContext = runtimeContextFromEvent(event);
         return process(eventContext, runtimeContext)
@@ -384,6 +387,9 @@ public final class AgentEventOperatorCapabilityAdapter
         evidence.put("latencyNanos", latencyNanos);
         evidence.put("agentConfidence", result.getConfidence());
         evidence.put("agentEvidence", result.getEvidence());
+        evidence.put("sideEffectProfile", descriptor.sideEffectProfile().name());
+        evidence.put("auditPolicy", observabilityPolicy.getOrDefault("auditPolicy", Map.of()));
+        evidence.put("idempotencyRequired", Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired")));
         return new EventOperatorResult<>(
             true,
             Optional.of(result.getOutput() != null ? result.getOutput() : Map.of()),
@@ -525,6 +531,17 @@ public final class AgentEventOperatorCapabilityAdapter
         if (!Boolean.TRUE.equals(replayPolicy.get("idempotencyRequired"))) {
             throw new IllegalArgumentException("SIDE_EFFECTING capability requires replayPolicy.idempotencyRequired");
         }
+    }
+
+    private static void requireDurableMemoryStore(MemoryStore memoryStore, Map<String, Object> memoryPolicy) {
+        if (!memoryStore.getClass().getName().endsWith(".NoOpMemoryStore")) {
+            return;
+        }
+        if (Boolean.TRUE.equals(memoryPolicy.get("allowNoOpMemoryStore"))) {
+            return;
+        }
+        throw new IllegalArgumentException(
+            "AgentEventOperatorCapabilityAdapter requires durable MemoryStore unless memoryPolicy.allowNoOpMemoryStore is true");
     }
 
     private static boolean hasPolicy(Map<String, Object> policy, String key) {

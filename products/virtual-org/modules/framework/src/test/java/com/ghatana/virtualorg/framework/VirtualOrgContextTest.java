@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for VirtualOrgContext - the main orchestration container.
  */
 @DisplayName("VirtualOrgContext Tests")
+@SuppressWarnings("removal")
 class VirtualOrgContextTest extends EventloopTestBase {
 
     @Test

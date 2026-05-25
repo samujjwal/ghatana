@@ -72,6 +72,7 @@ jobs:
           ./gradlew ${TASKS} --no-daemon
           node ./scripts/generate-data-cloud-active-modules-evidence.mjs
           node ./scripts/check-action-plane-boundaries.mjs
+          node ./scripts/check-evidence-current-commit.mjs
 
       # Backend: Static analysis
       - name: Run backend SpotBugs

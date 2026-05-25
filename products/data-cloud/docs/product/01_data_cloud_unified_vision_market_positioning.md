@@ -716,7 +716,7 @@ not as a competing SKU.
 Data-Cloud is the governed data/storage substrate.
 AEP is the adaptive event intelligence platform.
 Data-Cloud provides trusted data, metadata, storage-plane events, audit, retention, schemas, and persistence plugins.
-AEP owns EventCloud, PatternSpec/EPL, operators, pattern detection, learning, agents-as-operators, and pattern governance.
+AEP owns EventCloud, PatternSpec/EPL, operators, pattern detection, learning, agent capabilities, and pattern governance.
 
 Every operational entity has history.
 Every event has context.

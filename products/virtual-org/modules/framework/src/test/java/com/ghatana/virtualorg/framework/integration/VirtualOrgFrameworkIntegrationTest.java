@@ -45,7 +45,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
 
     private OperatorCatalog operatorCatalog;
     private SimpleMeterRegistry meterRegistry;
-    private AgentOperatorRegistry agentRegistry;
+    private AgentCapabilityRegistry agentRegistry;
     private WorkflowPipelineAdapter workflowAdapter;
 
     private static final String TENANT_ID = "integration-test-tenant";
@@ -54,7 +54,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
     void setUp() {
         operatorCatalog = new UnifiedOperatorCatalog();
         meterRegistry = new SimpleMeterRegistry();
-        agentRegistry = new AgentOperatorRegistry(operatorCatalog, meterRegistry);
+        agentRegistry = new AgentCapabilityRegistry(operatorCatalog, meterRegistry);
         workflowAdapter = new WorkflowPipelineAdapter(operatorCatalog);
     }
 
@@ -63,7 +63,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
      *
      * GIVEN: Sprint Planning workflow with 3 agents
      * WHEN: registering agents and converting workflow to pipeline
-     * THEN: pipeline executable with all agent operators
+     * THEN: pipeline executable with all agent capability stages
      */
     @Test
     @DisplayName("Should execute complete Sprint Planning workflow as pipeline")
@@ -75,7 +75,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
 
         List<OrganizationalAgent> agents = List.of(productManager, cto, architect);
 
-        // Register agents as operators
+        // Register agent capabilities
         runPromise(() -> agentRegistry.registerAll(agents, TENANT_ID));
 
         // Define Sprint Planning workflow
@@ -114,10 +114,10 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
         assertThat(pipeline).as("Pipeline should be created").isNotNull();
         assertThat(pipeline.getName()).isEqualTo("Sprint Planning");
 
-        // Verify all agent operators registered
-        assertAgentOperatorExists("ProductManager");
-        assertAgentOperatorExists("CTO");
-        assertAgentOperatorExists("ArchitectLead");
+        // Verify all agent capability stages registered
+        assertAgentCapabilityExists("ProductManager");
+        assertAgentCapabilityExists("CTO");
+        assertAgentCapabilityExists("ArchitectLead");
 
         // Verify pipeline structure
         assertThat(pipeline.getStages())
@@ -130,7 +130,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
      *
      * GIVEN: Code Review workflow with 4 agents
      * WHEN: executing workflow as pipeline
-     * THEN: event flows through all agent operators sequentially
+     * THEN: event flows through all agent capability stages sequentially
      */
     @Test
     @DisplayName("Should execute Code Review workflow with event flow")
@@ -341,7 +341,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
     // Assertion Helpers
     // ========================================================================
 
-    private void assertAgentOperatorExists(String roleName) {
+    private void assertAgentCapabilityExists(String roleName) {
         OperatorId operatorId = OperatorId.of(
             TENANT_ID,
             "virtualorg",
@@ -422,7 +422,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
         @Override
         public com.ghatana.contracts.agent.v1.AgentResultProto execute(
                 com.ghatana.contracts.agent.v1.AgentInputProto input) {
-            return null;
+            return com.ghatana.contracts.agent.v1.AgentResultProto.getDefaultInstance();
         }
 
         @Override
@@ -432,7 +432,76 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
 
         @Override
         public com.ghatana.platform.domain.agent.registry.AgentMetrics getMetrics() {
-            return null;
+            return AgentCapabilityRegistryTestMetricSupport.testMetrics();
+        }
+    }
+
+    private static final class AgentCapabilityRegistryTestMetricSupport {
+        private AgentCapabilityRegistryTestMetricSupport() {
+        }
+
+        private static com.ghatana.platform.domain.agent.registry.AgentMetrics testMetrics() {
+            return new com.ghatana.platform.domain.agent.registry.AgentMetrics() {
+                @Override
+                public long processedCount() {
+                    return 0;
+                }
+
+                @Override
+                public long getEventsProcessed() {
+                    return 0;
+                }
+
+                @Override
+                public long getErrorCount() {
+                    return 0;
+                }
+
+                @Override
+                public double getAverageProcessingTimeMs() {
+                    return 0.0;
+                }
+
+                @Override
+                public double getCurrentThroughput() {
+                    return 0.0;
+                }
+
+                @Override
+                public double getPeakThroughput() {
+                    return 0.0;
+                }
+
+                @Override
+                public java.time.Instant getLastProcessedAt() {
+                    return java.time.Instant.EPOCH;
+                }
+
+                @Override
+                public long getMemoryUsageMb() {
+                    return 0;
+                }
+
+                @Override
+                public double getCpuUtilization() {
+                    return 0.0;
+                }
+
+                @Override
+                public int getActiveThreads() {
+                    return 0;
+                }
+
+                @Override
+                public java.util.Map<String, Object> getCustomMetrics() {
+                    return java.util.Map.of();
+                }
+
+                @Override
+                public com.ghatana.platform.health.HealthStatus getHealthStatus() {
+                    return com.ghatana.platform.health.HealthStatus.healthy();
+                }
+            };
         }
     }
 }

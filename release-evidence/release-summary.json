@@ -1,9 +1,8 @@
 {
-  "generatedAt": "2026-05-24T03:42:43.186Z",
-  "sourceCommit": "19fe467601ab80c94dd4a0f2883afa8c333e20ff",
+  "generatedAt": "2026-05-25T01:22:29.328Z",
+  "sourceCommit": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
   "sourceBranch": "main",
   "productScope": [
-    "digital-marketing",
     "phr"
   ],
   "releaseEnvironment": "staging",
@@ -63,22 +62,22 @@
     },
     "releaseScoreThresholdPolicy": {
       "available": true,
-      "pass": false,
+      "pass": true,
       "implementationAverageScore": 5,
       "releaseTargetScore": 4,
       "criticalDimensionsBelowThreshold": 0,
-      "unresolvedP0P1Blockers": 8,
+      "unresolvedP0P1Blockers": 0,
       "productSloBudgetsPass": true,
       "productCostBudgetsPass": true,
       "productDomainInvariantsPass": true,
       "openApiBreakingChangesPass": true,
-      "affectedProductCount": 2
+      "affectedProductCount": 1
     },
     "perProductReleaseReadiness": {
       "available": true,
-      "pass": false,
-      "productCount": 2,
-      "failedProductCount": 2,
+      "pass": true,
+      "productCount": 1,
+      "failedProductCount": 0,
       "releaseTargetScore": 4,
       "dimensionValidation": {
         "requiredDimensionCount": 47,
@@ -87,20 +86,7 @@
         "allProductsHaveAllDimensions": true,
         "allDimensionsScored": true
       },
-      "failedProducts": [
-        {
-          "productId": "digital-marketing",
-          "releaseVerdict": "fail",
-          "averageScore": 5,
-          "dimensionCount": 47
-        },
-        {
-          "productId": "phr",
-          "releaseVerdict": "fail",
-          "averageScore": 5,
-          "dimensionCount": 47
-        }
-      ]
+      "failedProducts": []
     },
     "requiredGates": [
       {
@@ -131,14 +117,14 @@
       {
         "gateKey": "releaseScoreThresholdPolicy",
         "available": true,
-        "pass": false
+        "pass": true
       },
       {
         "gateKey": "perProductReleaseReadiness",
         "available": true,
-        "pass": false
+        "pass": true
       }
     ]
   },
-  "pass": false
+  "pass": true
 }

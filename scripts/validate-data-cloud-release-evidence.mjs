@@ -18,6 +18,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { findEvidenceCurrentCommitViolations } from './check-evidence-current-commit.mjs';
 import { getReleaseMode, shouldFailOnWarning, validateEvidenceQuality, processValidationResults, logValidationResults } from './lib/release-evidence-policy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,6 +72,23 @@ function validateRequiredEvidenceFiles() {
   }
 
   return allFilesExist;
+}
+
+/**
+ * Validate evidence files with an evidenceRun commit belong to the current checkout.
+ */
+function validateEvidenceFreshness() {
+  const freshnessViolations = findEvidenceCurrentCommitViolations(repoRoot);
+  if (freshnessViolations.length > 0) {
+    for (const violation of freshnessViolations) {
+      logError(`Evidence freshness violation: ${violation}`);
+    }
+    return false;
+  }
+
+  logSuccess('Evidence commit freshness validated');
+  logEvidence('All evidenceRun.commit values match current HEAD');
+  return true;
 }
 
 /**
@@ -160,23 +178,23 @@ function validateDataCloudTestCoverage() {
  * Validate Data Cloud security compliance
  */
 function validateDataCloudSecurityCompliance() {
-  const dataCloudPath = path.join(repoRoot, 'products/data-cloud');
-  
   const securityFiles = [
-    path.join(dataCloudPath, '.github/workflows/security.yml'),
-    path.join(dataCloudPath, 'SECURITY.md'),
+    path.join(repoRoot, '.github/workflows/data-cloud-ci.yml'),
+    path.join(repoRoot, '.github/workflows/data-cloud-release.yml'),
+    path.join(repoRoot, 'products/data-cloud/contracts/openapi/data-cloud.yaml'),
   ];
 
-  let hasSecurity = false;
+  let allSecurityEvidenceExists = true;
   for (const file of securityFiles) {
     if (existsSync(file)) {
-      hasSecurity = true;
       logEvidence(`Security file exists: ${path.relative(repoRoot, file)}`);
+    } else {
+      logError(`Data Cloud security compliance evidence missing: ${path.relative(repoRoot, file)}`);
+      allSecurityEvidenceExists = false;
     }
   }
 
-  if (!hasSecurity) {
-    logError('Data Cloud missing security compliance evidence');
+  if (!allSecurityEvidenceExists) {
     return false;
   }
 
@@ -191,20 +209,22 @@ function validateDataCloudDeploymentReadiness() {
   const dataCloudPath = path.join(repoRoot, 'products/data-cloud');
   
   const deployFiles = [
-    path.join(dataCloudPath, 'Dockerfile'),
-    path.join(dataCloudPath, 'docker-compose.yml'),
+    path.join(dataCloudPath, 'deploy/Dockerfile'),
+    path.join(dataCloudPath, 'deploy/helm/data-cloud/Chart.yaml'),
+    path.join(dataCloudPath, 'deploy/k8s/deployment.yaml'),
   ];
 
-  let hasDeploy = false;
+  let allDeploymentEvidenceExists = true;
   for (const file of deployFiles) {
     if (existsSync(file)) {
-      hasDeploy = true;
       logEvidence(`Deployment file exists: ${path.relative(repoRoot, file)}`);
+    } else {
+      logError(`Data Cloud deployment evidence missing: ${path.relative(repoRoot, file)}`);
+      allDeploymentEvidenceExists = false;
     }
   }
 
-  if (!hasDeploy) {
-    logError('Data Cloud missing deployment configuration');
+  if (!allDeploymentEvidenceExists) {
     return false;
   }
 
@@ -222,6 +242,9 @@ function main() {
   // Validate required evidence files exist
   console.log('--- Checking required evidence files ---');
   const filesExist = validateRequiredEvidenceFiles();
+
+  console.log('\n--- Checking evidence freshness ---');
+  const evidenceFresh = validateEvidenceFreshness();
 
   // Validate evidence file quality
   console.log('\n--- Validating evidence file quality ---');

@@ -85,7 +85,7 @@ import java.util.*;
  * @see EventStream
  * @see StorageTier
  *
- * @author EventCloud Team
+ * @author Data-Cloud Event Plane Team
  * @since 1.0.0
  */
 @jakarta.persistence.Entity

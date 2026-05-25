@@ -24,7 +24,6 @@
       "requireSourceBacking": true,
       "examples": [
         "kernel-implementation-plan-progress.json",
-        "kernel-implementation-plan-coverage.json",
         "atomic-workflow-posture.json",
         "product-domain-invariants.json",
         "product-interaction-coverage-matrix.json"
@@ -69,7 +68,6 @@
   },
   "evidenceFileMappings": {
     "kernel-implementation-plan-progress.json": "runtime-executed",
-    "kernel-implementation-plan-coverage.json": "runtime-executed",
     "kernel-implementation-task-matrix.json": "static-configuration",
     "kernel-implementation-wave-run.json": "static-configuration",
     "product-release-readiness.json": "runtime-production",
@@ -83,6 +81,7 @@
     "product-domain-invariants.json": "runtime-executed",
     "product-interaction-coverage-matrix.json": "runtime-executed",
     "product-capability-matrix-validation.json": "generated-on-demand",
+    "guided-reuse-recommendations.json": "generated-on-demand",
     "product-a11y-route-matrix.json": "generated-on-demand",
     "atomic-workflow-posture.json": "runtime-executed",
     "affected-product-release-profile.json": "static-configuration",

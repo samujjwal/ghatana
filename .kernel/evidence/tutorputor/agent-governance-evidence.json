@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "tutorputor",
+  "evidenceType": "agent-governance",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "status": "candidate",
+  "summary": {
+    "description": "Agent governance implementation for Tutorputor content generation",
+    "governedDispatcherStatus": "partial",
+    "safetyInvariantsStatus": "defined"
+  },
+  "implementation": {
+    "governedContentDispatchGuard": {
+      "path": "products/tutorputor/services/tutorputor-platform/src/workers/content/GovernedContentDispatchGuard.ts",
+      "status": "wired",
+      "checksImplemented": [
+        "TENANT_MISSING",
+        "JOB_TYPE_NOT_GOVERNED",
+        "RELEASE_GUARD_CANDIDATE"
+      ]
+    },
+    "invariantMonitor": {
+      "path": "platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java",
+      "status": "available",
+      "integrationStatus": "pending"
+    },
+    "safetyInvariants": {
+      "defined": [
+        "content_moderation_passed",
+        "learner_age_appropriate",
+        "tenant_scoped_generation",
+        "audit_trail_complete"
+      ],
+      "implemented": [],
+      "pending": 4
+    }
+  },
+  "gatePackRef": "products/tutorputor/lifecycle/gate-packs/agent-governance.yaml",
+  "nextSteps": [
+    "Complete GovernedAgentDispatcher DI wiring in Tutorputor orchestration module",
+    "Register safety invariants with InvariantMonitor",
+    "Implement content moderation invariant",
+    "Implement age-appropriate content invariant",
+    "Add audit trail logging for all generation requests",
+    "Run behavioral tests for invariant violation handling"
+  ]
+}

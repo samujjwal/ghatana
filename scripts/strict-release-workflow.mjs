@@ -21,6 +21,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const REQUIRED_STEPS = [
   'check-product-release-readiness',
   'check-evidence-freshness',
+  'check-evidence-current-commit',
   'check-production-readiness-audit-tasks',
   'generate-comprehensive-release-summary',
   'validate-release-evidence',
@@ -35,8 +36,8 @@ const EVIDENCE_FRESHNESS_THRESHOLD = 24;
 const REQUIRED_EVIDENCE = [
   '.kernel/evidence/atomic-workflow-posture.json',
   '.kernel/evidence/affected-product-release-profile.json',
-  '.kernel/evidence/release-summary.json',
-  'release-evidence/release-readiness-evidence.json',
+  '.kernel/evidence/product-release-readiness.json',
+  'release-evidence/release-summary.json',
 ];
 
 function validateWorkflow() {

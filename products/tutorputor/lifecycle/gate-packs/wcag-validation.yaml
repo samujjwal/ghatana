@@ -1,0 +1,146 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+gatePack: wcag-validation
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+summary:
+  description: |
+    WCAG 2.1 Level AA validation gate pack for Tutorputor web interface.
+    Ensures all learner-facing UI meets accessibility standards for
+    inclusive education delivery.
+
+requirement:
+  wcagVersion: "2.1"
+  conformanceLevel: AA
+  coverage: all-learner-facing-pages
+  automatedTesting: required
+  manualAudit: recommended
+
+validationGates:
+  - gate: automated-wcag-scan
+    description: |
+      Automated accessibility scanning passes with zero critical or serious
+      violations on all learner-facing pages.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: axe-core-scan-pass
+        description: |
+          axe-core automated scan returns zero violations with
+          impact "critical" or "serious".
+        validationMethod: automated-test
+        tool: axe-core
+      - checkName: lighthouse-a11y-score
+        description: |
+          Lighthouse accessibility score >= 95 for all pages.
+        validationMethod: automated-test
+        tool: lighthouse
+      - checkName: contrast-ratio-compliance
+        description: |
+          All text meets WCAG 2.1 contrast ratio requirements
+          (4.5:1 for normal text, 3:1 for large text).
+        validationMethod: automated-test
+        tool: color-contrast-analyzer
+
+  - gate: keyboard-navigation
+    description: |
+      All interactive elements are reachable and operable via keyboard alone.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: tab-order-logical
+        description: |
+          Tab order follows visual layout; no focus traps or jumps.
+        validationMethod: manual-test
+      - checkName: focus-visible-indicators
+        description: |
+          All interactive elements have visible focus indicators
+          with sufficient contrast.
+        validationMethod: automated-test
+      - checkName: keyboard-shortcuts-documented
+        description: |
+          All keyboard shortcuts are documented in help panel.
+        validationMethod: documentation-review
+
+  - gate: screen-reader-compatibility
+    description: |
+      All content is accessible to screen reader users with proper
+      semantic markup and ARIA labels.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: semantic-html-structure
+        description: |
+          Proper use of headings, landmarks, lists, and tables.
+        validationMethod: automated-test
+      - checkName: aria-labels-present
+        description: |
+          All icon buttons and non-text controls have aria-label.
+        validationMethod: automated-test
+      - checkName: form-labels-associated
+        description: |
+          All form inputs have associated labels.
+        validationMethod: automated-test
+      - checkName: dynamic-content-announcements
+        description: |
+          Live regions announce dynamic content updates
+          (assessment completion, feedback delivery).
+        validationMethod: screen-reader-test
+        tools: [NVDA, VoiceOver, JAWS]
+
+  - gate: multimedia-accessibility
+    description: |
+      All video and audio content is accessible to users with
+      visual or hearing impairments.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: captions-provided
+        description: |
+          All educational videos have synchronized captions.
+        validationMethod: content-review
+      - checkName: transcripts-available
+        description: |
+          Audio-only content has text transcripts.
+        validationMethod: content-review
+      - checkName: audio-description
+        description: |
+          Video content with critical visual information has
+          audio description track.
+        validationMethod: content-review
+
+  - gate: cognitive-accessibility
+    description: |
+      Content is accessible to learners with cognitive disabilities
+      through clear language and consistent navigation.
+    required: true
+    blockingIfFailed: false
+    checks:
+      - checkName: reading-level-appropriate
+        description: |
+          Instructional text maintains appropriate reading level
+          for target learner age group.
+        validationMethod: content-analysis
+      - checkName: consistent-navigation
+        description: |
+          Navigation patterns are consistent across all pages.
+        validationMethod: ux-review
+      - checkName: error-prevention
+        description: |
+          Forms provide clear error messages and prevention
+          mechanisms for destructive actions.
+        validationMethod: usability-test
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/e2e/accessibility/wcag-audit-results.json
+  - products/tutorputor/docs/accessibility-compliance-report.md
+
+testConfiguration:
+  targetBrowsers: [chrome, firefox, safari, edge]
+  targetAssistiveTechnologies: [NVDA, VoiceOver, JAWS, TalkBack]
+  testEnvironments: [staging, prod]
+  scanExclusions:
+    - "**/node_modules/**"
+    - "**/*.test.tsx"
+    - "**/test-utils/**"

@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Tests for the AgentRegistry and factory-based agent creation.
  */
 @DisplayName("Agent Registry Tests")
+@SuppressWarnings("removal")
 class AgentRegistryTest {
 
     private AgentRegistry registry;

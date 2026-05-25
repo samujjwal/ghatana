@@ -15,7 +15,7 @@ The canonical boundary must keep storage concerns separate from adaptive event i
 
 Data-Cloud owns governed entity storage, metadata, schemas, audit, retention, and pluggable persistence.
 
-AEP owns adaptive event processing semantics: EventCloud, PatternSpec/EPL, operator catalog, pattern detection, uncertainty, learning/adaptation, agent-as-operator runtime, and pattern governance.
+AEP owns adaptive event processing semantics: EventCloud, PatternSpec/EPL, operator catalog, pattern detection, uncertainty, learning/adaptation, EventOperatorCapability runtime, and pattern governance.
 
 EventCloud is AEP-owned. Data-Cloud may implement EventCloud persistence plugins, but Data-Cloud must not expose EventCloud, CEP, PatternSpec, operator-runtime, or learning semantics.
 
@@ -33,7 +33,7 @@ Data-Cloud is the governed data/storage substrate. AEP is the adaptive event int
 ## Consequences
 
 - Current AEP implementation modules may remain under `products/data-cloud/planes/action/*` during migration.
-- The temporary code location does not change semantic ownership: AEP owns EventCloud, PatternSpec/EPL, operator runtime, adaptive learning, and agent-as-operator behavior.
+- The temporary code location does not change semantic ownership: AEP owns EventCloud, PatternSpec/EPL, operator runtime, adaptive learning, and agent capability behavior.
 - Data-Cloud docs must not describe Data-Cloud as CEP or EventCloud.
 - AEP docs must not describe EventCloud as a generic standalone product.
 - Data-Cloud EventLog language remains valid for simple append/replay and storage-plane event records.

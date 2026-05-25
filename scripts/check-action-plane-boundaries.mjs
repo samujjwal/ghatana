@@ -8,7 +8,7 @@ const SCRIPT_PATH = 'scripts/check-action-plane-boundaries.mjs';
 const EVIDENCE_PATH = '.kernel/evidence/action-plane-boundaries.json';
 const COMMAND = 'pnpm check:action-plane-boundaries';
 const DEFAULT_ROOTS = ['products/data-cloud/planes'];
-const TEXT_EXTENSIONS = new Set(['.java', '.kt', '.kts', '.gradle', '.xml']);
+const TEXT_EXTENSIONS = new Set(['.java', '.kt', '.kts', '.gradle', '.xml', '.md', '.yaml', '.yml']);
 const EXCLUDED_DIRS = new Set(['build', '.gradle', '.idea', 'node_modules']);
 
 const FORBIDDEN_RULES = [
@@ -23,6 +23,34 @@ const FORBIDDEN_RULES = [
     message: 'Non-action Data Cloud planes must not depend on Action Plane Gradle modules',
   },
 ];
+
+const FORBIDDEN_SEMANTIC_RULES = [
+  {
+    id: 'eventcloud-semantics-in-data-cloud-plane',
+    pattern: /\bEventCloud\b/g,
+    message: 'Non-action Data Cloud planes must use EventLog/storage-plane wording; EventCloud semantics are AEP-owned',
+  },
+  {
+    id: 'patternspec-semantics-in-data-cloud-plane',
+    pattern: /\b(?:PatternSpec|EPL|EventOperatorCapability|EventOperator runtime|complex event processing|CEP)\b/g,
+    message: 'Non-action Data Cloud planes must not expose PatternSpec, EPL, EventOperator, or CEP semantics',
+  },
+];
+
+function isSemanticBoundaryAllowed(file, source, matchIndex) {
+  if (file.includes('/src/test/')) {
+    return true;
+  }
+
+  if (file.includes('/planes/shared-spi/') && /AEP'?s EventCloud can use for persistence/.test(source)) {
+    return true;
+  }
+
+  const lineStart = source.lastIndexOf('\n', matchIndex) + 1;
+  const lineEnd = source.indexOf('\n', matchIndex);
+  const line = source.slice(lineStart, lineEnd === -1 ? source.length : lineEnd);
+  return /\b(?:must not|does not|do not|not expose|not own|AEP-owned|owned by AEP|persistence plugin|stable SPI)\b/i.test(line);
+}
 
 function currentGitSha(root) {
   try {
@@ -83,6 +111,22 @@ export function findActionPlaneBoundaryViolations(root = process.cwd(), scanRoot
         });
       }
     }
+
+    for (const rule of FORBIDDEN_SEMANTIC_RULES) {
+      for (const match of source.matchAll(rule.pattern)) {
+        if (isSemanticBoundaryAllowed(file, source, match.index)) {
+          continue;
+        }
+        const line = source.slice(0, match.index).split(/\r?\n/).length;
+        violations.push({
+          file,
+          line,
+          rule: rule.id,
+          message: rule.message,
+          match: match[0],
+        });
+      }
+    }
   }
   return { files, violations };
 }
@@ -102,6 +146,7 @@ export function createActionPlaneBoundaryEvidence(root = process.cwd(), now = ne
       scannedRoots: DEFAULT_ROOTS,
       excludedRoots: ['products/data-cloud/planes/action'],
       rule: 'Non-action Data Cloud planes must not import AEP internals or depend on Action Plane modules.',
+      semanticRule: 'Non-action Data Cloud planes must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, CEP, or adaptive event runtime semantics.',
       publicAepPackageAllowlist: [
         'com.ghatana.aep.api',
         'com.ghatana.aep.client',

@@ -1,0 +1,173 @@
+schemaVersion: "1.0.0"
+productId: flashit
+gatePack: mobile-lifecycle-disabled
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+summary:
+  description: |
+    Enforces that FlashIt mobile lifecycle execution remains disabled
+    until mobile adapters (iOS/Android) are fully execution-ready.
+    Mobile surfaces are validated in build phase but not deployed
+    until bundle contracts and artifact manifests are complete.
+
+requirement:
+  mobileLifecycleExecution: disabled
+  webLifecycleExecution: enabled
+  enforcement: fail-closed
+  rationale: |
+    Mobile lifecycle requires IPA/AAB artifact contracts, code signing,
+    app store submission workflows, and device testing infrastructure.
+    These are not yet ready; keeping mobile disabled prevents
+    partial or broken mobile deployments.
+
+blockedOperations:
+  - deploy:
+      surfaces: [mobile-ios, mobile-android]
+      reason: "Mobile deployment requires execution-ready adapters"
+  - verify:
+      surfaces: [mobile-ios, mobile-android]
+      reason: "Mobile verification requires device testing infrastructure"
+
+allowedOperations:
+  - build:
+      surfaces: [mobile-ios, mobile-android]
+      reason: "Build validation of mobile code is permitted"
+  - validate:
+      surfaces: [mobile-ios, mobile-android]
+      reason: "Static validation of mobile code is permitted"
+  - test:
+      surfaces: [mobile-ios, mobile-android]
+      reason: "Unit testing of mobile code is permitted"
+  - all:
+      surfaces: [backend-api, web]
+      reason: "Web lifecycle is fully enabled and operational"
+
+validationGates:
+  - gate: mobile-execution-disabled
+    description: |
+      Mobile lifecycle execution is explicitly disabled in kernel-product.yaml
+      and enforced by the lifecycle executor.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: execution-enabled-false
+        description: |
+          kernel-product.yaml has executionEnabled: false or mobile
+          surfaces are excluded from deploy phase.
+        validationMethod: config-verify
+      - checkName: mobile-surfaces-excluded-from-deploy
+        description: |
+          Deploy phase defaultSurfaces does not include mobile-ios
+          or mobile-android.
+        validationMethod: config-verify
+      - checkName: lifecycle-executor-rejects-mobile-deploy
+        description: |
+          Attempting to deploy mobile surfaces returns clear error
+          with explanation of mobile lifecycle disabled status.
+        validationMethod: integration-test
+
+  - gate: web-lifecycle-fully-enabled
+    description: |
+      Web lifecycle (backend-api, web surfaces) is fully enabled
+      and operational for FlashIt.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: web-deploy-enabled
+        description: |
+          Web surface deploy is enabled and tested in staging.
+        validationMethod: integration-test
+      - checkName: backend-api-deploy-enabled
+        description: |
+          Backend-api surface deploy is enabled and tested in staging.
+        validationMethod: integration-test
+      - checkName: web-health-checks-pass
+        description: |
+          /health/ready and /health/live endpoints return 200
+          for web deployment.
+        validationMethod: health-check
+
+  - gate: mobile-artifacts-build-only
+    description: |
+      Mobile surfaces participate in build phase only;
+      no mobile artifacts are produced in package/deploy phases.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: mobile-build-phase-allowed
+        description: |
+          Mobile surfaces are included in build phase and build
+          successfully.
+        validationMethod: build-verify
+      - checkName: no-ipa-in-package-output
+        description: |
+          Package phase does not produce .ipa files.
+        validationMethod: artifact-scan
+      - checkName: no-aab-in-package-output
+        description: |
+          Package phase does not produce .aab files.
+        validationMethod: artifact-scan
+
+  - gate: mobile-readiness-tracking
+    description: |
+      Mobile lifecycle readiness is tracked with clear criteria
+      for future enablement.
+    required: true
+    blockingIfFailed: false
+    checks:
+      - checkName: mobile-adapter-status-documented
+        description: |
+          Mobile adapter readiness is documented in
+          lifecycle/mobile-adapter-readiness.yaml.
+        validationMethod: doc-verify
+      - checkName: mobile-artifact-manifests-exist
+        description: |
+          Mobile artifact manifests exist for future enablement
+          (lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml,
+          lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml).
+        validationMethod: file-exists
+      - checkName: mobile-enablement-criteria-defined
+        description: |
+          Clear criteria documented for when mobile lifecycle
+          can be enabled.
+        validationMethod: doc-verify
+
+criteriaForMobileEnablement:
+  - id: MA-001
+    description: iOS adapter (xcode-ios) execution-ready
+    status: planned
+  - id: MA-002
+    description: Android adapter (gradle-android) execution-ready
+    status: planned
+  - id: MA-003
+    description: IPA artifact manifest validated
+    status: draft
+  - id: MA-004
+    description: AAB artifact manifest validated
+    status: draft
+  - id: MA-005
+    description: Code signing infrastructure operational
+    status: planned
+  - id: MA-006
+    description: App store submission workflow tested
+    status: planned
+  - id: MA-007
+    description: Device testing infrastructure (Firebase Test Lab or equivalent)
+    status: planned
+  - id: MA-008
+    description: Mobile rollback strategy defined and tested
+    status: planned
+
+evidenceRefs:
+  - products/flashit/kernel-product.yaml
+  - products/flashit/lifecycle/gate-packs/mobile-lifecycle-disabled.yaml
+  - products/flashit/lifecycle/artifact-manifests/mobile-ipa-artifact-manifest.yaml
+  - products/flashit/lifecycle/artifact-manifests/mobile-aab-artifact-manifest.yaml
+
+implementation:
+  enforcementPoint: KernelLifecycleExecutor.validatePhaseConfig
+  failureMessage: |
+    FlashIt mobile lifecycle execution is disabled.
+    Mobile surfaces (mobile-ios, mobile-android) cannot be deployed.
+    See: products/flashit/lifecycle/gate-packs/mobile-lifecycle-disabled.yaml
+    Enablement criteria: See criteriaForMobileEnablement in this gate pack.

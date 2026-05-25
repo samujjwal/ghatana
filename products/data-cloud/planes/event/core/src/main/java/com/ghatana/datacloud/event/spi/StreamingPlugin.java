@@ -111,7 +111,7 @@ public interface StreamingPlugin extends Plugin {
     /**
      * Publish event to subscribers (after storage).
      *
-     * <p>This is typically called by the EventCloud core after
+     * <p>This is typically called by the Data-Cloud event plane after
      * successful storage, not directly by users.</p>
      *
      * @param event event to publish

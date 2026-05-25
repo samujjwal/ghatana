@@ -21,6 +21,8 @@ test('release summary records required gate evaluations and pass consistency', (
   const summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
 
   assert.ok(summary.releaseGate);
+  assert.ok(Array.isArray(summary.productScope));
+  assert.ok(summary.productScope.length > 0);
   assert.ok(Array.isArray(summary.releaseGate.requiredGates));
 
   const requiredGateKeys = summary.releaseGate.requiredGates.map((entry) => entry.gateKey);
@@ -87,4 +89,33 @@ test('release evidence freshness flags stale evidence and requires source backin
   }, errors);
 
   assert.equal(errors.some((message) => message.includes('stale')), true);
+});
+
+test('release evidence freshness honors failOnStale for generated-on-demand evidence', () => {
+  const staleGeneratedAt = new Date(Date.now() - (10 * 24 * 60 * 60 * 1000)).toISOString();
+  const errors = [];
+
+  evaluateEvidenceFreshness('.kernel/evidence/openapi-breaking-changes.json', {
+    generatedAt: staleGeneratedAt,
+    source: 'check:openapi-breaking-changes',
+  }, errors);
+
+  assert.equal(errors.some((message) => message.includes('stale')), false);
+});
+
+test('release evidence freshness requires source backing metadata when policy mandates it', () => {
+  const freshGeneratedAt = new Date().toISOString();
+  const errors = [];
+
+  evaluateEvidenceFreshness('.kernel/evidence/product-cost-budgets.json', {
+    generatedAt: freshGeneratedAt,
+    validationStatus: 'validated',
+    sourceCommitSha: 'a'.repeat(40),
+    targetCommitSha: 'b'.repeat(40),
+  }, errors);
+
+  assert.equal(
+    errors.some((message) => message.includes('missing required source backing metadata')),
+    true,
+  );
 });

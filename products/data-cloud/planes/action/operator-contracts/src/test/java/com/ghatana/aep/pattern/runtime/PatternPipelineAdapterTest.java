@@ -1,12 +1,19 @@
 package com.ghatana.aep.pattern.runtime;
 
+import com.ghatana.aep.agent.capability.AgentCapability;
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.CapabilityKind;
+import com.ghatana.aep.agent.capability.CapabilityResolver;
 import com.ghatana.aep.pattern.spec.CompiledPattern;
 import com.ghatana.aep.pattern.spec.PatternSpecCompiler;
+import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 import com.ghatana.core.pipeline.Pipeline;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,6 +62,65 @@ class PatternPipelineAdapterTest {
         assertThat(pipeline.validate().isValid()).isTrue();
     }
 
+    @Test
+    void resolvesLocalAndExternalCapabilityRefsIntoPipelineStageMetadata() {
+        String localRef = "agents/local-risk@1.0.0/capabilities/agent_predicate";
+        String externalRef = "external/verifier@2.0.0/capabilities/agent_review";
+        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+            "operator", "AND",
+            "operands", List.of(
+                Map.of(
+                    "operator", "AGENT_PREDICATE",
+                    "capabilityRef", localRef,
+                    "outputSchema", "RiskDecision"),
+                Map.of(
+                    "operator", "AGENT_REVIEW",
+                    "capabilityRef", externalRef,
+                    "outputSchema", "ReviewDecision")))));
+        CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
+            localRef, descriptor(localRef, CapabilityKind.EVENT_OPERATOR, "agents/local-risk@1.0.0", "local"),
+            externalRef, descriptor(externalRef, CapabilityKind.EXTERNAL, "external/verifier@2.0.0", "external")));
+
+        Pipeline pipeline = PatternPipelineAdapter.toPipeline(compiled, resolver);
+
+        assertThat(pipeline.getStages()).anySatisfy(stage -> {
+            assertThat(stage.stageId()).isEqualTo("root-0");
+            assertThat(stage.config())
+                .containsEntry("capabilityRef", localRef)
+                .containsEntry("capabilityBinding", "resolved")
+                .containsEntry("capabilityKind", "EVENT_OPERATOR")
+                .containsEntry("capabilityAgentRef", "agents/local-risk@1.0.0")
+                .containsEntry("capabilityOutputSchema", "RiskDecision")
+                .containsEntry("capabilitySideEffectProfile", "PURE_INFERENCE");
+            assertThat(stage.config().get("capabilityMetadata"))
+                .isEqualTo(Map.of("provider", "local"));
+        });
+        assertThat(pipeline.getStages()).anySatisfy(stage -> {
+            assertThat(stage.stageId()).isEqualTo("root-1");
+            assertThat(stage.config())
+                .containsEntry("capabilityRef", externalRef)
+                .containsEntry("capabilityBinding", "resolved")
+                .containsEntry("capabilityKind", "EXTERNAL")
+                .containsEntry("capabilityAgentRef", "external/verifier@2.0.0");
+            assertThat(stage.config().get("capabilityMetadata"))
+                .isEqualTo(Map.of("provider", "external"));
+        });
+        assertThat(pipeline.validate().isValid()).isTrue();
+    }
+
+    @Test
+    void rejectsUnknownCapabilityRefWhenResolverIsProvided() {
+        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+            "operator", "AGENT_PREDICATE",
+            "capabilityRef", "agents/missing@1.0.0/capabilities/agent_predicate",
+            "outputSchema", "RiskDecision")));
+        CapabilityResolver resolver = new MapCapabilityResolver(Map.of());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PatternPipelineAdapter.toPipeline(compiled, resolver))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Unknown capabilityRef");
+    }
+
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",
@@ -66,5 +132,38 @@ class PatternPipelineAdapterTest {
             "lifecycle", Map.of("state", "SHADOW"),
             "governance", Map.of("reviewPolicy", "human_required"),
             "observability", Map.of("metrics", true, "tracing", true)));
+    }
+
+    private static CapabilityDescriptor descriptor(
+            String id,
+            CapabilityKind kind,
+            String agentRef,
+            String provider) {
+        return new CapabilityDescriptor(
+            CapabilityId.of(id),
+            kind,
+            agentRef,
+            Optional.empty(),
+            "EventContext",
+            id.contains("review") ? "ReviewDecision" : "RiskDecision",
+            AgentSideEffectProfile.PURE_INFERENCE,
+            List.of("agent.capability"),
+            Map.of("replayPolicy", Map.of("mode", "deterministic")),
+            Map.of("provider", provider));
+    }
+
+    private record MapCapabilityResolver(Map<String, CapabilityDescriptor> descriptors) implements CapabilityResolver {
+        @Override
+        public Optional<CapabilityDescriptor> describe(CapabilityId capabilityId) {
+            return Optional.ofNullable(descriptors.get(capabilityId.value()));
+        }
+
+        @Override
+        public <I, O> Optional<AgentCapability<I, O>> resolve(
+                CapabilityId capabilityId,
+                Class<I> inputType,
+                Class<O> outputType) {
+            return Optional.empty();
+        }
     }
 }

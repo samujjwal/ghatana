@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * caused by enum declaration reordering.
  */
 @DisplayName("DurabilityLevel strength ordering")
-class EventCloudTest {
+class EventDurabilityServiceTest {
 
     // ─── Individual strength values ───────────────────────────────────────────
 

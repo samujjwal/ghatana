@@ -23,7 +23,7 @@ import java.util.List;
  * The publisher can be wired to:
  * <ul>
  *   <li>In-memory event bus for same-JVM subscribers</li>
- *   <li>EventCloud for persistent event streams</li>
+ *   <li>Data-Cloud EventLog for persistent event streams</li>
  *   <li>External message queues (Kafka, Redis Streams)</li>
  *   <li>Webhook dispatchers for HTTP notifications</li>
  * </ul>

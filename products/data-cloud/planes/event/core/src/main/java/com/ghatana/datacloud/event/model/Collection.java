@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base collection class for schema definitions in EventCloud.
+ * Base collection class for Data-Cloud event-plane schema definitions.
  *
  * <p>
  * Extends core {@link EntityRecord} with collection-specific fields for schema

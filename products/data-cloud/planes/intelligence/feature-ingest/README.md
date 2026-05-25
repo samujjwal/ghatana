@@ -2,16 +2,16 @@
 
 ## Purpose
 
-Real-time feature extraction and ingestion pipeline from event-cloud to the Data-Cloud feature store for ML model serving.
+Real-time feature extraction and ingestion pipeline from the Data-Cloud EventLog to the Data-Cloud feature store for ML model serving.
 
-This is part of Data-Cloud's native AI/ML surface. It is not an agentic runtime. Any agentic processing that consumes these features executes in AEP and integrates back through event-cloud and Data-Cloud APIs.
+This is part of Data-Cloud's native AI/ML surface. It is not an agentic runtime. Any agentic processing that consumes these features executes in AEP and integrates back through Data-Cloud public APIs or stable EventLog SPI.
 
 ## Architecture
 
 ```
-EventCloud (event stream)
+Data-Cloud EventLog (event stream)
     ↓
-EventCloudTailOperator (subscription)
+EventLogTailOperator (subscription)
     ↓
 FeatureExtractor (feature engineering logic)
     ↓
@@ -23,7 +23,7 @@ ML Models (real-time inference)
 ## Features
 
 - **Real-time Processing**: <10ms p99 latency from event to feature
-- **EventCloud Tailing**: Partition-aware subscription with auto-recovery
+- **EventLog Tailing**: Partition-aware subscription with auto-recovery
 - **Feature Engineering**: Extractable features from events
 - **Backpressure Handling**: Auto-throttle when downstream slow
 - **Checkpoint Recovery**: Resume from last committed offset
@@ -55,8 +55,8 @@ From sensor events, extract:
 ## Configuration
 
 Set environment variables:
-- `EVENTCLOUD_URL` - EventCloud connection string
-- `EVENTCLOUD_TENANT` - Tenant ID for subscription
+- `EVENTLOG_URL` - Data-Cloud EventLog connection string
+- `EVENTLOG_TENANT` - Tenant ID for subscription
 - `REDIS_URL` - Redis connection for hot features
 - `DATABASE_URL` - PostgreSQL for cold features
 - `CHECKPOINT_INTERVAL` - Checkpoint frequency (default: 1000 events)
@@ -76,7 +76,7 @@ java -jar products/data-cloud/planes/intelligence/feature-ingest/build/libs/feat
 Emitted metrics:
 - `feature.ingestion.rate` - Features ingested per second
 - `feature.extraction.duration` - Feature extraction latency (p50, p95, p99)
-- `eventcloud.lag` - Partition lag (events behind real-time)
+- `eventlog.lag` - Partition lag (events behind real-time)
 - `feature.store.write.duration` - Feature store write latency
 - `backpressure.throttle.count` - Number of backpressure throttles
 
@@ -89,7 +89,7 @@ Emitted metrics:
 ## Dependencies
 
 - `libs:ai-platform:feature-store` - Feature storage
-- `libs:event-cloud` - EventCloud client
+- `products:data-cloud:planes:shared-spi` - EventLog SPI
 - `libs:event-runtime` - Event processing
 - `libs:observability` - Metrics collection
 - ActiveJ Datastream for stream processing
@@ -101,14 +101,14 @@ Thread-safe - uses single ActiveJ Eventloop thread for all processing.
 ## Backpressure Strategy
 
 When feature store writes slow down:
-1. Reduce EventCloud fetch rate
+1. Reduce EventLog fetch rate
 2. Buffer up to 10k events in memory
 3. Emit `backpressure.throttle.count` metric
 4. Resume normal rate when writes recover
 
 ## Checkpoint Strategy
 
-Commits offset to EventCloud every:
+Commits offset to the EventLog every:
 - 1000 events processed, OR
 - 10 seconds elapsed
 

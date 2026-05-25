@@ -1,5 +1,8 @@
 package com.ghatana.aep.pattern.runtime;
 
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.CapabilityResolver;
 import com.ghatana.aep.operator.contract.OperatorKind;
 import com.ghatana.aep.pattern.spec.CompiledPattern;
 import com.ghatana.aep.pattern.spec.PatternRuntimeNode;
@@ -27,7 +30,24 @@ public final class PatternPipelineAdapter {
     private PatternPipelineAdapter() {
     }
 
+    /**
+     * Adapts a compiled pattern while leaving capability references for runtime resolution.
+     *
+     * @param pattern compiled PatternSpec graph
+     * @return executable pipeline DAG contract
+     */
     public static Pipeline toPipeline(CompiledPattern pattern) {
+        return toPipeline(pattern, null);
+    }
+
+    /**
+     * Adapts a compiled pattern and resolves capability references into stage metadata.
+     *
+     * @param pattern compiled PatternSpec graph
+     * @param capabilityResolver resolver for capabilityRef bindings, or null to defer binding
+     * @return executable pipeline DAG contract
+     */
+    public static Pipeline toPipeline(CompiledPattern pattern, CapabilityResolver capabilityResolver) {
         Objects.requireNonNull(pattern, "pattern");
         String tenantId = String.valueOf(pattern.metadata().getOrDefault("tenantId", "ghatana"));
         PipelineBuilder builder = Pipeline.builder(pattern.runtimePlanId(), DEFAULT_VERSION)
@@ -42,7 +62,7 @@ public final class PatternPipelineAdapter {
             .stage(SOURCE_STAGE_ID, OperatorId.of(tenantId, "eventcloud", "source", DEFAULT_VERSION),
                 Map.of("role", "source"));
 
-        addNodeStages(builder, tenantId, pattern.root());
+        addNodeStages(builder, tenantId, pattern.root(), capabilityResolver);
         addNodeEdges(builder, pattern.root());
         connectSourceToLeaves(builder, pattern.root());
 
@@ -52,10 +72,14 @@ public final class PatternPipelineAdapter {
         return builder.build();
     }
 
-    private static void addNodeStages(PipelineBuilder builder, String tenantId, PatternRuntimeNode node) {
-        builder.stage(node.nodeId(), operatorId(tenantId, node), stageConfig(node));
+    private static void addNodeStages(
+            PipelineBuilder builder,
+            String tenantId,
+            PatternRuntimeNode node,
+            CapabilityResolver capabilityResolver) {
+        builder.stage(node.nodeId(), operatorId(tenantId, node), stageConfig(node, capabilityResolver));
         for (PatternRuntimeNode child : node.children()) {
-            addNodeStages(builder, tenantId, child);
+            addNodeStages(builder, tenantId, child, capabilityResolver);
         }
     }
 
@@ -101,14 +125,35 @@ public final class PatternPipelineAdapter {
             .orElseGet(() -> node.operatorKind().name().toLowerCase(Locale.ROOT).replace('_', '-'));
     }
 
-    private static Map<String, Object> stageConfig(PatternRuntimeNode node) {
+    private static Map<String, Object> stageConfig(PatternRuntimeNode node, CapabilityResolver capabilityResolver) {
         Map<String, Object> config = new LinkedHashMap<>(node.parameters());
         config.put("operatorKind", node.operatorKind().name());
         node.eventType().ifPresent(value -> config.put("eventType", value));
         node.agentRef().ifPresent(value -> config.put("agentRef", value));
         node.capabilityRef().ifPresent(value -> config.put("capabilityRef", value));
         node.outputSchema().ifPresent(value -> config.put("outputSchema", value));
+        node.capabilityRef().ifPresent(value -> bindCapability(config, value, capabilityResolver));
         return config;
+    }
+
+    private static void bindCapability(
+            Map<String, Object> config,
+            String capabilityRef,
+            CapabilityResolver capabilityResolver) {
+        if (capabilityResolver == null) {
+            config.put("capabilityBinding", "unresolved");
+            return;
+        }
+        CapabilityDescriptor descriptor = capabilityResolver.describe(CapabilityId.of(capabilityRef))
+            .orElseThrow(() -> new IllegalArgumentException("Unknown capabilityRef: " + capabilityRef));
+        config.put("capabilityBinding", "resolved");
+        config.put("capabilityKind", descriptor.kind().name());
+        config.put("capabilityAgentRef", descriptor.agentRef());
+        config.put("capabilityInputSchema", descriptor.inputSchema());
+        config.put("capabilityOutputSchema", descriptor.outputSchema());
+        config.put("capabilitySideEffectProfile", descriptor.sideEffectProfile().name());
+        config.put("capabilityTags", descriptor.tags());
+        config.put("capabilityMetadata", descriptor.metadata());
     }
 
     private static String sanitize(String value) {

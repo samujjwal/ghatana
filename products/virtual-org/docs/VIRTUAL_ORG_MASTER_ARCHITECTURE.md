@@ -257,7 +257,7 @@ products/virtual-org/
 │   │       ├── memory/                      # Agent Memory (🔄 Planned)
 │   │       │
 │   │       └── integration/                 # External Integrations
-│   │           ├── AgentOperatorRegistry.java
+│   │           ├── AgentCapabilityRegistry.java
 │   │           └── WorkflowPipelineAdapter.java
 │   │
 │   ├── virtualorg-agent/           # Lightweight agent impl (192 LOC)
@@ -701,8 +701,8 @@ public class AepEventPublisherAdapter implements EventPublisher {
     }
 }
 
-// Register Virtual-Org operators with AEP
-AgentOperatorRegistry.register(
+// Register Virtual-Org agent capabilities with AEP
+AgentCapabilityRegistry.register(
     new AgentStreamOperator("virtual-org-agent-processor")
 );
 ```

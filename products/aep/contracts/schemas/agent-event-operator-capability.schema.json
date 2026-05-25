@@ -1,13 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.ghatana.io/aep/agent-operator-spec.schema.json",
-  "title": "AgentOperatorSpec",
+  "$id": "https://schemas.ghatana.io/aep/agent-event-operator-capability.schema.json",
+  "title": "AgentEventOperatorCapabilitySpec",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "operatorId",
     "operatorKind",
     "agentRef",
+    "capabilityRef",
     "inputSchema",
     "outputSchema",
     "modelPolicy",
@@ -42,6 +43,10 @@
     "agentRef": {
       "type": "string",
       "pattern": "^[A-Za-z0-9._/-]+@[A-Za-z0-9._-]+$"
+    },
+    "capabilityRef": {
+      "type": "string",
+      "minLength": 1
     },
     "inputSchema": {
       "$ref": "#/$defs/schemaRef"

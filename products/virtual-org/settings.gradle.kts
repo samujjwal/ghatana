@@ -50,6 +50,16 @@ fun includeNestedLib(parent: String, children: List<String>, subPath: String = "
     }
 }
 
+fun includeMonorepoProject(path: String, relativePath: String) {
+    val projectDir = File(monorepoRoot, relativePath)
+    if (projectDir.exists()) {
+        if (findProject(path) == null) {
+            include(path)
+        }
+        project(path).projectDir = projectDir
+    }
+}
+
 // ============================================================================
 // Include Shared Libraries
 // ============================================================================
@@ -134,9 +144,155 @@ if (contractsDir.exists()) {
 }
 
 // ============================================================================
+// Include Platform and Product Projects
+// ============================================================================
+logger.lifecycle("Including platform and product projects...")
+
+listOf(
+    ":platform" to "platform",
+    ":platform:java" to "platform/java",
+    ":platform-kernel" to "platform-kernel",
+    ":products" to "products",
+    ":products:data-cloud" to "products/data-cloud",
+    ":products:data-cloud:delivery" to "products/data-cloud/delivery",
+    ":products:data-cloud:extensions" to "products/data-cloud/extensions",
+    ":products:data-cloud:planes" to "products/data-cloud/planes",
+    ":products:data-cloud:planes:action" to "products/data-cloud/planes/action",
+    ":platform:contracts" to "platform/contracts",
+    ":platform:java:core" to "platform/java/core",
+    ":platform:java:database" to "platform/java/database",
+    ":platform:java:http" to "platform/java/http",
+    ":platform:java:observability" to "platform/java/observability",
+    ":platform:java:security" to "platform/java/security",
+    ":platform:java:testing" to "platform/java/testing",
+    ":platform:java:workflow" to "platform/java/workflow",
+    ":platform:java:ai-integration" to "platform/java/ai-integration",
+    ":platform:java:domain" to "platform/java/domain",
+    ":platform:java:config" to "platform/java/config",
+    ":platform:java:runtime" to "platform/java/runtime",
+    ":platform:java:audit" to "platform/java/audit",
+    ":platform:java:governance" to "platform/java/governance",
+    ":platform:java:policy-as-code" to "platform/java/policy-as-code",
+    ":platform:java:agent-core" to "platform/java/agent-core",
+    ":platform-kernel:kernel-core" to "platform-kernel/kernel-core",
+    ":platform-kernel:kernel-plugin" to "platform-kernel/kernel-plugin",
+    ":products:data-cloud:planes:action:agent-runtime" to "products/data-cloud/planes/action/agent-runtime",
+    ":products:data-cloud:planes:action:operator-contracts" to "products/data-cloud/planes/action/operator-contracts"
+).forEach { (path, relativePath) -> includeMonorepoProject(path, relativePath) }
+
+File(monorepoRoot, "platform/java")
+    .listFiles()
+    .orEmpty()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(":platform:java:${dir.name}", dir.relativeTo(monorepoRoot).path)
+    }
+
+File(monorepoRoot, "platform-kernel")
+    .listFiles()
+    .orEmpty()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(":platform-kernel:${dir.name}", dir.relativeTo(monorepoRoot).path)
+    }
+
+File(monorepoRoot, "products/data-cloud/planes/action")
+    .listFiles()
+    .orEmpty()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(":products:data-cloud:planes:action:${dir.name}", dir.relativeTo(monorepoRoot).path)
+    }
+
+File(monorepoRoot, "products/data-cloud/planes")
+    .walkTopDown()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(
+            ":${dir.relativeTo(monorepoRoot).path.replace(File.separatorChar, ':')}",
+            dir.relativeTo(monorepoRoot).path
+        )
+    }
+
+File(monorepoRoot, "products/data-cloud/extensions")
+    .listFiles()
+    .orEmpty()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(":products:data-cloud:extensions:${dir.name}", dir.relativeTo(monorepoRoot).path)
+    }
+
+File(monorepoRoot, "products/data-cloud/delivery")
+    .listFiles()
+    .orEmpty()
+    .filter { it.isDirectory && File(it, "build.gradle.kts").exists() }
+    .sortedBy { it.name }
+    .forEach { dir ->
+        includeMonorepoProject(":products:data-cloud:delivery:${dir.name}", dir.relativeTo(monorepoRoot).path)
+    }
+
+val sharedServicesDir = File(monorepoRoot, "shared-services")
+if (sharedServicesDir.exists()) {
+    includeMonorepoProject(":shared-services", "shared-services")
+    includeMonorepoProject(":shared-services:auth-gateway", "shared-services/auth-gateway")
+    includeMonorepoProject(":shared-services:incident-service", "shared-services/incident-service")
+}
+
+listOf(
+    ":modules:agent" to "modules/agent",
+    ":modules:framework" to "modules/framework",
+    ":modules:workflow" to "modules/workflow",
+    ":modules:operator-adapter" to "modules/operator-adapter",
+    ":modules:integration" to "modules/integration",
+    ":engine:service" to "engine/service",
+    ":launcher" to "launcher",
+    ":contracts:proto" to "contracts/proto"
+).forEach { (path, relativePath) ->
+    val projectDir = File(productDir, relativePath)
+    if (projectDir.exists()) {
+        include(path)
+        project(path).projectDir = projectDir
+    }
+}
+
+val virtualOrgAliasRoot = File(productDir, "build/gradle-alias/products-virtual-org")
+    .apply { mkdirs() }
+include(":products:virtual-org")
+project(":products:virtual-org").projectDir = virtualOrgAliasRoot
+include(":products:virtual-org:modules")
+project(":products:virtual-org:modules").projectDir = File(virtualOrgAliasRoot, "modules").apply { mkdirs() }
+include(":products:virtual-org:engine")
+project(":products:virtual-org:engine").projectDir = File(virtualOrgAliasRoot, "engine").apply { mkdirs() }
+
+listOf(
+    ":products:virtual-org:modules:agent" to ":modules:agent",
+    ":products:virtual-org:modules:framework" to ":modules:framework",
+    ":products:virtual-org:modules:workflow" to ":modules:workflow",
+    ":products:virtual-org:modules:operator-adapter" to ":modules:operator-adapter",
+    ":products:virtual-org:modules:integration" to ":modules:integration",
+    ":products:virtual-org:engine:service" to ":engine:service",
+    ":products:virtual-org:launcher" to ":launcher"
+).forEach { (aliasPath, targetPath) ->
+    val targetProject = project(targetPath)
+    include(aliasPath)
+    project(aliasPath).projectDir = targetProject.projectDir
+}
+
+// ============================================================================
 // Plugin Management & Dependency Resolution
 // ============================================================================
 pluginManagement {
+    if (gradle.parent == null) {
+        val standaloneMonorepoRoot = rootDir.parentFile.parentFile
+        includeBuild(File(standaloneMonorepoRoot, "build-logic")) {
+            name = "ghatana-build-logic"
+        }
+    }
     repositories {
         gradlePluginPortal()
         mavenCentral()
@@ -147,7 +303,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
     }
-    // Version catalog auto-discovered from gradle/libs.versions.toml (via symlink)
+    // The product-local gradle symlink exposes the shared version catalog.
 }
 
 logger.lifecycle("Virtual-Org build configuration complete!")

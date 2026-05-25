@@ -35,7 +35,7 @@ import java.util.*;
  *
  * <p><b>Consistency Model</b><br>
  * - Create/update: Immediately visible in same transaction
- * - Revoke: Visible after transaction commit (EventCloud audit event emitted)
+ * - Revoke: Visible after transaction commit (Data-Cloud audit event emitted)
  * - Query: Returns committed state (no uncommitted reads)
  * - Concurrent revokes: Last-write-wins (timestamp-based)
  *

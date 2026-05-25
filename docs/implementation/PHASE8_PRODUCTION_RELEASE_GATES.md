@@ -8,6 +8,7 @@ Release infrastructure has comprehensive scripts and workflows:
 
 - ✅ `check-product-release-readiness.mjs` - Product release readiness validation
 - ✅ `check-evidence-freshness.mjs` - Evidence freshness validation
+- ✅ `check-evidence-current-commit.mjs` - Evidence commit binding validation
 - ✅ `check-production-readiness-audit-tasks.mjs` - Production readiness audit
 - ✅ `generate-comprehensive-release-summary.mjs` - Release summary generation
 - ✅ `generate-release-maturity-summary.mjs` - Maturity summary generation
@@ -28,6 +29,7 @@ Release infrastructure has comprehensive scripts and workflows:
 - ✅ `.kernel/evidence/` - Evidence storage directory
 - ✅ `config/release-evidence-storage-policy.json` - Storage policy
 - ✅ `config/evidence-freshness-policy.json` - Freshness policy
+- ✅ `docs/implementation/RELEASE_EVIDENCE_FRESHNESS_POLICY.md` - Freshness, commit binding, and revalidation policy
 
 ## Target State
 

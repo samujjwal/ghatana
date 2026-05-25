@@ -10,10 +10,18 @@ readiness:
     - requires-content-safety
     - requires-learner-data-privacy
     - requires-model-output-evaluation
+    - requires-agent-governance
+    - requires-distributed-cache-validation
+    - requires-assessment-e2e-validation
+    - requires-wcag-validation
   requiredGates:
     - content-safety
     - learner-data-privacy
     - model-output-evaluation
+    - agent-governance
+    - distributed-cache-validation
+    - assessment-e2e-validation
+    - wcag-validation
   nextRequiredWork:
     - Keep Tutorputor lifecycle disabled until content moderation and learner privacy evidence are executable.
     - Add model evaluation evidence contracts before enabling lifecycle execution.

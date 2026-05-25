@@ -7,12 +7,12 @@
 
 ## Responsibility
 
-Real-time feature ingestion pipeline that consumes events from EventCloud and writes features into the Feature Store for ML pipelines.
+Real-time feature ingestion pipeline that consumes events from the Data-Cloud EventLog and writes features into the Feature Store for ML pipelines.
 
 ## Service Details
 
 - **Entry point:** `FeatureStoreIngestLauncher` (ActiveJ Eventloop)
-- **Dependencies:** `platform:java:ai-integration`, `platform:java:event-cloud`, PostgreSQL, Redis
+- **Dependencies:** `platform:java:ai-integration`, Data-Cloud EventLog SPI, PostgreSQL, Redis
 
 ## Previous Location
 

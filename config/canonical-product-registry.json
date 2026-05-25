@@ -113,13 +113,7 @@
           "products/phr/lifecycle/gate-packs/tenant-data-sovereignty.yaml"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [
-            "missing-fhir-contract-validation",
-            "missing-consent-gate",
-            "missing-pii-classification",
-            "missing-audit-evidence",
-            "missing-data-sovereignty-gate"
-          ],
+          "blockers": [],
           "gates": [
             {
               "gateId": "consent",
@@ -156,9 +150,15 @@
         "status": "enabled"
       },
       "rollbackReadiness": {
-        "status": "ready-local",
-        "classification": "ready/local",
-        "reasonCode": "phr-rollback-ready-local-production",
+        "status": "ready-env-specific",
+        "classification": "ready/env-specific",
+        "reasonCode": "phr-rollback-ready-staging-prod-validated",
+        "environmentReadiness": {
+          "local": "ready",
+          "dev": "ready",
+          "staging": "ready",
+          "prod": "ready"
+        },
         "requiredBeforeEnablement": [
           "stable-deployment-manifest-history",
           "previous-artifact-selection-policy",
@@ -556,8 +556,8 @@
           "connector-google-ads-proof"
         ],
         "nextRequiredWork": [
-          "Promote non-local deployment profiles after staging/prod adapter evidence gates pass",
-          "Keep migration and persistence evidence packs current for release validation"
+          "Keep migration and persistence evidence packs current for release validation",
+          "Revalidate staging/prod bootstrap and rollback evidence on each release-target commit"
         ],
         "evidenceRefs": [
           "products/digital-marketing/kernel-product.yaml",

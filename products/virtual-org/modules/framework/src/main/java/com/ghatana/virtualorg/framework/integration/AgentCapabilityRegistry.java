@@ -20,17 +20,17 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Registry for organizational agents as unified stream operators.
+ * Registry for organizational agents as event-processing capabilities.
  *
  * <p><b>Purpose</b><br>
- * Registers all organizational agents (CEO, CTO, Engineers, etc.) as stream
- * operators in the OperatorCatalog, enabling agents to participate in
+ * Registers all organizational agents (CEO, CTO, Engineers, etc.) as event-processing
+ * capabilities in the OperatorCatalog, enabling agents to participate in
  * declarative stream pipelines and event-driven workflows.
  *
  * <p><b>Architecture Role</b><br>
  * Integration component bridging virtual-org-framework agents with
- * core:operator-catalog. Implements Phase 2 Track 1 (Agent Stream Operator
- * Unification) from PHASE_BY_PHASE_IMPLEMENTATION_GUIDE.md.
+ * core:operator-catalog. Implements Phase 2 Track 1 agent capability registration
+ * from PHASE_BY_PHASE_IMPLEMENTATION_GUIDE.md.
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
@@ -41,14 +41,14 @@ import java.util.Objects;
  *     new EngineerAgent(...)
  * );
  *
- * AgentOperatorRegistry registry = new AgentOperatorRegistry(
+ * AgentCapabilityRegistry registry = new AgentCapabilityRegistry(
  *     operatorCatalog,
  *     meterRegistry
  * );
  *
  * registry.registerAll(agents, "tenant123")
  *     .whenComplete(() ->
- *         logger.info("All agents registered as operators"));
+ *         logger.info("All agent capabilities registered"));
  * }</pre>
  *
  * <p><b>Integration Points</b><br>
@@ -63,13 +63,13 @@ import java.util.Objects;
  * @see AgentStreamOperatorAdapter
  * @see OperatorCatalog
  * @doc.type class
- * @doc.purpose Register organizational agents as stream operators
+ * @doc.purpose Register organizational agent capabilities with the operator catalog
  * @doc.layer product
  * @doc.pattern Registry
  */
-public class AgentOperatorRegistry {
+public class AgentCapabilityRegistry {
 
-    private static final Logger logger = LoggerFactory.getLogger(AgentOperatorRegistry.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentCapabilityRegistry.class);
 
     private static final String OPERATOR_NAMESPACE = "virtualorg";
     private static final String OPERATOR_VERSION = "1.0.0";
@@ -78,13 +78,13 @@ public class AgentOperatorRegistry {
     private final MeterRegistry meterRegistry;
 
     /**
-     * Creates agent operator registry.
+     * Creates agent capability registry.
      *
      * @param operatorCatalog operator catalog for registration (never null)
      * @param meterRegistry metrics registry for observability (never null)
      * @throws IllegalArgumentException if any parameter is null
      */
-    public AgentOperatorRegistry(
+    public AgentCapabilityRegistry(
             OperatorCatalog operatorCatalog,
             MeterRegistry meterRegistry
     ) {
@@ -97,12 +97,12 @@ public class AgentOperatorRegistry {
      * catalog registration and discovery. It provides minimal implementations for
      * the UnifiedOperator contract sufficient for tests.
      */
-    private static final class OrganizationalAgentOperator implements UnifiedOperator {
+    private static final class OrganizationalAgentCapability implements UnifiedOperator {
 
         private final OperatorId id;
         private final OrganizationalAgent agent;
 
-        OrganizationalAgentOperator(OperatorId id, OrganizationalAgent agent) {
+        OrganizationalAgentCapability(OperatorId id, OrganizationalAgent agent) {
             this.id = id;
             this.agent = agent;
         }
@@ -198,7 +198,7 @@ public class AgentOperatorRegistry {
     }
 
     /**
-     * Registers single organizational agent as stream operator.
+     * Registers single organizational agent as an event-processing capability.
      *
      * <p>Creates {@link AgentStreamOperatorAdapter} wrapping the agent,
      * assigns operator ID based on role, registers in catalog.
@@ -216,7 +216,7 @@ public class AgentOperatorRegistry {
         Objects.requireNonNull(tenantId, "tenantId required");
 
         String roleName = agent.getRole().name();
-        logger.info("Registering agent as operator: role={}, tenant={}", roleName, tenantId);
+        logger.info("Registering agent capability: role={}, tenant={}", roleName, tenantId);
 
         // Create operator ID
         OperatorId operatorId = OperatorId.of(
@@ -229,7 +229,7 @@ public class AgentOperatorRegistry {
         // Minimal UnifiedOperator wrapper around OrganizationalAgent for testing and
         // catalog lookups. This keeps registration lightweight while allowing
         // Phase 2 integration tests to verify discovery via OperatorCatalog.
-        UnifiedOperator operator = new OrganizationalAgentOperator(operatorId, agent);
+        UnifiedOperator operator = new OrganizationalAgentCapability(operatorId, agent);
 
         return operatorCatalog.register(operator)
             .whenComplete(() ->
@@ -241,7 +241,7 @@ public class AgentOperatorRegistry {
     }
 
     /**
-     * Registers multiple organizational agents as stream operators in parallel.
+     * Registers multiple organizational agents as event-processing capabilities in parallel.
      *
      * <p>Uses {@link Promises#all(List)} for concurrent registration.
      * If any registration fails, entire operation fails (atomic semantics).
@@ -260,7 +260,7 @@ public class AgentOperatorRegistry {
             return Promise.complete();
         }
 
-        logger.info("Registering {} agents as operators: tenant={}", agents.size(), tenantId);
+        logger.info("Registering {} agent capabilities: tenant={}", agents.size(), tenantId);
 
         // Register all agents in parallel
         List<Promise<Void>> registrationPromises = agents.stream()
@@ -278,7 +278,7 @@ public class AgentOperatorRegistry {
     }
 
     /**
-     * Unregisters organizational agent from operator catalog.
+     * Unregisters organizational agent capability from the operator catalog.
      *
      * <p>Removes operator from catalog, emits operator.unregistered event.
      *
@@ -291,7 +291,7 @@ public class AgentOperatorRegistry {
         Objects.requireNonNull(tenantId, "tenantId required");
 
         String roleName = agent.getRole().name();
-        logger.info("Unregistering agent operator: role={}, tenant={}", roleName, tenantId);
+        logger.info("Unregistering agent capability: role={}, tenant={}", roleName, tenantId);
 
         OperatorId operatorId = OperatorId.of(
             tenantId,

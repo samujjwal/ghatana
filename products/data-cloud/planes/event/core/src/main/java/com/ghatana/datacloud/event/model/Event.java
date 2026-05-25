@@ -16,11 +16,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * EventCloud-specific event extending core EventRecord.
+ * Data-Cloud event-plane event extending core EventRecord.
  *
  * <p>
  * <b>Purpose</b><br>
- * Extends the core {@link EventRecord} with EventCloud-specific features:
+ * Extends the core {@link EventRecord} with storage-plane event features:
  * <ul>
  * <li><b>Event Type</b>: Schema versioning via
  * eventTypeName/eventTypeVersion</li>
@@ -34,7 +34,7 @@ import java.util.Objects;
  * <pre>
  * DataRecord (core)
  *   └── EventRecord (core) - immutable, partitioned, ordered
- *         └── Event (event/domain) - EventCloud-specific extensions
+ *         └── Event (event/domain) - storage-plane extensions
  * </pre>
  *
  * <p>
@@ -60,7 +60,7 @@ import java.util.Objects;
  * @see EventStream
  * @see StorageTier
  * @doc.type class
- * @doc.purpose EventCloud event with type versioning and tiered storage
+ * @doc.purpose Data-Cloud event-plane record with type versioning and tiered storage
  * @doc.layer domain
  * @doc.pattern Domain Entity, Event Sourcing
  */

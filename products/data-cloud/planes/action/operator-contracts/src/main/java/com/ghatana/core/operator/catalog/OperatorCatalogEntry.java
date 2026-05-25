@@ -84,10 +84,8 @@ public record OperatorCatalogEntry(
 
     private static String replayProfile(EventOperatorCapability<?, ?> capability) {
         Object replayPolicy = capability.descriptor().policies().get("replayPolicy");
-        if (replayPolicy instanceof Map) {
-            @SuppressWarnings("rawtypes")
-            Map map = (Map) replayPolicy;
-            Object mode = map.getOrDefault("mode", "");
+        if (replayPolicy instanceof Map<?, ?> map) {
+            Object mode = map.get("mode");
             return mode != null ? String.valueOf(mode) : "";
         }
         return "";

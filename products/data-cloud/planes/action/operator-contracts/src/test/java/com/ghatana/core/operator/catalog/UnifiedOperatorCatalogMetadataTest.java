@@ -58,7 +58,7 @@ class UnifiedOperatorCatalogMetadataTest {
         catalog.register(new StubAgentCapability());
 
         List<OperatorCatalogEntry> entries = catalog.search(new OperatorCatalogQuery(
-            Optional.of(OperatorType.AGENT),
+            Optional.of(OperatorType.EVENT_OPERATOR_CAPABILITY),
             Optional.empty(),
             Optional.of(AgentSideEffectProfile.SIDE_EFFECTING),
             Optional.of("agent.action")));
@@ -187,7 +187,7 @@ class UnifiedOperatorCatalogMetadataTest {
 
         @Override
         public OperatorType getType() {
-            return OperatorType.AGENT;
+            return OperatorType.EVENT_OPERATOR_CAPABILITY;
         }
 
         @Override

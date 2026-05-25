@@ -19,6 +19,7 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.core.operator.OperatorType;
 import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 import com.ghatana.platform.domain.event.Event;
@@ -65,6 +66,31 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("rejects no-op memory stores unless explicitly policy disabled")
+    void rejectsNoOpMemoryStoreUnlessPolicyDisabled() {
+        TestAgent agent = new TestAgent("memory-agent");
+
+        assertThatThrownBy(() -> adapter(
+            agent,
+            "schema://agent/input",
+            policy("model"),
+            policy("memory"),
+            MemoryStore.noOp()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("durable MemoryStore");
+
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            agent,
+            "schema://agent/input",
+            policy("model"),
+            Map.of("policyRef", "memory-disabled-for-replay-test", "allowNoOpMemoryStore", true),
+            MemoryStore.noOp());
+
+        assertThat(adapter.descriptor().policies().get("memoryPolicy"))
+            .isEqualTo(Map.of("policyRef", "memory-disabled-for-replay-test", "allowNoOpMemoryStore", true));
+    }
+
+    @Test
     @DisplayName("is an EventOperatorCapability and delegates TypedAgent execution")
     void exposesGovernanceMetadataAndDelegatesProcessing() {
         AgentEventOperatorCapabilityAdapter adapter = adapter(
@@ -76,6 +102,7 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
         assertThat(adapter.descriptor().inputSchema()).isEqualTo("schema://agent/input");
         assertThat(adapter.descriptor().outputSchema()).isEqualTo("schema://agent/output");
         assertThat(adapter.descriptor().sideEffectProfile()).isEqualTo(AgentSideEffectProfile.PROPOSE_ACTION);
+        assertThat(adapter.getType()).isEqualTo(OperatorType.EVENT_OPERATOR_CAPABILITY);
         assertThat(adapter.descriptor().policies()).containsKeys(
             "modelPolicy",
             "toolPolicy",
@@ -254,6 +281,10 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             runtimeContext()));
 
         assertThat(result.success()).isTrue();
+        assertThat(result.evidence())
+            .containsEntry("sideEffectProfile", "SIDE_EFFECTING")
+            .containsEntry("auditPolicy", Map.of("sink", "eventcloud"))
+            .containsEntry("idempotencyRequired", true);
         assertThat(adapter.getMetrics())
             .containsEntry("sideEffectProfile", "SIDE_EFFECTING")
             .containsEntry("success", 1L);
@@ -274,6 +305,31 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             modelPolicy,
             policy("tool"),
             policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore);
+    }
+
+    private static AgentEventOperatorCapabilityAdapter adapter(
+            TestAgent agent,
+            String inputSchema,
+            Map<String, Object> modelPolicy,
+            Map<String, Object> memoryPolicy,
+            MemoryStore memoryStore) {
+        return new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/" + agent.descriptor().getAgentId() + "@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            inputSchema,
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            modelPolicy,
+            policy("tool"),
+            memoryPolicy,
             policy("retrieval"),
             policy("guardrail"),
             policy("replay"),

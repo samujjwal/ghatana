@@ -71,3 +71,40 @@ test('rejects Action Plane Gradle dependencies from non-action Data Cloud planes
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('rejects EventCloud semantics from non-action Data Cloud planes', () => {
+  const root = tempRepo();
+  try {
+    write(root, 'products/data-cloud/planes/intelligence/feature-ingest/README.md', `
+      # Feature ingest
+      Reads directly from EventCloud and owns complex event processing.
+    `);
+
+    const violations = findActionPlaneBoundaryViolations(root).violations;
+
+    assert.ok(violations.some((violation) => violation.rule === 'eventcloud-semantics-in-data-cloud-plane'));
+    assert.ok(violations.some((violation) => violation.rule === 'patternspec-semantics-in-data-cloud-plane'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('allows boundary assertions and stable persistence SPI wording', () => {
+  const root = tempRepo();
+  try {
+    write(root, 'products/data-cloud/planes/event/store/src/test/java/com/example/EventLogContractTest.java', `
+      package com.example;
+      // EventLog does not expose PatternSpec semantics.
+      class EventLogContractTest {}
+    `);
+    write(root, 'products/data-cloud/planes/shared-spi/src/main/java/com/example/EventLogStore.java', `
+      package com.example;
+      /** Storage SPI that AEP's EventCloud can use for persistence. */
+      interface EventLogStore {}
+    `);
+
+    assert.deepEqual(findActionPlaneBoundaryViolations(root).violations, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

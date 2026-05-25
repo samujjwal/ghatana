@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { findEvidenceCurrentCommitViolations } from './check-evidence-current-commit.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -23,6 +24,7 @@ const REQUIRED_RUNTIME_SIGNALS = [
   'tenant-scoping',
 ];
 const REQUIRED_BLOCKERS = [
+  'all-evidence-run-commits-match-current-head',
   'product-release-readiness-pass-true',
   'ai-governance-behavioral-proof-zero-warnings',
   'all-active-data-cloud-modules-compile-and-release-check',
@@ -118,9 +120,19 @@ function assertExecutableReadinessEvidence(readiness) {
     fail('Data Cloud readiness status must remain blocked until a separate release transition updates it with executable proof');
   }
   assertIncludesAll('Data Cloud readiness blockers', readiness.conformance?.keepStatusBlockedUntil, REQUIRED_BLOCKERS);
+  const currentCommitViolations = findEvidenceCurrentCommitViolations(repoRoot);
+  if (currentCommitViolations.length > 0) {
+    fail(`Evidence current-commit check failed: ${currentCommitViolations.join('; ')}`);
+  }
 
   const proofRefs = new Set(asArray(readiness.conformance?.executableProofRefs));
+  if (!proofRefs.has('scripts/check-evidence-current-commit.mjs')) {
+    fail('all-evidence-run-commits-match-current-head must be mapped to scripts/check-evidence-current-commit.mjs');
+  }
   for (const blocker of REQUIRED_BLOCKERS) {
+    if (blocker === 'all-evidence-run-commits-match-current-head') {
+      continue;
+    }
     const expected = EXECUTABLE_EVIDENCE[blocker];
     if (!proofRefs.has(expected.path)) {
       fail(`${blocker} must be mapped to executable evidence ref ${expected.path}`);

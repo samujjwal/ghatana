@@ -78,8 +78,28 @@ function getFreshnessProfile(relativePath) {
   return {
     evidenceType,
     thresholdHours,
+    failOnStale: Boolean(policyEntry?.failOnStale ?? true),
     requireSourceBacking: Boolean(policyEntry?.requireSourceBacking),
   };
+}
+
+function hasSourceBacking(evidence) {
+  if (!evidence || typeof evidence !== 'object') {
+    return false;
+  }
+
+  const hasSourceDescriptor = Boolean(
+    evidence.source
+    || evidence.sourceCommand
+    || evidence.generator
+    || evidence.provenance?.source
+    || evidence.metadata?.source
+    || evidence.summary?.source
+    || evidence.evidenceRun?.command
+    || evidence.evidenceRun?.script,
+  );
+
+  return hasSourceDescriptor;
 }
 
 function readEvidenceTimestamp(evidence) {
@@ -355,8 +375,19 @@ function evaluateEvidenceFreshness(relativePath, evidence, errors) {
   }
 
   const ageHours = (Date.now() - timestamp) / (1000 * 60 * 60);
-  if (ageHours > profile.thresholdHours) {
+  if (ageHours > profile.thresholdHours && profile.failOnStale) {
     errors.push(`Evidence file is stale (> ${profile.thresholdHours}h, ${profile.evidenceType}): ${relativePath}`);
+  }
+
+  const migratedSchemaPresent = Boolean(
+    evidence?.validationStatus
+    || evidence?.sourceCommitSha
+    || evidence?.targetCommitSha
+    || evidence?.evidenceRun,
+  );
+
+  if (profile.requireSourceBacking && migratedSchemaPresent && !hasSourceBacking(evidence)) {
+    errors.push(`Evidence file is missing required source backing metadata (${profile.evidenceType}): ${relativePath}`);
   }
 }
 
@@ -374,6 +405,82 @@ function assertRecent(relativePath, evidence, errors) {
   }
 
   evaluateEvidenceFreshness(relativePath, evidence, errors);
+}
+
+function hasUnresolvedLifecycleBlockers(lifecycleReadiness) {
+  const matrix = lifecycleReadiness?.blockerGateAdapterMatrix;
+  if (!matrix || typeof matrix !== 'object') {
+    return false;
+  }
+
+  const blockers = Array.isArray(matrix.blockers) ? matrix.blockers : [];
+  const unresolvedBlocker = blockers.some((blocker) => {
+    const normalized = String(blocker).trim().toLowerCase();
+    return normalized.startsWith('missing-') || normalized.includes('blocked') || normalized.includes('unvalidated') || normalized.includes('pending');
+  });
+
+  const adapters = Array.isArray(matrix.adapters) ? matrix.adapters : [];
+  const unresolvedAdapter = adapters.some((adapter) => {
+    const readiness = String(adapter?.readiness ?? '').trim().toLowerCase();
+    return readiness.length > 0 && readiness !== 'ready' && readiness !== 'validated' && readiness !== 'pass';
+  });
+
+  return unresolvedBlocker || unresolvedAdapter;
+}
+
+function validateReleaseIdentityFields(label, content, errors) {
+  if (!content || typeof content !== 'object') {
+    errors.push(`${label} must be a JSON object`);
+    return;
+  }
+
+  const generatedAtMs = new Date(content.generatedAt ?? '').getTime();
+  if (!Number.isFinite(generatedAtMs)) {
+    errors.push(`${label} missing valid generatedAt`);
+  }
+
+  const sourceCommitSha = String(content.sourceCommitSha ?? content.evidenceRun?.sourceCommitSha ?? content.evidenceRun?.commit ?? '').trim();
+  if (!/^[a-f0-9]{40}$/i.test(sourceCommitSha)) {
+    errors.push(`${label} missing sourceCommitSha (40-char SHA)`);
+  } else {
+    const currentCommit = process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD');
+    if (currentCommit && sourceCommitSha !== currentCommit) {
+      errors.push(`${label} sourceCommitSha mismatch: expected current HEAD ${currentCommit}, got ${sourceCommitSha}`);
+    }
+  }
+
+  const targetCommitSha = String(content.targetCommitSha ?? content.evidenceRun?.targetCommitSha ?? '').trim();
+  if (!/^[a-f0-9]{40}$/i.test(targetCommitSha)) {
+    errors.push(`${label} missing targetCommitSha (40-char SHA)`);
+  }
+
+  const targetEnv = String(content.targetEnvironment ?? content.evidenceRun?.targetEnvironment ?? '').trim();
+  if (!targetEnv) {
+    errors.push(`${label} missing targetEnvironment`);
+  } else if (targetEnv !== releaseEnvironment) {
+    errors.push(`${label} targetEnvironment mismatch: expected ${releaseEnvironment}, got ${targetEnv}`);
+  }
+
+  const validationStatus = String(content.validationStatus ?? '').trim();
+  if (!validationStatus || !['validated', 'failed'].includes(validationStatus)) {
+    errors.push(`${label} missing validationStatus (validated|failed)`);
+  }
+
+  const reviewDueAtMs = new Date(content.reviewDueAt ?? '').getTime();
+  const expiresAtMs = new Date(content.expiresAt ?? '').getTime();
+  if (!Number.isFinite(reviewDueAtMs) && !Number.isFinite(expiresAtMs)) {
+    errors.push(`${label} must provide reviewDueAt or expiresAt`);
+  }
+  if (Number.isFinite(generatedAtMs) && Number.isFinite(expiresAtMs) && expiresAtMs <= generatedAtMs) {
+    errors.push(`${label} expiresAt must be later than generatedAt`);
+  }
+
+  if (isReleaseMode && /^[a-f0-9]{40}$/i.test(targetCommitSha)) {
+    const currentCommit = process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD');
+    if (currentCommit && targetCommitSha !== currentCommit) {
+      errors.push(`${label} targetCommitSha mismatch: expected ${currentCommit}, got ${targetCommitSha}`);
+    }
+  }
 }
 
 function validateRequiredContent(evidenceByPath, errors) {
@@ -640,6 +747,7 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
     if (isReleaseMode && content.releaseVerdict !== 'pass') {
       errors.push(`Per-product scorecard must pass: ${path.basename(scorecardPath)}`);
     }
+    validateReleaseIdentityFields(path.basename(scorecardPath), content, errors);
     if (!Array.isArray(content.dimensions) || content.dimensions.length !== 47) {
       errors.push(`Per-product scorecard must contain 47 dimensions: ${path.basename(scorecardPath)}`);
     }
@@ -653,6 +761,8 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
     }
     if (!Array.isArray(content.blockingGaps)) {
       errors.push(`Per-product scorecard must include blockingGaps array: ${path.basename(scorecardPath)}`);
+    } else if (content.releaseVerdict === 'pass' && content.blockingGaps.length > 0) {
+      errors.push(`Per-product scorecard cannot pass with blocking gaps: ${path.basename(scorecardPath)}`);
     }
     if (!Array.isArray(content.dimensions)) {
       errors.push(`Per-product scorecard dimensions must be an array: ${path.basename(scorecardPath)}`);
@@ -661,6 +771,10 @@ function validatePerProductScorecards(errors, expectedProductIds = []) {
       if (invalidDimensions.length > 0) {
         errors.push(`Per-product scorecard contains dimensions without numeric score: ${path.basename(scorecardPath)}`);
       }
+    }
+
+    if (content.releaseVerdict === 'pass' && hasUnresolvedLifecycleBlockers(content.productMetadata?.lifecycleReadiness)) {
+      errors.push(`Per-product scorecard cannot pass with unresolved lifecycle blocker matrix: ${path.basename(scorecardPath)}`);
     }
 
     // Validate evidence quality
@@ -690,6 +804,9 @@ function main() {
   validateRequiredContent(evidenceByPath, errors);
   const releaseSummary = evidenceByPath.get(summaryEvidencePath);
   const productReadinessAggregate = readJson('.kernel/evidence/product-release-readiness.json', errors);
+  if (productReadinessAggregate) {
+    validateReleaseIdentityFields('product-release-readiness.json', productReadinessAggregate, errors);
+  }
   const scopedProductIds = productReadinessAggregate?.affectedProducts ?? releaseSummary?.productScope ?? [];
   validatePerProductScorecards(errors, scopedProductIds);
   validateLatestScenarioReport({

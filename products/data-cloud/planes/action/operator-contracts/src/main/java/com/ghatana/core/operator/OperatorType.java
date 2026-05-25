@@ -35,11 +35,11 @@ package com.ghatana.core.operator;
  *       ├── CorrelationAnalyzer
  *       ├── PatternSynthesizer
  *       └── Recommender (Collaborative Filtering)
- *   └── agent capability (AGENT)
- *       ├── AgentPredicate
- *       ├── AgentEnrich
- *       ├── AgentReview
- *       └── AgentAction
+ *   └── Agent-backed capability (EVENT_OPERATOR_CAPABILITY)
+ *       ├── AgentPredicateCapability
+ *       ├── AgentEnrichCapability
+ *       ├── AgentReviewCapability
+ *       └── AgentActionCapability
  * </pre>
  *
  * <p><b>Usage Examples</b>
@@ -236,9 +236,9 @@ public enum OperatorType {
     LEARNING,
 
     /**
-     * Agent operators (governed agent execution as first-class event operators).
+     * Agent-backed event operator capabilities.
      *
-     * <p>Examples: AgentPredicate, AgentEnrich, AgentReview, AgentAction
+     * <p>Examples: AgentPredicateCapability, AgentEnrichCapability, AgentReviewCapability
      */
-    AGENT
+    EVENT_OPERATOR_CAPABILITY
 }

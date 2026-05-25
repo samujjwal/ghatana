@@ -1,0 +1,113 @@
+schemaVersion: "1.0.0"
+productId: tutorputor
+gatePack: agent-governance
+effectiveAt: "2026-05-25T00:00:00.000Z"
+
+summary:
+  description: |
+    Agent governance gate pack for Tutorputor content generation agents.
+    Ensures all AI-generated educational content flows through GovernedAgentDispatcher
+    with safety invariants, tenant isolation, and audit logging.
+
+requirement:
+  governedAgentDispatcher: required
+  invariantMonitor: required
+  safetyInvariants:
+    - content_moderation_passed
+    - learner_age_appropriate
+    - tenant_scoped_generation
+    - audit_trail_complete
+  bypassBlocked: true
+
+validationGates:
+  - gate: governed-dispatcher-wiring
+    description: |
+      All content generation requests flow through GovernedAgentDispatcher;
+      no direct LLMGateway calls from application code.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: no-direct-llm-gateway-calls
+        description: |
+          Static analysis confirms no direct LLMGateway.invoke() calls in
+          Tutorputor application code; all calls route through dispatcher.
+        validationMethod: static-analysis
+      - checkName: dispatcher-injection-verified
+        description: |
+          GovernedAgentDispatcher is constructor-injected into ContentGenerationService
+          and ExerciseGenerationService.
+        validationMethod: dependency-injection-verify
+      - checkName: fallback-to-governed-path
+        description: |
+          If dispatcher is unavailable, service fails closed (no fallback to
+          ungoverned generation path).
+        validationMethod: failure-injection-test
+
+  - gate: safety-invariants-active
+    description: |
+      All safety invariants are registered with InvariantMonitor and
+      violations are caught and logged.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: content-moderation-invariant-registered
+        description: |
+          ContentModerationInvariant is registered with InvariantMonitor
+          before any generation requests.
+        validationMethod: integration-test
+      - checkName: age-appropriate-invariant-registered
+        description: |
+          AgeAppropriateContentInvariant is registered for all learner-facing
+          content generation.
+        validationMethod: integration-test
+      - checkName: invariant-violation-caught
+        description: |
+          Invariant violation (e.g., inappropriate content) triggers
+          exception and audit log entry; content is not delivered.
+        validationMethod: behavioral-test
+
+  - gate: tenant-isolation-enforced
+    description: |
+      Content generation is always scoped to the requesting tenant;
+      cross-tenant content leakage is impossible.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: tenant-id-in-prompt-context
+        description: |
+          Every generation prompt includes tenantId in the context metadata.
+        validationMethod: code-review
+      - checkName: cross-tenant-generation-blocked
+        description: |
+          Attempt to generate content with mismatched tenant context
+          returns 403 and audit log entry.
+        validationMethod: security-test
+
+  - gate: audit-trail-complete
+    description: |
+      Every content generation request and response is audited with
+      full prompt, model, parameters, and output hash.
+    required: true
+    blockingIfFailed: true
+    checks:
+      - checkName: generation-audit-logged
+        description: |
+          ContentGenerationAuditEvent is emitted for every request
+          with correlationId, tenantId, promptHash, model, and outputHash.
+        validationMethod: audit-log-verify
+      - checkName: audit-immutability
+        description: |
+          Audit entries are append-only; no update or delete operations
+          permitted on content_generation_audit collection.
+        validationMethod: database-permission-test
+
+evidenceRefs:
+  - .kernel/evidence/tutorputor/tutorputor-release-readiness.json
+  - products/tutorputor/lifecycle/gate-packs/distributed-cache-validation.yaml
+  - products/tutorputor/services/tutorputor-platform/src/workers/content/GovernedContentDispatchGuard.ts
+  - platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java
+
+implementation:
+  governedContentDispatchGuard: products/tutorputor/services/tutorputor-platform/src/workers/content/GovernedContentDispatchGuard.ts
+  invariantMonitor: platform/java/agent-core/src/main/java/com/ghatana/agent/runtime/safety/InvariantMonitor.java
+  agentOrchestrationModule: products/data-cloud/planes/action/orchestrator/src/main/java/com/ghatana/aep/di/AepOrchestrationModule.java

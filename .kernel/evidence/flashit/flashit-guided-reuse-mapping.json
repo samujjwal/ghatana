@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "1.0.0",
+  "productId": "flashit",
+  "evidenceType": "guided-reuse-mapping",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "summary": {
+    "description": "FlashIt guided reuse mapping documenting consumption of hardened assets from PHR and Digital Marketing (DMOS)",
+    "status": "candidate",
+    "recommendation": "FlashIt is in candidate status; reuse PHR/DMOS assets through YAPPC guided reuse when moving to shaping phase",
+    "blockedForReuse": true,
+    "blockReason": "FlashIt is not yet release-ready (mobile lifecycle disabled, web lifecycle in validation)"
+  },
+  "foundationAssetConsumption": {
+    "kernel": {
+      "usage": "required",
+      "source": "platform",
+      "maturity": "hardened",
+      "status": "available"
+    },
+    "dataCloud": {
+      "usage": "required",
+      "source": "platform",
+      "maturity": "hardened",
+      "status": "available"
+    },
+    "platformJava": {
+      "usage": "partial",
+      "source": "platform",
+      "maturity": "hardened",
+      "status": "available",
+      "modules": [
+        "platform:java:http",
+        "platform:java:security"
+      ]
+    },
+    "platformTypeScript": {
+      "usage": "required",
+      "source": "platform",
+      "maturity": "hardened",
+      "status": "available",
+      "packages": [
+        "@ghatana/design-system",
+        "@ghatana/platform-utils",
+        "@ghatana/forms",
+        "@ghatana/state"
+      ]
+    }
+  },
+  "phrAssetConsumption": {
+    "description": "PHR assets recommended for FlashIt when healthcare-adjacent features are needed",
+    "status": "available-for-planning",
+    "assets": [
+      {
+        "assetId": "phr-consent-panel",
+        "assetName": "PHR Consent Panel",
+        "applicability": "High - FlashIt handles user content; consent patterns from PHR are relevant",
+        "adoptionComplexity": "medium",
+        "adaptationRequired": [
+          "Replace PHI-specific language with content-ownership language",
+          "Adapt UI for marketing content context"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json"
+        ]
+      },
+      {
+        "assetId": "phr-audit-trail-panel",
+        "assetName": "PHR Audit Trail Panel",
+        "applicability": "Medium - FlashIt needs audit for content operations",
+        "adoptionComplexity": "low",
+        "adaptationRequired": [
+          "Generalize from healthcare audit to content operations audit"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json"
+        ]
+      }
+    ]
+  },
+  "dmosAssetConsumption": {
+    "description": "Digital Marketing (DMOS) assets highly applicable to FlashIt marketing content workflows",
+    "status": "recommended",
+    "assets": [
+      {
+        "assetId": "dmos-approval-queue",
+        "assetName": "DMOS Approval Queue",
+        "applicability": "High - FlashIt content approval workflows can leverage DMOS patterns",
+        "adoptionComplexity": "low",
+        "adaptationRequired": [
+          "Adapt from campaign approval to content preview approval"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
+        ]
+      },
+      {
+        "assetId": "dmos-connector-workflow",
+        "assetName": "DMOS Connector Workflow",
+        "applicability": "High - FlashIt external integrations can use connector patterns",
+        "adoptionComplexity": "medium",
+        "adaptationRequired": [
+          "Add preview-specific connectors (social media, messaging platforms)"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
+        ]
+      },
+      {
+        "assetId": "dmos-campaign-dashboard",
+        "assetName": "DMOS Campaign Dashboard",
+        "applicability": "Medium - FlashIt content analytics dashboard can leverage patterns",
+        "adoptionComplexity": "medium",
+        "adaptationRequired": [
+          "Replace campaign metrics with content engagement metrics",
+          "Adapt for personal (non-business) use case"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
+        ]
+      }
+    ]
+  },
+  "reuseReadiness": {
+    "currentStatus": "candidate-not-ready",
+    "blockers": [
+      "FlashIt mobile lifecycle is disabled",
+      "FlashIt web lifecycle is not yet validated in staging",
+      "FlashIt has not completed foundation usage profile validation"
+    ],
+    "nextSteps": [
+      {
+        "step": "Validate web lifecycle in staging",
+        "priority": "P0",
+        "blocking": true
+      },
+      {
+        "step": "Complete foundation usage profile",
+        "priority": "P1",
+        "blocking": false
+      },
+      {
+        "step": "Document mobile lifecycle enablement plan",
+        "priority": "P1",
+        "blocking": false
+      },
+      {
+        "step": "Evaluate PHR consent patterns for FlashIt content ownership",
+        "priority": "P2",
+        "blocking": false
+      }
+    ]
+  },
+  "yappcIntegration": {
+    "guidedReuseEndpoint": "/api/v1/yappc/product-family/reuse-recommendations/flashit",
+    "status": "registered",
+    "candidateBlocked": true,
+    "blockMessage": "FlashIt is a candidate product not yet ready for guided asset reuse. Complete web lifecycle validation first.",
+    "unblockedCriteria": [
+      "Web lifecycle passes staging validation",
+      "Foundation usage profile validated",
+      "Release readiness score >= 4.0"
+    ]
+  },
+  "evidenceRefs": [
+    ".kernel/evidence/phr/reusable-assets-registration.json",
+    ".kernel/evidence/digital-marketing/reusable-assets-registration.json",
+    ".kernel/evidence/tutorputor/reusable-assets-registration.json",
+    "products/flashit/kernel-product.yaml",
+    "products/flashit/lifecycle/foundation-usage-profile.yaml"
+  ]
+}

@@ -41,7 +41,7 @@ readiness:
     - persistence-proof
     - connector-google-ads-proof
   nextRequiredWork:
-    - Promote non-local deployment profiles after staging/prod adapter evidence gates pass
+    - Revalidate staging/prod bootstrap and rollback evidence on each release-target commit
     - Keep migration and persistence evidence packs current for release validation
   evidenceRefs:
     - products/digital-marketing/kernel-product.yaml

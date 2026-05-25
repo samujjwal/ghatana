@@ -68,3 +68,65 @@ test('rejects PatternSpec helper names that preserve the old model', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('requires issue and removal deadline for temporary process(Event) compatibility', () => {
+  const root = tempRepo();
+  try {
+    write(root, 'src/main/java/com/example/AgentEventOperatorCapabilityAdapter.java', `
+      final class AgentEventOperatorCapabilityAdapter {
+        Promise<OperatorResult> process(Event event) { return null; }
+      }
+    `);
+
+    const violations = findAgentCapabilityDuplicateViolations(root, ['src/main/java']);
+
+    assert.ok(violations.some((violation) => violation.rule === 'agent-event-process-compatibility-missing-tracker'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('fails temporary process(Event) compatibility after the migration deadline', () => {
+  const root = tempRepo();
+  try {
+    write(root, 'src/main/java/com/example/AgentEventOperatorCapabilityAdapter.java', `
+      final class AgentEventOperatorCapabilityAdapter {
+        // AEP-AGENT-CAP-001 remove by 2026-06-30.
+        Promise<OperatorResult> process(Event event) { return null; }
+      }
+    `);
+
+    const violations = findAgentCapabilityDuplicateViolations(root, ['src/main/java'], {
+      now: new Date('2026-07-01T00:00:00.000Z'),
+    });
+
+    assert.ok(violations.some((violation) => violation.rule === 'agent-event-process-compatibility-expired'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects unsafe production defaults in agent capability adapter', () => {
+  const root = tempRepo();
+  try {
+    write(root, 'src/main/java/com/example/AgentEventOperatorCapabilityAdapter.java', `
+      final class AgentEventOperatorCapabilityAdapter {
+        OperatorType getType() { return OperatorType.AGENT; }
+        MemoryStore memoryStore() { return MemoryStore.noOp(); }
+        Map<String, Object> getMetrics() { return Map.of(); }
+        Object tenant() { return "default-tenant"; }
+        Object value() { return null; }
+      }
+    `);
+
+    const violations = findAgentCapabilityDuplicateViolations(root, ['src/main/java']);
+
+    assert.ok(violations.some((violation) => violation.rule === 'agent-capability-memory-noop'));
+    assert.ok(violations.some((violation) => violation.rule === 'agent-capability-default-tenant'));
+    assert.ok(violations.some((violation) => violation.rule === 'agent-capability-empty-metrics'));
+    assert.ok(violations.some((violation) => violation.rule === 'agent-capability-return-null'));
+    assert.ok(violations.some((violation) => violation.rule === 'agent-capability-operator-type-agent'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

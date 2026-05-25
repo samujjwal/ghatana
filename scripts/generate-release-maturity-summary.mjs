@@ -55,7 +55,10 @@ function readPerProductReleaseScorecards() {
     return [];
   }
 
-  const scopedProductIds = new Set(productReleaseReadiness?.affectedProducts ?? []);
+  const affectedProducts = Array.isArray(productReleaseReadiness?.affectedProducts)
+    ? productReleaseReadiness.affectedProducts
+    : [];
+  const scopedProductIds = new Set(affectedProducts);
 
   return readdirSync(evidenceDir)
     .filter((entry) => /^product-release-readiness\.[^.]+\.json$/i.test(entry))
@@ -65,6 +68,10 @@ function readPerProductReleaseScorecards() {
 }
 
 const perProductReleaseScorecards = readPerProductReleaseScorecards();
+const releaseProductScope =
+  Array.isArray(productReleaseReadiness?.affectedProducts) && productReleaseReadiness.affectedProducts.length > 0
+    ? productReleaseReadiness.affectedProducts
+    : perProductReleaseScorecards.map((scorecard) => scorecard.productId);
 const perProductFailedScorecards = perProductReleaseScorecards.filter((scorecard) => {
   const verdictPass = scorecard.releaseVerdict === 'pass';
   const averageScore = Number(scorecard.averageScore ?? 0);
@@ -117,7 +124,7 @@ const summary = {
   generatedAt: new Date().toISOString(),
   sourceCommit: process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD'),
   sourceBranch: process.env.GITHUB_REF_NAME ?? gitValue('git branch --show-current'),
-  productScope: productReleaseReadiness?.affectedProducts ?? perProductReleaseScorecards.map((scorecard) => scorecard.productId),
+  productScope: releaseProductScope,
   releaseEnvironment: releaseEnv,
   releaseGate: {
     smoke: {
@@ -195,7 +202,7 @@ const summary = {
       productCostBudgetsPass,
       productDomainInvariantsPass,
       openApiBreakingChangesPass,
-      affectedProductCount: productReleaseReadiness?.affectedProducts?.length ?? perProductReleaseScorecards.length,
+      affectedProductCount: releaseProductScope.length,
     },
     perProductReleaseReadiness: {
       available: perProductReleaseScorecards.length > 0,

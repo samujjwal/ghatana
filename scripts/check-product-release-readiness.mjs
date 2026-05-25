@@ -15,6 +15,8 @@ const implementationPlanEvidencePath = path.join(evidenceDir, 'kernel-implementa
 const wave2ScorecardPath = path.join(evidenceDir, 'wave2-product-quality-scorecard.json');
 const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4');
 const platformLifecycleBuildScript = 'pnpm:build:kernel-lifecycle-platform';
+const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
+const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
 
 function currentGitSha() {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], {
@@ -26,12 +28,86 @@ function currentGitSha() {
 }
 
 function evidenceRunMetadata() {
+  const commit = currentGitSha();
+  const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? commit;
+
   return {
     generatedBy: 'scripts/check-product-release-readiness.mjs',
     command: 'pnpm check:product-release-readiness',
     source: 'scripts/check-product-release-readiness.mjs',
-    commit: currentGitSha(),
+    commit,
+    sourceCommitSha: commit,
+    targetCommitSha,
+    targetEnvironment,
   };
+}
+
+function evidenceLifecycleMetadata(isValid) {
+  const now = new Date();
+  const sourceCommitSha = currentGitSha();
+  const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? sourceCommitSha;
+
+  return {
+    sourceCommitSha,
+    targetCommitSha,
+    targetEnvironment,
+    validationStatus: isValid ? 'validated' : 'failed',
+    reviewDueAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(now.getTime() + evidenceValidityHours * 60 * 60 * 1000).toISOString(),
+  };
+}
+
+function hasUnresolvedLifecycleBlockers(productMetadata) {
+  const matrix = productMetadata?.lifecycleReadiness?.blockerGateAdapterMatrix;
+  if (!matrix || typeof matrix !== 'object') {
+    return false;
+  }
+
+  const blockers = Array.isArray(matrix.blockers) ? matrix.blockers : [];
+  const unresolvedBlocker = blockers.some((blocker) => {
+    const normalized = String(blocker).trim().toLowerCase();
+    return normalized.startsWith('missing-') || normalized.includes('blocked') || normalized.includes('unvalidated') || normalized.includes('pending');
+  });
+
+  const adapters = Array.isArray(matrix.adapters) ? matrix.adapters : [];
+  const unresolvedAdapter = adapters.some((adapter) => {
+    const readiness = String(adapter?.readiness ?? '').trim().toLowerCase();
+    return readiness.length > 0 && readiness !== 'ready' && readiness !== 'validated' && readiness !== 'pass';
+  });
+
+  return unresolvedBlocker || unresolvedAdapter;
+}
+
+function validateRegistryAndEvidenceConsistency(productId, productMetadata) {
+  const gaps = [];
+  const deploymentTargets = productMetadata?.deployment?.targets ?? [];
+  const environments = productMetadata?.environments?.supported ?? [];
+  const requiresStagingOrProd =
+    deploymentTargets.includes('staging') ||
+    deploymentTargets.includes('prod') ||
+    environments.includes('staging') ||
+    environments.includes('prod');
+
+  const rollbackStatus = String(productMetadata?.rollbackReadiness?.status ?? '').toLowerCase();
+  if (requiresStagingOrProd && rollbackStatus === 'ready-local') {
+    gaps.push({
+      severity: 'P0',
+      gate: 'rollback-readiness',
+      reason: 'ready-local-with-staging-prod-targets',
+      message: `Product ${productId} cannot declare rollback status ready-local while staging/prod targets are enabled`,
+    });
+  }
+
+  if (hasUnresolvedLifecycleBlockers(productMetadata)) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'lifecycle-readiness-blockers',
+      reason: 'unresolved-blocker-matrix',
+      message: `Product ${productId} has unresolved blocker matrix entries while lifecycle readiness is enabled`,
+    });
+  }
+
+  return gaps;
 }
 
 function sleepMs(durationMs) {
@@ -519,6 +595,21 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     return uniqueExistingChecks(executionOrder);
   }
 
+  if (options.explicitProductScope) {
+    const strictScopedPlan = [
+      './scripts/check-affected-product-strict-release-profile.mjs',
+    ];
+
+    for (const productId of affectedProducts) {
+      const groupName = productScopedGroupById[productId];
+      if (groupName) {
+        strictScopedPlan.push(...scopedCheckGroups[groupName]);
+      }
+    }
+
+    return uniqueExistingChecks(strictScopedPlan);
+  }
+
   const plan = [
     ...scopedCheckGroups.globalPrerequisiteChecks,
     ...scopedCheckGroups.platformChecks,
@@ -586,9 +677,11 @@ function releaseReadinessOptions() {
   const explicitPaths = splitCsv(parseArg('--paths'));
   const baseRef = parseArg('--base');
   const headRef = parseArg('--head');
+  const explicitProducts = parseArg('--products') || parseArg('--product') || process.env.AFFECTED_PRODUCTS || '';
   return {
     full: hasArg('--full'),
     releaseRisk: hasArg('--release-risk') || process.env.RELEASE_RISK === 'true',
+    explicitProductScope: explicitProducts.trim().length > 0,
     paths: explicitPaths.length > 0 ? explicitPaths : readChangedFilesFromGit(baseRef, headRef),
   };
 }
@@ -815,6 +908,9 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
   const productionEvidenceGaps = validateProductionEvidence(productId, productMetadata);
   blockingGaps.push(...productionEvidenceGaps);
 
+  const consistencyGaps = validateRegistryAndEvidenceConsistency(productId, productMetadata);
+  blockingGaps.push(...consistencyGaps);
+
   const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
   const belowTargetDimensions = dimensions
     .filter((dimension) => dimension.score < releaseTargetScore)
@@ -832,11 +928,14 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
     });
   }
 
+  const releaseVerdict = blockingGaps.length === 0 ? 'pass' : 'fail';
+
   return {
     generatedAt: new Date().toISOString(),
     evidenceRun: evidenceRunMetadata(),
+    ...evidenceLifecycleMetadata(releaseVerdict === 'pass'),
     productId,
-    releaseVerdict: blockingGaps.length === 0 ? 'pass' : 'fail',
+    releaseVerdict,
     releaseProfiles,
     productMetadata,
     dimensions,
@@ -899,6 +998,7 @@ function runProductReleaseReadinessCli() {
     writeJsonWithRetry(evidencePath, {
       generatedAt: new Date().toISOString(),
       evidenceRun: evidenceRunMetadata(),
+      ...evidenceLifecycleMetadata(false),
       pass: false,
       reason,
       failedScript,
@@ -1000,6 +1100,7 @@ function runProductReleaseReadinessCli() {
   const evidence = {
     generatedAt: new Date().toISOString(),
     evidenceRun: evidenceRunMetadata(),
+    ...evidenceLifecycleMetadata(true),
     pass: true,
     journeyResults,
     releaseAreaResults,

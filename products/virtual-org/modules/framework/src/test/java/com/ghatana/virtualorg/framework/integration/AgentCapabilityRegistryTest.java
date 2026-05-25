@@ -14,29 +14,30 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Unit tests for AgentOperatorRegistry.
+ * Unit tests for AgentCapabilityRegistry.
  *
  * <p>Tests validate:
- * - Single agent registration as operator
+ * - Single agent capability registration
  * - Batch agent registration (all 12 agents)
  * - Operator catalog integration
  * - Operator ID format and namespacing
  * - Unregistration and cleanup
  *
  * @doc.type test
- * @doc.purpose Validate agent-to-operator registration
+ * @doc.purpose Validate agent capability registration
  * @doc.layer product
  */
-@DisplayName("AgentOperatorRegistry Tests")
-class AgentOperatorRegistryTest extends EventloopTestBase {
+@DisplayName("AgentCapabilityRegistry Tests")
+class AgentCapabilityRegistryTest extends EventloopTestBase {
 
     private OperatorCatalog operatorCatalog;
     private SimpleMeterRegistry meterRegistry;
-    private AgentOperatorRegistry registry;
+    private AgentCapabilityRegistry registry;
 
     private static final String TENANT_ID = "test-tenant";
 
@@ -44,7 +45,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
     void setUp() {
         operatorCatalog = new UnifiedOperatorCatalog();
         meterRegistry = new SimpleMeterRegistry();
-        registry = new AgentOperatorRegistry(operatorCatalog, meterRegistry);
+        registry = new AgentCapabilityRegistry(operatorCatalog, meterRegistry);
     }
 
     /**
@@ -52,10 +53,10 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
      *
      * GIVEN: CEO agent instance
      * WHEN: registering agent
-     * THEN: agent appears in operator catalog with correct ID
+     * THEN: agent capability registration succeeds with the expected metric
      */
     @Test
-    @DisplayName("Should register single agent as operator")
+    @DisplayName("Should register single agent capability")
     void shouldRegisterSingleAgent() {
         // GIVEN: CEO agent
         OrganizationalAgent ceo = createTestCEO();
@@ -235,7 +236,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
         @Override
         public com.ghatana.contracts.agent.v1.AgentResultProto execute(
                 com.ghatana.contracts.agent.v1.AgentInputProto input) {
-                return null;
+                return com.ghatana.contracts.agent.v1.AgentResultProto.getDefaultInstance();
         }
 
         @Override
@@ -245,7 +246,71 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
 
         @Override
         public com.ghatana.platform.domain.agent.registry.AgentMetrics getMetrics() {
-            return null;
+            return testMetrics();
         }
+    }
+
+    private static com.ghatana.platform.domain.agent.registry.AgentMetrics testMetrics() {
+        return new com.ghatana.platform.domain.agent.registry.AgentMetrics() {
+            @Override
+            public long processedCount() {
+                return 0;
+            }
+
+            @Override
+            public long getEventsProcessed() {
+                return 0;
+            }
+
+            @Override
+            public long getErrorCount() {
+                return 0;
+            }
+
+            @Override
+            public double getAverageProcessingTimeMs() {
+                return 0.0;
+            }
+
+            @Override
+            public double getCurrentThroughput() {
+                return 0.0;
+            }
+
+            @Override
+            public double getPeakThroughput() {
+                return 0.0;
+            }
+
+            @Override
+            public java.time.Instant getLastProcessedAt() {
+                return java.time.Instant.EPOCH;
+            }
+
+            @Override
+            public long getMemoryUsageMb() {
+                return 0;
+            }
+
+            @Override
+            public double getCpuUtilization() {
+                return 0.0;
+            }
+
+            @Override
+            public int getActiveThreads() {
+                return 0;
+            }
+
+            @Override
+            public Map<String, Object> getCustomMetrics() {
+                return Map.of();
+            }
+
+            @Override
+            public com.ghatana.platform.health.HealthStatus getHealthStatus() {
+                return com.ghatana.platform.health.HealthStatus.healthy();
+            }
+        };
     }
 }
