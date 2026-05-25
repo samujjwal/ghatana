@@ -1,7 +1,7 @@
 /**
  * Realtime Stream Integration for Data-Cloud
  *
- * Bridges @ghatana/realtime with Data-Cloud's EventCloud and Brain systems.
+ * Bridges @ghatana/realtime with Data-Cloud's EventLog and Brain systems.
  * Provides typed hooks for real-time event and state streaming.
  *
  * @doc.type module
@@ -37,9 +37,9 @@ export interface StreamEvent<T = unknown> {
 // ============================================
 
 /**
- * EventCloud event from Data-Cloud's event streaming system
+ * EventLog event from Data-Cloud's event streaming system
  */
-export interface EventCloudEvent {
+export interface EventLogEvent {
     /** Event ID */
     id: string;
     /** Event type */
@@ -227,11 +227,11 @@ function createWebSocketHook<T>(
 // ============================================
 
 /**
- * Hook for EventCloud streaming
+ * Hook for EventLog streaming
  *
  * @example
  * ```tsx
- * const { events, status, clear } = useEventCloudStream('tenant-1/entities');
+ * const { events, status, clear } = useEventLogStream('tenant-1/entities');
  *
  * <EventStreamVisualization
  *   events={events}
@@ -240,7 +240,7 @@ function createWebSocketHook<T>(
  * />
  * ```
  */
-export function useEventCloudStream(
+export function useEventLogStream(
     topic: string,
     options?: {
         enabled?: boolean;
@@ -254,9 +254,9 @@ export function useEventCloudStream(
 ) {
     const useStream = useMemo(
         () =>
-            createWebSocketHook<EventCloudEvent>('/api/ws/eventcloud', {
+            createWebSocketHook<EventLogEvent>('/api/ws/eventcloud', {
                 maxEvents: options?.maxEvents ?? 1000,
-                transform: (raw) => raw as EventCloudEvent,
+                transform: (raw) => raw as EventLogEvent,
             }),
         [options?.maxEvents]
     );
@@ -565,7 +565,7 @@ export function DataCloudRealtimeProvider({
     children: ReactNode;
     defaultTopic?: string;
 }) {
-    const eventCloud = useEventCloudStream(defaultTopic);
+    const eventCloud = useEventLogStream(defaultTopic);
     const brain = useBrainStateStream();
     const entity = useEntityChangeStream();
 

@@ -67,7 +67,7 @@ public enum DeploymentMode {
      *
      * <p><b>Use Cases:</b>
      * <ul>
-     *   <li>AEP with embedded EventCloud (same JVM)</li>
+     *   <li>AEP with embedded EventLog (same JVM)</li>
      *   <li>Edge/IoT deployments with local storage</li>
      *   <li>Unit and integration testing</li>
      *   <li>Single-node processing applications</li>

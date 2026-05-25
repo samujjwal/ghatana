@@ -133,7 +133,7 @@ class PatternSpecSchemaRegistryTest {
 
         @Test
         @DisplayName("agent capability with outputSchema is valid")
-        void agentOperatorWithOutputSchemaIsValid() {
+        void eventOperatorWithOutputSchemaIsValid() {
             PatternSpecValidationResult result = PatternSpecValidator.validate(validSpec(Map.of(
                 "operator", "AGENT_PREDICATE",
                 "agentRef", "agents/predicate@1.0.0",
@@ -219,7 +219,7 @@ class PatternSpecSchemaRegistryTest {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",
             "kind", "PatternSpec",
-            "metadata", Map.of("name", "test", "tenantId", "tenant-a", "owner", "sre"),
+            "metadata", Map.of("name", "test", "namespace", "test", "version", "1.0.0", "tenantId", "tenant-a", "owner", "sre"),
             "semantics", Map.of("timePolicy", Map.of(), "uncertaintyPolicy", Map.of(), "replayPolicy", Map.of()),
             "pattern", pattern,
             "emit", Map.of("eventType", "pattern.matched", "outputSchema", "PatternMatched"),

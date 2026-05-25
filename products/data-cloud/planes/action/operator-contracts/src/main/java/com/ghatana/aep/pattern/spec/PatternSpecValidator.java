@@ -1,11 +1,15 @@
 package com.ghatana.aep.pattern.spec;
 
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.ExternalAgentCapabilityRegistry;
 import com.ghatana.aep.operator.contract.OperatorKind;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -35,7 +39,7 @@ public final class PatternSpecValidator {
     private PatternSpecValidator() {}
 
     public static PatternSpecValidationResult validate(Map<String, Object> spec) {
-        return validate(spec, null, null);
+        return validate(spec, null, null, null);
     }
 
     /**
@@ -50,6 +54,23 @@ public final class PatternSpecValidator {
             Map<String, Object> spec,
             String commitSha,
             String environment) {
+        return validate(spec, commitSha, environment, null);
+    }
+
+    /**
+     * Validates a PatternSpec with production-specific constraints and capability registry validation.
+     *
+     * @param spec the pattern specification
+     * @param commitSha the commit SHA for production truth binding
+     * @param environment the target environment
+     * @param registry the capability registry for validating capabilityRef
+     * @return validation result
+     */
+    public static PatternSpecValidationResult validate(
+            Map<String, Object> spec,
+            String commitSha,
+            String environment,
+            ExternalAgentCapabilityRegistry registry) {
         List<String> errors = new ArrayList<>();
         if (spec == null) {
             return PatternSpecValidationResult.invalid(List.of("PatternSpec must not be null"));
@@ -72,7 +93,7 @@ public final class PatternSpecValidator {
 
         Object pattern = spec.get("pattern");
         if (pattern instanceof Map<?, ?> patternMap) {
-            validateExpression(patternMap, "pattern", governanceContext(spec), errors);
+            validateExpression(patternMap, "pattern", governanceContext(spec), registry, environment, errors);
         } else if (pattern != null) {
             errors.add("pattern must be an object");
         }
@@ -86,6 +107,8 @@ public final class PatternSpecValidator {
             Map<?, ?> expression,
             String path,
             GovernanceContext governance,
+            ExternalAgentCapabilityRegistry registry,
+            String environment,
             List<String> errors) {
         Object operatorValue = expression.get("operator");
         if (operatorValue == null) {
@@ -106,6 +129,8 @@ public final class PatternSpecValidator {
         if (AGENT_OPERATORS.contains(operatorKind)) {
             if (isBlank(expression.get("capabilityRef"))) {
                 errors.add(path + "." + operatorKind + " requires capabilityRef");
+            } else if (registry != null) {
+                validateCapabilityRef(expression, path, operatorKind, registry, environment, errors);
             }
             if (isBlank(expression.get("outputSchema"))) {
                 errors.add(path + "." + operatorKind + " requires outputSchema");
@@ -121,7 +146,7 @@ public final class PatternSpecValidator {
             for (int i = 0; i < list.size(); i++) {
                 Object child = list.get(i);
                 if (child instanceof Map<?, ?> childMap) {
-                    validateExpression(childMap, path + ".operands[" + i + "]", governance, errors);
+                    validateExpression(childMap, path + ".operands[" + i + "]", governance, registry, environment, errors);
                 } else {
                     errors.add(path + ".operands[" + i + "] must be an object");
                 }
@@ -130,7 +155,36 @@ public final class PatternSpecValidator {
 
         Object nestedPattern = expression.get("pattern");
         if (nestedPattern instanceof Map<?, ?> nestedMap) {
-            validateExpression(nestedMap, path + ".pattern", governance, errors);
+            validateExpression(nestedMap, path + ".pattern", governance, registry, environment, errors);
+        }
+    }
+
+    private static void validateCapabilityRef(
+            Map<?, ?> expression,
+            String path,
+            OperatorKind operatorKind,
+            ExternalAgentCapabilityRegistry registry,
+            String environment,
+            List<String> errors) {
+        String capabilityRef = String.valueOf(expression.get("capabilityRef"));
+        CapabilityId capabilityId = CapabilityId.of(capabilityRef);
+        Optional<CapabilityDescriptor> descriptor = registry.find(capabilityId);
+
+        if (descriptor.isEmpty()) {
+            errors.add(path + ".capabilityRef '" + capabilityRef + "' not found in registry");
+            return;
+        }
+
+        CapabilityDescriptor desc = descriptor.get();
+        if (!desc.kind().name().equals("EVENT_OPERATOR")) {
+            errors.add(path + ".capabilityRef '" + capabilityRef + "' is not an EVENT_OPERATOR capability");
+            return;
+        }
+
+        if ("production".equals(environment) && desc.sideEffectProfile().name().equals("SIDE_EFFECTING")) {
+            if (isBlank(expression.get("toolPolicy"))) {
+                errors.add(path + ".capabilityRef '" + capabilityRef + "' is SIDE_EFFECTING but missing toolPolicy in production");
+            }
         }
     }
 
@@ -244,6 +298,12 @@ public final class PatternSpecValidator {
 
         if (isBlank(lifecycleMap.get("state"))) {
             errors.add("lifecycle.state is required");
+        } else if ("production".equals(environment)) {
+            // DC-P5-003: Validate lifecycle.state is a valid transition target
+            String state = String.valueOf(lifecycleMap.get("state"));
+            if (!isValidLifecycleState(state)) {
+                errors.add("lifecycle.state '" + state + "' is not a valid production state");
+            }
         }
 
         // AEP-004: Production requires evidence persistence
@@ -253,8 +313,27 @@ public final class PatternSpecValidator {
             }
             if (isBlank(lifecycleMap.get("evidenceStore"))) {
                 errors.add("lifecycle.evidenceStore is required in production");
+            } else {
+                // DC-P5-003: Validate evidenceStore uses Data-Cloud/AEP-approved store
+                String evidenceStore = String.valueOf(lifecycleMap.get("evidenceStore"));
+                if (!isApprovedEvidenceStore(evidenceStore)) {
+                    errors.add("lifecycle.evidenceStore '" + evidenceStore + "' is not a Data-Cloud/AEP-approved store");
+                }
             }
         }
+    }
+
+    private static boolean isValidLifecycleState(String state) {
+        String normalized = state.toLowerCase();
+        return normalized.equals("active") || normalized.equals("draft") || normalized.equals("disabled")
+            || normalized.equals("shadow") || normalized.equals("recommended") || normalized.equals("predictive");
+    }
+
+    private static boolean isApprovedEvidenceStore(String evidenceStore) {
+        // Data-Cloud/AEP-approved evidence stores
+        return evidenceStore.startsWith("eventcloud://")
+            || evidenceStore.startsWith("datacloud://")
+            || evidenceStore.startsWith("aep://");
     }
 
     /**
@@ -290,6 +369,22 @@ public final class PatternSpecValidator {
         if ("production".equals(environment)) {
             if (isBlank(governanceMap.get("approvalPolicy")) && isBlank(governanceMap.get("reviewPolicy"))) {
                 errors.add("governance.approvalPolicy or governance.reviewPolicy is required in production");
+            }
+        }
+
+        // DC-P5-003: Production requires additional governance fields
+        if ("production".equals(environment)) {
+            if (isBlank(governanceMap.get("owner"))) {
+                errors.add("governance.owner is required in production");
+            }
+            if (isBlank(governanceMap.get("riskLevel"))) {
+                errors.add("governance.riskLevel is required in production");
+            }
+            if (isBlank(governanceMap.get("rollbackPolicy"))) {
+                errors.add("governance.rollbackPolicy is required in production");
+            }
+            if (isBlank(governanceMap.get("auditPolicy"))) {
+                errors.add("governance.auditPolicy is required in production");
             }
         }
     }

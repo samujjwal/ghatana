@@ -1,11 +1,11 @@
 /**
- * Real-time EventCloud Hooks
+ * Real-time EventLog Hooks
  *
- * Provides React hooks for real-time EventCloud topology updates.
+ * Provides React hooks for real-time EventLog topology updates.
  * Connects to ActiveJ backend via @ghatana/realtime WebSocket client.
  *
  * @doc.type hooks
- * @doc.purpose Real-time EventCloud streaming hooks
+ * @doc.purpose Real-time EventLog streaming hooks
  * @doc.layer product
  * @doc.pattern ReactHook
  */
@@ -55,9 +55,9 @@ export interface MetricsUpdateEvent {
 }
 
 /**
- * Configuration for useEventCloudStream hook.
+ * Configuration for useEventLogStream hook.
  */
-export interface UseEventCloudStreamOptions {
+export interface UseEventLogStreamOptions {
     /** ActiveJ server base URL */
     serverUrl: string;
 
@@ -81,9 +81,9 @@ export interface UseEventCloudStreamOptions {
 }
 
 /**
- * Return type for useEventCloudStream hook.
+ * Return type for useEventLogStream hook.
  */
-export interface UseEventCloudStreamReturn {
+export interface UseEventLogStreamReturn {
     /** Current topology nodes */
     nodes: EventCloudNode[];
 
@@ -117,7 +117,7 @@ export interface UseEventCloudStreamReturn {
 // ============================================
 
 /**
- * React hook for real-time EventCloud topology streaming.
+ * React hook for real-time EventLog topology streaming.
  *
  * Connects to ActiveJ backend and receives real-time updates for:
  * - Topology changes (nodes/edges added/removed)
@@ -126,20 +126,20 @@ export interface UseEventCloudStreamReturn {
  *
  * @example
  * ```tsx
- * function EventCloudMonitor() {
+ * function EventLogMonitor() {
  *   const {
  *     nodes,
  *     edges,
  *     connectionState,
  *     error,
- *   } = useEventCloudStream({
+ *   } = useEventLogStream({
  *     serverUrl: 'ws://localhost:8080',
  *     tenantId: 'tenant-123',
  *     autoConnect: true,
  *   });
  *
  *   return (
- *     <EventCloudTopology
+ *     <EventLogTopology
  *       nodes={nodes}
  *       edges={edges}
  *       isLoading={connectionState === 'connecting'}
@@ -149,7 +149,7 @@ export interface UseEventCloudStreamReturn {
  * }
  * ```
  */
-export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEventCloudStreamReturn {
+export function useEventLogStream(options: UseEventLogStreamOptions): UseEventLogStreamReturn {
     const {
         serverUrl,
         tenantId,
@@ -184,7 +184,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
     } = useActiveJStream<TopologyUpdateEvent | MetricsUpdateEvent>(
         normalizedServerUrl,
         tenantId,
-        '/eventcloud/stream',
+        '/eventlog/stream',
         {
             authToken,
             topics: ['topology', 'metrics'],
@@ -217,7 +217,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
                             ...prev,
                             {
                                 id: event.nodeId!,
-                                type: 'eventcloud',
+                                type: 'eventlog',
                                 position: { x: 0, y: 0 },
                                 data: event.node!,
                             },
@@ -254,7 +254,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
                                 id: event.edgeId!,
                                 source: '', // Would need source/target from event
                                 target: '',
-                                type: 'eventcloud',
+                                type: 'eventlog',
                                 data: event.edge!,
                             },
                         ]);
@@ -320,7 +320,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
     return {
         nodes,
         edges,
-        connectionState: connectionState as UseEventCloudStreamReturn['connectionState'],
+        connectionState: connectionState as UseEventLogStreamReturn['connectionState'],
         error,
         connect,
         disconnect,
@@ -338,7 +338,7 @@ export function useEventCloudStream(options: UseEventCloudStreamOptions): UseEve
  */
 export function useStreamMetrics(
     streamId: string,
-    options: Pick<UseEventCloudStreamOptions, 'serverUrl' | 'tenantId' | 'authToken'>
+    options: Pick<UseEventLogStreamOptions, 'serverUrl' | 'tenantId' | 'authToken'>
 ): {
     metrics: TopologyMetrics | null;
     status: TopologyNodeStatus;
@@ -357,7 +357,7 @@ export function useStreamMetrics(
     const { subscribe, isConnected, error } = useActiveJStream<MetricsUpdateEvent>(
         normalizedServerUrl,
         options.tenantId,
-        '/eventcloud/metrics',
+        '/eventlog/metrics',
         {
             authToken: options.authToken,
             topics: [`metrics.${streamId}`],

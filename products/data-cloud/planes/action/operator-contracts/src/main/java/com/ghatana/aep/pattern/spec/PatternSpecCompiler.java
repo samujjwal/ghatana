@@ -1,5 +1,8 @@
 package com.ghatana.aep.pattern.spec;
 
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.ExternalAgentCapabilityRegistry;
 import com.ghatana.aep.operator.contract.OperatorKind;
 
 import java.util.ArrayList;
@@ -20,6 +23,30 @@ public final class PatternSpecCompiler {
     }
 
     public static CompiledPattern compile(Map<String, Object> spec) {
+        return compile(spec, null);
+    }
+
+    /**
+     * Compiles a PatternSpec into an executable runtime DAG with capability resolution.
+     *
+     * @param spec the pattern specification (map representation for backward compatibility)
+     * @param registry the capability registry for resolving capabilityRef
+     * @return compiled pattern
+     */
+    public static CompiledPattern compile(Map<String, Object> spec, ExternalAgentCapabilityRegistry registry) {
+        // Parse map to typed model at boundary (DC-P5-001)
+        PatternSpec typedSpec = PatternSpecParser.parse(spec);
+        return compileTyped(typedSpec, registry);
+    }
+
+    /**
+     * Compiles a PatternSpec map into an executable runtime DAG (legacy path for map-based expressions).
+     *
+     * @param spec the pattern specification
+     * @param registry the capability registry for resolving capabilityRef
+     * @return compiled pattern
+     */
+    private static CompiledPattern compileMapSpec(Map<String, Object> spec, ExternalAgentCapabilityRegistry registry) {
         PatternSpecValidationResult validation = PatternSpecValidator.validate(spec);
         if (!validation.valid()) {
             throw new IllegalArgumentException(String.join("; ", validation.errors()));
@@ -27,44 +54,168 @@ public final class PatternSpecCompiler {
 
         Map<String, Object> metadata = mapSection(spec, "metadata");
         String patternId = text(metadata.getOrDefault("name", metadata.getOrDefault("id", "pattern")));
-        PatternRuntimeNode root = compileExpression(mapSection(spec, "pattern"), "root");
+        Map<String, Object> lifecycle = mapSection(spec, "lifecycle");
+        String lifecycleState = text(lifecycle.get("state"));
+
+        // DC-P5-004: Validate shadow vs active behavior
+        boolean isShadow = "shadow".equals(lifecycleState);
+        boolean isActive = "active".equals(lifecycleState);
+
+        PatternRuntimeNode root = compileExpression(mapSection(spec, "pattern"), "root", registry, isShadow, null);
         List<String> nodeOrder = new ArrayList<>();
         collectNodeOrder(root, nodeOrder);
+
+        // DC-P5-004: Resolve time and uncertainty policies
+        Map<String, Object> semantics = mapSection(spec, "semantics");
+        String timePolicy = optionalText(semantics.get("timePolicy")).orElse(
+            optionalText(semantics.get("timeMode")).orElse("event_time"));
+        String uncertaintyPolicy = text(semantics.get("uncertaintyPolicy"));
+
         return new CompiledPattern(
             patternId,
             "pattern-runtime-" + patternId,
             root,
             nodeOrder,
             metadata,
-            mapSection(spec, "semantics"),
+            semantics,
             mapSection(spec, "emit"),
-            mapSection(spec, "lifecycle"),
-            mapSection(spec, "governance"));
+            lifecycle,
+            mapSection(spec, "governance"),
+            timePolicy,
+            uncertaintyPolicy,
+            isShadow,
+            isActive);
     }
 
-    private static PatternRuntimeNode compileExpression(Map<String, Object> expression, String path) {
-        OperatorKind operatorKind = operatorKind(expression);
-        List<PatternRuntimeNode> children = new ArrayList<>();
-        Object operands = expression.get("operands");
-        if (operands instanceof List<?> list) {
-            for (int i = 0; i < list.size(); i++) {
-                children.add(compileExpression(castMap(list.get(i), path + ".operands[" + i + "]"), path + "-" + i));
-            }
-        }
-        Object nestedPattern = expression.get("pattern");
-        if (nestedPattern instanceof Map<?, ?>) {
-            children.add(compileExpression(castMap(nestedPattern, path + ".pattern"), path + "-pattern"));
+    /**
+     * Compiles a typed PatternSpec into an executable runtime DAG with capability resolution.
+     *
+     * @param spec the typed pattern specification
+     * @param registry the capability registry for resolving capabilityRef
+     * @return compiled pattern
+     */
+    public static CompiledPattern compileTyped(PatternSpec spec, ExternalAgentCapabilityRegistry registry) {
+        PatternSpecValidationResult validation = PatternSpecValidator.validate(spec.toMap());
+        if (!validation.valid()) {
+            throw new IllegalArgumentException(String.join("; ", validation.errors()));
         }
 
+        String patternId = spec.metadata().name();
+        String lifecycleState = spec.lifecycle().state();
+
+        // DC-P5-004: Validate shadow vs active behavior
+        boolean isShadow = "shadow".equals(lifecycleState);
+        boolean isActive = "active".equals(lifecycleState);
+
+        PatternRuntimeNode root = compileExpression(spec.pattern(), "root", registry, isShadow, spec);
+        List<String> nodeOrder = new ArrayList<>();
+        collectNodeOrder(root, nodeOrder);
+
+        // DC-P5-004: Resolve time and uncertainty policies from typed model
+        String timePolicy = spec.semantics().timePolicy() != null ? spec.semantics().timePolicy() :
+            (spec.semantics().timeMode() != null ? spec.semantics().timeMode() : "event_time");
+        String uncertaintyPolicy = spec.semantics().uncertaintyPolicy();
+
+        return new CompiledPattern(
+            patternId,
+            "pattern-runtime-" + patternId,
+            root,
+            nodeOrder,
+            spec.metadata().toMap(),
+            spec.semantics().toMap(),
+            spec.emit().toMap(),
+            spec.lifecycle().toMap(),
+            spec.governance().toMap(),
+            timePolicy,
+            uncertaintyPolicy,
+            isShadow,
+            isActive);
+    }
+
+    private static PatternRuntimeNode compileExpression(
+            PatternExpression expression,
+            String path,
+            ExternalAgentCapabilityRegistry registry,
+            boolean isShadow,
+            PatternSpec spec) {
+        OperatorKind operatorKind = operatorKind(expression);
+        List<PatternRuntimeNode> children = new ArrayList<>();
+        
+        if (expression.operands() != null && !expression.operands().isEmpty()) {
+            for (int i = 0; i < expression.operands().size(); i++) {
+                children.add(compileExpression(expression.operands().get(i), path + "-" + i, registry, isShadow, spec));
+            }
+        }
+        if (expression.pattern() != null) {
+            children.add(compileExpression(expression.pattern(), path + "-pattern", registry, isShadow, spec));
+        }
+
+        // DC-P5-002: Resolve capability binding for AGENT_* operators
+        Optional<CapabilityDescriptor> capabilityDescriptor = Optional.empty();
+        String capabilityRef = expression.capabilityRef();
+        if (capabilityRef != null && registry != null) {
+            capabilityDescriptor = registry.find(CapabilityId.of(capabilityRef));
+            
+            // DC-P5-002: Unknown capabilityRef fails
+            if (capabilityDescriptor.isEmpty()) {
+                throw new IllegalArgumentException(path + " capabilityRef " + capabilityRef + " not found in registry");
+            }
+            
+            // DC-P5-002: Verify capability kind matches operator
+            CapabilityDescriptor descriptor = capabilityDescriptor.get();
+            if (operatorKind.name().startsWith("AGENT_") && !operatorKind.name().equals(descriptor.kind().name())) {
+                throw new IllegalArgumentException(path + " operator kind " + operatorKind + " does not match capability kind " + descriptor.kind());
+            }
+            
+            // DC-P5-002: Verify input/output schema compatibility
+            if (expression.outputSchema() != null && descriptor.outputSchema() != null
+                    && !expression.outputSchema().equals(descriptor.outputSchema())) {
+                throw new IllegalArgumentException(path + " output schema " + expression.outputSchema() + " does not match capability output schema " + descriptor.outputSchema());
+            }
+        }
+
+        // DC-P5-002: Side-effecting capability without production policy fails
+        if (capabilityDescriptor.isPresent() 
+                && capabilityDescriptor.get().sideEffectProfile().name().equals("SIDE_EFFECTING")
+                && !hasProductionPolicy(spec.governance())) {
+            throw new IllegalArgumentException(path + " is SIDE_EFFECTING but governance lacks production policy");
+        }
+
+        // DC-P5-004: Shadow patterns must not have side effects
+        if (isShadow && capabilityDescriptor.isPresent()
+                && capabilityDescriptor.get().sideEffectProfile().name().equals("SIDE_EFFECTING")) {
+            throw new IllegalArgumentException(path + " is SIDE_EFFECTING but pattern lifecycle is shadow");
+        }
+
+        // Use agentRef from PatternExpression for backward compatibility
         return new PatternRuntimeNode(
             path,
             operatorKind,
-            optionalText(expression.get("event")),
-            optionalText(expression.get("agentRef")),
-            optionalText(expression.get("capabilityRef")),
-            optionalText(expression.get("outputSchema")),
-            parameters(expression),
-            children);
+            Optional.ofNullable(expression.event()),
+            Optional.ofNullable(expression.agentRef()),
+            Optional.ofNullable(capabilityRef),
+            Optional.ofNullable(expression.outputSchema()),
+            expression.parameters() != null ? expression.parameters() : Map.of(),
+            children,
+            capabilityDescriptor);
+    }
+
+    private static PatternRuntimeNode compileExpression(
+            Map<String, Object> expression,
+            String path,
+            ExternalAgentCapabilityRegistry registry,
+            boolean isShadow,
+            PatternSpec spec) {
+        // Convert map to typed expression for internal processing (DC-P5-001)
+        PatternExpression typedExpr = PatternSpecParser.parseExpression(expression, path);
+        return compileExpression(typedExpr, path, registry, isShadow, spec);
+    }
+
+    private static OperatorKind operatorKind(PatternExpression expression) {
+        if (expression.operator() == null) {
+            return OperatorKind.EVENT_REF;
+        }
+        return OperatorKind.valueOf(expression.operator());
     }
 
     private static OperatorKind operatorKind(Map<String, Object> expression) {
@@ -123,5 +274,11 @@ public final class PatternSpecCompiler {
             throw new IllegalArgumentException("value must not be blank");
         }
         return String.valueOf(value);
+    }
+
+    private static boolean hasProductionPolicy(PatternGovernance governance) {
+        return governance.approvalPolicy() != null 
+            || governance.reviewPolicy() != null
+            || governance.commitSha() != null;
     }
 }

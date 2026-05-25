@@ -89,7 +89,7 @@ public class WorkflowPipelineAdapter {
     /**
      * Creates workflow-to-pipeline adapter.
      *
-     * @param operatorCatalog operator catalog for resolving agent operators (never null)
+     * @param operatorCatalog operator catalog for resolving agent capabilities (never null)
      * @throws IllegalArgumentException if operatorCatalog is null
      */
     public WorkflowPipelineAdapter(OperatorCatalog operatorCatalog) {

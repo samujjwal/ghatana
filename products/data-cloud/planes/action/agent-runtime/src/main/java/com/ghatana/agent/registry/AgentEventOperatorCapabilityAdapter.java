@@ -274,7 +274,7 @@ public final class AgentEventOperatorCapabilityAdapter
 
     @Override
     public Promise<OperatorResult> process(Event event) {
-        // AEP-AGENT-CAP-001: temporary UnifiedOperator bridge; remove by 2026-06-30
+        // GHATANA-4321: temporary UnifiedOperator bridge; remove by 2026-06-30
         // after callers use process(EventContext, OperatorRuntimeContext).
         EventContext<Map<String, Object>> eventContext = eventContextFromEvent(event);
         OperatorRuntimeContext runtimeContext = runtimeContextFromEvent(event);

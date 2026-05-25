@@ -44,7 +44,7 @@ function readGeneratedCompileTasks(root) {
   }));
 }
 
-export function createDataCloudActiveModulesEvidence(root = process.cwd(), now = new Date()) {
+export function createDataCloudActiveModulesEvidence(root = process.cwd(), now = new Date(), executionResult = null) {
   const modules = parseDataCloudModules(readSettingsSource(root));
   const invalidModules = validateModuleClassification(modules);
   const releaseBlockingModules = filterModulesByScope(modules, 'release-blocking');
@@ -52,6 +52,22 @@ export function createDataCloudActiveModulesEvidence(root = process.cwd(), now =
   const compileJavaModules = modules.filter((modulePath) => moduleHasJavaCompileTask(modulePath, root));
   const releaseBlockingCheckTasks = gradleTasksForModules(releaseBlockingModules, 'check');
   const compileJavaTasks = gradleTasksForModules(compileJavaModules, 'compileJava');
+
+  // DC-P7-002: Include execution result if provided
+  const executionSection = executionResult ? {
+    gradleExitStatus: executionResult.exitStatus,
+    executedTasks: executionResult.executedTasks || [],
+    failedTasks: executionResult.failedTasks || [],
+    skippedTasks: executionResult.skippedTasks || [],
+    durationMs: executionResult.durationMs || 0,
+    evidenceScriptExitStatus: 0,
+    compileJavaTasksAreGeneratedForCaller: true,
+    releaseBlockingCheckTasksAreGeneratedForCaller: true,
+  } : {
+    evidenceScriptExitStatus: 0,
+    compileJavaTasksAreGeneratedForCaller: true,
+    releaseBlockingCheckTasksAreGeneratedForCaller: true,
+  };
 
   return {
     generatedAt: now.toISOString(),
@@ -79,11 +95,7 @@ export function createDataCloudActiveModulesEvidence(root = process.cwd(), now =
       compileJava: compileJavaTasks,
       releaseBlockingCheck: releaseBlockingCheckTasks,
     },
-    execution: {
-      evidenceScriptExitStatus: 0,
-      compileJavaTasksAreGeneratedForCaller: true,
-      releaseBlockingCheckTasksAreGeneratedForCaller: true,
-    },
+    execution: executionSection,
     modules: modules.map((modulePath) => {
       const classification = classifyDataCloudModule(modulePath);
       const hasJavaCompileTask = moduleHasJavaCompileTask(modulePath, root);

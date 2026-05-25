@@ -116,11 +116,11 @@ public class KafkaStreamingConfig {
 
     // ==================== Topic Configuration ====================
     /**
-     * Topic prefix for EventCloud topics. Full topic name:
+     * Topic prefix for EventLog topics. Full topic name:
      * {topicPrefix}.{tenantId}.{streamName}
      */
     @Builder.Default
-    String topicPrefix = "eventcloud";
+    String topicPrefix = "eventlog";
 
     /**
      * Default number of partitions for auto-created topics.

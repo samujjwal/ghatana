@@ -1,7 +1,7 @@
 /**
- * EventCloud Topology Visualization
+ * EventLog Topology Visualization
  *
- * Provides real-time stream topology visualization for Data-Cloud's EventCloud.
+ * Provides real-time stream topology visualization for Data-Cloud's EventLog storage plane.
  * Built on shared @ghatana/canvas/topology components.
  *
  * Features:
@@ -12,7 +12,7 @@
  * - Interactive node selection
  *
  * @doc.type component
- * @doc.purpose EventCloud stream topology visualization
+ * @doc.purpose EventLog stream topology visualization
  * @doc.layer product
  * @doc.pattern Visualization
  */
@@ -53,7 +53,7 @@ import { dataCloudColors } from '@/lib/theme';
 // ============================================
 
 /**
- * Icon mapping for EventCloud node types.
+ * Icon mapping for EventLog node types.
  */
 const NODE_ICONS: Record<string, React.ReactNode> = {
     source: (
@@ -105,9 +105,9 @@ function getNodeTypeColor(nodeType: string): keyof typeof dataCloudColors {
 }
 
 /**
- * EventCloud-specific node component.
+ * EventLog-specific node component.
  */
-const EventCloudNodeComponent = memo(function EventCloudNodeComponent(props: { data: EventCloudNodeData; selected?: boolean }) {
+const EventLogNodeComponent = memo(function EventLogNodeComponent(props: { data: EventCloudNodeData; selected?: boolean }) {
     const { data, selected } = props;
     const colorKey = getNodeTypeColor(data.nodeType);
     const colors = dataCloudColors[colorKey as keyof typeof dataCloudColors];
@@ -146,9 +146,9 @@ const EventCloudNodeComponent = memo(function EventCloudNodeComponent(props: { d
 });
 
 /**
- * EventCloud-specific edge component.
+ * EventLog-specific edge component.
  */
-const EventCloudEdgeComponent = memo(function EventCloudEdgeComponent(props: Record<string, unknown>) {
+const EventLogEdgeComponent = memo(function EventLogEdgeComponent(props: Record<string, unknown>) {
     return <BaseTopologyEdge {...(props as unknown as React.ComponentProps<typeof BaseTopologyEdge>)} pathType="smoothstep" showThroughput={true} />;
 });
 
@@ -157,18 +157,18 @@ const EventCloudEdgeComponent = memo(function EventCloudEdgeComponent(props: Rec
 // ============================================
 
 const nodeTypes = {
-    eventcloud: EventCloudNodeComponent,
+    eventlog: EventLogNodeComponent,
 };
 
 const edgeTypes = {
-    eventcloud: EventCloudEdgeComponent,
+    eventlog: EventLogEdgeComponent,
 };
 
 // ============================================
 // MAIN COMPONENT
 // ============================================
 
-export interface EventCloudTopologyProps {
+export interface EventLogTopologyProps {
     /** Stream nodes */
     nodes: EventCloudNode[];
 
@@ -201,7 +201,7 @@ export interface EventCloudTopologyProps {
 }
 
 /**
- * EventCloud Topology Visualization Component.
+ * EventLog Topology Visualization Component.
  *
  * Renders a real-time view of stream processing topology with:
  * - Source, processor, sink, router nodes
@@ -211,7 +211,7 @@ export interface EventCloudTopologyProps {
  *
  * @example
  * ```tsx
- * <EventCloudTopology
+ * <EventLogTopology
  *   nodes={streamNodes}
  *   edges={streamEdges}
  *   onNodeSelect={(node) => setSelectedStream(node)}
@@ -219,7 +219,7 @@ export interface EventCloudTopologyProps {
  * />
  * ```
  */
-export function EventCloudTopology({
+export function EventLogTopology({
     nodes: initialNodes,
     edges: initialEdges,
     config = {},
@@ -230,7 +230,7 @@ export function EventCloudTopology({
     readOnly = false,
     className = '',
     tenantId,
-}: EventCloudTopologyProps): React.JSX.Element {
+}: EventLogTopologyProps): React.JSX.Element {
     // Set default config
     const defaultConfig: TopologyVisualizationConfig = {
         layout: 'dagre',
@@ -243,22 +243,22 @@ export function EventCloudTopology({
         ...config,
     };
 
-    // Convert nodes to use eventcloud type
+    // Convert nodes to use eventlog type
     const typedNodes = useMemo(
         () =>
             initialNodes.map((node) => ({
                 ...node,
-                type: 'eventcloud',
+                type: 'eventlog',
             })),
         [initialNodes]
     );
 
-    // Convert edges to use eventcloud type
+    // Convert edges to use eventlog type
     const typedEdges = useMemo(
         () =>
             initialEdges.map((edge) => ({
                 ...edge,
-                type: 'eventcloud',
+                type: 'eventlog',
             })),
         [initialEdges]
     );
@@ -391,4 +391,4 @@ export function EventCloudTopology({
     );
 }
 
-export default EventCloudTopology;
+export default EventLogTopology;

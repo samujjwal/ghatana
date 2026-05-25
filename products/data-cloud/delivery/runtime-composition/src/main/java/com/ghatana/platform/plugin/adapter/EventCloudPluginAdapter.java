@@ -38,10 +38,10 @@ public class EventCloudPluginAdapter implements StreamingPlugin<EventLogStore.Ev
     @Override
     public @NotNull PluginMetadata metadata() {
         return new PluginMetadata(
-            "event-cloud-adapter",
-            "EventCloud Adapter",
+            "event-log-adapter",
+            "EventLog Adapter",
             "1.0.0",
-            "Native EventCloud integration",
+            "Native EventLog integration",
             PluginType.STREAMING,
             "Ghatana",
             "Proprietary",

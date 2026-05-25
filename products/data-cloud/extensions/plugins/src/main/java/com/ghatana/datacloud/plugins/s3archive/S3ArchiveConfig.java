@@ -33,7 +33,7 @@ import java.util.Objects;
  * <pre>{@code
  * // Production configuration with KMS encryption
  * S3ArchiveConfig prodConfig = S3ArchiveConfig.builder()
- *     .bucketName("eventcloud-archive-prod")
+ *     .bucketName("eventlog-archive-prod")
  *     .region("us-east-1")
  *     .encryptionType(EncryptionType.SSE_KMS)
  *     .kmsKeyId("arn:aws:kms:us-east-1:123456789012:key/...")
@@ -46,7 +46,7 @@ import java.util.Objects;
  *
  * // Development configuration with LocalStack
  * S3ArchiveConfig devConfig = S3ArchiveConfig.forLocalStack(
- *     "eventcloud-archive-dev", "http://localhost:4566");
+ *     "eventlog-archive-dev", "http://localhost:4566");
  * }</pre>
  *
  * @doc.type class
@@ -85,10 +85,10 @@ public class S3ArchiveConfig {
     private final boolean pathStyleAccess = false;
 
     /**
-     * Prefix for all archive objects (e.g., "eventcloud/archives/").
+     * Prefix for all archive objects (e.g., "eventlog/archives/").
      */
     @Builder.Default
-    private final String keyPrefix = "eventcloud/archives/";
+    private final String keyPrefix = "eventlog/archives/";
 
     // ==================== Encryption Configuration ====================
 
@@ -225,7 +225,7 @@ public class S3ArchiveConfig {
      * Metrics prefix for all S3 archive metrics.
      */
     @Builder.Default
-    private final String metricsPrefix = "eventcloud.s3archive";
+    private final String metricsPrefix = "eventlog.s3archive";
 
     // ==================== Enums ====================
 

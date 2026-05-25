@@ -441,7 +441,7 @@ public final class ProductOnboardingController {
         );
     }
 
-    private List<Map<String, String>> generateSurfacesForArchetype(String archetype) {
+    private List<Map<String, Object>> generateSurfacesForArchetype(String archetype) {
         return switch (archetype) {
             case "mobile-plus-api" -> List.of(
                 Map.of("type", "backend-api", "adapter", "gradle-java-service"),
@@ -461,7 +461,7 @@ public final class ProductOnboardingController {
     private List<Map<String, Object>> generatePhasesForArchetype(String archetype) {
         List<String> phases = List.of("dev", "validate", "test", "build", "package", "deploy");
         return phases.stream()
-            .map(phase -> Map.of(
+            .map(phase -> Map.<String, Object>of(
                 "name", phase,
                 "mode", "parallel",
                 "description", "Standard " + phase + " phase"
@@ -484,7 +484,7 @@ public final class ProductOnboardingController {
 
     private HttpResponse jsonResponse(Object body) {
         try {
-            return HttpResponse.ok()
+            return HttpResponse.ok200()
                 .withJson(objectMapper.writeValueAsString(body))
                 .build();
         } catch (Exception e) {

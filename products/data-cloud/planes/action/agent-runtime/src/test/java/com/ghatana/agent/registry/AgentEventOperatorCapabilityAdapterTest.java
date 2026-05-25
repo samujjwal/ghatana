@@ -66,6 +66,214 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("empty toolPolicy fails instantiation")
+    void emptyToolPolicyFails() {
+        TestAgent agent = new TestAgent("tool-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/tool-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            Map.of(),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("toolPolicy");
+    }
+
+    @Test
+    @DisplayName("empty memoryPolicy fails instantiation")
+    void emptyMemoryPolicyFails() {
+        TestAgent agent = new TestAgent("memory-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/memory-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            Map.of(),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("memoryPolicy");
+    }
+
+    @Test
+    @DisplayName("empty retrievalPolicy fails instantiation")
+    void emptyRetrievalPolicyFails() {
+        TestAgent agent = new TestAgent("retrieval-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/retrieval-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            Map.of(),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("retrievalPolicy");
+    }
+
+    @Test
+    @DisplayName("empty guardrailPolicy fails instantiation")
+    void emptyGuardrailPolicyFails() {
+        TestAgent agent = new TestAgent("guardrail-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/guardrail-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            Map.of(),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("guardrailPolicy");
+    }
+
+    @Test
+    @DisplayName("empty replayPolicy fails instantiation")
+    void emptyReplayPolicyFails() {
+        TestAgent agent = new TestAgent("replay-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/replay-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            Map.of(),
+            policy("uncertainty"),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("replayPolicy");
+    }
+
+    @Test
+    @DisplayName("empty uncertaintyPolicy fails instantiation")
+    void emptyUncertaintyPolicyFails() {
+        TestAgent agent = new TestAgent("uncertainty-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/uncertainty-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            Map.of(),
+            policy("human-review"),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("uncertaintyPolicy");
+    }
+
+    @Test
+    @DisplayName("empty humanReviewPolicy fails instantiation")
+    void emptyHumanReviewPolicyFails() {
+        TestAgent agent = new TestAgent("human-review-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/human-review-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            Map.of(),
+            policy("observability"),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("humanReviewPolicy");
+    }
+
+    @Test
+    @DisplayName("empty observabilityPolicy fails instantiation")
+    void emptyObservabilityPolicyFails() {
+        TestAgent agent = new TestAgent("observability-agent");
+
+        assertThatThrownBy(() -> new AgentEventOperatorCapabilityAdapter(
+            agent,
+            "agents/observability-agent@1.0.0",
+            AgentCapabilityRole.AGENT_REVIEW,
+            "schema://agent/input",
+            "schema://agent/output",
+            AgentSideEffectProfile.PROPOSE_ACTION,
+            policy("model"),
+            policy("tool"),
+            policy("memory"),
+            policy("retrieval"),
+            policy("guardrail"),
+            policy("replay"),
+            policy("uncertainty"),
+            policy("human-review"),
+            Map.of(),
+            memoryStore()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("observabilityPolicy");
+    }
+
+    @Test
     @DisplayName("rejects no-op memory stores unless explicitly policy disabled")
     void rejectsNoOpMemoryStoreUnlessPolicyDisabled() {
         TestAgent agent = new TestAgent("memory-agent");
@@ -151,6 +359,156 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
         assertThatThrownBy(() -> runPromise(() -> adapter.process(eventContext(Map.of("request", "x")), missingTrace)))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("traceId is required");
+    }
+
+    @Test
+    @DisplayName("fails fast when correlation ID is missing")
+    void requiresCorrelationId() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("review-agent"),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        OperatorRuntimeContext missingCorrelation = new OperatorRuntimeContext(
+            "tenant-a",
+            Optional.of("trace-1"),
+            Optional.empty(),
+            Map.of(),
+            Map.of());
+
+        assertThatThrownBy(() -> runPromise(() -> adapter.process(eventContext(Map.of("request", "x")), missingCorrelation)))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("correlationId is required");
+    }
+
+    @Test
+    @DisplayName("fails fast when tenant ID is blank")
+    void requiresNonBlankTenantId() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("review-agent"),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        assertThatThrownBy(() -> runPromise(() -> adapter.process(
+            eventContextWithTenant("", Map.of("request", "x")),
+            runtimeContext())))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("tenantId");
+    }
+
+    @Test
+    @DisplayName("valid context maps into AgentContext with required fields")
+    void validContextMapsIntoAgentContext() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("review-agent"),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "valid-context")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.output()).hasValueSatisfying(output ->
+            assertThat(output).containsEntry("tenantId", "tenant-a")
+                .containsEntry("traceId", "trace-1")
+                .containsEntry("correlationId", "corr-1"));
+    }
+
+    @Test
+    @DisplayName("modelConfidence equals clamped agent confidence")
+    void modelConfidenceEqualsClampedAgentConfidence() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("confidence-agent", 0.85),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "confidence-test")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.uncertainty().modelConfidence()).isEqualTo(0.85);
+    }
+
+    @Test
+    @DisplayName("retrievalConfidence comes from agent metrics when present")
+    void retrievalConfidenceFromAgentMetrics() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("retrieval-agent", 0.75, Map.of("retrievalConfidence", 0.92)),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "retrieval-test")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.uncertainty().retrievalConfidence()).isEqualTo(0.92);
+    }
+
+    @Test
+    @DisplayName("calibrationScore comes from agent metrics when present")
+    void calibrationScoreFromAgentMetrics() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("calibration-agent", 0.80, Map.of("calibrationScore", 0.88)),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "calibration-test")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.uncertainty().calibrationScore()).isEqualTo(0.88);
+    }
+
+    @Test
+    @DisplayName("evidence includes required fields for replay and audit")
+    void evidenceIncludesRequiredFields() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("evidence-agent"),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "evidence-test")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.evidence())
+            .containsEntry("agentRef", "agents/evidence-agent@1.0.0")
+            .containsEntry("capabilityId", adapter.capabilityId().value())
+            .containsEntry("operatorId", adapter.id().toString())
+            .containsEntry("tenantId", "tenant-a")
+            .containsEntry("traceId", "trace-1")
+            .containsEntry("correlationId", "corr-1")
+            .containsEntry("sideEffectProfile", "PROPOSE_ACTION")
+            .containsKey("idempotencyRequired");
+    }
+
+    @Test
+    @DisplayName("NaN confidence clamps to 0.0")
+    void nanConfidenceClampsToZero() {
+        AgentEventOperatorCapabilityAdapter adapter = adapter(
+            new TestAgent("nan-agent", Double.NaN),
+            "schema://agent/input",
+            policy("model"),
+            memoryStore());
+
+        EventOperatorResult<Map<String, Object>> result = runPromise(() -> adapter.process(
+            eventContext(Map.of("request", "nan-test")),
+            runtimeContext()));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.uncertainty().modelConfidence()).isEqualTo(0.0);
     }
 
     @Test
@@ -379,16 +737,51 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
             Optional.of(input));
     }
 
+    private static EventContext<Map<String, Object>> eventContextWithTenant(String tenantId, Map<String, Object> input) {
+        return new EventContext<>(
+            tenantId,
+            java.util.List.of(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            new EventTimeContext(
+                EventTimeContext.TimeMode.EVENT_TIME,
+                Optional.empty(),
+                Duration.ZERO,
+                EventTimeContext.LateEventBehavior.INCORPORATE,
+                Optional.empty()),
+            UncertaintyContext.certain(),
+            new ReplayContext(
+                ReplayContext.ReplayMode.LIVE,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Map.of()),
+            Optional.of(input));
+    }
+
     private static final class TestAgent implements TypedAgent<Map<String, Object>, Map<String, Object>> {
         private final AgentDescriptor descriptor;
+        private final double confidence;
+        private final Map<String, Object> metrics;
 
         private TestAgent(String agentId) {
+            this(agentId, 0.73, Map.of("retrievalConfidence", 0.67));
+        }
+
+        private TestAgent(String agentId, double confidence) {
+            this(agentId, confidence, Map.of("retrievalConfidence", 0.67));
+        }
+
+        private TestAgent(String agentId, double confidence, Map<String, Object> metrics) {
             this.descriptor = AgentDescriptor.builder()
                 .agentId(agentId)
                 .name("Test Agent")
                 .namespace("test")
                 .type(AgentType.PROBABILISTIC)
                 .build();
+            this.confidence = confidence;
+            this.metrics = metrics;
         }
 
         @Override
@@ -422,11 +815,11 @@ class AgentEventOperatorCapabilityAdapterTest extends EventloopTestBase {
                     "traceId", ctx.getTraceId(),
                     "correlationId", ctx.getMetadata().get("correlationId"),
                     "request", input.get("request")))
-                .confidence(0.73)
+                .confidence(confidence)
                 .status(com.ghatana.agent.AgentResultStatus.SUCCESS)
                 .agentId(descriptor.getAgentId())
                 .processingTime(Duration.ofMillis(1))
-                .metrics(Map.of("retrievalConfidence", 0.67))
+                .metrics(metrics)
                 .evidence(Map.of("scenario", "adapter-test"))
                 .build());
         }

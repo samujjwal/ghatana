@@ -42,7 +42,7 @@ import java.util.Objects;
  * GlacierRestoreManager restoreManager = new GlacierRestoreManager(s3Client, config);
  *
  * // Initiate restore
- * String archiveKey = "eventcloud/archives/tenant-1/2024/01/events.parquet";
+ * String archiveKey = "eventlog/archives/tenant-1/2024/01/events.parquet";
  * restoreManager.initiateRestore(archiveKey, RestoreTier.STANDARD).getResult();
  *
  * // Poll for completion

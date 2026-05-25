@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Disaster Recovery Manager for EventCloud.
+ * Disaster Recovery Manager for EventLog.
  *
  * <p>
  * Provides comprehensive disaster recovery capabilities:

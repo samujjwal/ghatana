@@ -33,7 +33,16 @@ ALTER TABLE product_family_reuse_recommendations ENABLE ROW LEVEL SECURITY;
 -- RLS policy for product_family_reuse_recommendations
 CREATE POLICY product_family_reuse_recommendations_tenant_isolation ON product_family_reuse_recommendations
     FOR ALL
-    USING (tenant_id = current_setting('app.current_tenant_id', true));
+    USING (tenant_id = tenant_security.get_current_tenant());
+
+-- Shared trigger function for updated_at management.
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Trigger for updated_at
 CREATE TRIGGER trigger_update_product_family_reuse_recommendations_updated_at

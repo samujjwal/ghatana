@@ -14,8 +14,7 @@ CREATE TABLE IF NOT EXISTS product_family_registry (
     lifecycle_profile VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    tenant_id VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_product_family_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    tenant_id VARCHAR(255) NOT NULL
 );
 
 -- Product Family Members
@@ -27,7 +26,6 @@ CREATE TABLE IF NOT EXISTS product_family_members (
     joined_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     tenant_id VARCHAR(255) NOT NULL,
     CONSTRAINT fk_family_members_family FOREIGN KEY (family_id) REFERENCES product_family_registry(family_id) ON DELETE CASCADE,
-    CONSTRAINT fk_family_members_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     CONSTRAINT uq_family_product UNIQUE (family_id, product_id, tenant_id)
 );
 
@@ -43,7 +41,6 @@ CREATE TABLE IF NOT EXISTS product_family_release_readiness (
     checked_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     tenant_id VARCHAR(255) NOT NULL,
     CONSTRAINT fk_release_readiness_family FOREIGN KEY (family_id) REFERENCES product_family_registry(family_id) ON DELETE CASCADE,
-    CONSTRAINT fk_release_readiness_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     CONSTRAINT uq_family_environment UNIQUE (family_id, environment, tenant_id)
 );
 
@@ -62,7 +59,7 @@ CREATE TABLE IF NOT EXISTS product_family_reusable_assets (
     promotion_status VARCHAR(50) NOT NULL, -- 'draft', 'proposed', 'approved', 'rejected'
     tenant_id VARCHAR(255) NOT NULL,
     CONSTRAINT fk_reusable_assets_family FOREIGN KEY (family_id) REFERENCES product_family_registry(family_id) ON DELETE CASCADE,
-    CONSTRAINT fk_reusable_assets_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT uq_reusable_assets_asset_tenant UNIQUE (asset_id, tenant_id),
     CONSTRAINT uq_family_asset UNIQUE (family_id, asset_id, tenant_id)
 );
 
@@ -75,8 +72,8 @@ CREATE TABLE IF NOT EXISTS product_family_asset_adoption (
     adoption_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     adaptation_notes TEXT,
     tenant_id VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_asset_adoption_asset FOREIGN KEY (asset_id) REFERENCES product_family_reusable_assets(asset_id) ON DELETE CASCADE,
-    CONSTRAINT fk_asset_adoption_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_asset_adoption_asset FOREIGN KEY (asset_id, tenant_id)
+        REFERENCES product_family_reusable_assets(asset_id, tenant_id) ON DELETE CASCADE,
     CONSTRAINT uq_asset_product UNIQUE (asset_id, adopting_product_id, tenant_id)
 );
 
@@ -89,19 +86,19 @@ ALTER TABLE product_family_asset_adoption ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: Tenant isolation
 CREATE POLICY product_family_registry_tenant_isolation ON product_family_registry
-    FOR ALL USING (tenant_id = current_setting('app.current_tenant')::VARCHAR);
+    FOR ALL USING (tenant_id = tenant_security.get_current_tenant());
 
 CREATE POLICY product_family_members_tenant_isolation ON product_family_members
-    FOR ALL USING (tenant_id = current_setting('app.current_tenant')::VARCHAR);
+    FOR ALL USING (tenant_id = tenant_security.get_current_tenant());
 
 CREATE POLICY product_family_release_readiness_tenant_isolation ON product_family_release_readiness
-    FOR ALL USING (tenant_id = current_setting('app.current_tenant')::VARCHAR);
+    FOR ALL USING (tenant_id = tenant_security.get_current_tenant());
 
 CREATE POLICY product_family_reusable_assets_tenant_isolation ON product_family_reusable_assets
-    FOR ALL USING (tenant_id = current_setting('app.current_tenant')::VARCHAR);
+    FOR ALL USING (tenant_id = tenant_security.get_current_tenant());
 
 CREATE POLICY product_family_asset_adoption_tenant_isolation ON product_family_asset_adoption
-    FOR ALL USING (tenant_id = current_setting('app.current_tenant')::VARCHAR);
+    FOR ALL USING (tenant_id = tenant_security.get_current_tenant());
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_product_family_registry_tenant ON product_family_registry(tenant_id);

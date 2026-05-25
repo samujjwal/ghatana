@@ -123,6 +123,32 @@ Contracts must not depend on runtime implementation modules.
 UI must use generated clients and frontend adapters, not backend internals.
 ```
 
+## Module Classification and Promotion
+
+Data Cloud modules are classified as either **release-blocking** or **advisory**:
+
+- **Release-blocking modules**: Must pass all checks before any release. These are production-critical surfaces.
+- **Advisory modules**: Compiled and tested in CI but not blocking releases. Used for experimental features, integration tests, or non-production surfaces.
+
+### Promotion Process
+
+When an advisory module becomes a production surface, it must be promoted to release-blocking status:
+
+1. **Update module classification**: Edit `scripts/list-data-cloud-active-modules.mjs` to move the module from `advisoryModules` to `releaseBlockingModules`.
+2. **Verify release-blocking checks**: Ensure the module has comprehensive tests, linting, and security checks configured.
+3. **Update CI workflows**: The release workflow automatically includes all release-blocking modules in strict checks.
+4. **Document the change**: Add a note to the implementation tracker or changelog explaining why the module was promoted.
+5. **Regenerate evidence**: Run `pnpm check:data-cloud-active-module-evidence` to update the evidence file.
+
+### Current Advisory Modules
+
+The following modules are currently advisory and should be promoted when they become production surfaces:
+
+- `:products:data-cloud:delivery:api-contract-tests` - API contract validation tests
+- `:products:data-cloud:integration-tests` - Cross-module integration test suite
+
+See `scripts/list-data-cloud-active-modules.mjs` for the authoritative source of truth.
+
 ## Shared Platform Review
 
 Shared platform modules should remain shared only when they are genuinely cross-product infrastructure. If a module mainly exists to bridge Data-Cloud storage and AEP adaptive event processing, keep the stable SPI boundary explicit and avoid moving AEP-owned semantics into Data-Cloud.

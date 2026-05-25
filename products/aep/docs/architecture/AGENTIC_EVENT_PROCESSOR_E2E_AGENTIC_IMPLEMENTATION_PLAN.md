@@ -40,8 +40,7 @@ pattern:
       min: 3
       within: PT10M
     - operator: AGENT_PREDICATE
-      agentRef: agents/sre-risk-assessor@1.0.0
-      capabilityRef: agents/sre-risk-assessor@1.0.0/capabilities/agent_predicate
+      capabilityRef: agents/sre-risk-assessor@1.0.0
       outputSchema: RiskDecision
       condition: "$output.riskScore >= 0.85"
 ```

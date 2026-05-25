@@ -28,10 +28,10 @@ import io.trino.spi.transaction.IsolationLevel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Main EventCloud connector implementation for Trino.
+ * Main EventLog connector implementation for Trino.
  *
  * <p>
- * This connector provides SQL access to EventCloud data across all storage
+ * This connector provides SQL access to EventLog data across all storage
  * tiers. It implements the Trino SPI to enable querying events using standard
  * SQL.</p>
  *
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Main Trino connector for EventCloud
+ * @doc.purpose Main Trino connector for EventLog
  * @doc.layer product
  * @doc.pattern Connector
  */
@@ -58,7 +58,7 @@ public class EventCloudConnector implements Connector {
     private final AtomicBoolean started;
 
     /**
-     * Creates a new EventCloud connector.
+     * Creates a new EventLog connector.
      *
      * @param config Connector configuration
      * @param context Trino connector context
@@ -78,7 +78,7 @@ public class EventCloudConnector implements Connector {
             boolean readOnly,
             boolean autoCommit) {
 
-        // EventCloud is read-only for now, so we just return a simple handle
+        // EventLog is read-only for now, so we just return a simple handle
         return EventCloudTransactionHandle.INSTANCE;
     }
 
@@ -115,7 +115,7 @@ public class EventCloudConnector implements Connector {
     }
 
     /**
-     * Simple transaction handle for EventCloud (read-only).
+     * Simple transaction handle for EventLog (read-only).
      */
     public enum EventCloudTransactionHandle implements ConnectorTransactionHandle {
         INSTANCE

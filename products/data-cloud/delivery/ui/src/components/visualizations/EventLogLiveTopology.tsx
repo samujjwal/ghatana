@@ -1,18 +1,18 @@
 /**
- * EventCloud Live Topology Component
+ * EventLog Live Topology Component
  *
- * A real-time streaming version of EventCloudTopology that connects to
+ * A real-time streaming version of EventLogTopology that connects to
  * the ActiveJ backend for live metrics and topology updates.
  *
  * @doc.type component
- * @doc.purpose Live EventCloud topology visualization
+ * @doc.purpose Live EventLog topology visualization
  * @doc.layer product
  * @doc.pattern SmartComponent
  */
 
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { EventCloudTopology, type EventCloudTopologyProps } from './EventCloudTopology';
-import { useEventCloudStream, type UseEventCloudStreamOptions } from '../../hooks';
+import { EventLogTopology, type EventLogTopologyProps } from './EventLogTopology';
+import { useEventLogStream, type UseEventLogStreamOptions } from '../../hooks';
 import { cn, cardStyles, textStyles, bgStyles } from '../../lib/theme';
 import { emitDataCloudDiagnostic } from '../../diagnostics';
 
@@ -20,8 +20,8 @@ import { emitDataCloudDiagnostic } from '../../diagnostics';
 // TYPES
 // ============================================
 
-export interface EventCloudLiveTopologyProps
-    extends Omit<EventCloudTopologyProps, 'nodes' | 'edges' | 'isLoading' | 'error'> {
+export interface EventLogLiveTopologyProps
+    extends Omit<EventLogTopologyProps, 'nodes' | 'edges' | 'isLoading' | 'error'> {
     /** ActiveJ server URL for streaming */
     serverUrl: string;
 
@@ -143,16 +143,16 @@ function ConnectionStatus({ state, lastUpdate, onReconnect, error }: ConnectionS
 // ============================================
 
 /**
- * EventCloudLiveTopology - Real-time streaming topology visualization.
+ * EventLogLiveTopology - Real-time streaming topology visualization.
  *
- * Wraps EventCloudTopology with live data streaming from ActiveJ backend.
+ * Wraps EventLogTopology with live data streaming from ActiveJ backend.
  * Automatically connects, handles reconnection, and provides connection status UI.
  *
  * @example
  * ```tsx
  * function StreamMonitor() {
  *   return (
- *     <EventCloudLiveTopology
+ *     <EventLogLiveTopology
  *       serverUrl="ws://localhost:8080"
  *       tenantId="tenant-123"
  *       authToken={token}
@@ -163,7 +163,7 @@ function ConnectionStatus({ state, lastUpdate, onReconnect, error }: ConnectionS
  * }
  * ```
  */
-export function EventCloudLiveTopology({
+export function EventLogLiveTopology({
     serverUrl,
     tenantId,
     authToken,
@@ -173,7 +173,7 @@ export function EventCloudLiveTopology({
     disconnectedFallback,
     className,
     ...topologyProps
-}: EventCloudLiveTopologyProps) {
+}: EventLogLiveTopologyProps) {
     // Connect to streaming hook
     const {
         nodes,
@@ -185,7 +185,7 @@ export function EventCloudLiveTopology({
         requestSync,
         lastUpdate,
         isSyncing,
-    } = useEventCloudStream({
+    } = useEventLogStream({
         serverUrl,
         tenantId,
         authToken,
@@ -209,7 +209,7 @@ export function EventCloudLiveTopology({
         try {
             await connect();
         } catch (err) {
-            emitDataCloudDiagnostic("EventCloudLiveTopology", "error", "Failed to reconnect", {
+            emitDataCloudDiagnostic("EventLogLiveTopology", "error", "Failed to reconnect", {
                 error: err,
             });
         }
@@ -252,7 +252,7 @@ export function EventCloudLiveTopology({
             )}
 
             {/* Main Topology */}
-            <EventCloudTopology
+            <EventLogTopology
                 nodes={nodes}
                 edges={edges}
                 isLoading={connectionState === 'connecting' && nodes.length === 0}
@@ -263,4 +263,4 @@ export function EventCloudLiveTopology({
     );
 }
 
-export default EventCloudLiveTopology;
+export default EventLogLiveTopology;

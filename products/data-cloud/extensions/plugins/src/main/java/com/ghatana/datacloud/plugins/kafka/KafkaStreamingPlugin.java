@@ -97,7 +97,7 @@ public class KafkaStreamingPlugin implements StreamingPlugin {
             .id("kafka-streaming")
             .name("Kafka Streaming Plugin")
             .version("1.0.0")
-            .description("Apache Kafka streaming plugin for EventCloud")
+            .description("Apache Kafka streaming plugin for EventLog")
             .type(PluginType.STREAMING)
             .capabilities(Set.of("consumer-groups", "exactly-once", "backpressure", "partitioning"))
             .vendor("Ghatana")

@@ -30,6 +30,27 @@ class EventOperatorCapabilityArchitectureContractTest {
     }
 
     @Test
+    void eventOperatorCapabilityExposesCapabilityId() {
+        CapabilityDescriptor descriptor = new CapabilityDescriptor(
+            CapabilityId.of("agents/predicate@1.0.0/capabilities/main"),
+            CapabilityKind.DETERMINISTIC,
+            "agents/predicate@1.0.0",
+            Optional.of(AgentDescriptor.builder()
+                .agentId("predicate")
+                .type(AgentType.DETERMINISTIC)
+                .build()),
+            "schema://capability/input",
+            "schema://capability/output",
+            AgentSideEffectProfile.PURE_INFERENCE,
+            List.of("agent-capability"),
+            Map.of("policyRef", "required"),
+            Map.of("owner", "aep"));
+
+        assertThat(descriptor.id()).isNotNull();
+        assertThat(descriptor.id().value()).isEqualTo("agents/predicate@1.0.0/capabilities/main");
+    }
+
+    @Test
     void capabilityDescriptorsRepresentCanonicalAgentTypes() {
         assertDescriptor(CapabilityKind.DETERMINISTIC, AgentType.DETERMINISTIC);
         assertDescriptor(CapabilityKind.PROBABILISTIC, AgentType.PROBABILISTIC);
@@ -55,35 +76,35 @@ class EventOperatorCapabilityArchitectureContractTest {
             request -> Promise.of(Map.of()));
 
         assertThat(predicate.kind()).isEqualTo(OperatorKind.AGENT_PREDICATE);
-        assertThat(agentOperator(new AgentEnrichmentOperator(
+        assertThat(eventOperator(new AgentEnrichmentOperator(
             OperatorId.of("tenant-a", "agent", "enrich", "1.0.0"),
             "agents/enrich@1.0.0",
             "EnrichInput",
             "EnrichOutput",
             request -> Promise.of(Map.of()))))
             .isEqualTo(OperatorKind.AGENT_ENRICH);
-        assertThat(agentOperator(new AgentExtractOperator(
+        assertThat(eventOperator(new AgentExtractOperator(
             OperatorId.of("tenant-a", "agent", "extract", "1.0.0"),
             "agents/extract@1.0.0",
             "ExtractInput",
             "ExtractOutput",
             request -> Promise.of(Map.of()))))
             .isEqualTo(OperatorKind.AGENT_EXTRACT);
-        assertThat(agentOperator(new AgentPatternSynthesisOperator(
+        assertThat(eventOperator(new AgentPatternSynthesisOperator(
             OperatorId.of("tenant-a", "agent", "synthesis", "1.0.0"),
             "agents/synthesis@1.0.0",
             "SynthesisInput",
             "PatternSuggestion",
             request -> Promise.of(Map.of()))))
             .isEqualTo(OperatorKind.AGENT_PATTERN_SYNTHESIS);
-        assertThat(agentOperator(new AgentExplanationOperator(
+        assertThat(eventOperator(new AgentExplanationOperator(
             OperatorId.of("tenant-a", "agent", "explain", "1.0.0"),
             "agents/explain@1.0.0",
             "ExplanationInput",
             "ExplanationOutput",
             request -> Promise.of(Map.of()))))
             .isEqualTo(OperatorKind.AGENT_EXPLANATION);
-        assertThat(agentOperator(new AgentReviewOperator(
+        assertThat(eventOperator(new AgentReviewOperator(
             OperatorId.of("tenant-a", "agent", "review", "1.0.0"),
             "agents/review@1.0.0",
             "ReviewInput",
@@ -91,7 +112,7 @@ class EventOperatorCapabilityArchitectureContractTest {
             request -> Promise.of(Map.of()))))
             .isEqualTo(OperatorKind.AGENT_REVIEW);
         assertThat(action.kind()).isEqualTo(OperatorKind.AGENT_ACTION);
-        assertThat(agentOperator(new AgentReflectionOperator(
+        assertThat(eventOperator(new AgentReflectionOperator(
             OperatorId.of("tenant-a", "agent", "reflection", "1.0.0"),
             "agents/reflection@1.0.0",
             "ReflectionInput",
@@ -117,6 +138,90 @@ class EventOperatorCapabilityArchitectureContractTest {
             .contains("AGENT_ACTION requires auditPolicy");
     }
 
+    @Test
+    void agentActionRequiresAllRequiredPolicies() {
+        AgentActionOperator action = new AgentActionOperator(
+            OperatorId.of("tenant-a", "agent", "action", "1.0.0"),
+            "agents/action@1.0.0",
+            "ActionInput",
+            "ActionOutput",
+            request -> Promise.of(Map.of()));
+
+        // Missing tool policy
+        assertThat(action.validate(spec(Map.of(
+            "approvalPolicy", Map.of("mode", "human_required"),
+            "auditPolicy", Map.of("enabled", true),
+            "idempotencyPolicy", Map.of("keyRequired", true))), null).errors())
+            .contains("AGENT_ACTION requires toolPolicy");
+
+        // Missing approval policy
+        assertThat(action.validate(spec(Map.of(
+            "toolPolicy", Map.of("allowedTools", List.of("ticket.create")),
+            "auditPolicy", Map.of("enabled", true),
+            "idempotencyPolicy", Map.of("keyRequired", true))), null).errors())
+            .contains("AGENT_ACTION requires approvalPolicy");
+
+        // Missing audit policy
+        assertThat(action.validate(spec(Map.of(
+            "toolPolicy", Map.of("allowedTools", List.of("ticket.create")),
+            "approvalPolicy", Map.of("mode", "human_required"),
+            "idempotencyPolicy", Map.of("keyRequired", true))), null).errors())
+            .contains("AGENT_ACTION requires auditPolicy");
+
+        // Missing idempotency policy
+        assertThat(action.validate(spec(Map.of(
+            "toolPolicy", Map.of("allowedTools", List.of("ticket.create")),
+            "approvalPolicy", Map.of("mode", "human_required"),
+            "auditPolicy", Map.of("enabled", true))), null).errors())
+            .contains("AGENT_ACTION requires idempotencyPolicy");
+    }
+
+    @Test
+    void agentPredicateMustNotDeclareMutatingToolPolicy() {
+        AgentPredicateOperator predicate = new AgentPredicateOperator(
+            OperatorId.of("tenant-a", "agent", "predicate", "1.0.0"),
+            "agents/predicate@1.0.0",
+            "PredicateInput",
+            "PredicateOutput",
+            request -> Promise.of(Map.of()));
+
+        assertThat(predicate.validate(spec(OperatorKind.AGENT_PREDICATE, Map.of(
+            "toolPolicy", Map.of("allowedTools", List.of("some.tool")))), null).errors())
+            .contains("AGENT_PREDICATE must not declare mutating toolPolicy");
+    }
+
+    @Test
+    void agentReviewMustNotSelfApproveHighRiskProductionChanges() {
+        AgentReviewOperator review = new AgentReviewOperator(
+            OperatorId.of("tenant-a", "agent", "review", "1.0.0"),
+            "agents/review@1.0.0",
+            "ReviewInput",
+            "ReviewOutput",
+            request -> Promise.of(Map.of()));
+
+        // High-risk production changes require external approval
+        assertThat(review.validate(spec(OperatorKind.AGENT_REVIEW, Map.of(
+            "riskLevel", "HIGH",
+            "mode", "production",
+            "selfApprovalAllowed", false)), null).errors())
+            .contains("AGENT_REVIEW cannot self-approve high-risk production changes");
+    }
+
+    @Test
+    void agentPatternSynthesisEmitsSuggestionNotActiveDeployment() {
+        AgentPatternSynthesisOperator synthesis = new AgentPatternSynthesisOperator(
+            OperatorId.of("tenant-a", "agent", "synthesis", "1.0.0"),
+            "agents/synthesis@1.0.0",
+            "SynthesisInput",
+            "PatternSuggestion",
+            request -> Promise.of(Map.of()));
+
+        // Pattern synthesis must emit suggestions, not deploy directly
+        assertThat(synthesis.validate(spec(OperatorKind.AGENT_PATTERN_SYNTHESIS, Map.of(
+            "deploymentMode", "direct")), null).errors())
+            .contains("AGENT_PATTERN_SYNTHESIS must emit pattern suggestion, not active deployment");
+    }
+
     private static OperatorSpec spec(Map<String, Object> policies) {
         return new OperatorSpec(
             "tenant-a:agent:action:1.0.0",
@@ -127,7 +232,17 @@ class EventOperatorCapabilityArchitectureContractTest {
             policies);
     }
 
-    private static OperatorKind agentOperator(EventOperator<Map<String, Object>, Map<String, Object>> operator) {
+    private static OperatorSpec spec(OperatorKind kind, Map<String, Object> policies) {
+        return new OperatorSpec(
+            "tenant-a:agent:" + kind.name().toLowerCase(java.util.Locale.ROOT) + ":1.0.0",
+            kind,
+            kind.name() + "Input",
+            kind.name() + "Output",
+            Map.of(),
+            policies);
+    }
+
+    private static OperatorKind eventOperator(EventOperator<Map<String, Object>, Map<String, Object>> operator) {
         return operator.kind();
     }
 

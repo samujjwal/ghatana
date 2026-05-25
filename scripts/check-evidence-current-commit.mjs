@@ -91,11 +91,23 @@ function main() {
   const evidenceRoot = evidenceRootArgIndex >= 0
     ? process.argv[evidenceRootArgIndex + 1]
     : DEFAULT_EVIDENCE_ROOT;
+  const summaryOnly = process.argv.includes('--summary');
   const violations = findEvidenceCurrentCommitViolations(root, { evidenceRoot });
 
   if (violations.length === 0) {
     console.log('Evidence current-commit check passed.');
+    if (summaryOnly) {
+      console.log('\n✓ All evidence files are current and match HEAD.');
+    }
     return;
+  }
+
+  if (summaryOnly) {
+    console.log('Stale evidence:');
+    for (const violation of violations) {
+      console.log(`- ${violation}`);
+    }
+    process.exit(1);
   }
 
   console.error('Evidence current-commit check failed:\n');

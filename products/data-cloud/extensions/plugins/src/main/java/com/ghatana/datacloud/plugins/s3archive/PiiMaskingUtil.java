@@ -112,7 +112,7 @@ public class PiiMaskingUtil implements ArchiveMigrationScheduler.PiiMaskingFunct
             "\\d{4}-\\d{2}-\\d{2}|\\d{2}/\\d{2}/\\d{4}|\\d{2}-\\d{2}-\\d{4}");
 
     private static final String REDACTED = "[REDACTED]";
-    private static final String SALT = "eventcloud-pii-salt-"; // In production, use secure config
+    private static final String SALT = "eventlog-pii-salt-"; // In production, use secure config
 
     // Configuration
     private final Map<String, MaskingStrategy> fieldStrategies;

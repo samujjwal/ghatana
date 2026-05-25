@@ -2,14 +2,14 @@
  * Copyright (c) 2025 Ghatana.
  * All rights reserved.
  *
- * package-info.java for EventCloud Trino Connector.
+ * package-info.java for EventLog Trino Connector.
  */
 
 /**
- * Trino SQL Connector for EventCloud.
+ * Trino SQL Connector for EventLog.
  *
  * <p>This package provides a Trino connector that enables SQL queries across
- * all EventCloud storage tiers, including:</p>
+ * all EventLog storage tiers, including:</p>
  * <ul>
  *   <li>L0 (Hot) - Redis/Memory cache</li>
  *   <li>L1 (Warm) - PostgreSQL</li>
@@ -26,7 +26,7 @@
  * </ul>
  *
  * @doc.type package
- * @doc.purpose SQL federation connector for EventCloud
+ * @doc.purpose SQL federation connector for EventLog
  * @doc.layer product
  * @doc.pattern Connector
  */

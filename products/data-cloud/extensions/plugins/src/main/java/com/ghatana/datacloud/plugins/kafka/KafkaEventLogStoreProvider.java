@@ -7,6 +7,7 @@ import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -18,46 +19,48 @@ import java.util.function.Consumer;
  */
 public final class KafkaEventLogStoreProvider implements EventLogStore, AutoCloseable {
 
+    private static final Executor INIT_EXECUTOR = Thread::startVirtualThread;
+
     private final AtomicReference<KafkaEventLogStore> delegate = new AtomicReference<>();
 
     @Override
     public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
-        return delegate().append(tenant, entry);
+        return resolveDelegate().then(store -> store.append(tenant, entry));
     }
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
-        return delegate().appendBatch(tenant, entries);
+        return resolveDelegate().then(store -> store.appendBatch(tenant, entries));
     }
 
     @Override
     public Promise<List<EventEntry>> read(TenantContext tenant, Offset from, int limit) {
-        return delegate().read(tenant, from, limit);
+        return resolveDelegate().then(store -> store.read(tenant, from, limit));
     }
 
     @Override
     public Promise<List<EventEntry>> readByTimeRange(TenantContext tenant, Instant startTime, Instant endTime, int limit) {
-        return delegate().readByTimeRange(tenant, startTime, endTime, limit);
+        return resolveDelegate().then(store -> store.readByTimeRange(tenant, startTime, endTime, limit));
     }
 
     @Override
     public Promise<List<EventEntry>> readByType(TenantContext tenant, String eventType, Offset from, int limit) {
-        return delegate().readByType(tenant, eventType, from, limit);
+        return resolveDelegate().then(store -> store.readByType(tenant, eventType, from, limit));
     }
 
     @Override
     public Promise<Offset> getLatestOffset(TenantContext tenant) {
-        return delegate().getLatestOffset(tenant);
+        return resolveDelegate().then(store -> store.getLatestOffset(tenant));
     }
 
     @Override
     public Promise<Offset> getEarliestOffset(TenantContext tenant) {
-        return delegate().getEarliestOffset(tenant);
+        return resolveDelegate().then(store -> store.getEarliestOffset(tenant));
     }
 
     @Override
     public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
-        return delegate().tail(tenant, from, handler);
+        return resolveDelegate().then(store -> store.tail(tenant, from, handler));
     }
 
     @Override
@@ -81,6 +84,15 @@ public final class KafkaEventLogStoreProvider implements EventLogStore, AutoClos
 
         created.close();
         return delegate.get();
+    }
+
+    private Promise<KafkaEventLogStore> resolveDelegate() {
+        KafkaEventLogStore current = delegate.get();
+        if (current != null) {
+            return Promise.of(current);
+        }
+        // Offload first-time Kafka store creation because initTransactions() blocks.
+        return Promise.ofBlocking(INIT_EXECUTOR, this::delegate);
     }
 
     private static KafkaEventLogStoreConfig buildConfigFromEnvironment() {

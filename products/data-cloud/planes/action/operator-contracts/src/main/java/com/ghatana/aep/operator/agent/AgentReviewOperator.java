@@ -30,5 +30,10 @@ public final class AgentReviewOperator extends AbstractAgentInferenceOperator {
         if (isTrue(spec.policies(), "canSelfApproveHighRisk")) {
             errors.add("AGENT_REVIEW must not self-approve high-risk production changes");
         }
+        if ("HIGH".equals(spec.policies().get("riskLevel"))
+                && "production".equals(spec.policies().get("mode"))
+                && !isTrue(spec.policies(), "selfApprovalAllowed")) {
+            errors.add("AGENT_REVIEW cannot self-approve high-risk production changes");
+        }
     }
 }

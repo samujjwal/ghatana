@@ -69,10 +69,22 @@ jobs:
         run: |
           set -euo pipefail
           TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=all-active --task=compileJava --format=shell)"
+          if [ -z "$TASKS" ]; then
+            echo "::error::Generated all-active task list is empty. This indicates a configuration error."
+            exit 1
+          fi
+          echo "Compiling all active Data Cloud modules (release-blocking + advisory):"
+          echo "$TASKS"
           ./gradlew ${TASKS} --no-daemon
           node ./scripts/generate-data-cloud-active-modules-evidence.mjs
           node ./scripts/check-action-plane-boundaries.mjs
           node ./scripts/check-evidence-current-commit.mjs
+
+      - name: Upload evidence freshness summary
+        if: always()
+        run: |
+          echo "## Evidence Freshness Summary" >> "$GITHUB_STEP_SUMMARY"
+          node ./scripts/check-evidence-current-commit.mjs --summary 2>&1 >> "$GITHUB_STEP_SUMMARY" || true
 
       # Backend: Static analysis
       - name: Run backend SpotBugs

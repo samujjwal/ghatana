@@ -42,10 +42,10 @@ import static io.trino.spi.type.IntegerType.INTEGER;
 import static io.trino.spi.type.VarcharType.VARCHAR;
 
 /**
- * Metadata provider for EventCloud Trino connector.
+ * Metadata provider for EventLog Trino connector.
  *
  * <p>
- * This class exposes EventCloud schemas and tables to Trino, allowing SQL
+ * This class exposes EventLog schemas and tables to Trino, allowing SQL
  * queries to discover available data.</p>
  *
  * <p>
@@ -69,7 +69,7 @@ public class EventCloudMetadata implements ConnectorMetadata {
     /**
      * Default schema name.
      */
-    public static final String DEFAULT_SCHEMA = "eventcloud";
+    public static final String DEFAULT_SCHEMA = "eventlog";
 
     /**
      * Events table name.
@@ -278,7 +278,7 @@ public class EventCloudMetadata implements ConnectorMetadata {
     }
 
     /**
-     * Column handle for EventCloud columns.
+     * Column handle for EventLog columns.
      */
     public record EventCloudColumnHandle(
             String name,

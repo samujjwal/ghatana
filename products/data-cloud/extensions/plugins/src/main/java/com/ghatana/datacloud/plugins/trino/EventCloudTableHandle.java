@@ -24,10 +24,10 @@ import io.trino.spi.predicate.TupleDomain;
 import java.util.Objects;
 
 /**
- * Table handle for EventCloud tables.
+ * Table handle for EventLog tables.
  *
  * <p>
- * This class represents a reference to an EventCloud table within Trino. It
+ * This class represents a reference to an EventLog table within Trino. It
  * includes optional constraint information for predicate pushdown.</p>
  *
  * @doc.type class

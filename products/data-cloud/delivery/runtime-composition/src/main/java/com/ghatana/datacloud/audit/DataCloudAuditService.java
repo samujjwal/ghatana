@@ -29,7 +29,7 @@ import java.util.UUID;
 /**
  * Implementation of AuditService backed by Data-Cloud StoragePlugin.
  *
- * <p>Persists audit events as immutable EventCloud events.
+ * <p>Persists audit events as immutable EventLog events.
  * This class lives in the data-cloud product because it depends on
  * data-cloud-specific types (Event, StoragePlugin).
  *

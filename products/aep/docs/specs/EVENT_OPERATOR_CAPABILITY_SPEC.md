@@ -1,4 +1,4 @@
-# Agent Event Operator Capability Spec
+# Event Operator Capability Spec
 
 **Status:** Target specification  
 **Owner:** AEP maintainers

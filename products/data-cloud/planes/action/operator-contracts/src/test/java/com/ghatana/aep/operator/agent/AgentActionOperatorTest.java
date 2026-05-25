@@ -31,7 +31,8 @@ class AgentActionOperatorTest extends EventloopTestBase {
         ValidationResult validation = operator.validate(spec(Map.of(
             "toolPolicy", Map.of("allowedTools", List.of("pagerduty.incident.create")),
             "approvalPolicy", Map.of("mode", "human_required"),
-            "auditPolicy", Map.of("emitEvents", true))), null);
+            "auditPolicy", Map.of("emitEvents", true),
+            "idempotencyPolicy", Map.of("mode", "key_based"))), null);
 
         assertThat(validation.valid()).isTrue();
     }

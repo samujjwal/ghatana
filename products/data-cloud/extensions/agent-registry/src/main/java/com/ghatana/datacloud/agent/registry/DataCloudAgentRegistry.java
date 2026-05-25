@@ -82,7 +82,6 @@ import java.util.stream.Collectors;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
- * @see com.ghatana.aep.runtime.AepCentralRegistryService (v2.5+ primary consumer)
  */
 public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseable {
 

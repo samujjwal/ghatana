@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Configuration for EventCloud Trino connector.
+ * Configuration for EventLog Trino connector.
  *
  * @doc.type class
  * @doc.purpose Connector configuration
@@ -32,13 +32,13 @@ import java.util.Optional;
 public class EventCloudConnectorConfig {
 
     // Configuration keys
-    public static final String URL_KEY = "eventcloud.url";
-    public static final String AUTH_TOKEN_KEY = "eventcloud.auth.token";
-    public static final String TENANT_ID_KEY = "eventcloud.tenant.id";
-    public static final String CACHE_ENABLED_KEY = "eventcloud.cache.enabled";
-    public static final String CACHE_TTL_KEY = "eventcloud.cache.ttl.seconds";
-    public static final String MAX_SPLITS_KEY = "eventcloud.max.splits";
-    public static final String FETCH_SIZE_KEY = "eventcloud.fetch.size";
+    public static final String URL_KEY = "eventlog.url";
+    public static final String AUTH_TOKEN_KEY = "eventlog.auth.token";
+    public static final String TENANT_ID_KEY = "eventlog.tenant.id";
+    public static final String CACHE_ENABLED_KEY = "eventlog.cache.enabled";
+    public static final String CACHE_TTL_KEY = "eventlog.cache.ttl.seconds";
+    public static final String MAX_SPLITS_KEY = "eventlog.max.splits";
+    public static final String FETCH_SIZE_KEY = "eventlog.fetch.size";
 
     // Default values
     private static final String DEFAULT_URL = "http://localhost:8080";

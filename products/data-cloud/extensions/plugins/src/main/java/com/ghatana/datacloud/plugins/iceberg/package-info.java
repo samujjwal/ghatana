@@ -1,5 +1,5 @@
 /**
- * Apache Iceberg L2 (COOL tier) Storage Plugin for EventCloud.
+ * Apache Iceberg L2 (COOL tier) Storage Plugin for EventLog.
  *
  * <p><b>Purpose</b><br>
  * Provides columnar analytics storage for events using Apache Iceberg table format.

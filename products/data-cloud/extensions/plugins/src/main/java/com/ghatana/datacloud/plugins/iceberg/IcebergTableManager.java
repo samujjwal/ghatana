@@ -28,7 +28,7 @@ import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 /**
- * Manages Apache Iceberg tables for EventCloud L2 (COOL tier) storage.
+ * Manages Apache Iceberg tables for EventLog L2 (COOL tier) storage.
  *
  * <p><b>Purpose</b><br>
  * Handles table lifecycle operations including:
@@ -86,7 +86,7 @@ public class IcebergTableManager implements Closeable {
     // ==================== Schema Definition ====================
 
     /**
-     * Iceberg schema for EventCloud events.
+     * Iceberg schema for EventLog events.
      */
     public static final Schema EVENT_SCHEMA = new Schema(
             // Primary identifier

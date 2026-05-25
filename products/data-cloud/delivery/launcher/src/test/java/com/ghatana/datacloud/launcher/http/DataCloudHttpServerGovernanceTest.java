@@ -55,7 +55,7 @@ import static org.mockito.Mockito.withSettings;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Governance Endpoints")
+@DisplayName("DataCloudHttpServer - Governance Endpoints")
 class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
@@ -163,9 +163,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         if (server != null) server.stop(); 
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // POST /api/v1/governance/retention/classify
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("POST /api/v1/governance/retention/classify")
@@ -256,14 +256,14 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); 
             Map<String, Object> data = (Map<String, Object>) respBody.get("data");
             assertThat(data.get("tier")).isEqualTo("permanent");
-            // expiresAt is null for permanent — Jackson serializes as absent or null
+            // expiresAt is null for permanent - Jackson serializes as absent or null
             assertThat(data.containsKey("expiresAt") && data.get("expiresAt") != null).isFalse();
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // GET /api/v1/governance/retention/policy
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("GET /api/v1/governance/retention/policy")
@@ -326,9 +326,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // POST /api/v1/governance/retention/purge
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("POST /api/v1/governance/retention/purge")
@@ -598,9 +598,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // POST /api/v1/governance/privacy/redact
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("POST /api/v1/governance/privacy/redact")
@@ -874,9 +874,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             });
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // GET /api/v1/governance/privacy/pii-fields
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("GET /api/v1/governance/privacy/pii-fields")
@@ -993,9 +993,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // GET /api/v1/governance/compliance/summary
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Nested
     @DisplayName("GET /api/v1/governance/compliance/summary")
@@ -1091,9 +1091,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // Helper methods
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     @Override
     protected void startServer() throws Exception {
@@ -1191,9 +1191,9 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
     // P0-04: Cross-tenant enforcement at HTTP server level
-    // ─────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
 
     /**
      * Verifies that when the security filter is active (API key auth enabled)
@@ -1297,7 +1297,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
-        @DisplayName("Retention classify is deterministic — same input always produces same tier")
+        @DisplayName("Retention classify is deterministic - same input always produces same tier")
         @SuppressWarnings("unchecked")
         void retentionClassify_sameTier_isDeterministic() throws Exception {
             server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
@@ -1385,10 +1385,10 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
     }
 
     /**
-     * DC-P1-009: Policy CRUD lifecycle — Trust Center governance contract.
+     * DC-P1-009: Policy CRUD lifecycle - Trust Center governance contract.
      */
     @Nested
-    @DisplayName("POST|GET|PUT|DELETE /api/v1/governance/policies — Trust Center policy lifecycle (DC-P1-009)")
+    @DisplayName("POST|GET|PUT|DELETE /api/v1/governance/policies - Trust Center policy lifecycle (DC-P1-009)")
     class PolicyCrudLifecycleTests {
         private static final String TENANT_ID = "tenant-test";
 
@@ -1540,7 +1540,7 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
-        @DisplayName("Policy CRUD: complete create → read → update → delete lifecycle")
+        @DisplayName("Policy CRUD: complete create -> read -> update -> delete lifecycle")
         @SuppressWarnings("unchecked")
         void fullPolicyCrudLifecycle() throws Exception {
             startServer();
@@ -1588,3 +1588,4 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         }
     }
 }
+

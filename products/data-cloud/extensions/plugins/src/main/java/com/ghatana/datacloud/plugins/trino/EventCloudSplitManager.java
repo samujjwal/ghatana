@@ -31,10 +31,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Split manager for EventCloud Trino connector.
+ * Split manager for EventLog Trino connector.
  *
  * <p>
- * This class generates splits for parallel data reading from EventCloud. Each
+ * This class generates splits for parallel data reading from EventLog. Each
  * split represents a partition range that can be processed independently.</p>
  *
  * <p>
@@ -124,7 +124,7 @@ public class EventCloudSplitManager implements ConnectorSplitManager {
         List<ConnectorSplit> splits = new ArrayList<>();
 
         // Generate one split per partition
-        // In production, this would query EventCloud for actual partition info
+        // In production, this would query EventLog for actual partition info
         for (int partitionId = 0; partitionId < DEFAULT_PARTITION_COUNT; partitionId++) {
             splits.add(new EventCloudSplit(
                     EventCloudMetadata.EVENTS_TABLE,
@@ -144,7 +144,7 @@ public class EventCloudSplitManager implements ConnectorSplitManager {
      *
      * <p>
      * This implementation is used when splits need to be fetched from
-     * EventCloud dynamically.</p>
+     * EventLog dynamically.</p>
      */
     static class AsyncEventCloudSplitSource implements ConnectorSplitSource {
 

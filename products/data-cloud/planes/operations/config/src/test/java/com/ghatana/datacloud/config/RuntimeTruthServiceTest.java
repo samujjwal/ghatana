@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -231,6 +232,197 @@ class RuntimeTruthServiceTest {
 
             RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
             assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.UNKNOWN);
+        }
+    }
+
+    // =========================================================================
+    //  DC-P6-004: Runtime Truth Requirements
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Runtime Truth Requirements (DC-P6-004)")
+    class RuntimeTruthRequirementsTests {
+
+        @Test
+        @DisplayName("runtime truth exposes live/degraded/unavailable status")
+        void runtimeTruthExposesStatus() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.DEGRADED, Map.of());
+            service.updatePlaneState("governance-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.planeStates().get("data-plane").status()).isEqualTo(RuntimeTruthService.PlaneStatus.UP);
+            assertThat(truth.planeStates().get("event-plane").status()).isEqualTo(RuntimeTruthService.PlaneStatus.DEGRADED);
+            assertThat(truth.planeStates().get("governance-plane").status()).isEqualTo(RuntimeTruthService.PlaneStatus.DOWN);
+        }
+
+        @Test
+        @DisplayName("runtime truth exposes dependencies in metadata")
+        void runtimeTruthExposesDependencies() {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("dependencies", List.of("database", "cache", "message-queue"));
+            metadata.put("database", "postgresql://localhost:5432");
+            metadata.put("cache", "redis://localhost:6379");
+
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, metadata);
+
+            RuntimeTruthService.PlaneState state = service.getPlaneState("data-plane");
+            assertThat(state.metadata()).containsKey("dependencies");
+            assertThat(state.metadata()).containsKey("database");
+            assertThat(state.metadata()).containsKey("cache");
+        }
+
+        @Test
+        @DisplayName("runtime truth exposes health snapshots")
+        void runtimeTruthExposesHealthSnapshots() {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("health", "healthy");
+            metadata.put("cpu", 45.2);
+            metadata.put("memory", 78.5);
+            metadata.put("disk", 62.1);
+
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, metadata);
+
+            RuntimeTruthService.PlaneState state = service.getPlaneState("data-plane");
+            assertThat(state.metadata()).containsKey("health");
+            assertThat(state.metadata()).containsKey("cpu");
+            assertThat(state.metadata()).containsKey("memory");
+            assertThat(state.metadata()).containsKey("disk");
+        }
+
+        @Test
+        @DisplayName("runtime truth exposes tenant scoping")
+        void runtimeTruthExposesTenantScoping() {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("tenantId", "tenant-123");
+            metadata.put("tenantCount", 5);
+            metadata.put("activeTenants", List.of("tenant-123", "tenant-456", "tenant-789"));
+
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, metadata);
+
+            RuntimeTruthService.PlaneState state = service.getPlaneState("data-plane");
+            assertThat(state.metadata()).containsKey("tenantId");
+            assertThat(state.metadata()).containsKey("tenantCount");
+            assertThat(state.metadata()).containsKey("activeTenants");
+        }
+
+        @Test
+        @DisplayName("runtime truth exposes provenance refs")
+        void runtimeTruthExposesProvenanceRefs() {
+            service.setCommitSha("abc123def456");
+            service.setEnvironment("production");
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.commitSha()).isEqualTo("abc123def456");
+            assertThat(truth.environment()).isEqualTo("production");
+        }
+
+        @Test
+        @DisplayName("runtime truth exposes artifact refs in metadata")
+        void runtimeTruthExposesArtifactRefs() {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("artifactId", "data-cloud-plane-1.0.0.jar");
+            metadata.put("artifactVersion", "1.0.0");
+            metadata.put("buildTime", "2026-03-27T10:00:00Z");
+
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, metadata);
+
+            RuntimeTruthService.PlaneState state = service.getPlaneState("data-plane");
+            assertThat(state.metadata()).containsKey("artifactId");
+            assertThat(state.metadata()).containsKey("artifactVersion");
+            assertThat(state.metadata()).containsKey("buildTime");
+        }
+    }
+
+    // =========================================================================
+    //  DC-P6-004: Failure Injection Tests
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Failure Injection Tests (DC-P6-004)")
+    class FailureInjectionTests {
+
+        @Test
+        @DisplayName("system status reflects single plane failure")
+        void systemStatusReflectsSinglePlaneFailure() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+            service.updatePlaneState("governance-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DOWN);
+        }
+
+        @Test
+        @DisplayName("system status reflects multiple plane failures")
+        void systemStatusReflectsMultiplePlaneFailures() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+            service.updatePlaneState("governance-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DOWN);
+        }
+
+        @Test
+        @DisplayName("system status recovers when failed plane recovers")
+        void systemStatusRecoversWhenFailedPlaneRecovers() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth1 = service.getRuntimeTruth();
+            assertThat(truth1.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DOWN);
+
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth2 = service.getRuntimeTruth();
+            assertThat(truth2.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.UP);
+        }
+    }
+
+    // =========================================================================
+    //  DC-P6-004: Degraded Dependency Tests
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Degraded Dependency Tests (DC-P6-004)")
+    class DegradedDependencyTests {
+
+        @Test
+        @DisplayName("system status is DEGRADED when dependency is degraded")
+        void systemStatusIsDegradedWhenDependencyIsDegraded() {
+            Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("dependencies", List.of("database", "cache"));
+            metadata.put("database", "degraded");
+            metadata.put("cache", "healthy");
+
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.DEGRADED, metadata);
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DEGRADED);
+        }
+
+        @Test
+        @DisplayName("system status remains DEGRADED with mixed plane states")
+        void systemStatusRemainsDegradedWithMixedPlaneStates() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.DEGRADED, Map.of());
+            service.updatePlaneState("governance-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DEGRADED);
+        }
+
+        @Test
+        @DisplayName("system status prioritizes DOWN over DEGRADED")
+        void systemStatusPrioritizesDownOverDegraded() {
+            service.updatePlaneState("data-plane", RuntimeTruthService.PlaneStatus.DEGRADED, Map.of());
+            service.updatePlaneState("event-plane", RuntimeTruthService.PlaneStatus.DOWN, Map.of());
+            service.updatePlaneState("governance-plane", RuntimeTruthService.PlaneStatus.UP, Map.of());
+
+            RuntimeTruthService.RuntimeTruth truth = service.getRuntimeTruth();
+            assertThat(truth.systemStatus()).isEqualTo(RuntimeTruthService.PlaneStatus.DOWN);
         }
     }
 }

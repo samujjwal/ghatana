@@ -18,7 +18,11 @@ public record CompiledPattern(
         Map<String, Object> semantics,
         Map<String, Object> emit,
         Map<String, Object> lifecycle,
-        Map<String, Object> governance) {
+        Map<String, Object> governance,
+        String timePolicy,
+        String uncertaintyPolicy,
+        boolean isShadow,
+        boolean isActive) {
 
     public CompiledPattern {
         if (patternId == null || patternId.isBlank()) {

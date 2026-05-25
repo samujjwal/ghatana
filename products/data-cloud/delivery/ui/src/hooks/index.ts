@@ -25,13 +25,13 @@ export * from "./useAmbientIntelligence";
 
 // Real-time streaming hooks
 export {
-  useEventCloudStream,
+  useEventLogStream,
   useStreamMetrics,
-  type UseEventCloudStreamOptions,
-  type UseEventCloudStreamReturn,
+  type UseEventLogStreamOptions,
+  type UseEventLogStreamReturn,
   type TopologyUpdateEvent,
   type MetricsUpdateEvent,
-} from "./useEventCloudStream";
+} from "./useEventLogStream";
 
 // Re-export core diagram hooks for convenience
 export { useTopology, useHistory } from "@ghatana/canvas/topology";

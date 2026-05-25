@@ -38,10 +38,10 @@ import java.util.Map;
 
 
 /**
- * Record cursor for reading EventCloud data row by row.
+ * Record cursor for reading EventLog data row by row.
  *
  * <p>
- * This cursor fetches data from EventCloud HTTP API and streams it to Trino
+ * This cursor fetches data from EventLog HTTP API and streams it to Trino
  * workers.</p>
  *
  * @doc.type class

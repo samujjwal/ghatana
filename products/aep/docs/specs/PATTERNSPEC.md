@@ -103,7 +103,7 @@ pattern:
         event: service.error_rate_elevated
         min: 3
     - operator: AGENT_PREDICATE
-      agentRef: agents/sre-risk-assessor@1.0.0
+      capabilityRef: agents/sre-risk-assessor@1.0.0
       inputSchema: DeployRiskContext
       outputSchema: RiskDecision
       replayPolicy:
@@ -130,11 +130,11 @@ pattern:
   operands:
     - event: payment.failed
     - operator: AGENT_ENRICH
-      agentRef: agents/fraud-context-enricher@1.0.0
+      capabilityRef: agents/fraud-context-enricher@1.0.0
       inputSchema: PaymentFailureContext
       outputSchema: FraudContext
     - operator: AGENT_PREDICATE
-      agentRef: agents/fraud-risk-reviewer@1.0.0
+      capabilityRef: agents/fraud-risk-reviewer@1.0.0
       inputSchema: FraudContext
       outputSchema: FraudDecision
       condition: "$output.decision == 'REVIEW'"
@@ -148,11 +148,11 @@ pipeline:
   operands:
     - event: event_group.discovered
     - operator: AGENT_PATTERN_SYNTHESIS
-      agentRef: agents/pattern-synthesizer@1.0.0
+      capabilityRef: agents/pattern-synthesizer@1.0.0
       inputSchema: DiscoveredEventGroup
       outputSchema: CandidatePatternSpec
     - operator: AGENT_REVIEW
-      agentRef: agents/pattern-reviewer@1.0.0
+      capabilityRef: agents/pattern-reviewer@1.0.0
       inputSchema: CandidatePatternSpec
       outputSchema: PatternReviewRecommendation
 emit:

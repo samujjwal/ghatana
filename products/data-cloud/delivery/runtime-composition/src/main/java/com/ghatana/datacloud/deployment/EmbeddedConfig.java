@@ -25,7 +25,7 @@ import java.util.Objects;
  * <p>Provides configuration for running Data-Cloud as an in-process library
  * without HTTP server. Designed for:
  * <ul>
- *   <li>AEP with embedded EventCloud (same JVM)</li>
+ *   <li>AEP with embedded EventLog (same JVM)</li>
  *   <li>Edge/IoT deployments with local storage</li>
  *   <li>Testing with in-memory storage</li>
  *   <li>Single-node processing applications</li>
@@ -103,7 +103,7 @@ public record EmbeddedConfig(
     }
 
     /**
-     * Streaming/EventCloud configuration for embedded mode.
+     * Streaming/EventLog configuration for embedded mode.
      */
     public record StreamingConfig(
             int eventBufferSize,

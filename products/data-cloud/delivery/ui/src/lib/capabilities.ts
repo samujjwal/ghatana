@@ -189,14 +189,14 @@ const mockSchema: CapabilitySchema = {
   aep_capabilities: [
     {
       id: 'aep.eventcloud.durable',
-      name: 'Durable EventCloud',
+      name: 'Durable EventLog',
       type: 'EVENT_PROCESSING',
       status: 'stable',
       products: ['aep'],
       description: 'Durable event storage and processing with HTTP 503 for unavailable services in production',
       metadata: {
         fail_closed: 'true',
-        notes: 'Production requires durable EventCloud provider; in-memory only for dev/test with allow flag',
+        notes: 'Production requires durable EventLog provider; in-memory only for dev/test with allow flag',
       },
     },
   ],

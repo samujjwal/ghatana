@@ -475,6 +475,7 @@ public final class DataCloud {
                 case LT -> EntityStore.Filter.lt(filter.field(), filter.value());
                 case LTE -> EntityStore.Filter.lte(filter.field(), filter.value());
                 case LIKE -> EntityStore.Filter.like(filter.field(), (String) filter.value());
+                case IN -> EntityStore.Filter.in(filter.field(), (List<?>) filter.value());
                 default -> EntityStore.Filter.eq(filter.field(), filter.value());
             };
         }

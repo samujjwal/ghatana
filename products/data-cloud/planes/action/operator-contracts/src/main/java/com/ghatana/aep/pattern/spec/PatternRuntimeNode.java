@@ -1,5 +1,6 @@
 package com.ghatana.aep.pattern.spec;
 
+import com.ghatana.aep.agent.capability.CapabilityDescriptor;
 import com.ghatana.aep.operator.contract.OperatorKind;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public record PatternRuntimeNode(
         Optional<String> capabilityRef,
         Optional<String> outputSchema,
         Map<String, Object> parameters,
-        List<PatternRuntimeNode> children) {
+        List<PatternRuntimeNode> children,
+        Optional<CapabilityDescriptor> capabilityDescriptor) {
 
     public PatternRuntimeNode {
         if (nodeId == null || nodeId.isBlank()) {
@@ -35,6 +37,7 @@ public record PatternRuntimeNode(
         outputSchema = outputSchema != null ? outputSchema : Optional.empty();
         parameters = Map.copyOf(parameters != null ? parameters : Map.of());
         children = List.copyOf(children != null ? children : List.of());
+        capabilityDescriptor = capabilityDescriptor != null ? capabilityDescriptor : Optional.empty();
     }
 
     public boolean isAgentCapability() {

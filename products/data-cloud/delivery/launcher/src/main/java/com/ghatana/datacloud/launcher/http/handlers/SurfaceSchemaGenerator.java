@@ -295,8 +295,8 @@ public final class SurfaceSchemaGenerator {
         List<Capability> capabilities = new ArrayList<>();
 
         capabilities.add(new Capability(
-            "aep.eventcloud.durable",
-            "Durable EventCloud",
+            "aep.eventlog.durable",
+            "Durable EventLog",
             "EVENT_PROCESSING",
             "stable",
             List.of("aep"),
@@ -305,7 +305,7 @@ public final class SurfaceSchemaGenerator {
             null,
             Map.of(
                 "fail_closed", "true",
-                "notes", "Production requires durable EventCloud provider; in-memory only for dev/test with allow flag"
+                "notes", "Production requires durable EventLog provider; in-memory only for dev/test with allow flag"
             )
         ));
 

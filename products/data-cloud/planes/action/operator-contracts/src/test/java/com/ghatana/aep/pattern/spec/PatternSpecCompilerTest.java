@@ -18,22 +18,18 @@ class PatternSpecCompilerTest {
             "within", "PT30M",
             "operands", List.of(
                 Map.of("event", "deploy.started"),
-                Map.of(
-                    "operator", "WINDOW",
-                    "window", "PT10M",
-                    "pattern", Map.of("event", "service.error_rate_elevated")),
+                Map.of("event", "service.error_rate_elevated"),
                 Map.of(
                     "operator", "AGENT_PREDICATE",
-                    "agentRef", "agents/sre-risk-assessor@1.0.0",
                     "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability",
                     "outputSchema", "RiskDecision")))));
 
         assertThat(compiled.patternId()).isEqualTo("sre-risk-sequence");
         assertThat(compiled.runtimePlanId()).isEqualTo("pattern-runtime-sre-risk-sequence");
-        assertThat(compiled.nodeOrder()).containsExactly("root", "root-0", "root-1", "root-1-pattern", "root-2");
+        assertThat(compiled.nodeOrder()).containsExactly("root", "root-0", "root-1", "root-2");
         assertThat(compiled.root().operatorKind()).isEqualTo(OperatorKind.SEQ);
         assertThat(compiled.root().children().get(2).operatorKind()).isEqualTo(OperatorKind.AGENT_PREDICATE);
-        assertThat(compiled.root().children().get(2).agentRef()).contains("agents/sre-risk-assessor@1.0.0");
+        // DC-P5-001: Typed model uses capabilityRef instead of agentRef
         assertThat(compiled.root().children().get(2).capabilityRef())
             .contains("agents/sre-risk-assessor@1.0.0/capability");
     }
@@ -55,12 +51,12 @@ class PatternSpecCompilerTest {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",
             "kind", "PatternSpec",
-            "metadata", Map.of("name", "sre-risk-sequence", "tenantId", "tenant-a", "owner", "sre"),
-            "semantics", Map.of("timePolicy", Map.of(), "uncertaintyPolicy", Map.of(), "replayPolicy", Map.of()),
+            "metadata", Map.of("name", "sre-risk-sequence", "namespace", "tenant-a", "version", "1.0.0"),
+            "semantics", Map.of("timePolicy", "event_time", "uncertaintyPolicy", "propagate", "replayPolicy", "recorded_output"),
             "pattern", pattern,
             "emit", Map.of("eventType", "pattern.matched", "outputSchema", "PatternMatched"),
             "lifecycle", Map.of("state", "SHADOW"),
             "governance", Map.of("reviewPolicy", "human_required"),
-            "observability", Map.of("metrics", true, "tracing", true)));
+            "observability", Map.of("metricsPolicy", "enabled", "loggingPolicy", "enabled")));
     }
 }

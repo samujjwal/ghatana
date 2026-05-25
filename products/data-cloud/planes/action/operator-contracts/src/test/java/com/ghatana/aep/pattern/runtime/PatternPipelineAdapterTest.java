@@ -38,11 +38,9 @@ class PatternPipelineAdapterTest {
         assertThat(pipeline.getMetadata()).containsEntry("tenantId", "tenant-a");
         assertThat(pipeline.getStages()).extracting("stageId")
             .containsExactly("eventcloud-source", "root", "root-0", "root-1", "eventcloud-sink");
-        assertThat(pipeline.getStages()).anySatisfy(stage -> {
-            assertThat(stage.stageId()).isEqualTo("root-1");
+        assertThat(pipeline.getStages()).filteredOn(stage -> stage.stageId().equals("root-1")).first().satisfies(stage -> {
             assertThat(stage.operatorId().getType()).isEqualTo("agent-capability");
             assertThat(stage.config()).containsEntry("operatorKind", "AGENT_PREDICATE");
-            assertThat(stage.config()).containsEntry("agentRef", "agents/sre-risk-assessor@1.0.0");
             assertThat(stage.config()).containsEntry(
                 "capabilityRef",
                 "agents/sre-risk-assessor@1.0.0/capability");
@@ -125,7 +123,7 @@ class PatternPipelineAdapterTest {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",
             "kind", "PatternSpec",
-            "metadata", Map.of("name", "sre-risk-sequence", "tenantId", "tenant-a", "owner", "sre"),
+            "metadata", Map.of("name", "sre-risk-sequence", "namespace", "sre", "version", "1.0.0", "tenantId", "tenant-a", "owner", "sre"),
             "semantics", Map.of("timePolicy", Map.of(), "uncertaintyPolicy", Map.of(), "replayPolicy", Map.of()),
             "pattern", pattern,
             "emit", Map.of("eventType", "pattern.matched", "outputSchema", "PatternMatched"),

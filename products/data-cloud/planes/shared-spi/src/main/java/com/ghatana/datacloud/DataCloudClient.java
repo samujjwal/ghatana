@@ -301,6 +301,10 @@ public interface DataCloudClient extends AutoCloseable {
         public static Filter like(String field, String pattern) {
             return new Filter(field, FilterCriteria.Operator.LIKE, pattern);
         }
+
+        public static Filter in(String field, List<?> values) {
+            return new Filter(field, FilterCriteria.Operator.IN, values);
+        }
     }
 
     /**

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /**
- * EventCloud Enterprise Plugin - Enterprise-grade features for production deployments.
+ * EventLog Enterprise Plugin - Enterprise-grade features for production deployments.
  *
  * <p>
  * This plugin provides enterprise features including:

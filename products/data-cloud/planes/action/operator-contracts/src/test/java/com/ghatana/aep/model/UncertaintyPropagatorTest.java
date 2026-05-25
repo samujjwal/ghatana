@@ -43,7 +43,7 @@ class UncertaintyPropagatorTest {
     }
 
     @Test
-    void agentOperatorUsesModelRetrievalCompletenessAndCalibration() {
+    void eventOperatorUsesModelRetrievalCompletenessAndCalibration() {
         UncertaintyContext propagated = UncertaintyPropagator.propagate(
             OperatorKind.AGENT_PREDICATE,
             List.of(context(0.95, 0.95, 0.95, 0.72)),

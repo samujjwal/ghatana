@@ -23,33 +23,33 @@ import io.trino.spi.connector.ConnectorFactory;
 import java.util.Map;
 
 /**
- * Factory for creating EventCloud Trino connectors.
+ * Factory for creating EventLog Trino connectors.
  *
  * <p>
- * This factory is the entry point for Trino to instantiate EventCloud
- * connectors. It configures the connector with proper EventCloud backend
+ * This factory is the entry point for Trino to instantiate EventLog
+ * connectors. It configures the connector with proper EventLog backend
  * connections and multi-tenant isolation.</p>
  *
  * <p>
  * <b>Configuration Properties:</b></p>
  * <ul>
- * <li>eventcloud.url - EventCloud API endpoint</li>
- * <li>eventcloud.auth.token - Authentication token</li>
- * <li>eventcloud.tenant.id - Default tenant ID</li>
- * <li>eventcloud.cache.enabled - Enable query result caching</li>
+ * <li>eventlog.url - EventLog API endpoint</li>
+ * <li>eventlog.auth.token - Authentication token</li>
+ * <li>eventlog.tenant.id - Default tenant ID</li>
+ * <li>eventlog.cache.enabled - Enable query result caching</li>
  * </ul>
  *
  * <p>
  * <b>Usage in Trino:</b></p>
  * <pre>
- * -- etc/catalog/eventcloud.properties
- * connector.name=eventcloud
- * eventcloud.url=http://localhost:8080
- * eventcloud.auth.token=your-token
+ * -- etc/catalog/eventlog.properties
+ * connector.name=eventlog
+ * eventlog.url=http://localhost:8080
+ * eventlog.auth.token=your-token
  * </pre>
  *
  * @doc.type class
- * @doc.purpose Trino connector factory for EventCloud
+ * @doc.purpose Trino connector factory for EventLog
  * @doc.layer product
  * @doc.pattern Factory
  */
@@ -58,7 +58,7 @@ public class EventCloudConnectorFactory implements ConnectorFactory {
     /**
      * Connector name registered with Trino.
      */
-    public static final String CONNECTOR_NAME = "eventcloud";
+    public static final String CONNECTOR_NAME = "eventlog";
 
     @Override
     public String getName() {

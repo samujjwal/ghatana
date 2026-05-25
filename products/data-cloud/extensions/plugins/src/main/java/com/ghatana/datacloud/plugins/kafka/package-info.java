@@ -1,9 +1,9 @@
 /**
- * Apache Kafka Streaming Plugin for EventCloud.
+ * Apache Kafka Streaming Plugin for EventLog.
  *
  * <p>
  * This package provides high-throughput distributed streaming capabilities for
- * EventCloud using Apache Kafka. Key features include:
+ * EventLog using Apache Kafka. Key features include:
  * <ul>
  * <li><b>Consumer Groups</b>: Coordinated consumption with automatic partition
  * rebalancing</li>
@@ -15,7 +15,7 @@
  * <p>
  * <b>Architecture</b>:
  * <pre>
- * EventCloud → KafkaStreamingPlugin → Kafka Cluster
+ * EventLog → KafkaStreamingPlugin → Kafka Cluster
  *                    ↓
  *              ConsumerGroupManager
  *                    ↓
@@ -25,8 +25,8 @@
  * <p>
  * <b>Topic Naming Convention</b>:
  * <pre>
- * eventcloud.{tenant_id}.{stream_name}
- * eventcloud.{tenant_id}.{stream_name}.{partition_id}
+ * eventlog.{tenant_id}.{stream_name}
+ * eventlog.{tenant_id}.{stream_name}.{partition_id}
  * </pre>
  *
  * <p>
@@ -38,9 +38,11 @@
  * </ul>
  *
  * @doc.type package
- * @doc.purpose Apache Kafka streaming plugin for EventCloud
+ * @doc.purpose Apache Kafka streaming plugin for EventLog
  * @doc.layer plugin
  * @see com.ghatana.datacloud.event.plugins.kafka.KafkaStreamingPlugin
  * @see com.ghatana.datacloud.event.plugins.kafka.KafkaStreamingConfig
+ *
+ * Canonical home for Data Cloud Kafka streaming/runtime integration types.
  */
 package com.ghatana.datacloud.plugins.kafka;

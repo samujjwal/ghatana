@@ -119,7 +119,7 @@ public class ColdTierArchivePlugin implements StoragePlugin {
 
     // ==================== Constructors ====================
     public ColdTierArchivePlugin() {
-        this(S3ArchiveConfig.builder().bucketName("eventcloud-archive").build());
+        this(S3ArchiveConfig.builder().bucketName("eventlog-archive").build());
     }
 
     public ColdTierArchivePlugin(S3ArchiveConfig config) {

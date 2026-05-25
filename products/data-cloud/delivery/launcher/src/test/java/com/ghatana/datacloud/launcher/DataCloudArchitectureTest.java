@@ -32,7 +32,10 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  *   <li>No raw {@code CompletableFuture} in launcher production code.</li>
  *   <li>No {@code System.out.println} in launcher production code (use SLF4J).</li> 
  *   <li>No cyclic dependencies between launcher packages.</li>
- *   <li>Security filter must reside in the {@code http} package (not leaked to handlers).</li> 
+ *   <li>Security filter must reside in the {@code http} package (not leaked to handlers).</li>
+ *   <li>DC-P2-003: Non-action Data Cloud planes must not import AEP internal packages.</li>
+ *   <li>DC-P2-003: Non-action Data Cloud planes must not expose EventCloud semantics.</li>
+ *   <li>DC-P2-003: Non-action Data Cloud planes must not expose PatternSpec/EPL/EventOperator/CEP semantics.</li>
  * </ul>
  *
  * @doc.type class
@@ -254,6 +257,63 @@ class DataCloudArchitectureTest {
                         + "Any Test-suffixed class in main/ is a test leaked to production.")
                     .allowEmptyShould(true); 
             rule.check(LAUNCHER_CLASSES); 
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 6. DC-P2-003: Action Plane boundary rules (parity with script checks)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("DC-P2-003: Action Plane boundary rules")
+    class ActionPlaneBoundaryRules {
+
+        @Test
+        @DisplayName("Non-action Data Cloud planes must not import AEP internal packages")
+        void mustNotImportAepInternalPackages() {
+            // Public AEP packages are allowed: api, client, event.spi, model, sdk
+            // This rule checks that launcher doesn't depend on AEP internal packages
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.launcher..")
+                    .should().dependOnClassesThat()
+                    .resideInAPackage("com.ghatana.aep..")
+                    .because(
+                            "Non-action Data Cloud planes must not import AEP internal packages. "
+                            + "Only public AEP packages (api, client, event.spi, model, sdk) are allowed.")
+                    .allowEmptyShould(true);
+            rule.check(LAUNCHER_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Non-action Data Cloud planes must not expose EventCloud semantics")
+        void mustNotExposeEventCloudSemantics() {
+            // This is a semantic check - verify no class names or constants reference EventCloud
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.launcher..")
+                    .should().haveSimpleNameContaining("EventCloud")
+                    .because(
+                            "Non-action Data Cloud planes must use EventLog/storage-plane wording; "
+                            + "EventCloud semantics are AEP-owned.")
+                    .allowEmptyShould(true);
+            rule.check(LAUNCHER_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Non-action Data Cloud planes must not expose PatternSpec/EPL/EventOperator/CEP semantics")
+        void mustNotExposePatternSpecSemantics() {
+            // Verify no class names reference PatternSpec, EPL, EventOperator, or CEP
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.launcher..")
+                    .should().haveNameMatching(".*PatternSpec.*")
+                    .orShould().haveNameMatching(".*EPL.*")
+                    .orShould().haveNameMatching(".*EventOperator.*")
+                    .orShould().haveNameMatching(".*ComplexEventProcessing.*")
+                    .orShould().haveNameMatching(".*CEP.*")
+                    .because(
+                            "Non-action Data Cloud planes must not expose PatternSpec, EPL, "
+                            + "EventOperator, or CEP semantics. These are AEP-owned.")
+                    .allowEmptyShould(true);
+            rule.check(LAUNCHER_CLASSES);
         }
     }
 }

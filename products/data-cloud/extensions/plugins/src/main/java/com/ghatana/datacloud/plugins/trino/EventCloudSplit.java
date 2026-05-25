@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Represents a unit of work for parallel EventCloud data reading.
+ * Represents a unit of work for parallel EventLog data reading.
  *
  * <p>
  * Each split corresponds to a partition range that can be processed
@@ -123,7 +123,7 @@ public final class EventCloudSplit implements ConnectorSplit {
 
     @Override
     public boolean isRemotelyAccessible() {
-        // All EventCloud data is accessible from any node
+        // All EventLog data is accessible from any node
         return true;
     }
 

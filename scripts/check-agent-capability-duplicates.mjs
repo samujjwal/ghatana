@@ -59,6 +59,11 @@ const FORBIDDEN_PATTERNS = [
   },
 ];
 
+// Files that are allowed to contain forbidden patterns for documentation purposes
+const ALLOWED_FORBIDDEN_PATTERN_FILES = new Set([
+  'docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md',
+]);
+
 const TEXT_EXTENSIONS = new Set(['.java', '.md', '.kts', '.gradle', '.mjs', '.js', '.json', '.yaml', '.yml']);
 const UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE = '2026-06-30';
 const COMPATIBILITY_ISSUE_REF = /\b(?:AEP|GHATANA|DATA-CLOUD)-[A-Z0-9-]*\d+\b/;
@@ -97,6 +102,10 @@ export function findAgentCapabilityDuplicateViolations(root = process.cwd(), sco
     for (const rule of FORBIDDEN_PATTERNS) {
       const match = source.match(rule.pattern);
       if (match) {
+        // Skip forbidden pattern violations in allowed documentation files
+        if (ALLOWED_FORBIDDEN_PATTERN_FILES.has(file)) {
+          continue;
+        }
         violations.push({
           file,
           rule: rule.id,

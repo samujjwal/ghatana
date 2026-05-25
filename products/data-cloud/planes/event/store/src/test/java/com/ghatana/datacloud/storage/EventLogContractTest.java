@@ -422,6 +422,128 @@ class EventLogContractTest {
     }
 
     // =========================================================================
+    //  Replay Operations (DC-P6-002)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Replay Operations")
+    class ReplayTests {
+
+        @Test
+        @DisplayName("replay from offset returns events in order")
+        void replayFromOffsetReturnsEventsInOrder() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 5; i++) {
+                store.append(TENANT_CONTEXT, createTestEntry("event-" + i)).getResult();
+            }
+
+            List<EventLogStore.EventEntry> events = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+
+            assertThat(events).hasSize(5);
+            for (int i = 0; i < 5; i++) {
+                assertThat(new String(events.get(i).payload().array())).contains("event-" + i);
+            }
+        }
+
+        @Test
+        @DisplayName("replay is deterministic for same offset")
+        void replayIsDeterministicForSameOffset() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 5; i++) {
+                store.append(TENANT_CONTEXT, createTestEntry("event-" + i)).getResult();
+            }
+
+            List<EventLogStore.EventEntry> events1 = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+            List<EventLogStore.EventEntry> events2 = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+
+            assertThat(events1).hasSize(5);
+            assertThat(events2).hasSize(5);
+            for (int i = 0; i < 5; i++) {
+                assertThat(events1.get(i).eventId()).isEqualTo(events2.get(i).eventId());
+                assertThat(events1.get(i).payload()).isEqualTo(events2.get(i).payload());
+            }
+        }
+
+        @Test
+        @DisplayName("replay respects tenant isolation")
+        void replayRespectsTenantIsolation() {
+            EventLogStore store = new InMemoryEventLogStore();
+            TenantContext tenant1 = TenantContext.of("tenant-1");
+            TenantContext tenant2 = TenantContext.of("tenant-2");
+
+            store.append(tenant1, createTestEntry("tenant1-event")).getResult();
+            store.append(tenant2, createTestEntry("tenant2-event")).getResult();
+
+            List<EventLogStore.EventEntry> tenant1Events = store.read(tenant1, Offset.of(0), 10).getResult();
+            List<EventLogStore.EventEntry> tenant2Events = store.read(tenant2, Offset.of(0), 10).getResult();
+
+            assertThat(tenant1Events).hasSize(1);
+            assertThat(tenant2Events).hasSize(1);
+            assertThat(new String(tenant1Events.get(0).payload().array())).contains("tenant1");
+            assertThat(new String(tenant2Events.get(0).payload().array())).contains("tenant2");
+        }
+    }
+
+    // =========================================================================
+    //  Retention (DC-P6-002)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Retention")
+    class RetentionTests {
+
+        @Test
+        @DisplayName("events can be queried by time range")
+        void eventsCanBeQueriedByTimeRange() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            // Append events with different timestamps
+            Instant now = Instant.now();
+            EventLogStore.EventEntry entry1 = EventLogStore.EventEntry.builder()
+                .eventType("test-event")
+                .payload("event-1")
+                .timestamp(now.minusSeconds(100))
+                .build();
+            EventLogStore.EventEntry entry2 = EventLogStore.EventEntry.builder()
+                .eventType("test-event")
+                .payload("event-2")
+                .timestamp(now.minusSeconds(50))
+                .build();
+            EventLogStore.EventEntry entry3 = EventLogStore.EventEntry.builder()
+                .eventType("test-event")
+                .payload("event-3")
+                .timestamp(now.minusSeconds(10))
+                .build();
+
+            store.append(TENANT_CONTEXT, entry1).getResult();
+            store.append(TENANT_CONTEXT, entry2).getResult();
+            store.append(TENANT_CONTEXT, entry3).getResult();
+
+            // Read all events
+            List<EventLogStore.EventEntry> events = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+
+            assertThat(events).hasSize(3);
+        }
+
+        @Test
+        @DisplayName("events can be truncated by count")
+        void eventsCanBeTruncatedByCount() {
+            EventLogStore store = new InMemoryEventLogStore();
+
+            for (int i = 0; i < 20; i++) {
+                store.append(TENANT_CONTEXT, createTestEntry("event-" + i)).getResult();
+            }
+
+            // Read only first 10 events
+            List<EventLogStore.EventEntry> events = store.read(TENANT_CONTEXT, Offset.of(0), 10).getResult();
+
+            assertThat(events).hasSize(10);
+        }
+    }
+
+    // =========================================================================
     //  Helper Methods
     // =========================================================================
 

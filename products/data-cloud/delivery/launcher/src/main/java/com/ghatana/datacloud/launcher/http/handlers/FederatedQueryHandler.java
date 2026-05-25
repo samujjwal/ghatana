@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HTTP handler for federated Trino queries (B13).
  *
- * <p>Enables cross-tier SQL via Trino's {@code EventCloudConnector}, which spans
+ * <p>Enables cross-tier SQL via Trino's {@code EventLogConnector}, which spans
  * HOT (Redis), WARM (Iceberg), and COLD (Glacier) storage in a single query.
  *
  * <p>When a Trino coordinator JDBC URL is configured ({@code TRINO_URL} env var),
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Routes SQL queries through the Trino EventCloud connector (B13)
+ * @doc.purpose Routes SQL queries through the Trino EventLog connector (B13)
  * @doc.layer product
  * @doc.pattern Handler
  */
@@ -55,7 +55,7 @@ public final class FederatedQueryHandler {
      * @param http            shared HTTP support
      * @param analyticsEngine fallback when Trino is not available
      * @param metrics         observability metrics
-     * @param trinoUrl        Trino coordinator JDBC URL, e.g. {@code jdbc:trino://host:8080/eventcloud},
+     * @param trinoUrl        Trino coordinator JDBC URL, e.g. {@code jdbc:trino://host:8080/eventlog},
      *                        or {@code null} to always use the fallback engine
      */
     public FederatedQueryHandler(
@@ -150,15 +150,15 @@ public final class FederatedQueryHandler {
      * ActiveJ event loop free.
      *
      * <p>Tenant isolation is achieved by setting the catalog to
-     * {@code eventcloud_<tenantId>}. A lightweight {@code EXPLAIN} is run first
+     * {@code eventlog_<tenantId>}. A lightweight {@code EXPLAIN} is run first
      * to surface the estimated cost before executing.
      */
     private Promise<HttpResponse> executeViaTrino(String sql, String tenantId) {
         return Promise.ofBlocking(http.blockingExecutor(), () -> {
             long startMs = System.currentTimeMillis();
             List<String> warnings = new ArrayList<>();
-            // Tenant-scoped catalog: eventcloud_<tenantId>
-            String tenantCatalog = "eventcloud_" + tenantId;
+            // Tenant-scoped catalog: eventlog_<tenantId>
+            String tenantCatalog = "eventlog_" + tenantId;
             String tenantUrl = buildTenantUrl(trinoUrl, tenantCatalog);
             try (java.sql.Connection conn = java.sql.DriverManager.getConnection(tenantUrl);
                  java.sql.Statement explainStmt = conn.createStatement();
@@ -232,8 +232,8 @@ public final class FederatedQueryHandler {
      * Builds a Trino JDBC URL scoped to the tenant catalog.
      * Replaces the catalog component in the URL if present, otherwise appends it.
      *
-     * <p>e.g. {@code jdbc:trino://host:8080/eventcloud} →
-     *         {@code jdbc:trino://host:8080/eventcloud_tenantA}
+     * <p>e.g. {@code jdbc:trino://host:8080/eventlog} →
+     *         {@code jdbc:trino://host:8080/eventlog_tenantA}
      */
     static String buildTenantUrl(String baseUrl, String tenantCatalog) {
         if (baseUrl == null) return null;

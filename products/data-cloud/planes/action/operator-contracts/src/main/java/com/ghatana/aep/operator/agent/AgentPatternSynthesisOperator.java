@@ -34,5 +34,8 @@ public final class AgentPatternSynthesisOperator extends AbstractAgentInferenceO
         if (isTrue(spec.policies(), "autoActivate")) {
             errors.add("AGENT_PATTERN_SYNTHESIS must not auto-activate patterns");
         }
+        if ("direct".equals(spec.policies().get("deploymentMode"))) {
+            errors.add("AGENT_PATTERN_SYNTHESIS must emit pattern suggestion, not active deployment");
+        }
     }
 }

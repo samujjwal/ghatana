@@ -144,7 +144,13 @@ class PatternSpecValidatorTest {
         spec.put("lifecycle", Map.of(
             "state", "ACTIVE",
             "evidencePolicy", Map.of("retentionDays", 90),
-            "evidenceStore", "eventcloud"));
+            "evidenceStore", "eventcloud://default"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -172,6 +178,12 @@ class PatternSpecValidatorTest {
     void productionRequiresEvidencePolicy() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("lifecycle", Map.of("state", "ACTIVE"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -183,6 +195,12 @@ class PatternSpecValidatorTest {
     void productionRequiresEvidenceStore() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
         spec.put("lifecycle", Map.of("state", "ACTIVE", "evidencePolicy", Map.of("retentionDays", 90)));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -196,7 +214,13 @@ class PatternSpecValidatorTest {
         spec.put("lifecycle", Map.of(
             "state", "ACTIVE",
             "evidencePolicy", Map.of("retentionDays", 90),
-            "evidenceStore", "eventcloud"));
+            "evidenceStore", "eventcloud://default"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -217,11 +241,16 @@ class PatternSpecValidatorTest {
     @Test
     void productionAcceptsApprovalPolicy() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
-        spec.put("governance", Map.of("owner", "sre", "approvalPolicy", "human_required"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
         spec.put("lifecycle", Map.of(
             "state", "ACTIVE",
             "evidencePolicy", Map.of("retentionDays", 90),
-            "evidenceStore", "eventcloud"));
+            "evidenceStore", "eventcloud://default"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -231,11 +260,16 @@ class PatternSpecValidatorTest {
     @Test
     void productionAcceptsReviewPolicy() {
         Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
-        spec.put("governance", Map.of("owner", "sre", "reviewPolicy", "human_required"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "reviewPolicy", "human_required"));
         spec.put("lifecycle", Map.of(
             "state", "ACTIVE",
             "evidencePolicy", Map.of("retentionDays", 90),
-            "evidenceStore", "eventcloud"));
+            "evidenceStore", "eventcloud://default"));
         PatternSpecValidationResult result = PatternSpecValidator.validate(
             spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
 
@@ -246,7 +280,7 @@ class PatternSpecValidatorTest {
         return new java.util.LinkedHashMap<>(Map.of(
             "apiVersion", "aep.ghatana.io/v1",
             "kind", "PatternSpec",
-            "metadata", Map.of("name", "test", "tenantId", "tenant-a", "owner", "sre"),
+            "metadata", Map.of("name", "test", "namespace", "test", "version", "1.0.0", "tenantId", "tenant-a", "owner", "sre"),
             "semantics", Map.of("timePolicy", Map.of(), "uncertaintyPolicy", Map.of(), "replayPolicy", Map.of()),
             "pattern", pattern,
             "emit", Map.of("eventType", "pattern.matched", "outputSchema", "PatternMatched"),

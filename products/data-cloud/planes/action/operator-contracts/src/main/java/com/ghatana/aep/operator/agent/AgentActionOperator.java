@@ -81,6 +81,9 @@ public final class AgentActionOperator implements EventOperator<Map<String, Obje
         if (!hasPolicy(spec.policies(), "auditPolicy")) {
             return ValidationResult.invalid(List.of("AGENT_ACTION requires auditPolicy"));
         }
+        if (!hasPolicy(spec.policies(), "idempotencyPolicy")) {
+            return ValidationResult.invalid(List.of("AGENT_ACTION requires idempotencyPolicy"));
+        }
         return ValidationResult.ok();
     }
 

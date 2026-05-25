@@ -82,4 +82,55 @@ class PatternLifecyclePolicyTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("pattern.promoted");
     }
+
+    @Test
+    void shadowPatternHasNoProductionSideEffects() {
+        // DC-P10-001: Verify shadow patterns cannot directly transition to ACTIVE
+        assertThat(PatternLifecyclePolicy.isAllowed(
+            PatternLifecycleState.SHADOW,
+            PatternLifecycleState.ACTIVE)).isFalse();
+        
+        // Shadow must go through RECOMMENDED -> APPROVED -> ACTIVE path
+        assertThat(PatternLifecyclePolicy.isAllowed(
+            PatternLifecycleState.SHADOW,
+            PatternLifecycleState.RECOMMENDED)).isTrue();
+        assertThat(PatternLifecyclePolicy.isAllowed(
+            PatternLifecycleState.RECOMMENDED,
+            PatternLifecycleState.APPROVED)).isTrue();
+        assertThat(PatternLifecyclePolicy.isAllowed(
+            PatternLifecycleState.APPROVED,
+            PatternLifecycleState.ACTIVE)).isTrue();
+    }
+
+    @Test
+    void lifecycleEventsArePersistedAndAuditable() {
+        // DC-P10-001: Verify lifecycle events are persisted and auditable
+        PatternLifecycleService service = new PatternLifecycleService(Clock.systemUTC());
+        PatternLifecycleRegistry registry = new PatternLifecycleRegistry(service);
+        
+        registry.initializeDraft("tenant-a", "pattern-1");
+        
+        PatternLifecycleTransition transition1 = new PatternLifecycleTransition(
+            "pattern-1",
+            "tenant-a",
+            PatternLifecycleState.DRAFT,
+            PatternLifecycleState.CANDIDATE,
+            PatternLifecycleEventType.PATTERN_CREATED,
+            "author",
+            Map.of("reason", "initial draft"));
+        
+        PatternLifecycleEvent event1 = registry.transition(transition1);
+        
+        // Verify event is persisted
+        assertThat(registry.events("tenant-a", "pattern-1")).hasSize(1);
+        assertThat(registry.events("tenant-a", "pattern-1").get(0)).isEqualTo(event1);
+        
+        // Verify event is auditable (contains actor, timestamp, evidence)
+        assertThat(event1.actor()).isEqualTo("author");
+        assertThat(event1.occurredAt()).isNotNull();
+        assertThat(event1.evidence()).containsEntry("reason", "initial draft");
+        
+        // Verify state is updated
+        assertThat(registry.currentState("tenant-a", "pattern-1")).hasValue(PatternLifecycleState.CANDIDATE);
+    }
 }

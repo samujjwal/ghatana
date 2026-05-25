@@ -487,4 +487,44 @@ class DataCloudPlaneBoundaryTest {
             rule.check(compositionClasses);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7. AEP package allowlist enforcement (parity with check-action-plane-boundaries.mjs)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("AEP package allowlist enforcement (DC-BND-002)")
+    class AepPackageAllowlist {
+
+        @Test
+        @DisplayName("Non-Action planes must not depend on AEP server internals")
+        void nonActionPlanesMustNotDependOnAepServerInternals() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.entity..",
+                            "com.ghatana.datacloud.record..",
+                            "com.ghatana.datacloud.event..",
+                            "com.ghatana.datacloud.platform.event..",
+                            "com.ghatana.datacloud.governance..",
+                            "com.ghatana.datacloud.config..",
+                            "com.ghatana.datacloud.application.policy..",
+                            "com.ghatana.datacloud.infrastructure.policy..",
+                            "com.ghatana.datacloud.pattern..",
+                            "com.ghatana.datacloud.reflex..",
+                            "com.ghatana.datacloud.context..",
+                            "com.ghatana.datacloud.delivery..",
+                            "com.ghatana.datacloud.extensions..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.server..",
+                            "com.ghatana.aep.bootstrap..",
+                            "com.ghatana.aep.di..",
+                            "com.ghatana.aep.runtime..")
+                    .allowEmptyShould(true)
+                    .because(
+                            "Non-Action Data Cloud planes must not depend on AEP server internals. "
+                            + "Use com.ghatana.aep.client.* or the Action Plane contract API instead.");
+            rule.check(DATA_CLOUD_CLASSES);
+        }
+    }
 }

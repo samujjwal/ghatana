@@ -30,10 +30,10 @@ import io.trino.spi.type.Type;
 import java.util.List;
 
 /**
- * Record set provider for EventCloud Trino connector.
+ * Record set provider for EventLog Trino connector.
  *
  * <p>
- * This class creates record sets for reading data from EventCloud splits.</p>
+ * This class creates record sets for reading data from EventLog splits.</p>
  *
  * @doc.type class
  * @doc.purpose Trino record set provider
@@ -76,7 +76,7 @@ public class EventCloudRecordSetProvider implements ConnectorRecordSetProvider {
     }
 
     /**
-     * Record set implementation for EventCloud data.
+     * Record set implementation for EventLog data.
      */
     static class EventCloudRecordSet implements RecordSet {
 

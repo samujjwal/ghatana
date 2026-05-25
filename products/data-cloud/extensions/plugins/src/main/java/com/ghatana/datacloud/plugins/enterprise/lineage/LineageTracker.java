@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Data lineage tracking system for EventCloud.
+ * Data lineage tracking system for EventLog.
  *
  * <p>
  * Tracks data flow and transformations across datasets, enabling:

@@ -22,15 +22,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * reports the canonical connector name.
  *
  * @doc.type class
- * @doc.purpose Tests for EventCloud Trino connector configuration and factory wiring
+ * @doc.purpose Tests for EventLog Trino connector configuration and factory wiring
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EventCloud Trino Connector — Config and Factory")
+@DisplayName("EventLog Trino Connector â€” Config and Factory")
 class EventCloudConnectorConfigTest {
 
     // =========================================================================
-    // EventCloudConnectorConfig — fromMap parsing
+    // EventCloudConnectorConfig â€” fromMap parsing
     // =========================================================================
 
     @Nested
@@ -41,11 +41,11 @@ class EventCloudConnectorConfigTest {
         @DisplayName("defaults are applied when no optional properties are provided")
         void defaultsAppliedWhenEmpty() {
             Map<String, String> props = Map.of(
-                    EventCloudConnectorConfig.URL_KEY, "http://eventcloud-host:8080"
+                    EventCloudConnectorConfig.URL_KEY, "http://eventlog-host:8080"
             );
             EventCloudConnectorConfig config = EventCloudConnectorConfig.fromMap(props);
 
-            assertThat(config.getUrl()).isEqualTo("http://eventcloud-host:8080");
+            assertThat(config.getUrl()).isEqualTo("http://eventlog-host:8080");
             assertThat(config.isCacheEnabled()).isTrue();                        // DEFAULT_CACHE_ENABLED
             assertThat(config.getCacheTtl()).isEqualTo(Duration.ofMinutes(5));   // DEFAULT_CACHE_TTL
             assertThat(config.getMaxSplits()).isEqualTo(16);                     // DEFAULT_MAX_SPLITS
@@ -140,7 +140,7 @@ class EventCloudConnectorConfigTest {
     }
 
     // =========================================================================
-    // EventCloudConnectorConfig — builder
+    // EventCloudConnectorConfig â€” builder
     // =========================================================================
 
     @Nested
@@ -148,7 +148,7 @@ class EventCloudConnectorConfigTest {
     class Builder {
 
         @Test
-        @DisplayName("builder requires url — NullPointerException when null")
+        @DisplayName("builder requires url â€” NullPointerException when null")
         void builderRequiresUrl() {
             assertThatThrownBy(() ->
                 EventCloudConnectorConfig.builder().url(null).build()
@@ -188,18 +188,18 @@ class EventCloudConnectorConfigTest {
     class Factory {
 
         @Test
-        @DisplayName("getName() returns canonical connector name 'eventcloud'")
+        @DisplayName("getName() returns canonical connector name 'eventlog'")
         void factoryReturnsCanonicalName() {
             EventCloudConnectorFactory factory = new EventCloudConnectorFactory();
 
             assertThat(factory.getName()).isEqualTo(EventCloudConnectorFactory.CONNECTOR_NAME);
-            assertThat(factory.getName()).isEqualTo("eventcloud");
+            assertThat(factory.getName()).isEqualTo("eventlog");
         }
 
         @Test
-        @DisplayName("CONNECTOR_NAME constant is 'eventcloud'")
-        void connectorNameConstantIsEventCloud() {
-            assertThat(EventCloudConnectorFactory.CONNECTOR_NAME).isEqualTo("eventcloud");
+        @DisplayName("CONNECTOR_NAME constant is 'eventlog'")
+        void connectorNameConstantIsEventLog() {
+            assertThat(EventCloudConnectorFactory.CONNECTOR_NAME).isEqualTo("eventlog");
         }
     }
 }
