@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-05-25T06:45:17.539Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
+    "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
+    "command": "pnpm check:data-cloud-security-sbom-proof",
+    "commit": "73c0c110542226333369fe8046193139efaac158"
+  },
+  "source": {
+    "workflow": ".github/workflows/data-cloud-release.yml"
+  },
+  "summary": {
+    "requiredTokenCount": 10,
+    "violationCount": 0
+  },
+  "requiredTokens": [
+    "security-scan-strict:",
+    "needs: [build-and-test]",
+    "Run dependency vulnerability check (blocking)",
+    ":products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze",
+    "Generate SBOM (blocking)",
+    "./gradlew cyclonedxBom --no-daemon",
+    "Upload SBOM artifact",
+    "name: data-cloud-sbom",
+    "**/build/reports/bom.json",
+    "**/build/reports/bom.xml"
+  ],
+  "violations": []
+}

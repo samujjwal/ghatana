@@ -1,6 +1,11 @@
 productId: data-cloud
 productKind: platform-provider
 status: blocked
+allowedStatusProgression:
+  - blocked
+  - candidate
+  - staging-ready
+  - production-ready
 lifecycleExecutionAllowed: false
 ordinaryLifecycleProductEnabled: false
 providerMode:

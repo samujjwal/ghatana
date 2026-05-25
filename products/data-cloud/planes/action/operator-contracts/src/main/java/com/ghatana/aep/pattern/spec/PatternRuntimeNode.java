@@ -19,6 +19,7 @@ public record PatternRuntimeNode(
         Optional<String> eventType,
         Optional<String> agentRef,
         Optional<String> capabilityRef,
+        Optional<String> inputSchema,
         Optional<String> outputSchema,
         Map<String, Object> parameters,
         List<PatternRuntimeNode> children,
@@ -34,6 +35,7 @@ public record PatternRuntimeNode(
         eventType = eventType != null ? eventType : Optional.empty();
         agentRef = agentRef != null ? agentRef : Optional.empty();
         capabilityRef = capabilityRef != null ? capabilityRef : Optional.empty();
+        inputSchema = inputSchema != null ? inputSchema : Optional.empty();
         outputSchema = outputSchema != null ? outputSchema : Optional.empty();
         parameters = Map.copyOf(parameters != null ? parameters : Map.of());
         children = List.copyOf(children != null ? children : List.of());

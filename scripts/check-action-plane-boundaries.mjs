@@ -86,8 +86,8 @@ const FORBIDDEN_SEMANTIC_RULES = [
   },
   {
     id: 'patternspec-semantics-in-data-cloud-plane',
-    pattern: /\b(?:PatternSpec|EPL|EventOperatorCapability|EventOperator runtime|complex event processing|CEP)\b/g,
-    message: 'Non-action Data Cloud planes must not expose PatternSpec, EPL, EventOperator, or CEP semantics',
+    pattern: /\b(?:PatternSpec|EPL|EventOperatorCapability|EventOperator runtime|EventOperatorCapability runtime|adaptive event runtime|complex event processing|CEP|pattern promotion|recommended pattern|predictive pattern|Pattern lifecycle)\b/g,
+    message: 'Non-action Data Cloud planes must not expose PatternSpec, EPL, EventOperator, CEP, adaptive runtime, or pattern lifecycle semantics',
   },
 ];
 
@@ -227,7 +227,7 @@ export function createActionPlaneBoundaryEvidence(root = process.cwd(), now = ne
       scannedRoots: DEFAULT_ROOTS,
       excludedRoots: ['products/data-cloud/planes/action'],
       rule: 'Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.',
-      semanticRule: 'Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, CEP, or adaptive event runtime semantics.',
+      semanticRule: 'Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.',
       publicAepPackageAllowlist: [
         'com.ghatana.aep.api',
         'com.ghatana.aep.client',

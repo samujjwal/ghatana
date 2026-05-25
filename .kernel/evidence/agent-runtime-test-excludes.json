@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-05-25T06:45:16.712Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-agent-runtime-test-excludes.mjs",
+    "source": "scripts/check-agent-runtime-test-excludes.mjs",
+    "command": "pnpm check:agent-runtime-test-excludes",
+    "commit": "73c0c110542226333369fe8046193139efaac158"
+  },
+  "summary": {
+    "gradleFile": "products/data-cloud/planes/action/agent-runtime/build.gradle.kts",
+    "violationCount": 0
+  },
+  "violations": []
+}

@@ -17,7 +17,7 @@ import com.ghatana.agent.catalog.CatalogRegistry;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
 import com.ghatana.agent.framework.api.AgentContext;
-import com.ghatana.agent.runtime.GaaAgentExecutor;
+import com.ghatana.agent.registry.AgentCapabilityExecutionFactory;
 import com.ghatana.agent.runtime.TypedAgentExecutor;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +72,7 @@ public class CatalogAgentDispatcher implements AgentDispatcher {
         this.catalogRegistry = Objects.requireNonNull(catalogRegistry, "catalogRegistry");
         this.llmPlan = Objects.requireNonNull(llmPlan, "llmPlan");
         this.servicePlan = Objects.requireNonNull(servicePlan, "servicePlan");
-        this.typedAgentExecutor = new GaaAgentExecutor();
+        this.typedAgentExecutor = AgentCapabilityExecutionFactory.typedAgentExecutor();
     }
 
     /**

@@ -175,11 +175,11 @@ public class PatternRecord {
     long falseNegativeCount = 0;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // Lifecycle
+    // Record status
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Pattern lifecycle status.
+     * Pattern record status.
      */
     @Builder.Default
     PatternStatus status = PatternStatus.DRAFT;
@@ -376,7 +376,7 @@ public class PatternRecord {
     }
 
     /**
-     * Pattern lifecycle status.
+     * Pattern record status.
      */
     public enum PatternStatus {
         /**

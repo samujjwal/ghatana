@@ -194,6 +194,7 @@ public final class PatternSpecCompiler {
             Optional.ofNullable(expression.event()),
             Optional.ofNullable(expression.agentRef()),
             Optional.ofNullable(capabilityRef),
+            Optional.empty(),
             Optional.ofNullable(expression.outputSchema()),
             expression.parameters() != null ? expression.parameters() : Map.of(),
             children,

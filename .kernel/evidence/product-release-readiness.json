@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-25T03:41:29.543Z",
+  "generatedAt": "2026-05-25T06:45:04.984Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+    "commit": "73c0c110542226333369fe8046193139efaac158",
+    "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+    "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-  "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+  "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+  "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-26T03:41:29.576Z",
-  "expiresAt": "2026-05-27T03:41:29.576Z",
+  "reviewDueAt": "2026-05-26T06:45:04.993Z",
+  "expiresAt": "2026-05-27T06:45:04.993Z",
   "pass": true,
   "journeyResults": [
     {
@@ -183,52 +183,47 @@
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 17897
+      "durationMs": 5285
     },
     {
       "script": "./scripts/check-affected-product-strict-release-profile.mjs",
       "status": 0,
-      "durationMs": 67
+      "durationMs": 52
     },
     {
-      "script": "./scripts/check-phr-lifecycle-readiness.mjs",
+      "script": "pnpm:check:data-cloud-release-gate",
       "status": 0,
-      "durationMs": 174
+      "durationMs": 119745
     },
     {
-      "script": "./scripts/check-phr-lifecycle-pilot.mjs",
+      "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
       "status": 0,
-      "durationMs": 285
+      "durationMs": 31261
     },
     {
-      "script": "./scripts/check-phr-kernel-context.mjs",
+      "script": "./scripts/check-data-cloud-ui-a11y.mjs",
       "status": 0,
-      "durationMs": 69
+      "durationMs": 50
     },
     {
-      "script": "./scripts/check-phr-data-cloud-rls.mjs",
+      "script": "./scripts/check-data-cloud-platform-providers.mjs",
       "status": 0,
-      "durationMs": 66
+      "durationMs": 232
     },
     {
-      "script": "./scripts/check-phr-emergency-access-audit.mjs",
+      "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
       "status": 0,
-      "durationMs": 61
+      "durationMs": 108
     },
     {
-      "script": "./scripts/check-phr-fhir-validation.mjs",
+      "script": "./scripts/check-action-plane-route-lifecycle.mjs",
       "status": 0,
-      "durationMs": 57
+      "durationMs": 110
     },
     {
-      "script": "./scripts/check-phr-hipaa-compliance.mjs",
+      "script": "./scripts/check-data-cloud-maturity-proof.mjs",
       "status": 0,
-      "durationMs": 63
-    },
-    {
-      "script": "./scripts/check-phr-consent-cache.mjs",
-      "status": 0,
-      "durationMs": 55
+      "durationMs": 550
     }
   ],
   "scopedCheckGroups": {
@@ -327,18 +322,17 @@
     "polyglot-service-release"
   ],
   "affectedProducts": [
-    "phr"
+    "data-cloud"
   ],
   "scopedExecution": true,
   "plannedExecutionOrder": [
     "./scripts/check-affected-product-strict-release-profile.mjs",
-    "./scripts/check-phr-lifecycle-readiness.mjs",
-    "./scripts/check-phr-lifecycle-pilot.mjs",
-    "./scripts/check-phr-kernel-context.mjs",
-    "./scripts/check-phr-data-cloud-rls.mjs",
-    "./scripts/check-phr-emergency-access-audit.mjs",
-    "./scripts/check-phr-fhir-validation.mjs",
-    "./scripts/check-phr-hipaa-compliance.mjs",
-    "./scripts/check-phr-consent-cache.mjs"
+    "pnpm:check:data-cloud-release-gate",
+    "./scripts/check-data-cloud-release-runtime-profile.mjs",
+    "./scripts/check-data-cloud-ui-a11y.mjs",
+    "./scripts/check-data-cloud-platform-providers.mjs",
+    "./scripts/check-data-cloud-platform-provider-readiness.mjs",
+    "./scripts/check-action-plane-route-lifecycle.mjs",
+    "./scripts/check-data-cloud-maturity-proof.mjs"
   ]
 }

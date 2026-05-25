@@ -152,6 +152,8 @@ Results are written under `products/data-cloud/delivery/runtime-composition/buil
 
 ## Recovery Notes
 
+- Strict release backup proof is produced by `products/data-cloud/scripts/run-backup-drill.sh --json`
+  and published as `release-evidence/backup/backup-drill-report.json` by the release workflow.
 - For sovereign mode, restore from the data directory snapshot and restart with the same `DATACLOUD_SOVEREIGN_DATA_DIR`
 - For PostgreSQL mode, recover the database first, then restart the service so the provider reconnects through HikariCP
 - After any recovery, rerun the focused provider tests or the health-probe flow before reopening traffic

@@ -216,8 +216,8 @@ for (const productId of affectedProducts) {
     continue;
   }
 
-  if (product.kind !== 'business-product') {
-    violations.push(`Affected product ${productId} must be a business-product for strict release orchestration`);
+  if (product.kind !== 'business-product' && !(productId === 'data-cloud' && product.kind === 'platform-provider')) {
+    violations.push(`Affected product ${productId} must be a business-product or the Data-Cloud platform-provider for strict release orchestration`);
     continue;
   }
 

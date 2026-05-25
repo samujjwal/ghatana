@@ -190,8 +190,11 @@ jobs:
         run: |
           set -euo pipefail
           node ./scripts/list-data-cloud-active-modules.mjs --validate
+          node ./scripts/check-action-plane-module-inventory.mjs
+          node ./scripts/check-production-readiness-task-map.mjs
           node ./scripts/check-agent-capability-duplicates.mjs
           node ./scripts/check-agent-runtime-test-excludes.mjs
+          node ./scripts/audit-agent-usage.mjs
           TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=release-blocking --task=check --format=shell)"
           if [ -z "$TASKS" ]; then
             echo "::error::Generated release-blocking task list is empty. This indicates a configuration error."
@@ -199,15 +202,15 @@ jobs:
           fi
           echo "Executing release-blocking checks for modules:"
           echo "$TASKS"
-          
+
           # DC-P1-002: Validate each release-blocking module has a check task
           for task in $TASKS; do
-            if ! ./gradlew "$task" --dry-run 2>&1 | grep -q "$task"; then
+            if ! ./gradlew "$task" --dry-run --no-daemon 2>&1 | grep -q "$task"; then
               echo "::error::Release-blocking module task does not exist: $task"
               exit 1
             fi
           done
-          
+
           START_TIME=$(date +%s%3N)
           ./gradlew ${TASKS} --no-daemon
           EXIT_STATUS=$?
@@ -238,6 +241,13 @@ jobs:
           
           node ./scripts/check-action-plane-boundaries.mjs
           node ./scripts/check-evidence-current-commit.mjs
+          {
+            echo "## Data Cloud Release-Blocking Module Checks"
+            echo ""
+            for task in ${TASKS}; do
+              echo "- ${task}: passed"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Gradle test reports for release-blocking modules
         if: always()
@@ -260,6 +270,20 @@ jobs:
         run: |
           pnpm --dir products/data-cloud/delivery/ui run type-check
           pnpm --dir products/data-cloud/delivery/ui run test:readiness
+
+      - name: Upload build gate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-build-gate-evidence
+          path: |
+            .kernel/evidence/data-cloud-active-modules.json
+            .kernel/evidence/action-plane-boundaries.json
+            .kernel/evidence/action-plane-module-inventory.json
+            .kernel/evidence/production-readiness-task-map.json
+            .kernel/evidence/agent-capability-duplicates.json
+            .kernel/evidence/agent-runtime-test-excludes.json
+            .kernel/evidence/agent-usage-audit.json
+          retention-days: 90
 
   release-runtime-profile:
     runs-on: ubuntu-latest
@@ -504,6 +528,18 @@ jobs:
           name: data-cloud-runtime-profile-evidence
           path: .kernel/evidence
 
+      - name: Download build gate evidence artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-cloud-build-gate-evidence
+          path: .kernel/evidence
+
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: data-cloud-sbom
+          path: release-evidence/security
+
       - name: Verify release evidence artifacts exist
         run: |
           set -euo pipefail
@@ -512,6 +548,11 @@ jobs:
           test -s .kernel/evidence/data-cloud-release-runtime-profile.json
           test -s .kernel/evidence/data-cloud-active-modules.json
           test -s .kernel/evidence/action-plane-boundaries.json
+          test -s .kernel/evidence/action-plane-module-inventory.json
+          test -s .kernel/evidence/production-readiness-task-map.json
+          test -s .kernel/evidence/agent-capability-duplicates.json
+          test -s .kernel/evidence/agent-runtime-test-excludes.json
+          test -s .kernel/evidence/agent-usage-audit.json
           test -s .kernel/evidence/action-plane-route-lifecycle.json
           test -s .kernel/evidence/data-cloud-maturity-proof.json
           test -s .kernel/evidence/atomic-workflow-posture.json
@@ -556,6 +597,9 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: pnpm check:validate-release-evidence
 
+      - name: Generate Data Cloud release evidence bundle
+        run: pnpm generate:data-cloud-release-bundle
+
       - name: Upload release summary artifact
         uses: actions/upload-artifact@v4
         with:
@@ -567,6 +611,12 @@ jobs:
             .kernel/evidence/wave2-product-quality-scorecard.json
             .kernel/evidence/data-cloud-active-modules.json
             .kernel/evidence/action-plane-boundaries.json
+            .kernel/evidence/action-plane-module-inventory.json
+            .kernel/evidence/production-readiness-task-map.json
+            .kernel/evidence/agent-capability-duplicates.json
+            .kernel/evidence/agent-runtime-test-excludes.json
+            .kernel/evidence/agent-usage-audit.json
+            .kernel/evidence/data-cloud-release-bundle.json
             .kernel/evidence/action-plane-route-lifecycle.json
             .kernel/evidence/data-cloud-maturity-proof.json
             .kernel/evidence/product-a11y-route-matrix.json

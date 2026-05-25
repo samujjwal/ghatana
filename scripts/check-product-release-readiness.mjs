@@ -220,6 +220,9 @@ function runCheck(checkRef, options = {}) {
   const productArgs = productScopedScriptRefs.has(checkRef) && products.length > 0
     ? ['--products', products.join(',')]
     : [];
+  const env = checkRef === 'pnpm:check:data-cloud-release-gate' || checkRef === './scripts/check-data-cloud-platform-provider-readiness.mjs'
+    ? { ...process.env, DATACLOUD_RELEASE_GATE_BOOTSTRAP: 'product-release-readiness' }
+    : process.env;
 
   if (checkRef.startsWith('pnpm:')) {
     const scriptName = checkRef.slice('pnpm:'.length);
@@ -228,20 +231,20 @@ function runCheck(checkRef, options = {}) {
       return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', ...pnpmArgs], {
         cwd: repoRoot,
         stdio: 'inherit',
-        env: process.env,
+        env,
       });
     }
     return spawnSync('pnpm', pnpmArgs, {
       cwd: repoRoot,
       stdio: 'inherit',
-      env: process.env,
+      env,
     });
   }
 
   return spawnSync(process.execPath, [checkRef, ...productArgs], {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: process.env,
+    env,
   });
 }
 
@@ -279,7 +282,11 @@ function loadDimensionScoreMap() {
 export function filterReleaseEligibleProducts(productIds, registry) {
   return productIds.filter((productId) => {
     const metadata = registry[productId];
-    if (!metadata || metadata.kind !== 'business-product') {
+    if (!metadata) {
+      return false;
+    }
+
+    if (metadata.kind !== 'business-product' && !(productId === 'data-cloud' && metadata.kind === 'platform-provider')) {
       return false;
     }
 
@@ -287,7 +294,9 @@ export function filterReleaseEligibleProducts(productIds, registry) {
       return false;
     }
 
-    return metadata.lifecycleExecutionAllowed === true || metadata.lifecycleStatus === 'enabled';
+    return productId === 'data-cloud'
+      || metadata.lifecycleExecutionAllowed === true
+      || metadata.lifecycleStatus === 'enabled';
   });
 }
 

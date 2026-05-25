@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-25T03:43:54.090Z",
+  "generatedAt": "2026-05-25T06:45:15.429Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-action-plane-boundaries.mjs",
     "source": "scripts/check-action-plane-boundaries.mjs",
     "command": "pnpm check:action-plane-boundaries",
-    "commit": "d951b48a6ee8197ec6bb24919e21134844fe30c6"
+    "commit": "73c0c110542226333369fe8046193139efaac158"
   },
   "scope": {
     "scannedRoots": [
@@ -18,7 +18,7 @@
       "products/data-cloud/planes/action"
     ],
     "rule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.",
-    "semanticRule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, CEP, or adaptive event runtime semantics.",
+    "semanticRule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.",
     "publicAepPackageAllowlist": [
       "com.ghatana.aep.api",
       "com.ghatana.aep.client",
@@ -54,7 +54,7 @@
     ]
   },
   "summary": {
-    "scannedFiles": 2167,
+    "scannedFiles": 2169,
     "violationCount": 0
   },
   "violations": []

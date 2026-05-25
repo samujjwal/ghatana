@@ -11,12 +11,16 @@
  * Usage: node scripts/audit-agent-usage.mjs
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
+const SCRIPT_PATH = 'scripts/audit-agent-usage.mjs';
+const EVIDENCE_PATH = '.kernel/evidence/agent-usage-audit.json';
+const COMMAND = 'pnpm check:agent-usage-audit';
 
 const SCAN_DIRECTORIES = [
   'products/data-cloud/planes/action/server',
@@ -47,7 +51,9 @@ const EXCLUDED_PATTERNS = [
   /\/node_modules\//,
   // Factory and adapter files (expected to use agents)
   /AgentCapabilityExecutionFactory/,
+  /AgentEventOperatorCapabilityAdapter/,
   /AgentAdapter/,
+  /GovernedAgentDispatcher/,
   // Operator implementations (expected to use agents)
   /AbstractAgentInferenceOperator/,
   /AgentPredicateOperator/,
@@ -72,11 +78,21 @@ const EXCLUDED_PATTERNS = [
   /AgentMarketplaceService/,
 ];
 
-const findings = [];
+function currentGitSha(root) {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
-function scanFile(filePath) {
+function scanFile(root, filePath, findings) {
   const content = readFileSync(filePath, 'utf8');
-  const relativePath = path.relative(repoRoot, filePath);
+  const relativePath = path.relative(root, filePath).replaceAll(path.sep, '/');
 
   // Skip excluded files
   for (const exclude of EXCLUDED_PATTERNS) {
@@ -111,8 +127,11 @@ function getContext(content, index, contextLines = 2) {
   return lines.slice(start, end).join('\n');
 }
 
-function scanDirectory(dir) {
-  const fullPath = path.join(repoRoot, dir);
+function scanDirectory(root, dir, findings) {
+  const fullPath = path.join(root, dir);
+  if (!existsSync(fullPath)) {
+    return;
+  }
   const stat = statSync(fullPath);
 
   // Skip node_modules at directory level
@@ -122,34 +141,64 @@ function scanDirectory(dir) {
 
   if (stat.isDirectory()) {
     for (const entry of readdirSync(fullPath)) {
-      scanDirectory(path.join(dir, entry));
+      scanDirectory(root, path.join(dir, entry), findings);
     }
   } else if (stat.isFile() && (fullPath.endsWith('.java') || fullPath.endsWith('.ts'))) {
-    scanFile(fullPath);
+    scanFile(root, fullPath, findings);
   }
 }
 
-function main() {
-  console.log('Phase 6: Auditing agent usage for Operator runtime migration...\n');
-
+export function findDirectAgentUsage(root = repoRoot) {
+  const findings = [];
   for (const dir of SCAN_DIRECTORIES) {
-    try {
-      scanDirectory(dir);
-    } catch (error) {
-      console.error(`Error scanning ${dir}:`, error.message);
-    }
+    scanDirectory(root, dir, findings);
+  }
+  return findings;
+}
+
+export function createAgentUsageAuditEvidence(root = repoRoot, now = new Date()) {
+  const findings = findDirectAgentUsage(root);
+  return {
+    generatedAt: now.toISOString(),
+    pass: findings.length === 0,
+    evidenceRun: {
+      generatedBy: SCRIPT_PATH,
+      source: SCRIPT_PATH,
+      command: COMMAND,
+      commit: currentGitSha(root),
+    },
+    summary: {
+      scannedDirectories: SCAN_DIRECTORIES.length,
+      findingCount: findings.length,
+      approvedExceptionPatterns: EXCLUDED_PATTERNS.map((pattern) => pattern.source),
+    },
+    violations: findings,
+  };
+}
+
+export function writeAgentUsageAuditEvidence(root = repoRoot, evidence = createAgentUsageAuditEvidence(root)) {
+  const evidencePath = path.join(root, EVIDENCE_PATH);
+  mkdirSync(path.dirname(evidencePath), { recursive: true });
+  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  return evidencePath;
+}
+
+function main() {
+  const rootArgIndex = process.argv.indexOf('--root');
+  const root = rootArgIndex >= 0 ? path.resolve(process.argv[rootArgIndex + 1]) : repoRoot;
+  const evidence = createAgentUsageAuditEvidence(root);
+  writeAgentUsageAuditEvidence(root, evidence);
+
+  if (evidence.pass) {
+    console.log(`Agent usage audit evidence written to ${EVIDENCE_PATH}.`);
+    return;
   }
 
-  if (findings.length === 0) {
-    console.log('✅ No direct agent usage found - migration complete or not needed.');
-    process.exit(0);
-  }
-
-  console.log(`Found ${findings.length} instances of direct agent usage:\n`);
+  console.error(`Found ${evidence.violations.length} instances of direct agent usage:\n`);
 
   // Group by file
   const byFile = {};
-  for (const finding of findings) {
+  for (const finding of evidence.violations) {
     if (!byFile[finding.file]) {
       byFile[finding.file] = [];
     }
@@ -157,18 +206,18 @@ function main() {
   }
 
   for (const [file, fileFindings] of Object.entries(byFile)) {
-    console.log(`📄 ${file}`);
+    console.error(file);
     for (const finding of fileFindings) {
-      console.log(`   Line ${finding.line}: pattern "${finding.pattern}"`);
-      console.log(`   Context:\n${finding.context.split('\n').map(l => '     ' + l).join('\n')}\n`);
+      console.error(`   Line ${finding.line}: pattern "${finding.pattern}"`);
+      console.error(`   Context:\n${finding.context.split('\n').map(l => '     ' + l).join('\n')}\n`);
     }
   }
 
-  console.log('\nMigration recommendations:');
-  console.log('1. Replace direct agent.execute() with AgentCapability execution.');
-  console.log('2. Use AgentCapabilityExecutionFactory.createCapabilityExecutionTree() instead of registry.resolve().');
-  console.log('3. Wrap agent instantiation in AgentEventOperatorCapabilityAdapter when event processing is needed.');
-  console.log('4. Update imports to use EventOperatorCapability from operator-contracts.');
+  console.error('\nMigration recommendations:');
+  console.error('1. Replace direct agent.execute() with AgentCapability execution.');
+  console.error('2. Use AgentCapabilityExecutionFactory.createCapabilityExecutionTree() instead of registry.resolve().');
+  console.error('3. Wrap agent instantiation in AgentEventOperatorCapabilityAdapter when event processing is needed.');
+  console.error('4. Update imports to use EventOperatorCapability from operator-contracts.');
 
   process.exit(1);
 }

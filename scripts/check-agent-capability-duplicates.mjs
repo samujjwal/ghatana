@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+
+const SCRIPT_PATH = 'scripts/check-agent-capability-duplicates.mjs';
+const EVIDENCE_PATH = '.kernel/evidence/agent-capability-duplicates.json';
+const COMMAND = 'pnpm check:agent-capability-duplicates';
 
 const DEFAULT_SCOPES = [
   'platform/java/agent-core/src/main/java',
@@ -67,6 +72,18 @@ const ALLOWED_FORBIDDEN_PATTERN_FILES = new Set([
 const TEXT_EXTENSIONS = new Set(['.java', '.md', '.kts', '.gradle', '.mjs', '.js', '.json', '.yaml', '.yml']);
 const UNIFIED_OPERATOR_COMPATIBILITY_DEADLINE = '2026-06-30';
 const COMPATIBILITY_ISSUE_REF = /\b(?:AEP|GHATANA|DATA-CLOUD)-[A-Z0-9-]*\d+\b/;
+
+function currentGitSha(root) {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 function walk(root, relativePath, files) {
   const fullPath = path.join(root, relativePath);
@@ -179,18 +196,45 @@ export function findAgentCapabilityDuplicateViolations(root = process.cwd(), sco
   return violations;
 }
 
+export function createAgentCapabilityDuplicateEvidence(root = process.cwd(), now = new Date()) {
+  const violations = findAgentCapabilityDuplicateViolations(root);
+  return {
+    generatedAt: now.toISOString(),
+    pass: violations.length === 0,
+    evidenceRun: {
+      generatedBy: SCRIPT_PATH,
+      source: SCRIPT_PATH,
+      command: COMMAND,
+      commit: currentGitSha(root),
+    },
+    summary: {
+      scannedScopes: DEFAULT_SCOPES.length,
+      violationCount: violations.length,
+    },
+    violations,
+  };
+}
+
+export function writeAgentCapabilityDuplicateEvidence(root = process.cwd(), evidence = createAgentCapabilityDuplicateEvidence(root)) {
+  const evidencePath = path.join(root, EVIDENCE_PATH);
+  mkdirSync(path.dirname(evidencePath), { recursive: true });
+  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  return evidencePath;
+}
+
 function main() {
   const rootArgIndex = process.argv.indexOf('--root');
   const root = rootArgIndex >= 0 ? path.resolve(process.argv[rootArgIndex + 1]) : process.cwd();
-  const violations = findAgentCapabilityDuplicateViolations(root);
+  const evidence = createAgentCapabilityDuplicateEvidence(root);
+  writeAgentCapabilityDuplicateEvidence(root, evidence);
 
-  if (violations.length === 0) {
-    console.log('Agent capability duplicate check passed.');
+  if (evidence.pass) {
+    console.log(`Agent capability duplicate evidence written to ${EVIDENCE_PATH}.`);
     return;
   }
 
   console.error('Agent capability duplicate check failed:\n');
-  for (const violation of violations) {
+  for (const violation of evidence.violations) {
     console.error(`- ${violation.file}: ${violation.message} (${violation.rule}: ${violation.match})`);
   }
   process.exit(1);

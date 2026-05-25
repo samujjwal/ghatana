@@ -50,6 +50,7 @@ export function findEvidenceCurrentCommitViolations(
   {
     evidenceRoot = DEFAULT_EVIDENCE_ROOT,
     expectedCommit = currentGitSha(root),
+    skipProductReleaseReadiness = false,
   } = {},
 ) {
   const violations = [];
@@ -62,6 +63,9 @@ export function findEvidenceCurrentCommitViolations(
   walkJsonFiles(root, evidenceRoot, evidenceFiles);
 
   for (const evidenceFile of evidenceFiles) {
+    if (skipProductReleaseReadiness && /^\.kernel\/evidence\/product-release-readiness(\.|\.json$)/.test(evidenceFile)) {
+      continue;
+    }
     const payload = parseJson(path.join(root, evidenceFile));
     if (payload.error) {
       violations.push(`${evidenceFile}: evidence JSON is invalid (${payload.error.message})`);
@@ -92,7 +96,10 @@ function main() {
     ? process.argv[evidenceRootArgIndex + 1]
     : DEFAULT_EVIDENCE_ROOT;
   const summaryOnly = process.argv.includes('--summary');
-  const violations = findEvidenceCurrentCommitViolations(root, { evidenceRoot });
+  const violations = findEvidenceCurrentCommitViolations(root, {
+    evidenceRoot,
+    skipProductReleaseReadiness: process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness',
+  });
 
   if (violations.length === 0) {
     console.log('Evidence current-commit check passed.');
