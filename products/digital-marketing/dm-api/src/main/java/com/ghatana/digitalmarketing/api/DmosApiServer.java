@@ -1152,7 +1152,9 @@ public final class DmosApiServer extends Launcher {
      */
     private BridgeAuditEmitter createAuditEmitter() {
         if (environment.equals(PRODUCTION)) {
-            throw new IllegalStateException("Production audit emitter is not configured.");
+            throw new IllegalStateException(
+                "Production audit emitter is not configured; no-op audit is not permitted."
+            );
         }
         LOG.info("[{}] Using development audit emitter", environment);
         return event -> { };

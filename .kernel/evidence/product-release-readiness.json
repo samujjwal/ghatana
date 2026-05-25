@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-25T01:23:43.009Z",
+  "generatedAt": "2026-05-25T01:32:26.526Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
-    "sourceCommitSha": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
-    "targetCommitSha": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
+    "commit": "e346600919fb63a4c72be0ee6a610cb501977555",
+    "sourceCommitSha": "e346600919fb63a4c72be0ee6a610cb501977555",
+    "targetCommitSha": "e346600919fb63a4c72be0ee6a610cb501977555",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
-  "targetCommitSha": "d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a",
+  "sourceCommitSha": "e346600919fb63a4c72be0ee6a610cb501977555",
+  "targetCommitSha": "e346600919fb63a4c72be0ee6a610cb501977555",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-26T01:23:43.070Z",
-  "expiresAt": "2026-05-27T01:23:43.070Z",
+  "reviewDueAt": "2026-05-26T01:32:26.538Z",
+  "expiresAt": "2026-05-27T01:32:26.538Z",
   "pass": true,
   "journeyResults": [
     {
@@ -183,52 +183,77 @@
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 63844
+      "durationMs": 6964
     },
     {
       "script": "./scripts/check-affected-product-strict-release-profile.mjs",
       "status": 0,
-      "durationMs": 227
+      "durationMs": 118
     },
     {
-      "script": "./scripts/check-phr-lifecycle-readiness.mjs",
+      "script": "./scripts/check-digital-marketing-lifecycle-pilot.mjs",
       "status": 0,
-      "durationMs": 319
+      "durationMs": 4226
     },
     {
-      "script": "./scripts/check-phr-lifecycle-pilot.mjs",
+      "script": "./scripts/check-dmos-boundary-workflow-coverage.mjs",
       "status": 0,
-      "durationMs": 506
+      "durationMs": 72
     },
     {
-      "script": "./scripts/check-phr-kernel-context.mjs",
+      "script": "./scripts/check-dmos-no-fake-data.mjs",
       "status": 0,
-      "durationMs": 139
+      "durationMs": 125
     },
     {
-      "script": "./scripts/check-phr-data-cloud-rls.mjs",
+      "script": "./scripts/check-dmos-docs-matrix.mjs",
       "status": 0,
-      "durationMs": 248
+      "durationMs": 74
     },
     {
-      "script": "./scripts/check-phr-emergency-access-audit.mjs",
+      "script": "./scripts/check-dmos-operations-docs.mjs",
       "status": 0,
-      "durationMs": 180
+      "durationMs": 72
     },
     {
-      "script": "./scripts/check-phr-fhir-validation.mjs",
+      "script": "./scripts/check-dmos-duplicate-runtimes.mjs",
       "status": 0,
-      "durationMs": 181
+      "durationMs": 242
     },
     {
-      "script": "./scripts/check-phr-hipaa-compliance.mjs",
+      "script": "./scripts/check-dmos-production-wiring.mjs",
       "status": 0,
-      "durationMs": 173
+      "durationMs": 73
     },
     {
-      "script": "./scripts/check-phr-consent-cache.mjs",
+      "script": "./scripts/check-dmos-runtime-module.mjs",
       "status": 0,
-      "durationMs": 260
+      "durationMs": 71
+    },
+    {
+      "script": "./scripts/check-dmos-persistence.mjs",
+      "status": 0,
+      "durationMs": 76
+    },
+    {
+      "script": "./scripts/check-dmos-kernel-context.mjs",
+      "status": 0,
+      "durationMs": 76
+    },
+    {
+      "script": "./scripts/check-dmos-data-cloud-rls.mjs",
+      "status": 0,
+      "durationMs": 75
+    },
+    {
+      "script": "./scripts/check-dmos-ai-action-log.mjs",
+      "status": 0,
+      "durationMs": 72
+    },
+    {
+      "script": "./scripts/check-dmos-google-ads-connector.mjs",
+      "status": 0,
+      "durationMs": 68
     }
   ],
   "scopedCheckGroups": {
@@ -327,18 +352,23 @@
     "polyglot-service-release"
   ],
   "affectedProducts": [
-    "phr"
+    "digital-marketing"
   ],
   "scopedExecution": true,
   "plannedExecutionOrder": [
     "./scripts/check-affected-product-strict-release-profile.mjs",
-    "./scripts/check-phr-lifecycle-readiness.mjs",
-    "./scripts/check-phr-lifecycle-pilot.mjs",
-    "./scripts/check-phr-kernel-context.mjs",
-    "./scripts/check-phr-data-cloud-rls.mjs",
-    "./scripts/check-phr-emergency-access-audit.mjs",
-    "./scripts/check-phr-fhir-validation.mjs",
-    "./scripts/check-phr-hipaa-compliance.mjs",
-    "./scripts/check-phr-consent-cache.mjs"
+    "./scripts/check-digital-marketing-lifecycle-pilot.mjs",
+    "./scripts/check-dmos-boundary-workflow-coverage.mjs",
+    "./scripts/check-dmos-no-fake-data.mjs",
+    "./scripts/check-dmos-docs-matrix.mjs",
+    "./scripts/check-dmos-operations-docs.mjs",
+    "./scripts/check-dmos-duplicate-runtimes.mjs",
+    "./scripts/check-dmos-production-wiring.mjs",
+    "./scripts/check-dmos-runtime-module.mjs",
+    "./scripts/check-dmos-persistence.mjs",
+    "./scripts/check-dmos-kernel-context.mjs",
+    "./scripts/check-dmos-data-cloud-rls.mjs",
+    "./scripts/check-dmos-ai-action-log.mjs",
+    "./scripts/check-dmos-google-ads-connector.mjs"
   ]
 }

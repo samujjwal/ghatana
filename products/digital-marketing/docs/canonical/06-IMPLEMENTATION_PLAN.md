@@ -1,9 +1,9 @@
 # Digital Marketing Operating System (DMOS) — Implementation Plan
 
-**Status:** MVP Pilot  
-**Lifecycle stage:** Local pilot — `validate`, `test`, `build`, `package`, `deploy:local`, `verify:local`  
+**Status:** MVP Pilot
+**Lifecycle stage:** Local pilot — `validate`, `test`, `build`, `package`, `deploy:local`, `verify:local`
 **Target:** Production-track marketing platform pilot under Ghatana Kernel lifecycle governance
-**Classification:** Target architecture. **Evidence:** `products/digital-marketing/kernel-product.yaml`, `.kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json`
+**Classification:** Canonical implementation plan. **Evidence:** `products/digital-marketing/kernel-product.yaml`, `.kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json`
 
 ---
 
@@ -65,7 +65,7 @@ The `dm-kernel-bridge` module is the product-owned adapter over Kernel bridge po
 | Risk evaluation          | `DmosRiskEvaluatorRegistrar`                                                |
 | Workflow engine          | `DmWorkflowEngineAdapter`                                                   |
 
-Bridge compliance is validated by: `pnpm check:bridge-compliance` and `./gradlew :products:digital-marketing:dm-kernel-bridge:test`
+Bridge compliance is validated by: `pnpm check:bridge-compliance` and `./gradlew :products:digital-marketing:dm-kernel-bridge:test`.
 
 ---
 
@@ -87,7 +87,6 @@ DMOS has the following product-configured policy packs (configured by DMOS, not 
 All lifecycle execution uses the Kernel product runner. DMOS must not implement its own lifecycle runner.
 
 ```bash
-# Full lifecycle proof sequence
 pnpm plan:validate:digital-marketing  &&  pnpm validate:digital-marketing
 pnpm plan:test:digital-marketing      &&  pnpm test:digital-marketing
 pnpm plan:build:digital-marketing     &&  pnpm build:digital-marketing
@@ -95,8 +94,6 @@ pnpm plan:package:digital-marketing   &&  pnpm package:digital-marketing
 pnpm plan:deploy:local:digital-marketing   &&  pnpm deploy:local:digital-marketing
 pnpm plan:verify:local:digital-marketing   &&  pnpm verify:local:digital-marketing
 ```
-
-### Phase descriptions
 
 | Phase          | What it does                                                                          |
 | -------------- | ------------------------------------------------------------------------------------- |
@@ -125,14 +122,14 @@ Lifecycle promote, deploy, and rollback phases require approvals:
 
 Lifecycle evidence is generated under:
 
-```
+```text
 .kernel/out/products/digital-marketing/<phase>/latest/
 .kernel/evidence/digital-marketing/<runId>/
 ```
 
 Bridge compliance evidence is in:
 
-```
+```text
 products/digital-marketing/dm-kernel-bridge/src/test/java/
 ```
 
