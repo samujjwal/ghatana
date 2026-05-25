@@ -1,60 +1,608 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "assets": [
     {
       "id": "phr-consent-panel",
-      "name": "PHR Consent Panel",
+      "name": "PHR Consent Gate Pattern",
+      "type": "service",
       "sourceProduct": "phr",
-      "status": "candidate",
-      "maturity": "validated",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "shared-package",
       "targetPromotion": "shared-package",
       "owner": "PHR Team",
-      "description": "Patient-facing consent management UI + state transitions with audit visibility.",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Patient consent create, revoke, access-check, invalidation, emergency grant, and audit pattern for regulated products.",
+      "paths": [
+        "products/phr/src/main/java/com/ghatana/phr/kernel/service/ConsentManagementService.java",
+        "products/phr/lifecycle/gate-packs/consent.yaml"
+      ],
+      "tests": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java"
+      ],
+      "dependencies": ["kernel-lifecycle", "data-cloud-runtime-truth", "audit-plugin", "distributed-cache"],
+      "requiredFoundations": ["kernel", "data-cloud", "consent", "audit", "tenant-isolation"],
+      "constraints": ["requires tenant and principal metadata", "requires production distributed cache"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare", "student-privacy", "personal-data"],
+        "runtime": "jvm",
+        "constraints": ["fail-closed consent checks", "durable audit required"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used consent lifecycle gate",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended student privacy consent boundary",
+          "state": "recommended"
+        },
+        {
+          "productId": "flashit",
+          "usage": "recommended personal data sharing boundary",
+          "state": "recommended"
+        }
+      ],
       "evidenceRefs": [
-        "products/phr/lifecycle/gate-packs/consent.yaml",
-        "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java"
+        ".kernel/evidence/phr/phr-release-readiness.json",
+        ".kernel/evidence/phr/distributed-cache-proof.json",
+        "products/phr/lifecycle/gate-packs/consent.yaml"
       ]
     },
     {
-      "id": "phr-emergency-access-workflow",
-      "name": "PHR Emergency Access Workflow",
+      "id": "phr-fhir-validation-gate",
+      "name": "PHR FHIR R4 Validation Gate",
+      "type": "gate-pack",
       "sourceProduct": "phr",
-      "status": "candidate",
-      "maturity": "validated",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "schema-pack",
+      "targetPromotion": "schema-pack",
+      "owner": "PHR Team",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "FHIR R4 golden fixture and contract validation gate covering healthcare resource interoperability.",
+      "paths": [
+        "products/phr/src/main/java/com/ghatana/phr/fhir/FhirValidator.java",
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+      ],
+      "tests": [
+        "products/phr/src/test/java/com/ghatana/phr/fhir/FhirGoldenFixturesTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/fhir/FhirR4ContractTest.java"
+      ],
+      "dependencies": ["fhir-r4", "kernel-route-registry", "openapi-contracts"],
+      "requiredFoundations": ["kernel", "fhir", "data-cloud", "observability"],
+      "constraints": ["FHIR R4 only", "golden fixtures must remain current"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare"],
+        "runtime": "jvm",
+        "constraints": ["requires FHIR route ownership", "requires schema fixtures"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used FHIR contract gate",
+          "state": "production-used"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/phr/fhir-golden-fixture-coverage.json",
+        ".kernel/evidence/phr/fhir-compliance.json",
+        "products/phr/lifecycle/gate-packs/fhir-contract-validation.yaml"
+      ]
+    },
+    {
+      "id": "phr-break-glass-workflow",
+      "name": "PHR Break-Glass Workflow",
+      "type": "workflow",
+      "sourceProduct": "phr",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "template",
       "targetPromotion": "template",
       "owner": "PHR Team",
-      "description": "Break-glass access with review workflow, notification, and immutable evidence hooks.",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Emergency access workflow with notification, audit, patient-visible trail, and post-hoc review.",
+      "paths": [
+        "products/phr/src/main/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewWorkflow.java",
+        "products/phr/src/main/java/com/ghatana/phr/kernel/service/KernelEventEmergencyAccessNotificationSender.java"
+      ],
+      "tests": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewWorkflowTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessBreakGlassE2EIT.java"
+      ],
+      "dependencies": ["kernel-event-bus", "notification-outbox", "audit-plugin", "data-cloud-runtime-truth"],
+      "requiredFoundations": ["kernel", "data-cloud", "audit", "notification", "tenant-isolation"],
+      "constraints": ["requires post-hoc review case", "patient notification must be durable"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare", "student-privacy", "high-risk-operations"],
+        "runtime": "jvm",
+        "constraints": ["requires emergency policy", "requires durable audit"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used emergency access path",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended educator override review pattern",
+          "state": "recommended"
+        }
+      ],
       "evidenceRefs": [
-        "products/phr/lifecycle/gate-packs/audit-evidence.yaml",
-        "products/phr/src/test/java/com/ghatana/phr/kernel/service/EmergencyAccessReviewWorkflowContextTest.java"
+        ".kernel/evidence/phr/break-glass-e2e-evidence.json",
+        ".kernel/evidence/phr/emergency-access.json",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+      ]
+    },
+    {
+      "id": "phr-audit-trail-panel",
+      "name": "PHR Patient Audit Trail Pattern",
+      "type": "service",
+      "sourceProduct": "phr",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "shared-package",
+      "targetPromotion": "shared-package",
+      "owner": "PHR Team",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Tenant-scoped, patient-visible audit trail pattern with fail-closed observability for sensitive reads and writes.",
+      "paths": [
+        "products/phr/src/main/java/com/ghatana/phr/observability/PHRAuditTrailServiceImpl.java",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+      ],
+      "tests": [
+        "products/phr/src/test/java/com/ghatana/phr/observability/PHRAuditTrailServiceTest.java",
+        "products/phr/apps/web/src/__tests__/PhrPrivacyHardeningTest.tsx"
+      ],
+      "dependencies": ["audit-plugin", "data-cloud-runtime-truth", "observability"],
+      "requiredFoundations": ["kernel", "data-cloud", "audit", "observability", "tenant-isolation"],
+      "constraints": ["requires patient scope", "audit failures must be observable"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare", "student-privacy", "personal-data"],
+        "runtime": "jvm-and-web",
+        "constraints": ["requires tenant-scoped data access"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used audit visibility path",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended learning event audit trail",
+          "state": "recommended"
+        },
+        {
+          "productId": "flashit",
+          "usage": "recommended sync and privacy audit trail",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/phr/ui-privacy-access-tests-evidence.json",
+        ".kernel/evidence/phr/phr-release-readiness.json",
+        "products/phr/lifecycle/gate-packs/audit-evidence.yaml"
+      ]
+    },
+    {
+      "id": "phr-rollback-safety-gate-pack",
+      "name": "PHR Regulated Rollback Safety Gate Pack",
+      "type": "gate-pack",
+      "sourceProduct": "phr",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "template",
+      "targetPromotion": "template",
+      "owner": "PHR Team",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Rollback drill gate pack for regulated products, including previous-artifact selection, approvals, health checks, and audit evidence.",
+      "paths": [
+        "products/phr/lifecycle/rollback/rollback-readiness-evidence.yaml",
+        "products/phr/domains/healthcare/src/main/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckService.java"
+      ],
+      "tests": [
+        "products/phr/domains/healthcare/src/test/java/com/ghatana/phr/healthcare/service/RollbackSafetyCheckServiceTest.java"
+      ],
+      "dependencies": ["kernel-lifecycle", "data-cloud-runtime-truth", "audit-plugin"],
+      "requiredFoundations": ["kernel", "data-cloud", "audit", "observability"],
+      "constraints": ["requires environment-specific evidence", "requires approval contract"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare", "regulated-personal-data"],
+        "runtime": "lifecycle",
+        "constraints": ["requires rollback evidence pack"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used rollback readiness gate",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended regulated learning rollback gate",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/phr/staging-rollback-evidence.json",
+        ".kernel/evidence/phr/prod-rollback-evidence.json",
+        ".kernel/evidence/phr/rollback-evidence-validation.json"
+      ]
+    },
+    {
+      "id": "phr-tenant-scoped-mutation-pattern",
+      "name": "PHR Tenant-Scoped Mutation Pattern",
+      "type": "pattern",
+      "sourceProduct": "phr",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "shared-package",
+      "targetPromotion": "shared-package",
+      "owner": "PHR Team",
+      "ownerApproval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Mutation metadata enrichment pattern that rejects production writes without explicit tenant and principal metadata.",
+      "paths": [
+        "products/phr/src/main/java/com/ghatana/phr/kernel/service/PhrServiceBase.java",
+        "products/phr/lifecycle/foundation-usage-profile.yaml"
+      ],
+      "tests": [
+        "products/phr/src/test/java/com/ghatana/phr/kernel/service/ConsentManagementServiceTest.java",
+        "products/phr/src/test/java/com/ghatana/phr/security/PHRSecurityIntegrationTest.java"
+      ],
+      "dependencies": ["tenant-isolation", "data-cloud-runtime-truth", "kernel-lifecycle"],
+      "requiredFoundations": ["kernel", "data-cloud", "tenant-isolation", "audit"],
+      "constraints": ["no production fallback tenant", "no production fallback principal"],
+      "compatibility": {
+        "productTypes": ["regulated-healthcare", "student-privacy", "personal-data"],
+        "runtime": "jvm",
+        "constraints": ["requires authenticated product context"]
+      },
+      "productUsage": [
+        {
+          "productId": "phr",
+          "usage": "production-used mutation metadata pattern",
+          "state": "production-used"
+        },
+        {
+          "productId": "flashit",
+          "usage": "recommended mobile sync tenant metadata pattern",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/phr/foundation-usage-profile.json",
+        ".kernel/evidence/phr/bootstrap-evidence-validation.json",
+        "products/phr/lifecycle/foundation-usage-profile.yaml"
       ]
     },
     {
       "id": "dmos-approval-queue",
       "name": "DMOS Approval Queue",
+      "type": "service",
       "sourceProduct": "digital-marketing",
-      "status": "candidate",
-      "maturity": "validated",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "shared-package",
       "targetPromotion": "shared-package",
       "owner": "Digital Marketing Team",
-      "description": "Approval queue workflow with snapshot persistence and enforcement boundaries.",
+      "ownerApproval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Approval queue workflow with snapshot persistence, role enforcement, and audit boundaries.",
+      "paths": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/approval/ApprovalWorkflowServiceImpl.java",
+        "products/digital-marketing/ui/src/pages/ApprovalQueuePage.tsx"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/approval/ApprovalWorkflowServiceImplTest.java",
+        "products/digital-marketing/ui/src/pages/__tests__/ApprovalQueuePage.test.tsx"
+      ],
+      "dependencies": ["kernel-approval", "audit-plugin", "data-cloud-runtime-truth"],
+      "requiredFoundations": ["kernel", "data-cloud", "approval", "audit", "tenant-isolation"],
+      "constraints": ["requires approval snapshot persistence", "fails closed on missing role grants"],
+      "compatibility": {
+        "productTypes": ["marketing-ops", "student-workflow", "regulated-review"],
+        "runtime": "jvm-and-web",
+        "constraints": ["requires approval policy mapping"]
+      },
+      "productUsage": [
+        {
+          "productId": "digital-marketing",
+          "usage": "production-used campaign approval path",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended content publishing approval queue",
+          "state": "recommended"
+        }
+      ],
       "evidenceRefs": [
-        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml",
-        "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/DigitalMarketingKernelAdapterImplTest.java"
+        ".kernel/evidence/digital-marketing/kernel-bridge-release-gates.json",
+        ".kernel/evidence/digital-marketing/foundation-usage-profile.json",
+        "products/digital-marketing/lifecycle/gate-packs/bridge-compliance.yaml"
       ]
     },
     {
-      "id": "dmos-connector-retry-dlq",
-      "name": "DMOS Connector Retry + DLQ Pattern",
+      "id": "dmos-campaign-cockpit",
+      "name": "DMOS Campaign Cockpit",
+      "type": "ui-component",
       "sourceProduct": "digital-marketing",
-      "status": "candidate",
-      "maturity": "validated",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "template",
+      "targetPromotion": "template",
+      "owner": "Digital Marketing Team",
+      "ownerApproval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Operational cockpit pattern for campaign state, blockers, budget, and connector health.",
+      "paths": [
+        "products/digital-marketing/ui/src/pages/CampaignsPage.tsx",
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/campaign/CampaignServiceImpl.java"
+      ],
+      "tests": [
+        "products/digital-marketing/ui/src/pages/__tests__/CampaignsPage.test.tsx",
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/campaign/CampaignServiceImplTest.java"
+      ],
+      "dependencies": ["data-cloud-runtime-truth", "kernel-feature-flags", "observability"],
+      "requiredFoundations": ["kernel", "data-cloud", "feature-flags", "observability"],
+      "constraints": ["requires tenant workspace filters", "requires connector external IDs"],
+      "compatibility": {
+        "productTypes": ["marketing-ops", "learning-dashboard"],
+        "runtime": "web-and-jvm",
+        "constraints": ["requires backend truth source"]
+      },
+      "productUsage": [
+        {
+          "productId": "digital-marketing",
+          "usage": "production-used campaign operations cockpit",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended learning operations cockpit pattern",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/digital-marketing/ui-release-cockpit-evidence.json",
+        ".kernel/evidence/digital-marketing/dmos-release-readiness.json",
+        "products/digital-marketing/lifecycle/foundation-usage-profile.yaml"
+      ]
+    },
+    {
+      "id": "dmos-google-ads-connector-adapter",
+      "name": "DMOS Google Ads Connector Adapter",
+      "type": "connector",
+      "sourceProduct": "digital-marketing",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "kernel-plugin",
       "targetPromotion": "kernel-plugin",
       "owner": "Digital Marketing Team",
-      "description": "Connector retry and dead-letter handling pattern for external campaign systems.",
+      "ownerApproval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "External connector adapter with OAuth, token refresh, retry, DLQ, idempotency, external IDs, and rollback commands.",
+      "paths": [
+        "products/digital-marketing/dm-connector-google-ads/src/main/java/com/ghatana/digitalmarketing/connector/googleads/HttpDmGoogleAdsCampaignApiClientAdapter.java",
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/googleads/GoogleAdsOutboxExecutor.java"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-connectors/google-ads-connector/src/test/java/com/ghatana/digitalmarketing/connector/googleads/GoogleAdsConnectorProductionProofTest.java",
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/GoogleAdsOutboxExecutorTest.java"
+      ],
+      "dependencies": ["connector-runtime", "outbox", "data-cloud-runtime-truth", "audit-plugin"],
+      "requiredFoundations": ["kernel", "data-cloud", "connectors", "audit", "observability"],
+      "constraints": ["no ephemeral adapters in production", "external IDs must be durable"],
+      "compatibility": {
+        "productTypes": ["marketing-ops", "external-connector"],
+        "runtime": "jvm",
+        "constraints": ["requires connector credential store"]
+      },
+      "productUsage": [
+        {
+          "productId": "digital-marketing",
+          "usage": "production-used Google Ads connector path",
+          "state": "production-used"
+        }
+      ],
       "evidenceRefs": [
-        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
-        "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java"
+        ".kernel/evidence/digital-marketing/google-ads-connector.json",
+        ".kernel/evidence/digital-marketing/ephemeral-infrastructure-blocked.json",
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+      ]
+    },
+    {
+      "id": "dmos-retry-dlq-pattern",
+      "name": "DMOS Retry and DLQ Pattern",
+      "type": "pattern",
+      "sourceProduct": "digital-marketing",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "kernel-plugin",
+      "targetPromotion": "kernel-plugin",
+      "owner": "Digital Marketing Team",
+      "ownerApproval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "Retry and dead-letter handling pattern for external workflow commands and notification delivery.",
+      "paths": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/googleads/GoogleAdsOutboxExecutor.java",
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-kernel-bridge/src/test/java/com/ghatana/digitalmarketing/bridge/NotificationRetryAndDlqTest.java",
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/ConnectorChaosRetryTest.java"
+      ],
+      "dependencies": ["outbox", "notification", "connector-runtime", "observability"],
+      "requiredFoundations": ["kernel", "data-cloud", "connectors", "notification", "observability"],
+      "constraints": ["requires idempotency key", "requires observable DLQ"],
+      "compatibility": {
+        "productTypes": ["marketing-ops", "external-connector", "workflow"],
+        "runtime": "jvm",
+        "constraints": ["requires retry budget policy"]
+      },
+      "productUsage": [
+        {
+          "productId": "digital-marketing",
+          "usage": "production-used connector and notification retry path",
+          "state": "production-used"
+        },
+        {
+          "productId": "flashit",
+          "usage": "recommended offline sync retry pattern",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/digital-marketing/google-ads-connector.json",
+        ".kernel/evidence/digital-marketing/prod-rollback-evidence.json",
+        "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
+      ]
+    },
+    {
+      "id": "dmos-ai-transparency-panel",
+      "name": "DMOS AI Transparency Pattern",
+      "type": "service",
+      "sourceProduct": "digital-marketing",
+      "status": "production",
+      "maturity": "release-ready",
+      "reuseMode": "shared-package",
+      "targetPromotion": "shared-package",
+      "owner": "Digital Marketing Team",
+      "ownerApproval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
+      },
+      "freshness": {
+        "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+        "validatedAt": "2026-05-25T00:00:00.000Z"
+      },
+      "description": "AI action transparency pattern that persists prompt, model, provider, confidence, risk, policy, approval, and outcome.",
+      "paths": [
+        "products/digital-marketing/dm-application/src/main/java/com/ghatana/digitalmarketing/application/transparency/AiActionLogServiceImpl.java",
+        "products/digital-marketing/ui/src/pages/AiActionLogPage.tsx"
+      ],
+      "tests": [
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/transparency/AiActionLogServiceImplTest.java",
+        "products/digital-marketing/ui/src/pages/__tests__/AiActionLogPage.test.tsx"
+      ],
+      "dependencies": ["aep-governance", "data-cloud-runtime-truth", "audit-plugin"],
+      "requiredFoundations": ["kernel", "data-cloud", "aep", "audit", "observability"],
+      "constraints": ["requires immutable AI action records", "requires redaction on sensitive fields"],
+      "compatibility": {
+        "productTypes": ["marketing-ops", "ai-assisted-learning", "content-generation"],
+        "runtime": "jvm-and-web",
+        "constraints": ["requires AI governance policy"]
+      },
+      "productUsage": [
+        {
+          "productId": "digital-marketing",
+          "usage": "production-used AI action audit path",
+          "state": "production-used"
+        },
+        {
+          "productId": "tutorputor",
+          "usage": "recommended AI tutoring transparency pattern",
+          "state": "recommended"
+        }
+      ],
+      "evidenceRefs": [
+        ".kernel/evidence/digital-marketing/ai-action-transparency-evidence.json",
+        ".kernel/evidence/digital-marketing/ai-transparency.json",
+        ".kernel/evidence/digital-marketing/foundation-usage-profile.json"
       ]
     }
   ]

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-25T06:47:51.210Z",
+  "generatedAt": "2026-05-25T18:02:44.799Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-production-readiness-task-map.mjs",
     "source": "scripts/check-production-readiness-task-map.mjs",
     "command": "pnpm check:production-readiness-task-map",
-    "commit": "73c0c110542226333369fe8046193139efaac158"
+    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
   },
   "source": {
     "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",

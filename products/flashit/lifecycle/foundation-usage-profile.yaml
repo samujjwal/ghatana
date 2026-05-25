@@ -5,7 +5,11 @@
 schemaVersion: "1.0.0"
 productId: "flashit"
 productName: "FlashIt"
-generatedAt: "2026-05-24T00:00:00Z"
+generatedAt: "2026-05-25T00:00:00Z"
+sourceCommitSha: "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+targetCommitSha: "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+releaseIntent: "planning-score-only"
+releaseBlocking: false
 
 foundationComponents:
   kernel:
@@ -108,6 +112,31 @@ foundationComponents:
         usage: "planned"
         purpose: "Future AI-assisted flash card generation and spaced repetition optimization"
         evidencePath: ".kernel/evidence/flashit/agent-core-planning.json"
+
+reusableAssets:
+  mode: "guided-reuse-planning"
+  evidencePath: ".kernel/evidence/flashit/reusable-assets-mapping.json"
+  candidates:
+    - assetId: "phr-consent-panel"
+      sourceProduct: "phr"
+      usage: "Personal data sharing, deck collaboration, and learning progress consent boundary"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "consent", "audit", "tenant-isolation"]
+    - assetId: "phr-audit-trail-panel"
+      sourceProduct: "phr"
+      usage: "User-visible sync, privacy, and deck access audit trail"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "audit", "observability"]
+    - assetId: "phr-tenant-scoped-mutation-pattern"
+      sourceProduct: "phr"
+      usage: "Tenant and principal metadata pattern for offline sync reconciliation"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "tenant-isolation", "audit"]
+    - assetId: "dmos-retry-dlq-pattern"
+      sourceProduct: "digital-marketing"
+      usage: "Mobile/offline sync retry and dead-letter pattern for conflict repair"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "notification", "observability"]
 
 specificRequirements:
   education:

@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-05-25T01:35:05.413Z",
-  "sourceCommit": "e346600919fb63a4c72be0ee6a610cb501977555",
+  "generatedAt": "2026-05-25T18:08:45.603Z",
+  "sourceCommit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
   "sourceBranch": "main",
   "productScope": [
-    "digital-marketing"
+    "phr"
   ],
   "releaseEnvironment": "staging",
   "releaseGate": {

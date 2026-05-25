@@ -55,7 +55,7 @@
     "check:tsconfig-strict": "node ./scripts/check-typescript-strict.js",
     "check:production-readiness": "node ./scripts/check-production-readiness.mjs && node ./scripts/check-test-authenticity.mjs --changed-only",
     "check:i18n-conformance": "node ./scripts/check-i18n-maturity.mjs",
-    "check:product-release-readiness": "pnpm check:wave2-product-quality-scorecard && node --test ./scripts/__tests__/check-product-release-readiness.test.mjs ./scripts/__tests__/product-registry-helper.test.mjs && node ./scripts/check-product-release-readiness.mjs --products data-cloud",
+    "check:product-release-readiness": "DATACLOUD_RELEASE_GATE_BOOTSTRAP=product-release-readiness pnpm check:data-cloud-platform-provider-readiness && pnpm check:data-cloud-release-runtime-profile && pnpm check:wave2-product-quality-scorecard && node --test ./scripts/__tests__/check-product-release-readiness.test.mjs ./scripts/__tests__/product-registry-helper.test.mjs && node ./scripts/check-product-release-readiness.mjs",
     "check:kernel-implementation-plan-coverage": "node --test ./scripts/__tests__/check-kernel-implementation-plan-coverage.test.mjs && node ./scripts/check-kernel-implementation-plan-coverage.mjs",
     "check:kernel-implementation-task-matrix": "node --test ./scripts/__tests__/check-kernel-implementation-task-matrix.test.mjs && node ./scripts/check-kernel-implementation-task-matrix.mjs",
     "plan:kernel-implementation-waves": "node ./scripts/run-kernel-implementation-waves.mjs",

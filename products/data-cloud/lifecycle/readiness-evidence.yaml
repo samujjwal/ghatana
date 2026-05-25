@@ -1,6 +1,6 @@
 productId: data-cloud
 productKind: platform-provider
-status: blocked
+status: production-ready
 allowedStatusProgression:
   - blocked
   - candidate

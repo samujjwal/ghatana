@@ -452,6 +452,11 @@ function validateReleaseIdentityFields(label, content, errors) {
   const targetCommitSha = String(content.targetCommitSha ?? content.evidenceRun?.targetCommitSha ?? '').trim();
   if (!/^[a-f0-9]{40}$/i.test(targetCommitSha)) {
     errors.push(`${label} missing targetCommitSha (40-char SHA)`);
+  } else {
+    const currentCommit = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD');
+    if (currentCommit && targetCommitSha !== currentCommit) {
+      errors.push(`${label} stale-release-evidence: targetCommitSha mismatch: expected ${currentCommit}, got ${targetCommitSha}`);
+    }
   }
 
   const targetEnv = String(content.targetEnvironment ?? content.evidenceRun?.targetEnvironment ?? '').trim();
@@ -475,11 +480,8 @@ function validateReleaseIdentityFields(label, content, errors) {
     errors.push(`${label} expiresAt must be later than generatedAt`);
   }
 
-  if (isReleaseMode && /^[a-f0-9]{40}$/i.test(targetCommitSha)) {
-    const currentCommit = process.env.GITHUB_SHA ?? gitValue('git rev-parse HEAD');
-    if (currentCommit && targetCommitSha !== currentCommit) {
-      errors.push(`${label} targetCommitSha mismatch: expected ${currentCommit}, got ${targetCommitSha}`);
-    }
+  if (isReleaseMode && /^[a-f0-9]{40}$/i.test(targetCommitSha) && validationStatus === 'failed') {
+    errors.push(`${label} validationStatus failed for current target evidence`);
   }
 }
 

@@ -17,6 +17,12 @@ const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4'
 const platformLifecycleBuildScript = 'pnpm:build:kernel-lifecycle-platform';
 const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
+const dataCloudProviderReadinessCheck = './scripts/check-data-cloud-platform-provider-readiness.mjs';
+const dataCloudRuntimeProfileCheck = './scripts/check-data-cloud-release-runtime-profile.mjs';
+const businessProductFoundationChecks = [
+  dataCloudProviderReadinessCheck,
+  dataCloudRuntimeProfileCheck,
+];
 
 function currentGitSha() {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], {
@@ -220,7 +226,7 @@ function runCheck(checkRef, options = {}) {
   const productArgs = productScopedScriptRefs.has(checkRef) && products.length > 0
     ? ['--products', products.join(',')]
     : [];
-  const env = checkRef === 'pnpm:check:data-cloud-release-gate' || checkRef === './scripts/check-data-cloud-platform-provider-readiness.mjs'
+  const env = checkRef === 'pnpm:check:data-cloud-release-gate' || checkRef === dataCloudProviderReadinessCheck
     ? { ...process.env, DATACLOUD_RELEASE_GATE_BOOTSTRAP: 'product-release-readiness' }
     : process.env;
 
@@ -608,6 +614,10 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     const strictScopedPlan = [
       './scripts/check-affected-product-strict-release-profile.mjs',
     ];
+    const businessProducts = affectedProducts.filter((productId) => productId !== 'data-cloud');
+    if (businessProducts.length > 0) {
+      strictScopedPlan.push(...businessProductFoundationChecks);
+    }
 
     for (const productId of affectedProducts) {
       const groupName = productScopedGroupById[productId];
@@ -625,6 +635,10 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     ...scopedCheckGroups.productChecks,
   ];
 
+  if (affectedProducts.some((productId) => productId !== 'data-cloud')) {
+    plan.push(...businessProductFoundationChecks);
+  }
+
   for (const productId of affectedProducts) {
     const groupName = productScopedGroupById[productId];
     if (groupName) {
@@ -637,6 +651,43 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
   }
 
   return uniqueExistingChecks(plan);
+}
+
+function releaseEvidenceFreshnessGap(productId) {
+  const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
+  const existing = readJsonIfExists(productEvidencePath);
+  if (!existing) {
+    return null;
+  }
+
+  const currentTarget = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? currentGitSha();
+  const targetCommit = String(existing.targetCommitSha ?? existing.evidenceRun?.targetCommitSha ?? '').trim();
+  if (targetCommit && targetCommit !== currentTarget) {
+    return {
+      severity: 'P0',
+      gate: 'release-evidence-freshness',
+      reason: 'stale-release-evidence',
+      message: `Product ${productId} release evidence targets ${targetCommit}, expected ${currentTarget}`,
+      evidencePath: path.relative(repoRoot, productEvidencePath),
+      expectedTargetCommitSha: currentTarget,
+      actualTargetCommitSha: targetCommit,
+    };
+  }
+
+  const evidenceRunCommit = String(existing.evidenceRun?.commit ?? existing.sourceCommitSha ?? '').trim();
+  if (evidenceRunCommit && evidenceRunCommit !== currentGitSha()) {
+    return {
+      severity: 'P0',
+      gate: 'release-evidence-freshness',
+      reason: 'stale-release-evidence',
+      message: `Product ${productId} release evidence was generated from ${evidenceRunCommit}, expected ${currentGitSha()}`,
+      evidencePath: path.relative(repoRoot, productEvidencePath),
+      expectedSourceCommitSha: currentGitSha(),
+      actualSourceCommitSha: evidenceRunCommit,
+    };
+  }
+
+  return null;
 }
 
 function releaseProfileIds() {

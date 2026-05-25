@@ -1,83 +1,83 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "productId": "flashit",
   "evidenceType": "reusable-assets-mapping",
-  "generatedAt": "2026-05-24T00:00:00.000Z",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "commitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
   "validationStatus": "passed",
-  "requirement": "Map reusable assets for FlashIt",
-  "sourceProducts": ["phr", "digital-marketing"],
+  "releaseIntent": "planning-score-only",
+  "requirement": "Map hardened reusable assets from PHR and Digital Marketing for FlashIt planning",
+  "sourceProducts": [
+    "phr",
+    "digital-marketing"
+  ],
   "targetProduct": "flashit",
   "reuseRecommendationsTable": "product_family_reuse_recommendations",
-  "migrationFile": "products/data-cloud/delivery/runtime-composition/src/main/resources/db/migration/V024__create_product_family_reuse_recommendations.sql",
   "mappedAssets": {
     "fromPHR": [
       {
-        "assetId": "phr-tenant-isolation-middleware",
-        "type": "service",
-        "confidenceScore": 0.95,
-        "benefitCategory": "security",
-        "estimatedEffortHours": 4,
-        "rationale": "FlashIt requires strict tenant isolation for multi-tenant flashcard decks. PHR tenant isolation middleware provides signed JWT validation and cross-tenant data leakage prevention.",
-        "adaptationNotes": "Minimal adaptation needed. Tenant model is compatible with flashcard deck isolation requirements.",
-        "flashitUseCase": "Flashcard deck tenant isolation, user data boundary enforcement"
-      },
-      {
-        "assetId": "phr-distributed-cache-integration",
+        "assetId": "phr-consent-panel",
         "type": "service",
         "confidenceScore": 0.85,
-        "benefitCategory": "performance",
+        "benefitCategory": "privacy",
         "estimatedEffortHours": 8,
-        "rationale": "FlashIt requires caching for frequently accessed flashcard decks. PHR distributed cache integration provides Redis-backed caching with multi-node synchronization.",
-        "adaptationNotes": "Adapt cache invalidation strategy for flashcard deck updates instead of consent changes.",
-        "flashitUseCase": "Flashcard deck cache, learning progress cache, user statistics cache"
+        "rationale": "Provides consent boundary for deck collaboration and personal learning data sharing.",
+        "flashitUseCase": "Deck sharing consent and learning-progress privacy controls"
+      },
+      {
+        "assetId": "phr-audit-trail-panel",
+        "type": "service",
+        "confidenceScore": 0.88,
+        "benefitCategory": "audit",
+        "estimatedEffortHours": 6,
+        "rationale": "Provides user-visible access and sync audit pattern.",
+        "flashitUseCase": "Deck access audit, sync repair audit, privacy event trail"
+      },
+      {
+        "assetId": "phr-tenant-scoped-mutation-pattern",
+        "type": "pattern",
+        "confidenceScore": 0.93,
+        "benefitCategory": "tenant-isolation",
+        "estimatedEffortHours": 5,
+        "rationale": "Provides tenant/principal metadata pattern for offline sync reconciliation.",
+        "flashitUseCase": "Tenant-scoped offline mutation replay and conflict repair"
       }
     ],
     "fromDMOS": [
       {
-        "assetId": "dmos-rate-limiting-policy",
-        "type": "policy",
-        "confidenceScore": 0.80,
-        "benefitCategory": "performance",
-        "estimatedEffortHours": 6,
-        "rationale": "FlashIt needs rate limiting for public flashcard deck access to prevent abuse. DMOS rate limiting policy provides tenant-specific limits and graceful degradation.",
-        "adaptationNotes": "Adjust rate limits for flashcard deck access patterns (read-heavy, write-light).",
-        "flashitUseCase": "Flashcard deck API rate limiting, user submission rate limiting"
+        "assetId": "dmos-retry-dlq-pattern",
+        "type": "pattern",
+        "confidenceScore": 0.86,
+        "benefitCategory": "offline-sync",
+        "estimatedEffortHours": 7,
+        "rationale": "Provides retry and dead-letter handling for failed external commands.",
+        "flashitUseCase": "Offline sync retry, dead-letter conflict repair, notification delivery"
       }
     ]
   },
   "reuseStrategy": {
-    "prioritization": "high-confidence-first",
-    "adaptationApproach": "domain-specific-translation",
+    "prioritization": "privacy-and-offline-sync-first",
+    "adaptationApproach": "mobile/offline-specific-translation",
     "validation": "evidence-backed",
     "tracking": "product_family_reuse_recommendations table"
   },
-  "benefitCategories": {
-    "security": {
-      "count": 1,
-      "assets": ["phr-tenant-isolation-middleware"],
-      "totalEffortHours": 4
-    },
-    "performance": {
-      "count": 2,
-      "assets": ["phr-distributed-cache-integration", "dmos-rate-limiting-policy"],
-      "totalEffortHours": 14
-    }
-  },
-  "totalAssets": 3,
-  "averageConfidenceScore": 0.87,
-  "totalEstimatedEffortHours": 18,
+  "totalAssets": 4,
+  "averageConfidenceScore": 0.88,
+  "totalEstimatedEffortHours": 26,
   "evidenceRefs": [
-    "products/data-cloud/delivery/runtime-composition/src/main/resources/db/migration/V024__create_product_family_reuse_recommendations.sql",
-    "products/phr/lifecycle/foundation-usage-profile.yaml",
-    "products/digital-marketing/lifecycle/foundation-usage-profile.yaml",
+    "config/product-family-asset-registry.json",
+    ".kernel/evidence/phr/reusable-assets-registration.json",
+    ".kernel/evidence/digital-marketing/reusable-assets-registration.json",
     "products/flashit/lifecycle/foundation-usage-profile.yaml"
   ],
   "summary": {
-    "mappedAssets": 3,
-    "fromPHR": 2,
+    "mappedAssets": 4,
+    "fromPHR": 3,
     "fromDMOS": 1,
-    "highConfidenceAssets": 2,
-    "mediumConfidenceAssets": 1,
+    "planningOnly": true,
+    "mobileLifecycleDisabled": true,
     "overallStatus": "passed"
   }
 }

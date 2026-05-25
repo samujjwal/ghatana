@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-24T08:35:00.000Z",
-  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "commitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -12,8 +12,8 @@
       "rollback_evidence_present",
       "no_pending_blocking_issues"
     ],
-    "promotionLockSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
-    "lockedAt": "2026-05-24T00:00:00.000Z",
+    "promotionLockSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "lockedAt": "2026-05-25T00:00:00.000Z",
     "promotionApprovedBy": "phr-team-lead",
     "allAssetsLockedForPromotion": true
   },
@@ -24,14 +24,20 @@
       "asset_type": "ui-component",
       "source_product": "phr",
       "description": "Reusable consent management panel for healthcare applications with granular consent tracking and patient-controlled preferences",
-      "tags": ["healthcare", "consent", "privacy", "ui", "patient-control"],
+      "tags": [
+        "healthcare",
+        "consent",
+        "privacy",
+        "ui",
+        "patient-control"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -68,6 +74,15 @@
         "framework": "react",
         "min_version": "18.0.0",
         "platform": "web"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
@@ -76,14 +91,20 @@
       "asset_type": "ui-component",
       "source_product": "phr",
       "description": "Comprehensive audit trail display component for healthcare data access and modifications with HIPAA-compliant logging",
-      "tags": ["healthcare", "audit", "compliance", "hipaa", "ui"],
+      "tags": [
+        "healthcare",
+        "audit",
+        "compliance",
+        "hipaa",
+        "ui"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -118,6 +139,15 @@
         "framework": "react",
         "min_version": "18.0.0",
         "platform": "web"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
@@ -126,14 +156,20 @@
       "asset_type": "service",
       "source_product": "phr",
       "description": "FHIR R4 validation service with schema validation, data type checking, and healthcare-specific constraints enforcement",
-      "tags": ["healthcare", "fhir", "validation", "hl7", "r4"],
+      "tags": [
+        "healthcare",
+        "fhir",
+        "validation",
+        "hl7",
+        "r4"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -168,6 +204,15 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
@@ -176,14 +221,20 @@
       "asset_type": "workflow",
       "source_product": "phr",
       "description": "Emergency access workflow for healthcare with patient notification, audit logging, post-hoc review, and compliance evidence generation",
-      "tags": ["healthcare", "emergency", "break-glass", "compliance", "workflow"],
+      "tags": [
+        "healthcare",
+        "emergency",
+        "break-glass",
+        "compliance",
+        "workflow"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -219,22 +270,37 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
-      "asset_id": "phr-tenant-scoped-repository-pattern",
-      "asset_name": "PHR Tenant-Scoped Repository Pattern",
+      "asset_id": "phr-tenant-scoped-mutation-pattern",
+      "asset_name": "PHR Tenant-Scoped Mutation Pattern",
       "asset_type": "pattern",
       "source_product": "phr",
-      "description": "Repository pattern with automatic tenant isolation, row-level security, and multi-tenancy support for healthcare data",
-      "tags": ["healthcare", "repository", "tenant-isolation", "pattern", "multi-tenancy"],
+      "description": "Reusable mutation metadata enrichment pattern that rejects production writes without explicit tenant and principal context",
+      "tags": [
+        "healthcare",
+        "repository",
+        "tenant-isolation",
+        "pattern",
+        "multi-tenancy"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -268,22 +334,37 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
-      "asset_id": "phr-rollback-gate",
-      "asset_name": "PHR Rollback Gate",
+      "asset_id": "phr-rollback-safety-gate-pack",
+      "asset_name": "PHR Rollback Safety Gate Pack",
       "asset_type": "service",
       "source_product": "phr",
       "description": "Rollback safety gate for healthcare deployments with artifact selection, post-rollback verification, healthcare-specific gates, and audit evidence",
-      "tags": ["healthcare", "rollback", "deployment", "safety", "gate"],
+      "tags": [
+        "healthcare",
+        "rollback",
+        "deployment",
+        "safety",
+        "gate"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -321,7 +402,26 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "phr-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     }
-  ]
+  ],
+  "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "expiresAt": "2026-08-23T00:00:00.000Z",
+  "evidenceRun": {
+    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "generatedAt": "2026-05-25T00:00:00.000Z",
+    "source": "product-family-asset-registry"
+  }
 }

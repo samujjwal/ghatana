@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
-  "generatedAt": "2026-05-24T08:35:00.000Z",
-  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "commitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -13,8 +13,8 @@
       "no_pending_blocking_issues",
       "ephemeral_adapters_blocked"
     ],
-    "promotionLockSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
-    "lockedAt": "2026-05-24T00:00:00.000Z",
+    "promotionLockSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "lockedAt": "2026-05-25T00:00:00.000Z",
     "promotionApprovedBy": "dmos-team-lead",
     "allAssetsLockedForPromotion": true
   },
@@ -25,14 +25,20 @@
       "asset_type": "service",
       "source_product": "digital-marketing",
       "description": "Multi-stage approval queue for marketing campaigns with role-based approvals, delegation, and audit trail",
-      "tags": ["marketing", "approval", "workflow", "governance", "campaign"],
+      "tags": [
+        "marketing",
+        "approval",
+        "workflow",
+        "governance",
+        "campaign"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -71,22 +77,37 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
-      "asset_id": "dmos-connector-workflow",
-      "asset_name": "DMOS Connector Workflow",
+      "asset_id": "dmos-google-ads-connector-adapter",
+      "asset_name": "DMOS Google Ads Connector Adapter",
       "asset_type": "workflow",
       "source_product": "digital-marketing",
       "description": "Generic connector workflow pattern with OAuth handshake, idempotency, retry logic, DLQ, compensation, and external ID persistence",
-      "tags": ["marketing", "connector", "workflow", "integration", "oauth"],
+      "tags": [
+        "marketing",
+        "connector",
+        "workflow",
+        "integration",
+        "oauth"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -124,22 +145,37 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
-      "asset_id": "dmos-campaign-dashboard",
-      "asset_name": "DMOS Campaign Dashboard",
+      "asset_id": "dmos-campaign-cockpit",
+      "asset_name": "DMOS Campaign Cockpit",
       "asset_type": "ui-component",
       "source_product": "digital-marketing",
       "description": "Campaign management dashboard with performance metrics, budget tracking, and multi-channel visibility",
-      "tags": ["marketing", "dashboard", "campaign", "analytics", "ui"],
+      "tags": [
+        "marketing",
+        "dashboard",
+        "campaign",
+        "analytics",
+        "ui"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -174,6 +210,15 @@
         "framework": "react",
         "min_version": "18.0.0",
         "platform": "web"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
@@ -182,14 +227,20 @@
       "asset_type": "ui-component",
       "source_product": "digital-marketing",
       "description": "AI action transparency panel displaying prompt metadata, model version, confidence scores, rationale, and policy decisions",
-      "tags": ["marketing", "ai", "transparency", "governance", "ui"],
+      "tags": [
+        "marketing",
+        "ai",
+        "transparency",
+        "governance",
+        "ui"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -225,6 +276,15 @@
         "framework": "react",
         "min_version": "18.0.0",
         "platform": "web"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     },
     {
@@ -233,14 +293,20 @@
       "asset_type": "pattern",
       "source_product": "digital-marketing",
       "description": "Retry pattern with exponential backoff, dead-letter queue, compensation, and idempotency guarantees for external integrations",
-      "tags": ["marketing", "retry", "dlq", "pattern", "resilience"],
+      "tags": [
+        "marketing",
+        "retry",
+        "dlq",
+        "pattern",
+        "resilience"
+      ],
       "maturity_level": "hardened",
       "usage_count": 0,
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-24T00:00:00.000Z",
-        "lockedAtSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "lockedAt": "2026-05-25T00:00:00.000Z",
+        "lockedAtSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
         "promotionTarget": "shared-package",
         "approvedBy": "dmos-team-lead",
         "stagingBootstrapValidated": true,
@@ -275,7 +341,26 @@
         "language": "java",
         "min_version": "21",
         "platform": "jvm"
+      },
+      "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+      "validatedAt": "2026-05-25T00:00:00.000Z",
+      "expiresAt": "2026-08-23T00:00:00.000Z",
+      "owner_approval": {
+        "approvedBy": "dmos-team-lead",
+        "approvedAt": "2026-05-25T00:00:00.000Z",
+        "approvalStatus": "approved"
       }
     }
-  ]
+  ],
+  "sourceCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "targetCommitSha": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "expiresAt": "2026-08-23T00:00:00.000Z",
+  "evidenceRun": {
+    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19",
+    "generatedAt": "2026-05-25T00:00:00.000Z",
+    "source": "product-family-asset-registry"
+  }
 }

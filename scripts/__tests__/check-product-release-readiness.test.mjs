@@ -72,7 +72,21 @@ test('product release readiness scopes execution to the selected product family'
   assert.ok(dataCloudPlan.includes('pnpm:check:data-cloud-release-gate'));
   assert.ok(!dataCloudPlan.includes('./scripts/check-dmos-production-wiring.mjs'));
   assert.ok(dmosPlan.includes('./scripts/check-dmos-production-wiring.mjs'));
+  assert.ok(dmosPlan.includes('./scripts/check-data-cloud-platform-provider-readiness.mjs'));
+  assert.ok(dmosPlan.includes('./scripts/check-data-cloud-release-runtime-profile.mjs'));
   assert.ok(!dmosPlan.includes('pnpm:check:data-cloud-release-gate'));
+});
+
+test('product release readiness runs Data Cloud foundation checks before product scoped gates', () => {
+  const phrPlan = buildScopedExecutionOrder(['phr'], {
+    explicitProductScope: true,
+    paths: ['products/phr/kernel-product.yaml'],
+    releaseRisk: false,
+  });
+
+  assert.ok(phrPlan.includes('./scripts/check-data-cloud-platform-provider-readiness.mjs'));
+  assert.ok(phrPlan.includes('./scripts/check-data-cloud-release-runtime-profile.mjs'));
+  assert.ok(phrPlan.indexOf('./scripts/check-data-cloud-platform-provider-readiness.mjs') < phrPlan.indexOf('./scripts/check-phr-lifecycle-readiness.mjs'));
 });
 
 test('product scorecard uses product execution evidence instead of global maturity baseline', () => {

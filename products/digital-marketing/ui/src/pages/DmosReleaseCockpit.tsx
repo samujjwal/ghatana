@@ -1,17 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2, XCircle, AlertTriangle, Clock, Shield, Database, Activity, BarChart3, Target, Layers, Calendar, RefreshCw } from 'lucide-react';
+
+type ComponentProps = React.PropsWithChildren<{ className?: string }>;
+
+function Card({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <section className={`rounded-lg border border-gray-200 bg-white shadow-sm ${className}`}>{children}</section>;
+}
+
+function CardHeader({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <div className={`border-b border-gray-100 p-4 ${className}`}>{children}</div>;
+}
+
+function CardTitle({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <h2 className={`text-lg font-semibold ${className}`}>{children}</h2>;
+}
+
+function CardDescription({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <p className={`mt-1 text-sm text-gray-500 ${className}`}>{children}</p>;
+}
+
+function CardContent({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <div className={`p-4 ${className}`}>{children}</div>;
+}
+
+function Badge({ children, className = '', variant }: ComponentProps & { variant?: 'outline' | 'destructive' }): React.ReactElement {
+  const variantClass = variant === 'outline'
+    ? 'border border-gray-300 bg-white text-gray-700'
+    : variant === 'destructive'
+      ? 'bg-red-600 text-white'
+      : 'text-white';
+  return <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${variantClass} ${className}`}>{children}</span>;
+}
+
+function Button({ children, className = '', variant: _variant, ...props }: ComponentProps & React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }): React.ReactElement {
+  return <button className={`inline-flex items-center rounded border border-gray-300 px-3 py-2 text-sm font-medium ${className}`} {...props}>{children}</button>;
+}
+
+function Alert({ children, variant }: ComponentProps & { variant?: 'destructive' }): React.ReactElement {
+  const tone = variant === 'destructive' ? 'border-red-200 bg-red-50 text-red-900' : 'border-gray-200 bg-white text-gray-900';
+  return <div className={`rounded-lg border p-4 ${tone}`}>{children}</div>;
+}
+
+function AlertTitle({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <div className={`font-semibold ${className}`}>{children}</div>;
+}
+
+function AlertDescription({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <div className={`mt-1 text-sm ${className}`}>{children}</div>;
+}
+
+function Tabs({ children }: ComponentProps & { value?: string; defaultValue?: string; onValueChange?: (value: string) => void }): React.ReactElement {
+  return <>{children}</>;
+}
+
+function TabsList({ children, className = '' }: ComponentProps): React.ReactElement {
+  return <div className={`flex gap-2 ${className}`}>{children}</div>;
+}
+
+function TabsTrigger({ children, value, className = '' }: ComponentProps & { value: string }): React.ReactElement {
+  return <button type="button" data-tab-value={value} className={`rounded border border-gray-300 px-3 py-2 text-sm ${className}`}>{children}</button>;
+}
+
+function TabsContent({ children, value, className = '' }: ComponentProps & { value: string }): React.ReactElement {
+  return <div data-tab-content={value} className={className}>{children}</div>;
+}
 
 interface ReleaseReadinessEvidence {
   schemaVersion: string;
   productId: string;
   productName: string;
   checkedAt: string;
+  sourceCommitSha?: string;
+  targetCommitSha?: string;
   targetEnvironment?: string;
+  validationStatus?: string;
+  expiresAt?: string;
+  evidenceRun?: {
+    commit?: string;
+    generatedAt?: string;
+  };
+  evidenceFreshness?: {
+    status?: string;
+    current?: boolean;
+    warnings?: string[];
+  };
+  dataCloudProviderReadiness?: {
+    status?: string;
+    evidenceRef?: string;
+  };
+  dataCloudRuntimeProfile?: {
+    status?: string;
+    evidenceRef?: string;
+  };
+  contradictionState?: string;
   releaseReadiness: {
     status: string;
     overallScore: number;
@@ -178,6 +259,8 @@ export function DmosReleaseCockpit() {
         return 'bg-gray-500';
     }
   };
+  const isFreshnessBlocked = evidence.evidenceFreshness?.current === false || evidence.validationStatus === 'failed';
+  const hasContradiction = evidence.contradictionState === 'EVIDENCE_CONTRADICTION';
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -202,6 +285,18 @@ export function DmosReleaseCockpit() {
           </Button>
         </div>
       </div>
+
+      {(hasContradiction || isFreshnessBlocked) && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{hasContradiction ? 'Evidence contradiction' : 'Evidence freshness blocked'}</AlertTitle>
+          <AlertDescription>
+            {hasContradiction
+              ? 'Product readiness and Data Cloud provider/runtime evidence disagree. Review the evidence records below.'
+              : 'Release readiness is blocked until current commit evidence is regenerated and validated.'}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Overall Status */}
       <Card>
@@ -236,6 +331,52 @@ export function DmosReleaseCockpit() {
             <div className="text-center">
               <div className="text-2xl font-bold text-red-500">{evidence.summary.blocked}</div>
               <div className="text-sm text-muted-foreground">Blocked</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Evidence Freshness
+          </CardTitle>
+          <CardDescription>Commit, environment, and Data Cloud evidence alignment</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Target commit</div>
+              <div className="font-mono text-xs break-all">{evidence.targetCommitSha || evidence.evidenceRun?.commit || 'unknown'}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Validation</div>
+              <Badge className={getStatusColor(evidence.validationStatus || evidence.evidenceFreshness?.status || 'pending')}>
+                {evidence.validationStatus || evidence.evidenceFreshness?.status || 'pending'}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Expires</div>
+              <div className="text-sm">{evidence.expiresAt ? new Date(evidence.expiresAt).toLocaleString() : 'unknown'}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Data Cloud provider</div>
+              <Badge className={getStatusColor(evidence.dataCloudProviderReadiness?.status || 'pending')}>
+                {evidence.dataCloudProviderReadiness?.status || 'pending'}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Runtime profile</div>
+              <Badge className={getStatusColor(evidence.dataCloudRuntimeProfile?.status || 'pending')}>
+                {evidence.dataCloudRuntimeProfile?.status || 'pending'}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Contradiction</div>
+              <Badge className={hasContradiction ? 'bg-red-500' : 'bg-green-500'}>
+                {evidence.contradictionState || 'NONE'}
+              </Badge>
             </div>
           </div>
         </CardContent>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
@@ -16,6 +16,106 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
 }
 
+const REQUIRED_ASSET_FIELDS = [
+  'id',
+  'name',
+  'type',
+  'sourceProduct',
+  'status',
+  'maturity',
+  'reuseMode',
+  'targetPromotion',
+  'owner',
+  'ownerApproval',
+  'freshness',
+  'paths',
+  'tests',
+  'dependencies',
+  'requiredFoundations',
+  'constraints',
+  'compatibility',
+  'productUsage',
+  'evidenceRefs'
+];
+
+const VALID_TYPES = new Set(['ui-component', 'service', 'workflow', 'policy', 'gate-pack', 'pattern', 'connector']);
+const VALID_SOURCE_PRODUCTS = new Set(['phr', 'digital-marketing']);
+const VALID_STATUSES = new Set(['candidate', 'hardened', 'production', 'shared']);
+const VALID_MATURITIES = new Set(['draft', 'validated', 'release-ready']);
+const VALID_REUSE_MODES = new Set(['reference', 'template', 'shared-package', 'kernel-plugin', 'schema-pack']);
+const VALID_TARGET_PROMOTIONS = new Set(['shared-package', 'kernel-plugin', 'template', 'schema-pack', 'none']);
+const VALID_USAGE_STATES = new Set(['production-used', 'recommended', 'planned']);
+
+function assertArray(asset, field, { min = 1 } = {}) {
+  if (!Array.isArray(asset[field]) || asset[field].length < min) {
+    fail(`Asset ${asset.id} must include ${field} with at least ${min} entr${min === 1 ? 'y' : 'ies'}`);
+  }
+}
+
+function assertExistingRefs(asset, field) {
+  for (const ref of asset[field]) {
+    if (typeof ref !== 'string' || ref.length < 3) {
+      fail(`Asset ${asset.id} has invalid ${field} ref: ${ref ?? '<missing>'}`);
+    }
+    if (ref.startsWith('platform:')) {
+      continue;
+    }
+    if (!existsSync(path.join(root, ref))) {
+      fail(`Asset ${asset.id} ${field} ref does not exist: ${ref}`);
+    }
+  }
+}
+
+function assertApproval(asset) {
+  const approval = asset.ownerApproval;
+  if (!approval || approval.approvalStatus !== 'approved' || !approval.approvedBy || !approval.approvedAt) {
+    fail(`Asset ${asset.id} must include approved ownerApproval metadata`);
+  }
+}
+
+function assertFreshness(asset) {
+  const freshness = asset.freshness;
+  if (
+    !freshness ||
+    typeof freshness.sourceCommitSha !== 'string' ||
+    typeof freshness.targetCommitSha !== 'string' ||
+    typeof freshness.validatedAt !== 'string'
+  ) {
+    fail(`Asset ${asset.id} must include source/target commit freshness metadata`);
+  }
+  if (freshness.sourceCommitSha !== freshness.targetCommitSha) {
+    fail(`Asset ${asset.id} sourceCommitSha must match targetCommitSha`);
+  }
+}
+
+function assertCompatibility(asset) {
+  const compatibility = asset.compatibility;
+  if (
+    !compatibility ||
+    !Array.isArray(compatibility.productTypes) ||
+    compatibility.productTypes.length === 0 ||
+    typeof compatibility.runtime !== 'string' ||
+    !Array.isArray(compatibility.constraints)
+  ) {
+    fail(`Asset ${asset.id} must include compatibility metadata`);
+  }
+}
+
+function assertProductUsage(asset) {
+  assertArray(asset, 'productUsage');
+  const hasSourceUsage = asset.productUsage.some(
+    (usage) => usage.productId === asset.sourceProduct && usage.state === 'production-used'
+  );
+  if (!hasSourceUsage) {
+    fail(`Asset ${asset.id} must record production-used usage for ${asset.sourceProduct}`);
+  }
+  for (const usage of asset.productUsage) {
+    if (!usage?.productId || !usage?.usage || !VALID_USAGE_STATES.has(usage.state)) {
+      fail(`Asset ${asset.id} has invalid productUsage record`);
+    }
+  }
+}
+
 function main() {
   const schema = readJson(schemaPath);
   const registry = readJson(registryPath);
@@ -29,6 +129,11 @@ function main() {
 
   const ids = new Set();
   for (const asset of registry.assets) {
+    for (const field of REQUIRED_ASSET_FIELDS) {
+      if (!(field in asset)) {
+        fail(`Asset ${asset?.id ?? '<missing>'} is missing required field: ${field}`);
+      }
+    }
     if (!asset?.id || !/^[a-z0-9-]+$/.test(asset.id)) {
       fail(`Invalid asset id: ${asset?.id ?? '<missing>'}`);
     }
@@ -37,14 +142,37 @@ function main() {
     }
     ids.add(asset.id);
 
-    if (!Array.isArray(asset.evidenceRefs) || asset.evidenceRefs.length === 0) {
-      fail(`Asset ${asset.id} must include evidenceRefs`);
+    if (!VALID_TYPES.has(asset.type)) {
+      fail(`Asset ${asset.id} has invalid type: ${asset.type}`);
     }
-    if (!['candidate', 'hardened', 'production', 'shared'].includes(asset.status)) {
+    if (!VALID_SOURCE_PRODUCTS.has(asset.sourceProduct)) {
+      fail(`Asset ${asset.id} has invalid sourceProduct: ${asset.sourceProduct}`);
+    }
+    if (!VALID_STATUSES.has(asset.status)) {
       fail(`Asset ${asset.id} has invalid status: ${asset.status}`);
     }
-    if (!['draft', 'validated', 'release-ready'].includes(asset.maturity)) {
+    if (!VALID_MATURITIES.has(asset.maturity)) {
       fail(`Asset ${asset.id} has invalid maturity: ${asset.maturity}`);
+    }
+    if (!VALID_REUSE_MODES.has(asset.reuseMode)) {
+      fail(`Asset ${asset.id} has invalid reuseMode: ${asset.reuseMode}`);
+    }
+    if (!VALID_TARGET_PROMOTIONS.has(asset.targetPromotion)) {
+      fail(`Asset ${asset.id} has invalid targetPromotion: ${asset.targetPromotion}`);
+    }
+    assertApproval(asset);
+    assertFreshness(asset);
+    assertArray(asset, 'paths');
+    assertArray(asset, 'tests');
+    assertArray(asset, 'requiredFoundations');
+    assertArray(asset, 'evidenceRefs');
+    assertExistingRefs(asset, 'paths');
+    assertExistingRefs(asset, 'tests');
+    assertExistingRefs(asset, 'evidenceRefs');
+    assertCompatibility(asset);
+    assertProductUsage(asset);
+    if (asset.status === 'production' && asset.maturity !== 'release-ready') {
+      fail(`Production asset ${asset.id} must be release-ready`);
     }
   }
 

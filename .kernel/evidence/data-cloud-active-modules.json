@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-25T06:45:15.051Z",
+  "generatedAt": "2026-05-25T18:02:38.748Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
     "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
     "command": "pnpm check:data-cloud-active-module-evidence",
-    "commit": "73c0c110542226333369fe8046193139efaac158"
+    "commit": "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
   },
   "source": {
     "settings": "config/generated/settings-gradle-includes.kts",

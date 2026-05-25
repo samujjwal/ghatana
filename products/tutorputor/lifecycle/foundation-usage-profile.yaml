@@ -5,7 +5,11 @@
 schemaVersion: "1.0.0"
 productId: "tutorputor"
 productName: "Tutorputor"
-generatedAt: "2026-05-24T00:00:00Z"
+generatedAt: "2026-05-25T00:00:00Z"
+sourceCommitSha: "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+targetCommitSha: "2d01d02963fe8a77c2ee5072f2016cac64b7ac19"
+releaseIntent: "planning-score-only"
+releaseBlocking: false
 
 foundationComponents:
   kernel:
@@ -129,6 +133,41 @@ foundationComponents:
         usage: "required"
         purpose: "Pattern learning linked to reusable assets with promotion tracking"
         evidencePath: ".kernel/evidence/tutorputor/learned-pattern-evidence.json"
+
+reusableAssets:
+  mode: "guided-reuse-planning"
+  evidencePath: ".kernel/evidence/tutorputor/reusable-assets-mapping.json"
+  candidates:
+    - assetId: "phr-consent-panel"
+      sourceProduct: "phr"
+      usage: "Student privacy and guardian consent boundary for learning records and adaptive tutoring"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "consent", "audit", "tenant-isolation"]
+    - assetId: "phr-audit-trail-panel"
+      sourceProduct: "phr"
+      usage: "Student-visible learning-record audit trail and educator access history"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "audit", "observability"]
+    - assetId: "phr-break-glass-workflow"
+      sourceProduct: "phr"
+      usage: "Educator override review workflow for safety-critical tutoring interventions"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "notification", "audit", "tenant-isolation"]
+    - assetId: "dmos-approval-queue"
+      sourceProduct: "digital-marketing"
+      usage: "Human approval queue for curriculum publishing and high-risk content changes"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "approval", "audit"]
+    - assetId: "dmos-ai-transparency-panel"
+      sourceProduct: "digital-marketing"
+      usage: "AI tutoring transparency for prompts, model, confidence, risk, policy, approval, and outcome"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "aep", "audit", "observability"]
+    - assetId: "phr-rollback-safety-gate-pack"
+      sourceProduct: "phr"
+      usage: "Regulated rollback drill pattern for student data and mastery model integrity"
+      adoptionState: "recommended"
+      requiredFoundations: ["kernel", "data-cloud", "audit", "observability"]
 
 specificRequirements:
   education:
