@@ -3,17 +3,18 @@
  * OpenAPI Route Manifest Parity Validator
  * 
  * Validates that all routes in the route-manifest.yaml exist in the OpenAPI spec
- * and that metadata (auth, scopes, operationId) is consistent.
+ * and that metadata (auth, lifecycle, operationId) is consistent.
  * 
  * Usage: node scripts/validate-openapi-parity.js <openapi.yaml> <route-manifest.yaml>
  */
 
 const fs = require('fs');
 const path = require('path');
-const yaml = require('js-yaml');
+const yaml = require('yaml');
 
 const OPENAPI_FILE = process.argv[2];
 const MANIFEST_FILE = process.argv[3];
+const stableOnly = process.argv.includes('--stable-only');
 
 if (!OPENAPI_FILE || !MANIFEST_FILE) {
   console.error('Usage: node validate-openapi-parity.js <openapi.yaml> <route-manifest.yaml>');
@@ -21,8 +22,8 @@ if (!OPENAPI_FILE || !MANIFEST_FILE) {
 }
 
 // Load files
-const openapiDoc = yaml.load(fs.readFileSync(OPENAPI_FILE, 'utf8'));
-const manifestDoc = yaml.load(fs.readFileSync(MANIFEST_FILE, 'utf8'));
+const openapiDoc = yaml.parse(fs.readFileSync(OPENAPI_FILE, 'utf8'));
+const manifestDoc = yaml.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
 
 let errors = [];
 let warnings = [];
@@ -33,7 +34,7 @@ const openapiOperations = {};
 
 for (const [path, methods] of Object.entries(openapiPaths)) {
   for (const [method, operation] of Object.entries(methods)) {
-    const key = `${method.toUpperCase()} ${path}`;
+    const key = routeKey(method, path);
     openapiOperations[key] = {
       operationId: operation.operationId,
       security: operation.security || [],
@@ -42,21 +43,50 @@ for (const [path, methods] of Object.entries(openapiPaths)) {
   }
 }
 
+function manifestRoutes(doc) {
+  if (Array.isArray(doc?.routes)) {
+    return doc.routes.map(route => ({ owner: route.servlet || doc.product || 'manifest', route }));
+  }
+
+  const routes = [];
+  for (const [owner, ownerRoutes] of Object.entries(doc || {})) {
+    if (owner.startsWith('#') || owner === '───') continue;
+    if (!Array.isArray(ownerRoutes)) continue;
+    for (const route of ownerRoutes) {
+      routes.push({ owner, route });
+    }
+  }
+  return routes;
+}
+
+function normalizePath(routePath) {
+  return routePath
+    .replace(/:([A-Za-z0-9_]+)/g, '{$1}')
+    .replace(/\{[A-Za-z0-9_]+\}/g, '{param}');
+}
+
+function routeKey(method, routePath) {
+  return `${method.toUpperCase()} ${normalizePath(routePath)}`;
+}
+
 // Validate manifest routes
-for (const [owner, routes] of Object.entries(manifestDoc)) {
-  if (owner.startsWith('#') || owner === '───') continue; // Skip comments and section headers
-  
-  for (const route of routes) {
+for (const { owner, route } of manifestRoutes(manifestDoc)) {
+    if (stableOnly && route.lifecycle && route.lifecycle !== 'stable') {
+      continue;
+    }
+    if (stableOnly && route.servlet === null) {
+      continue;
+    }
     if (!route.method || !route.path) {
       errors.push(`Invalid route in ${owner}: missing method or path`);
       continue;
     }
 
-    const key = `${route.method.toUpperCase()} ${route.path}`;
+    const key = routeKey(route.method, route.path);
     const openapiOp = openapiOperations[key];
 
     if (!openapiOp) {
-      errors.push(`Route ${key} (owner: ${route.owner}) not found in OpenAPI spec`);
+      errors.push(`Route ${route.method.toUpperCase()} ${route.path} (owner: ${route.owner || owner}) not found in OpenAPI spec`);
       continue;
     }
 
@@ -81,25 +111,28 @@ for (const [owner, routes] of Object.entries(manifestDoc)) {
       );
     }
 
-    // Validate boundary is declared
-    if (!route.boundary) {
-      warnings.push(`Route ${key}: missing boundary field in manifest`);
+    // Validate lifecycle is declared using the manifest schema.
+    if (!route.lifecycle) {
+      errors.push(`Route ${key}: missing lifecycle field in manifest`);
+    } else if (!['stable', 'boundary'].includes(route.lifecycle)) {
+      errors.push(`Route ${key}: invalid lifecycle '${route.lifecycle}' in manifest`);
     }
-  }
 }
 
 // Check for OpenAPI routes not in manifest (optional, can be noisy)
 for (const key of Object.keys(openapiOperations)) {
   let found = false;
-  for (const [owner, routes] of Object.entries(manifestDoc)) {
-    if (owner.startsWith('#') || owner === '───') continue;
-    for (const route of routes) {
-      if (`${route.method.toUpperCase()} ${route.path}` === key) {
-        found = true;
-        break;
-      }
+  for (const { route } of manifestRoutes(manifestDoc)) {
+    if (stableOnly && route.lifecycle && route.lifecycle !== 'stable') {
+      continue;
     }
-    if (found) break;
+    if (stableOnly && route.servlet === null) {
+      continue;
+    }
+    if (route.method && route.path && routeKey(route.method, route.path) === key) {
+      found = true;
+      break;
+    }
   }
   if (!found) {
     warnings.push(`OpenAPI route ${key} not found in route manifest`);

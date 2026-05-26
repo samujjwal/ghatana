@@ -65,7 +65,7 @@ public final class DmosExperimentSuggestionServlet {
     }
 
     public DmosExperimentSuggestionServlet(ExperimentSuggestionService service, Eventloop eventloop) {
-        this(service, eventloop, DmosMetricsCollector.disabled(), DmosTelemetry.disabled(), new DmosHttpContextFactory(false, null));
+        this(service, eventloop, DmosMetricsCollector.disabled(), DmosTelemetry.disabled(), DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public AsyncServlet getServlet() {

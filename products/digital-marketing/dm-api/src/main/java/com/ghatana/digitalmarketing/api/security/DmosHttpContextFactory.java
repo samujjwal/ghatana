@@ -46,6 +46,7 @@ public final class DmosHttpContextFactory {
     private static final Logger LOG = LoggerFactory.getLogger(DmosHttpContextFactory.class);
 
     private final boolean productionMode;
+    private final boolean allowAnonymousFallback;
     private final IdentityProvider identityProvider;
 
     /**
@@ -78,7 +79,35 @@ public final class DmosHttpContextFactory {
      * @param identityProvider server-side identity provider (required in production)
      */
     public DmosHttpContextFactory(boolean productionMode, IdentityProvider identityProvider) {
+        this(productionMode, identityProvider, false);
+    }
+
+    /**
+     * Creates a test-only context factory that preserves the historical anonymous fallback.
+     *
+     * <p>Production, staging, and integration wiring must use the normal constructor so
+     * protected routes fail closed when no principal/session can be derived.</p>
+     *
+     * @return context factory configured for local servlet tests
+     */
+    public static DmosHttpContextFactory testModeWithAnonymousFallback() {
+        return new DmosHttpContextFactory(false, null, true);
+    }
+
+    /**
+     * Creates the context factory.
+     *
+     * @param productionMode if true, enforces stricter validation
+     * @param identityProvider server-side identity provider (required in production)
+     * @param allowAnonymousFallback whether local/test mode may synthesize anonymous identity
+     */
+    public DmosHttpContextFactory(
+        boolean productionMode,
+        IdentityProvider identityProvider,
+        boolean allowAnonymousFallback
+    ) {
         this.productionMode = productionMode;
+        this.allowAnonymousFallback = allowAnonymousFallback;
         if (productionMode && identityProvider == null) {
             throw new IllegalStateException(
                 "IdentityProvider must be configured in production mode");
@@ -196,11 +225,17 @@ public final class DmosHttpContextFactory {
                 }
             }
 
-            if (principalId == null || principalId.isBlank()) {
+            if ((principalId == null || principalId.isBlank()) && allowAnonymousFallback) {
                 principalId = "anonymous";
             }
-            if (sessionId == null || sessionId.isBlank()) {
+            if ((sessionId == null || sessionId.isBlank()) && allowAnonymousFallback) {
                 sessionId = "session-anonymous";
+            }
+            if (principalId == null || principalId.isBlank()) {
+                throw new IllegalArgumentException("Principal ID missing in non-production authentication context");
+            }
+            if (sessionId == null || sessionId.isBlank()) {
+                throw new IllegalArgumentException("Session ID missing in non-production authentication context");
             }
 
             identity = new IdentityProvider.IdentityResult(

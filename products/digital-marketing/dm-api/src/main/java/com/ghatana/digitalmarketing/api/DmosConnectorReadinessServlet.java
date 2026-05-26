@@ -50,7 +50,7 @@ public final class DmosConnectorReadinessServlet {
     public DmosConnectorReadinessServlet(
             DmGoogleAdsConnectorReadinessService googleAdsReadinessService,
             Eventloop eventloop) {
-        this(googleAdsReadinessService, eventloop, new DmosHttpContextFactory(false, null));
+        this(googleAdsReadinessService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public DmosConnectorReadinessServlet(

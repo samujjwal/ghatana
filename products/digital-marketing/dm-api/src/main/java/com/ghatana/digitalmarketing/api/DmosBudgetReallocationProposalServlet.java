@@ -63,7 +63,7 @@ public final class DmosBudgetReallocationProposalServlet {
     }
 
     public DmosBudgetReallocationProposalServlet(BudgetReallocationProposalService service, Eventloop eventloop) {
-        this(service, eventloop, DmosMetricsCollector.disabled(), DmosTelemetry.disabled(), new DmosHttpContextFactory(false, null));
+        this(service, eventloop, DmosMetricsCollector.disabled(), DmosTelemetry.disabled(), DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public AsyncServlet getServlet() {

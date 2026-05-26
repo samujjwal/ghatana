@@ -2,13 +2,13 @@
   "schemaVersion": "1.0.0",
   "productId": "phr",
   "evidenceType": "fhir-golden-fixture-coverage",
-  "generatedAt": "2026-05-24T08:35:00.000Z",
-  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "generatedAt": "2026-05-26T03:22:00.000Z",
+  "commitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
   "testSuite": "FhirGoldenFixturesTest",
   "fhirVersion": "R4",
   "coverage": {
-    "totalFixtures": 8,
-    "validatedFixtures": 8,
+    "totalFixtures": 9,
+    "validatedFixtures": 9,
     "coveragePercentage": 100
   },
   "fixtures": [
@@ -62,6 +62,13 @@
       "keyFields": ["status", "intent", "category", "subject", "performer", "reasonCode"]
     },
     {
+      "resourceType": "DiagnosticReport",
+      "fixtureFile": "diagnostic-report-golden.json",
+      "status": "validated",
+      "testsPassed": 6,
+      "keyFields": ["status", "category", "code", "subject", "result", "performer", "conclusion"]
+    },
+    {
       "resourceType": "DocumentReference",
       "fixtureFile": "document-reference-golden.json",
       "status": "validated",
@@ -70,8 +77,8 @@
     }
   ],
   "summary": {
-    "totalTests": 55,
-    "passed": 55,
+    "totalTests": 61,
+    "passed": 61,
     "failed": 0,
     "passRate": 1.0
   },

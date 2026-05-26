@@ -381,6 +381,51 @@ routes:
     lifecycle: boundary
     servlet: null
 
+  - path: /v1/workspaces/:workspaceId/next-best-action-recommendations
+    method: GET
+    capability: dmos.ai_optimization
+    actions:
+      - view-recommendations
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosNextBestActionRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/next-best-action-recommendations
+    method: POST
+    capability: dmos.ai_optimization
+    actions:
+      - approve-optimizations
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosNextBestActionRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/next-best-action-recommendations/:recId
+    method: GET
+    capability: dmos.ai_optimization
+    actions:
+      - view-recommendations
+    minimumRole: brand-manager
+    lifecycle: stable
+    servlet: DmosNextBestActionRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/next-best-action-recommendations/:recId/approve
+    method: POST
+    capability: dmos.ai_optimization
+    actions:
+      - approve-optimizations
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosNextBestActionRecommendationServlet
+
+  - path: /v1/workspaces/:workspaceId/next-best-action-recommendations/:recId/reject
+    method: POST
+    capability: dmos.ai_optimization
+    actions:
+      - approve-optimizations
+    minimumRole: marketing-director
+    lifecycle: stable
+    servlet: DmosNextBestActionRecommendationServlet
+
   - path: /v1/workspaces/:workspaceId/self-marketing-funnel
     method: GET
     capability: dmos.self_marketing

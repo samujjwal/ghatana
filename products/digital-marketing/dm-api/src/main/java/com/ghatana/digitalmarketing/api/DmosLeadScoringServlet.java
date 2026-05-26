@@ -71,7 +71,7 @@ public final class DmosLeadScoringServlet {
     }
 
     public DmosLeadScoringServlet(LeadScoringService leadScoringService, Eventloop eventloop) {
-        this(leadScoringService, eventloop, new DmosHttpContextFactory(false, null));
+        this(leadScoringService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     /**

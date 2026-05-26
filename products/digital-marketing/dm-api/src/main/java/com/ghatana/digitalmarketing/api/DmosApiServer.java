@@ -215,6 +215,10 @@ public final class DmosApiServer extends Launcher {
         return normalized;
     }
 
+    static boolean isStrictAuthEnvironment(String environment) {
+        return PRODUCTION.equals(environment) || STAGING.equals(environment);
+    }
+
     private String resolvePiiHmacKey() {
         String key = System.getenv("DMOS_PII_HMAC_KEY");
         if (key != null && !key.isBlank()) {
@@ -1116,16 +1120,16 @@ public final class DmosApiServer extends Launcher {
             LOG.info("IdempotencyMiddleware instantiated for PostgreSQL");
         }
 
-        // P1-001: Instantiate DmosHttpContextFactory with fail-closed security
-        boolean productionMode = environment.equals(PRODUCTION);
+        // P1-001 / DMOS-013 / DMOS-014: staging and production use strict server-derived identity.
+        boolean strictAuthMode = isStrictAuthEnvironment(environment);
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.IdentityProvider identityProvider = null;
-        if (productionMode) {
+        if (strictAuthMode) {
             identityProvider = DmosJwtIdentityProvider.fromEnvironment();
         }
         com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory httpContextFactory =
-            new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(productionMode, identityProvider);
+            new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(strictAuthMode, identityProvider);
         register(com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.class, httpContextFactory);
-        LOG.info("DmosHttpContextFactory instantiated with productionMode={}", productionMode);
+        LOG.info("DmosHttpContextFactory instantiated with strictAuthMode={}", strictAuthMode);
 
         WorkspaceService workspaceService = get(WorkspaceService.class);
         register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop, httpContextFactory));

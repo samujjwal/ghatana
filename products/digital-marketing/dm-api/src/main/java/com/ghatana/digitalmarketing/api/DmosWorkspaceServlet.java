@@ -75,7 +75,7 @@ public final class DmosWorkspaceServlet {
     }
 
     public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop) {
-        this(workspaceService, eventloop, new DmosHttpContextFactory(false, null));
+        this(workspaceService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public AsyncServlet getServlet() {

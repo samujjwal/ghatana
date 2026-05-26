@@ -117,7 +117,11 @@ public final class DmosOpenApiGenerator {
         addBudgetPaths(paths);
         addApprovalPaths(paths);
         addAiActionLogPaths(paths);
+        addNextBestActionPaths(paths);
         addWorkspacePaths(paths);
+        addDashboardPaths(paths);
+        addConnectorReadinessPaths(paths);
+        addReleaseReadinessPaths(paths);
         addCapabilitiesPaths(paths);
         addAdCopyPaths(paths);
         addCompetitorResearchPaths(paths);
@@ -140,21 +144,43 @@ public final class DmosOpenApiGenerator {
 
     private static void addPath(Map<String, Object> paths, String path, String method, 
                                String summary, String description) {
+        addPath(paths, path, method, summary, description, standardResponses());
+    }
+
+    private static void addPath(
+        Map<String, Object> paths,
+        String path,
+        String method,
+        String summary,
+        String description,
+        Map<String, Object> responses
+    ) {
         Map<String, Object> pathItem = pathItem(paths, path);
         
         Map<String, Object> operation = new LinkedHashMap<>();
         operation.put("summary", summary);
         operation.put("description", description);
-        operation.put("responses", Map.of(
+        operation.put("responses", responses);
+        pathItem.put(method.toLowerCase(), operation);
+        paths.put(path, pathItem);
+    }
+
+    private static Map<String, Object> standardResponses() {
+        return Map.of(
             "200", Map.of("description", "Success"),
             "400", Map.of("description", "Bad Request"),
             "401", Map.of("description", "Unauthorized"),
             "403", Map.of("description", "Forbidden"),
             "404", Map.of("description", "Not Found"),
             "500", Map.of("description", "Internal Server Error")
-        ));
-        pathItem.put(method.toLowerCase(), operation);
-        paths.put(path, pathItem);
+        );
+    }
+
+    private static Map<String, Object> healthResponses() {
+        return Map.of(
+            "200", Map.of("description", "Success"),
+            "503", Map.of("description", "Service Unavailable")
+        );
     }
 
     private static Map<String, Object> pathItem(Map<String, Object> paths, String path) {
@@ -178,6 +204,12 @@ public final class DmosOpenApiGenerator {
             "Create campaign", "Create a new campaign in the workspace");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}", "GET", 
             "Get campaign", "Retrieve a specific campaign by ID");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/transition", "POST",
+            "Transition campaign", "Apply a governed campaign lifecycle transition");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/request-approval", "POST",
+            "Request campaign approval", "Move a draft campaign into pending approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/duplicate", "POST",
+            "Duplicate campaign", "Create a copy of an existing campaign");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/launch", "POST", 
             "Launch campaign", "Launch a campaign");
         addPath(paths, "/v1/workspaces/{workspaceId}/campaigns/{id}/pause", "POST", 
@@ -201,6 +233,14 @@ public final class DmosOpenApiGenerator {
             "Generate strategy", "Generate an AI-powered marketing strategy");
         addPath(paths, "/v1/workspaces/{workspaceId}/strategies/{id}/submit", "POST", 
             "Submit strategy for approval", "Submit a strategy for approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/strategy", "GET",
+            "Get strategy", "Retrieve the current marketing strategy for a workspace");
+        addPath(paths, "/v1/workspaces/{workspaceId}/strategy", "POST",
+            "Generate strategy", "Generate an AI-powered marketing strategy");
+        addPath(paths, "/v1/workspaces/{workspaceId}/strategy/{strategyId}/submit", "POST",
+            "Submit strategy for approval", "Submit a strategy for approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/strategy/{strategyId}/approve", "POST",
+            "Approve strategy", "Approve a submitted marketing strategy");
     }
 
     private static void addBudgetPaths(Map<String, Object> paths) {
@@ -209,6 +249,12 @@ public final class DmosOpenApiGenerator {
             "List budget recommendations", "List budget recommendations for a workspace");
         addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation", "POST",
             "Generate budget recommendation", "Generate AI-powered budget recommendations");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budget", "GET",
+            "Get budget", "Retrieve budget recommendation state for a workspace");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budgets", "GET",
+            "List budgets", "List budget recommendations");
+        addPath(paths, "/v1/workspaces/{workspaceId}/budgets", "POST",
+            "Generate budget", "Generate AI-powered budget");
         addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/submit", "POST",
             "Submit budget for approval", "Submit a budget for approval");
         addPath(paths, "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/approve", "POST",
@@ -220,6 +266,8 @@ public final class DmosOpenApiGenerator {
             "List approvals", "List pending approvals for a workspace");
         addPath(paths, "/v1/workspaces/{workspaceId}/approvals/{id}", "GET", 
             "Get approval", "Retrieve a specific approval");
+        addPath(paths, "/v1/workspaces/{workspaceId}/approvals/{id}/decide", "POST",
+            "Decide approval", "Approve or reject a pending approval request");
         addPath(paths, "/v1/workspaces/{workspaceId}/approvals/{id}/approve", "POST", 
             "Approve", "Approve a pending approval");
         addPath(paths, "/v1/workspaces/{workspaceId}/approvals/{id}/reject", "POST", 
@@ -233,11 +281,39 @@ public final class DmosOpenApiGenerator {
             "Get AI action", "Retrieve a specific AI action");
     }
 
+    private static void addNextBestActionPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/next-best-action-recommendations", "GET",
+            "List next-best-action recommendations", "List AI-generated recommendations for a workspace");
+        addPath(paths, "/v1/workspaces/{workspaceId}/next-best-action-recommendations", "POST",
+            "Publish next-best-action recommendation", "Publish a governed AI next-best-action recommendation");
+        addPath(paths, "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}", "GET",
+            "Get next-best-action recommendation", "Retrieve a specific next-best-action recommendation");
+        addPath(paths, "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}/approve", "POST",
+            "Approve next-best-action recommendation", "Approve and optionally execute a next-best-action recommendation");
+        addPath(paths, "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}/reject", "POST",
+            "Reject next-best-action recommendation", "Reject a next-best-action recommendation with an audit reason");
+    }
+
     private static void addWorkspacePaths(Map<String, Object> paths) {
         addPath(paths, "/v1/workspaces", "GET", 
             "List workspaces", "List workspaces accessible to the user");
         addPath(paths, "/v1/workspaces/{workspaceId}", "GET", 
             "Get workspace", "Retrieve a specific workspace");
+    }
+
+    private static void addDashboardPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/dashboard", "GET",
+            "Get dashboard summary", "Retrieve runtime dashboard summary for a workspace");
+    }
+
+    private static void addConnectorReadinessPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/connectors/google-ads/{connectorId}/readiness", "GET",
+            "Get Google Ads connector readiness", "Retrieve Google Ads connector runtime readiness");
+    }
+
+    private static void addReleaseReadinessPaths(Map<String, Object> paths) {
+        addPath(paths, "/v1/workspaces/{workspaceId}/release-readiness", "GET",
+            "Get release readiness", "Retrieve DMOS release evidence freshness and blockers");
     }
 
     private static void addCapabilitiesPaths(Map<String, Object> paths) {
@@ -311,7 +387,7 @@ public final class DmosOpenApiGenerator {
 
     private static void addHealthPaths(Map<String, Object> paths) {
         addPath(paths, "/health", "GET", 
-            "Health check", "Check API health status");
+            "Health check", "Check API health status", healthResponses());
     }
 
     private static void addPublicIntakePaths(Map<String, Object> paths) {

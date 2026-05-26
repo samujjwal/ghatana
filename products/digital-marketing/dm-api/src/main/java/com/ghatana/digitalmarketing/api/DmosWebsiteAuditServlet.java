@@ -64,7 +64,7 @@ public final class DmosWebsiteAuditServlet {
     }
 
     public DmosWebsiteAuditServlet(WebsiteAuditService auditService, Eventloop eventloop) {
-        this(auditService, eventloop, new DmosHttpContextFactory(false, null));
+        this(auditService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     /**

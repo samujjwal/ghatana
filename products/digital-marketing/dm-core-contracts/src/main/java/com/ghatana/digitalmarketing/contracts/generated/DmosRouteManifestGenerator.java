@@ -413,6 +413,9 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/budget")) {
             return "/workspaces/:workspaceId/budget";
         }
+        if (path.contains("/next-best-action-recommendations")) {
+            return "/workspaces/:workspaceId/ai-optimization";
+        }
         if (path.contains("/release-readiness")) {
             return "/workspaces/:workspaceId/release-readiness";
         }
@@ -427,6 +430,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "CampaignsPage";
         if (path.contains("/strategy")) return "StrategyPage";
         if (path.contains("/budget")) return "BudgetPage";
+        if (path.contains("/next-best-action-recommendations")) return "AiOptimizationPage";
         if (path.contains("/release-readiness")) return "DmosReleaseCockpit";
         if (path.contains("/funnel-analytics")) return "FunnelAnalyticsPage";
         if (path.contains("/attribution")) return "AttributionPage";
@@ -449,6 +453,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Campaigns";
         if (path.contains("/strategy")) return "Strategy";
         if (path.contains("/budget")) return "Budget";
+        if (path.contains("/next-best-action-recommendations")) return "AI Optimization";
         if (path.contains("/release-readiness")) return "Release Cockpit";
         if (path.contains("/funnel-analytics")) return "Funnel Analytics";
         if (path.contains("/attribution")) return "Attribution";
@@ -470,6 +475,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Campaign planning and orchestration.";
         if (path.contains("/strategy")) return "Strategy generation, review, and approvals.";
         if (path.contains("/budget")) return "Budget recommendations and approval decisions.";
+        if (path.contains("/next-best-action-recommendations")) return "AI-driven next-best-action recommendations, anomaly detection, and budget optimization.";
         if (path.contains("/release-readiness")) return "Evidence freshness, runtime proof, rollback, and launch blockers.";
         if (path.contains("/funnel-analytics")) return "Full-funnel conversion analytics and stage drop-off reporting.";
         if (path.contains("/attribution")) return "Multi-touch attribution models and channel credit distribution.";
@@ -490,6 +496,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "Execution";
         if (path.contains("/strategy")) return "Execution";
         if (path.contains("/budget")) return "Execution";
+        if (path.contains("/next-best-action-recommendations")) return "Intelligence";
         if (path.contains("/release-readiness")) return "Governance";
         if (path.contains("/funnel-analytics")) return "Reporting";
         if (path.contains("/attribution")) return "Reporting";
@@ -511,6 +518,7 @@ public final class DmosRouteManifestGenerator {
         if (path.contains("/campaigns")) return "megaphone";
         if (path.contains("/strategy")) return "target";
         if (path.contains("/budget")) return "wallet";
+        if (path.contains("/next-best-action-recommendations")) return "sparkles";
         if (path.contains("/release-readiness")) return "shield-check";
         if (path.contains("/funnel-analytics")) return "chart-bar";
         if (path.contains("/attribution")) return "share-nodes";

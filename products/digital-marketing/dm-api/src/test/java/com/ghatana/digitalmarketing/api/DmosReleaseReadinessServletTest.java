@@ -104,7 +104,7 @@ class DmosReleaseReadinessServletTest extends EventloopTestBase {
 
         servlet = new DmosReleaseReadinessServlet(
             Eventloop.create(),
-            new DmosHttpContextFactory(false, null),
+            DmosHttpContextFactory.testModeWithAnonymousFallback(),
             workspaceRoot
         ).getServlet();
     }

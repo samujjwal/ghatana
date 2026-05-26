@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-26T00:43:46.204Z",
+  "generatedAt": "2026-05-26T03:24:25.667Z",
   "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
   "fhirVersion": "R4",
   "validationEnabled": true,
@@ -25,9 +25,9 @@
     "generatedBy": "scripts/check-phr-fhir-validation.mjs",
     "command": "node scripts/check-phr-fhir-validation.mjs",
     "source": "scripts/check-phr-fhir-validation.mjs",
-    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "commit": "af0793843502db5f34c0ba7f00043261b3c86982",
+    "sourceCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+    "targetCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
     "targetEnvironment": "staging"
   },
   "runtimeResourcesSupported": [

@@ -89,7 +89,7 @@ public final class DmosBudgetRecommendationServlet {
             eventloop,
             DmosMetricsCollector.disabled(),
             DmosTelemetry.disabled(),
-            new DmosHttpContextFactory(false, null)
+            DmosHttpContextFactory.testModeWithAnonymousFallback()
         );
     }
 
