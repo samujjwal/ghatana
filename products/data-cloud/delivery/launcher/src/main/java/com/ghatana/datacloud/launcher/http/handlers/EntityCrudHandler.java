@@ -1162,7 +1162,7 @@ public class EntityCrudHandler {
                 }
 
                 DestructiveActionToken.TokenValidationResult tokenResult =
-                    validateBatchDeleteToken(confirmationToken, tenantId, collection);
+                    validateBatchDeleteToken(confirmationToken, tenantId, collection, ids.size());
                 if (!tokenResult.valid()) {
                     log.warn("[batch-delete] REJECTED invalid token: {} collection={} tenant={}",
                         tokenResult.reason(), collection, tenantId);
@@ -1243,9 +1243,9 @@ public class EntityCrudHandler {
 
     private static String buildBatchDeleteToken(String tenantId, String collection, int count, long issuedAtMs) {
         String scope = "batch-delete";
-        // DC-ENTITY-001: Count is not included in HMAC signature to allow flexible batch sizes
-        // Token is scoped to tenant+collection+timestamp only
-        String payload = scope + ":" + tenantId + ":" + collection + ":" + issuedAtMs;
+        // DC-ENTITY-001: Include count in HMAC signature to bind token to exact batch size
+        // Token is scoped to tenant+collection+count+timestamp for security
+        String payload = scope + ":" + tenantId + ":" + collection + ":" + count + ":" + issuedAtMs;
         String hmac = DestructiveActionToken.hmacSha256Hex(
             DestructiveActionToken.resolveSecret(DestructiveActionToken.runtimeEnvironment()), payload);
         String raw = issuedAtMs + "." + hmac;
@@ -1254,7 +1254,7 @@ public class EntityCrudHandler {
     }
 
     private static DestructiveActionToken.TokenValidationResult validateBatchDeleteToken(
-            String token, String tenantId, String collection) {
+            String token, String tenantId, String collection, int count) {
         try {
             byte[] decoded = java.util.Base64.getUrlDecoder().decode(token);
             String raw = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
@@ -1274,8 +1274,8 @@ public class EntityCrudHandler {
                 return DestructiveActionToken.TokenValidationResult.failure("token issued in the future");
             }
 
-            // We don't validate count in the token; it is only loosely scoped to tenant+collection
-            String payload = "batch-delete:" + tenantId + ":" + collection + ":" + issuedAtMs;
+            // DC-ENTITY-001: Validate count in the token to bind to exact batch size
+            String payload = "batch-delete:" + tenantId + ":" + collection + ":" + count + ":" + issuedAtMs;
             String expectedHmac = DestructiveActionToken.hmacSha256Hex(
                 DestructiveActionToken.resolveSecret(DestructiveActionToken.runtimeEnvironment()), payload);
             if (!DestructiveActionToken.constantTimeEquals(expectedHmac, providedHmac)) {

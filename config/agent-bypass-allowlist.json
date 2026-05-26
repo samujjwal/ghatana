@@ -31,10 +31,13 @@
     "legacyExceptions": []
   },
   "governance": {
-    "maxExceptionCount": 5,
+    "maxExceptionCount": 1,
     "requireJustification": true,
     "requireOwner": true,
     "requireReviewDate": true,
-    "autoExpireAfterDays": 90
+    "autoExpireAfterDays": 30,
+    "requireSecurityReview": true,
+    "requireComplianceSignoff": true,
+    "enforceReviewSchedule": true
   }
 }

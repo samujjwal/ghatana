@@ -109,6 +109,182 @@ class GovernedDispatchIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
+    @DisplayName("Governed dispatch security scenarios")
+    class GovernedDispatchSecurityScenarios {
+
+        @Test
+        @DisplayName("governed dispatch rejects agent without release record")
+        void governedDispatch_rejectsAgentWithoutReleaseRecord() {
+            // Given - no release record exists
+            TestAgent agent = new TestAgent("orphan-agent");
+            AgentDispatcher delegate = (agentId, input, ctx) ->
+                Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .status(AgentResultStatus.SUCCESS)
+                    .agentId(agentId)
+                    .confidence(0.85)
+                    .processingTime(Duration.ofMillis(10))
+                    .output(Map.of("result", "success"))
+                    .build());
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
+
+            // When - dispatch without release
+            AgentContext ctx = AgentContext.builder()
+                .turnId("turn-1")
+                .agentId("orphan-agent")
+                .tenantId("tenant-x")
+                .memoryStore(memoryStore)
+                .build();
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("orphan-agent", "input", ctx));
+
+            // Then - dispatch is denied
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).contains("release");
+        }
+
+        @Test
+        @DisplayName("governed dispatch rejects expired release")
+        void governedDispatch_rejectsExpiredRelease() {
+            // Given - create expired release
+            AgentRelease expiredRelease = new AgentReleaseBuilder()
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .releaseVersion("1.0.0")
+                .state(AgentReleaseState.EXPIRED)
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .evaluationPackId("ep-test")
+                .memoryContractId("mc-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
+                .build();
+            runPromise(() -> releaseRepository.save(expiredRelease));
+
+            TestAgent agent = new TestAgent("test-agent");
+            AgentDispatcher delegate = (agentId, input, ctx) ->
+                Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .status(AgentResultStatus.SUCCESS)
+                    .agentId(agentId)
+                    .confidence(0.85)
+                    .processingTime(Duration.ofMillis(10))
+                    .output(Map.of("result", "success"))
+                    .build());
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
+
+            AgentContext ctx = AgentContext.builder()
+                .turnId("turn-1")
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .memoryStore(memoryStore)
+                .build();
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            // Then - dispatch is denied
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).contains("EXPIRED");
+        }
+
+        @Test
+        @DisplayName("governed dispatch enforces permitted purposes")
+        void governedDispatch_enforcesPermittedPurposes() {
+            // Given - release with restricted purposes
+            AgentRelease restrictedRelease = new AgentReleaseBuilder()
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .releaseVersion("1.0.0")
+                .state(AgentReleaseState.ACTIVE)
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .evaluationPackId("ep-test")
+                .memoryContractId("mc-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
+                .build();
+            runPromise(() -> releaseRepository.save(restrictedRelease));
+
+            // When - attempt dispatch with disallowed purpose
+            AgentContext ctx = AgentContext.builder()
+                .turnId("turn-1")
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .memoryStore(memoryStore)
+                .purpose("agent.action") // Not in permitted purposes
+                .build();
+
+            TestAgent agent = new TestAgent("test-agent");
+            AgentDispatcher delegate = (agentId, input, ctx) ->
+                Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .status(AgentResultStatus.SUCCESS)
+                    .agentId(agentId)
+                    .confidence(0.85)
+                    .processingTime(Duration.ofMillis(10))
+                    .output(Map.of("result", "success"))
+                    .build());
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            // Then - dispatch is denied due to purpose violation
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).contains("purpose");
+        }
+
+        @Test
+        @DisplayName("governed dispatch enforces capability maturity profile")
+        void governedDispatch_enforcesCapabilityMaturityProfile() {
+            // Given - release with L1 maturity (low maturity)
+            AgentRelease lowMaturityRelease = new AgentReleaseBuilder()
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .releaseVersion("1.0.0")
+                .state(AgentReleaseState.ACTIVE)
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .evaluationPackId("ep-test")
+                .memoryContractId("mc-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
+                .build();
+            runPromise(() -> releaseRepository.save(lowMaturityRelease));
+
+            // When - attempt high-risk operation
+            AgentContext ctx = AgentContext.builder()
+                .turnId("turn-1")
+                .agentId("test-agent")
+                .tenantId("tenant-x")
+                .memoryStore(memoryStore)
+                .riskLevel("HIGH")
+                .build();
+
+            TestAgent agent = new TestAgent("test-agent");
+            AgentDispatcher delegate = (agentId, input, ctx) ->
+                Promise.of(AgentResult.<Map<String, Object>>builder()
+                    .status(AgentResultStatus.SUCCESS)
+                    .agentId(agentId)
+                    .confidence(0.85)
+                    .processingTime(Duration.ofMillis(10))
+                    .output(Map.of("result", "success"))
+                    .build());
+
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher(
+                delegate, invariantMonitor, traceLedger, modeSelector, releaseRepository);
+
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx));
+
+            // Then - dispatch is denied due to maturity mismatch
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED);
+            assertThat(result.getExplanation()).contains("maturity");
+        }
+    }
+
+    @Nested
     @DisplayName("Full governed dispatch flow")
     class FullGovernedDispatchFlow {
 
