@@ -1,0 +1,94 @@
+/**
+ * Nepali locale strings for the PHR mobile application.
+ *
+ * All values are Devanagari translations. Keys must match the English locale exactly.
+ */
+import type { EnLocale } from './en';
+
+export const ne: EnLocale = {
+  tabs: {
+    home: 'गृह',
+    records: 'अभिलेख',
+    consents: 'सहमति',
+    alerts: 'सूचनाहरू',
+    emergency: 'आपतकाल',
+    settings: 'सेटिङ',
+  },
+  dashboard: {
+    title: 'मेरो स्वास्थ्य ड्यासबोर्ड',
+    loading: 'ड्यासबोर्ड लोड हुँदैछ…',
+    error: 'ड्यासबोर्ड लोड गर्न असफल भयो। पुनः प्रयास गर्नुहोस्।',
+    welcome: 'स्वागत छ, {{name}}',
+    lastSync: 'अन्तिम सिंक: {{time}}',
+    noData: 'कुनै स्वास्थ्य डेटा उपलब्ध छैन।',
+  },
+  records: {
+    title: 'स्वास्थ्य अभिलेखहरू',
+    loading: 'अभिलेख लोड हुँदैछ…',
+    error: 'अभिलेख लोड गर्न असफल भयो।',
+    noRecords: 'कुनै अभिलेख फेला परेन।',
+    detail: 'अभिलेख विवरण',
+    type: 'प्रकार',
+    date: 'मिति',
+    status: 'स्थिति',
+    value: 'मान',
+    unit: 'एकाइ',
+  },
+  consents: {
+    title: 'मेरा सहमतिहरू',
+    loading: 'सहमति लोड हुँदैछ…',
+    error: 'सहमति लोड गर्न असफल भयो।',
+    noConsents: 'कुनै सक्रिय सहमति छैन।',
+    granted: 'अनुमति दिइएको',
+    revoked: 'फिर्ता लिइएको',
+    expires: 'म्याद: {{date}}',
+  },
+  alerts: {
+    title: 'सूचनाहरू',
+    loading: 'सूचनाहरू लोड हुँदैछ…',
+    error: 'सूचनाहरू लोड गर्न असफल भयो।',
+    noAlerts: 'कुनै सूचना छैन।',
+    markRead: 'पढिएको चिन्ह लगाउनुहोस्',
+  },
+  emergency: {
+    title: 'आपतकालीन पहुँच',
+    reasonLabel: 'पहुँचको कारण',
+    reasonPlaceholder: 'कारण लेख्नुहोस् (आवश्यक)',
+    requestButton: 'आपतकालीन पहुँच अनुरोध गर्नुहोस्',
+    requesting: 'अनुरोध गर्दै…',
+    authorized: 'आपतकालीन पहुँच अनुमति दिइयो।',
+    denied: 'आपतकालीन पहुँच अस्वीकार गरियो।',
+    error: 'आपतकालीन पहुँच अनुरोध गर्न असफल भयो।',
+    biometricPrompt: 'आपतकालीन पहुँच पुष्टि गर्न प्रमाणिकरण गर्नुहोस्',
+  },
+  settings: {
+    title: 'सेटिङ',
+    logoutButton: 'साइन आउट',
+    logoutConfirmTitle: 'साइन आउट',
+    logoutConfirmMessage: 'के तपाईं साइन आउट गर्न चाहनुहुन्छ?',
+    logoutConfirmOk: 'साइन आउट',
+    logoutConfirmCancel: 'रद्द गर्नुहोस्',
+    languageLabel: 'भाषा',
+    languageEnglish: 'अंग्रेजी',
+    languageNepali: 'नेपाली',
+    version: 'संस्करण {{version}}',
+  },
+  error: {
+    generic: 'त्रुटि भयो। पुनः प्रयास गर्नुहोस्।',
+    network: 'नेटवर्क त्रुटि। आफ्नो जडान जाँच गर्नुहोस्।',
+    session: 'तपाईंको सत्र समाप्त भयो। पुनः साइन इन गर्नुहोस्।',
+    unauthorized: 'यो कार्य गर्न तपाईंलाई अनुमति छैन।',
+    notFound: 'अनुरोध गरिएको स्रोत फेला परेन।',
+  },
+  common: {
+    retry: 'पुनः प्रयास गर्नुहोस्',
+    cancel: 'रद्द गर्नुहोस्',
+    confirm: 'पुष्टि गर्नुहोस्',
+    back: 'पछाडि',
+    save: 'सुरक्षित गर्नुहोस्',
+    loading: 'लोड हुँदैछ…',
+    ok: 'ठीक छ',
+    yes: 'हो',
+    no: 'होइन',
+  },
+} as const;

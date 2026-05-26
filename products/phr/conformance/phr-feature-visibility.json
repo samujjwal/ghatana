@@ -1,0 +1,144 @@
+{
+  "$schema": "./phr-feature-visibility.schema.json",
+  "version": "1.0.0",
+  "product": "phr",
+  "description": "Controls which PHR features are visible per role and tenant tier. All flags default to false (deny-all baseline). Set to true only when production-ready.",
+  "lastUpdated": "2026-01-01",
+  "features": {
+    "dashboard": {
+      "roles": ["patient", "caregiver", "clinician", "admin"],
+      "tiers": ["core", "clinical", "admin"],
+      "enabled": true,
+      "description": "Main health dashboard"
+    },
+    "records": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Medical records browser"
+    },
+    "consents": {
+      "roles": ["patient"],
+      "tiers": ["core"],
+      "enabled": true,
+      "description": "Consent grant management"
+    },
+    "appointments": {
+      "roles": ["patient", "caregiver"],
+      "tiers": ["core"],
+      "enabled": true,
+      "description": "Appointment booking and management"
+    },
+    "labs": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Lab results viewer"
+    },
+    "medications": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Medication list and adherence"
+    },
+    "immunizations": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Immunization history"
+    },
+    "documents": {
+      "roles": ["patient"],
+      "tiers": ["core"],
+      "enabled": true,
+      "description": "Document upload and OCR review"
+    },
+    "profile": {
+      "roles": ["patient"],
+      "tiers": ["core"],
+      "enabled": true,
+      "description": "Patient demographic profile"
+    },
+    "timeline": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Chronological clinical timeline"
+    },
+    "conditions": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "Active and resolved diagnoses"
+    },
+    "observations": {
+      "roles": ["patient", "caregiver", "clinician"],
+      "tiers": ["core", "clinical"],
+      "enabled": true,
+      "description": "FHIR Observation viewer (vitals, BMI, glucose)"
+    },
+    "emergency": {
+      "roles": ["clinician", "admin"],
+      "tiers": ["clinical", "admin"],
+      "enabled": true,
+      "description": "Emergency break-glass access and review"
+    },
+    "audit": {
+      "roles": ["admin"],
+      "tiers": ["admin"],
+      "enabled": true,
+      "description": "PHI access audit trail"
+    },
+    "notifications": {
+      "roles": ["patient"],
+      "tiers": ["core"],
+      "enabled": true,
+      "description": "Push notification preferences"
+    },
+    "releaseReadiness": {
+      "roles": ["admin"],
+      "tiers": ["admin"],
+      "enabled": true,
+      "description": "System release readiness dashboard"
+    },
+    "providerDashboard": {
+      "roles": ["clinician"],
+      "tiers": ["clinical"],
+      "enabled": true,
+      "description": "Provider patient search and summary"
+    },
+    "caregiverDependents": {
+      "roles": ["caregiver"],
+      "tiers": ["caregiver"],
+      "enabled": true,
+      "description": "Caregiver delegated dependents view"
+    },
+    "fchvDashboard": {
+      "roles": ["fchv"],
+      "tiers": ["community"],
+      "enabled": true,
+      "description": "FCHV community health volunteer view"
+    },
+    "insurance": {
+      "roles": ["patient"],
+      "tiers": ["phase-2"],
+      "enabled": false,
+      "featureFlag": "ENABLE_INSURANCE_MODULE",
+      "description": "Insurance coverage and payments — Phase 2"
+    },
+    "referrals": {
+      "roles": ["patient", "clinician"],
+      "tiers": ["phase-2"],
+      "enabled": false,
+      "featureFlag": "ENABLE_REFERRALS_MODULE",
+      "description": "Specialist referrals and imaging — Phase 2"
+    },
+    "imaging": {
+      "roles": ["patient", "clinician"],
+      "tiers": ["phase-2"],
+      "enabled": false,
+      "featureFlag": "ENABLE_IMAGING_MODULE",
+      "description": "DICOM imaging viewer — Phase 2"
+    }
+  }
+}

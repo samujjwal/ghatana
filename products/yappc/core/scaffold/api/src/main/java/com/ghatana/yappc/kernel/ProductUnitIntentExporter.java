@@ -46,9 +46,9 @@ import java.util.UUID;
  *     .projectId("my-project")
  *     .projectName("My Digital Marketing Campaign")
  *     .targetType("kernel-product-unit")
- *     .surfaces(List.of("web-api", "frontend"))
- *     .runtimeProvider("ghatana-kernel")
- *     .lifecycleProfile("standard")
+ *     .surfaces(List.of("backend-api", "web"))
+ *     .runtimeProvider("ghatana-file-registry")
+ *     .lifecycleProfile("standard-web-api-product")
  *     .workspaceId("workspace-123")
  *     .build();
  *
@@ -102,6 +102,7 @@ public final class ProductUnitIntentExporter {
         private final List<String> surfaces;
         private final String runtimeProvider;
         private final String lifecycleProfile;
+        private final String tenantId;
         private final String workspaceId;
         private final String sourcePhase;
         private final Map<String, Object> metadata;
@@ -113,6 +114,7 @@ public final class ProductUnitIntentExporter {
             this.surfaces = builder.surfaces;
             this.runtimeProvider = builder.runtimeProvider;
             this.lifecycleProfile = builder.lifecycleProfile;
+            this.tenantId = builder.tenantId != null ? builder.tenantId : "local-dev-tenant";
             this.workspaceId = builder.workspaceId;
             this.sourcePhase = builder.sourcePhase != null ? builder.sourcePhase : "generate";
             this.metadata = builder.metadata != null ? builder.metadata : new HashMap<>();
@@ -124,6 +126,7 @@ public final class ProductUnitIntentExporter {
         public List<String> surfaces() { return surfaces; }
         public String runtimeProvider() { return runtimeProvider; }
         public String lifecycleProfile() { return lifecycleProfile; }
+        public String tenantId() { return tenantId; }
         public String workspaceId() { return workspaceId; }
         public String sourcePhase() { return sourcePhase; }
         public Map<String, Object> metadata() { return metadata; }
@@ -142,6 +145,7 @@ public final class ProductUnitIntentExporter {
             private List<String> surfaces;
             private String runtimeProvider;
             private String lifecycleProfile;
+            private String tenantId;
             private String workspaceId;
             private String sourcePhase;
             private Map<String, Object> metadata;
@@ -173,6 +177,11 @@ public final class ProductUnitIntentExporter {
 
             public Builder lifecycleProfile(String lifecycleProfile) {
                 this.lifecycleProfile = lifecycleProfile;
+                return this;
+            }
+
+            public Builder tenantId(String tenantId) {
+                this.tenantId = tenantId;
                 return this;
             }
 
@@ -291,62 +300,49 @@ public final class ProductUnitIntentExporter {
         if (!contractRegistry.isLifecycleProfileKnown(request.lifecycleProfile())) {
             throw new ExportException("Unknown lifecycle profile: " + request.lifecycleProfile());
         }
+        if (request.tenantId() == null || request.tenantId().isBlank()) {
+            throw new ExportException("tenantId is required");
+        }
         if (request.workspaceId() == null || request.workspaceId().isBlank()) {
             throw new ExportException("workspaceId is required");
         }
     }
 
     private Map<String, Object> buildIntent(Request request, String intentId) {
-        Map<String, Object> intent = new HashMap<>();
-        
-        intent.put("schemaVersion", SCHEMA_VERSION);
-        intent.put("intentId", intentId);
-        
-        // Producer information
-        Map<String, Object> producer = new HashMap<>();
-        producer.put("id", "yappc:" + request.workspaceId());
-        producer.put("type", PRODUCER_TYPE);
-        intent.put("producer", producer);
-        
-        // Target providers
-        Map<String, Object> target = new HashMap<>();
-        target.put("registryProvider", request.runtimeProvider());
-        target.put("sourceProvider", "ghatana-file-registry");
-        intent.put("target", target);
-        
-        // ProductUnit draft
-        Map<String, Object> productUnit = new HashMap<>();
-        productUnit.put("id", request.projectId());
-        productUnit.put("name", request.projectName());
-        productUnit.put("kind", inferKindFromTargetType(request.targetType()));
-        productUnit.put("surfaces", request.surfaces());
-        
-        if (request.lifecycleProfile() != null && !request.lifecycleProfile().isBlank()) {
-            productUnit.put("lifecycleProfile", request.lifecycleProfile());
-        }
-        
-        // Add provenance metadata
         Map<String, Object> metadata = new HashMap<>(request.metadata());
         metadata.put("producer", PRODUCER_TYPE);
         metadata.put("sourcePhase", request.sourcePhase());
         metadata.put("projectId", request.projectId());
         metadata.put("workspaceId", request.workspaceId());
         metadata.put("exportedAt", Instant.now().toString());
-        
-        if (!metadata.isEmpty()) {
-            productUnit.put("metadata", metadata);
-        }
-        
-        intent.put("productUnit", productUnit);
-        
-        // Requested lifecycle configuration
-        if (request.lifecycleProfile() != null && !request.lifecycleProfile().isBlank()) {
-            Map<String, Object> requestedLifecycle = new HashMap<>();
-            requestedLifecycle.put("profile", request.lifecycleProfile());
-            requestedLifecycle.put("enableExecution", true);
-            intent.put("requestedLifecycle", requestedLifecycle);
-        }
-        
+
+        ProductUnitIntentDocument document = new ProductUnitIntentDocument(
+                SCHEMA_VERSION,
+                intentId,
+                "create",
+                new ProductUnitScopeDocument(request.tenantId(), request.workspaceId(), request.projectId()),
+                new ProducerDocument(
+                        "yappc:" + request.workspaceId(),
+                        PRODUCER_TYPE,
+                        "yappc-product-unit-intent-exporter",
+                        intentId),
+                new TargetProvidersDocument(request.runtimeProvider(), "ghatana-file-registry"),
+                new ProductUnitDraftDocument(
+                        request.projectId(),
+                        request.projectName(),
+                        inferKindFromTargetType(request.targetType()),
+                        request.surfaces().stream()
+                                .map(surface -> new ProductUnitSurfaceDocument(
+                                        request.projectId() + "-" + surface,
+                                        surface,
+                                        "planned"))
+                                .toList(),
+                        request.lifecycleProfile(),
+                        Map.copyOf(metadata)),
+                new RequestedLifecycleDocument(request.lifecycleProfile(), true));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> intent = jsonMapper.convertValue(document, Map.class);
         return intent;
     }
 
@@ -361,6 +357,99 @@ public final class ProductUnitIntentExporter {
             case "shared-service" -> "shared-service";
             default -> "business-product";
         };
+    }
+
+    /**
+     * Typed ProductUnitIntent document exported to Kernel public contracts.
+     *
+     * @doc.type record
+     * @doc.purpose Schema-backed ProductUnitIntent document used before YAML or JSON serialization
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record ProductUnitIntentDocument(
+            String schemaVersion,
+            String intentId,
+            String intentType,
+            ProductUnitScopeDocument scope,
+            ProducerDocument producer,
+            TargetProvidersDocument target,
+            ProductUnitDraftDocument productUnit,
+            RequestedLifecycleDocument requestedLifecycle
+    ) {
+    }
+
+    /**
+     * ProductUnitIntent scope.
+     *
+     * @doc.type record
+     * @doc.purpose Carries tenant, workspace, and project scope for Kernel handoff
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record ProductUnitScopeDocument(String tenantId, String workspaceId, String projectId) {
+    }
+
+    /**
+     * ProductUnitIntent producer metadata.
+     *
+     * @doc.type record
+     * @doc.purpose Captures YAPPC producer identity and correlation for Kernel handoff
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record ProducerDocument(String id, String type, String name, String correlationId) {
+    }
+
+    /**
+     * ProductUnitIntent target providers.
+     *
+     * @doc.type record
+     * @doc.purpose Captures Kernel registry and source providers
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record TargetProvidersDocument(String registryProvider, String sourceProvider) {
+    }
+
+    /**
+     * ProductUnit draft document.
+     *
+     * @doc.type record
+     * @doc.purpose Captures ProductUnit draft fields using Kernel public DTO shape
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record ProductUnitDraftDocument(
+            String id,
+            String name,
+            String kind,
+            List<ProductUnitSurfaceDocument> surfaces,
+            String lifecycleProfile,
+            Map<String, Object> metadata
+    ) {
+    }
+
+    /**
+     * ProductUnit surface document.
+     *
+     * @doc.type record
+     * @doc.purpose Captures canonical Kernel ProductUnitSurface fields
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record ProductUnitSurfaceDocument(String id, String type, String implementationStatus) {
+    }
+
+    /**
+     * Requested lifecycle document.
+     *
+     * @doc.type record
+     * @doc.purpose Captures requested Kernel lifecycle profile and execution preference
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record RequestedLifecycleDocument(String profile, boolean enableExecution) {
     }
 
     /**

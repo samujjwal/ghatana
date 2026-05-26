@@ -55,7 +55,9 @@ class PhaseActionAuthorizationServiceTest {
                 .orElseThrow();
 
         assertThat(advance.enabled()).isFalse();
-        assertThat(advance.disabledReason()).contains("Policy denied");
+        assertThat(advance.label()).isEqualTo("phaseAction.advancePhase.label");
+        assertThat(advance.description()).isEqualTo("phaseAction.advancePhase.description");
+        assertThat(advance.disabledReason()).isEqualTo("phaseAction.disabled.policyDeniedTransition");
     }
 
     @Test
@@ -93,7 +95,7 @@ class PhaseActionAuthorizationServiceTest {
                 .orElseThrow();
 
         assertThat(advance.enabled()).isFalse();
-        assertThat(advance.disabledReason()).contains("entitlement");
+        assertThat(advance.disabledReason()).isEqualTo("phaseAction.disabled.phaseAdvanceEntitlementMissing");
     }
 
     @Test

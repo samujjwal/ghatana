@@ -396,7 +396,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 phaseType = com.ghatana.yappc.domain.PhaseType.INTENT;
             }
             
-            Map<String, Boolean> gateContext = buildPhaseGateContext(
+            PhaseGateValidator.PhaseGateContext gateContext = buildPhaseGateContext(
                     phase,
                     projectId,
                     workspaceId,
@@ -440,7 +440,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
         }
     }
 
-    private Map<String, Boolean> buildPhaseGateContext(
+    private PhaseGateValidator.PhaseGateContext buildPhaseGateContext(
             String phase,
             String projectId,
             String workspaceId,
@@ -453,6 +453,9 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             Set<String> enabledFlags
     ) {
         Map<String, Boolean> context = new HashMap<>();
+        Set<String> requiredArtifactIds = requiredArtifacts.stream()
+                .map(PhasePacket.RequiredArtifact::artifactId)
+                .collect(java.util.stream.Collectors.toSet());
         Set<String> completedArtifactIds = completedArtifacts.stream()
                 .map(PhasePacket.CompletedArtifact::artifactId)
                 .collect(java.util.stream.Collectors.toSet());
@@ -481,7 +484,16 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
         addBooleanConditionValues(context, projectState.get("criteriaStatus"));
         addCollectionConditions(context, projectState.get("satisfiedCriteria"), true);
         addCollectionConditions(context, projectState.get("unsatisfiedCriteria"), false);
-        return Map.copyOf(context);
+        return new PhaseGateValidator.PhaseGateContext(
+                requiredArtifactIds,
+                completedArtifactIds,
+                !evidence.isEmpty(),
+                governance.stream().noneMatch(record -> "DENIED".equalsIgnoreCase(record.outcome())),
+                healthSignals.preview().isHealthy(),
+                healthSignals.generation().isHealthy(),
+                healthSignals.runtime().isHealthy(),
+                enabledFlags,
+                context);
     }
 
     @SuppressWarnings("unchecked")
@@ -553,7 +565,19 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     tenantId,
                     e
             );
-            return List.of();
+            return List.of(new PhasePacket.PhaseEvidence(
+                    "EVIDENCE_QUERY_FAILED",
+                    "SYSTEM_DEGRADED",
+                    "Phase evidence unavailable",
+                    "Evidence service failure blocks unsafe phase advancement until runtime truth is available.",
+                    Instant.now(),
+                    Map.of(
+                            "phase", phase,
+                            "projectId", projectId,
+                            "workspaceId", workspaceId,
+                            "tenantId", tenantId,
+                            "reason", e.getClass().getSimpleName()),
+                    "evidence-query-failed:" + e.getClass().getSimpleName()));
         }
     }
 
@@ -614,7 +638,19 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                     tenantId,
                     e
             );
-            return List.of();
+            return List.of(new PhasePacket.GovernanceRecord(
+                    "GOVERNANCE_QUERY_FAILED",
+                    "POLICY_DENIAL",
+                    "DENIED",
+                    "system",
+                    Instant.now(),
+                    Map.of(
+                            "phase", phase,
+                            "projectId", projectId,
+                            "workspaceId", workspaceId,
+                            "tenantId", tenantId,
+                            "reason", e.getClass().getSimpleName()),
+                    "governance-query-failed:" + projectId + ":" + phase));
         }
     }
 
@@ -727,6 +763,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 missingPrerequisites.add("Policy approval");
             }
 
+            boolean evidenceAvailable = evidence.stream().noneMatch(this::isEvidenceDegraded);
+            if (!evidenceAvailable) {
+                missingPrerequisites.add("Phase evidence unavailable");
+            }
+
             boolean healthReady = healthSignals.preview().isHealthy()
                     && healthSignals.generation().isHealthy()
                     && healthSignals.runtime().isHealthy();
@@ -740,7 +781,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             double blockerScore = blockers.isEmpty()
                     ? 1.0
                     : blockers.stream().anyMatch(blocker -> "CRITICAL".equals(blocker.severity())) ? 0.0 : 0.5;
-            double evidenceScore = evidence.isEmpty() ? 0.0 : 1.0;
+            double evidenceScore = evidence.isEmpty() || !evidenceAvailable ? 0.0 : 1.0;
             double governanceScore = policyAllowed ? 1.0 : 0.0;
             double healthScore = healthReady ? 1.0 : 0.0;
             double completenessScore = roundScore(
@@ -752,6 +793,7 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
             );
             boolean canAdvance = missingPrerequisites.isEmpty()
                     && blockers.isEmpty()
+                    && evidenceAvailable
                     && completenessScore >= 0.90
                     && "active".equalsIgnoreCase(String.valueOf(projectState.getOrDefault("status", "active")));
             
@@ -791,6 +833,11 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     private boolean isPolicyDenied(PhasePacket.GovernanceRecord record) {
         return "DENIED".equalsIgnoreCase(record.outcome())
                 || "POLICY_DENIAL".equalsIgnoreCase(record.type());
+    }
+
+    private boolean isEvidenceDegraded(PhasePacket.PhaseEvidence evidence) {
+        return "SYSTEM_DEGRADED".equalsIgnoreCase(evidence.type())
+                || "EVIDENCE_QUERY_FAILED".equalsIgnoreCase(evidence.id());
     }
 
     /**

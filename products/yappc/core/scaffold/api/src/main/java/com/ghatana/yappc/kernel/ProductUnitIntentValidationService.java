@@ -140,6 +140,11 @@ public final class ProductUnitIntentValidationService {
         // Validate intent ID
         validateIntentId(intent, errors);
 
+        // Validate canonical Kernel intent fields
+        validateIntentType(intent, errors);
+
+        validateScope(intent, errors);
+
         // Validate producer
         validateProducer(intent, errors);
 
@@ -173,6 +178,32 @@ public final class ProductUnitIntentValidationService {
         }
     }
 
+    private void validateIntentType(Map<String, Object> intent, List<String> errors) {
+        Object intentType = intent.get("intentType");
+        if (intentType == null) {
+            errors.add("intentType is required");
+        } else if (!"create".equals(intentType)) {
+            errors.add("intentType must be 'create', got: " + intentType);
+        }
+    }
+
+    private void validateScope(Map<String, Object> intent, List<String> errors) {
+        Object scope = intent.get("scope");
+        if (scope == null) {
+            errors.add("scope is required");
+            return;
+        }
+        if (!(scope instanceof Map)) {
+            errors.add("scope must be an object");
+            return;
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> scopeMap = (Map<String, Object>) scope;
+        validateRequiredString(scopeMap, "scope.tenantId", "tenantId", errors);
+        validateRequiredString(scopeMap, "scope.workspaceId", "workspaceId", errors);
+        validateRequiredString(scopeMap, "scope.projectId", "projectId", errors);
+    }
+
     private void validateProducer(Map<String, Object> intent, List<String> errors) {
         Object producer = intent.get("producer");
         if (producer == null) {
@@ -201,6 +232,8 @@ public final class ProductUnitIntentValidationService {
         } else if (!"yappc".equals(producerType)) {
             errors.add("producer.type must be 'yappc', got: " + producerType);
         }
+
+        validateRequiredString(producerMap, "producer.correlationId", "correlationId", errors);
     }
 
     private void validateTarget(Map<String, Object> intent, List<String> errors) {
@@ -274,6 +307,8 @@ public final class ProductUnitIntentValidationService {
             errors.add("productUnit.kind is required");
         } else if (!(kind instanceof String) || ((String) kind).isBlank()) {
             errors.add("productUnit.kind must be a non-empty string");
+        } else if (!contractRegistry.isProductUnitKindKnown((String) kind)) {
+            errors.add("productUnit.kind '" + kind + "' is not a known Kernel ProductUnit kind");
         }
 
         // Validate surfaces
@@ -289,11 +324,7 @@ public final class ProductUnitIntentValidationService {
                 errors.add("productUnit.surfaces must be non-empty");
             } else {
                 for (Object surface : surfacesList) {
-                    if (!(surface instanceof String surfaceName) || surfaceName.isBlank()) {
-                        errors.add("productUnit.surfaces entries must be non-empty strings");
-                    } else if (!contractRegistry.isSurfaceKnown(surfaceName)) {
-                        errors.add("productUnit.surfaces contains unknown surface: " + surfaceName);
-                    }
+                    validateSurface(surface, errors);
                 }
             }
         }
@@ -357,6 +388,41 @@ public final class ProductUnitIntentValidationService {
                     }
                 }
             }
+        }
+    }
+
+    private void validateSurface(Object surface, List<String> errors) {
+        if (!(surface instanceof Map)) {
+            errors.add("productUnit.surfaces entries must be Kernel ProductUnitSurface objects");
+            return;
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> surfaceMap = (Map<String, Object>) surface;
+        validateRequiredString(surfaceMap, "productUnit.surfaces[].id", "id", errors);
+
+        Object type = surfaceMap.get("type");
+        if (!(type instanceof String surfaceType) || surfaceType.isBlank()) {
+            errors.add("productUnit.surfaces[].type must be a non-empty string");
+        } else if (!contractRegistry.isSurfaceKnown(surfaceType)) {
+            errors.add("productUnit.surfaces contains unknown surface type: " + surfaceType);
+        }
+
+        Object implementationStatus = surfaceMap.get("implementationStatus");
+        if (implementationStatus != null) {
+            if (!(implementationStatus instanceof String status) || status.isBlank()) {
+                errors.add("productUnit.surfaces[].implementationStatus must be a non-empty string");
+            } else if (!contractRegistry.isImplementationStatusKnown(status)) {
+                errors.add("productUnit.surfaces contains unknown implementation status: " + status);
+            }
+        }
+    }
+
+    private void validateRequiredString(Map<String, Object> map, String fieldName, String key, List<String> errors) {
+        Object value = map.get(key);
+        if (value == null) {
+            errors.add(fieldName + " is required");
+        } else if (!(value instanceof String) || ((String) value).isBlank()) {
+            errors.add(fieldName + " must be a non-empty string");
         }
     }
 

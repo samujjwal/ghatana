@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link PhasePacketServiceImpl} covering normal packet building,
@@ -89,7 +92,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                         DataCloudClient.Entity.of(PROJECT_ID, "projects",
                                 Map.of("name", "Test Project", "tier", "PRO", "status", "active")))));
 
-        lenient().when(phaseGateValidator.validate(anyString(), any(), any()))
+        lenient().when(phaseGateValidator.validate(anyString(), any(), any(PhaseGateValidator.PhaseGateContext.class)))
                 .thenReturn(Promise.of(new PhaseGateValidator.ValidationResult(
                         com.ghatana.yappc.domain.PhaseType.INTENT, true, List.of())));
 
@@ -210,7 +213,7 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     @Test
     @DisplayName("Phase blockers from gate validator appear in the returned packet")
     void phaseBlockers_presentInPacket_whenGateValidatorReturnsBlockers() {
-        lenient().when(phaseGateValidator.validate(anyString(), any(), any()))
+        lenient().when(phaseGateValidator.validate(anyString(), any(), any(PhaseGateValidator.PhaseGateContext.class)))
                 .thenReturn(Promise.of(new PhaseGateValidator.ValidationResult(
                         com.ghatana.yappc.domain.PhaseType.INTENT,
                         false,
@@ -287,6 +290,43 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Evidence provider failure returns degraded evidence and blocks advancement")
+    void evidenceProviderFailure_returnsDegradedEvidenceAndBlocksAdvance() {
+        when(platformIntegrationClient.searchEvidence(any()))
+                .thenThrow(new RuntimeException("AEP evidence unavailable"));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.evidence())
+                .anySatisfy(evidence -> {
+                    assertThat(evidence.id()).isEqualTo("EVIDENCE_QUERY_FAILED");
+                    assertThat(evidence.type()).isEqualTo("SYSTEM_DEGRADED");
+                });
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.readiness().missingPrerequisites()).contains("Phase evidence unavailable");
+    }
+
+    @Test
+    @DisplayName("Governance provider failure fails closed with policy denial")
+    void governanceProviderFailure_returnsPolicyDenial() {
+        when(platformIntegrationClient.evaluatePolicy(any()))
+                .thenThrow(new RuntimeException("policy service unavailable"));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.governance())
+                .anySatisfy(record -> {
+                    assertThat(record.id()).isEqualTo("GOVERNANCE_QUERY_FAILED");
+                    assertThat(record.type()).isEqualTo("POLICY_DENIAL");
+                    assertThat(record.outcome()).isEqualTo("DENIED");
+                });
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.readiness().missingPrerequisites()).contains("Policy approval");
+    }
+
+    @Test
     @DisplayName("Project feature flags are surfaced in packet")
     void projectFeatureFlags_areSurfacedInPacket() {
         lenient().when(dataCloudClient.findById(anyString(), anyString(), anyString()))
@@ -302,6 +342,36 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
 
         assertThat(packet.enabledPhaseFlags()).contains("custom.phase.flag", "phase.report.export");
+    }
+
+    @Test
+    @DisplayName("Phase gate validator receives typed gate context")
+    void phaseGateValidatorReceivesTypedGateContext() {
+        lenient().when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(
+                        DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                Map.of(
+                                        "name", "Test Project",
+                                        "tier", "ENTERPRISE",
+                                        "enabledPhaseFlags", List.of("custom.phase.flag"),
+                                        "status", "active",
+                                        "conditions", Map.of("intent.reviewed", true))))));
+
+        runPromise(() -> service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        ArgumentCaptor<PhaseGateValidator.PhaseGateContext> captor =
+                ArgumentCaptor.forClass(PhaseGateValidator.PhaseGateContext.class);
+        verify(phaseGateValidator).validate(anyString(), any(), captor.capture());
+
+        PhaseGateValidator.PhaseGateContext context = captor.getValue();
+        assertThat(context.enabledFlags()).contains("custom.phase.flag", "phase.advance");
+        assertThat(context.conditionVerdicts()).containsEntry("intent.reviewed", true);
+        assertThat(context.conditionVerdicts()).containsKeys(
+                "evidence.available",
+                "policyAllowed",
+                "previewHealthy",
+                "generationHealthy",
+                "runtimeHealthy");
     }
 
 }

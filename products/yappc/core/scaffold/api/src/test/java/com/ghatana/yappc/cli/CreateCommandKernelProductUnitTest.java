@@ -67,7 +67,7 @@ class CreateCommandKernelProductUnitTest {
                 "--intent-output", intentOutput.toString(),
                 "--workspace-id", "workspace-001",
                 "--project-id", "digital-marketing",
-                "--surface", "web-api",
+                "--surface", "backend-api",
                 "--lifecycle-profile", "standard-web-api-product"
         );
 
@@ -85,10 +85,10 @@ class CreateCommandKernelProductUnitTest {
                 "campaign-management",
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
-                "--runtime-provider", "ghatana-kernel",
+                "--runtime-provider", "ghatana-file-registry",
                 "--workspace-id", "workspace-001",
                 "--project-id", "campaign-management",
-                "--surface", "web-api",
+                "--surface", "backend-api",
                 "--lifecycle-profile", "standard-web-api-product"
         );
 
@@ -111,7 +111,7 @@ class CreateCommandKernelProductUnitTest {
                 "--intent-output", intentOutput.toString(),
                 "--workspace-id", "workspace-001",
                 "--project-id", "test-product",
-                "--surface", "web-api",
+                "--surface", "backend-api",
                 "--lifecycle-profile", "standard-web-api-product"
         );
 
@@ -145,7 +145,7 @@ class CreateCommandKernelProductUnitTest {
                 "--target", "kernel-product-unit",
                 "--intent-output", intentOutput.toString(),
                 "--project-id", "digital-marketing",
-                "--surface", "web-api",
+                "--surface", "backend-api",
                 "--lifecycle-profile", "standard-web-api-product"
         );
 

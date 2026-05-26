@@ -1,0 +1,232 @@
+{
+  "$schema": "./phr-route-screen-test-map.schema.json",
+  "version": "1.0.0",
+  "product": "phr",
+  "description": "Maps each PHR route to the screen component(s) and test file(s) that cover it. Used by the IA coverage check script.",
+  "lastUpdated": "2026-01-01",
+  "mappings": [
+    {
+      "route": "/",
+      "useCaseIds": [],
+      "webComponent": "src/pages/DashboardPage.tsx",
+      "testFiles": ["src/pages/__tests__/DashboardPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "partial"
+    },
+    {
+      "route": "/dashboard",
+      "useCaseIds": ["UC-01"],
+      "webComponent": "src/pages/DashboardPage.tsx",
+      "testFiles": ["src/pages/__tests__/DashboardPage.test.tsx"],
+      "mobileScreen": "src/screens/DashboardScreen.tsx",
+      "mobileTestFiles": ["src/screens/__tests__/DashboardScreen.test.tsx"],
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/records",
+      "useCaseIds": ["UC-02"],
+      "webComponent": "src/pages/RecordsPage.tsx",
+      "testFiles": ["src/pages/__tests__/RecordsPage.test.tsx"],
+      "mobileScreen": "src/screens/RecordsScreen.tsx",
+      "mobileTestFiles": ["src/screens/__tests__/RecordsScreen.test.tsx"],
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/consents",
+      "useCaseIds": ["UC-03"],
+      "webComponent": "src/pages/ConsentPage.tsx",
+      "testFiles": ["src/pages/__tests__/ConsentPage.test.tsx"],
+      "mobileScreen": "src/screens/ConsentScreen.tsx",
+      "mobileTestFiles": ["src/screens/__tests__/ConsentScreen.test.tsx"],
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/appointments",
+      "useCaseIds": ["UC-04"],
+      "webComponent": "src/pages/AppointmentsPage.tsx",
+      "testFiles": ["src/pages/__tests__/AppointmentsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/labs",
+      "useCaseIds": ["UC-05"],
+      "webComponent": "src/pages/LabResultsPage.tsx",
+      "testFiles": ["src/pages/__tests__/LabResultsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/medications",
+      "useCaseIds": ["UC-06"],
+      "webComponent": "src/pages/MedicationsPage.tsx",
+      "testFiles": ["src/pages/__tests__/MedicationsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/immunizations",
+      "useCaseIds": ["UC-07"],
+      "webComponent": "src/pages/ImmunizationsPage.tsx",
+      "testFiles": ["src/pages/__tests__/ImmunizationsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/documents",
+      "useCaseIds": ["UC-08"],
+      "webComponent": "src/pages/DocumentsPage.tsx",
+      "testFiles": ["src/pages/__tests__/DocumentsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/documents/upload",
+      "useCaseIds": ["UC-08"],
+      "webComponent": "src/pages/DocumentUploadPage.tsx",
+      "testFiles": ["src/pages/__tests__/DocumentUploadPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/documents/ocr",
+      "useCaseIds": ["UC-08"],
+      "webComponent": "src/pages/OcrReviewPage.tsx",
+      "testFiles": ["src/pages/__tests__/OcrReviewPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/profile",
+      "useCaseIds": ["UC-09"],
+      "webComponent": "src/pages/ProfilePage.tsx",
+      "testFiles": ["src/pages/__tests__/ProfilePage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/timeline",
+      "useCaseIds": ["UC-10"],
+      "webComponent": "src/pages/TimelinePage.tsx",
+      "testFiles": ["src/pages/__tests__/TimelinePage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/conditions",
+      "useCaseIds": ["UC-11"],
+      "webComponent": "src/pages/ConditionsPage.tsx",
+      "testFiles": ["src/pages/__tests__/ConditionsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/observations",
+      "useCaseIds": ["UC-12"],
+      "webComponent": "src/pages/ObservationsPage.tsx",
+      "testFiles": ["src/pages/__tests__/ObservationsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/emergency",
+      "useCaseIds": ["UC-13", "UC-14"],
+      "webComponent": "src/pages/EmergencyPage.tsx",
+      "testFiles": ["src/pages/__tests__/EmergencyPage.test.tsx"],
+      "mobileScreen": "src/screens/EmergencyAccessScreen.tsx",
+      "mobileTestFiles": ["src/screens/__tests__/EmergencyAccessScreen.test.tsx"],
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/audit",
+      "useCaseIds": ["UC-15"],
+      "webComponent": "src/pages/AuditPage.tsx",
+      "testFiles": ["src/pages/__tests__/AuditPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/caregiver/dependents",
+      "useCaseIds": ["UC-16"],
+      "webComponent": "src/pages/CaregiverDependentsPage.tsx",
+      "testFiles": ["src/pages/__tests__/CaregiverDependentsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/provider/dashboard",
+      "useCaseIds": ["UC-17"],
+      "webComponent": "src/pages/ProviderDashboardPage.tsx",
+      "testFiles": ["src/pages/__tests__/ProviderDashboardPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/provider/patients",
+      "useCaseIds": ["UC-17"],
+      "webComponent": "src/pages/ProviderPatientsPage.tsx",
+      "testFiles": ["src/pages/__tests__/ProviderPatientsPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/fchv/dashboard",
+      "useCaseIds": ["UC-18"],
+      "webComponent": "src/pages/FchvDashboardPage.tsx",
+      "testFiles": ["src/pages/__tests__/FchvDashboardPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/notifications",
+      "useCaseIds": ["UC-19"],
+      "webComponent": "src/pages/NotificationsPage.tsx",
+      "testFiles": ["src/pages/__tests__/NotificationsPage.test.tsx"],
+      "mobileScreen": "src/screens/NotificationsScreen.tsx",
+      "mobileTestFiles": ["src/screens/__tests__/NotificationsScreen.test.tsx"],
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/insurance",
+      "useCaseIds": ["UC-20"],
+      "webComponent": null,
+      "testFiles": [],
+      "mobileScreen": null,
+      "coverageStatus": "flagged",
+      "flagReason": "Phase 2 — insurance integration pending"
+    },
+    {
+      "route": "/referrals",
+      "useCaseIds": ["UC-21"],
+      "webComponent": null,
+      "testFiles": [],
+      "mobileScreen": null,
+      "coverageStatus": "flagged",
+      "flagReason": "Phase 2 — radiology integration pending"
+    },
+    {
+      "route": "/release-readiness",
+      "useCaseIds": [],
+      "webComponent": "src/pages/ReleaseReadinessPage.tsx",
+      "testFiles": ["src/pages/__tests__/ReleaseReadinessPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/forbidden",
+      "useCaseIds": [],
+      "webComponent": "src/pages/ForbiddenPage.tsx",
+      "testFiles": ["src/pages/__tests__/ForbiddenPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    },
+    {
+      "route": "/not-found",
+      "useCaseIds": [],
+      "webComponent": "src/pages/NotFoundPage.tsx",
+      "testFiles": ["src/pages/__tests__/NotFoundPage.test.tsx"],
+      "mobileScreen": null,
+      "coverageStatus": "covered"
+    }
+  ]
+}

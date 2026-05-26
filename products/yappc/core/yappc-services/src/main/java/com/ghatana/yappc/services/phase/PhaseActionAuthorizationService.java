@@ -42,18 +42,18 @@ public final class PhaseActionAuthorizationService {
         boolean policyAllowed = governance.stream().noneMatch(this::isPolicyDenied);
         String blockerReason = blockers.isEmpty()
                 ? null
-                : blockers.size() + " blocker(s) must be resolved before continuing";
+                : "phaseAction.disabled.blockersMustResolve";
 
         actions.add(new PhasePacket.PhaseAction(
                 "advance-phase",
-                "Advance to Next Phase",
-                "Move to the next lifecycle phase",
+                "phaseAction.advancePhase.label",
+                "phaseAction.advancePhase.description",
                 capabilities.canUpdate() && readiness.canAdvance() && policyAllowed && enabledFlags.contains("phase.advance"),
                 firstDisabledReason(
-                        capabilities.canUpdate() ? null : "Update capability is required",
+                        capabilities.canUpdate() ? null : "phaseAction.disabled.updateCapabilityRequired",
                         readiness.canAdvance() ? null : blockerReason,
-                        policyAllowed ? null : "Policy denied this phase transition",
-                        enabledFlags.contains("phase.advance") ? null : "Phase advance entitlement is not enabled"
+                        policyAllowed ? null : "phaseAction.disabled.policyDeniedTransition",
+                        enabledFlags.contains("phase.advance") ? null : "phaseAction.disabled.phaseAdvanceEntitlementMissing"
                 ),
                 "phase:advance",
                 Map.of("nextPhase", Optional.ofNullable(readiness.nextPhase()).orElse(""))
@@ -61,13 +61,13 @@ public final class PhaseActionAuthorizationService {
 
         actions.add(new PhasePacket.PhaseAction(
                 "configure-phase",
-                "Configure Phase",
-                "Configure phase-specific settings",
+                "phaseAction.configurePhase.label",
+                "phaseAction.configurePhase.description",
                 capabilities.canApprove() && policyAllowed && enabledFlags.contains("phase.governance.configure"),
                 firstDisabledReason(
-                        capabilities.canApprove() ? null : "Approval capability is required",
-                        policyAllowed ? null : "Policy denied governance configuration",
-                        enabledFlags.contains("phase.governance.configure") ? null : "Governance configuration entitlement is not enabled"
+                        capabilities.canApprove() ? null : "phaseAction.disabled.approvalCapabilityRequired",
+                        policyAllowed ? null : "phaseAction.disabled.policyDeniedGovernanceConfiguration",
+                        enabledFlags.contains("phase.governance.configure") ? null : "phaseAction.disabled.governanceConfigurationEntitlementMissing"
                 ),
                 "phase:configure",
                 Map.of()
@@ -78,13 +78,13 @@ public final class PhaseActionAuthorizationService {
                 && enabledFlags.contains("phase.report.export");
         actions.add(new PhasePacket.PhaseAction(
                 "export-report",
-                "Export Phase Report",
-                "Export detailed phase report",
+                "phaseAction.exportReport.label",
+                "phaseAction.exportReport.description",
                 canExportReport,
                 firstDisabledReason(
-                        tier == PhasePacket.TenantTier.ENTERPRISE ? null : "Enterprise tier is required",
-                        capabilities.canRead() ? null : "Read capability is required",
-                        enabledFlags.contains("phase.report.export") ? null : "Report export entitlement is not enabled"
+                        tier == PhasePacket.TenantTier.ENTERPRISE ? null : "phaseAction.disabled.enterpriseTierRequired",
+                        capabilities.canRead() ? null : "phaseAction.disabled.readCapabilityRequired",
+                        enabledFlags.contains("phase.report.export") ? null : "phaseAction.disabled.reportExportEntitlementMissing"
                 ),
                 "report:export",
                 Map.of()

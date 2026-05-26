@@ -34,6 +34,7 @@ class PhrRouteSupportTest {
         assertThat(ctx.tenantId()).isEqualTo("tenant-1");
         assertThat(ctx.principalId()).isEqualTo("user-42");
         assertThat(ctx.role()).isEqualTo("patient");
+        assertThat(ctx.correlationId()).isEqualTo("no-correlation-id");
     }
 
     @Test
@@ -106,19 +107,70 @@ class PhrRouteSupportTest {
     }
 
     @Test
-    @DisplayName("isPrivileged returns true for clinician and admin")
+    @DisplayName("correlationId is extracted from X-Correlation-ID header")
+    void correlationIdIsExtracted() {
+        HttpRequest request = requestWithCorrelation("tenant-1", "user-42", "patient", "corr-xyz");
+        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
+        assertThat(ctx.correlationId()).isEqualTo("corr-xyz");
+    }
+
+    @Test
+    @DisplayName("correlationId falls back to no-correlation-id when header absent")
+    void correlationIdFallbackWhenAbsent() {
+        HttpRequest request = requestWithHeaders("tenant-1", "user-42", "patient");
+        PhrRouteSupport.PhrRequestContext ctx = PhrRouteSupport.requireContext(request);
+        assertThat(ctx.correlationId()).isEqualTo("no-correlation-id");
+    }
+
+    @Test
+    @DisplayName("hasClinicalRole returns true for clinician and admin")
+    void hasClinicalRoleForClinicianAndAdmin() {
+        for (String role : new String[]{"admin", "clinician"}) {
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("hasClinicalRole returns false for patient and caregiver")
+    void hasClinicalRoleReturnsFalseForNonClinical() {
+        for (String role : new String[]{"patient", "caregiver"}) {
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            assertThat(PhrRouteSupport.hasClinicalRole(ctx)).isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("canAccessPatientRecordForRole — patient may only access own record")
+    void patientCanOnlyAccessOwnRecord() {
+        PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "patient-42", "patient", "corr");
+        assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-42")).isTrue();
+        assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "patient-99")).isFalse();
+    }
+
+    @Test
+    @DisplayName("canAccessPatientRecordForRole — clinician and admin access any record")
+    void clinicianAndAdminAccessAnyRecord() {
+        for (String role : new String[]{"clinician", "admin"}) {
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
+            assertThat(PhrRouteSupport.canAccessPatientRecordForRole(ctx, "any-patient")).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("isPrivileged returns true for clinician and admin (deprecated bridge)")
     void isPrivilegedForAdminAndClinician() {
         for (String role : new String[]{"admin", "clinician"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role);
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
             assertThat(PhrRouteSupport.isPrivileged(ctx)).isTrue();
         }
     }
 
     @Test
-    @DisplayName("isPrivileged returns false for patient and caregiver")
+    @DisplayName("isPrivileged returns false for patient and caregiver (deprecated bridge)")
     void isNotPrivilegedForPatientAndCaregiver() {
         for (String role : new String[]{"patient", "caregiver"}) {
-            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role);
+            PhrRouteSupport.PhrRequestContext ctx = new PhrRouteSupport.PhrRequestContext("t1", "p1", role, "corr");
             assertThat(PhrRouteSupport.isPrivileged(ctx)).isFalse();
         }
     }
@@ -130,12 +182,20 @@ class PhrRouteSupportTest {
      * A {@code null} value means the header is absent from the request.
      */
     private static HttpRequest requestWithHeaders(String tenantId, String principalId, String role) {
+        return requestWithCorrelation(tenantId, principalId, role, null);
+    }
+
+    private static HttpRequest requestWithCorrelation(
+            String tenantId, String principalId, String role, String correlationId) {
         HttpRequest request = mock(HttpRequest.class);
         when(request.getHeader(HttpHeaders.of("X-Tenant-ID"))).thenReturn(tenantId);
         when(request.getHeader(HttpHeaders.of("X-Tenant-Id"))).thenReturn(null);
         when(request.getHeader(HttpHeaders.of("X-Principal-ID"))).thenReturn(principalId);
         when(request.getHeader(HttpHeaders.of("X-Principal-Id"))).thenReturn(null);
         when(request.getHeader(HttpHeaders.of("X-Role"))).thenReturn(role);
+        when(request.getHeader(HttpHeaders.of("X-Correlation-ID"))).thenReturn(correlationId);
+        when(request.getHeader(HttpHeaders.of("X-Correlation-Id"))).thenReturn(null);
+        when(request.getHeader(HttpHeaders.of("X-Request-ID"))).thenReturn(null);
         return request;
     }
 }

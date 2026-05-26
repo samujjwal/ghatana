@@ -1,0 +1,220 @@
+{
+  "$schema": "./phr-usecase-baseline.schema.json",
+  "version": "1.0.0",
+  "product": "phr",
+  "lastUpdated": "2026-01-01",
+  "useCases": [
+    {
+      "id": "UC-01",
+      "title": "Patient views health dashboard",
+      "description": "A patient logs in and sees their aggregated health summary, upcoming appointments, labs, and medications.",
+      "personas": ["patient"],
+      "route": "/dashboard",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:dashboard"
+    },
+    {
+      "id": "UC-02",
+      "title": "Patient views and manages medical records",
+      "description": "A patient can browse FHIR-structured records (visits, labs, medications, immunizations) and download them.",
+      "personas": ["patient", "caregiver"],
+      "route": "/records",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:records"
+    },
+    {
+      "id": "UC-03",
+      "title": "Patient manages consent grants",
+      "description": "A patient grants, views, and revokes consent for third-party access to their PHI.",
+      "personas": ["patient"],
+      "route": "/consents",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:consents"
+    },
+    {
+      "id": "UC-04",
+      "title": "Patient books and manages appointments",
+      "description": "A patient can request appointments by specialty and preferred date and view pending/confirmed visits.",
+      "personas": ["patient"],
+      "route": "/appointments",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:appointments"
+    },
+    {
+      "id": "UC-05",
+      "title": "Patient views lab results",
+      "description": "A patient can view recent lab results with interpretation guidance, flagging attention items.",
+      "personas": ["patient", "clinician"],
+      "route": "/labs",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:labs"
+    },
+    {
+      "id": "UC-06",
+      "title": "Patient views medications",
+      "description": "A patient can view active medications with dosage, schedule, and adherence information.",
+      "personas": ["patient"],
+      "route": "/medications",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:medications"
+    },
+    {
+      "id": "UC-07",
+      "title": "Patient views immunization records",
+      "description": "A patient can view their immunization history and upcoming due vaccines.",
+      "personas": ["patient", "caregiver"],
+      "route": "/immunizations",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:immunizations"
+    },
+    {
+      "id": "UC-08",
+      "title": "Patient manages documents",
+      "description": "A patient can upload, view, and OCR-review health documents (prescriptions, discharge summaries).",
+      "personas": ["patient"],
+      "route": "/documents",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:documents"
+    },
+    {
+      "id": "UC-09",
+      "title": "Patient views and manages profile",
+      "description": "A patient can view and update their demographic information, emergency contacts, and preferred language.",
+      "personas": ["patient"],
+      "route": "/profile",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:profile"
+    },
+    {
+      "id": "UC-10",
+      "title": "Patient views clinical timeline",
+      "description": "A patient can see a chronological timeline of all their health events (visits, labs, medications, immunizations).",
+      "personas": ["patient", "caregiver"],
+      "route": "/timeline",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:timeline"
+    },
+    {
+      "id": "UC-11",
+      "title": "Patient views conditions",
+      "description": "A patient can see their active and resolved diagnoses with SNOMED codes and clinical notes.",
+      "personas": ["patient", "clinician"],
+      "route": "/conditions",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:conditions"
+    },
+    {
+      "id": "UC-12",
+      "title": "Patient views observations",
+      "description": "A patient can view FHIR Observation resources (vitals, BMI, glucose) over time.",
+      "personas": ["patient", "clinician"],
+      "route": "/observations",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:observations"
+    },
+    {
+      "id": "UC-13",
+      "title": "Clinician emergency break-glass access",
+      "description": "A clinician can request emergency access to a patient's PHI with a stated justification. The access is server-authorized, biometric-gated on mobile, and fully audited.",
+      "personas": ["clinician"],
+      "route": "/emergency",
+      "tier": "clinical",
+      "status": "implemented",
+      "evidenceRef": "route:emergency"
+    },
+    {
+      "id": "UC-14",
+      "title": "Admin reviews emergency access events",
+      "description": "An admin can review pending and overdue break-glass events and mark them as approved or flagged.",
+      "personas": ["admin"],
+      "route": "/emergency",
+      "tier": "admin",
+      "status": "implemented",
+      "evidenceRef": "route:emergency"
+    },
+    {
+      "id": "UC-15",
+      "title": "Admin views audit trail",
+      "description": "An admin can view the PHI access audit trail with filtering by principal, resource type, and date range.",
+      "personas": ["admin"],
+      "route": "/audit",
+      "tier": "admin",
+      "status": "implemented",
+      "evidenceRef": "route:audit"
+    },
+    {
+      "id": "UC-16",
+      "title": "Caregiver views delegated patient dashboard",
+      "description": "A caregiver with an active consent grant can view the patient's dashboard and records on their behalf.",
+      "personas": ["caregiver"],
+      "route": "/caregiver/dependents",
+      "tier": "caregiver",
+      "status": "implemented",
+      "evidenceRef": "route:caregiver"
+    },
+    {
+      "id": "UC-17",
+      "title": "Provider views patient summary",
+      "description": "A provider can search for patients, view summaries, and access clinical context for a consultation.",
+      "personas": ["clinician"],
+      "route": "/provider/dashboard",
+      "tier": "clinical",
+      "status": "implemented",
+      "evidenceRef": "route:provider"
+    },
+    {
+      "id": "UC-18",
+      "title": "FCHV community health volunteer dashboard",
+      "description": "An FCHV (Female Community Health Volunteer) can view assigned community members and register visits.",
+      "personas": ["fchv"],
+      "route": "/fchv/dashboard",
+      "tier": "community",
+      "status": "implemented",
+      "evidenceRef": "route:fchv"
+    },
+    {
+      "id": "UC-19",
+      "title": "Patient receives notifications and alerts",
+      "description": "A patient receives push notifications for appointment reminders, lab results, and consent expiry.",
+      "personas": ["patient"],
+      "route": "/notifications",
+      "tier": "core",
+      "status": "implemented",
+      "evidenceRef": "route:notifications"
+    },
+    {
+      "id": "UC-20",
+      "title": "Patient views insurance and payments",
+      "description": "A patient can view their insurance coverage, payment history, and pending claims.",
+      "personas": ["patient"],
+      "route": "/insurance",
+      "tier": "phase-2",
+      "status": "flagged",
+      "flagReason": "Insurance data integration pending external health fund API agreement",
+      "evidenceRef": "route:insurance"
+    },
+    {
+      "id": "UC-21",
+      "title": "Patient views referrals and imaging",
+      "description": "A patient can view specialist referrals and DICOM imaging requests with status.",
+      "personas": ["patient", "clinician"],
+      "route": "/referrals",
+      "tier": "phase-2",
+      "status": "flagged",
+      "flagReason": "DICOM viewer integration pending radiology partner agreement",
+      "evidenceRef": "route:referrals"
+    }
+  ]
+}

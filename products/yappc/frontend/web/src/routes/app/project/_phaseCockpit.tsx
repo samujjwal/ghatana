@@ -250,6 +250,12 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<PhaseActionResult | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const actionText = useCallback((value: string | undefined): string | undefined => {
+    if (!value) {
+      return undefined;
+    }
+    return value.startsWith('phaseAction.') ? t(value) : value;
+  }, [t]);
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
@@ -373,7 +379,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       return;
     }
 
-    setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: action.label }));
+    setFeedback(t('phaseCockpit.feedback.reviewingAction', { label: actionText(action.label) ?? action.actionId }));
     scrollToSupportingSurface();
   }, [handlePrimaryAction, scrollToSupportingSurface, t]);
 
@@ -516,9 +522,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   // Map packet actions to suggestions format
   const suggestions: SuggestedStep[] = packet.availableActions.map(a => ({
     id: a.actionId,
-    title: a.label,
+    title: actionText(a.label) ?? a.actionId,
     type: a.enabled ? 'automation' : 'review',
-    description: a.description,
+    description: actionText(a.description) ?? '',
     confidence: 0.5,
     evidence: [],
     riskLevel: a.enabled ? 'low' : 'medium',
@@ -587,7 +593,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const disabledReason = actionMutation.isPending
     ? t('phaseCockpit.disabled.running')
     : primaryPacketAction?.disabledReason
-      ? primaryPacketAction.disabledReason
+      ? actionText(primaryPacketAction.disabledReason)
     : !primaryPacketAction
       ? t('phaseCockpit.disabled.noBackendAction')
       : undefined;
@@ -600,9 +606,9 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
         phaseDescription={t('phaseCockpit.layout.description', { phase, projectName })}
         primaryAction={(
           <PhasePrimaryActionCard
-            title={primaryPacketAction?.label ?? t('phaseCockpit.primary.title', { phase })}
-            description={primaryPacketAction?.description ?? t('phaseCockpit.primary.description')}
-            actionLabel={primaryPacketAction?.enabled ? primaryPacketAction.label : t('phaseCockpit.primary.viewBlockers')}
+            title={actionText(primaryPacketAction?.label) ?? t('phaseCockpit.primary.title', { phase })}
+            description={actionText(primaryPacketAction?.description) ?? t('phaseCockpit.primary.description')}
+            actionLabel={primaryPacketAction?.enabled ? actionText(primaryPacketAction.label) ?? primaryPacketAction.actionId : t('phaseCockpit.primary.viewBlockers')}
             onAction={primaryPacketAction?.enabled ? handlePrimaryAction : scrollToBlockerPanel}
             secondaryActionLabel={t('phaseCockpit.primary.reviewDetails')}
             onSecondaryAction={handleSecondaryAction}
@@ -644,7 +650,7 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
             <div data-testid="phase-contract-persisted">{packet.projectName ?? t('phaseCockpit.fallback.project')}</div>
             <div data-testid="phase-contract-derived">{t('phaseCockpit.contract.evidenceCount', { count: packet.evidence.length })}</div>
             <div data-testid="phase-contract-suggested">
-              {packet.availableActions[0]?.label ?? t('phaseCockpit.contract.noSuggestedAction')}
+              {actionText(packet.availableActions[0]?.label) ?? t('phaseCockpit.contract.noSuggestedAction')}
             </div>
             <div data-testid="phase-contract-review">
               {packet.governance[0]?.outcome ?? t('phaseCockpit.contract.readyWithoutReview')}

@@ -72,7 +72,7 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
      * Constructs a new KernelLifecycleEventIngestService with default kernel output root.
      */
     public KernelLifecycleEventIngestService() {
-        this(new LocalFilesystemKernelLifecycleEventProvider(Path.of(".kernel"), createOwnedBlockingExecutor(), true));
+        this(localFilesystemProvider(Path.of(".kernel"), createOwnedBlockingExecutor(), true));
     }
 
     /**
@@ -81,7 +81,7 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
      * @param kernelOutputRoot the root directory for Kernel output files
      */
     public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot) {
-        this(new LocalFilesystemKernelLifecycleEventProvider(kernelOutputRoot, createOwnedBlockingExecutor(), true));
+        this(localFilesystemProvider(kernelOutputRoot, createOwnedBlockingExecutor(), true));
     }
 
     /**
@@ -91,7 +91,7 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
      * @param blockingExecutor executor used for blocking filesystem reads
      */
     public KernelLifecycleEventIngestService(@NotNull Path kernelOutputRoot, @NotNull Executor blockingExecutor) {
-        this(new LocalFilesystemKernelLifecycleEventProvider(kernelOutputRoot, blockingExecutor, false));
+        this(localFilesystemProvider(kernelOutputRoot, blockingExecutor, false));
     }
 
     /**
@@ -132,6 +132,43 @@ public final class KernelLifecycleEventIngestService implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
+    }
+
+    private static LocalFilesystemKernelLifecycleEventProvider localFilesystemProvider(
+            @NotNull Path kernelOutputRoot,
+            @NotNull Executor blockingExecutor,
+            boolean ownsExecutor
+    ) {
+        assertLocalProviderAllowed();
+        return new LocalFilesystemKernelLifecycleEventProvider(kernelOutputRoot, blockingExecutor, ownsExecutor);
+    }
+
+    private static void assertLocalProviderAllowed() {
+        if (isProductionRuntime()) {
+            throw new IllegalStateException(
+                    "Local filesystem Kernel lifecycle provider is dev/test-only; production must inject DataCloudKernelLifecycleTruthSource");
+        }
+    }
+
+    private static boolean isProductionRuntime() {
+        return isProductionValue(System.getProperty("ghatana.runtime.profile"))
+                || isProductionValue(System.getProperty("yappc.runtime.profile"))
+                || isProductionValue(System.getenv("GHATANA_RUNTIME_PROFILE"))
+                || isProductionValue(System.getenv("GHATANA_ENV"))
+                || isProductionValue(System.getenv("SPRING_PROFILES_ACTIVE"));
+    }
+
+    private static boolean isProductionValue(@Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        for (String part : value.split("[,;\\s]+")) {
+            String normalized = part.trim().toLowerCase(java.util.Locale.ROOT);
+            if ("production".equals(normalized) || "prod".equals(normalized)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

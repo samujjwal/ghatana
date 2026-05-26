@@ -18,10 +18,8 @@ import java.util.Set;
  * <ul>
  *   <li>All inbound context headers are validated for presence, non-blank content,
  *       and role membership before any business logic executes.</li>
- *   <li>Unknown roles throw {@link IllegalArgumentException} with code
- *       {@code INVALID_ROLE}; callers' existing try/catch converts this to a 403.</li>
- *   <li>Header values are trimmed but not further sanitised; routes requiring
- *       domain-specific validation (UUID format etc.) must do so locally.</li>
+ *   <li>Unknown roles throw {@link IllegalArgumentException};</li>
+ *   <li>Header values are trimmed but not further sanitised.</li>
  * </ul>
  *
  * @doc.type class
@@ -34,15 +32,10 @@ final class PhrRouteSupport {
     static final String CONTENT_JSON = "application/json";
     static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
-    /**
-     * Roles permitted to call PHR routes. Any inbound role not in this set is
-     * rejected; no implicit default is assigned.
-     */
+    /** Roles permitted to call PHR routes. */
     static final Set<String> ALLOWED_ROLES = Set.of("patient", "caregiver", "clinician", "admin");
 
-    /**
-     * Roles that have elevated (privileged) access beyond basic patient operations.
-     */
+    /** Roles with elevated access beyond basic patient operations. */
     private static final Set<String> PRIVILEGED_ROLES = Set.of("admin", "clinician");
 
     private PhrRouteSupport() {}
@@ -50,22 +43,9 @@ final class PhrRouteSupport {
     /**
      * Extracts and validates the request context from inbound security headers.
      *
-     * <p>Validation rules (fail-closed):
-     * <ol>
-     *   <li>{@code X-Tenant-ID} must be present and non-blank.</li>
-     *   <li>{@code X-Principal-ID} must be present and non-blank.</li>
-     *   <li>{@code X-Role} must be present, non-blank, and a member of
-     *       {@link #ALLOWED_ROLES}.</li>
-     * </ol>
-     *
-     * <p>Throws {@link IllegalArgumentException} on any violation. Callers are
-     * expected to catch and convert to an appropriate HTTP error response; the
-     * existing route adapter pattern already does this via try/catch blocks.
-     *
      * @param request the inbound HTTP request
      * @return a validated request context
-     * @throws IllegalArgumentException if any header is absent, blank, or contains
-     *                                  an unrecognised role
+     * @throws IllegalArgumentException if any required header is absent, blank, or unrecognised
      */
     static PhrRequestContext requireContext(HttpRequest request) {
         String tenantId = firstHeader(request, "X-Tenant-ID", "X-Tenant-Id");
@@ -85,18 +65,92 @@ final class PhrRouteSupport {
         if (!ALLOWED_ROLES.contains(normalisedRole)) {
             throw new IllegalArgumentException("Unrecognised role: " + role);
         }
-        return new PhrRequestContext(tenantId.strip(), principalId.strip(), normalisedRole);
+        String correlationId = extractCorrelationId(request);
+        return new PhrRequestContext(tenantId.strip(), principalId.strip(), normalisedRole, correlationId);
     }
 
+    /**
+     * Extracts the correlation ID from the inbound request headers.
+     * Returns a fallback string if no correlation header is present.
+     *
+     * @param request the inbound HTTP request
+     * @return the correlation ID string; never null
+     */
+    static String extractCorrelationId(HttpRequest request) {
+        String value = firstHeader(request, "X-Correlation-ID", "X-Correlation-Id", "X-Request-ID");
+        return (value != null && !value.isBlank()) ? value.strip() : "no-correlation-id";
+    }
+
+    /**
+     * Returns true if the context holder has elevated (clinician/admin) access.
+     *
+     * @deprecated Prefer explicit policy methods such as hasClinicalRole.
+     */
+    @Deprecated(forRemoval = true)
     static boolean isPrivileged(PhrRequestContext context) {
         return PRIVILEGED_ROLES.contains(context.role());
     }
 
+    /**
+     * Returns true if the context holder has clinical read access (clinician or admin).
+     *
+     * @param context the validated request context
+     * @return true for clinician or admin roles
+     */
+    static boolean hasClinicalRole(PhrRequestContext context) {
+        return "clinician".equals(context.role()) || "admin".equals(context.role());
+    }
+
+    /**
+     * Returns true if the context holder may perform administrative operations.
+     *
+     * @param context the validated request context
+     * @return true only for admin role
+     */
+    static boolean canPerformAdminOperation(PhrRequestContext context) {
+        return "admin".equals(context.role());
+    }
+
+    /**
+     * Determines whether the context holder may access a given patient record.
+     *
+     * <p>Patients may only access their own record. Clinicians and admins may access any record.
+     * Caregivers are provisionally granted access; consent must be verified in the service layer.
+     *
+     * @param context   the validated request context
+     * @param patientId the target patient ID
+     * @return true if access is provisionally allowed
+     */
+    static boolean canAccessPatientRecordForRole(PhrRequestContext context, String patientId) {
+        return switch (context.role()) {
+            case "admin", "clinician" -> true;
+            case "caregiver" -> true; // consent verified by service layer
+            case "patient" -> context.principalId().equals(patientId);
+            default -> false;
+        };
+    }
+
     static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {
         try {
-            String json = body instanceof String stringBody ? stringBody : JSON.writeValueAsString(body);
+            String json = body instanceof String s ? s : JSON.writeValueAsString(body);
             return Promise.of(HttpResponse.ofCode(statusCode)
                 .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withJson(json)
+                .build());
+        } catch (JsonProcessingException ex) {
+            return Promise.of(HttpResponse.ofCode(500)
+                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withJson("{\"error\":\"SERIALIZATION_ERROR\",\"message\":\"Failed to serialize response\"}")
+                .build());
+        }
+    }
+
+    static Promise<HttpResponse> jsonResponse(int statusCode, Object body, String correlationId) {
+        try {
+            String json = body instanceof String s ? s : JSON.writeValueAsString(body);
+            return Promise.of(HttpResponse.ofCode(statusCode)
+                .withHeader(HttpHeaders.CONTENT_TYPE, CONTENT_JSON)
+                .withHeader(HttpHeaders.of("X-Correlation-ID"), correlationId)
                 .withJson(json)
                 .build());
         } catch (JsonProcessingException ex) {
@@ -112,6 +166,14 @@ final class PhrRouteSupport {
         body.put("error", code);
         body.put("message", message);
         return jsonResponse(statusCode, body);
+    }
+
+    static Promise<HttpResponse> errorResponse(int statusCode, String code, String message, String correlationId) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", code);
+        body.put("message", message);
+        body.put("correlationId", correlationId);
+        return jsonResponse(statusCode, body, correlationId);
     }
 
     static String requiredQuery(HttpRequest request, String name) {
@@ -144,5 +206,5 @@ final class PhrRouteSupport {
         return null;
     }
 
-    record PhrRequestContext(String tenantId, String principalId, String role) {}
+    record PhrRequestContext(String tenantId, String principalId, String role, String correlationId) {}
 }

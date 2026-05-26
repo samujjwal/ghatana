@@ -5,9 +5,12 @@
 package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.yappc.api.PhasePacket;
+import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.lifecycle.assessment.AIReadinessAssessor;
 import com.ghatana.yappc.services.lifecycle.assessment.ProjectContext;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
+import com.ghatana.yappc.services.phase.PhaseActionAuthorizationService;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +58,8 @@ public class AdvancePhaseUseCase {
     private final PolicyEngine policyEngine;
     private final YappcArtifactRepository artifactRepository;
     private final DlqPublisher dlqPublisher;
+    private final CapabilityEvaluationService capabilityEvaluationService;
+    private final PhaseActionAuthorizationService phaseActionAuthorizationService;
     /** Optional AI readiness assessor; if null, AI gate is skipped. */
     private final @Nullable AIReadinessAssessor readinessAssessor;
 
@@ -71,7 +76,15 @@ public class AdvancePhaseUseCase {
             PolicyEngine policyEngine,
             YappcArtifactRepository artifactRepository,
             DlqPublisher dlqPublisher) {
-        this(transitionConfig, policyEngine, artifactRepository, dlqPublisher, null);
+        this(
+                transitionConfig,
+                policyEngine,
+                artifactRepository,
+                dlqPublisher,
+                request -> Promise.of(CapabilityEvaluationService.CapabilityModel.allDenied(
+                        "CapabilityEvaluationService is not configured")),
+                new PhaseActionAuthorizationService(),
+                null);
     }
 
     /**
@@ -89,10 +102,42 @@ public class AdvancePhaseUseCase {
             YappcArtifactRepository artifactRepository,
             DlqPublisher dlqPublisher,
             @Nullable AIReadinessAssessor readinessAssessor) {
+        this(
+                transitionConfig,
+                policyEngine,
+                artifactRepository,
+                dlqPublisher,
+                request -> Promise.of(CapabilityEvaluationService.CapabilityModel.allDenied(
+                        "CapabilityEvaluationService is not configured")),
+                new PhaseActionAuthorizationService(),
+                readinessAssessor);
+    }
+
+    /**
+     * Constructs the use case with backend phase action authorization.
+     *
+     * @param transitionConfig loaded transition rules
+     * @param policyEngine policy gate evaluator
+     * @param artifactRepository artifact presence checker
+     * @param dlqPublisher DLQ sink for blocked / invalid transitions
+     * @param capabilityEvaluationService backend capability evaluator
+     * @param phaseActionAuthorizationService phase action authorization contract service
+     * @param readinessAssessor AI readiness assessor; {@code null} to skip AI gate
+     */
+    public AdvancePhaseUseCase(
+            TransitionConfigLoader transitionConfig,
+            PolicyEngine policyEngine,
+            YappcArtifactRepository artifactRepository,
+            DlqPublisher dlqPublisher,
+            CapabilityEvaluationService capabilityEvaluationService,
+            PhaseActionAuthorizationService phaseActionAuthorizationService,
+            @Nullable AIReadinessAssessor readinessAssessor) {
         this.transitionConfig    = transitionConfig;
         this.policyEngine        = policyEngine;
         this.artifactRepository  = artifactRepository;
         this.dlqPublisher        = dlqPublisher;
+        this.capabilityEvaluationService = capabilityEvaluationService;
+        this.phaseActionAuthorizationService = phaseActionAuthorizationService;
         this.readinessAssessor   = readinessAssessor;
     }
 

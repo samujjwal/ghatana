@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Validates whether a YAPPC project satisfies all gate criteria for a target lifecycle phase.
@@ -125,10 +126,25 @@ public final class PhaseGateValidator {
             @NotNull String projectId,
             @NotNull PhaseType targetPhase,
             @NotNull Map<String, Boolean> conditions) {
+        return validate(projectId, targetPhase, PhaseGateContext.fromConditions(conditions));
+    }
+
+    /**
+     * Validates all gates for a project transitioning to {@code targetPhase}.
+     *
+     * @param projectId   the project being transitioned
+     * @param targetPhase the lifecycle phase the project wants to enter
+     * @param context typed gate context with artifacts, evidence, governance, health, flags, and condition verdicts
+     * @return promise resolving to a {@link ValidationResult} with full gate diagnostics
+     */
+    public Promise<ValidationResult> validate(
+            @NotNull String projectId,
+            @NotNull PhaseType targetPhase,
+            @NotNull PhaseGateContext context) {
 
         Objects.requireNonNull(projectId,    "projectId");
         Objects.requireNonNull(targetPhase,  "targetPhase");
-        Objects.requireNonNull(conditions,   "conditions");
+        Objects.requireNonNull(context,      "context");
 
         long startMs = System.currentTimeMillis();
         String stageId = targetPhase.name().toLowerCase();
@@ -141,6 +157,7 @@ public final class PhaseGateValidator {
         }
 
         StageSpec stage = stageOpt.get();
+        Map<String, Boolean> conditions = context.conditionVerdicts();
 
         // 1. Entry criteria evaluation (synchronous — no I/O)
         GateEvaluator.GateResult entryResult = gateEvaluator.evaluateEntry(stage, conditions);
@@ -267,6 +284,52 @@ public final class PhaseGateValidator {
         /** Convenience factory for a fully-green result. */
         static ValidationResult allClear(PhaseType phase) {
             return new ValidationResult(phase, true, List.of());
+        }
+    }
+
+    /**
+     * Typed phase-gate context used by YAPPC readiness and transition validation.
+     *
+     * @doc.type record
+     * @doc.purpose Carries typed gate inputs before reducing them to GateEvaluator condition verdicts
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record PhaseGateContext(
+            Set<String> requiredArtifactIds,
+            Set<String> completedArtifactIds,
+            boolean evidenceAvailable,
+            boolean policyAllowed,
+            boolean previewHealthy,
+            boolean generationHealthy,
+            boolean runtimeHealthy,
+            Set<String> enabledFlags,
+            Map<String, Boolean> conditionVerdicts
+    ) {
+        public PhaseGateContext {
+            requiredArtifactIds = Set.copyOf(requiredArtifactIds);
+            completedArtifactIds = Set.copyOf(completedArtifactIds);
+            enabledFlags = Set.copyOf(enabledFlags);
+            conditionVerdicts = Map.copyOf(conditionVerdicts);
+        }
+
+        /**
+         * Creates a typed context from legacy condition verdicts.
+         *
+         * @param conditions condition verdict map
+         * @return typed phase gate context
+         */
+        public static PhaseGateContext fromConditions(@NotNull Map<String, Boolean> conditions) {
+            return new PhaseGateContext(
+                    Set.of(),
+                    Set.of(),
+                    conditions.getOrDefault("evidence.available", false),
+                    conditions.getOrDefault("policyAllowed", false),
+                    conditions.getOrDefault("previewHealthy", false),
+                    conditions.getOrDefault("generationHealthy", false),
+                    conditions.getOrDefault("runtimeHealthy", false),
+                    Set.of(),
+                    conditions);
         }
     }
 }

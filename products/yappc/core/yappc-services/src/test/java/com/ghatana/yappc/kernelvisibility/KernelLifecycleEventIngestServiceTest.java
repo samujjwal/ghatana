@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("KernelLifecycleEventIngestService")
 class KernelLifecycleEventIngestServiceTest extends EventloopTestBase {
@@ -90,5 +91,24 @@ class KernelLifecycleEventIngestServiceTest extends EventloopTestBase {
         service.close();
 
         assertThat(closed.get()).isTrue();
+    }
+
+    @Test
+    @DisplayName("production runtime rejects local filesystem provider")
+    void productionRuntimeRejectsLocalFilesystemProvider() {
+        String previousProfile = System.getProperty("yappc.runtime.profile");
+        try {
+            System.setProperty("yappc.runtime.profile", "production");
+
+            assertThatThrownBy(KernelLifecycleEventIngestService::new)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("production must inject DataCloudKernelLifecycleTruthSource");
+        } finally {
+            if (previousProfile == null) {
+                System.clearProperty("yappc.runtime.profile");
+            } else {
+                System.setProperty("yappc.runtime.profile", previousProfile);
+            }
+        }
     }
 }

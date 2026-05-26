@@ -92,8 +92,8 @@ public class CreateCommand implements Callable<Integer> {
     @Option(names = {"--intent-output"}, description = "Path to write ProductUnitIntent when target is kernel-product-unit")
     private Path intentOutputPath;
 
-    @Option(names = {"--runtime-provider"}, description = "Runtime provider for kernel-product-unit (default: ghatana-kernel)")
-    private String runtimeProvider = "ghatana-kernel";
+    @Option(names = {"--runtime-provider"}, description = "Runtime provider for kernel-product-unit (default: ghatana-file-registry)")
+    private String runtimeProvider = "ghatana-file-registry";
 
     @Option(names = {"--lifecycle-profile"}, description = "Lifecycle profile for kernel-product-unit")
     private String lifecycleProfile;

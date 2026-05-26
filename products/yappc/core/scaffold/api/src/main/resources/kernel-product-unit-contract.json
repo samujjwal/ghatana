@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "providers": [
+    "ghatana-file-registry",
+    "github",
+    "external"
+  ],
+  "lifecycleProfiles": [
+    "standard-web-api-product",
+    "standard-polyglot-product",
+    "backend-only-java-service",
+    "mobile-plus-api-product",
+    "platform-provider-product"
+  ],
+  "surfaces": [
+    "backend-api",
+    "web",
+    "worker",
+    "operator",
+    "portal",
+    "sdk",
+    "mobile",
+    "mobile-ios",
+    "mobile-android",
+    "cli",
+    "domain-pack",
+    "plugin",
+    "agent-runtime",
+    "data-pipeline"
+  ],
+  "productUnitKinds": [
+    "business-product",
+    "platform-provider",
+    "shared-service",
+    "demo-example",
+    "domain-pack",
+    "sdk",
+    "plugin",
+    "data-pipeline",
+    "agent-runtime",
+    "external-application"
+  ],
+  "implementationStatuses": [
+    "implemented",
+    "planned",
+    "backend-only",
+    "experimental"
+  ]
+}

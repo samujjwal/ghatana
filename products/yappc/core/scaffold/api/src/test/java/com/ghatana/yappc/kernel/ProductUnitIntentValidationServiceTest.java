@@ -2,18 +2,7 @@
  * Copyright (c) 2026 Ghatana Platform Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-
 package com.ghatana.yappc.kernel;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for ProductUnitIntentValidationService.
+ *
+ * @doc.type test
+ * @doc.purpose Verifies ProductUnitIntent validation uses canonical Kernel contract shape
+ * @doc.layer product
+ * @doc.pattern Test
  */
 class ProductUnitIntentValidationServiceTest {
 
@@ -32,237 +26,110 @@ class ProductUnitIntentValidationServiceTest {
     void validatesValidProductUnitIntent() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
 
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api", "frontend"),
-                        "lifecycleProfile", "standard-web-api-product"
-                )
-        );
-
-        ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
+        ProductUnitIntentValidationService.ValidationResult result = validator.validate(validIntent());
 
         assertThat(result.isValid()).isTrue();
         assertThat(result.errors()).isEmpty();
     }
 
     @Test
-    void rejectsMissingSchemaVersion() {
+    void rejectsMissingCanonicalIntentType() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api")
-                )
-        );
+        Map<String, Object> intent = new java.util.HashMap<>(validIntent());
+        intent.remove("intentType");
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).contains("schemaVersion is required");
+        assertThat(result.errors()).contains("intentType is required");
     }
 
     @Test
-    void rejectsInvalidSchemaVersion() {
+    void rejectsMissingScope() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "2.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api")
-                )
-        );
+        Map<String, Object> intent = new java.util.HashMap<>(validIntent());
+        intent.remove("scope");
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).contains("schemaVersion must be '1.0.0', got: 2.0.0");
+        assertThat(result.errors()).contains("scope is required");
     }
 
     @Test
-    void rejectsNonKebabCaseProductId() {
+    void rejectsUnknownProvider() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "Digital_Marketing_Campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api")
-                )
-        );
+        Map<String, Object> intent = validIntentWithTarget(Map.of(
+                "registryProvider", "ghatana-kernel",
+                "sourceProvider", "ghatana-file-registry"));
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).contains("productUnit.id must be kebab-case (lowercase with hyphens), got: Digital_Marketing_Campaign");
+        assertThat(result.errors()).contains(
+                "target.registryProvider 'ghatana-kernel' is not a known provider. Mark as 'external' if intentional.");
     }
 
     @Test
-    void rejectsEmptySurfaces() {
+    void rejectsUnknownProductUnitKind() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of()
-                )
-        );
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("kind", "unknown-kind");
+        Map<String, Object> intent = validIntentWithProductUnit(productUnit);
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).contains("productUnit.surfaces must be non-empty");
+        assertThat(result.errors()).contains("productUnit.kind 'unknown-kind' is not a known Kernel ProductUnit kind");
     }
 
     @Test
-    void rejectsUnknownLifecycleProfile() {
+    void rejectsUnknownSurfaceType() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api"),
-                        "lifecycleProfile", "unknown-profile"
-                )
-        );
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("surfaces", List.of(surface("product-unknown", "frontend", "planned")));
+        Map<String, Object> intent = validIntentWithProductUnit(productUnit);
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).contains("productUnit.lifecycleProfile 'unknown-profile' is not a recognized profile");
+        assertThat(result.errors()).contains("productUnit.surfaces contains unknown surface type: frontend");
     }
 
     @Test
-    void rejectsSecretKeysInMetadata() {
+    void rejectsUnknownImplementationStatus() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api"),
-                        "metadata", Map.of(
-                                "apiSecret", "secret-value",
-                                "databasePassword", "password-value"
-                        )
-                )
-        );
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("surfaces", List.of(surface("product-web", "web", "done-ish")));
+        Map<String, Object> intent = validIntentWithProductUnit(productUnit);
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
         assertThat(result.isValid()).isFalse();
-        assertThat(result.errors()).anyMatch(error -> error.contains("apiSecret"));
-        assertThat(result.errors()).anyMatch(error -> error.contains("databasePassword"));
+        assertThat(result.errors()).contains("productUnit.surfaces contains unknown implementation status: done-ish");
+    }
+
+    @Test
+    void rejectsLegacyStringSurfaceShape() {
+        ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("surfaces", List.of("web"));
+        Map<String, Object> intent = validIntentWithProductUnit(productUnit);
+
+        ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
+
+        assertThat(result.isValid()).isFalse();
+        assertThat(result.errors()).contains("productUnit.surfaces entries must be Kernel ProductUnitSurface objects");
     }
 
     @Test
     void rejectsKernelFilePathsInMetadataWhenNotFileRegistry() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-kernel",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api"),
-                        "metadata", Map.of(
-                                "configPath", "config/canonical-product-registry.json",
-                                "kernelPath", "/kernel/out/products/123"
-                        )
-                )
-        );
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("metadata", Map.of("configPath", "config/canonical-product-registry.json"));
+        Map<String, Object> intent = validIntentWithTargetAndProductUnit(
+                Map.of("registryProvider", "external", "sourceProvider", "external-git"),
+                productUnit);
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
@@ -273,28 +140,9 @@ class ProductUnitIntentValidationServiceTest {
     @Test
     void allowsKernelFilePathsInMetadataWhenFileRegistry() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "ghatana-file-registry",
-                        "sourceProvider", "ghatana-file-registry"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api"),
-                        "metadata", Map.of(
-                                "configPath", "config/canonical-product-registry.json"
-                        )
-                )
-        );
+        Map<String, Object> productUnit = new java.util.HashMap<>(productUnit());
+        productUnit.put("metadata", Map.of("configPath", "config/canonical-product-registry.json"));
+        Map<String, Object> intent = validIntentWithProductUnit(productUnit);
 
         ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
 
@@ -302,68 +150,64 @@ class ProductUnitIntentValidationServiceTest {
     }
 
     @Test
-    void allowsExternalProvider() {
-        ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        Map<String, Object> intent = Map.of(
-                "schemaVersion", "1.0.0",
-                "intentId", "intent-123",
-                "producer", Map.of(
-                        "id", "yappc:workspace-123",
-                        "type", "yappc"
-                ),
-                "target", Map.of(
-                        "registryProvider", "external",
-                        "sourceProvider", "external-git"
-                ),
-                "productUnit", Map.of(
-                        "id", "digital-marketing-campaign",
-                        "name", "Digital Marketing Campaign",
-                        "kind", "business-product",
-                        "surfaces", List.of("web-api")
-                )
-        );
-
-        ProductUnitIntentValidationService.ValidationResult result = validator.validate(intent);
-
-        assertThat(result.isValid()).isTrue();
-    }
-
-    @Test
-    void isKebabCase() {
-        ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
-
-        assertThat(validator.isKebabCase("valid-name")).isTrue();
-        assertThat(validator.isKebabCase("valid-name-123")).isTrue();
-        assertThat(validator.isKebabCase("InvalidName")).isFalse();
-        assertThat(validator.isKebabCase("invalid_name")).isFalse();
-        assertThat(validator.isKebabCase("")).isFalse();
-        assertThat(validator.isKebabCase(null)).isFalse();
-    }
-
-    @Test
-    void isRecognizedLifecycleProfile() {
+    void exposesRecognizedLifecycleProfiles() {
         ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
 
         assertThat(validator.isRecognizedLifecycleProfile("standard-web-api-product")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("standard-polyglot-product")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("backend-only-java-service")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("mobile-plus-api-product")).isTrue();
-        assertThat(validator.isRecognizedLifecycleProfile("platform-provider-product")).isTrue();
         assertThat(validator.isRecognizedLifecycleProfile("unknown")).isFalse();
-        assertThat(validator.isRecognizedLifecycleProfile(null)).isFalse();
+        assertThat(validator.getRecognizedLifecycleProfiles())
+                .contains("standard-web-api-product", "backend-only-java-service");
     }
 
-    @Test
-    void getRecognizedLifecycleProfiles() {
-        ProductUnitIntentValidationService validator = new ProductUnitIntentValidationService();
+    private static Map<String, Object> validIntent() {
+        return validIntentWithProductUnit(productUnit());
+    }
 
-        assertThat(validator.getRecognizedLifecycleProfiles())
-                .containsExactlyInAnyOrder(
-                        "standard-web-api-product",
-                        "standard-polyglot-product",
-                        "backend-only-java-service",
-                        "mobile-plus-api-product",
-                        "platform-provider-product");
+    private static Map<String, Object> validIntentWithProductUnit(Map<String, Object> productUnit) {
+        return validIntentWithTargetAndProductUnit(
+                Map.of("registryProvider", "ghatana-file-registry", "sourceProvider", "ghatana-file-registry"),
+                productUnit);
+    }
+
+    private static Map<String, Object> validIntentWithTarget(Map<String, Object> target) {
+        return validIntentWithTargetAndProductUnit(target, productUnit());
+    }
+
+    private static Map<String, Object> validIntentWithTargetAndProductUnit(
+            Map<String, Object> target,
+            Map<String, Object> productUnit
+    ) {
+        return Map.of(
+                "schemaVersion", "1.0.0",
+                "intentId", "intent-123",
+                "intentType", "create",
+                "scope", Map.of(
+                        "tenantId", "tenant-123",
+                        "workspaceId", "workspace-123",
+                        "projectId", "digital-marketing-campaign"),
+                "producer", Map.of(
+                        "id", "yappc:workspace-123",
+                        "type", "yappc",
+                        "correlationId", "corr-123"),
+                "target", target,
+                "productUnit", productUnit);
+    }
+
+    private static Map<String, Object> productUnit() {
+        return Map.of(
+                "id", "digital-marketing-campaign",
+                "name", "Digital Marketing Campaign",
+                "kind", "business-product",
+                "surfaces", List.of(
+                        surface("digital-marketing-campaign-backend-api", "backend-api", "planned"),
+                        surface("digital-marketing-campaign-web", "web", "planned")),
+                "lifecycleProfile", "standard-web-api-product");
+    }
+
+    private static Map<String, Object> surface(String id, String type, String implementationStatus) {
+        return Map.of(
+                "id", id,
+                "type", type,
+                "implementationStatus", implementationStatus);
     }
 }

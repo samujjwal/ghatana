@@ -73,10 +73,21 @@ public final class DataCloudPlatformRunStatusService implements PlatformRunStatu
                                 phase,
                                 error
                         );
-                        return Promise.of(Optional.empty());
+                        return Promise.of(Optional.of(degradedStatus(projectId, phase, error)));
                     }
                     return Promise.of(status);
                 });
+    }
+
+    private PhasePacket.PlatformRunStatus degradedStatus(String projectId, String phase, Throwable error) {
+        return new PhasePacket.PlatformRunStatus(
+                "degraded-" + projectId + "-" + phase.toLowerCase(),
+                "DEGRADED_RUNTIME_TRUTH",
+                "data-cloud-aep",
+                Instant.now(),
+                null,
+                "data-cloud-run-status-query-failed",
+                List.of("runtime-truth-query-failed:" + error.getClass().getSimpleName()));
     }
 
     private Optional<PhasePacket.PlatformRunStatus> toPlatformRunStatus(Map<String, Object> data) {
