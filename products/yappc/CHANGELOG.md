@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: Resolve merge conflicts in evidence files by accepting remote versions [`600bebf`](https://github.com/samujjwal/ghatana/commit/600bebfa0832716d6589d5bcae223191138563cc)
 - **Changed**: df fdsa fadfs [`bdcee47`](https://github.com/samujjwal/ghatana/commit/bdcee47c1e304454e7af848be60d981b24da1151)
 - **Changed**: daf dfsaf fdas [`7731945`](https://github.com/samujjwal/ghatana/commit/773194594857cf052579e652c67a3f26c0615e53)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`e346600`](https://github.com/samujjwal/ghatana/commit/e346600919fb63a4c72be0ee6a610cb501977555)
