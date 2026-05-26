@@ -2,10 +2,10 @@
   "schemaVersion": "1.0.0",
   "productId": "tutorputor",
   "productName": "Tutorputor",
-  "checkedAt": "2026-05-24T15:00:00.000Z",
+  "checkedAt": "2026-05-25T00:00:00.000Z",
   "releaseReadiness": {
     "status": "candidate",
-    "overallScore": 4.0,
+    "overallScore": 4,
     "blockingIssues": [
       "Agent governance integration requires GovernedAgentDispatcher wiring",
       "Learning progress tracking requires distributed cache validation",
@@ -15,9 +15,9 @@
     ],
     "warnings": [
       "Foundation usage profile drafted but not yet validated",
-      "Reusable asset mapping from PHR/DMOS pending",
       "Agent safety invariants require production testing",
-      "Content generation safety gates need integration testing"
+      "Content generation safety gates need integration testing",
+      "Reusable asset mapping from PHR/DMOS is current and planning-only; adoption remains non-blocking."
     ]
   },
   "evidenceCategories": {
@@ -143,7 +143,11 @@
       },
       "workerPlaneDetails": {
         "guard": "GovernedContentDispatchGuard",
-        "checks": ["TENANT_MISSING", "JOB_TYPE_NOT_GOVERNED", "RELEASE_GUARD_CANDIDATE"],
+        "checks": [
+          "TENANT_MISSING",
+          "JOB_TYPE_NOT_GOVERNED",
+          "RELEASE_GUARD_CANDIDATE"
+        ],
         "releaseStatusEnvVar": "TUTORPUTOR_RELEASE_STATUS",
         "candidateModeOverride": "TUTORPUTOR_ALLOW_CANDIDATE_DISPATCH",
         "auditLogging": "structured"
@@ -228,7 +232,11 @@
         "screen-reader-testing": "candidate"
       },
       "wcagValidationPlan": {
-        "tools": ["axe-core", "Playwright accessibility snapshot", "NVDA/VoiceOver manual test"],
+        "tools": [
+          "axe-core",
+          "Playwright accessibility snapshot",
+          "NVDA/VoiceOver manual test"
+        ],
         "coverageTarget": "all tutorputor-web routes with student-facing content",
         "colorContrastRatio": "4.5:1 minimum for normal text, 3:1 for large text",
         "keyboardNavigation": "all interactive elements reachable and operable by keyboard",
@@ -449,5 +457,10 @@
     "Map reusable assets from PHR/DMOS into FlashIt and Tutorputor",
     "Add agent safety invariant production testing via InvariantMonitor",
     "Complete staging/prod bootstrap validation with executabilityProof blocks"
-  ]
+  ],
+  "commitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "releaseIntent": "planning-score-only",
+  "releaseBlocking": false
 }

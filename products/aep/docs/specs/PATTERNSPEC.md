@@ -74,7 +74,8 @@ PatternExpr :=
 - Pattern lifecycle metadata is mandatory.
 - Side-effecting operators must declare governance and approval policy.
 - Pattern compiler must reject unknown operators.
-- Pattern compiler must reject agent capability roles without `capabilityRef` and output schemas.
+- Pattern compiler must reject agent capability roles without `capabilityRef`, input schema compatibility, and output schemas.
+- Pattern compiler must reject capability bindings unless descriptor `kind = EVENT_OPERATOR` and descriptor role matches the requested agent operator.
 
 ## Example
 

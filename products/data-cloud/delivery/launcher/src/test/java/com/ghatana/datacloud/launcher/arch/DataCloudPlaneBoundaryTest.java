@@ -151,6 +151,55 @@ class DataCloudPlaneBoundaryTest {
         }
 
         @Test
+        @DisplayName("Data plane must not depend on AEP packages")
+        void dataPlaneMustNotDependOnAepPackages() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.entity..",
+                            "com.ghatana.datacloud.record..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep..",
+                            "com.ghatana.core.operator..")
+                    .allowEmptyShould(true)
+                    .because("The Data plane owns storage/entity behavior, not AEP operator or PatternSpec semantics.");
+            rule.check(DATA_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Event plane must not depend on PatternSpec or AEP operator runtime")
+        void eventPlaneMustNotDependOnPatternSpecOrOperatorRuntime() {
+            ArchRule rule = noClasses()
+                    .that().resideInAnyPackage(
+                            "com.ghatana.datacloud.event..",
+                            "com.ghatana.datacloud.platform.event..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep.pattern..",
+                            "com.ghatana.aep.operator..",
+                            "com.ghatana.core.operator..")
+                    .allowEmptyShould(true)
+                    .because("The Event plane is a durable EventLog substrate and must not own PatternSpec/EPL runtime semantics.");
+            rule.check(EVENT_PLANE_CLASSES);
+        }
+
+        @Test
+        @DisplayName("Governance plane must not depend on Action Plane internals")
+        void governancePlaneMustNotDependOnActionPlaneInternals() {
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.governance..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.aep..",
+                            "com.ghatana.orchestrator..",
+                            "com.ghatana.pattern..",
+                            "com.ghatana.pipeline.registry..")
+                    .allowEmptyShould(true)
+                    .because("Governance policy must remain independent from Action Plane and AEP implementation internals.");
+            rule.check(GOVERNANCE_PLANE_CLASSES);
+        }
+
+        @Test
         @DisplayName("Data plane must not import AEP server internals")
         void dataPlaneHasNoAepServerDependency() {
             ArchRule rule = noClasses()

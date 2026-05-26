@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
@@ -34,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("DmosCampaignServlet")
 class DmosCampaignServletTest extends EventloopTestBase {
+
+    private static final TypeReference<Map<String, Object>> JSON_OBJECT_TYPE = new TypeReference<>() {};
 
     private FakeCampaignService campaignService;
     private AsyncServlet servlet;
@@ -513,8 +516,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(200);
 
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> json = mapper.readValue(body, Map.class);
+        Map<String, Object> json = readJsonObject(body);
 
         assertThat(json).containsKey("items");
         assertThat(json).containsKey("count");
@@ -636,8 +638,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(404);
 
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> json = mapper.readValue(body, Map.class);
+        Map<String, Object> json = readJsonObject(body);
 
         assertThat(json).containsKey("error");
         assertThat(json).containsKey("message");
@@ -662,8 +663,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> json = mapper.readValue(body, Map.class);
+        Map<String, Object> json = readJsonObject(body);
 
         assertThat(json.get("correlationId")).isEqualTo(requestCorrelId);
     }
@@ -681,8 +681,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> json = mapper.readValue(body, Map.class);
+        Map<String, Object> json = readJsonObject(body);
 
         assertThat(json.get("correlationId")).isNotNull();
         assertThat(json.get("correlationId").toString()).isNotEmpty();
@@ -699,8 +698,7 @@ class DmosCampaignServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(400);
 
         String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8);
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> json = mapper.readValue(body, Map.class);
+        Map<String, Object> json = readJsonObject(body);
         assertThat(json.get("error")).isEqualTo("BAD_REQUEST");
     }
 
@@ -716,6 +714,10 @@ class DmosCampaignServletTest extends EventloopTestBase {
             .updatedAt(now)
             .createdBy("user-42")
             .build();
+    }
+
+    private static Map<String, Object> readJsonObject(String body) throws Exception {
+        return new ObjectMapper().readValue(body, JSON_OBJECT_TYPE);
     }
 
     private static final class FakeCampaignService implements CampaignService {

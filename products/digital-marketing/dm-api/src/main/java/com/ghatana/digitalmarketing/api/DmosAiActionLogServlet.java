@@ -71,7 +71,7 @@ public final class DmosAiActionLogServlet {
     }
 
     public DmosAiActionLogServlet(AiActionLogService service, Eventloop eventloop) {
-        this(service, eventloop, DmosMetricsCollector.disabled(), new DmosHttpContextFactory(false, null));
+        this(service, eventloop, DmosMetricsCollector.disabled(), DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public AsyncServlet routes() {

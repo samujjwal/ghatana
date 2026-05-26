@@ -1,14 +1,30 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+const SCRIPT_PATH = 'scripts/check-agent-runtime-test-excludes.mjs';
+const EVIDENCE_PATH = '.kernel/evidence/agent-runtime-test-excludes.json';
+const COMMAND = 'pnpm check:agent-runtime-test-excludes';
 const DEFAULT_GRADLE_FILE =
   'products/data-cloud/planes/action/agent-runtime/build.gradle.kts';
 
 const EXCLUDE_PATTERN = /exclude\("([^"]+)"\)/g;
 const ISSUE_PATTERN = /\b(?:GH|AEP|DATA-CLOUD)-\d+\b/i;
 const REMOVAL_DATE_PATTERN = /\b(?:remove by|target removal date)\s+20\d{2}-\d{2}-\d{2}\b/i;
+
+function currentGitSha(root) {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 export function checkAgentRuntimeTestExcludes(root = process.cwd(), gradleFile = DEFAULT_GRADLE_FILE) {
   const fullPath = path.join(root, gradleFile);
@@ -57,17 +73,44 @@ export function checkAgentRuntimeTestExcludes(root = process.cwd(), gradleFile =
   return violations;
 }
 
+export function createAgentRuntimeTestExcludesEvidence(root = process.cwd(), now = new Date()) {
+  const violations = checkAgentRuntimeTestExcludes(root);
+  return {
+    generatedAt: now.toISOString(),
+    pass: violations.length === 0,
+    evidenceRun: {
+      generatedBy: SCRIPT_PATH,
+      source: SCRIPT_PATH,
+      command: COMMAND,
+      commit: currentGitSha(root),
+    },
+    summary: {
+      gradleFile: DEFAULT_GRADLE_FILE,
+      violationCount: violations.length,
+    },
+    violations,
+  };
+}
+
+export function writeAgentRuntimeTestExcludesEvidence(root = process.cwd(), evidence = createAgentRuntimeTestExcludesEvidence(root)) {
+  const evidencePath = path.join(root, EVIDENCE_PATH);
+  mkdirSync(path.dirname(evidencePath), { recursive: true });
+  writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  return evidencePath;
+}
+
 function main() {
   const rootArgIndex = process.argv.indexOf('--root');
   const root = rootArgIndex >= 0 ? path.resolve(process.argv[rootArgIndex + 1]) : process.cwd();
-  const violations = checkAgentRuntimeTestExcludes(root);
-  if (violations.length === 0) {
-    console.log('Agent runtime test exclusion check passed.');
+  const evidence = createAgentRuntimeTestExcludesEvidence(root);
+  writeAgentRuntimeTestExcludesEvidence(root, evidence);
+  if (evidence.pass) {
+    console.log(`Agent runtime test exclusion evidence written to ${EVIDENCE_PATH}.`);
     return;
   }
 
   console.error('Agent runtime test exclusion check failed:\n');
-  for (const violation of violations) {
+  for (const violation of evidence.violations) {
     console.error(`- ${violation.file} ${violation.excludedPath ?? ''}: ${violation.message}`.trim());
   }
   process.exit(1);

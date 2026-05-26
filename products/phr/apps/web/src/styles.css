@@ -114,6 +114,25 @@ a {
   font-weight: 700;
 }
 
+.release-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(72px, 1fr));
+  gap: 0.5rem;
+  min-width: min(420px, 100%);
+}
+
+.release-metrics span {
+  font-size: 1.35rem;
+  overflow-wrap: anywhere;
+}
+
 .dashboard-grid,
 .two-column-layout {
   display: grid;
@@ -214,5 +233,14 @@ a {
   .dashboard-grid,
   .two-column-layout {
     grid-template-columns: 1fr;
+  }
+
+  .release-hero {
+    flex-direction: column;
+  }
+
+  .segmented-control {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 100%;
   }
 }

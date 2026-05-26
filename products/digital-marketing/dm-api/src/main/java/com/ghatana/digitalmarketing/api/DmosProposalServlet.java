@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.proposal.ProposalService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -90,7 +91,9 @@ public final class DmosProposalServlet {
                 this::handleApproveProposal)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/proposal/:proposalId",
                 this::handleGetProposal)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "proposal"
         );
     }
 

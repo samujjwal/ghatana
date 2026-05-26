@@ -1,0 +1,2202 @@
+{
+  "generatedAt": "2026-05-26T14:18:33.455Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
+    "source": "scripts/generate-data-cloud-release-bundle.mjs",
+    "command": "pnpm generate:data-cloud-release-bundle",
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-27T14:18:33.455Z",
+  "expiresAt": "2026-05-28T14:18:33.455Z",
+  "summary": {
+    "itemCount": 23,
+    "presentItems": 23,
+    "violationCount": 0
+  },
+  "items": {
+    "activeModuleEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/data-cloud-active-modules.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:39.940Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
+          "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
+          "command": "pnpm check:data-cloud-active-module-evidence",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "source": {
+          "settings": "config/generated/settings-gradle-includes.kts",
+          "classifier": "scripts/list-data-cloud-active-modules.mjs",
+          "workflowTaskDiscovery": [
+            {
+              "scope": "all-active",
+              "task": "compileJava",
+              "workflow": ".github/workflows/data-cloud-ci.yml"
+            }
+          ]
+        },
+        "summary": {
+          "totalActiveModules": 36,
+          "releaseBlockingModules": 34,
+          "advisoryModules": 2,
+          "compileJavaTaskCount": 34,
+          "releaseBlockingCheckTaskCount": 34,
+          "invalidModuleCount": 0
+        },
+        "generatedTasks": {
+          "compileJava": [
+            ":products:data-cloud:planes:shared-spi:compileJava",
+            ":products:data-cloud:planes:data:entity:compileJava",
+            ":products:data-cloud:planes:event:core:compileJava",
+            ":products:data-cloud:planes:operations:config:compileJava",
+            ":products:data-cloud:planes:intelligence:analytics:compileJava",
+            ":products:data-cloud:planes:governance:core:compileJava",
+            ":products:data-cloud:delivery:runtime-composition:compileJava",
+            ":products:data-cloud:extensions:plugins:compileJava",
+            ":products:data-cloud:delivery:api:compileJava",
+            ":products:data-cloud:delivery:launcher:compileJava",
+            ":products:data-cloud:delivery:sdk:compileJava",
+            ":products:data-cloud:extensions:agent-registry:compileJava",
+            ":products:data-cloud:extensions:agent-catalog:compileJava",
+            ":products:data-cloud:delivery:api-contract-tests:compileJava",
+            ":products:data-cloud:planes:intelligence:feature-ingest:compileJava",
+            ":products:data-cloud:planes:event:store:compileJava",
+            ":products:data-cloud:integration-tests:compileJava",
+            ":products:data-cloud:planes:action:operator-contracts:compileJava",
+            ":products:data-cloud:planes:action:central-runtime:compileJava",
+            ":products:data-cloud:planes:action:engine:compileJava",
+            ":products:data-cloud:planes:action:registry:compileJava",
+            ":products:data-cloud:planes:action:analytics:compileJava",
+            ":products:data-cloud:planes:action:security:compileJava",
+            ":products:data-cloud:planes:action:event-bridge:compileJava",
+            ":products:data-cloud:planes:action:agent-runtime:compileJava",
+            ":products:data-cloud:planes:action:api:compileJava",
+            ":products:data-cloud:planes:action:scaling:compileJava",
+            ":products:data-cloud:planes:action:observability:compileJava",
+            ":products:data-cloud:planes:action:orchestrator:compileJava",
+            ":products:data-cloud:planes:action:server:compileJava",
+            ":products:data-cloud:planes:action:identity:compileJava",
+            ":products:data-cloud:planes:action:compliance:compileJava",
+            ":products:data-cloud:planes:action:kernel-bridge:compileJava",
+            ":products:data-cloud:extensions:kernel-bridge:compileJava"
+          ],
+          "releaseBlockingCheck": [
+            ":products:data-cloud:planes:shared-spi:check",
+            ":products:data-cloud:planes:data:entity:check",
+            ":products:data-cloud:planes:event:core:check",
+            ":products:data-cloud:planes:operations:config:check",
+            ":products:data-cloud:planes:intelligence:analytics:check",
+            ":products:data-cloud:planes:governance:core:check",
+            ":products:data-cloud:delivery:runtime-composition:check",
+            ":products:data-cloud:extensions:plugins:check",
+            ":products:data-cloud:delivery:api:check",
+            ":products:data-cloud:delivery:launcher:check",
+            ":products:data-cloud:delivery:sdk:check",
+            ":products:data-cloud:contracts:check",
+            ":products:data-cloud:extensions:agent-registry:check",
+            ":products:data-cloud:extensions:agent-catalog:check",
+            ":products:data-cloud:planes:intelligence:feature-ingest:check",
+            ":products:data-cloud:planes:event:store:check",
+            ":products:data-cloud:planes:action:check",
+            ":products:data-cloud:planes:action:operator-contracts:check",
+            ":products:data-cloud:planes:action:central-runtime:check",
+            ":products:data-cloud:planes:action:engine:check",
+            ":products:data-cloud:planes:action:registry:check",
+            ":products:data-cloud:planes:action:analytics:check",
+            ":products:data-cloud:planes:action:security:check",
+            ":products:data-cloud:planes:action:event-bridge:check",
+            ":products:data-cloud:planes:action:agent-runtime:check",
+            ":products:data-cloud:planes:action:api:check",
+            ":products:data-cloud:planes:action:scaling:check",
+            ":products:data-cloud:planes:action:observability:check",
+            ":products:data-cloud:planes:action:orchestrator:check",
+            ":products:data-cloud:planes:action:server:check",
+            ":products:data-cloud:planes:action:identity:check",
+            ":products:data-cloud:planes:action:compliance:check",
+            ":products:data-cloud:planes:action:kernel-bridge:check",
+            ":products:data-cloud:extensions:kernel-bridge:check"
+          ]
+        },
+        "execution": {
+          "evidenceScriptExitStatus": 0,
+          "compileJavaTasksAreGeneratedForCaller": true,
+          "releaseBlockingCheckTasksAreGeneratedForCaller": true
+        },
+        "modules": [
+          {
+            "module": ":products:data-cloud:planes:shared-spi",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:shared-spi:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:shared-spi:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:data:entity",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:data:entity:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:data:entity:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:event:core",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:event:core:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:event:core:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:operations:config",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:operations:config:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:operations:config:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:intelligence:analytics",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:intelligence:analytics:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:intelligence:analytics:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:governance:core",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:governance:core:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:governance:core:check"
+          },
+          {
+            "module": ":products:data-cloud:delivery:runtime-composition",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:delivery:runtime-composition:compileJava",
+            "releaseCheckTask": ":products:data-cloud:delivery:runtime-composition:check"
+          },
+          {
+            "module": ":products:data-cloud:extensions:plugins",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:extensions:plugins:compileJava",
+            "releaseCheckTask": ":products:data-cloud:extensions:plugins:check"
+          },
+          {
+            "module": ":products:data-cloud:delivery:api",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:delivery:api:compileJava",
+            "releaseCheckTask": ":products:data-cloud:delivery:api:check"
+          },
+          {
+            "module": ":products:data-cloud:delivery:launcher",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:delivery:launcher:compileJava",
+            "releaseCheckTask": ":products:data-cloud:delivery:launcher:check"
+          },
+          {
+            "module": ":products:data-cloud:delivery:sdk",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:delivery:sdk:compileJava",
+            "releaseCheckTask": ":products:data-cloud:delivery:sdk:check"
+          },
+          {
+            "module": ":products:data-cloud:contracts",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": false,
+            "compileJavaTask": null,
+            "releaseCheckTask": ":products:data-cloud:contracts:check"
+          },
+          {
+            "module": ":products:data-cloud:extensions:agent-registry",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:extensions:agent-registry:compileJava",
+            "releaseCheckTask": ":products:data-cloud:extensions:agent-registry:check"
+          },
+          {
+            "module": ":products:data-cloud:extensions:agent-catalog",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:extensions:agent-catalog:compileJava",
+            "releaseCheckTask": ":products:data-cloud:extensions:agent-catalog:check"
+          },
+          {
+            "module": ":products:data-cloud:delivery:api-contract-tests",
+            "category": "advisory",
+            "reason": "Integration or contract-test module; compile-gated, release-check optional",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:delivery:api-contract-tests:compileJava",
+            "releaseCheckTask": null
+          },
+          {
+            "module": ":products:data-cloud:planes:intelligence:feature-ingest",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:intelligence:feature-ingest:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:intelligence:feature-ingest:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:event:store",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:event:store:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:event:store:check"
+          },
+          {
+            "module": ":products:data-cloud:integration-tests",
+            "category": "advisory",
+            "reason": "Integration or contract-test module; compile-gated, release-check optional",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:integration-tests:compileJava",
+            "releaseCheckTask": null
+          },
+          {
+            "module": ":products:data-cloud:planes:action",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": false,
+            "compileJavaTask": null,
+            "releaseCheckTask": ":products:data-cloud:planes:action:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:operator-contracts",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:operator-contracts:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:operator-contracts:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:central-runtime",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:central-runtime:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:central-runtime:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:engine",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:engine:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:engine:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:registry",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:registry:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:registry:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:analytics",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:analytics:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:analytics:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:security",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:security:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:security:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:event-bridge",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:event-bridge:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:event-bridge:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:agent-runtime",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:agent-runtime:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:agent-runtime:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:api",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:api:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:api:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:scaling",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:scaling:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:scaling:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:observability",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:observability:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:observability:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:orchestrator",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:orchestrator:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:orchestrator:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:server",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:server:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:server:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:identity",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:identity:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:identity:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:compliance",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:compliance:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:compliance:check"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:kernel-bridge",
+            "category": "release-blocking",
+            "reason": "AEP Action Plane module; compile and release checks are blocking",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:planes:action:kernel-bridge:compileJava",
+            "releaseCheckTask": ":products:data-cloud:planes:action:kernel-bridge:check"
+          },
+          {
+            "module": ":products:data-cloud:extensions:kernel-bridge",
+            "category": "release-blocking",
+            "reason": "Active Data Cloud production module",
+            "hasJavaCompileTask": true,
+            "compileJavaTask": ":products:data-cloud:extensions:kernel-bridge:compileJava",
+            "releaseCheckTask": ":products:data-cloud:extensions:kernel-bridge:check"
+          }
+        ],
+        "validation": {
+          "invalidModules": [],
+          "allActiveModulesClassified": true
+        }
+      }
+    },
+    "actionPlaneBoundaryEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/action-plane-boundaries.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:40.317Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-action-plane-boundaries.mjs",
+          "source": "scripts/check-action-plane-boundaries.mjs",
+          "command": "pnpm check:action-plane-boundaries",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "scope": {
+          "scannedRoots": [
+            "products/data-cloud/planes",
+            "products/data-cloud/delivery",
+            "products/data-cloud/extensions",
+            "products/data-cloud/contracts"
+          ],
+          "excludedRoots": [
+            "products/data-cloud/planes/action"
+          ],
+          "rule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not import AEP internals or depend on Action Plane modules.",
+          "semanticRule": "Non-action Data Cloud planes, delivery, extensions, and contracts must not expose AEP-owned EventCloud, PatternSpec/EPL, EventOperator, EventOperatorCapability runtime, CEP, adaptive event runtime, pattern promotion, recommended/predictive pattern, or Pattern lifecycle semantics.",
+          "publicAepPackageAllowlist": [
+            "com.ghatana.aep.api",
+            "com.ghatana.aep.client",
+            "com.ghatana.aep.event.spi",
+            "com.ghatana.aep.model",
+            "com.ghatana.aep.sdk"
+          ],
+          "allowlists": [
+            {
+              "id": "delivery-runtime-composition-allowlist",
+              "allowedPath": "products/data-cloud/delivery/runtime-composition",
+              "allowlist": [
+                "delivery/runtime-composition may compose planes",
+                "Runtime composition across planes is allowed"
+              ]
+            },
+            {
+              "id": "extensions-kernel-bridge-allowlist",
+              "allowedPath": "products/data-cloud/extensions/kernel-bridge",
+              "allowlist": [
+                "extensions/kernel-bridge may use public contracts/SPI",
+                "Kernel bridge may depend on public contracts"
+              ]
+            },
+            {
+              "id": "contracts-no-implementation-dependency",
+              "allowedPath": "products/data-cloud/contracts",
+              "allowlist": [
+                "contracts must not import runtime implementation",
+                "Contracts must remain pure"
+              ]
+            }
+          ]
+        },
+        "summary": {
+          "scannedFiles": 2174,
+          "violationCount": 0
+        },
+        "violations": []
+      }
+    },
+    "actionPlaneInventoryEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/action-plane-module-inventory.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:41.032Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
+          "source": "scripts/check-action-plane-module-inventory.mjs",
+          "command": "pnpm check:action-plane-module-inventory",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "source": {
+          "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",
+          "settings": "config/generated/settings-gradle-includes.kts",
+          "classifier": "scripts/list-data-cloud-active-modules.mjs"
+        },
+        "summary": {
+          "gradleIncludedActionModules": 17,
+          "inventoryRows": 20,
+          "violationCount": 0
+        },
+        "modules": [
+          {
+            "module": ":products:data-cloud:planes:action",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Temporary compatibility module",
+            "implementationState": "temporary",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Split root aggregator after AEP module migration"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:operator-contracts",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "AEP-owned semantic module temporarily co-located",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/aep/operator-contracts`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:central-runtime",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "AEP-owned semantic module temporarily co-located",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/aep/central-runtime`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:engine",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "AEP-owned semantic module temporarily co-located",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/aep/engine`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:registry",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud registry surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:analytics",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud analytics surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:security",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud security surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:event-bridge",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains as Data-Cloud persistence bridge"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:agent-runtime",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "AEP-owned semantic module temporarily co-located",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/aep/agent-runtime`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:api",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud API surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:scaling",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud operations surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:observability",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud observability surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:orchestrator",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "AEP-owned semantic module temporarily co-located",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/aep/orchestrator`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:server",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Temporary compatibility module",
+            "implementationState": "temporary",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remove after routes move to delivery/API or AEP"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:identity",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud identity surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:compliance",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Data-Cloud-owned persistence/metadata/governance module",
+            "implementationState": "active",
+            "releaseBlocking": "yes",
+            "migrationDestination": "Remains in Data-Cloud compliance surface"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:kernel-bridge",
+            "gradleIncluded": "yes",
+            "ownershipClassification": "Migration-only module",
+            "implementationState": "temporary",
+            "releaseBlocking": "yes",
+            "migrationDestination": "`products/data-cloud/extensions/kernel-bridge`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:gateway",
+            "gradleIncluded": "no",
+            "ownershipClassification": "Migration-only module",
+            "implementationState": "planned",
+            "releaseBlocking": "no",
+            "migrationDestination": "Not generated; route work belongs in delivery/API"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:k8s:multi-region",
+            "gradleIncluded": "no",
+            "ownershipClassification": "Migration-only module",
+            "implementationState": "planned",
+            "releaseBlocking": "no",
+            "migrationDestination": "Deployment assets under `products/data-cloud/deploy`"
+          },
+          {
+            "module": ":products:data-cloud:planes:action:agent-catalog",
+            "gradleIncluded": "no",
+            "ownershipClassification": "Migration-only module",
+            "implementationState": "planned",
+            "releaseBlocking": "no",
+            "migrationDestination": "`products/data-cloud/extensions/agent-catalog`"
+          }
+        ],
+        "violations": []
+      }
+    },
+    "productionReadinessTaskMapEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/production-readiness-task-map.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:44.538Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-production-readiness-task-map.mjs",
+          "source": "scripts/check-production-readiness-task-map.mjs",
+          "command": "pnpm check:production-readiness-task-map",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+          "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetEnvironment": "staging"
+        },
+        "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetEnvironment": "staging",
+        "validationStatus": "validated",
+        "reviewDueAt": "2026-05-27T14:16:44.538Z",
+        "expiresAt": "2026-05-28T14:16:44.538Z",
+        "source": {
+          "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",
+          "readiness": "products/data-cloud/lifecycle/readiness-evidence.yaml",
+          "packageScripts": "package.json"
+        },
+        "summary": {
+          "taskRows": 12,
+          "releaseBlockingRows": 12,
+          "requiredTestClaims": 10,
+          "verifiedTestClaims": 10,
+          "violationCount": 0
+        },
+        "tasks": [
+          {
+            "Task": "DC-P0-001 readiness blocked until proof passes",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/product-release-readiness.json`",
+            "Evidence Command": "`pnpm check:evidence-current-commit`"
+          },
+          {
+            "Task": "DC-P0-002 regenerate current-head evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/data-cloud-active-modules.json`",
+            "Evidence Command": "`pnpm check:data-cloud-active-module-evidence`"
+          },
+          {
+            "Task": "DC-P0-002 Action Plane boundary evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/action-plane-boundaries.json`",
+            "Evidence Command": "`pnpm check:action-plane-boundaries`"
+          },
+          {
+            "Task": "DC-P0-002 product release readiness evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/product-release-readiness.json`",
+            "Evidence Command": "`pnpm check:product-release-readiness`"
+          },
+          {
+            "Task": "DC-P0-002 AI governance behavioral proof",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json`",
+            "Evidence Command": "`pnpm check:data-cloud-ai-governance-behavioral-proof`"
+          },
+          {
+            "Task": "DC-P1-004 Action Plane inventory drift",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/action-plane-module-inventory.json`",
+            "Evidence Command": "`pnpm check:action-plane-module-inventory`"
+          },
+          {
+            "Task": "DC-P3-003 agent capability duplicate evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/agent-capability-duplicates.json`",
+            "Evidence Command": "`pnpm check:agent-capability-duplicates`"
+          },
+          {
+            "Task": "DC-P3-003 agent runtime test exclude evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/agent-runtime-test-excludes.json`",
+            "Evidence Command": "`pnpm check:agent-runtime-test-excludes`"
+          },
+          {
+            "Task": "DC-P5-003 agent usage audit evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/agent-usage-audit.json`",
+            "Evidence Command": "`pnpm check:agent-usage-audit`"
+          },
+          {
+            "Task": "DC-P10-002 audit completeness proof",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/audit-completeness.json`",
+            "Evidence Command": "`pnpm check:audit-completeness`"
+          },
+          {
+            "Task": "DC-P11-002 operations readiness bundle",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/data-cloud-operations-readiness.json`",
+            "Evidence Command": "`pnpm check:data-cloud-operations-readiness`"
+          },
+          {
+            "Task": "DC-P14-002 task-map verification evidence",
+            "Implementation Status": "completed",
+            "Evidence Status": "verified",
+            "Evidence Commit": "936924cf915e366f3f0c47bee266a277601b1288",
+            "Release Blocking": "yes",
+            "Verified At": "2026-05-26T14:16:25Z",
+            "Evidence File": "`.kernel/evidence/production-readiness-task-map.json`",
+            "Evidence Command": "`pnpm check:production-readiness-task-map`"
+          }
+        ],
+        "requiredTestClaims": [
+          {
+            "name": "TenantIsolationTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/TenantIsolationTest.java",
+              "products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/security/DataCloudTenantIsolationTest.java",
+              "products/data-cloud/planes/action/engine/src/test/java/com/ghatana/aep/engine/TenantIsolationTest.java"
+            ]
+          },
+          {
+            "name": "EntityCrudContractTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/data/entity/src/test/java/com/ghatana/datacloud/entity/EntityCrudContractTest.java"
+            ]
+          },
+          {
+            "name": "EventLogContractTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/event/store/src/test/java/com/ghatana/datacloud/storage/EventLogContractTest.java"
+            ]
+          },
+          {
+            "name": "GovernancePolicyTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/GovernancePolicyTest.java"
+            ]
+          },
+          {
+            "name": "GovernanceAuditServiceTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/audit/GovernanceAuditServiceTest.java"
+            ]
+          },
+          {
+            "name": "RuntimeTruthServiceTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/RuntimeTruthServiceTest.java"
+            ]
+          },
+          {
+            "name": "PatternSpecValidatorTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/PatternSpecValidatorTest.java"
+            ]
+          },
+          {
+            "name": "PatternSpecCompilerTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/PatternSpecCompilerTest.java"
+            ]
+          },
+          {
+            "name": "PatternSpecGoldenTests",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/pattern/spec/PatternSpecGoldenTests.java"
+            ]
+          },
+          {
+            "name": "EventOperatorCapabilityArchitectureContractTest",
+            "pass": true,
+            "paths": [
+              "products/data-cloud/planes/action/operator-contracts/src/test/java/com/ghatana/aep/operator/agent/EventOperatorCapabilityArchitectureContractTest.java"
+            ]
+          }
+        ],
+        "violations": []
+      }
+    },
+    "agentCapabilityDuplicateEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/agent-capability-duplicates.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:41.428Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-agent-capability-duplicates.mjs",
+          "source": "scripts/check-agent-capability-duplicates.mjs",
+          "command": "pnpm check:agent-capability-duplicates",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "summary": {
+          "scannedScopes": 15,
+          "violationCount": 0
+        },
+        "violations": []
+      }
+    },
+    "agentRuntimeTestExcludeEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/agent-runtime-test-excludes.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:42.413Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-agent-runtime-test-excludes.mjs",
+          "source": "scripts/check-agent-runtime-test-excludes.mjs",
+          "command": "pnpm check:agent-runtime-test-excludes",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "summary": {
+          "gradleFile": "products/data-cloud/planes/action/agent-runtime/build.gradle.kts",
+          "violationCount": 0
+        },
+        "violations": []
+      }
+    },
+    "agentUsageAuditEvidence": {
+      "present": true,
+      "path": ".kernel/evidence/agent-usage-audit.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:43.206Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/audit-agent-usage.mjs",
+          "source": "scripts/audit-agent-usage.mjs",
+          "command": "pnpm check:agent-usage-audit",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+          "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetEnvironment": "staging"
+        },
+        "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetEnvironment": "staging",
+        "summary": {
+          "scannedDirectories": 7,
+          "findingCount": 0,
+          "approvedExceptionRegistry": "products/data-cloud/planes/action/agent-runtime/docs/AGENT_USAGE_EXCEPTIONS.md",
+          "approvedExceptionPatterns": [
+            "\\/test\\/",
+            "\\/__tests__\\/",
+            "\\/node_modules\\/",
+            "AgentCapabilityExecutionFactory",
+            "AgentEventOperatorCapabilityAdapter",
+            "AgentAdapter",
+            "GovernedAgentDispatcher",
+            "AbstractAgentInferenceOperator",
+            "AgentPredicateOperator",
+            "AgentActionOperator",
+            "canvas\\/",
+            "CanvasCommand",
+            "ReflexEngine",
+            "AgentDispatchPipeline",
+            "AgentDispatchStage",
+            "CircuitBreakerOperator",
+            "HybridStateStore",
+            "WindowedQueryPlan",
+            "AepCentralRegistryService",
+            "AgentMarketplaceService",
+            "AgentCapabilityExecutionFactory",
+            "AgentEventOperatorCapabilityAdapter",
+            "GovernedAgentDispatcher"
+          ]
+        },
+        "violations": []
+      }
+    },
+    "auditCompletenessProof": {
+      "present": true,
+      "path": ".kernel/evidence/audit-completeness.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:45.020Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-audit-completeness.mjs",
+          "source": "scripts/check-audit-completeness.mjs",
+          "command": "pnpm check:audit-completeness",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "summary": {
+          "requiredFileCount": 10,
+          "coveredFileCount": 10,
+          "mutationSurfacesChecked": 5,
+          "violationCount": 0
+        },
+        "mutationSurfaces": [
+          {
+            "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+            "requiredTokens": [
+              "auditService",
+              "AuditEvent.builder",
+              "sensitivity",
+              "success"
+            ]
+          },
+          {
+            "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+            "requiredTokens": [
+              "AuditService is required",
+              "AuditEvent.builder",
+              "auditPayload",
+              "Entity writes must be atomic with event append and audit emission"
+            ]
+          },
+          {
+            "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java",
+            "requiredTokens": [
+              "recordCritical",
+              "RETENTION_PURGE",
+              "PII_REDACT"
+            ]
+          },
+          {
+            "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java",
+            "requiredTokens": [
+              "emitConnectorAudit",
+              "CONNECTOR_CREATED",
+              "CONNECTOR_UPDATED",
+              "CONNECTOR_DELETED"
+            ]
+          },
+          {
+            "file": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/audit/EventLogAuditService.java",
+            "requiredTokens": [
+              "recordCritical",
+              "failClosed",
+              "eventLogStore.append"
+            ]
+          }
+        ],
+        "coveredFiles": [
+          "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/audit/EventLogAuditService.java",
+          "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudSecurityFilter.java",
+          "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/EntityCrudHandler.java",
+          "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java",
+          "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataSourceRegistryHandler.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/audit/EventLogAuditServiceTest.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/audit/CriticalAuditFailureInjectionTest.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/SensitiveMutationAuditTrailTest.java",
+          "products/data-cloud/delivery/launcher/src/test/java/com/ghatana/datacloud/launcher/http/handlers/EntityEventAuditIdempotencyGoldenTest.java",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/audit/GovernanceAuditServiceTest.java"
+        ],
+        "violations": []
+      }
+    },
+    "operationsReadinessProof": {
+      "present": true,
+      "path": ".kernel/evidence/data-cloud-operations-readiness.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:45.260Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
+          "source": "scripts/check-data-cloud-operations-readiness.mjs",
+          "command": "pnpm check:data-cloud-operations-readiness",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "summary": {
+          "requiredFileCount": 15,
+          "presentFileCount": 15,
+          "readinessAreaCount": 7,
+          "violationCount": 0
+        },
+        "readinessAreas": [
+          "runtime truth",
+          "health checks",
+          "backup/restore drill",
+          "SLO budget",
+          "cost budget",
+          "alerting",
+          "deployment manifests and Helm/k8s render inputs"
+        ],
+        "presentFiles": [
+          "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/RuntimeTruthService.java",
+          "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/PlaneHealthChecker.java",
+          "products/data-cloud/planes/operations/config/src/main/java/com/ghatana/datacloud/config/BackupRestoreService.java",
+          "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/RuntimeTruthServiceTest.java",
+          "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/PlaneHealthCheckerTest.java",
+          "products/data-cloud/planes/operations/config/src/test/java/com/ghatana/datacloud/config/BackupRestoreServiceTest.java",
+          "products/data-cloud/docs/operations/README.md",
+          "products/data-cloud/docs/operations/RUNBOOK.md",
+          "products/data-cloud/docs/operations/PRODUCTION_PROFILE_CHECKLIST.md",
+          "products/data-cloud/deploy/helm/data-cloud/Chart.yaml",
+          "products/data-cloud/deploy/k8s/deployment.yaml",
+          "release-evidence/backup/backup-drill-report.json",
+          ".kernel/evidence/product-slo-budgets.json",
+          ".kernel/evidence/product-cost-budgets.json",
+          ".kernel/evidence/data-cloud-release-runtime-profile.json"
+        ],
+        "violations": []
+      }
+    },
+    "productReleaseReadiness": {
+      "present": true,
+      "path": ".kernel/evidence/product-release-readiness.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:18:23.527Z",
+        "evidenceRun": {
+          "generatedBy": "scripts/check-product-release-readiness.mjs",
+          "command": "pnpm check:product-release-readiness",
+          "source": "scripts/check-product-release-readiness.mjs",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+          "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetEnvironment": "staging"
+        },
+        "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetEnvironment": "staging",
+        "validationStatus": "validated",
+        "reviewDueAt": "2026-05-27T14:18:23.533Z",
+        "expiresAt": "2026-05-28T14:18:23.533Z",
+        "pass": true,
+        "journeyResults": [
+          {
+            "journey": "vision-and-coherence",
+            "pass": true,
+            "areas": [
+              {
+                "area": "product-truth-and-ownership",
+                "scripts": [
+                  "./scripts/check-product-shape-capability-matrix.mjs",
+                  "./scripts/check-product-registry-drift.mjs",
+                  "pnpm:check:product-registry",
+                  "./scripts/check-platform-product-boundaries.mjs",
+                  "./scripts/check-cross-product-interaction-boundaries.mjs"
+                ],
+                "pass": true
+              }
+            ]
+          },
+          {
+            "journey": "workflow-and-runtime-proof",
+            "pass": true,
+            "areas": [
+              {
+                "area": "e2e-runtime-and-failure-proof",
+                "scripts": [
+                  "./scripts/check-product-ui-contracts.mjs",
+                  "./scripts/check-audited-e2e-workflow.mjs",
+                  "pnpm:check:cross-product-interaction-flows",
+                  "./scripts/check-interaction-runtime-truth.mjs",
+                  "./scripts/check-data-cloud-release-runtime-profile.mjs",
+                  "./scripts/check-runtime-dependency-failure-injection.mjs",
+                  "./scripts/check-atomic-workflow-failure-injection.mjs",
+                  "./scripts/check-runtime-failure-injection.mjs",
+                  "./scripts/check-atomic-workflow-proof.mjs"
+                ],
+                "pass": true
+              }
+            ]
+          },
+          {
+            "journey": "security-privacy-governance",
+            "pass": true,
+            "areas": [
+              {
+                "area": "secure-routes-observability-and-doc-truth",
+                "scripts": [
+                  "./scripts/check-secret-default-credentials.mjs",
+                  "./scripts/check-production-stubs.mjs",
+                  "./scripts/check-route-entitlement-contracts.mjs",
+                  "./scripts/check-observability-conformance.mjs",
+                  "./scripts/check-doc-claims-evidence.mjs",
+                  "./scripts/check-current-state-claims.mjs",
+                  "./scripts/check-doc-truth.mjs"
+                ],
+                "pass": true
+              }
+            ]
+          },
+          {
+            "journey": "quality-experience-and-release",
+            "pass": true,
+            "areas": [
+              {
+                "area": "a11y-i18n-ai-performance",
+                "scripts": [
+                  "./scripts/check-data-cloud-ui-a11y.mjs",
+                  "./scripts/check-product-a11y-route-matrix.mjs",
+                  "./scripts/check-i18n-conformance.mjs",
+                  "./scripts/check-ai-governance-conformance.mjs",
+                  "./scripts/check-audited-performance-workflows.mjs",
+                  "./scripts/check-product-slo-budgets.mjs",
+                  "./scripts/check-product-cost-budgets.mjs",
+                  "./scripts/check-product-domain-invariants.mjs"
+                ],
+                "pass": true
+              },
+              {
+                "area": "strict-release-and-coverage",
+                "scripts": [
+                  "./scripts/check-release-profile-local-targets.mjs",
+                  "./scripts/check-openapi-release-quality.mjs",
+                  "./scripts/check-openapi-breaking-changes.mjs",
+                  "./scripts/check-product-release-evidence-packs.mjs",
+                  "./scripts/generate-wave2-product-quality-scorecard.mjs",
+                  "./scripts/check-product-ci-matrices.mjs",
+                  "./scripts/check-affected-product-strict-release-profile.mjs",
+                  "./scripts/check-product-family-asset-promotion-policy.mjs",
+                  "./scripts/check-yappc-product-family-control-plane.mjs",
+                  "./scripts/check-kernel-implementation-task-matrix.mjs",
+                  "./scripts/check-kernel-implementation-plan-coverage.mjs"
+                ],
+                "pass": true
+              },
+              {
+                "area": "artifact-authoring-platform-readiness",
+                "scripts": [
+                  "pnpm:check:kernel-authoring-pipeline",
+                  "pnpm:check:artifact-roundtrip",
+                  "pnpm:check:generated-artifact-validation-pipeline",
+                  "pnpm:check:studio-production-profile:strict",
+                  "pnpm:check:studio-source-acquisition-worker",
+                  "pnpm:check:studio-workflow-persistence-contracts"
+                ],
+                "pass": true
+              }
+            ]
+          }
+        ],
+        "releaseAreaResults": [
+          {
+            "area": "strict-release-gate-evidence",
+            "pass": true,
+            "scripts": [
+              "./scripts/check-product-family-asset-registry.mjs",
+              "./scripts/check-product-family-asset-promotion-policy.mjs",
+              "./scripts/check-product-release-evidence-packs.mjs",
+              "./scripts/check-release-profile-local-targets.mjs",
+              "./scripts/check-data-cloud-release-runtime-profile.mjs",
+              "./scripts/check-affected-product-strict-release-profile.mjs",
+              "./scripts/check-kernel-implementation-plan-coverage.mjs"
+            ]
+          },
+          {
+            "area": "quality-and-experience-gates",
+            "pass": true,
+            "scripts": [
+              "./scripts/check-data-cloud-ui-a11y.mjs",
+              "./scripts/check-product-a11y-route-matrix.mjs",
+              "./scripts/check-i18n-conformance.mjs",
+              "./scripts/check-ai-governance-conformance.mjs",
+              "./scripts/check-audited-performance-workflows.mjs",
+              "./scripts/check-product-slo-budgets.mjs",
+              "./scripts/check-product-cost-budgets.mjs",
+              "./scripts/check-product-domain-invariants.mjs",
+              "./scripts/check-openapi-release-quality.mjs",
+              "./scripts/check-openapi-breaking-changes.mjs"
+            ]
+          },
+          {
+            "area": "security-and-doc-truth-gates",
+            "pass": true,
+            "scripts": [
+              "./scripts/check-secret-default-credentials.mjs",
+              "./scripts/check-production-stubs.mjs",
+              "./scripts/check-route-entitlement-contracts.mjs",
+              "./scripts/check-doc-claims-evidence.mjs",
+              "./scripts/check-current-state-claims.mjs",
+              "./scripts/check-doc-truth.mjs"
+            ]
+          },
+          {
+            "area": "artifact-authoring-release-gates",
+            "pass": true,
+            "scripts": [
+              "pnpm:check:kernel-authoring-pipeline",
+              "pnpm:check:artifact-roundtrip",
+              "pnpm:check:generated-artifact-validation-pipeline",
+              "pnpm:check:studio-production-profile:strict",
+              "pnpm:check:studio-source-acquisition-worker",
+              "pnpm:check:studio-workflow-persistence-contracts"
+            ]
+          }
+        ],
+        "runs": [
+          {
+            "script": "pnpm:build:kernel-lifecycle-platform",
+            "status": 0,
+            "durationMs": 5705
+          },
+          {
+            "script": "./scripts/check-affected-product-strict-release-profile.mjs",
+            "status": 0,
+            "durationMs": 51
+          },
+          {
+            "script": "pnpm:check:data-cloud-release-gate",
+            "status": 0,
+            "durationMs": 72402
+          },
+          {
+            "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
+            "status": 0,
+            "durationMs": 31280
+          },
+          {
+            "script": "./scripts/check-data-cloud-ui-a11y.mjs",
+            "status": 0,
+            "durationMs": 47
+          },
+          {
+            "script": "./scripts/check-data-cloud-platform-providers.mjs",
+            "status": 0,
+            "durationMs": 208
+          },
+          {
+            "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
+            "status": 0,
+            "durationMs": 87
+          },
+          {
+            "script": "./scripts/check-action-plane-route-lifecycle.mjs",
+            "status": 0,
+            "durationMs": 110
+          },
+          {
+            "script": "./scripts/check-data-cloud-maturity-proof.mjs",
+            "status": 0,
+            "durationMs": 540
+          }
+        ],
+        "scopedCheckGroups": {
+          "globalPrerequisiteChecks": [
+            "pnpm:check:aggregate-gate-integrity",
+            "./scripts/check-release-profile-local-targets.mjs",
+            "./scripts/check-product-family-asset-registry.mjs",
+            "./scripts/check-affected-product-strict-release-profile.mjs"
+          ],
+          "platformChecks": [
+            "./scripts/check-kernel-platform-lifecycle.mjs",
+            "./scripts/check-kernel-lifecycle-truth.mjs",
+            "./scripts/check-toolchain-adapter-contracts.mjs",
+            "./scripts/check-product-artifact-contracts.mjs",
+            "./scripts/check-product-deployment-contracts.mjs",
+            "./scripts/check-product-environment-contracts.mjs"
+          ],
+          "productChecks": [
+            "./scripts/check-product-shape-capability-matrix.mjs",
+            "./scripts/check-product-registry-drift.mjs",
+            "./scripts/check-product-release-evidence-packs.mjs",
+            "./scripts/check-product-ci-matrices.mjs",
+            "./scripts/check-product-slo-budgets.mjs",
+            "./scripts/check-product-cost-budgets.mjs",
+            "./scripts/check-product-domain-invariants.mjs",
+            "./scripts/check-product-a11y-route-matrix.mjs",
+            "./scripts/check-openapi-release-quality.mjs",
+            "./scripts/check-openapi-breaking-changes.mjs"
+          ],
+          "dataCloudChecks": [
+            "pnpm:check:data-cloud-release-gate",
+            "./scripts/check-data-cloud-release-runtime-profile.mjs",
+            "./scripts/check-data-cloud-ui-a11y.mjs",
+            "./scripts/check-data-cloud-platform-providers.mjs",
+            "./scripts/check-data-cloud-platform-provider-readiness.mjs",
+            "./scripts/check-action-plane-route-lifecycle.mjs",
+            "./scripts/check-data-cloud-maturity-proof.mjs"
+          ],
+          "dmosChecks": [
+            "./scripts/check-digital-marketing-lifecycle-pilot.mjs",
+            "./scripts/check-dmos-boundary-workflow-coverage.mjs",
+            "./scripts/check-dmos-no-fake-data.mjs",
+            "./scripts/check-dmos-docs-matrix.mjs",
+            "./scripts/check-dmos-operations-docs.mjs",
+            "./scripts/check-dmos-duplicate-runtimes.mjs",
+            "./scripts/check-dmos-production-wiring.mjs",
+            "./scripts/check-dmos-runtime-module.mjs",
+            "./scripts/check-dmos-persistence.mjs",
+            "./scripts/check-dmos-kernel-context.mjs",
+            "./scripts/check-dmos-data-cloud-rls.mjs",
+            "./scripts/check-dmos-ai-action-log.mjs",
+            "./scripts/check-dmos-google-ads-connector.mjs"
+          ],
+          "phrChecks": [
+            "./scripts/check-phr-lifecycle-readiness.mjs",
+            "./scripts/check-phr-lifecycle-pilot.mjs",
+            "./scripts/check-phr-kernel-context.mjs",
+            "./scripts/check-phr-data-cloud-rls.mjs",
+            "./scripts/check-phr-emergency-access-audit.mjs",
+            "./scripts/check-phr-fhir-validation.mjs",
+            "./scripts/check-phr-hipaa-compliance.mjs",
+            "./scripts/check-phr-consent-cache.mjs"
+          ],
+          "yappcChecks": [
+            "./scripts/check-yappc-platform-provider-readiness.mjs",
+            "./scripts/check-yappc-product-family-control-plane.mjs",
+            "./scripts/check-yappc-product-unit-intent-handoff.mjs",
+            "./scripts/check-yappc-artifact-intelligence-boundary.mjs"
+          ],
+          "flashitChecks": [
+            "./scripts/check-flashit-lifecycle-readiness.mjs",
+            "./scripts/check-flashit-client-conformance.mjs",
+            "./scripts/check-flashit-doc-content.mjs",
+            "./scripts/check-flashit-package-manager.mjs"
+          ],
+          "artifactAuthoringChecks": [
+            "pnpm:check:kernel-authoring-pipeline",
+            "pnpm:check:artifact-roundtrip",
+            "pnpm:check:generated-artifact-validation-pipeline",
+            "pnpm:check:studio-production-profile:strict",
+            "pnpm:check:studio-source-acquisition-worker",
+            "pnpm:check:studio-workflow-persistence-contracts"
+          ]
+        },
+        "artifactAuthoringGateScripts": [
+          "pnpm:check:kernel-authoring-pipeline",
+          "pnpm:check:artifact-roundtrip",
+          "pnpm:check:generated-artifact-validation-pipeline",
+          "pnpm:check:studio-production-profile:strict",
+          "pnpm:check:studio-source-acquisition-worker",
+          "pnpm:check:studio-workflow-persistence-contracts"
+        ],
+        "releaseProfiles": [
+          "standard-web-api-release",
+          "backend-only-release",
+          "polyglot-service-release"
+        ],
+        "affectedProducts": [
+          "data-cloud"
+        ],
+        "perProductBlockingGaps": [],
+        "scopedExecution": true,
+        "plannedExecutionOrder": [
+          "./scripts/check-affected-product-strict-release-profile.mjs",
+          "pnpm:check:data-cloud-release-gate",
+          "./scripts/check-data-cloud-release-runtime-profile.mjs",
+          "./scripts/check-data-cloud-ui-a11y.mjs",
+          "./scripts/check-data-cloud-platform-providers.mjs",
+          "./scripts/check-data-cloud-platform-provider-readiness.mjs",
+          "./scripts/check-action-plane-route-lifecycle.mjs",
+          "./scripts/check-data-cloud-maturity-proof.mjs"
+        ]
+      }
+    },
+    "aiGovernanceProof": {
+      "present": true,
+      "path": ".kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json",
+      "payload": {
+        "timestamp": "generated-on-demand",
+        "generatedAt": "2026-05-26T14:18:06.838Z",
+        "evidenceRun": {
+          "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
+          "command": "pnpm check:ai-governance-behavioral-proof",
+          "source": "scripts/check-ai-governance-behavioral-proof.mjs",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "violations": [],
+        "warnings": [],
+        "evidence": [
+          "Data Cloud: Executed real AI governance behavioral scenarios"
+        ],
+        "summary": {
+          "totalViolations": 0,
+          "totalWarnings": 0,
+          "totalEvidence": 1
+        }
+      }
+    },
+    "openApiDriftProof": {
+      "present": true,
+      "path": ".kernel/evidence/openapi-breaking-changes.json",
+      "payload": {
+        "generatedAt": "2026-05-26T05:30:07.168Z",
+        "status": "passed",
+        "details": [
+          {
+            "id": "data-cloud",
+            "baselinePath": "release-evidence/openapi-baseline/data-cloud.yaml",
+            "currentPath": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+            "removedCount": 0,
+            "waivedRemoved": [],
+            "unwaivedRemoved": [],
+            "schemaBreakingChanges": 0,
+            "unwaivedSchemaChanges": 0,
+            "schemaChanges": []
+          },
+          {
+            "id": "aep",
+            "baselinePath": "release-evidence/openapi-baseline/aep.yaml",
+            "currentPath": "products/data-cloud/contracts/openapi/aep.yaml",
+            "removedCount": 0,
+            "waivedRemoved": [],
+            "unwaivedRemoved": [],
+            "schemaBreakingChanges": 0,
+            "unwaivedSchemaChanges": 0,
+            "schemaChanges": []
+          },
+          {
+            "id": "digital-marketing",
+            "baselinePath": "release-evidence/openapi-baseline/dmos-openapi.json",
+            "currentPath": "products/digital-marketing/dm-api/src/main/resources/openapi.json",
+            "removedCount": 0,
+            "waivedRemoved": [],
+            "unwaivedRemoved": [],
+            "schemaBreakingChanges": 0,
+            "unwaivedSchemaChanges": 0,
+            "schemaChanges": []
+          },
+          {
+            "id": "flashit",
+            "baselinePath": "release-evidence/openapi-baseline/flashit-openapi.yaml",
+            "currentPath": "products/flashit/backend/gateway/openapi.yaml",
+            "removedCount": 0,
+            "waivedRemoved": [],
+            "unwaivedRemoved": [],
+            "schemaBreakingChanges": 0,
+            "unwaivedSchemaChanges": 0,
+            "schemaChanges": []
+          }
+        ],
+        "violations": []
+      }
+    },
+    "routeManifestProof": {
+      "present": true,
+      "path": ".kernel/evidence/action-plane-route-lifecycle.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:18:22.954Z",
+        "productId": "data-cloud",
+        "area": "action-plane-route-lifecycle",
+        "targetScore": 5,
+        "files": {
+          "actionPlane": "products/data-cloud/contracts/openapi/action-plane.yaml",
+          "aep": "products/data-cloud/contracts/openapi/aep.yaml",
+          "routeRegistry": "products/data-cloud/contracts/openapi/route-compatibility-registry.yaml",
+          "routeSecurityRegistry": "products/data-cloud/delivery/launcher/src/main/java/com/ghatana/datacloud/launcher/http/RouteSecurityRegistry.java"
+        },
+        "classification": {
+          "canonicalActionPathCount": 45,
+          "canonicalActionOperationCount": 50,
+          "aepCompatibilityOnlyPathCount": 67,
+          "aepDeprecatedOperationCount": 11,
+          "registeredLegacyRouteCount": 28,
+          "duplicateRegistryEntryCount": 0,
+          "runtimeCompatibilityRouteCount": 28,
+          "registeredRuntimeCompatibilityRouteCount": 28,
+          "canonicalActionRoutesReservedCount": 0
+        },
+        "policy": {
+          "canonicalProductLanguage": "Data Cloud Action Plane",
+          "internalCompatibilityName": "AEP",
+          "canonicalRoutePrefix": "/api/v1/action/",
+          "compatibilityRouteStatus": "compatibility-only",
+          "registryRequiredLifecycleFields": [
+            "path",
+            "canonical",
+            "methods",
+            "deprecated_since",
+            "retirement_target",
+            "feature_flag",
+            "migration_notes"
+          ]
+        },
+        "summary": {
+          "passed": true,
+          "violationCount": 0,
+          "proofAreaCount": 4
+        },
+        "violations": []
+      }
+    },
+    "sdkGenerationProof": {
+      "present": true,
+      "path": ".kernel/evidence/data-cloud-release-runtime-profile.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:18:22.494Z",
+        "evidenceRun": {
+          "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
+          "command": "pnpm check:data-cloud-release-runtime-profile",
+          "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+          "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+          "targetEnvironment": "staging"
+        },
+        "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+        "targetEnvironment": "staging",
+        "validationStatus": "validated",
+        "reviewDueAt": "2026-05-27T14:18:22.494Z",
+        "expiresAt": "2026-05-28T14:18:22.494Z",
+        "checks": [
+          {
+            "check": "Runtime dependency failure-injection executable",
+            "ok": true
+          },
+          {
+            "check": "Atomic workflow failure-injection executable",
+            "ok": true
+          },
+          {
+            "check": "Runtime failure-injection posture",
+            "ok": true
+          },
+          {
+            "check": "Atomic workflow proof",
+            "ok": true
+          },
+          {
+            "check": "Data Cloud maturity proof",
+            "ok": true
+          },
+          {
+            "check": "AI governance conformance",
+            "ok": true
+          },
+          {
+            "check": "AI governance behavioral proof",
+            "ok": true
+          },
+          {
+            "check": "i18n conformance",
+            "ok": true
+          },
+          {
+            "check": "i18n behavioral proof",
+            "ok": true
+          },
+          {
+            "check": "a11y behavioral proof",
+            "ok": true
+          },
+          {
+            "check": "Route entitlement contracts",
+            "ok": true
+          },
+          {
+            "check": "Action Plane route lifecycle",
+            "ok": true
+          },
+          {
+            "check": "OpenAPI canonical alignment",
+            "ok": true
+          },
+          {
+            "check": "Observability conformance",
+            "ok": true
+          }
+        ],
+        "pass": true
+      }
+    },
+    "tenantIsolationProof": {
+      "present": true,
+      "path": ".kernel/evidence/data-cloud/tenant-isolation-governance-validation.json",
+      "payload": {
+        "schemaVersion": "1.0.0",
+        "productId": "data-cloud",
+        "generatedAt": "2026-05-24T08:40:00.000Z",
+        "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+        "evidenceType": "tenant-isolation-governance-validation",
+        "status": "validated",
+        "summary": {
+          "title": "Data Cloud Tenant Isolation and Governance Plane Validation",
+          "description": "Comprehensive validation of multi-tenant isolation guarantees across Data Cloud infrastructure, including entity storage, event logs, query operations, and governance plane policies and rules.",
+          "validatedAt": "2026-05-24T08:40:00.000Z",
+          "validationScope": [
+            "entity-crud-isolation",
+            "event-log-isolation",
+            "tenant-context-spi",
+            "cross-collection-isolation",
+            "concurrent-multi-tenant-access",
+            "governance-plane-isolation",
+            "policy-evaluation"
+          ]
+        },
+        "tenantIsolation": {
+          "testSuite": {
+            "file": "products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/security/DataCloudTenantIsolationTest.java",
+            "testClasses": [
+              "EntityCrudIsolation",
+              "EventLogIsolation",
+              "TenantContextSpi",
+              "CrossCollectionIsolation",
+              "ConcurrentAccess",
+              "EndToEndLifecycle",
+              "GovernancePlaneIsolation"
+            ],
+            "totalTests": 20,
+            "coverageAreas": [
+              "Entity saved by tenant A is invisible to tenant B",
+              "Each tenant sees only its own entities",
+              "Delete by tenant A does not affect tenant B's entities",
+              "findById across tenants returns empty, not other tenant's entity",
+              "Events appended by tenant A are invisible to tenant B",
+              "Event queries by type are tenant-scoped",
+              "TenantContext.of() creates correct tenant scope",
+              "TenantContext with workspace scopes further",
+              "TenantContext metadata does not leak across instances",
+              "TenantContext.withMetadata creates new instance",
+              "Same collection name in different tenants are isolated namespaces",
+              "Concurrent entity saves maintain tenant isolation",
+              "Full CRUD lifecycle maintains tenant boundaries",
+              "Full event lifecycle maintains tenant boundaries",
+              "Policies defined by tenant A are invisible to tenant B",
+              "Each tenant sees only its own governance rules",
+              "Policy enforcement is tenant-scoped",
+              "Audit logs are tenant-scoped in governance plane"
+            ]
+          },
+          "hardeningFeatures": [
+            {
+              "feature": "Entity CRUD Isolation",
+              "description": "All entity operations (save, query, findById, delete) are automatically scoped to the tenant context. Cross-tenant access returns empty results, not errors.",
+              "implementation": "DataCloudClient methods accept tenantId parameter and enforce isolation at the storage layer",
+              "testCoverage": "EntityCrudIsolation nested test class with 4 tests"
+            },
+            {
+              "feature": "Event Log Isolation",
+              "description": "Event append and query operations are tenant-scoped. Events emitted by one tenant are never visible to other tenants.",
+              "implementation": "EventStoreContract enforces tenant boundaries at the event log layer",
+              "testCoverage": "EventLogIsolation nested test class with 2 tests"
+            },
+            {
+              "feature": "TenantContext SPI",
+              "description": "Immutable value object for tenant context with tenant ID, optional workspace ID, and metadata. Factory methods ensure correct scoping and immutability.",
+              "implementation": "TenantContext record with validation, factory methods, and withMetadata/withWorkspace builders",
+              "testCoverage": "TenantContextSpi nested test class with 4 tests"
+            },
+            {
+              "feature": "Cross-Collection Isolation",
+              "description": "Same collection names in different tenants are isolated namespaces. Each tenant has its own data namespace regardless of collection naming.",
+              "implementation": "Storage layer prefixes tenant context to collection namespace",
+              "testCoverage": "CrossCollectionIsolation nested test class with 1 test"
+            },
+            {
+              "feature": "Concurrent Multi-Tenant Access",
+              "description": "Concurrent operations from multiple tenants maintain isolation without cross-contamination under load.",
+              "implementation": "Eventloop-based async execution with tenant-scoped operations",
+              "testCoverage": "ConcurrentAccess nested test class with 1 test (20 ops per tenant)"
+            },
+            {
+              "feature": "End-to-End Multi-Tenant Lifecycle",
+              "description": "Full CRUD and event lifecycles maintain tenant boundaries throughout create, read, update, delete operations.",
+              "implementation": "End-to-end integration tests verify isolation across operation sequences",
+              "testCoverage": "EndToEndLifecycle nested test class with 2 tests"
+            }
+          ]
+        },
+        "governancePlane": {
+          "testCoverage": {
+            "file": "products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/security/DataCloudTenantIsolationTest.java",
+            "testClass": "GovernancePlaneIsolation",
+            "tests": 4,
+            "areas": [
+              "Policies defined by tenant A are invisible to tenant B",
+              "Each tenant sees only its own governance rules",
+              "Policy enforcement is tenant-scoped",
+              "Audit logs are tenant-scoped in governance plane"
+            ]
+          },
+          "services": [
+            {
+              "service": "MemoryGovernanceService",
+              "file": "products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/governance/MemoryGovernanceService.java",
+              "purpose": "API for governing memory namespaces: enforcing retention policies, controlling access to namespaces, and auditing governance decisions",
+              "tenantScoping": "All methods (enforceRetention, evaluateAccess, setRetentionPolicy, auditLog) accept tenantId parameter and enforce tenant boundaries",
+              "capabilities": [
+                "Register and update retention policies per namespace",
+                "Evaluate whether a memory access is permitted for a given principal",
+                "Expire and evict memory entries past their retention window",
+                "Audit governance policy enforcement history"
+              ],
+              "valueTypes": [
+                "RetentionEnforcementResult",
+                "AccessDecision",
+                "GovernanceEvent"
+              ]
+            },
+            {
+              "service": "PolicyService",
+              "file": "products/data-cloud/planes/governance/core/src/main/java/com/ghatana/datacloud/governance/PolicyService.java",
+              "purpose": "Domain contract for data governance policy management",
+              "tenantScoping": "Policy record includes tenantId field. Policies are indexed by tenant and only applied to matching tenant contexts",
+              "policyTypes": [
+                "DATA_RETENTION",
+                "PII_MASKING",
+                "ACCESS_CONTROL",
+                "AUDIT_LOGGING",
+                "CONSENT_MANAGEMENT",
+                "DATA_MINIMIZATION",
+                "PURPOSE_LIMITATION",
+                "CROSS_BORDER_TRANSFER",
+                "ENCRYPTION",
+                "ANONYMIZATION"
+              ],
+              "policyRecord": {
+                "fields": [
+                  "id",
+                  "name",
+                  "description",
+                  "tenantId",
+                  "type",
+                  "conditions",
+                  "enabled",
+                  "priority",
+                  "createdAt",
+                  "updatedAt"
+                ]
+              }
+            },
+            {
+              "service": "PolicyEvaluator",
+              "file": "products/data-cloud/planes/governance/core/src/main/java/com/ghatana/datacloud/governance/PolicyEvaluator.java",
+              "purpose": "Evaluates governance policies against data artifacts and surfaces violations",
+              "tenantScoping": "EvaluationContext includes tenantId. evaluateAll method filters policies by tenantId match before evaluation",
+              "evaluationLogic": "Policies with null tenantId are treated as global. Policies with tenantId only apply to matching tenant contexts",
+              "policyHandlers": [
+                "evaluatePiiMasking",
+                "evaluateAccessControl",
+                "evaluateAuditLogging",
+                "evaluateConsentManagement",
+                "evaluateDataMinimization",
+                "evaluatePurposeLimitation",
+                "evaluateCrossBorderTransfer",
+                "evaluateEncryption",
+                "evaluateAnonymization",
+                "evaluateDataRetention"
+              ],
+              "valueTypes": [
+                "PolicyViolation",
+                "EvaluationContext"
+              ]
+            }
+          ],
+          "hardeningFeatures": [
+            {
+              "feature": "Policy Isolation",
+              "description": "Policies defined by one tenant are invisible to other tenants. Each tenant sees only its own governance rules.",
+              "implementation": "Policy record includes tenantId field. Query operations filter by tenant context",
+              "testCoverage": "GovernancePlaneIsolation.policiesInvisibleAcrossTenants, GovernancePlaneIsolation.eachTenantSeesOwnGovernanceRules"
+            },
+            {
+              "feature": "Tenant-Scoped Policy Enforcement",
+              "description": "Policy evaluation is tenant-scoped. A tenant's policies only apply to operations within that tenant's context.",
+              "implementation": "PolicyEvaluator.evaluateAll filters policies by tenantId match before evaluation",
+              "testCoverage": "GovernancePlaneIsolation.policyEnforcementTenantScoped"
+            },
+            {
+              "feature": "Tenant-Scoped Audit Logs",
+              "description": "Audit logs in the governance plane are tenant-scoped. Each tenant sees only its own audit events.",
+              "implementation": "Event log queries are filtered by tenant context. Audit events include tenant-specific actor information",
+              "testCoverage": "GovernancePlaneIsolation.auditLogsTenantScoped"
+            },
+            {
+              "feature": "Memory Namespace Governance",
+              "description": "Memory governance operations (retention enforcement, access evaluation, policy setting, audit logging) are all tenant-scoped.",
+              "implementation": "MemoryGovernanceService methods require tenantId parameter and enforce boundaries",
+              "testCoverage": "MemoryGovernanceServiceTest with tenant isolation tests"
+            }
+          ]
+        },
+        "tenantContextSpi": {
+          "file": "products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/TenantContext.java",
+          "purpose": "Tenant context for multi-tenant storage operations",
+          "recordFields": [
+            "tenantId (required, non-blank)",
+            "workspaceId (optional)",
+            "metadata (immutable map)"
+          ],
+          "factoryMethods": [
+            "TenantContext.of(String tenantId)",
+            "TenantContext.of(String tenantId, String workspaceId)",
+            "TenantContext.of(String tenantId, Map<String, String> metadata)"
+          ],
+          "builderMethods": [
+            "withMetadata(String key, String value)",
+            "withWorkspace(String workspaceId)"
+          ],
+          "validation": [
+            "tenantId is required and non-null",
+            "tenantId cannot be blank",
+            "workspaceId defaults to Optional.empty() if null",
+            "metadata is copied to immutable map if provided, defaults to empty map"
+          ],
+          "immutability": "Record with defensive copying ensures immutability. withMetadata and withWorkspace return new instances.",
+          "testCoverage": "TenantContextTest with nested test classes for factory methods, metadata handling, and workspace scoping"
+        },
+        "testCoverage": {
+          "totalTests": 20,
+          "testSuites": [
+            {
+              "name": "DataCloudTenantIsolationTest",
+              "file": "products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/security/DataCloudTenantIsolationTest.java",
+              "nestedClasses": 7,
+              "testsPerClass": {
+                "EntityCrudIsolation": 4,
+                "EventLogIsolation": 2,
+                "TenantContextSpi": 4,
+                "CrossCollectionIsolation": 1,
+                "ConcurrentAccess": 1,
+                "EndToEndLifecycle": 2,
+                "GovernancePlaneIsolation": 4
+              }
+            },
+            {
+              "name": "TenantContextTest",
+              "file": "products/data-cloud/planes/shared-spi/src/test/java/com/ghatana/datacloud/spi/TenantContextTest.java",
+              "nestedClasses": 5,
+              "coverage": "Factory methods, metadata handling, workspace scoping, immutability"
+            },
+            {
+              "name": "MemoryGovernanceServiceTest",
+              "file": "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/memory/governance/MemoryGovernanceServiceTest.java",
+              "nestedClasses": 4,
+              "coverage": "Governance service tests, access decision tests, audit log, retention enforcement"
+            },
+            {
+              "name": "PolicyEvaluatorTest",
+              "file": "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/PolicyEvaluatorTest.java",
+              "coverage": "Policy evaluation for all policy types, tenant-scoped evaluation"
+            }
+          ],
+          "isolationGuarantees": [
+            "No cross-tenant data leakage in entity storage",
+            "No cross-tenant event leakage in event logs",
+            "No cross-tenant policy visibility",
+            "No cross-tenant audit log leakage",
+            "Immutable tenant context prevents accidental scope changes",
+            "Concurrent operations maintain isolation under load"
+          ]
+        },
+        "securityConsiderations": [
+          "Tenant ID is required and validated (non-null, non-blank)",
+          "All storage operations are implicitly tenant-scoped",
+          "Cross-tenant access returns empty results, not errors (prevents information leakage through error messages)",
+          "Policies are tenant-scoped and only apply to matching tenant contexts",
+          "Audit logs are tenant-scoped for compliance and investigation",
+          "Metadata is immutable to prevent scope creep",
+          "Workspace ID provides additional scoping within tenant"
+        ],
+        "evidenceRefs": [
+          "products/data-cloud/delivery/runtime-composition/src/test/java/com/ghatana/datacloud/security/DataCloudTenantIsolationTest.java",
+          "products/data-cloud/planes/shared-spi/src/main/java/com/ghatana/datacloud/spi/TenantContext.java",
+          "products/data-cloud/planes/shared-spi/src/test/java/com/ghatana/datacloud/spi/TenantContextTest.java",
+          "products/data-cloud/delivery/api/src/main/java/com/ghatana/datacloud/memory/governance/MemoryGovernanceService.java",
+          "products/data-cloud/delivery/api/src/test/java/com/ghatana/datacloud/memory/governance/MemoryGovernanceServiceTest.java",
+          "products/data-cloud/planes/governance/core/src/main/java/com/ghatana/datacloud/governance/PolicyService.java",
+          "products/data-cloud/planes/governance/core/src/main/java/com/ghatana/datacloud/governance/PolicyEvaluator.java",
+          "products/data-cloud/planes/governance/core/src/test/java/com/ghatana/datacloud/governance/PolicyEvaluatorTest.java"
+        ],
+        "validationResults": {
+          "entityCrudIsolation": "PASS",
+          "eventLogIsolation": "PASS",
+          "tenantContextSpi": "PASS",
+          "crossCollectionIsolation": "PASS",
+          "concurrentMultiTenantAccess": "PASS",
+          "endToEndLifecycle": "PASS",
+          "governancePlaneIsolation": "PASS",
+          "policyEvaluation": "PASS",
+          "memoryGovernanceService": "PASS"
+        },
+        "notes": [
+          "Tenant isolation is enforced at multiple layers: storage, event log, governance plane",
+          "All test suites use ActiveJ eventloop for async execution consistent with Data Cloud architecture",
+          "Governance plane policies include tenantId field for scoping",
+          "PolicyEvaluator filters policies by tenantId before evaluation",
+          "MemoryGovernanceService operations are all tenant-scoped",
+          "Audit logs in governance plane are tenant-scoped for compliance"
+        ]
+      }
+    },
+    "securitySbomProof": {
+      "present": true,
+      "path": ".kernel/evidence/data-cloud-security-sbom-proof.json",
+      "payload": {
+        "generatedAt": "2026-05-26T14:16:44.785Z",
+        "pass": true,
+        "evidenceRun": {
+          "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
+          "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
+          "command": "pnpm check:data-cloud-security-sbom-proof",
+          "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+        },
+        "source": {
+          "workflow": ".github/workflows/data-cloud-release.yml"
+        },
+        "summary": {
+          "requiredTokenCount": 10,
+          "violationCount": 0
+        },
+        "requiredTokens": [
+          "security-scan-strict:",
+          "needs: [build-and-test]",
+          "Run dependency vulnerability check (blocking)",
+          ":products:data-cloud:delivery:runtime-composition:dependencyCheckAnalyze",
+          "Generate SBOM (blocking)",
+          "./gradlew cyclonedxBom --no-daemon",
+          "Upload SBOM artifact",
+          "name: data-cloud-sbom",
+          "**/build/reports/bom.json",
+          "**/build/reports/bom.xml"
+        ],
+        "violations": []
+      }
+    },
+    "smokeE2eProof": {
+      "present": true,
+      "path": "release-evidence/smoke/smoke-e2e-report.json",
+      "payload": {
+        "generatedAt": "2026-05-25T16:38:10.455Z",
+        "source": "check:data-cloud-runbook-smoke",
+        "summary": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 0
+        },
+        "results": [
+          {
+            "check": "runbook-smoke",
+            "status": "PASS",
+            "detail": "Recovered from runbook smoke command output for local release evidence gating."
+          }
+        ]
+      }
+    },
+    "backupRestoreProof": {
+      "present": true,
+      "path": "release-evidence/backup/backup-drill-report.json",
+      "payload": {
+        "drill_timestamp": "2026-05-25T16:38:10.846Z",
+        "source": "check:release-rollback-drill",
+        "pass": 1,
+        "fail": 0,
+        "skip": 0,
+        "results": [
+          {
+            "tier": "release-rollback-drill",
+            "check": "audit-task",
+            "status": "PASS",
+            "detail": "Release rollback drill production-readiness audit task passed."
+          }
+        ]
+      }
+    },
+    "a11yProof": {
+      "present": true,
+      "path": ".kernel/evidence/a11y-behavioral-proof/a11y-behavioral-proof-latest.json",
+      "payload": {
+        "timestamp": "generated-on-demand",
+        "violations": [],
+        "warnings": [],
+        "evidence": [
+          "Data Cloud: Executed real keyboard/screen-reader/focus behavioral tests"
+        ],
+        "summary": {
+          "totalViolations": 0,
+          "totalWarnings": 0,
+          "totalEvidence": 1
+        }
+      }
+    },
+    "i18nProof": {
+      "present": true,
+      "path": ".kernel/evidence/i18n-behavioral-proof/i18n-behavioral-proof-latest.json",
+      "payload": {
+        "timestamp": "generated-on-demand",
+        "violations": [],
+        "warnings": [],
+        "evidence": [
+          "Data Cloud: Executed real i18n behavioral scenarios"
+        ],
+        "summary": {
+          "totalViolations": 0,
+          "totalWarnings": 0,
+          "totalEvidence": 1
+        }
+      }
+    },
+    "sloProof": {
+      "present": true,
+      "path": ".kernel/evidence/product-slo-budgets.json",
+      "payload": {
+        "timestamp": "generated-on-demand",
+        "status": "passed",
+        "activeBusinessProducts": [
+          "dcmaar",
+          "digital-marketing",
+          "finance",
+          "flashit",
+          "phr",
+          "tutorputor"
+        ],
+        "violations": [],
+        "warnings": []
+      }
+    },
+    "costProof": {
+      "present": true,
+      "path": ".kernel/evidence/product-cost-budgets.json",
+      "payload": {
+        "generatedAt": "2026-05-26T05:30:04.908Z",
+        "status": "passed",
+        "activeBusinessProducts": [
+          "dcmaar",
+          "digital-marketing",
+          "finance",
+          "flashit",
+          "phr",
+          "tutorputor"
+        ],
+        "violations": []
+      }
+    },
+    "domainInvariantProof": {
+      "present": true,
+      "path": ".kernel/evidence/product-domain-invariants.json",
+      "payload": {
+        "generatedAt": "2026-05-26T05:30:05.474Z",
+        "status": "passed",
+        "coverage": [
+          {
+            "productId": "dcmaar",
+            "hasInvariantDeclaration": true,
+            "invariantCount": 6,
+            "mappingViolations": 0,
+            "categoryViolations": 0,
+            "executionViolations": 0
+          },
+          {
+            "productId": "digital-marketing",
+            "hasInvariantDeclaration": false,
+            "javaTestCount": 303,
+            "tsTestCount": 50,
+            "invariantNamedTestCount": 106
+          },
+          {
+            "productId": "finance",
+            "hasInvariantDeclaration": true,
+            "invariantCount": 8,
+            "mappingViolations": 0,
+            "categoryViolations": 0,
+            "executionViolations": 0
+          },
+          {
+            "productId": "flashit",
+            "hasInvariantDeclaration": true,
+            "invariantCount": 8,
+            "mappingViolations": 0,
+            "categoryViolations": 0,
+            "executionViolations": 0
+          },
+          {
+            "productId": "phr",
+            "hasInvariantDeclaration": true,
+            "invariantCount": 10,
+            "mappingViolations": 0,
+            "categoryViolations": 0,
+            "executionViolations": 0
+          },
+          {
+            "productId": "tutorputor",
+            "hasInvariantDeclaration": true,
+            "invariantCount": 7,
+            "mappingViolations": 0,
+            "categoryViolations": 0,
+            "executionViolations": 0
+          }
+        ],
+        "violations": []
+      }
+    }
+  },
+  "violations": []
+}

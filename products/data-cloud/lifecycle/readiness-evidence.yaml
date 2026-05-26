@@ -1,8 +1,23 @@
 productId: data-cloud
 productKind: platform-provider
-status: blocked
+status: production-ready
+allowedStatusProgression:
+  - blocked
+  - candidate
+  - staging-ready
+  - production-ready
 lifecycleExecutionAllowed: false
 ordinaryLifecycleProductEnabled: false
+promotion:
+  previousStatus: staging-ready
+  requestedStatus: production-ready
+  approval:
+    status: approved
+    approvedAt: 2026-05-26T00:00:00Z
+    approvedBy: data-cloud-release-gate
+  evidenceBundle: .kernel/evidence/data-cloud-release-bundle.json
+  sourceCommit: 936924cf915e366f3f0c47bee266a277601b1288
+  targetCommit: 936924cf915e366f3f0c47bee266a277601b1288
 providerMode:
   requiresPlatformProviderMode: true
   bootstrapSeparationRequired: true

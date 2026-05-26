@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.api;
 
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -61,7 +62,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
                 calls.incrementAndGet();
                 return Promise.of(HttpResponse.ok200().build());
             };
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
 
             for (int i = 0; i < 80; i++) {
                 HttpRequest request = tenantRequest("tenant-bypass");
@@ -81,7 +82,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
             String tenant = "tenant-env-test-" + UUID.randomUUID();
 
             for (int i = 0; i < DmosApiRateLimiter.DEFAULT_MAX_REQUESTS; i++) {
@@ -109,7 +110,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
             String tenant = "tenant-" + UUID.randomUUID();
 
             for (int i = 0; i < DmosApiRateLimiter.DEFAULT_MAX_REQUESTS; i++) {
@@ -127,7 +128,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
 
             String tenantA = "tenant-A-" + UUID.randomUUID();
             String tenantB = "tenant-B-" + UUID.randomUUID();
@@ -150,7 +151,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
 
             HttpRequest xffRequest = HttpRequest.get("http://localhost/v1/x")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "203.0.113.5")
@@ -169,7 +170,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
 
             HttpRequest chainA = HttpRequest.get("http://localhost/v1/x")
                 .withHeader(HttpHeaders.of("X-Forwarded-For"), "1.2.3.4, 5.6.7.8")
@@ -201,7 +202,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
             String tenant = "tenant-429-json-" + UUID.randomUUID();
 
             for (int i = 0; i < DmosApiRateLimiter.DEFAULT_MAX_REQUESTS; i++) {
@@ -227,7 +228,7 @@ class DmosApiRateLimiterTest extends EventloopTestBase {
             DmosApiRateLimiter.setTestRuntimeOverride(false);
 
             AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build());
-            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate);
+            AsyncServlet wrapped = DmosApiRateLimiter.wrap(delegate, DmosMetricsCollector.disabled(), "rate-limiter-test");
             String tenant = "tenant-retry-after-" + UUID.randomUUID();
 
             for (int i = 0; i < DmosApiRateLimiter.DEFAULT_MAX_REQUESTS; i++) {

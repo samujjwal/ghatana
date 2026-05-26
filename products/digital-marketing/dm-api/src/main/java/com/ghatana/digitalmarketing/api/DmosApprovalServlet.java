@@ -94,7 +94,7 @@ public final class DmosApprovalServlet {
             null,
             DmosMetricsCollector.disabled(),
             DmosTelemetry.disabled(),
-            new DmosHttpContextFactory(false, null)
+            DmosHttpContextFactory.testModeWithAnonymousFallback()
         );
     }
 

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.validation.ContentValidationService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -81,7 +82,9 @@ public final class DmosContentValidationServlet {
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-versions/:versionId/validation-results",
                 this::handleListResults)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "content-validation"
         );
     }
 

@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>ImagingStudy resources</li>
  *   <li>ClinicalImpression (clinical notes) resources</li>
  *   <li>ServiceRequest (referrals) resources</li>
+ *   <li>DiagnosticReport resources</li>
  *   <li>DocumentReference resources</li>
  * </ul>
  *
@@ -577,6 +578,60 @@ class FhirGoldenFixturesTest {
             JsonNode reasonCodes = root.path("reasonCode");
             assertThat(reasonCodes.isArray()).isTrue();
             assertThat(reasonCodes.size()).isGreaterThan(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("DiagnosticReport golden fixture")
+    class DiagnosticReportGoldenFixture {
+
+        @Test
+        @DisplayName("diagnostic-report-golden.json exists and is valid JSON")
+        void fixtureExists() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            assertThat(root).isNotNull();
+        }
+
+        @Test
+        @DisplayName("resourceType is DiagnosticReport")
+        void hasResourceType() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            assertThat(root.path("resourceType").asText()).isEqualTo("DiagnosticReport");
+        }
+
+        @Test
+        @DisplayName("status is valid DiagnosticReport status")
+        void hasValidStatus() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            String status = root.path("status").asText();
+            assertThat(status).isIn("registered", "partial", "preliminary", "final", "amended", "corrected", "appended", "cancelled", "entered-in-error", "unknown");
+        }
+
+        @Test
+        @DisplayName("code uses LOINC system")
+        void codeUsesLoinc() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            JsonNode coding = root.path("code").path("coding");
+            assertThat(coding.isArray()).isTrue();
+            assertThat(coding.get(0).path("system").asText()).isEqualTo("http://loinc.org");
+            assertThat(coding.get(0).path("code").asText()).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("subject reference follows Patient/{id} format")
+        void subjectReferenceFormat() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            assertThat(root.path("subject").path("reference").asText()).startsWith("Patient/");
+        }
+
+        @Test
+        @DisplayName("has result Observation reference")
+        void hasResultObservationReference() throws Exception {
+            JsonNode root = loadFixture("diagnostic-report-golden.json");
+            JsonNode results = root.path("result");
+            assertThat(results.isArray()).isTrue();
+            assertThat(results.size()).isGreaterThan(0);
+            assertThat(results.get(0).path("reference").asText()).startsWith("Observation/");
         }
     }
 

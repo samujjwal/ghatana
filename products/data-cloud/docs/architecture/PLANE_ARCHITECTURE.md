@@ -49,7 +49,7 @@ During migration, AEP implementation modules may remain under `products/data-clo
 | Context Plane | Lineage, provenance, freshness, semantic context, memory, RAG, and retrieval grounding | Context details, lineage, memory, RAG | `planes/context` |
 | Intelligence Plane | Schema inference, query assistance, recommendations, anomaly detection, classification, summarization, and ML substrate | Query assist, insights, recommendations | `planes/intelligence` |
 | Governance Plane | Tenant isolation, authorization, policy, privacy, retention, redaction, legal hold, audit, and compliance evidence | Trust, audit, policy, privacy actions | `planes/governance` |
-| Action Plane | Compatibility and migration area for stored execution metadata, checkpoints, review evidence, and AEP integration adapters | Pipelines, agents, reviews, runs, learning metadata | `planes/action` during boundary cleanup; adaptive event semantics belong to AEP |
+| Action Plane | AEP-powered compatibility and migration area for persisted action metadata, review evidence, policy evidence, audit evidence, storage integrations, and AEP integration adapters | Pipelines, agents, reviews, runs, learning metadata | `planes/action` during boundary cleanup; adaptive event-processing semantics belong to AEP |
 | Operations Plane | Metrics, traces, logs, alerts, backup, restore, compaction, readiness, and operational diagnostics | Operations, alerts, health | `planes/operations` |
 
 ## Navigation Model

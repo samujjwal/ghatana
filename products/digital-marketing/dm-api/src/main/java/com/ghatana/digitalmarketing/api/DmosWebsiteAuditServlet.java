@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.audit.WebsiteAuditService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
@@ -63,7 +64,7 @@ public final class DmosWebsiteAuditServlet {
     }
 
     public DmosWebsiteAuditServlet(WebsiteAuditService auditService, Eventloop eventloop) {
-        this(auditService, eventloop, new DmosHttpContextFactory(false, null));
+        this(auditService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     /**
@@ -76,7 +77,9 @@ public final class DmosWebsiteAuditServlet {
         RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/audit/run", this::handleRunAudit)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/audit/latest", this::handleGetLatestAudit)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "website-audit"
         );
     }
 

@@ -79,17 +79,9 @@ public final class DmosRouteEntitlementServlet {
             return jsonResponse(request, 200, cached.get());
         }
 
-        // Compute entitlements
-        List<ProductRouteEntitlement.ActionEntitlement> actions = List.of(
-            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:view-dashboard", "View dashboard", "/workspaces/:workspaceId/dashboard"),
-            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:review-approval", "Review approval", "/workspaces/:workspaceId/approvals"),
-            new ProductRouteEntitlement.ActionEntitlement("digital-marketing:view-audit-log", "View AI action log", "/workspaces/:workspaceId/ai-actions")
-        );
-        List<ProductRouteEntitlement.CardEntitlement> cards = List.of(
-            new ProductRouteEntitlement.CardEntitlement("launch-readiness", "Launch readiness", "/workspaces/:workspaceId/dashboard", "dashboard"),
-            new ProductRouteEntitlement.CardEntitlement("approval-queue", "Approval queue", "/workspaces/:workspaceId/approvals", "dashboard"),
-            new ProductRouteEntitlement.CardEntitlement("workflow-health", "Workflow health", "/workspaces/:workspaceId/dashboard", "dashboard")
-        );
+        List<ProductRouteEntitlement.RouteEntitlement> routes = routesFor(role);
+        List<ProductRouteEntitlement.ActionEntitlement> actions = actionsFor(routes);
+        List<ProductRouteEntitlement.CardEntitlement> cards = cardsFor(routes);
 
         ProductRouteEntitlement entitlement = new ProductRouteEntitlement(
             "digital-marketing",
@@ -99,7 +91,7 @@ public final class DmosRouteEntitlementServlet {
             entitlementContext.getPersona().orElse("analyst"),
             entitlementContext.getTier().orElse("core"),
             entitlementContext.getCorrelationId().orElse(null),
-            routesFor(role),
+            routes,
             actions,
             cards
         );
@@ -130,6 +122,52 @@ public final class DmosRouteEntitlementServlet {
             definition.cards(),
             definition.capabilityKey() != null && !definition.capabilityKey().isBlank() ? definition.capabilityKey() : null
         );
+    }
+
+    private static List<ProductRouteEntitlement.ActionEntitlement> actionsFor(
+            List<ProductRouteEntitlement.RouteEntitlement> routes) {
+        Map<String, ProductRouteEntitlement.ActionEntitlement> actions = new LinkedHashMap<>();
+        for (ProductRouteEntitlement.RouteEntitlement route : routes) {
+            for (String action : route.actions()) {
+                actions.putIfAbsent(
+                    action,
+                    new ProductRouteEntitlement.ActionEntitlement(
+                        "digital-marketing:" + action,
+                        labelFor(action),
+                        route.path()
+                    )
+                );
+            }
+        }
+        return List.copyOf(actions.values());
+    }
+
+    private static List<ProductRouteEntitlement.CardEntitlement> cardsFor(
+            List<ProductRouteEntitlement.RouteEntitlement> routes) {
+        Map<String, ProductRouteEntitlement.CardEntitlement> cards = new LinkedHashMap<>();
+        for (ProductRouteEntitlement.RouteEntitlement route : routes) {
+            String group = route.label().toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+            for (String card : route.cards()) {
+                cards.putIfAbsent(
+                    card,
+                    new ProductRouteEntitlement.CardEntitlement(
+                        card,
+                        labelFor(card),
+                        route.path(),
+                        group
+                    )
+                );
+            }
+        }
+        return List.copyOf(cards.values());
+    }
+
+    private static String labelFor(String value) {
+        String normalized = value.replace('-', ' ').replace('_', ' ').trim();
+        if (normalized.isEmpty()) {
+            return value;
+        }
+        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
     }
 
     private static RouteContract loadRouteContract() {

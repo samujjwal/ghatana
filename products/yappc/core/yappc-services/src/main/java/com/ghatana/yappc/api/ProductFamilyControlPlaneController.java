@@ -171,24 +171,68 @@ public final class ProductFamilyControlPlaneController {
 
                 // YAPPC-001: Extract evidenceRun.commit for mismatch detection
                 String evidenceCommit = extractEvidenceCommit(json);
+                String sourceCommit = firstNonBlank(
+                        stringValue(json.get("sourceCommitSha")),
+                        stringValue(getNested(json, "evidenceRun", "sourceCommitSha")),
+                        evidenceCommit);
+                String evidenceTargetCommit = firstNonBlank(
+                        stringValue(json.get("targetCommitSha")),
+                        stringValue(getNested(json, "evidenceRun", "targetCommitSha")));
                 String targetCommit = resolveHeadCommit();
-                boolean commitMismatch = isCommitMismatch(evidenceCommit, targetCommit);
+                boolean commitMismatch = isCommitMismatch(firstNonBlank(evidenceTargetCommit, evidenceCommit), targetCommit);
+                String generatedAt = String.valueOf(json.getOrDefault("generatedAt", Instant.now().toString()));
+                String targetEnvironment = firstNonBlank(
+                        stringValue(json.get("targetEnvironment")),
+                        stringValue(getNested(json, "evidenceRun", "targetEnvironment")),
+                        "");
+                String validationStatus = stringValue(json.get("validationStatus"));
+                String expiresAt = stringValue(json.get("expiresAt"));
+                EvidenceFreshness freshness = evaluateEvidenceFreshness(
+                        sourceCommit,
+                        evidenceTargetCommit,
+                        generatedAt,
+                        targetEnvironment,
+                        validationStatus,
+                        expiresAt,
+                        targetCommit);
+                Map<String, Object> providerReadiness = loadEvidenceSummary(
+                        ".kernel/evidence/data-cloud/platform-provider-readiness.json",
+                        "status",
+                        "pass");
+                Map<String, Object> runtimeProfile = loadEvidenceSummary(
+                        ".kernel/evidence/data-cloud-release-runtime-profile.json",
+                        "pass",
+                        Boolean.TRUE);
+                boolean dataCloudBlockerContradiction = hasDataCloudProviderBlocker(blockerMessages)
+                        && Boolean.TRUE.equals(providerReadiness.get("passes"))
+                        && Boolean.TRUE.equals(runtimeProfile.get("passes"));
+                String status = releaseRecordStatus(json, freshness, dataCloudBlockerContradiction);
 
                 Map<String, Object> record = new LinkedHashMap<>();
                 record.put("id", "release-readiness-" + productKey);
                 record.put("product_key", productKey);
+                record.put("status", status);
                 record.put("verdict", String.valueOf(json.getOrDefault("releaseVerdict", "BLOCKED")).toUpperCase(java.util.Locale.ROOT));
                 record.put("gate_status", coerceList(json.get("dimensions")));
                 record.put("blockers", blockerMessages);
                 record.put("evidence_refs", coerceList(json.get("evidencePaths")));
                 record.put("foundation_readiness", coerceList(json.get("releaseProfiles")));
-                record.put("doc_truth_warnings", List.of());
+                record.put("doc_truth_warnings", freshness.warnings());
                 record.put("trace_id", "evidence:" + productKey);
-                record.put("updated_at", String.valueOf(json.getOrDefault("generatedAt", Instant.now().toString())));
+                record.put("updated_at", generatedAt);
                 // YAPPC-001: Persist commit alignment fields so normalizeReleaseRecord can expose them
                 record.put("evidence_commit", evidenceCommit != null ? evidenceCommit : "");
+                record.put("source_commit", sourceCommit);
+                record.put("evidence_target_commit", evidenceTargetCommit);
                 record.put("target_commit", targetCommit != null ? targetCommit : "");
                 record.put("commit_mismatch", commitMismatch);
+                record.put("target_environment", targetEnvironment);
+                record.put("validation_status", validationStatus);
+                record.put("expires_at", expiresAt);
+                record.put("evidence_freshness", freshness.asMap());
+                record.put("data_cloud_provider_readiness", providerReadiness);
+                record.put("data_cloud_runtime_profile", runtimeProfile);
+                record.put("contradiction_state", dataCloudBlockerContradiction ? "EVIDENCE_CONTRADICTION" : "NONE");
                 if (commitMismatch) {
                     log.warn("YAPPC-001 evidence commit mismatch: productKey={}, evidenceCommit={}, targetCommit={}",
                             productKey, evidenceCommit, targetCommit);
@@ -280,6 +324,125 @@ public final class ProductFamilyControlPlaneController {
         return !longer.startsWith(shorter);
     }
 
+    private EvidenceFreshness evaluateEvidenceFreshness(
+            String sourceCommit,
+            String targetCommit,
+            String generatedAt,
+            String targetEnvironment,
+            String validationStatus,
+            String expiresAt,
+            String currentTargetCommit) {
+        List<String> warnings = new java.util.ArrayList<>();
+        if (sourceCommit.isBlank()) {
+            warnings.add("sourceCommitSha missing");
+        }
+        if (targetCommit.isBlank()) {
+            warnings.add("targetCommitSha missing");
+        } else if (currentTargetCommit != null && !currentTargetCommit.isBlank() && isCommitMismatch(targetCommit, currentTargetCommit)) {
+            warnings.add("targetCommitSha stale");
+        }
+        if (generatedAt.isBlank() || !isInstant(generatedAt)) {
+            warnings.add("generatedAt missing or invalid");
+        }
+        if (targetEnvironment.isBlank()) {
+            warnings.add("targetEnvironment missing");
+        }
+        if (validationStatus.isBlank()) {
+            warnings.add("validationStatus missing");
+        }
+        if (expiresAt.isBlank() || !isInstant(expiresAt)) {
+            warnings.add("expiresAt missing or invalid");
+        } else if (Instant.parse(expiresAt).isBefore(Instant.now())) {
+            warnings.add("expiresAt elapsed");
+        }
+        return new EvidenceFreshness(warnings.isEmpty(), List.copyOf(warnings));
+    }
+
+    private boolean isInstant(String value) {
+        try {
+            Instant.parse(value);
+            return true;
+        } catch (RuntimeException error) {
+            return false;
+        }
+    }
+
+    private String releaseRecordStatus(
+            Map<String, Object> json,
+            EvidenceFreshness freshness,
+            boolean dataCloudBlockerContradiction) {
+        if (!freshness.current()) {
+            return "STALE";
+        }
+        if (dataCloudBlockerContradiction) {
+            return "EVIDENCE_CONTRADICTION";
+        }
+        String validationStatus = stringValue(json.get("validationStatus"));
+        if ("failed".equalsIgnoreCase(validationStatus)) {
+            return "FAILED";
+        }
+        return "READY";
+    }
+
+    private boolean hasDataCloudProviderBlocker(List<String> blockers) {
+        return blockers.stream().anyMatch(blocker ->
+                blocker.contains("check-data-cloud-platform-provider-readiness.mjs")
+                        || blocker.contains("data-cloud-platform-provider-readiness"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadEvidenceSummary(String relativePath, String passField, Object passValue) {
+        Path filePath = repoRoot.resolve(relativePath);
+        if (!Files.exists(filePath)) {
+            return Map.of("evidenceRef", relativePath, "status", "MISSING", "passes", false);
+        }
+        try {
+            Map<String, Object> payload = objectMapper.readValue(Files.readString(filePath, StandardCharsets.UTF_8), Map.class);
+            Object actual = payload.get(passField);
+            boolean passes = passValue.equals(actual);
+            return Map.of(
+                    "evidenceRef", relativePath,
+                    "status", String.valueOf(actual),
+                    "passes", passes,
+                    "targetCommitSha", firstNonBlank(stringValue(payload.get("targetCommitSha")), stringValue(getNested(payload, "evidenceRun", "targetCommitSha"))),
+                    "generatedAt", String.valueOf(payload.getOrDefault("generatedAt", "")));
+        } catch (IOException error) {
+            log.warn("Failed to parse evidence summary file: {}", filePath, error);
+            return Map.of("evidenceRef", relativePath, "status", "INVALID", "passes", false);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getNested(Map<String, Object> map, String firstKey, String secondKey) {
+        Object nested = map.get(firstKey);
+        if (nested instanceof Map<?, ?> nestedMap) {
+            return nestedMap.get(secondKey);
+        }
+        return null;
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
+
+    private record EvidenceFreshness(boolean current, List<String> warnings) {
+        Map<String, Object> asMap() {
+            return Map.of(
+                    "status", current ? "CURRENT" : "STALE",
+                    "current", current,
+                    "warnings", warnings);
+        }
+    }
+
     private Promise<Void> ingestAssetCandidatesFromEvidence(String tenantId) {
         Path phrAssets = repoRoot.resolve(".kernel/evidence/phr/reusable-assets-registration.json");
         Path dmosAssets = repoRoot.resolve(".kernel/evidence/digital-marketing/reusable-assets-registration.json");
@@ -298,6 +461,13 @@ public final class ProductFamilyControlPlaneController {
         try {
             Map<String, Object> payload = objectMapper.readValue(Files.readString(filePath, StandardCharsets.UTF_8), Map.class);
             List<Object> assets = coerceList(payload.get("assets"));
+            String fileCommit = String.valueOf(getOrDefaultRaw(payload, "commitSha", ""));
+            String fileSourceCommit = String.valueOf(getOrDefaultRaw(payload, "sourceCommitSha", fileCommit));
+            String fileTargetCommit = String.valueOf(getOrDefaultRaw(payload, "targetCommitSha", fileCommit));
+            String fileGeneratedAt = String.valueOf(getOrDefaultRaw(payload, "generatedAt", ""));
+            String fileTargetEnvironment = String.valueOf(getOrDefaultRaw(payload, "targetEnvironment", ""));
+            String fileValidationStatus = String.valueOf(getOrDefaultRaw(payload, "validationStatus", ""));
+            String fileExpiresAt = String.valueOf(getOrDefaultRaw(payload, "expiresAt", ""));
             Promise<Void> chain = Promise.complete();
             for (Object value : assets) {
                 if (!(value instanceof Map<?, ?> raw)) {
@@ -322,6 +492,15 @@ public final class ProductFamilyControlPlaneController {
                 asset.put("promotion_state", String.valueOf(getOrDefaultRaw(raw, "promotion_status", "candidate")));
                 asset.put("compatibility", getOrDefaultRaw(raw, "compatibility", Map.of()));
                 asset.put("evidence_refs", extractEvidenceRefs(raw.get("promotion_evidence")));
+                asset.put("source_commit", String.valueOf(getOrDefaultRaw(raw, "sourceCommitSha", fileSourceCommit)));
+                asset.put("target_commit", String.valueOf(getOrDefaultRaw(raw, "targetCommitSha", fileTargetCommit)));
+                asset.put("validated_at", String.valueOf(getOrDefaultRaw(raw, "validatedAt", fileGeneratedAt)));
+                asset.put("target_environment", fileTargetEnvironment);
+                asset.put("validation_status", fileValidationStatus);
+                asset.put("expires_at", String.valueOf(getOrDefaultRaw(raw, "expiresAt", fileExpiresAt)));
+                asset.put("owner_approval", getOrDefaultRaw(raw, "owner_approval", Map.of()));
+                asset.put("required_foundations", coerceList(raw.get("required_foundations")));
+                asset.put("constraints", coerceList(raw.get("constraints")));
 
                 chain = chain.then(() -> dataCloudClient.save(tenantId, ASSET_COLLECTION, asset).map(ignored -> null));
             }
@@ -710,7 +889,7 @@ public final class ProductFamilyControlPlaneController {
     private Map<String, Object> normalizeReleaseRecord(String productKey, Map<String, Object> data) {
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("productKey", value(data, "product_key", productKey.toLowerCase()));
-        result.put("status", "READY");
+        result.put("status", value(data, "status", "READY"));
         result.put("verdict", value(data, "verdict", "BLOCKED"));
         result.put("gateStatus", value(data, "gate_status", List.of()));
         result.put("blockers", value(data, "blockers", List.of()));
@@ -724,8 +903,17 @@ public final class ProductFamilyControlPlaneController {
         result.put("updatedAt", value(data, "updated_at", Instant.now().toString()));
         // YAPPC-001: Expose evidence commit alignment fields
         result.put("evidenceCommit", value(data, "evidence_commit", ""));
+        result.put("sourceCommit", value(data, "source_commit", ""));
+        result.put("evidenceTargetCommit", value(data, "evidence_target_commit", ""));
         result.put("targetCommit", value(data, "target_commit", ""));
         result.put("commitMismatch", value(data, "commit_mismatch", false));
+        result.put("targetEnvironment", value(data, "target_environment", ""));
+        result.put("validationStatus", value(data, "validation_status", ""));
+        result.put("expiresAt", value(data, "expires_at", ""));
+        result.put("evidenceFreshness", value(data, "evidence_freshness", Map.of()));
+        result.put("dataCloudProviderReadiness", value(data, "data_cloud_provider_readiness", Map.of()));
+        result.put("dataCloudRuntimeProfile", value(data, "data_cloud_runtime_profile", Map.of()));
+        result.put("contradictionState", value(data, "contradiction_state", "NONE"));
         // YAPPC-002: Expose environment tier for per-environment readiness display
         result.put("environmentTier", value(data, "environment_tier", resolveEnvironmentTier()));
         return Map.copyOf(result);
@@ -771,6 +959,16 @@ public final class ProductFamilyControlPlaneController {
         result.put("promotionTarget", value(data, "promotion_target", ""));
         result.put("promotionState", value(data, "promotion_state", value(data, "maturity", "candidate")));
         result.put("compatibility", value(data, "compatibility", Map.of()));
+        result.put("evidenceRefs", value(data, "evidence_refs", List.of()));
+        result.put("sourceCommit", value(data, "source_commit", ""));
+        result.put("targetCommit", value(data, "target_commit", ""));
+        result.put("targetEnvironment", value(data, "target_environment", ""));
+        result.put("validationStatus", value(data, "validation_status", ""));
+        result.put("validatedAt", value(data, "validated_at", ""));
+        result.put("expiresAt", value(data, "expires_at", ""));
+        result.put("ownerApproval", value(data, "owner_approval", Map.of()));
+        result.put("requiredFoundations", value(data, "required_foundations", List.of()));
+        result.put("constraints", value(data, "constraints", List.of()));
         return Map.copyOf(result);
     }
 

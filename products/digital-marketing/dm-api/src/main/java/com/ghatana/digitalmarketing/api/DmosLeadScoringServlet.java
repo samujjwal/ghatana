@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.scoring.LeadScoringService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
@@ -70,7 +71,7 @@ public final class DmosLeadScoringServlet {
     }
 
     public DmosLeadScoringServlet(LeadScoringService leadScoringService, Eventloop eventloop) {
-        this(leadScoringService, eventloop, new DmosHttpContextFactory(false, null));
+        this(leadScoringService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     /**
@@ -83,7 +84,9 @@ public final class DmosLeadScoringServlet {
         RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/lead-score", this::handleGenerateScore)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/lead-score", this::handleGetLatestScore)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "lead-scoring"
         );
     }
 

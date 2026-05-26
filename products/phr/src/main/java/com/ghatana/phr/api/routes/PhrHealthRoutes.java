@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.function.Supplier;
+import com.ghatana.platform.health.HealthStatus;
 
 /**
  * Health check routes for the PHR product.
@@ -32,11 +34,17 @@ public final class PhrHealthRoutes {
 
     private final Eventloop eventloop;
     private final PhrFhirR4Server fhirServer;
+    private final Supplier<HealthStatus> evidenceHealthSupplier;
     private volatile boolean started = false;
 
     public PhrHealthRoutes(Eventloop eventloop, PhrFhirR4Server fhirServer) {
+        this(eventloop, fhirServer, () -> HealthStatus.healthy("No regulated evidence outbox configured"));
+    }
+
+    public PhrHealthRoutes(Eventloop eventloop, PhrFhirR4Server fhirServer, Supplier<HealthStatus> evidenceHealthSupplier) {
         this.eventloop = eventloop;
         this.fhirServer = fhirServer;
+        this.evidenceHealthSupplier = evidenceHealthSupplier;
     }
 
     /**
@@ -67,16 +75,28 @@ public final class PhrHealthRoutes {
     private Promise<HttpResponse> handleHealth(HttpRequest request) {
         boolean healthy = isHealthy();
         int code = healthy ? 200 : 503;
-        return jsonResponse(code, Map.of("status", healthy ? "UP" : "DOWN", "service", "phr-http-server"));
+        HealthStatus evidenceHealth = evidenceHealthSupplier.get();
+        return jsonResponse(code, Map.of(
+            "status", healthy ? "UP" : "DOWN",
+            "service", "phr-http-server",
+            "evidenceOutbox", evidenceHealth.getStatus().name(),
+            "evidenceOutboxDetails", evidenceHealth.getDetails()
+        ));
     }
 
     /**
      * Readiness probe — returns 200 only when started and the FHIR server is ready.
      */
     private Promise<HttpResponse> handleReady(HttpRequest request) {
-        boolean ready = started && fhirServer.isHealthy();
+        HealthStatus evidenceHealth = evidenceHealthSupplier.get();
+        boolean ready = started && fhirServer.isHealthy() && !evidenceHealth.isUnhealthy();
         int code = ready ? 200 : 503;
-        return jsonResponse(code, Map.of("ready", ready, "service", "phr-http-server"));
+        return jsonResponse(code, Map.of(
+            "ready", ready,
+            "service", "phr-http-server",
+            "evidenceOutbox", evidenceHealth.getStatus().name(),
+            "evidenceOutboxDetails", evidenceHealth.getDetails()
+        ));
     }
 
     /**
@@ -90,7 +110,7 @@ public final class PhrHealthRoutes {
      * Checks if the service is healthy.
      */
     public boolean isHealthy() {
-        return started && fhirServer.isHealthy();
+        return started && fhirServer.isHealthy() && !evidenceHealthSupplier.get().isUnhealthy();
     }
 
     private static Promise<HttpResponse> jsonResponse(int statusCode, Object body) {

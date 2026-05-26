@@ -223,4 +223,40 @@ class PostgresCampaignRepositoryIT extends EventloopTestBase {
         assertThat(found.get().getCreatedAt()).isEqualTo(created);
         assertThat(found.get().getUpdatedAt()).isEqualTo(updated);
     }
+
+    @Test
+    @DisplayName("findById — preserves explicit zero budget instead of mapping to null")
+    void findById_preservesZeroBudget() {
+        Campaign campaign = Campaign.builder()
+            .id("camp-zero-budget")
+            .workspaceId(DmWorkspaceId.of("ws-alpha"))
+            .name("Zero Budget Campaign")
+            .status(CampaignStatus.DRAFT)
+            .type(CampaignType.EMAIL)
+            .budgetCents(0L)
+            .createdAt(Instant.parse("2026-01-01T00:00:00Z"))
+            .updatedAt(Instant.parse("2026-01-01T00:00:00Z"))
+            .createdBy("test-user")
+            .build();
+        runPromise(() -> repository.save(campaign));
+
+        Optional<Campaign> found = runPromise(() ->
+            repository.findById(DmWorkspaceId.of("ws-alpha"), "camp-zero-budget"));
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getBudgetCents()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("findById — maps SQL NULL budget to null")
+    void findById_preservesNullBudget() {
+        Campaign campaign = buildCampaign("camp-null-budget", "ws-beta");
+        runPromise(() -> repository.save(campaign));
+
+        Optional<Campaign> found = runPromise(() ->
+            repository.findById(DmWorkspaceId.of("ws-beta"), "camp-null-budget"));
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getBudgetCents()).isNull();
+    }
 }

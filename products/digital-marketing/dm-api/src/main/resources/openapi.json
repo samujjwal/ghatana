@@ -1,255 +1,1691 @@
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "DMOS API",
-    "description": "Digital Marketing Orchestration System API",
-    "version": "1.0.0"
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "DMOS API",
+    "description" : "Digital Marketing Orchestration System API",
+    "version" : "1.0.0"
   },
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+  "components" : {
+    "securitySchemes" : {
+      "bearerAuth" : {
+        "type" : "http",
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer"
       }
     },
-    "schemas": {
-      "CampaignType": {
-        "type": "string",
-        "enum": ["EMAIL", "SOCIAL", "PAID_SEARCH", "PUSH", "SMS", "OMNICHANNEL"],
-        "description": "The channel or method type of a DMOS campaign"
+    "schemas" : {
+      "CampaignType" : {
+        "type" : "string",
+        "enum" : [ "EMAIL", "SOCIAL", "PAID_SEARCH", "PUSH", "SMS", "OMNICHANNEL" ],
+        "description" : "The channel or method type of a DMOS campaign"
       },
-      "CampaignStatus": {
-        "type": "string",
-        "enum": ["DRAFT", "PENDING_APPROVAL", "APPROVED", "PENDING_LAUNCH", "LAUNCH_RUNNING", "LAUNCH_FAILED", "EXTERNAL_EXECUTION_BLOCKED", "LAUNCHED", "PAUSED", "COMPLETED", "ARCHIVED", "ROLLED_BACK"],
-        "description": "Lifecycle status of a DMOS campaign"
+      "CampaignStatus" : {
+        "type" : "string",
+        "enum" : [ "DRAFT", "PENDING_APPROVAL", "APPROVED", "PENDING_LAUNCH", "LAUNCH_RUNNING", "LAUNCH_FAILED", "EXTERNAL_EXECUTION_BLOCKED", "LAUNCHED", "PAUSED", "COMPLETED", "ARCHIVED", "ROLLED_BACK" ],
+        "description" : "Lifecycle status of a DMOS campaign"
       },
-      "ErrorBody": {
-        "type": "object",
-        "required": ["error", "message", "status", "correlationId"],
-        "properties": {
-          "error": {"type": "string", "description": "Error code (e.g., BAD_REQUEST, FORBIDDEN)"},
-          "message": {"type": "string", "description": "Human-readable error message"},
-          "status": {"type": "integer", "description": "HTTP status code"},
-          "correlationId": {"type": "string", "description": "Correlation ID for tracing"},
-          "details": {"type": "object", "description": "Additional error details"}
+      "ErrorBody" : {
+        "type" : "object",
+        "required" : [ "error", "message", "status", "correlationId" ],
+        "properties" : {
+          "status" : {
+            "type" : "integer",
+            "description" : "HTTP status code"
+          },
+          "details" : {
+            "type" : "object",
+            "description" : "Additional error details"
+          },
+          "correlationId" : {
+            "type" : "string",
+            "description" : "Correlation ID for tracing"
+          },
+          "error" : {
+            "type" : "string",
+            "description" : "Error code (e.g., BAD_REQUEST, FORBIDDEN)"
+          },
+          "message" : {
+            "type" : "string",
+            "description" : "Human-readable error message"
+          }
         }
       },
-      "Campaign": {
-        "type": "object",
-        "required": ["id", "workspaceId", "name", "status", "type", "createdBy", "createdAt", "updatedAt"],
-        "properties": {
-          "id": {"type": "string", "description": "Campaign ID"},
-          "workspaceId": {"type": "string", "description": "Workspace ID"},
-          "name": {"type": "string", "description": "Campaign name"},
-          "status": {"$ref": "#/components/schemas/CampaignStatus"},
-          "type": {"$ref": "#/components/schemas/CampaignType"},
-          "createdBy": {"type": "string", "description": "User who created the campaign"},
-          "createdAt": {"type": "string", "format": "date-time", "description": "Creation timestamp"},
-          "updatedAt": {"type": "string", "format": "date-time", "description": "Last update timestamp"}
+      "Campaign" : {
+        "type" : "object",
+        "required" : [ "id", "workspaceId", "name", "status", "type", "createdBy", "createdAt", "updatedAt" ],
+        "properties" : {
+          "status" : {
+            "$ref" : "#/components/schemas/CampaignStatus"
+          },
+          "workspaceId" : {
+            "type" : "string",
+            "description" : "Workspace ID"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "description" : "User who created the campaign"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Last update timestamp"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Creation timestamp"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "Campaign name"
+          },
+          "id" : {
+            "type" : "string",
+            "description" : "Campaign ID"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/CampaignType"
+          }
         }
       },
-      "CreateCampaignRequest": {
-        "type": "object",
-        "required": ["name", "type"],
-        "properties": {
-          "name": {"type": "string", "description": "Campaign name"},
-          "type": {"$ref": "#/components/schemas/CampaignType"}
+      "CreateCampaignRequest" : {
+        "type" : "object",
+        "required" : [ "name", "type" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Campaign name"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/CampaignType"
+          }
         }
       },
-      "CampaignListResponse": {
-        "type": "object",
-        "required": ["items", "count", "offset"],
-        "properties": {
-          "items": {"type": "array", "items": {"$ref": "#/components/schemas/Campaign"}},
-          "count": {"type": "integer", "description": "Number of items in this page"},
-          "offset": {"type": "integer", "description": "Pagination offset"}
+      "CampaignListResponse" : {
+        "type" : "object",
+        "required" : [ "items", "count", "offset" ],
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Campaign"
+            }
+          },
+          "offset" : {
+            "type" : "integer",
+            "description" : "Pagination offset"
+          },
+          "count" : {
+            "type" : "integer",
+            "description" : "Number of items in this page"
+          }
         }
       }
     }
   },
-  "security": [{"bearerAuth": []}],
-  "paths": {
-    "/v1/workspaces/{workspaceId}/campaigns": {
-      "get": {
-        "summary": "List campaigns",
-        "description": "Paginated list of campaigns",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+  "security" : [ {
+    "bearerAuth" : [ ]
+  } ],
+  "paths" : {
+    "/v1/workspaces/{workspaceId}/campaigns" : {
+      "get" : {
+        "summary" : "List campaigns",
+        "description" : "Paginated list of campaigns for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       },
-      "post": {
-        "summary": "Create campaign",
-        "description": "Create a new campaign",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+      "post" : {
+        "summary" : "Create campaign",
+        "description" : "Create a new campaign in the workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/campaigns/{id}": {
-      "get": {
-        "summary": "Get campaign",
-        "description": "Retrieve a specific campaign",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/campaigns/{id}" : {
+      "get" : {
+        "summary" : "Get campaign",
+        "description" : "Retrieve a specific campaign by ID",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/campaigns/{id}/launch": {
-      "post": {
-        "summary": "Launch campaign",
-        "description": "Launch a campaign",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/transition" : {
+      "post" : {
+        "summary" : "Transition campaign",
+        "description" : "Apply a governed campaign lifecycle transition",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/campaigns/{id}/pause": {
-      "post": {
-        "summary": "Pause campaign",
-        "description": "Pause a running campaign",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/request-approval" : {
+      "post" : {
+        "summary" : "Request campaign approval",
+        "description" : "Move a draft campaign into pending approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/strategies": {
-      "get": {
-        "summary": "List strategies",
-        "description": "List marketing strategies",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/duplicate" : {
+      "post" : {
+        "summary" : "Duplicate campaign",
+        "description" : "Create a copy of an existing campaign",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/launch" : {
+      "post" : {
+        "summary" : "Launch campaign",
+        "description" : "Launch a campaign",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/pause" : {
+      "post" : {
+        "summary" : "Pause campaign",
+        "description" : "Pause a running campaign",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/complete" : {
+      "post" : {
+        "summary" : "Complete campaign",
+        "description" : "Mark a campaign as completed (P1-005)",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/archive" : {
+      "post" : {
+        "summary" : "Archive campaign",
+        "description" : "Archive a completed campaign (P1-005)",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/rollback" : {
+      "post" : {
+        "summary" : "Rollback campaign",
+        "description" : "Rollback a campaign to DRAFT status (P1-005)",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/approve" : {
+      "post" : {
+        "summary" : "Approve campaign",
+        "description" : "Approve a pending campaign approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/reject" : {
+      "post" : {
+        "summary" : "Reject campaign",
+        "description" : "Reject a pending campaign approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/strategies" : {
+      "get" : {
+        "summary" : "List strategies",
+        "description" : "List marketing strategies for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       },
-      "post": {
-        "summary": "Generate strategy",
-        "description": "Generate AI-powered strategy",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+      "post" : {
+        "summary" : "Generate strategy",
+        "description" : "Generate an AI-powered marketing strategy",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/budgets": {
-      "get": {
-        "summary": "List budgets",
-        "description": "List budget recommendations",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/strategies/{id}/submit" : {
+      "post" : {
+        "summary" : "Submit strategy for approval",
+        "description" : "Submit a strategy for approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/strategy" : {
+      "get" : {
+        "summary" : "Get strategy",
+        "description" : "Retrieve the current marketing strategy for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       },
-      "post": {
-        "summary": "Generate budget",
-        "description": "Generate AI-powered budget",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+      "post" : {
+        "summary" : "Generate strategy",
+        "description" : "Generate an AI-powered marketing strategy",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/approvals": {
-      "get": {
-        "summary": "List approvals",
-        "description": "List pending approvals",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/strategy/{strategyId}/submit" : {
+      "post" : {
+        "summary" : "Submit strategy for approval",
+        "description" : "Submit a strategy for approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces/{workspaceId}/ai-actions": {
-      "get": {
-        "summary": "List AI actions",
-        "description": "List AI-generated actions",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/strategy/{strategyId}/approve" : {
+      "post" : {
+        "summary" : "Approve strategy",
+        "description" : "Approve a submitted marketing strategy",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/v1/workspaces": {
-      "get": {
-        "summary": "List workspaces",
-        "description": "List accessible workspaces",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "401": {"description": "Unauthorized"},
-          "403": {"description": "Forbidden"},
-          "404": {"description": "Not Found"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/budget-recommendation" : {
+      "get" : {
+        "summary" : "List budget recommendations",
+        "description" : "List budget recommendations for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Generate budget recommendation",
+        "description" : "Generate AI-powered budget recommendations",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/health": {
-      "get": {
-        "summary": "Health check",
-        "description": "Check API health status",
-        "responses": {
-          "200": {"description": "Success"},
-          "503": {"description": "Service Unavailable"}
+    "/v1/workspaces/{workspaceId}/budget" : {
+      "get" : {
+        "summary" : "Get budget",
+        "description" : "Retrieve budget recommendation state for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     },
-    "/public/intake": {
-      "post": {
-        "summary": "Public intake",
-        "description": "Submit public intake questionnaire",
-        "responses": {
-          "200": {"description": "Success"},
-          "400": {"description": "Bad Request"},
-          "500": {"description": "Internal Server Error"}
+    "/v1/workspaces/{workspaceId}/budgets" : {
+      "get" : {
+        "summary" : "List budgets",
+        "description" : "List budget recommendations",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Generate budget",
+        "description" : "Generate AI-powered budget",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/submit" : {
+      "post" : {
+        "summary" : "Submit budget for approval",
+        "description" : "Submit a budget for approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/budget-recommendation/{id}/approve" : {
+      "post" : {
+        "summary" : "Approve budget",
+        "description" : "Approve a budget recommendation",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals" : {
+      "get" : {
+        "summary" : "List approvals",
+        "description" : "List pending approvals for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals/{id}" : {
+      "get" : {
+        "summary" : "Get approval",
+        "description" : "Retrieve a specific approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals/{id}/decide" : {
+      "post" : {
+        "summary" : "Decide approval",
+        "description" : "Approve or reject a pending approval request",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals/{id}/approve" : {
+      "post" : {
+        "summary" : "Approve",
+        "description" : "Approve a pending approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals/{id}/reject" : {
+      "post" : {
+        "summary" : "Reject",
+        "description" : "Reject a pending approval",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/ai-actions" : {
+      "get" : {
+        "summary" : "List AI actions",
+        "description" : "List AI-generated actions for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/ai-actions/{id}" : {
+      "get" : {
+        "summary" : "Get AI action",
+        "description" : "Retrieve a specific AI action",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/next-best-action-recommendations" : {
+      "get" : {
+        "summary" : "List next-best-action recommendations",
+        "description" : "List AI-generated recommendations for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Publish next-best-action recommendation",
+        "description" : "Publish a governed AI next-best-action recommendation",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}" : {
+      "get" : {
+        "summary" : "Get next-best-action recommendation",
+        "description" : "Retrieve a specific next-best-action recommendation",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}/approve" : {
+      "post" : {
+        "summary" : "Approve next-best-action recommendation",
+        "description" : "Approve and optionally execute a next-best-action recommendation",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/next-best-action-recommendations/{recId}/reject" : {
+      "post" : {
+        "summary" : "Reject next-best-action recommendation",
+        "description" : "Reject a next-best-action recommendation with an audit reason",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces" : {
+      "get" : {
+        "summary" : "List workspaces",
+        "description" : "List workspaces accessible to the user",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}" : {
+      "get" : {
+        "summary" : "Get workspace",
+        "description" : "Retrieve a specific workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/dashboard" : {
+      "get" : {
+        "summary" : "Get dashboard summary",
+        "description" : "Retrieve runtime dashboard summary for a workspace",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/connectors/google-ads/{connectorId}/readiness" : {
+      "get" : {
+        "summary" : "Get Google Ads connector readiness",
+        "description" : "Retrieve Google Ads connector runtime readiness",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/release-readiness" : {
+      "get" : {
+        "summary" : "Get release readiness",
+        "description" : "Retrieve DMOS release evidence freshness and blockers",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/capabilities" : {
+      "get" : {
+        "summary" : "Get workspace capabilities",
+        "description" : "Retrieve capability flags for a workspace (P0-002)",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/ad-copy/generate" : {
+      "post" : {
+        "summary" : "Generate ad copy",
+        "description" : "Generate AI-powered ad copy drafts",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/ad-copy/latest-approved" : {
+      "get" : {
+        "summary" : "Get latest approved ad copy",
+        "description" : "Retrieve the latest approved ad copy",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/competitor-research" : {
+      "post" : {
+        "summary" : "Generate competitor research",
+        "description" : "Generate AI-powered competitor intelligence",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/content-validation" : {
+      "post" : {
+        "summary" : "Validate content",
+        "description" : "Validate content against compliance rules",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/content-versions" : {
+      "get" : {
+        "summary" : "List content versions",
+        "description" : "List content version history",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/content-versions/{versionId}" : {
+      "get" : {
+        "summary" : "Get content version",
+        "description" : "Retrieve a specific content version",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/email-followup" : {
+      "post" : {
+        "summary" : "Generate email follow-up",
+        "description" : "Generate AI-powered email follow-up sequences",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/intake-questionnaire" : {
+      "post" : {
+        "summary" : "Submit intake questionnaire",
+        "description" : "Submit workspace intake questionnaire",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/landing-pages" : {
+      "post" : {
+        "summary" : "Generate landing page",
+        "description" : "Generate AI-powered landing page content",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/lead-scoring" : {
+      "post" : {
+        "summary" : "Score leads",
+        "description" : "Score leads using AI-powered lead scoring",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/proposals" : {
+      "post" : {
+        "summary" : "Generate proposal",
+        "description" : "Generate AI-powered marketing proposal",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sows" : {
+      "post" : {
+        "summary" : "Generate SOW",
+        "description" : "Generate AI-powered statement of work",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/website-audit" : {
+      "post" : {
+        "summary" : "Audit website",
+        "description" : "Generate AI-powered website audit report",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/v1/routes/entitlements" : {
+      "get" : {
+        "summary" : "Get route entitlements",
+        "description" : "Retrieve route entitlement information",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
+        }
+      }
+    },
+    "/health" : {
+      "get" : {
+        "summary" : "Health check",
+        "description" : "Check API health status",
+        "responses" : {
+          "200" : {
+            "description" : "Success"
+          },
+          "503" : {
+            "description" : "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/public/intake" : {
+      "post" : {
+        "summary" : "Public intake",
+        "description" : "Submit public intake questionnaire",
+        "responses" : {
+          "404" : {
+            "description" : "Not Found"
+          },
+          "403" : {
+            "description" : "Forbidden"
+          },
+          "500" : {
+            "description" : "Internal Server Error"
+          },
+          "401" : {
+            "description" : "Unauthorized"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          },
+          "200" : {
+            "description" : "Success"
+          }
         }
       }
     }

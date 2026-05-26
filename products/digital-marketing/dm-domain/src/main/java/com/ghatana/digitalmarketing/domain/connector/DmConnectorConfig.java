@@ -71,12 +71,20 @@ public final class DmConnectorConfig {
     public DmConnectorConfig markAuthFailed(String reason) {
         Objects.requireNonNull(reason, "reason must not be null");
         return toBuilder().status(DmConnectorStatus.AUTH_FAILED)
-            .failureReason(reason).updatedAt(Instant.now()).build();
+            .failureReason(reason).lastHealthCheckAt(Instant.now()).updatedAt(Instant.now()).build();
+    }
+
+    /** Record a non-auth connector readiness failure without implying valid credentials. */
+    public DmConnectorConfig markPending(String reason) {
+        Objects.requireNonNull(reason, "reason must not be null");
+        return toBuilder().status(DmConnectorStatus.PENDING)
+            .failureReason(reason).lastHealthCheckAt(Instant.now()).updatedAt(Instant.now()).build();
     }
 
     /** Permanently disable the connector. */
     public DmConnectorConfig disable() {
-        return toBuilder().status(DmConnectorStatus.DISABLED).updatedAt(Instant.now()).build();
+        return toBuilder().status(DmConnectorStatus.DISABLED)
+            .lastHealthCheckAt(Instant.now()).updatedAt(Instant.now()).build();
     }
 
     /** Whether the connector can process requests. */

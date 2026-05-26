@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
@@ -74,7 +75,7 @@ public final class DmosWorkspaceServlet {
     }
 
     public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop) {
-        this(workspaceService, eventloop, new DmosHttpContextFactory(false, null));
+        this(workspaceService, eventloop, DmosHttpContextFactory.testModeWithAnonymousFallback());
     }
 
     public AsyncServlet getServlet() {
@@ -86,7 +87,9 @@ public final class DmosWorkspaceServlet {
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/suspend", this::handleSuspendWorkspace)
                 .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/reactivate", this::handleReactivateWorkspace)
                 .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/capabilities", this::handleGetWorkspaceCapabilities)
-                .build()
+                .build(),
+            DmosMetricsCollector.disabled(),
+            "workspace"
         );
     }
 

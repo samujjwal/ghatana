@@ -10,6 +10,7 @@ import com.ghatana.agent.AgentType;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.runtime.GaaAgentExecutor;
+import com.ghatana.agent.runtime.TypedAgentExecutor;
 import com.ghatana.agent.spi.AgentRegistry;
 import io.activej.promise.Promise;
 import lombok.Builder;
@@ -53,6 +54,13 @@ public class AgentCapabilityExecutionFactory {
     private final AgentExecutionStrategyRegistry strategyRegistry;
     private final Map<String, CapabilityExecutionMapping> customMappings = new LinkedHashMap<>();
 
+    /**
+     * Provides the approved typed-agent executor for adapter and dispatcher internals.
+     */
+    public static TypedAgentExecutor typedAgentExecutor() {
+        return new GaaAgentExecutor();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Operator Abstraction
     // ═══════════════════════════════════════════════════════════════════════════
@@ -86,7 +94,7 @@ public class AgentCapabilityExecutionFactory {
                 @NotNull AgentContext ctx, @NotNull Map<String, Object> input) {
             Map<String, Object> processed = preProcessor != null
                     ? preProcessor.apply(input) : input;
-            return new GaaAgentExecutor().execute(agent, ctx, processed)
+            return typedAgentExecutor().execute(agent, ctx, processed)
                     .map(result -> postProcessor != null
                             ? postProcessor.apply(result) : result);
         }

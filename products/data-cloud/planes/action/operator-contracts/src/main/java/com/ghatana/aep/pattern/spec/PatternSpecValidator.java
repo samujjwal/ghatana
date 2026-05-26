@@ -1,8 +1,10 @@
 package com.ghatana.aep.pattern.spec;
 
 import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityKind;
 import com.ghatana.aep.agent.capability.CapabilityId;
 import com.ghatana.aep.agent.capability.ExternalAgentCapabilityRegistry;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.aep.operator.contract.OperatorKind;
 
 import java.util.ArrayList;
@@ -176,9 +178,24 @@ public final class PatternSpecValidator {
         }
 
         CapabilityDescriptor desc = descriptor.get();
-        if (!desc.kind().name().equals("EVENT_OPERATOR")) {
+        if (desc.kind() != CapabilityKind.EVENT_OPERATOR) {
             errors.add(path + ".capabilityRef '" + capabilityRef + "' is not an EVENT_OPERATOR capability");
             return;
+        }
+        AgentCapabilityRole expectedRole = AgentCapabilityRole.valueOf(operatorKind.name());
+        Optional<AgentCapabilityRole> actualRole = desc.capabilityRole();
+        if (actualRole.isEmpty()) {
+            errors.add(path + ".capabilityRef '" + capabilityRef + "' is missing role metadata for " + expectedRole);
+        } else if (actualRole.orElseThrow() != expectedRole) {
+            errors.add(path + ".capabilityRef '" + capabilityRef + "' role " + actualRole.orElseThrow() + " does not match " + expectedRole);
+        }
+        if (!isBlank(expression.get("inputSchema"))
+                && !String.valueOf(expression.get("inputSchema")).equals(desc.inputSchema())) {
+            errors.add(path + ".inputSchema does not match capability input schema " + desc.inputSchema());
+        }
+        if (!isBlank(expression.get("outputSchema"))
+                && !String.valueOf(expression.get("outputSchema")).equals(desc.outputSchema())) {
+            errors.add(path + ".outputSchema does not match capability output schema " + desc.outputSchema());
         }
 
         if ("production".equals(environment) && desc.sideEffectProfile().name().equals("SIDE_EFFECTING")) {

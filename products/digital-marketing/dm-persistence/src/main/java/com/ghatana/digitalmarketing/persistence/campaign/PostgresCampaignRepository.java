@@ -193,6 +193,8 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     private static Campaign mapRow(ResultSet rs) throws SQLException {
         Instant createdAt = rs.getTimestamp("created_at").toInstant();
         Instant updatedAt = rs.getTimestamp("updated_at").toInstant();
+        long rawBudgetCents = rs.getLong("budget_cents");
+        Long budgetCents = rs.wasNull() ? null : rawBudgetCents;
         return Campaign.builder()
             .id(rs.getString("id"))
             .workspaceId(DmWorkspaceId.of(rs.getString("workspace_id")))
@@ -200,7 +202,7 @@ public final class PostgresCampaignRepository implements CampaignRepository {
             .status(CampaignStatus.valueOf(rs.getString("status")))
             .type(CampaignType.valueOf(rs.getString("type")))
             .objective(rs.getString("objective"))
-            .budgetCents(rs.getLong("budget_cents") > 0 ? rs.getLong("budget_cents") : null)
+            .budgetCents(budgetCents)
             .startDate(rs.getString("start_date"))
             .endDate(rs.getString("end_date"))
             .audience(rs.getString("audience"))

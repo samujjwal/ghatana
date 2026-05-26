@@ -36,7 +36,7 @@ class DmosTrialOnboardingServletTest extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         service = new FakeTrialOnboardingService();
-        DmosHttpContextFactory contextFactory = new DmosHttpContextFactory(false, null);
+        DmosHttpContextFactory contextFactory = DmosHttpContextFactory.testModeWithAnonymousFallback();
         servlet = new DmosTrialOnboardingServlet(
             Eventloop.create(),
             service,

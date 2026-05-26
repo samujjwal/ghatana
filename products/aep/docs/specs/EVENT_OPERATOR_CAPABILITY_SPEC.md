@@ -12,6 +12,8 @@ This spec defines how agents expose event-processing capabilities. The agent rem
 
 - `operatorId`
 - `operatorKind`
+- `kind: EVENT_OPERATOR`
+- `role`
 - `agentRef`
 - `capabilityRef`
 - `inputSchema`
@@ -27,6 +29,15 @@ This spec defines how agents expose event-processing capabilities. The agent rem
 - `observabilityPolicy`
 
 ## Capability Roles
+
+The capability descriptor must identify both the coarse capability kind and the operator role:
+
+```text
+kind = EVENT_OPERATOR
+role = PREDICATE | ENRICH | EXTRACT | PATTERN_SYNTHESIS | EXPLANATION | REVIEW | ACTION | REFLECTION
+```
+
+PatternSpec binding validates `kind`, `role`, `inputSchema`, and `outputSchema` before runtime planning. A matching string in the operator name is not enough.
 
 ```text
 AGENT_PREDICATE

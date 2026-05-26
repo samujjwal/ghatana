@@ -56,3 +56,30 @@ export interface DashboardData {
   labs: LabResultSummary[];
   medications: MedicationSummary[];
 }
+
+export interface PhrReleaseReadinessSection {
+  label: string;
+  status: string;
+  runtimeProven: boolean;
+  message: string;
+  details?: unknown;
+}
+
+export interface PhrReleaseReadiness {
+  product: 'phr';
+  tenantId: string;
+  principalId: string;
+  role: string;
+  environment: string;
+  generatedAt: string;
+  targetCommitSha: string;
+  runtimeTruthBlocked: boolean;
+  requiredSections: string[];
+  releaseReadiness?: {
+    status?: string;
+    overallScore?: number;
+    blockingIssues?: string[];
+    warnings?: string[];
+  };
+  sections: Record<string, PhrReleaseReadinessSection>;
+}

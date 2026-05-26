@@ -30,6 +30,7 @@ class PatternPipelineAdapterTest {
                     "operator", "AGENT_PREDICATE",
                     "agentRef", "agents/sre-risk-assessor@1.0.0",
                     "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability",
+                    "inputSchema", "EventContext",
                     "outputSchema", "RiskDecision")))));
 
         Pipeline pipeline = PatternPipelineAdapter.toPipeline(compiled);
@@ -70,10 +71,12 @@ class PatternPipelineAdapterTest {
                 Map.of(
                     "operator", "AGENT_PREDICATE",
                     "capabilityRef", localRef,
+                    "inputSchema", "EventContext",
                     "outputSchema", "RiskDecision"),
                 Map.of(
                     "operator", "AGENT_REVIEW",
                     "capabilityRef", externalRef,
+                    "inputSchema", "EventContext",
                     "outputSchema", "ReviewDecision")))));
         CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
             localRef, descriptor(localRef, CapabilityKind.EVENT_OPERATOR, "agents/local-risk@1.0.0", "local"),
@@ -91,7 +94,7 @@ class PatternPipelineAdapterTest {
                 .containsEntry("capabilityOutputSchema", "RiskDecision")
                 .containsEntry("capabilitySideEffectProfile", "PURE_INFERENCE");
             assertThat(stage.config().get("capabilityMetadata"))
-                .isEqualTo(Map.of("provider", "local"));
+                .isEqualTo(Map.of("provider", "local", "role", "PREDICATE"));
         });
         assertThat(pipeline.getStages()).anySatisfy(stage -> {
             assertThat(stage.stageId()).isEqualTo("root-1");
@@ -101,7 +104,7 @@ class PatternPipelineAdapterTest {
                 .containsEntry("capabilityKind", "EXTERNAL")
                 .containsEntry("capabilityAgentRef", "external/verifier@2.0.0");
             assertThat(stage.config().get("capabilityMetadata"))
-                .isEqualTo(Map.of("provider", "external"));
+                .isEqualTo(Map.of("provider", "external", "role", "REVIEW"));
         });
         assertThat(pipeline.validate().isValid()).isTrue();
     }
@@ -111,12 +114,69 @@ class PatternPipelineAdapterTest {
         CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
             "operator", "AGENT_PREDICATE",
             "capabilityRef", "agents/missing@1.0.0/capabilities/agent_predicate",
+            "inputSchema", "EventContext",
             "outputSchema", "RiskDecision")));
         CapabilityResolver resolver = new MapCapabilityResolver(Map.of());
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> PatternPipelineAdapter.toPipeline(compiled, resolver))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Unknown capabilityRef");
+    }
+
+    @Test
+    void rejectsMismatchedCapabilityInputSchema() {
+        String capabilityRef = "agents/local-risk@1.0.0/capabilities/agent_predicate";
+        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+            "operator", "AGENT_PREDICATE",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "WrongContext",
+            "outputSchema", "RiskDecision")));
+        CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
+            capabilityRef, descriptor(capabilityRef, CapabilityKind.EVENT_OPERATOR, "agents/local-risk@1.0.0", "local", "PREDICATE")));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PatternPipelineAdapter.toPipeline(compiled, resolver))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("inputSchema");
+    }
+
+    @Test
+    void rejectsPredicateCapabilityWithoutEventOperatorKindAndRole() {
+        String capabilityRef = "agents/local-risk@1.0.0/capabilities/agent_predicate";
+        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+            "operator", "AGENT_PREDICATE",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "outputSchema", "RiskDecision")));
+        CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
+            capabilityRef, descriptor(capabilityRef, CapabilityKind.EXTERNAL, "agents/local-risk@1.0.0", "local", "PREDICATE")));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PatternPipelineAdapter.toPipeline(compiled, resolver))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("EVENT_OPERATOR");
+    }
+
+    @Test
+    void rejectsShadowSideEffectingCapability() {
+        String capabilityRef = "agents/action@1.0.0/capabilities/agent_action";
+        CompiledPattern compiled = PatternSpecCompiler.compile(validSpec(Map.of(
+            "operator", "AGENT_ACTION",
+            "capabilityRef", capabilityRef,
+            "inputSchema", "EventContext",
+            "toolPolicy", Map.of("mode", "ticketing.propose"),
+            "outputSchema", "ActionResult")));
+        CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
+            capabilityRef, descriptor(
+                capabilityRef,
+                CapabilityKind.EVENT_OPERATOR,
+                "agents/action@1.0.0",
+                "local",
+                "ACTION",
+                AgentSideEffectProfile.SIDE_EFFECTING,
+                "ActionResult")));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PatternPipelineAdapter.toPipeline(compiled, resolver))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("SHADOW lifecycle cannot bind SIDE_EFFECTING");
     }
 
     private static Map<String, Object> validSpec(Map<String, Object> pattern) {
@@ -147,7 +207,37 @@ class PatternPipelineAdapterTest {
             AgentSideEffectProfile.PURE_INFERENCE,
             List.of("agent.capability"),
             Map.of("replayPolicy", Map.of("mode", "deterministic")),
-            Map.of("provider", provider));
+            Map.of("provider", provider, "role", id.contains("predicate") ? "PREDICATE" : "REVIEW"));
+    }
+
+    private static CapabilityDescriptor descriptor(
+            String id,
+            CapabilityKind kind,
+            String agentRef,
+            String provider,
+            String role) {
+        return descriptor(id, kind, agentRef, provider, role, AgentSideEffectProfile.PURE_INFERENCE, "RiskDecision");
+    }
+
+    private static CapabilityDescriptor descriptor(
+            String id,
+            CapabilityKind kind,
+            String agentRef,
+            String provider,
+            String role,
+            AgentSideEffectProfile sideEffectProfile,
+            String outputSchema) {
+        return new CapabilityDescriptor(
+            CapabilityId.of(id),
+            kind,
+            agentRef,
+            Optional.empty(),
+            "EventContext",
+            outputSchema,
+            sideEffectProfile,
+            List.of("agent.capability"),
+            Map.of("replayPolicy", Map.of("mode", "deterministic")),
+            Map.of("provider", provider, "role", role));
     }
 
     private record MapCapabilityResolver(Map<String, CapabilityDescriptor> descriptors) implements CapabilityResolver {

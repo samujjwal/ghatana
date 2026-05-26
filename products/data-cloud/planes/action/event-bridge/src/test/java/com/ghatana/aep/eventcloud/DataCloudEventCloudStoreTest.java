@@ -7,11 +7,14 @@ package com.ghatana.aep.eventcloud;
 import com.ghatana.aep.event.spi.EventCloudCheckpoint;
 import com.ghatana.aep.event.spi.EventCloudOffset;
 import com.ghatana.aep.event.spi.EventCloudRecord;
+import com.ghatana.aep.event.spi.EventCloudSubscription;
+import com.ghatana.aep.event.spi.EventCloudWatermark;
 import com.ghatana.aep.model.CanonicalEvent;
 import com.ghatana.aep.model.PatternPartialMatch;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -22,6 +25,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @doc.type class
+ * @doc.purpose Contract tests proving the Data-Cloud EventCloud bridge persists AEP EventCloud state without owning AEP semantics
+ * @doc.layer product
+ * @doc.pattern ContractTest
+ */
+@DisplayName("Data-Cloud EventCloud bridge persistence contract")
 class DataCloudEventCloudStoreTest extends EventloopTestBase {
 
     @Test
@@ -38,6 +48,7 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
         assertThat(record).hasValueSatisfying(value -> {
             assertThat(value.event().eventId()).isEqualTo("event-1");
             assertThat(value.event().eventType()).isEqualTo("deploy.started");
+            assertThat(value.event().idempotencyKey()).isEqualTo("event-1-idempotency");
             assertThat(value.event().payload()).containsEntry("service", "checkout");
         });
     }
@@ -54,6 +65,148 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
 
         assertThat(replayed).extracting(record -> record.event().eventId())
             .containsExactly("event-1", "event-3");
+    }
+
+    @Test
+    void tailsAppendedRecordsWithinTenantPartition() {
+        DataCloudEventCloudStore store = store();
+        List<EventCloudRecord> tailed = new ArrayList<>();
+
+        EventCloudSubscription subscription = runPromise(() -> store.tail(
+            "tenant-a",
+            "partition-a",
+            new EventCloudOffset("tenant-a", "partition-a", 0L),
+            tailed::add));
+        runPromise(() -> store.append(event("event-1", "deploy.started", "partition-a")));
+        runPromise(() -> store.append(event("event-2", "deploy.started", "partition-b")));
+        runPromise(() -> store.append(event("event-3", "deploy.completed", "partition-a")));
+
+        assertThat(subscription.isCancelled()).isFalse();
+        assertThat(tailed).extracting(record -> record.event().eventId())
+            .containsExactly("event-1", "event-3");
+
+        subscription.cancel();
+        assertThat(subscription.isCancelled()).isTrue();
+    }
+
+    @Test
+    void keepsTenantOffsetsAndReplayIsolated() {
+        DataCloudEventCloudStore store = store();
+        EventCloudOffset tenantAFirst = runPromise(() -> store.append(event(
+            "event-a-1",
+            "deploy.started",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:00:00Z")));
+        EventCloudOffset tenantBFirst = runPromise(() -> store.append(event(
+            "event-b-1",
+            "deploy.started",
+            "tenant-b",
+            "partition-a",
+            "2026-05-23T00:00:00Z")));
+        EventCloudOffset tenantASecond = runPromise(() -> store.append(event(
+            "event-a-2",
+            "deploy.completed",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:01:00Z")));
+        List<EventCloudRecord> replayed = new ArrayList<>();
+
+        runPromise(() -> store.replay("tenant-a", tenantAFirst, tenantASecond, replayed::add));
+
+        assertThat(tenantAFirst.offset()).isEqualTo(1L);
+        assertThat(tenantBFirst.offset()).isEqualTo(1L);
+        assertThat(tenantASecond.offset()).isEqualTo(2L);
+        assertThat(replayed).extracting(record -> record.event().eventId())
+            .containsExactly("event-a-1", "event-a-2");
+    }
+
+    @Test
+    void persistsCheckpointAndWatermarkProgressAcrossRestart() {
+        InMemoryEventLogStoreProvider provider = new InMemoryEventLogStoreProvider();
+        DataCloudEventCloudStore store = store(provider);
+        EventCloudOffset offset = runPromise(() -> store.append(event("event-1", "metric.error", "partition-a")));
+        EventCloudCheckpoint checkpoint = new EventCloudCheckpoint(
+            "tenant-a",
+            "consumer-1",
+            offset,
+            Instant.parse("2026-05-23T00:05:00Z"),
+            Map.of("mode", "live"));
+
+        runPromise(() -> store.checkpoints().save(checkpoint));
+        EventCloudWatermark watermark = runPromise(() -> store.watermark("tenant-a", "partition-a"));
+
+        DataCloudEventCloudStore restartedStore = store(provider);
+        assertThat(runPromise(() -> restartedStore.checkpoints().load("tenant-a", "consumer-1")))
+            .contains(checkpoint);
+        assertThat(watermark.tenantId()).isEqualTo("tenant-a");
+        assertThat(watermark.partition()).isEqualTo("partition-a");
+        assertThat(watermark.offset().offset()).isGreaterThanOrEqualTo(offset.offset());
+    }
+
+    @Test
+    void storesLateEventsAndDlqRecordsAsAppendOnlyDataCloudEvents() {
+        DataCloudEventCloudStore store = store();
+        EventCloudOffset current = runPromise(() -> store.append(event(
+            "event-current",
+            "metric.current",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:10:00Z")));
+        EventCloudOffset late = runPromise(() -> store.append(event(
+            "event-late",
+            "metric.late",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:01:00Z")));
+        EventCloudOffset dlq = runPromise(() -> store.append(event(
+            "event-dlq",
+            "aep.dlq.recorded",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:11:00Z")));
+        List<EventCloudRecord> replayed = new ArrayList<>();
+
+        runPromise(() -> store.replay("tenant-a", current, dlq, replayed::add));
+
+        assertThat(late.offset()).isGreaterThan(current.offset());
+        assertThat(replayed).extracting(record -> record.event().eventId())
+            .containsExactly("event-current", "event-late", "event-dlq");
+        assertThat(replayed).extracting(record -> record.event().eventTime())
+            .containsExactly(
+                Instant.parse("2026-05-23T00:10:00Z"),
+                Instant.parse("2026-05-23T00:01:00Z"),
+                Instant.parse("2026-05-23T00:11:00Z"));
+    }
+
+    @Test
+    void bridgePersistsStateWithoutPatternEvaluationOrReordering() {
+        DataCloudEventCloudStore store = store();
+        EventCloudOffset first = runPromise(() -> store.append(event(
+            "event-1",
+            "deploy.started",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:10:00Z")));
+        runPromise(() -> store.append(event(
+            "event-2",
+            "deploy.completed",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:01:00Z")));
+        List<EventCloudRecord> replayed = new ArrayList<>();
+
+        EventCloudWatermark watermark = runPromise(() -> store.watermark("tenant-a", "partition-a"));
+        runPromise(() -> store.replay("tenant-a", first, watermark.offset(), replayed::add));
+
+        assertThat(replayed).extracting(record -> record.event().eventType())
+            .containsExactly("deploy.started", "deploy.completed");
+        assertThat(replayed).extracting(record -> record.event().eventTime())
+            .containsExactly(
+                Instant.parse("2026-05-23T00:10:00Z"),
+                Instant.parse("2026-05-23T00:01:00Z"));
+        assertThat(replayed).extracting(record -> record.event().payload())
+            .allSatisfy(payload -> assertThat(payload).containsKey("service"));
     }
 
     @Test
@@ -124,12 +277,21 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
     }
 
     private static CanonicalEvent event(String eventId, String eventType, String partition) {
+        return event(eventId, eventType, "tenant-a", partition, "2026-05-23T00:00:00Z");
+    }
+
+    private static CanonicalEvent event(
+            String eventId,
+            String eventType,
+            String tenantId,
+            String partition,
+            String eventTime) {
         return new CanonicalEvent(
             eventId,
-            "tenant-a",
+            tenantId,
             eventType,
             "1.0.0",
-            Instant.parse("2026-05-23T00:00:00Z"),
+            Instant.parse(eventTime),
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),

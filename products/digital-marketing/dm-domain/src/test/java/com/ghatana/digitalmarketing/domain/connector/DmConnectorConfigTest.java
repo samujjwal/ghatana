@@ -94,6 +94,15 @@ class DmConnectorConfigTest {
     }
 
     @Test
+    @DisplayName("markPending records readiness reason and health-check time")
+    void markPending() {
+        DmConnectorConfig c = sample(DmConnectorStatus.ACTIVE).markPending("rate limited");
+        assertThat(c.getStatus()).isEqualTo(DmConnectorStatus.PENDING);
+        assertThat(c.getFailureReason()).isEqualTo("rate limited");
+        assertThat(c.getLastHealthCheckAt()).isNotNull();
+    }
+
+    @Test
     @DisplayName("disable transitions any status to DISABLED")
     void disable() {
         DmConnectorConfig c = sample(DmConnectorStatus.ACTIVE).disable();

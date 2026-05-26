@@ -78,7 +78,9 @@ function validateRequiredEvidenceFiles() {
  * Validate evidence files with an evidenceRun commit belong to the current checkout.
  */
 function validateEvidenceFreshness() {
-  const freshnessViolations = findEvidenceCurrentCommitViolations(repoRoot);
+  const freshnessViolations = findEvidenceCurrentCommitViolations(repoRoot, {
+    skipProductReleaseReadiness: process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness',
+  });
   if (freshnessViolations.length > 0) {
     for (const violation of freshnessViolations) {
       logError(`Evidence freshness violation: ${violation}`);

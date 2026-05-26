@@ -1,0 +1,584 @@
+{
+  "generatedAt": "2026-05-26T14:18:23.548Z",
+  "evidenceRun": {
+    "generatedBy": "scripts/check-product-release-readiness.mjs",
+    "command": "pnpm check:product-release-readiness",
+    "source": "scripts/check-product-release-readiness.mjs",
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-27T14:18:23.554Z",
+  "expiresAt": "2026-05-28T14:18:23.554Z",
+  "productId": "data-cloud",
+  "releaseVerdict": "pass",
+  "releaseProfiles": [
+    "standard-web-api-release",
+    "backend-only-release",
+    "polyglot-service-release"
+  ],
+  "productMetadata": {
+    "id": "data-cloud",
+    "name": "Data Cloud",
+    "description": "Data cloud platform with planes architecture",
+    "type": "product",
+    "kind": "platform-provider",
+    "manifestPath": null,
+    "manifestFormat": null,
+    "gradleModules": [
+      ":products:data-cloud:planes:shared-spi",
+      ":products:data-cloud:planes:data:entity",
+      ":products:data-cloud:planes:event:core",
+      ":products:data-cloud:planes:operations:config",
+      ":products:data-cloud:planes:intelligence:analytics",
+      ":products:data-cloud:planes:governance:core",
+      ":products:data-cloud:delivery:runtime-composition",
+      ":products:data-cloud:extensions:plugins",
+      ":products:data-cloud:delivery:api",
+      ":products:data-cloud:delivery:launcher",
+      ":products:data-cloud:delivery:sdk",
+      ":products:data-cloud:contracts",
+      ":products:data-cloud:extensions:agent-registry",
+      ":products:data-cloud:extensions:agent-catalog",
+      ":products:data-cloud:delivery:api-contract-tests",
+      ":products:data-cloud:planes:intelligence:feature-ingest",
+      ":products:data-cloud:planes:event:store",
+      ":products:data-cloud:integration-tests",
+      ":products:data-cloud:planes:action",
+      ":products:data-cloud:planes:action:operator-contracts",
+      ":products:data-cloud:planes:action:central-runtime",
+      ":products:data-cloud:planes:action:engine",
+      ":products:data-cloud:planes:action:registry",
+      ":products:data-cloud:planes:action:analytics",
+      ":products:data-cloud:planes:action:security",
+      ":products:data-cloud:planes:action:event-bridge",
+      ":products:data-cloud:planes:action:agent-runtime",
+      ":products:data-cloud:planes:action:api",
+      ":products:data-cloud:planes:action:scaling",
+      ":products:data-cloud:planes:action:observability",
+      ":products:data-cloud:planes:action:orchestrator",
+      ":products:data-cloud:planes:action:server",
+      ":products:data-cloud:planes:action:identity",
+      ":products:data-cloud:planes:action:compliance",
+      ":products:data-cloud:planes:action:kernel-bridge",
+      ":products:data-cloud:extensions:kernel-bridge"
+    ],
+    "surfaces": [
+      {
+        "type": "backend-api",
+        "path": "products/data-cloud/delivery/api",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "web",
+        "path": "products/data-cloud/delivery/ui",
+        "packagePath": "products/data-cloud/delivery/ui/package.json",
+        "implementationStatus": "implemented"
+      },
+      {
+        "type": "sdk",
+        "path": "products/data-cloud/delivery/sdk",
+        "implementationStatus": "implemented"
+      }
+    ],
+    "pnpmPackages": [
+      "products/data-cloud/delivery/ui",
+      "products/data-cloud/libs/*",
+      "products/data-cloud/planes/action/ui",
+      "products/data-cloud/planes/action/gateway"
+    ],
+    "ci": {
+      "enabled": true,
+      "gates": [
+        "build",
+        "test",
+        "manifest-validation",
+        "security-scan",
+        "integration-test"
+      ]
+    },
+    "conformance": {
+      "manifest": false,
+      "observability": false,
+      "security": false,
+      "dataAccess": false,
+      "bridge": false,
+      "agentDefinitions": false,
+      "masteryBindings": false,
+      "evaluationPacks": false,
+      "runtimeModule": false,
+      "manifestExemption": "No product manifest is registered yet; manifest conformance is disabled until manifestPath, manifestFormat, and buildFile are declared."
+    },
+    "metadata": {
+      "owner": "Data Cloud Team",
+      "created": "2026-03-19",
+      "documentation": "products/data-cloud/README.md",
+      "status": "active",
+      "displayName": "Data Cloud",
+      "description": "Platform data services and data lake infrastructure provider",
+      "category": "platform-infrastructure"
+    },
+    "lifecycleReadiness": {
+      "reasonCodes": [
+        "platform-provider-mode-required",
+        "bootstrap-platform-separation-validated",
+        "platform-provider-health-validated",
+        "runtime-truth-provider-validated",
+        "data-cloud-release-gate-passed"
+      ],
+      "requiredGates": [
+        "bootstrap-build-without-platform-providers",
+        "platform-provider-health",
+        "runtime-truth-provider"
+      ],
+      "nextRequiredWork": [
+        "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
+        "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target"
+      ],
+      "evidenceRefs": [
+        "products/data-cloud/lifecycle/readiness-evidence.yaml",
+        "products/data-cloud/extensions/kernel-bridge",
+        "products/data-cloud/planes/action/kernel-bridge",
+        ".kernel/evidence/data-cloud/platform-provider-readiness.json"
+      ],
+      "blockerGateAdapterMatrix": {
+        "blockers": [],
+        "gates": [
+          {
+            "gateId": "bootstrap-build-without-platform-providers",
+            "description": "Bootstrap build must work without Data Cloud providers"
+          },
+          {
+            "gateId": "platform-provider-health",
+            "description": "Platform provider health validation"
+          },
+          {
+            "gateId": "runtime-truth-provider",
+            "description": "Runtime truth provider availability"
+          }
+        ],
+        "adapters": [
+          {
+            "adapterId": "backend-api",
+            "readiness": "ready"
+          },
+          {
+            "adapterId": "web",
+            "readiness": "ready"
+          },
+          {
+            "adapterId": "sdk",
+            "readiness": "ready"
+          },
+          {
+            "adapterId": "kernel-bridge",
+            "readiness": "ready"
+          }
+        ]
+      },
+      "status": "ready"
+    },
+    "lifecycleExecutionAllowed": false
+  },
+  "dimensions": [
+    {
+      "dimensionName": "Vision alignment",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Product coherence",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Feature completeness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "End-to-end workflow completeness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Domain correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Data model correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Contract correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Route/API correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/API/runtime coherence",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Runtime Truth maturity",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Security",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Privacy",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Tenant isolation",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Authorization/RBAC/ABAC/scope",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Governance/policy/compliance",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Audit durability/evidence quality",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Event correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Action Plane / automation correctness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Implicit AI/ML maturity",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "HITL/override control",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Observability",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Reliability/resilience",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Error/degraded mode",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Idempotency/retry/replay/rollback",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Performance",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Scalability",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Extensibility/plugin model",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Shared-library reuse",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Dependency hygiene",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Architecture boundaries",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Simplicity/maintainability",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "UI/UX simplicity/consistency",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Accessibility",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "i18n/l10n readiness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Testing depth",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Test quality/no-theater",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "CI gate strength",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Release readiness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Deployment/ops readiness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Backup/restore/DR",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Config/secrets management",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Documentation truthfulness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Migration/deprecation hygiene",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Cost/operational efficiency",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall production readiness",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    },
+    {
+      "dimensionName": "Overall world-class maturity",
+      "score": 5,
+      "sources": {
+        "baseline": 5,
+        "wave2Delta": 0
+      }
+    }
+  ],
+  "averageScore": 5,
+  "releaseTargetScore": 4,
+  "belowTargetDimensions": [],
+  "blockingGaps": [],
+  "skippedGates": [],
+  "evidencePaths": [
+    ".kernel/evidence/product-release-readiness.json",
+    ".kernel/evidence/kernel-implementation-plan-progress.json",
+    ".kernel/evidence/wave2-product-quality-scorecard.json"
+  ],
+  "artifactAuthoringGateScripts": [
+    "pnpm:check:kernel-authoring-pipeline",
+    "pnpm:check:artifact-roundtrip",
+    "pnpm:check:generated-artifact-validation-pipeline",
+    "pnpm:check:studio-production-profile:strict",
+    "pnpm:check:studio-source-acquisition-worker",
+    "pnpm:check:studio-workflow-persistence-contracts"
+  ]
+}

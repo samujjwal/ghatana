@@ -263,6 +263,7 @@ class ContactServiceImplTest extends EventloopTestBase {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<Optional<Contact>> findByEmail(DmWorkspaceId workspaceId, String email) {
             // Simplified implementation for test - matches by emailHash
             return Promise.of(store.values().stream()

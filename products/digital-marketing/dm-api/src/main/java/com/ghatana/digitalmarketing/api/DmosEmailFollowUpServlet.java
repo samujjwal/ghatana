@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.email.EmailFollowUpDraftService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -94,7 +95,9 @@ public final class DmosEmailFollowUpServlet {
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/email-followup/latest-approved",
                 this::handleGetLatestApproved)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "email-follow-up"
         );
     }
 

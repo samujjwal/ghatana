@@ -4,7 +4,11 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { evaluateEvidenceFreshness, getFreshnessProfile } from '../validate-release-evidence.mjs';
+import {
+  evaluateEvidenceFreshness,
+  getFreshnessProfile,
+  validateReleaseContentContradictions,
+} from '../validate-release-evidence.mjs';
 
 const repoRoot = process.cwd();
 const generateSummaryScript = path.join(repoRoot, 'scripts', 'generate-release-maturity-summary.mjs');
@@ -116,6 +120,40 @@ test('release evidence freshness requires source backing metadata when policy ma
 
   assert.equal(
     errors.some((message) => message.includes('missing required source backing metadata')),
+    true,
+  );
+});
+
+test('release evidence contradictions reject pass state with partial child proof', () => {
+  const errors = [];
+
+  validateReleaseContentContradictions('phr-release-readiness.json', {
+    releaseReadiness: { status: 'ready-for-staging' },
+    cache: { distributedCache: { status: 'partial' } },
+  }, errors);
+
+  assert.equal(
+    errors.some((message) => message.includes('cannot be ready/pass')),
+    true,
+  );
+});
+
+test('release evidence contradictions reject current HEAD required task-map rows', () => {
+  const errors = [];
+
+  validateReleaseContentContradictions('production-readiness-task-map.json', {
+    pass: true,
+    tasks: [
+      {
+        Task: 'Evidence freshness',
+        'Evidence Status': 'pending',
+        'Evidence Commit': 'current HEAD required',
+      },
+    ],
+  }, errors);
+
+  assert.equal(
+    errors.some((message) => message.includes('current-HEAD-required')),
     true,
   );
 });

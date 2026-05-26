@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.intake.IntakeQuestionnaireService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -67,7 +68,9 @@ public final class DmosIntakeQuestionnaireServlet {
             .with(HttpMethod.PUT, "/v1/workspaces/:workspaceId/intake/questionnaire/draft", this::handleSaveDraft)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/intake/questionnaire/draft", this::handleGetDraft)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/intake/questionnaire/submit", this::handleSubmit)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "intake-questionnaire"
         );
     }
 

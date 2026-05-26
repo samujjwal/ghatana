@@ -1,4 +1,4 @@
-name: Data Cloud CI (Advisory)
+name: Data Cloud CI — Developer Gate
 
 on:
   push:
@@ -58,16 +58,21 @@ jobs:
 
       # Backend: Compile all modules
       - name: Validate active Data Cloud module classification
-        run: node ./scripts/list-data-cloud-active-modules.mjs --validate
+        run: |
+          node ./scripts/list-data-cloud-active-modules.mjs --validate
+          node ./scripts/check-action-plane-module-inventory.mjs
+          node ./scripts/check-production-readiness-task-map.mjs
 
       - name: Validate agent capability architecture gates
         run: |
           node ./scripts/check-agent-capability-duplicates.mjs
           node ./scripts/check-agent-runtime-test-excludes.mjs
+          node ./scripts/audit-agent-usage.mjs
 
       - name: Compile active Data Cloud modules
         run: |
           set -euo pipefail
+          START_SECONDS="$(date +%s)"
           TASKS="$(node ./scripts/list-data-cloud-active-modules.mjs --scope=all-active --task=compileJava --format=shell)"
           if [ -z "$TASKS" ]; then
             echo "::error::Generated all-active task list is empty. This indicates a configuration error."
@@ -76,9 +81,33 @@ jobs:
           echo "Compiling all active Data Cloud modules (release-blocking + advisory):"
           echo "$TASKS"
           ./gradlew ${TASKS} --no-daemon
+          END_SECONDS="$(date +%s)"
           node ./scripts/generate-data-cloud-active-modules-evidence.mjs
           node ./scripts/check-action-plane-boundaries.mjs
           node ./scripts/check-evidence-current-commit.mjs
+          node - <<'NODE' "$TASKS" "$START_SECONDS" "$END_SECONDS"
+          const fs = require('node:fs');
+          const tasks = process.argv[2].split(/\s+/).filter(Boolean);
+          const start = Number(process.argv[3]);
+          const end = Number(process.argv[4]);
+          const evidence = JSON.parse(fs.readFileSync('.kernel/evidence/data-cloud-active-modules.json', 'utf8'));
+          const head = require('node:child_process')
+            .execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' })
+            .trim();
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
+            '## Data Cloud Active Module Compile',
+            '',
+            `- Total modules: ${evidence.summary.totalActiveModules}`,
+            `- Release-blocking modules: ${evidence.summary.releaseBlockingModules}`,
+            `- Advisory modules: ${evidence.summary.advisoryModules}`,
+            `- Compile tasks executed: ${tasks.length}`,
+            '- Failed tasks: 0',
+            `- Duration seconds: ${Math.max(0, end - start)}`,
+            `- Current HEAD: ${head}`,
+            `- Evidence commit: ${evidence.evidenceRun.commit}`,
+            '',
+          ].join('\n'));
+          NODE
 
       - name: Upload evidence freshness summary
         if: always()

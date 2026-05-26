@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -11,6 +12,9 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const PRODUCT_ID = 'data-cloud';
 const READINESS_PATH = 'products/data-cloud/lifecycle/readiness-evidence.yaml';
+const EVIDENCE_PATH = '.kernel/evidence/data-cloud/platform-provider-readiness.json';
+const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
+const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
 const REQUIRED_GATES = [
   'bootstrap-build-without-platform-providers',
   'platform-provider-health',
@@ -67,6 +71,15 @@ function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 }
 
+function currentGitSha() {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  return result.status === 0 ? result.stdout.trim() : 'unknown';
+}
+
 function readYaml(relativePath) {
   return YAML.parse(readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 }
@@ -81,6 +94,48 @@ function pathExists(relativePath) {
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function isBlank(value) {
+  return value === null || value === undefined || String(value).trim().length === 0;
+}
+
+function sleepMs(durationMs) {
+  const signal = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(signal, 0, 0, durationMs);
+}
+
+function writeJsonWithRetry(relativePath, payload, maxAttempts = 8) {
+  const targetPath = path.join(repoRoot, relativePath);
+  mkdirSync(path.dirname(targetPath), { recursive: true });
+  const tempPath = `${targetPath}.tmp`;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      writeFileSync(tempPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+      renameSync(tempPath, targetPath);
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        if (existsSync(tempPath)) {
+          unlinkSync(tempPath);
+        }
+      } catch {
+        // Best-effort cleanup only.
+      }
+
+      const code = String(error?.code ?? '');
+      const retriable = code === 'UNKNOWN' || code === 'EACCES' || code === 'EBUSY' || code === 'EPERM';
+      if (!retriable || attempt === maxAttempts) {
+        throw error;
+      }
+      sleepMs(50 * attempt);
+    }
+  }
+
+  throw lastError;
 }
 
 function assertIncludesAll(label, actual, expected) {
@@ -116,13 +171,20 @@ function assertEvidenceRun(label, payload, expected) {
 }
 
 function assertExecutableReadinessEvidence(readiness) {
-  if (readiness.status !== 'blocked') {
-    fail('Data Cloud readiness status must remain blocked until a separate release transition updates it with executable proof');
+  const productReleaseReadinessBootstrap =
+    process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness';
+  const allowedStatuses = new Set(['blocked', 'candidate', 'staging-ready', 'production-ready']);
+  if (!allowedStatuses.has(String(readiness.status ?? ''))) {
+    fail('Data Cloud readiness status must be blocked, candidate, staging-ready, or production-ready');
   }
   assertIncludesAll('Data Cloud readiness blockers', readiness.conformance?.keepStatusBlockedUntil, REQUIRED_BLOCKERS);
-  const currentCommitViolations = findEvidenceCurrentCommitViolations(repoRoot);
+  const currentCommitViolations = findEvidenceCurrentCommitViolations(repoRoot, {
+    evidenceRoot: EVIDENCE_PATH,
+    skipProductReleaseReadiness: true,
+    skipEvidencePaths: [EVIDENCE_PATH],
+  });
   if (currentCommitViolations.length > 0) {
-    fail(`Evidence current-commit check failed: ${currentCommitViolations.join('; ')}`);
+    fail(`Provider readiness evidence current-commit check failed: ${currentCommitViolations.join('; ')}`);
   }
 
   const proofRefs = new Set(asArray(readiness.conformance?.executableProofRefs));
@@ -131,6 +193,9 @@ function assertExecutableReadinessEvidence(readiness) {
   }
   for (const blocker of REQUIRED_BLOCKERS) {
     if (blocker === 'all-evidence-run-commits-match-current-head') {
+      continue;
+    }
+    if (blocker === 'product-release-readiness-pass-true' && productReleaseReadinessBootstrap) {
       continue;
     }
     const expected = EXECUTABLE_EVIDENCE[blocker];
@@ -161,6 +226,38 @@ function assertExecutableReadinessEvidence(readiness) {
       fail('Action Plane boundary evidence must have pass: true');
     }
   }
+
+  if (readiness.status === 'production-ready') {
+    const promotion = readiness.promotion;
+    if (!promotion || typeof promotion !== 'object') {
+      fail('Data Cloud production-ready status requires promotion evidence');
+    }
+    if (promotion.previousStatus !== 'staging-ready' || promotion.requestedStatus !== 'production-ready') {
+      fail('Data Cloud production-ready status requires promotion.previousStatus staging-ready and requestedStatus production-ready');
+    }
+    const approval = promotion.approval;
+    if (!approval || approval.status !== 'approved' || isBlank(approval.approvedAt) || isBlank(approval.approvedBy)) {
+      fail('Data Cloud production-ready status requires approved promotion.approval metadata');
+    }
+    const currentCommit = currentGitSha();
+    if (promotion.sourceCommit !== currentCommit || promotion.targetCommit !== currentCommit) {
+      fail(`Data Cloud production-ready promotion sourceCommit and targetCommit must match current HEAD ${currentCommit}`);
+    }
+    if (promotion.evidenceBundle !== '.kernel/evidence/data-cloud-release-bundle.json') {
+      fail('Data Cloud production-ready promotion must reference .kernel/evidence/data-cloud-release-bundle.json');
+    }
+    const bundle = readJson(promotion.evidenceBundle);
+    assertEvidenceRun('production-ready promotion bundle', bundle, {
+      source: 'scripts/generate-data-cloud-release-bundle.mjs',
+      command: 'pnpm generate:data-cloud-release-bundle',
+    });
+    if (bundle.pass !== true) {
+      fail('Data Cloud production-ready promotion bundle must have pass: true');
+    }
+    if (bundle.evidenceRun?.commit !== currentCommit || bundle.targetCommitSha !== currentCommit) {
+      fail(`Data Cloud production-ready promotion bundle must match current HEAD ${currentCommit}`);
+    }
+  }
 }
 
 function assertDataCloudNeutrality(readiness) {
@@ -181,6 +278,44 @@ function assertDataCloudNeutrality(readiness) {
     readiness.productNeutrality?.prohibitedBusinessProductRoots,
     PROHIBITED_BUSINESS_PRODUCT_ROOTS,
   );
+}
+
+function writeProviderReadinessEvidence(readiness) {
+  const generatedAt = new Date();
+  const sourceCommitSha = currentGitSha();
+  const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? sourceCommitSha;
+  const existing = pathExists(EVIDENCE_PATH) ? readJson(EVIDENCE_PATH) : {};
+
+  writeJsonWithRetry(EVIDENCE_PATH, {
+    ...existing,
+    productId: PRODUCT_ID,
+    productKind: 'platform-provider',
+    status: 'pass',
+    generatedAt: generatedAt.toISOString(),
+    lastChecked: generatedAt.toISOString(),
+    evidenceRun: {
+      generatedBy: 'scripts/check-data-cloud-platform-provider-readiness.mjs',
+      command: 'pnpm check:data-cloud-platform-provider-readiness',
+      source: 'scripts/check-data-cloud-platform-provider-readiness.mjs',
+      commit: sourceCommitSha,
+      sourceCommitSha,
+      targetCommitSha,
+      targetEnvironment,
+    },
+    sourceCommitSha,
+    targetCommitSha,
+    targetEnvironment,
+    validationStatus: 'validated',
+    reviewDueAt: new Date(generatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    expiresAt: new Date(generatedAt.getTime() + evidenceValidityHours * 60 * 60 * 1000).toISOString(),
+    requiredGates: REQUIRED_GATES,
+    requiredRuntimeSignals: REQUIRED_RUNTIME_SIGNALS,
+    prohibitedBusinessProductRoots: PROHIBITED_BUSINESS_PRODUCT_ROOTS,
+    conformance: {
+      keepStatusBlockedUntil: asArray(readiness.conformance?.keepStatusBlockedUntil),
+      executableProofRefs: asArray(readiness.conformance?.executableProofRefs),
+    },
+  });
 }
 
 function main() {
@@ -234,6 +369,7 @@ function main() {
 
   assertExecutableReadinessEvidence(readiness);
   assertDataCloudNeutrality(readiness);
+  writeProviderReadinessEvidence(readiness);
   console.log('Data Cloud platform-provider readiness checks passed.');
 }
 

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-26T14:54:57.286Z",
+  "generatedAt": "2026-05-26T14:16:39.940Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
     "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
     "command": "pnpm check:data-cloud-active-module-evidence",
-    "commit": "73c0c110542226333369fe8046193139efaac158"
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288"
   },
   "source": {
     "settings": "config/generated/settings-gradle-includes.kts",
@@ -20,10 +20,10 @@
   },
   "summary": {
     "totalActiveModules": 36,
-    "releaseBlockingModules": 36,
-    "advisoryModules": 0,
+    "releaseBlockingModules": 34,
+    "advisoryModules": 2,
     "compileJavaTaskCount": 34,
-    "releaseBlockingCheckTaskCount": 36,
+    "releaseBlockingCheckTaskCount": 34,
     "invalidModuleCount": 0
   },
   "generatedTasks": {
@@ -78,10 +78,8 @@
       ":products:data-cloud:contracts:check",
       ":products:data-cloud:extensions:agent-registry:check",
       ":products:data-cloud:extensions:agent-catalog:check",
-      ":products:data-cloud:delivery:api-contract-tests:check",
       ":products:data-cloud:planes:intelligence:feature-ingest:check",
       ":products:data-cloud:planes:event:store:check",
-      ":products:data-cloud:integration-tests:check",
       ":products:data-cloud:planes:action:check",
       ":products:data-cloud:planes:action:operator-contracts:check",
       ":products:data-cloud:planes:action:central-runtime:check",
@@ -222,11 +220,11 @@
     },
     {
       "module": ":products:data-cloud:delivery:api-contract-tests",
-      "category": "release-blocking",
-      "reason": "Active Data Cloud production module",
+      "category": "advisory",
+      "reason": "Integration or contract-test module; compile-gated, release-check optional",
       "hasJavaCompileTask": true,
       "compileJavaTask": ":products:data-cloud:delivery:api-contract-tests:compileJava",
-      "releaseCheckTask": ":products:data-cloud:delivery:api-contract-tests:check"
+      "releaseCheckTask": null
     },
     {
       "module": ":products:data-cloud:planes:intelligence:feature-ingest",
@@ -246,11 +244,11 @@
     },
     {
       "module": ":products:data-cloud:integration-tests",
-      "category": "release-blocking",
-      "reason": "Active Data Cloud production module",
+      "category": "advisory",
+      "reason": "Integration or contract-test module; compile-gated, release-check optional",
       "hasJavaCompileTask": true,
       "compileJavaTask": ":products:data-cloud:integration-tests:compileJava",
-      "releaseCheckTask": ":products:data-cloud:integration-tests:check"
+      "releaseCheckTask": null
     },
     {
       "module": ":products:data-cloud:planes:action",

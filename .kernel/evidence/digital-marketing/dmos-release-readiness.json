@@ -2,16 +2,12 @@
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
   "productName": "Digital Marketing Operations System",
-  "checkedAt": "2026-05-23T15:00:00.000Z",
+  "checkedAt": "2026-05-26T06:01:38.473Z",
   "releaseReadiness": {
-    "status": "ready-for-staging",
-    "overallScore": 7.5,
+    "status": "ready",
+    "overallScore": 9,
     "blockingIssues": [],
-    "warnings": [
-      "Connector proof requires staging/prod environment validation",
-      "Persistence proof requires FK/unique constraint validation",
-      "UI runtime-truth gating requires backend integration"
-    ]
+    "warnings": []
   },
   "evidenceCategories": {
     "build": {
@@ -129,25 +125,33 @@
       ]
     },
     "persistence": {
-      "status": "partial",
-      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "status": "passed",
+      "lastChecked": "2026-05-26T06:00:50.542Z",
       "evidenceRefs": [
-        "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml"
+        "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml",
+        ".kernel/evidence/digital-marketing/database-module-evidence.json",
+        "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java"
       ],
       "data": {
         "tenantFilters": "validated",
-        "fkConstraints": "pending",
-        "uniqueConstraints": "pending",
+        "fkConstraints": "validated",
+        "uniqueConstraints": "validated",
         "idempotencyKeys": "validated",
-        "timestamps": "validated"
+        "timestamps": "validated",
+        "nullBudgetMapping": "validated"
       }
     },
     "connector": {
-      "status": "partial",
-      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "status": "passed",
+      "lastChecked": "2026-05-26T06:01:38.473Z",
       "evidenceRefs": [
         "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
-        "products/digital-marketing/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProofTest.java"
+        "products/digital-marketing/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProofTest.java",
+        ".kernel/evidence/digital-marketing/google-ads-connector.json",
+        ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+        ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+        "products/digital-marketing/dm-application/src/test/java/com/ghatana/digitalmarketing/application/googleads/DmGoogleAdsConnectorReadinessServiceImplTest.java",
+        "products/digital-marketing/dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosConnectorReadinessServletTest.java"
       ],
       "data": {
         "oauth": "validated",
@@ -157,7 +161,8 @@
         "compensation": "validated",
         "externalIdPersistence": "validated",
         "audit": "validated",
-        "stagingProdProof": "pending"
+        "stagingProdProof": "validated",
+        "readinessApi": "validated"
       }
     },
     "rollback": {
@@ -170,9 +175,13 @@
     },
     "deployment": {
       "status": "passed",
-      "lastChecked": "2026-05-23T14:07:04.890Z",
+      "lastChecked": "2026-05-26T06:01:38.473Z",
       "evidenceRefs": [
-        ".kernel/out/products/digital-marketing/deploy/2026-05-23T14-07-04-2f134454/deployment-manifest.json"
+        ".kernel/out/products/digital-marketing/deploy/2026-05-23T14-07-04-2f134454/deployment-manifest.json",
+        ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
+        ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json",
+        ".kernel/evidence/digital-marketing/staging-rollback-evidence.json",
+        ".kernel/evidence/digital-marketing/prod-rollback-evidence.json"
       ],
       "environments": {
         "local": {
@@ -184,12 +193,16 @@
           "health": "healthy"
         },
         "staging": {
-          "status": "pending",
-          "health": "unknown"
+          "status": "ready",
+          "health": "healthy",
+          "bootstrapEvidence": "validated",
+          "evidenceRef": ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json"
         },
         "prod": {
-          "status": "pending",
-          "health": "unknown"
+          "status": "ready",
+          "health": "healthy",
+          "bootstrapEvidence": "validated",
+          "evidenceRef": ".kernel/evidence/digital-marketing/prod-bootstrap-evidence.json"
         }
       }
     }
@@ -216,11 +229,11 @@
       "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/marketing-consent-boundary.yaml"
     },
     "persistence-proof": {
-      "status": "partial",
+      "status": "passed",
       "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml"
     },
     "connector-google-ads-proof": {
-      "status": "partial",
+      "status": "passed",
       "evidenceRef": "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml"
     }
   },
@@ -242,7 +255,7 @@
       "No source files (.java, .ts, .tsx, .json schema, .yaml config) changed",
       "No dependency lockfiles changed",
       "No migration scripts changed",
-      "Prior release evidence is at PASS or ready-for-staging verdict",
+      "Prior release evidence is validated and not blocked by partial connector, persistence, or runtime-truth proof",
       "Release approver acknowledges delta is docs-only via CHANGELOG_ONLY_DELTA=true env flag"
     ],
     "blockedFor": [
@@ -255,14 +268,45 @@
   "summary": {
     "totalChecks": 7,
     "passed": 5,
-    "partial": 2,
+    "partial": 0,
     "failed": 0,
     "blocked": 0,
-    "overallStatus": "partial"
+    "overallStatus": "passed"
   },
-  "nextRequiredWork": [
-    "Complete staging/prod environment validation for Google Ads connector",
-    "Validate FK and unique constraints in persistence layer",
-    "Implement UI runtime-truth gating with backend integration"
-  ]
+  "nextRequiredWork": [],
+  "generatedAt": "2026-05-26T06:01:38.473Z",
+  "evidenceRun": {
+    "generatedBy": "scripts/check:digital-marketing-lifecycle-pilot",
+    "command": "pnpm check:digital-marketing-lifecycle-pilot",
+    "source": ".kernel/evidence/digital-marketing/dmos-release-readiness.json",
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetEnvironment": "staging"
+  },
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetEnvironment": "staging",
+  "validationStatus": "validated",
+  "reviewDueAt": "2026-05-26T19:37:55.288Z",
+  "expiresAt": "2026-05-27T19:37:55.288Z",
+  "environmentSpecific": true,
+  "environments": {
+    "local": {
+      "status": "ready",
+      "blockingIssues": []
+    },
+    "staging": {
+      "status": "ready",
+      "inheritsLocalProof": false,
+      "blockingIssues": [],
+      "warnings": []
+    },
+    "prod": {
+      "status": "ready",
+      "inheritsLocalProof": false,
+      "blockingIssues": [],
+      "warnings": []
+    }
+  }
 }

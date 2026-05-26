@@ -65,6 +65,17 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
                 """
                 {
                   "generatedAt": "2026-05-23T22:10:18.389Z",
+                  "sourceCommitSha": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
+                  "targetCommitSha": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
+                  "targetEnvironment": "staging",
+                  "validationStatus": "failed",
+                  "expiresAt": "2099-05-23T22:10:18.389Z",
+                  "evidenceRun": {
+                    "commit": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
+                    "sourceCommitSha": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
+                    "targetCommitSha": "ca6a53684a4685fe04fff1dd23cea80b9b65d27d",
+                    "targetEnvironment": "staging"
+                  },
                   "productId": "phr",
                   "releaseVerdict": "fail",
                   "releaseProfiles": ["standard-web-api-release"],
@@ -93,7 +104,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(200);
         String body = response.getBody().asString(StandardCharsets.UTF_8);
         assertThat(body).contains("\"productKey\":\"phr\"");
-        assertThat(body).contains("\"status\":\"READY\"");
+        assertThat(body).contains("\"status\":\"FAILED\"");
         assertThat(body).contains("check-production-stubs.mjs");
         verify(dataCloudClient).save(eq(TENANT_ID), eq("product_release_readiness"), org.mockito.ArgumentMatchers.<Map<String, Object>>any());
     }
@@ -177,17 +188,20 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
     @Test
     @DisplayName("asset promotion persists updated asset and history")
     void promoteAssetPersistsAssetAndHistory() throws Exception {
-        Map<String, Object> currentAsset = Map.of(
-                "id", "entity-1",
-                "asset_id", "phr-consent-module",
-                "asset_type", "module",
-                "display_name", "PHR Consent Module",
-                "source_product", "phr",
-                "domain", "healthcare",
-                "maturity", "candidate",
-                "reuse_mode", "reference",
-                "owner", "platform",
-                "version", 2);
+        Map<String, Object> currentAsset = Map.ofEntries(
+                Map.entry("id", "entity-1"),
+                Map.entry("asset_id", "phr-consent-module"),
+                Map.entry("asset_type", "module"),
+                Map.entry("display_name", "PHR Consent Module"),
+                Map.entry("source_product", "phr"),
+                Map.entry("domain", "healthcare"),
+                Map.entry("maturity", "candidate"),
+                Map.entry("reuse_mode", "reference"),
+                Map.entry("owner", "platform"),
+                Map.entry("paths", List.of("products/phr/src/main/java/com/ghatana/phr/consent/ConsentManagementService.java")),
+                Map.entry("tests", List.of("products/phr/src/test/java/com/ghatana/phr/consent/ConsentManagementServiceTest.java")),
+                Map.entry("dependencies", List.of("platform:java:governance")),
+                Map.entry("version", 2));
         when(dataCloudClient.findById(TENANT_ID, ASSET_COLLECTION, "phr-consent-module"))
                 .thenReturn(Promise.of(Optional.of(DataCloudClient.Entity.of("entity-1", ASSET_COLLECTION, currentAsset))));
         when(dataCloudClient.save(eq(TENANT_ID), anyString(), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
@@ -352,6 +366,7 @@ class ProductFamilyControlPlaneControllerTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(200);
             String body = response.getBody().asString(StandardCharsets.UTF_8);
+            assertThat(body).contains("\"status\":\"STALE\"");
             assertThat(body).contains("\"commitMismatch\":true");
             assertThat(body).contains("\"evidenceCommit\":\"ca6a53684a46");
         }

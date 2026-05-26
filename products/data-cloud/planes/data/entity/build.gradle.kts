@@ -71,9 +71,9 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                // Phase 3: Current coverage is 0.29 - set threshold to current level
-                // Incremental test additions target 0.50 next, then 0.70.
-                minimum = "0.25".toBigDecimal()
+                // Tier 0 critical: tenant isolation, CRUD, schema validation, query filtering,
+                // audit hooks, and retention hooks must move toward the 0.70+ production bar.
+                minimum = "0.40".toBigDecimal()
             }
         }
     }

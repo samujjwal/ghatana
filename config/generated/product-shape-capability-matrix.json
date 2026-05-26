@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-24T14:55:31.182Z",
+  "generated": "2026-05-25T17:45:57.844Z",
   "source": "config/canonical-product-registry.json",
   "matrix": [
     {
@@ -415,14 +415,16 @@
       "requiredCapabilities": [],
       "capabilityGaps": [],
       "reasonCodes": [
+        "bootstrap-platform-separation-validated",
+        "data-cloud-release-gate-passed",
         "disabled-observed",
+        "platform-provider-health-validated",
         "platform-provider-mode-required",
-        "requires-bootstrap-platform-separation",
-        "requires-runtime-truth-provider"
+        "runtime-truth-provider-validated"
       ],
       "nextActions": [
-        "Declare Data Cloud lifecycle profile only after bootstrap build/deploy remains independent of Data Cloud providers",
-        "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed",
+        "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
+        "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target",
         "Wire platform-mode provider bridge before enabling lifecycle execution"
       ],
       "readinessEvidence": [
@@ -735,8 +737,8 @@
         "validated-digital-marketing-lifecycle-pilot"
       ],
       "nextActions": [
-        "Revalidate staging/prod bootstrap and rollback evidence on each release-target commit",
         "Keep migration and persistence evidence packs current for release validation",
+        "Revalidate staging/prod bootstrap and rollback evidence on each release-target commit",
         "Keep lifecycle smoke passing and preserve manifest evidence"
       ],
       "readinessEvidence": [

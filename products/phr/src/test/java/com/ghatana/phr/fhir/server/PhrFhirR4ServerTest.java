@@ -7,9 +7,12 @@ import com.ghatana.phr.kernel.service.PhrTestInfrastructure;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -64,6 +67,20 @@ class PhrFhirR4ServerTest extends EventloopTestBase {
         assertThat(bundle.path("entry").get(0).path("resource").path("id").asText()).isEqualTo("obs-1");
     }
 
+    @ParameterizedTest(name = "creates and reads {0}")
+    @MethodSource("supportedResourcePayloads")
+    @DisplayName("creates and reads every registered FHIR resource provider")
+    void createsAndReadsEveryRegisteredResourceProvider(String resourceType, String resourceJson) throws Exception {
+        PhrApiResponse createResponse = runPromise(() -> server.createResource(resourceType, resourceJson));
+        JsonNode created = JSON_MAPPER.readTree(createResponse.body());
+
+        PhrApiResponse readResponse = runPromise(() -> server.getResource(resourceType, created.path("id").asText()));
+
+        assertThat(createResponse.statusCode()).isEqualTo(201);
+        assertThat(readResponse.statusCode()).isEqualTo(200);
+        assertThat(JSON_MAPPER.readTree(readResponse.body()).path("resourceType").asText()).isEqualTo(resourceType);
+    }
+
     @Test
     @DisplayName("returns OperationOutcome for unsupported resource type")
     void rejectsUnsupportedResourceType() throws Exception {
@@ -97,5 +114,70 @@ class PhrFhirR4ServerTest extends EventloopTestBase {
               "valueQuantity": {"value": 1.1, "unit": "mg/dL"}
             }
             """.formatted(id, patientId, loincCode);
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> supportedResourcePayloads() {
+        return Stream.of(
+            org.junit.jupiter.params.provider.Arguments.of("Patient", """
+                {
+                  "resourceType": "Patient",
+                  "id": "patient-provider-1",
+                  "identifier": [{"value": "NHS-67890"}],
+                  "name": [{"family": "Karki", "given": ["Maya"]}],
+                  "gender": "female",
+                  "active": true
+                }
+                """),
+            org.junit.jupiter.params.provider.Arguments.of("Observation", """
+                {
+                  "resourceType": "Observation",
+                  "id": "observation-provider-1",
+                  "status": "final",
+                  "subject": {"reference": "Patient/patient-provider-1"},
+                  "code": {"coding": [{"system": "http://loinc.org", "code": "718-7"}]},
+                  "valueQuantity": {"value": 13.2, "unit": "g/dL"}
+                }
+                """),
+            org.junit.jupiter.params.provider.Arguments.of("MedicationRequest", """
+                {
+                  "resourceType": "MedicationRequest",
+                  "id": "medication-request-provider-1",
+                  "status": "active",
+                  "intent": "order",
+                  "subject": {"reference": "Patient/patient-provider-1"},
+                  "medicationCodeableConcept": {"text": "Metformin 500 mg"}
+                }
+                """),
+            org.junit.jupiter.params.provider.Arguments.of("Immunization", """
+                {
+                  "resourceType": "Immunization",
+                  "id": "immunization-provider-1",
+                  "status": "completed",
+                  "vaccineCode": {"text": "Influenza vaccine"},
+                  "patient": {"reference": "Patient/patient-provider-1"},
+                  "occurrenceDateTime": "2026-05-24T09:00:00Z"
+                }
+                """),
+            org.junit.jupiter.params.provider.Arguments.of("DiagnosticReport", """
+                {
+                  "resourceType": "DiagnosticReport",
+                  "id": "diagnostic-report-provider-1",
+                  "status": "final",
+                  "code": {"coding": [{"system": "http://loinc.org", "code": "58410-2"}]},
+                  "subject": {"reference": "Patient/patient-provider-1"},
+                  "result": [{"reference": "Observation/observation-provider-1"}]
+                }
+                """),
+            org.junit.jupiter.params.provider.Arguments.of("DocumentReference", """
+                {
+                  "resourceType": "DocumentReference",
+                  "id": "document-reference-provider-1",
+                  "status": "current",
+                  "type": {"coding": [{"system": "http://loinc.org", "code": "18842-5"}]},
+                  "subject": {"reference": "Patient/patient-provider-1"},
+                  "content": [{"attachment": {"contentType": "application/pdf", "data": "JVBERi0xLjQK"}}]
+                }
+                """)
+        );
     }
 }

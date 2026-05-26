@@ -115,7 +115,7 @@ public final class DmosCampaignServlet {
             eventloop,
             DmosMetricsCollector.disabled(),
             DmosTelemetry.disabled(),
-            new DmosHttpContextFactory(false, null)
+            DmosHttpContextFactory.testModeWithAnonymousFallback()
         );
     }
 

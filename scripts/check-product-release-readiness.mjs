@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affected-products.mjs';
 
@@ -17,6 +18,13 @@ const defaultReleaseTargetScore = Number(process.env.RELEASE_TARGET_SCORE ?? '4'
 const platformLifecycleBuildScript = 'pnpm:build:kernel-lifecycle-platform';
 const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
+const dataCloudProviderReadinessCheck = './scripts/check-data-cloud-platform-provider-readiness.mjs';
+const dataCloudRuntimeProfileCheck = './scripts/check-data-cloud-release-runtime-profile.mjs';
+const dataCloudReadinessPath = path.join(repoRoot, 'products/data-cloud/lifecycle/readiness-evidence.yaml');
+const businessProductFoundationChecks = [
+  dataCloudProviderReadinessCheck,
+  dataCloudRuntimeProfileCheck,
+];
 
 function currentGitSha() {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], {
@@ -104,6 +112,86 @@ function validateRegistryAndEvidenceConsistency(productId, productMetadata) {
       gate: 'lifecycle-readiness-blockers',
       reason: 'unresolved-blocker-matrix',
       message: `Product ${productId} has unresolved blocker matrix entries while lifecycle readiness is enabled`,
+    });
+  }
+
+  return gaps;
+}
+
+function readYamlIfExists(filePath) {
+  if (!existsSync(filePath)) {
+    return null;
+  }
+
+  return YAML.parse(readFileSync(filePath, 'utf8'));
+}
+
+function validateDataCloudProductionPromotionEvidence() {
+  const gaps = [];
+  const readiness = readYamlIfExists(dataCloudReadinessPath);
+  if (!readiness || readiness.status !== 'production-ready') {
+    return gaps;
+  }
+
+  const currentCommit = currentGitSha();
+  const promotion = readiness.promotion;
+  if (!promotion || typeof promotion !== 'object') {
+    return [{
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-evidence',
+      message: 'Data Cloud production-ready status requires promotion evidence',
+    }];
+  }
+
+  if (promotion.previousStatus !== 'staging-ready' || promotion.requestedStatus !== 'production-ready') {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'invalid-promotion-transition',
+      message: 'Data Cloud production-ready promotion must transition from staging-ready to production-ready',
+    });
+  }
+
+  const approval = promotion.approval;
+  if (!approval || approval.status !== 'approved' || !approval.approvedAt || !approval.approvedBy) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-approval',
+      message: 'Data Cloud production-ready promotion requires approvedAt and approvedBy metadata',
+    });
+  }
+
+  if (promotion.sourceCommit !== currentCommit || promotion.targetCommit !== currentCommit) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'stale-promotion-commit',
+      message: `Data Cloud production-ready promotion commits must match current HEAD ${currentCommit}`,
+      expectedCommitSha: currentCommit,
+      actualSourceCommitSha: promotion.sourceCommit,
+      actualTargetCommitSha: promotion.targetCommit,
+    });
+  }
+
+  const bundlePath = path.join(repoRoot, String(promotion.evidenceBundle ?? ''));
+  const bundle = readJsonIfExists(bundlePath);
+  if (!bundle) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-bundle',
+      message: 'Data Cloud production-ready promotion evidence bundle is missing',
+      evidenceBundle: promotion.evidenceBundle,
+    });
+  } else if (bundle.pass !== true || bundle.evidenceRun?.commit !== currentCommit || bundle.targetCommitSha !== currentCommit) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'invalid-promotion-bundle',
+      message: `Data Cloud production-ready promotion bundle must pass and match current HEAD ${currentCommit}`,
+      evidenceBundle: promotion.evidenceBundle,
     });
   }
 
@@ -220,6 +308,9 @@ function runCheck(checkRef, options = {}) {
   const productArgs = productScopedScriptRefs.has(checkRef) && products.length > 0
     ? ['--products', products.join(',')]
     : [];
+  const env = checkRef === 'pnpm:check:data-cloud-release-gate' || checkRef === dataCloudProviderReadinessCheck
+    ? { ...process.env, DATACLOUD_RELEASE_GATE_BOOTSTRAP: 'product-release-readiness' }
+    : process.env;
 
   if (checkRef.startsWith('pnpm:')) {
     const scriptName = checkRef.slice('pnpm:'.length);
@@ -228,20 +319,20 @@ function runCheck(checkRef, options = {}) {
       return spawnSync('cmd.exe', ['/d', '/c', 'pnpm', ...pnpmArgs], {
         cwd: repoRoot,
         stdio: 'inherit',
-        env: process.env,
+        env,
       });
     }
     return spawnSync('pnpm', pnpmArgs, {
       cwd: repoRoot,
       stdio: 'inherit',
-      env: process.env,
+      env,
     });
   }
 
   return spawnSync(process.execPath, [checkRef, ...productArgs], {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: process.env,
+    env,
   });
 }
 
@@ -279,7 +370,11 @@ function loadDimensionScoreMap() {
 export function filterReleaseEligibleProducts(productIds, registry) {
   return productIds.filter((productId) => {
     const metadata = registry[productId];
-    if (!metadata || metadata.kind !== 'business-product') {
+    if (!metadata) {
+      return false;
+    }
+
+    if (metadata.kind !== 'business-product' && !(productId === 'data-cloud' && metadata.kind === 'platform-provider')) {
       return false;
     }
 
@@ -287,7 +382,9 @@ export function filterReleaseEligibleProducts(productIds, registry) {
       return false;
     }
 
-    return metadata.lifecycleExecutionAllowed === true || metadata.lifecycleStatus === 'enabled';
+    return productId === 'data-cloud'
+      || metadata.lifecycleExecutionAllowed === true
+      || metadata.lifecycleStatus === 'enabled';
   });
 }
 
@@ -599,6 +696,10 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     const strictScopedPlan = [
       './scripts/check-affected-product-strict-release-profile.mjs',
     ];
+    const businessProducts = affectedProducts.filter((productId) => productId !== 'data-cloud');
+    if (businessProducts.length > 0) {
+      strictScopedPlan.push(...businessProductFoundationChecks);
+    }
 
     for (const productId of affectedProducts) {
       const groupName = productScopedGroupById[productId];
@@ -616,6 +717,10 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
     ...scopedCheckGroups.productChecks,
   ];
 
+  if (affectedProducts.some((productId) => productId !== 'data-cloud')) {
+    plan.push(...businessProductFoundationChecks);
+  }
+
   for (const productId of affectedProducts) {
     const groupName = productScopedGroupById[productId];
     if (groupName) {
@@ -628,6 +733,43 @@ export function buildScopedExecutionOrder(affectedProducts, options = {}) {
   }
 
   return uniqueExistingChecks(plan);
+}
+
+function releaseEvidenceFreshnessGap(productId) {
+  const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
+  const existing = readJsonIfExists(productEvidencePath);
+  if (!existing) {
+    return null;
+  }
+
+  const currentTarget = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? currentGitSha();
+  const targetCommit = String(existing.targetCommitSha ?? existing.evidenceRun?.targetCommitSha ?? '').trim();
+  if (targetCommit && targetCommit !== currentTarget) {
+    return {
+      severity: 'P0',
+      gate: 'release-evidence-freshness',
+      reason: 'stale-release-evidence',
+      message: `Product ${productId} release evidence targets ${targetCommit}, expected ${currentTarget}`,
+      evidencePath: path.relative(repoRoot, productEvidencePath),
+      expectedTargetCommitSha: currentTarget,
+      actualTargetCommitSha: targetCommit,
+    };
+  }
+
+  const evidenceRunCommit = String(existing.evidenceRun?.commit ?? existing.sourceCommitSha ?? '').trim();
+  if (evidenceRunCommit && evidenceRunCommit !== currentGitSha()) {
+    return {
+      severity: 'P0',
+      gate: 'release-evidence-freshness',
+      reason: 'stale-release-evidence',
+      message: `Product ${productId} release evidence was generated from ${evidenceRunCommit}, expected ${currentGitSha()}`,
+      evidencePath: path.relative(repoRoot, productEvidencePath),
+      expectedSourceCommitSha: currentGitSha(),
+      actualSourceCommitSha: evidenceRunCommit,
+    };
+  }
+
+  return null;
 }
 
 function releaseProfileIds() {
@@ -860,8 +1002,60 @@ function validateProductionEvidence(productId, productMetadata) {
   return gaps;
 }
 
+function productReleaseEvidencePath(productId) {
+  if (productId === 'phr') {
+    return path.join(evidenceDir, 'phr/phr-release-readiness.json');
+  }
+  if (productId === 'digital-marketing') {
+    return path.join(evidenceDir, 'digital-marketing/dmos-release-readiness.json');
+  }
+  return null;
+}
+
+function validateProductSpecificReleaseEvidence(productId) {
+  const gaps = [];
+  const evidencePath = productReleaseEvidencePath(productId);
+  if (!evidencePath || !existsSync(evidencePath)) {
+    return gaps;
+  }
+
+  const evidence = readJsonIfExists(evidencePath);
+  const summary = evidence?.summary ?? {};
+  const releaseStatus = String(evidence?.releaseReadiness?.status ?? summary.overallStatus ?? '').toLowerCase();
+  const partialCount = Number(summary.partial ?? 0);
+  const blockedCount = Number(summary.blocked ?? 0);
+  const failedCount = Number(summary.failed ?? 0);
+  const pendingText = JSON.stringify(evidence).toLowerCase();
+
+  if (
+    partialCount > 0
+    || blockedCount > 0
+    || failedCount > 0
+    || releaseStatus.includes('partial')
+    || releaseStatus.includes('blocked')
+    || pendingText.includes('"status":"pending"')
+    || pendingText.includes('"status": "pending"')
+    || pendingText.includes('"stagingprodproof":"pending"')
+  ) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'product-specific-release-evidence',
+      reason: 'partial-or-pending-product-proof',
+      message: `Product ${productId} has partial, pending, blocked, or failed product release proof`,
+      evidencePath: path.relative(repoRoot, evidencePath),
+    });
+  }
+
+  return gaps;
+}
+
 export function buildProductScorecard(productId, runs, releaseProfiles, registry, options = {}) {
-  const { wave2Rows, releaseTargetScore } = options;
+  const {
+    wave2Rows,
+    releaseTargetScore,
+    enforceExistingEvidenceFreshness = false,
+    skipProductSpecificReleaseEvidence = false,
+  } = options;
   const runPassRatio = Number((runs.filter((run) => run.status === 0).length / Math.max(1, runs.length)).toFixed(2));
   const wave2Row = wave2Rows.get(productId);
   const productMetadata = registry[productId] ?? null;
@@ -908,8 +1102,22 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
   const productionEvidenceGaps = validateProductionEvidence(productId, productMetadata);
   blockingGaps.push(...productionEvidenceGaps);
 
+  const productSpecificEvidenceGaps = skipProductSpecificReleaseEvidence
+    ? []
+    : validateProductSpecificReleaseEvidence(productId);
+  blockingGaps.push(...productSpecificEvidenceGaps);
+
   const consistencyGaps = validateRegistryAndEvidenceConsistency(productId, productMetadata);
   blockingGaps.push(...consistencyGaps);
+
+  if (productId === 'data-cloud') {
+    blockingGaps.push(...validateDataCloudProductionPromotionEvidence());
+  }
+
+  const freshnessGap = enforceExistingEvidenceFreshness ? releaseEvidenceFreshnessGap(productId) : null;
+  if (freshnessGap) {
+    blockingGaps.push(freshnessGap);
+  }
 
   const averageScore = Number((dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length).toFixed(2));
   const belowTargetDimensions = dimensions
@@ -956,7 +1164,7 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
 function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
   const registry = loadCanonicalRegistry(repoRoot);
   const wave2Rows = loadWave2ScoreRows();
-  const paths = [];
+  const scorecards = [];
 
   for (const productId of affectedProducts) {
     const scorecard = buildProductScorecard(productId, runs, releaseProfiles, registry, {
@@ -965,10 +1173,15 @@ function writePerProductScorecards(affectedProducts, runs, releaseProfiles) {
     });
     const productEvidencePath = path.join(evidenceDir, `product-release-readiness.${productId}.json`);
     writeJsonWithRetry(productEvidencePath, scorecard);
-    paths.push(path.relative(repoRoot, productEvidencePath));
+    scorecards.push({
+      productId,
+      path: path.relative(repoRoot, productEvidencePath),
+      releaseVerdict: scorecard.releaseVerdict,
+      blockingGaps: scorecard.blockingGaps,
+    });
   }
 
-  return paths;
+  return scorecards;
 }
 
 export function runProductReleaseReadinessCheck({ writeEvidence = true } = {}) {
@@ -1097,31 +1310,51 @@ function runProductReleaseReadinessCli() {
     };
   });
 
+  const releaseProfiles = releaseProfileIds();
+  const perProductScorecards = affectedProducts.map((productId) => buildProductScorecard(productId, runs, releaseProfiles, loadCanonicalRegistry(repoRoot), {
+    wave2Rows: loadWave2ScoreRows(),
+    releaseTargetScore: defaultReleaseTargetScore,
+  }));
+  const perProductBlockingGaps = perProductScorecards.flatMap((scorecard) =>
+    scorecard.blockingGaps.map((gap) => ({
+      productId: scorecard.productId,
+      ...gap,
+    })),
+  );
+  const aggregatePass = perProductBlockingGaps.length === 0;
+
   const evidence = {
     generatedAt: new Date().toISOString(),
     evidenceRun: evidenceRunMetadata(),
-    ...evidenceLifecycleMetadata(true),
-    pass: true,
+    ...evidenceLifecycleMetadata(aggregatePass),
+    pass: aggregatePass,
+    reason: aggregatePass ? undefined : 'per-product-release-readiness-blocked',
     journeyResults,
     releaseAreaResults,
     runs,
     scopedCheckGroups,
     artifactAuthoringGateScripts: artifactAuthoringReadinessScripts,
-    releaseProfiles: releaseProfileIds(),
+    releaseProfiles,
     affectedProducts,
+    perProductBlockingGaps,
     scopedExecution: !options.full,
     plannedExecutionOrder,
   };
 
   mkdirSync(evidenceDir, { recursive: true });
   writeJsonWithRetry(evidencePath, evidence);
-  const perProductEvidencePaths = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
+  const perProductEvidence = writePerProductScorecards(affectedProducts, runs, evidence.releaseProfiles);
+
+  if (!aggregatePass) {
+    console.error('Product release readiness failed because per-product scorecards contain blocking gaps.');
+    process.exit(1);
+  }
 
   console.log(`Product release readiness check passed. Evidence: ${path.relative(repoRoot, evidencePath)}`);
   return {
     status: 'passed',
     journeys: journeyMatrix,
-    perProductEvidencePaths,
+    perProductEvidencePaths: perProductEvidence.map((entry) => entry.path),
     ...evidence,
   };
 }

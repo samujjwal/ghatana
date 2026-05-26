@@ -1,6 +1,7 @@
 package com.ghatana.aep.agent.capability;
 
 import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 
 import java.util.List;
@@ -43,5 +44,18 @@ public record CapabilityDescriptor(
         tags = List.copyOf(tags != null ? tags : List.of());
         policies = Map.copyOf(policies != null ? policies : Map.of());
         metadata = Map.copyOf(metadata != null ? metadata : Map.of());
+    }
+
+    public Optional<AgentCapabilityRole> capabilityRole() {
+        String value = metadata.get("role");
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String normalized = value.startsWith("AGENT_") ? value : "AGENT_" + value;
+        try {
+            return Optional.of(AgentCapabilityRole.valueOf(normalized));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 }

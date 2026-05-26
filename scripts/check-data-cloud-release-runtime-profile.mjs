@@ -7,6 +7,17 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const evidenceDir = path.join(repoRoot, '.kernel/evidence');
 const evidencePath = path.join(evidenceDir, 'data-cloud-release-runtime-profile.json');
+const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
+const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
+
+function currentGitSha() {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  return result.status === 0 ? result.stdout.trim() : 'unknown';
+}
 
 function sleepMs(durationMs) {
   const signal = new Int32Array(new SharedArrayBuffer(4));
@@ -80,8 +91,26 @@ for (const check of checks) {
 }
 
 mkdirSync(evidenceDir, { recursive: true });
+const generatedAt = new Date();
+const sourceCommitSha = currentGitSha();
+const targetCommitSha = process.env.TARGET_COMMIT_SHA ?? process.env.AUDIT_TARGET_COMMIT ?? sourceCommitSha;
 writeJsonWithRetry(evidencePath, {
-  generatedAt: 'generated-on-demand',
+  generatedAt: generatedAt.toISOString(),
+  evidenceRun: {
+    generatedBy: 'scripts/check-data-cloud-release-runtime-profile.mjs',
+    command: 'pnpm check:data-cloud-release-runtime-profile',
+    source: 'scripts/check-data-cloud-release-runtime-profile.mjs',
+    commit: sourceCommitSha,
+    sourceCommitSha,
+    targetCommitSha,
+    targetEnvironment,
+  },
+  sourceCommitSha,
+  targetCommitSha,
+  targetEnvironment,
+  validationStatus: results.every((entry) => entry.ok) ? 'validated' : 'failed',
+  reviewDueAt: new Date(generatedAt.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+  expiresAt: new Date(generatedAt.getTime() + evidenceValidityHours * 60 * 60 * 1000).toISOString(),
   checks: results,
   pass: results.every((entry) => entry.ok),
 });

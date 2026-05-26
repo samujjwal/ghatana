@@ -220,6 +220,7 @@ class DataSubjectRequestServiceImplTest extends EventloopTestBase {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Promise<Optional<Contact>> findByEmail(DmWorkspaceId workspaceId, String email) {
             return Promise.of(Optional.empty());
         }

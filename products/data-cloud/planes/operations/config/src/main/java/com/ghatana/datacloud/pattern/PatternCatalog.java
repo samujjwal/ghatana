@@ -29,7 +29,7 @@ import java.util.Optional;
  * Central registry for pattern storage, retrieval, and search.
  *
  * <p>The PatternCatalog is the authoritative source for all learned patterns.
- * It supports CRUD operations, search, and lifecycle management.
+ * It supports CRUD operations, search, and metadata status management.
  *
  * <h2>Key Capabilities</h2>
  * <ul>
@@ -37,7 +37,7 @@ import java.util.Optional;
  *   <li>Search by type, tags, and metadata</li>
  *   <li>Semantic search using embeddings</li>
  *   <li>Multi-tenant isolation</li>
- *   <li>Pattern lifecycle management</li>
+ *   <li>Record status management</li>
  * </ul>
  *
  * @doc.type interface

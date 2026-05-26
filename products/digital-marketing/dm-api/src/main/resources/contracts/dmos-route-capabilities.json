@@ -17,6 +17,16 @@
       "cards": ["launch-readiness", "approval-queue", "workflow-health"]
     },
     {
+      "path": "/workspaces/:workspaceId/release-readiness",
+      "label": "Release Cockpit",
+      "minimumRole": "marketing-director",
+      "personas": ["approver", "executive"],
+      "tiers": ["core"],
+      "actions": ["view-release-readiness"],
+      "cards": ["evidence-freshness", "runtime-proof", "rollback-proof"],
+      "capabilityKey": "dmos.release_readiness"
+    },
+    {
       "path": "/workspaces/:workspaceId/approvals",
       "label": "Approvals",
       "minimumRole": "viewer",

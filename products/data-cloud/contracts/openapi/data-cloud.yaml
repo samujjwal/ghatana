@@ -255,6 +255,87 @@ components:
       description: Arbitrary JSON object.
       additionalProperties: true
 
+    ProductReleaseReadiness:
+      type: object
+      required:
+        - productId
+        - productVersion
+        - releaseTarget
+        - releaseVerdict
+        - generatedAt
+        - evidence
+        - blockingGaps
+        - belowTargetDimensions
+        - tenantId
+        - commitSha
+        - evidenceEnvironment
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+          enum: [phr, digital-marketing, dmos, data-cloud]
+        productVersion:
+          type: string
+        releaseTarget:
+          type: string
+          enum: [development, staging, production]
+        releaseVerdict:
+          type: string
+          enum: [pass, fail]
+        averageScore:
+          type: number
+          minimum: 0
+          maximum: 1
+        releaseTargetScore:
+          type: number
+          minimum: 0
+          maximum: 1
+        generatedAt:
+          type: string
+          format: date-time
+        evidence:
+          $ref: "#/components/schemas/FreeformObject"
+        blockingGaps:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreeformObject"
+        belowTargetDimensions:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreeformObject"
+        tenantId:
+          type: string
+        commitSha:
+          type: string
+          pattern: "^[a-fA-F0-9]{40}$"
+        evidenceEnvironment:
+          type: string
+          enum: [development, staging, production]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductReleaseReadinessStats:
+      type: object
+      required: [totalReleases, passedReleases, failedReleases, averageScore, byProduct, byTarget]
+      properties:
+        totalReleases: { type: integer }
+        passedReleases: { type: integer }
+        failedReleases: { type: integer }
+        averageScore: { type: number }
+        byProduct:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/FreeformObject"
+        byTarget:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/FreeformObject"
+
     SurfaceRecord:
       type: object
       description: Typed surface record with dependency-probe evidence (DC-P1-5).
@@ -5676,6 +5757,113 @@ paths:
 
   # DC-P1.12: Removed compatibility /api/v1/capabilities endpoints; use canonical /api/v1/surfaces only
   # P0-10: Removed /api/v1/surfaces/typed endpoint; use canonical /api/v1/surfaces instead
+
+  /api/v1/release-readiness:
+    get:
+      summary: List tenant-scoped product release readiness records
+      operationId: apiV1ReleaseReadinessList
+      tags: [surfaces]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - in: query
+          name: productId
+          schema: { type: string }
+        - in: query
+          name: productVersion
+          schema: { type: string }
+        - in: query
+          name: releaseTarget
+          schema: { type: string, enum: [development, staging, production] }
+        - in: query
+          name: releaseVerdict
+          schema: { type: string, enum: [pass, fail] }
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+      responses:
+        "200":
+          description: Release readiness records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductReleaseReadiness"
+    post:
+      summary: Produce product release readiness into Data Cloud
+      operationId: apiV1ReleaseReadinessProduce
+      tags: [surfaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductReleaseReadiness"
+      responses:
+        "201":
+          description: Persisted release readiness record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductReleaseReadiness"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/release-readiness/stats:
+    get:
+      summary: Get product release readiness statistics
+      operationId: apiV1ReleaseReadinessStats
+      tags: [surfaces]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Tenant-scoped release readiness statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductReleaseReadinessStats"
+
+  /api/v1/release-readiness/{productId}/{productVersion}/{releaseTarget}:
+    get:
+      summary: Get product release readiness by product/version/target
+      operationId: apiV1ReleaseReadinessGet
+      tags: [surfaces]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - in: path
+          name: productId
+          required: true
+          schema: { type: string }
+        - in: path
+          name: productVersion
+          required: true
+          schema: { type: string }
+        - in: path
+          name: releaseTarget
+          required: true
+          schema: { type: string, enum: [development, staging, production] }
+      responses:
+        "200":
+          description: Release readiness record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductReleaseReadiness"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/release-readiness/{id}:
+    delete:
+      summary: Delete a product release readiness record
+      operationId: apiV1ReleaseReadinessDelete
+      tags: [surfaces]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Release readiness record deleted.
 
   /api/v1/settings:
     get:

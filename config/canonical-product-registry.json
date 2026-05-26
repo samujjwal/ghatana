@@ -933,10 +933,11 @@
       },
       "lifecycleReadiness": {
         "reasonCodes": [
-          "disabled-observed",
           "platform-provider-mode-required",
-          "requires-bootstrap-platform-separation",
-          "requires-runtime-truth-provider"
+          "bootstrap-platform-separation-validated",
+          "platform-provider-health-validated",
+          "runtime-truth-provider-validated",
+          "data-cloud-release-gate-passed"
         ],
         "requiredGates": [
           "bootstrap-build-without-platform-providers",
@@ -944,8 +945,8 @@
           "runtime-truth-provider"
         ],
         "nextRequiredWork": [
-          "Declare Data Cloud lifecycle profile only after bootstrap build/deploy remains independent of Data Cloud providers",
-          "Wire runtime truth provider evidence after Data Cloud deployment is Kernel-managed"
+          "Keep Data Cloud registered as a platform provider rather than an ordinary Kernel lifecycle product",
+          "Keep bootstrap separation, runtime truth provider, and Action Plane governance evidence current for each release target"
         ],
         "evidenceRefs": [
           "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -954,12 +955,7 @@
           ".kernel/evidence/data-cloud/platform-provider-readiness.json"
         ],
         "blockerGateAdapterMatrix": {
-          "blockers": [
-            "missing-bootstrap-platform-separation",
-            "missing-platform-provider-health",
-            "missing-runtime-truth-provider",
-            "platform-providers-required-in-bootstrap"
-          ],
+          "blockers": [],
           "gates": [
             {
               "gateId": "bootstrap-build-without-platform-providers",
@@ -993,7 +989,7 @@
             }
           ]
         },
-        "status": "blocked"
+        "status": "ready"
       },
       "lifecycleExecutionAllowed": false
     },

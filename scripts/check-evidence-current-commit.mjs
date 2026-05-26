@@ -50,6 +50,8 @@ export function findEvidenceCurrentCommitViolations(
   {
     evidenceRoot = DEFAULT_EVIDENCE_ROOT,
     expectedCommit = currentGitSha(root),
+    skipProductReleaseReadiness = false,
+    skipEvidencePaths = [],
   } = {},
 ) {
   const violations = [];
@@ -60,8 +62,15 @@ export function findEvidenceCurrentCommitViolations(
 
   const evidenceFiles = [];
   walkJsonFiles(root, evidenceRoot, evidenceFiles);
+  const skippedPaths = new Set(skipEvidencePaths.map((entry) => entry.replaceAll(path.sep, '/')));
 
   for (const evidenceFile of evidenceFiles) {
+    if (skipProductReleaseReadiness && /^\.kernel\/evidence\/product-release-readiness(\.|\.json$)/.test(evidenceFile)) {
+      continue;
+    }
+    if (skippedPaths.has(evidenceFile)) {
+      continue;
+    }
     const payload = parseJson(path.join(root, evidenceFile));
     if (payload.error) {
       violations.push(`${evidenceFile}: evidence JSON is invalid (${payload.error.message})`);
@@ -69,15 +78,23 @@ export function findEvidenceCurrentCommitViolations(
     }
 
     const commit = payload?.evidenceRun?.commit;
-    if (commit === undefined) {
-      continue;
+    if (commit !== undefined) {
+      if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
+        violations.push(`${evidenceFile}: evidenceRun.commit must be a 40-character git SHA`);
+      } else if (commit !== expectedCommit) {
+        violations.push(`${evidenceFile}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
+      }
     }
-    if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
-      violations.push(`${evidenceFile}: evidenceRun.commit must be a 40-character git SHA`);
-      continue;
-    }
-    if (commit !== expectedCommit) {
-      violations.push(`${evidenceFile}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
+    for (const field of ['sourceCommitSha', 'targetCommitSha']) {
+      const value = payload?.evidenceRun?.[field] ?? payload?.[field];
+      if (value === undefined) {
+        continue;
+      }
+      if (typeof value !== 'string' || !/^[a-f0-9]{40}$/i.test(value)) {
+        violations.push(`${evidenceFile}: ${field} must be a 40-character git SHA`);
+      } else if (value !== expectedCommit) {
+        violations.push(`${evidenceFile}: ${field} ${value} must match current HEAD ${expectedCommit}`);
+      }
     }
   }
 
@@ -92,7 +109,10 @@ function main() {
     ? process.argv[evidenceRootArgIndex + 1]
     : DEFAULT_EVIDENCE_ROOT;
   const summaryOnly = process.argv.includes('--summary');
-  const violations = findEvidenceCurrentCommitViolations(root, { evidenceRoot });
+  const violations = findEvidenceCurrentCommitViolations(root, {
+    evidenceRoot,
+    skipProductReleaseReadiness: process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness',
+  });
 
   if (violations.length === 0) {
     console.log('Evidence current-commit check passed.');

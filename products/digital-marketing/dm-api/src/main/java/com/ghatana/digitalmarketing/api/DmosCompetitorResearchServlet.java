@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.research.CompetitorResearchService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -69,7 +70,9 @@ public final class DmosCompetitorResearchServlet {
         RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/research/competitor", this::handleRunResearch)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/research/competitor", this::handleGetLatestResearch)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "competitor-research"
         );
     }
 

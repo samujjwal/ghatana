@@ -1,9 +1,11 @@
 package com.ghatana.aep.pattern.spec;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Parses Map representation into typed PatternSpec model.
@@ -14,6 +16,20 @@ import java.util.Objects;
  * @doc.pattern Parser
  */
 public final class PatternSpecParser {
+
+    private static final Set<String> EXPRESSION_KEYS = Set.of(
+        "operator",
+        "event",
+        "capabilityRef",
+        "agentRef",
+        "inputSchema",
+        "outputSchema",
+        "operands",
+        "pattern",
+        "parameters",
+        "toolPolicy",
+        "window",
+        "windowSpec");
 
     private PatternSpecParser() {}
 
@@ -108,13 +124,28 @@ public final class PatternSpecParser {
             optionalString(exprMap, "event"),
             optionalString(exprMap, "capabilityRef"),
             optionalString(exprMap, "agentRef"),
+            optionalString(exprMap, "inputSchema"),
             optionalString(exprMap, "outputSchema"),
             operands,
             nestedPattern,
-            optionalMap(exprMap, "parameters"),
+            expressionParameters(exprMap),
             optionalMap(exprMap, "toolPolicy"),
             optionalString(exprMap, "window"),
             optionalString(exprMap, "windowSpec"));
+    }
+
+    private static Map<String, Object> expressionParameters(Map<String, Object> exprMap) {
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        Map<String, Object> explicitParameters = optionalMap(exprMap, "parameters");
+        if (explicitParameters != null) {
+            parameters.putAll(explicitParameters);
+        }
+        for (Map.Entry<String, Object> entry : exprMap.entrySet()) {
+            if (!EXPRESSION_KEYS.contains(entry.getKey())) {
+                parameters.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return parameters.isEmpty() ? null : parameters;
     }
 
     private static PatternEmit parseEmit(Object value) {

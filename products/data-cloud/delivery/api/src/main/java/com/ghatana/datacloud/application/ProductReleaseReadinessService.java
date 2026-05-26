@@ -193,6 +193,42 @@ public class ProductReleaseReadinessService {
     }
 
     /**
+     * Lists all release readiness records for a tenant.
+     *
+     * @param tenantId the tenant ID
+     * @return Promise that completes with all tenant-scoped release readiness records
+     */
+    public Promise<List<ProductReleaseReadiness>> listReleaseReadiness(String tenantId) {
+        try {
+            log.debug("Listing release readiness for tenant: {}", tenantId);
+            return repository.findByTenant(tenantId);
+        } catch (Exception e) {
+            log.error("Failed to list release readiness for tenant: {}", tenantId, e);
+            return Promise.ofException(e);
+        }
+    }
+
+    /**
+     * Deletes a tenant-scoped release readiness record.
+     *
+     * @param id the release readiness record ID
+     * @param tenantId the tenant ID
+     * @return Promise that completes when the record has been deleted
+     */
+    public Promise<Void> deleteReleaseReadiness(String id, String tenantId) {
+        try {
+            if (id == null || id.isBlank()) {
+                return Promise.ofException(new IllegalArgumentException("Release readiness ID must be present"));
+            }
+            log.info("Deleting release readiness record: id={}, tenant={}", id, tenantId);
+            return repository.deleteById(id, tenantId);
+        } catch (Exception e) {
+            log.error("Failed to delete release readiness record: {}", id, e);
+            return Promise.ofException(e);
+        }
+    }
+
+    /**
      * Validates release readiness data.
      *
      * @param readiness the release readiness to validate
@@ -298,6 +334,8 @@ public class ProductReleaseReadinessService {
         Promise<Optional<ProductReleaseReadiness>> findByProductVersionAndTarget(
             String productId, String productVersion, String releaseTarget, String tenantId);
         Promise<List<ProductReleaseReadiness>> findByProductId(String productId, String tenantId);
+        Promise<List<ProductReleaseReadiness>> findByTenant(String tenantId);
+        Promise<Void> deleteById(String id, String tenantId);
     }
 
     /**

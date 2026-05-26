@@ -42,6 +42,8 @@ export const CapabilityKeys = {
   CAMPAIGNS: 'dmos.campaigns',
   STRATEGY: 'dmos.strategy',
   BUDGET: 'dmos.budget',
+  CONNECTORS: 'dmos.connectors',
+  RELEASE_READINESS: 'dmos.release_readiness',
   APPROVALS: 'dmos.approvals',
   AI_ACTIONS: 'dmos.ai_actions',
 
@@ -141,6 +143,8 @@ const ACTION_CAPABILITY_GRANTS: Record<string, CapabilityKey[]> = {
   // AI actions
   'optimize': [CapabilityKeys.AI_OPTIMIZATION],
   'log': [CapabilityKeys.AI_ACTIONS],
+  'view-release-readiness': [CapabilityKeys.RELEASE_READINESS],
+  'view-connector-readiness': [CapabilityKeys.CONNECTORS],
 
   // Content generation actions
   'generate-ad-copy': [CapabilityKeys.AD_COPY_GENERATION],

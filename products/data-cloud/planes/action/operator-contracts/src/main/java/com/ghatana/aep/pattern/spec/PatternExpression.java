@@ -17,6 +17,7 @@ public record PatternExpression(
         String event,
         String capabilityRef,
         String agentRef,
+        String inputSchema,
         String outputSchema,
         List<PatternExpression> operands,
         PatternExpression pattern,
@@ -44,6 +45,9 @@ public record PatternExpression(
         }
         if (agentRef != null) {
             map.put("agentRef", agentRef);
+        }
+        if (inputSchema != null) {
+            map.put("inputSchema", inputSchema);
         }
         if (outputSchema != null) {
             map.put("outputSchema", outputSchema);

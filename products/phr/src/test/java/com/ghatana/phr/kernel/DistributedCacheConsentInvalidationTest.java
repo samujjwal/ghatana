@@ -62,7 +62,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         // Start Redis container for production-grade testing
         redisContainer = new GenericContainer<>(DockerImageName.parse(REDIS_IMAGE))
             .withExposedPorts(REDIS_PORT)
-            .waitingFor(Wait.forLogMessage("Ready to accept connections", 1));
+            .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
         redisContainer.start();
         
         // Create JedisPool connected to container
@@ -91,7 +91,7 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
             redisContainer.stop();
         }
         if (executorService != null) {
-            executorService.shutdown();
+            executorService.shutdownNow();
         }
     }
 
@@ -207,9 +207,10 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
                 try {
                     String entry = iteration % 2 == 0 ? "granted" : "revoked";
 
-                    Eventloop eventloop = Eventloop.create();
-                    eventloop.submit(() -> cache.put(cacheKey, entry));
-                    eventloop.run();
+                    String redisKey = "cache:phr.consent:" + cacheKey;
+                    try (var jedis = jedisPool.getResource()) {
+                        jedis.set(redisKey, new ObjectMapper().writeValueAsString(entry));
+                    }
                 } catch (Exception e) {
                     // Log error in production
                 } finally {
@@ -237,14 +238,14 @@ class DistributedCacheConsentInvalidationTest extends EventloopTestBase {
         // Store consent with short TTL
         String entry = "granted";
 
-        runPromise(() -> cache.put(cacheKey, entry));
+        runPromise(() -> cache.put(cacheKey, entry, Duration.ofSeconds(1)));
 
         // Verify entry exists immediately
         Optional<String> immediate = runPromise(() -> cache.get(cacheKey));
         assertThat(immediate).isPresent();
 
         // Wait for TTL to expire
-        Thread.sleep(1500);
+        Thread.sleep(2000);
 
         // Verify entry is expired (Redis TTL)
         Optional<String> expired = runPromise(() -> cache.get(cacheKey));

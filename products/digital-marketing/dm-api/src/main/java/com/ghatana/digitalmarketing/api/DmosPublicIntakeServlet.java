@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.abuse.IntakeAbuseControlService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.lead.LeadService;
 import com.ghatana.digitalmarketing.application.suppression.SuppressionService;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
@@ -112,7 +113,9 @@ public final class DmosPublicIntakeServlet {
         return DmosApiRateLimiter.wrap(
         RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/public/v1/workspaces/:workspaceId/intake/leads", this::handleCaptureLead)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "public-intake"
         );
     }
 

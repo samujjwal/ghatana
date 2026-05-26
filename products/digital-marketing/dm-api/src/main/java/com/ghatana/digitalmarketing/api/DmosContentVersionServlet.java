@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.content.ContentItemService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -96,7 +97,9 @@ public final class DmosContentVersionServlet {
                 this::handleApproveVersion)
             .with(HttpMethod.GET,  "/v1/workspaces/:workspaceId/content-items/:itemId/versions",
                 this::handleGetVersionHistory)
-            .build()
+            .build(),
+            DmosMetricsCollector.disabled(),
+            "content-version"
         );
     }
 

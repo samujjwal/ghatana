@@ -222,6 +222,17 @@ class DmosAuthHardeningTest {
     }
 
     @Test
+    @DisplayName("Route capability registry should resolve canonical manifest routes")
+    void routeCapabilityRegistry_shouldResolveCanonicalManifestRoutes() {
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/campaigns/abc/transition"))
+            .isEqualTo("dmos.campaigns");
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/strategy/strategy-1/approve"))
+            .isEqualTo("dmos.strategy");
+        assertThat(DmosRouteCapabilityRegistry.capabilityForPath("/v1/workspaces/workspace-123/approvals/request-1"))
+            .isNull();
+    }
+
+    @Test
     @DisplayName("Non-production mode should use client headers as fallback")
     void nonProductionMode_shouldUseClientHeadersAsFallback() {
         DmosHttpContextFactory factory = new DmosHttpContextFactory(false, null);
@@ -238,12 +249,38 @@ class DmosAuthHardeningTest {
         assertThat(context.getActor().getPrincipalId()).isEqualTo("test-principal");
     }
 
+    @Test
+    @DisplayName("Non-production mode should reject missing principal unless test fallback is explicit")
+    void nonProductionMode_shouldRejectMissingPrincipalUnlessTestFallbackIsExplicit() {
+        DmosHttpContextFactory factory = new DmosHttpContextFactory(false, null);
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
+            .build();
+
+        assertThatThrownBy(() -> factory.buildContext(request, "workspace-123", false))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Principal ID missing");
+    }
+
+    @Test
+    @DisplayName("Test mode can explicitly enable anonymous fallback")
+    void testMode_canExplicitlyEnableAnonymousFallback() {
+        DmosHttpContextFactory factory = DmosHttpContextFactory.testModeWithAnonymousFallback();
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/workspace-123/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
+            .build();
+
+        var context = factory.buildContext(request, "workspace-123", false);
+
+        assertThat(context.getActor().getPrincipalId()).isEqualTo("anonymous");
+    }
+
     // Test identity provider for production mode tests
     private static class TestIdentityProvider implements DmosHttpContextFactory.IdentityProvider {
         @Override
-        public IdentityResult deriveIdentity(String token, String tenantId) {
+        public DmosHttpContextFactory.IdentityProvider.IdentityResult deriveIdentity(String token, String tenantId) {
             if ("valid-token".equals(token) || "test-token".equals(token)) {
-                return new IdentityResult(
+                return new DmosHttpContextFactory.IdentityProvider.IdentityResult(
                     "user-from-token",
                     "session-from-token",
                     Set.of("brand-manager"),
@@ -251,7 +288,7 @@ class DmosAuthHardeningTest {
                     true
                 );
             }
-            return new IdentityResult(null, null, Set.of(), Set.of(), false);
+            return new DmosHttpContextFactory.IdentityProvider.IdentityResult(null, null, Set.of(), Set.of(), false);
         }
     }
 }

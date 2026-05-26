@@ -2,11 +2,13 @@ package com.ghatana.aep.pattern.runtime;
 
 import com.ghatana.aep.agent.capability.CapabilityDescriptor;
 import com.ghatana.aep.agent.capability.CapabilityId;
+import com.ghatana.aep.agent.capability.CapabilityKind;
 import com.ghatana.aep.agent.capability.CapabilityResolver;
 import com.ghatana.aep.operator.contract.OperatorKind;
 import com.ghatana.aep.pattern.spec.CompiledPattern;
 import com.ghatana.aep.pattern.spec.PatternRuntimeNode;
 import com.ghatana.core.operator.OperatorId;
+import com.ghatana.core.operator.agent.AgentSideEffectProfile;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineBuilder;
 
@@ -62,7 +64,7 @@ public final class PatternPipelineAdapter {
             .stage(SOURCE_STAGE_ID, OperatorId.of(tenantId, "eventcloud", "source", DEFAULT_VERSION),
                 Map.of("role", "source"));
 
-        addNodeStages(builder, tenantId, pattern.root(), capabilityResolver);
+        addNodeStages(builder, tenantId, pattern.root(), capabilityResolver, pattern.lifecycle(), pattern.governance());
         addNodeEdges(builder, pattern.root());
         connectSourceToLeaves(builder, pattern.root());
 
@@ -76,10 +78,12 @@ public final class PatternPipelineAdapter {
             PipelineBuilder builder,
             String tenantId,
             PatternRuntimeNode node,
-            CapabilityResolver capabilityResolver) {
-        builder.stage(node.nodeId(), operatorId(tenantId, node), stageConfig(node, capabilityResolver));
+            CapabilityResolver capabilityResolver,
+            Map<String, Object> lifecycle,
+            Map<String, Object> governance) {
+        builder.stage(node.nodeId(), operatorId(tenantId, node), stageConfig(node, capabilityResolver, lifecycle, governance));
         for (PatternRuntimeNode child : node.children()) {
-            addNodeStages(builder, tenantId, child, capabilityResolver);
+            addNodeStages(builder, tenantId, child, capabilityResolver, lifecycle, governance);
         }
     }
 
@@ -125,27 +129,36 @@ public final class PatternPipelineAdapter {
             .orElseGet(() -> node.operatorKind().name().toLowerCase(Locale.ROOT).replace('_', '-'));
     }
 
-    private static Map<String, Object> stageConfig(PatternRuntimeNode node, CapabilityResolver capabilityResolver) {
+    private static Map<String, Object> stageConfig(
+            PatternRuntimeNode node,
+            CapabilityResolver capabilityResolver,
+            Map<String, Object> lifecycle,
+            Map<String, Object> governance) {
         Map<String, Object> config = new LinkedHashMap<>(node.parameters());
         config.put("operatorKind", node.operatorKind().name());
         node.eventType().ifPresent(value -> config.put("eventType", value));
         node.agentRef().ifPresent(value -> config.put("agentRef", value));
         node.capabilityRef().ifPresent(value -> config.put("capabilityRef", value));
+        node.inputSchema().ifPresent(value -> config.put("inputSchema", value));
         node.outputSchema().ifPresent(value -> config.put("outputSchema", value));
-        node.capabilityRef().ifPresent(value -> bindCapability(config, value, capabilityResolver));
+        node.capabilityRef().ifPresent(value -> bindCapability(config, node, value, capabilityResolver, lifecycle, governance));
         return config;
     }
 
     private static void bindCapability(
             Map<String, Object> config,
+            PatternRuntimeNode node,
             String capabilityRef,
-            CapabilityResolver capabilityResolver) {
+            CapabilityResolver capabilityResolver,
+            Map<String, Object> lifecycle,
+            Map<String, Object> governance) {
         if (capabilityResolver == null) {
             config.put("capabilityBinding", "unresolved");
             return;
         }
         CapabilityDescriptor descriptor = capabilityResolver.describe(CapabilityId.of(capabilityRef))
             .orElseThrow(() -> new IllegalArgumentException("Unknown capabilityRef: " + capabilityRef));
+        validateCapabilityBinding(node, descriptor, lifecycle, governance);
         config.put("capabilityBinding", "resolved");
         config.put("capabilityKind", descriptor.kind().name());
         config.put("capabilityAgentRef", descriptor.agentRef());
@@ -154,6 +167,60 @@ public final class PatternPipelineAdapter {
         config.put("capabilitySideEffectProfile", descriptor.sideEffectProfile().name());
         config.put("capabilityTags", descriptor.tags());
         config.put("capabilityMetadata", descriptor.metadata());
+    }
+
+    private static void validateCapabilityBinding(
+            PatternRuntimeNode node,
+            CapabilityDescriptor descriptor,
+            Map<String, Object> lifecycle,
+            Map<String, Object> governance) {
+        if (requiresEventOperatorCapability(node.operatorKind()) && descriptor.kind() != CapabilityKind.EVENT_OPERATOR) {
+            throw new IllegalArgumentException(node.operatorKind() + " requires EVENT_OPERATOR capability kind");
+        }
+        expectedRole(node.operatorKind()).ifPresent(expected -> {
+            String actual = String.valueOf(descriptor.metadata().getOrDefault("role", "")).toUpperCase(Locale.ROOT);
+            if (!expected.equals(actual)) {
+                throw new IllegalArgumentException(node.operatorKind() + " requires " + expected + " capability role");
+            }
+        });
+        node.inputSchema().ifPresent(inputSchema -> {
+            if (!inputSchema.equals(descriptor.inputSchema())) {
+                throw new IllegalArgumentException("Capability inputSchema " + descriptor.inputSchema()
+                    + " does not match PatternSpec inputSchema " + inputSchema);
+            }
+        });
+        node.outputSchema().ifPresent(outputSchema -> {
+            if (!outputSchema.equals(descriptor.outputSchema())) {
+                throw new IllegalArgumentException("Capability outputSchema " + descriptor.outputSchema()
+                    + " does not match PatternSpec outputSchema " + outputSchema);
+            }
+        });
+        String lifecycleState = String.valueOf(lifecycle.getOrDefault("state", "")).toUpperCase(Locale.ROOT);
+        if ("SHADOW".equals(lifecycleState) && descriptor.sideEffectProfile() == AgentSideEffectProfile.SIDE_EFFECTING) {
+            throw new IllegalArgumentException("SHADOW lifecycle cannot bind SIDE_EFFECTING capability");
+        }
+        if ("ACTIVE".equals(lifecycleState)
+            && descriptor.sideEffectProfile() == AgentSideEffectProfile.SIDE_EFFECTING
+            && (!Boolean.TRUE.equals(governance.get("sideEffectApproval"))
+            || !Boolean.TRUE.equals(governance.get("auditRequired"))
+            || !Boolean.TRUE.equals(governance.get("rollbackRequired")))) {
+            throw new IllegalArgumentException("ACTIVE side-effecting capability requires approval, audit, and rollback governance");
+        }
+    }
+
+    private static boolean requiresEventOperatorCapability(OperatorKind operatorKind) {
+        return operatorKind == OperatorKind.AGENT_PREDICATE
+            || operatorKind == OperatorKind.AGENT_ENRICH
+            || operatorKind == OperatorKind.AGENT_ACTION;
+    }
+
+    private static java.util.Optional<String> expectedRole(OperatorKind operatorKind) {
+        return switch (operatorKind) {
+            case AGENT_PREDICATE -> java.util.Optional.of("PREDICATE");
+            case AGENT_ENRICH -> java.util.Optional.of("ENRICH");
+            case AGENT_ACTION -> java.util.Optional.of("ACTION");
+            default -> java.util.Optional.empty();
+        };
     }
 
     private static String sanitize(String value) {

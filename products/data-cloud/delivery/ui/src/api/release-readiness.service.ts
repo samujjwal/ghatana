@@ -26,6 +26,8 @@ export interface ReleaseReadiness {
   blockingGaps: Array<Record<string, unknown>>;
   belowTargetDimensions: Array<Record<string, unknown>>;
   tenantId: string;
+  commitSha: string;
+  evidenceEnvironment: "production" | "staging" | "development";
   createdAt: string;
   updatedAt: string;
 }

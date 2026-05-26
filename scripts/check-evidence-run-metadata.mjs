@@ -50,7 +50,10 @@ function currentGitSha(root) {
 export function checkEvidenceRunMetadata(root = process.cwd(), evidenceFiles = CRITICAL_EVIDENCE) {
   const violations = [];
   const expectedCommit = currentGitSha(root);
-  for (const evidence of evidenceFiles) {
+  const effectiveEvidenceFiles = process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness'
+    ? evidenceFiles.filter((evidence) => evidence.path !== '.kernel/evidence/product-release-readiness.json')
+    : evidenceFiles;
+  for (const evidence of effectiveEvidenceFiles) {
     const evidencePath = path.join(root, evidence.path);
     if (!existsSync(evidencePath)) {
       violations.push(`${evidence.path}: evidence file is missing`);

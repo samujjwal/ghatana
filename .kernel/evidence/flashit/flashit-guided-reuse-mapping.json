@@ -3,11 +3,11 @@
   "productId": "flashit",
   "evidenceType": "guided-reuse-mapping",
   "generatedAt": "2026-05-25T00:00:00.000Z",
-  "commitSha": "7f84bc08e9e4e6d7e209cb49a855f199f7c90347",
+  "commitSha": "936924cf915e366f3f0c47bee266a277601b1288",
   "summary": {
     "description": "FlashIt guided reuse mapping documenting consumption of hardened assets from PHR and Digital Marketing (DMOS)",
-    "status": "candidate",
-    "recommendation": "FlashIt is in candidate status; reuse PHR/DMOS assets through YAPPC guided reuse when moving to shaping phase",
+    "status": "planning",
+    "recommendation": "FlashIt stays planning-only; consume PHR privacy/audit assets and the DMOS retry/DLQ pattern when shaping resumes.",
     "blockedForReuse": true,
     "blockReason": "FlashIt is not yet release-ready (mobile lifecycle disabled, web lifecycle in validation)"
   },
@@ -53,12 +53,11 @@
     "assets": [
       {
         "assetId": "phr-consent-panel",
-        "assetName": "PHR Consent Panel",
-        "applicability": "High - FlashIt handles user content; consent patterns from PHR are relevant",
+        "assetName": "PHR Consent Gate Pattern",
+        "applicability": "High - personal learning data and deck sharing need explicit consent boundaries",
         "adoptionComplexity": "medium",
         "adaptationRequired": [
-          "Replace PHI-specific language with content-ownership language",
-          "Adapt UI for marketing content context"
+          "Replace healthcare language with personal learning and deck-sharing language"
         ],
         "evidenceRefs": [
           ".kernel/evidence/phr/reusable-assets-registration.json"
@@ -66,11 +65,23 @@
       },
       {
         "assetId": "phr-audit-trail-panel",
-        "assetName": "PHR Audit Trail Panel",
-        "applicability": "Medium - FlashIt needs audit for content operations",
+        "assetName": "PHR Patient Audit Trail Pattern",
+        "applicability": "High - sync and privacy operations need a user-visible audit trail",
         "adoptionComplexity": "low",
         "adaptationRequired": [
-          "Generalize from healthcare audit to content operations audit"
+          "Generalize patient-visible audit language to learner-visible sync and deck access events"
+        ],
+        "evidenceRefs": [
+          ".kernel/evidence/phr/reusable-assets-registration.json"
+        ]
+      },
+      {
+        "assetId": "phr-tenant-scoped-mutation-pattern",
+        "assetName": "PHR Tenant-Scoped Mutation Pattern",
+        "applicability": "High - offline mutations must preserve tenant and principal metadata",
+        "adoptionComplexity": "medium",
+        "adaptationRequired": [
+          "Adapt from healthcare mutations to offline flashcard sync replay"
         ],
         "evidenceRefs": [
           ".kernel/evidence/phr/reusable-assets-registration.json"
@@ -83,37 +94,12 @@
     "status": "recommended",
     "assets": [
       {
-        "assetId": "dmos-approval-queue",
-        "assetName": "DMOS Approval Queue",
-        "applicability": "High - FlashIt content approval workflows can leverage DMOS patterns",
-        "adoptionComplexity": "low",
-        "adaptationRequired": [
-          "Adapt from campaign approval to content preview approval"
-        ],
-        "evidenceRefs": [
-          ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
-        ]
-      },
-      {
-        "assetId": "dmos-connector-workflow",
-        "assetName": "DMOS Connector Workflow",
-        "applicability": "High - FlashIt external integrations can use connector patterns",
+        "assetId": "dmos-retry-dlq-pattern",
+        "assetName": "DMOS Retry and DLQ Pattern",
+        "applicability": "High - offline sync and notification delivery require retry and dead-letter handling",
         "adoptionComplexity": "medium",
         "adaptationRequired": [
-          "Add preview-specific connectors (social media, messaging platforms)"
-        ],
-        "evidenceRefs": [
-          ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
-        ]
-      },
-      {
-        "assetId": "dmos-campaign-dashboard",
-        "assetName": "DMOS Campaign Dashboard",
-        "applicability": "Medium - FlashIt content analytics dashboard can leverage patterns",
-        "adoptionComplexity": "medium",
-        "adaptationRequired": [
-          "Replace campaign metrics with content engagement metrics",
-          "Adapt for personal (non-business) use case"
+          "Adapt connector retry budgets to mobile/offline sync retry budgets"
         ],
         "evidenceRefs": [
           ".kernel/evidence/digital-marketing/reusable-assets-registration.json"
@@ -163,10 +149,12 @@
     ]
   },
   "evidenceRefs": [
+    "config/product-family-asset-registry.json",
+    ".kernel/evidence/flashit/reusable-assets-mapping.json",
     ".kernel/evidence/phr/reusable-assets-registration.json",
     ".kernel/evidence/digital-marketing/reusable-assets-registration.json",
-    ".kernel/evidence/tutorputor/reusable-assets-registration.json",
-    "products/flashit/kernel-product.yaml",
     "products/flashit/lifecycle/foundation-usage-profile.yaml"
-  ]
+  ],
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288"
 }

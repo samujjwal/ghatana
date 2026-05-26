@@ -12,6 +12,7 @@ import { hasMinimumRole, type ValidRole } from '@/lib/role-utils';
 
 export const ACTION_MINIMUM_ROLES = {
   'view-dashboard': 'viewer',
+  'view-release-readiness': 'marketing-director',
   'review-approval': 'viewer',
   'approve': 'brand-manager',
   'reject': 'brand-manager',
