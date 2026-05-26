@@ -986,6 +986,8 @@
   "phaseAction.disabled.enterpriseTierRequired": "Enterprise tier is required",
   "phaseAction.disabled.readCapabilityRequired": "Read capability is required",
   "phaseAction.disabled.reportExportEntitlementMissing": "Report export entitlement is not enabled",
+  "phaseAction.disabled.unauthorized": "This phase action is not authorized",
+  "phaseAction.disabled.authorizationUnavailable": "Phase action authorization is temporarily unavailable",
   "phaseCockpit.layout.description": "Phase cockpit for {{phase}}. Project: {{projectName}}.",
   "phaseCockpit.primary.title": "Advance {{phase}}",
   "phaseCockpit.primary.description": "Review backend readiness before continuing.",

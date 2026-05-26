@@ -8,14 +8,17 @@ import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
 import com.ghatana.phr.api.routes.PhrAuditRoutes;
 import com.ghatana.phr.api.routes.PhrAuthRoutes;
+import com.ghatana.phr.api.routes.PhrCaregiverRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
 import com.ghatana.phr.api.routes.PhrEntitlementRoutes;
 import com.ghatana.phr.api.routes.PhrEmergencyRoutes;
+import com.ghatana.phr.api.routes.PhrFchvRoutes;
 import com.ghatana.phr.api.routes.PhrFhirRoutes;
 import com.ghatana.phr.api.routes.PhrHealthRoutes;
 import com.ghatana.phr.api.routes.PhrPatientRecordRoutes;
+import com.ghatana.phr.api.routes.PhrProviderRoutes;
 import com.ghatana.phr.api.routes.PhrReleaseReadinessRoutes;
 import com.ghatana.phr.fhir.server.PhrFhirR4Server;
 import com.ghatana.phr.kernel.service.BillingService;
@@ -96,6 +99,9 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrHealthRoutes healthRoutes;
     private final PhrAuditRoutes auditRoutes;
     private final PhrAuthRoutes authRoutes;
+    private final PhrProviderRoutes providerRoutes;
+    private final PhrCaregiverRoutes caregiverRoutes;
+    private final PhrFchvRoutes fchvRoutes;
     private volatile boolean started = false;
 
     /**
@@ -177,6 +183,35 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrHealthRoutes healthRoutes,
             PhrAuditRoutes auditRoutes,
             PhrAuthRoutes authRoutes) {
+        this(eventloop, fhirRoutes, patientRecordRoutes, consentRoutes, clinicalRoutes,
+            emergencyRoutes, administrativeRoutes, documentImagingRoutes, releaseReadinessRoutes,
+            entitlementRoutes, healthRoutes, auditRoutes, authRoutes, null, null, null);
+    }
+
+    /**
+     * Full constructor including role-specific route adapters.
+     *
+     * @param providerRoutes   provider dashboard and patient roster routes; may be null
+     * @param caregiverRoutes  caregiver delegated-access routes; may be null
+     * @param fchvRoutes       FCHV community health volunteer routes; may be null
+     */
+    public PhrHttpServer(
+            Eventloop eventloop,
+            PhrFhirRoutes fhirRoutes,
+            PhrPatientRecordRoutes patientRecordRoutes,
+            PhrConsentRoutes consentRoutes,
+            PhrClinicalRoutes clinicalRoutes,
+            PhrEmergencyRoutes emergencyRoutes,
+            PhrAdministrativeRoutes administrativeRoutes,
+            PhrDocumentImagingRoutes documentImagingRoutes,
+            PhrReleaseReadinessRoutes releaseReadinessRoutes,
+            PhrEntitlementRoutes entitlementRoutes,
+            PhrHealthRoutes healthRoutes,
+            PhrAuditRoutes auditRoutes,
+            PhrAuthRoutes authRoutes,
+            PhrProviderRoutes providerRoutes,
+            PhrCaregiverRoutes caregiverRoutes,
+            PhrFchvRoutes fchvRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
         this.patientRecordRoutes = patientRecordRoutes;
@@ -190,6 +225,9 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.healthRoutes = Objects.requireNonNull(healthRoutes, "healthRoutes cannot be null");
         this.auditRoutes = auditRoutes;
         this.authRoutes = authRoutes;
+        this.providerRoutes = providerRoutes;
+        this.caregiverRoutes = caregiverRoutes;
+        this.fchvRoutes = fchvRoutes;
     }
 
     // -------------------------------------------------------------------------
@@ -269,6 +307,15 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         }
         if (authRoutes != null) {
             builder.with("/auth/*", authRoutes.getServlet());
+        }
+        if (providerRoutes != null) {
+            builder.with("/provider/*", providerRoutes.getServlet());
+        }
+        if (caregiverRoutes != null) {
+            builder.with("/caregiver/*", caregiverRoutes.getServlet());
+        }
+        if (fchvRoutes != null) {
+            builder.with("/fchv/*", fchvRoutes.getServlet());
         }
         return builder
             .with("/route-entitlements", entitlementRoutes.getServlet())

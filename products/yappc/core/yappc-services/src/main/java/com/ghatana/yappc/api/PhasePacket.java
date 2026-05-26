@@ -228,9 +228,11 @@ public final class PhasePacket {
     public record CompletedArtifact(
             String artifactId,
             String artifactType,
+            String version,
             String title,
             Instant completedAt,
-            String completedBy
+            String completedBy,
+            String evidenceId
     ) {}
 
     /**

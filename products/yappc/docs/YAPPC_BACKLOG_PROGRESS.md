@@ -17,8 +17,13 @@ This file tracks the consolidated YAPPC-only backlog from the `797819d9ee4e5e027
 | YAPPC-P0-008 | Complete | `DataCloudPlatformRunStatusService` returns `DEGRADED_RUNTIME_TRUTH` with trace/evidence IDs on Data Cloud query failure. |
 | YAPPC-P0-010 | Complete | `PhasePacketServiceImpl.queryPhaseEvidence` returns degraded system evidence and blocks unsafe advancement when evidence lookup fails. |
 | YAPPC-P0-011 | Complete | `PhasePacketServiceImpl.queryGovernanceRecords` fails closed with policy-denial governance records when governance lookup fails. |
+| YAPPC-P0-012 | Complete | `AdvancePhaseUseCase` performs server-side phase action authorization using backend capability, tier, readiness, and enabled phase flags before transition execution. |
 | YAPPC-P0-013 | Complete | `PhaseActionAuthorizationService` now emits stable `phaseAction.*` label/description/disabled-reason keys; phase cockpit translates those keys with `@ghatana/i18n`. |
 | YAPPC-P0-014 | Complete | `PhaseGateValidator.PhaseGateContext` carries typed artifacts/evidence/governance/health/flags; `PhasePacketServiceImpl` now passes typed context and tests capture it. |
+| YAPPC-P0-015 | Complete | `PhasePacketServiceImplTest` now covers every lifecycle phase for gate blockers, policy denial, missing evidence, degraded health, and disabled advance flags. |
+| YAPPC-P0-016 | Complete | `YappcArtifactRepository` now exposes canonical completed artifact metadata; `PhasePacketServiceImpl` maps real artifact ID/type/version/actor/timestamp/evidence instead of synthesizing from storage versions. |
+| YAPPC-P0-017 | Complete | Required artifact completion now compares explicit canonical artifact IDs/types only; storage-version-only records do not complete required artifacts. |
+| YAPPC-P0-018 | Complete | Repository-layer tenant enforcement tests prove Project, Task, PhaseState, and AgentState repositories reject missing/default tenant context before Data Cloud access. |
 
 ## Verified Commands
 
@@ -28,13 +33,17 @@ This file tracks the consolidated YAPPC-only backlog from the `797819d9ee4e5e027
 | Kernel lifecycle truth source/guard | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.kernelvisibility.*"` | Passed |
 | Phase failure semantics | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest" --tests "com.ghatana.yappc.services.phase.DataCloudPlatformRunStatusServiceTest"` | Passed |
 | Phase action i18n keys | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhaseActionAuthorizationServiceTest"`, `node -e "JSON.parse(...common.json...)"`, and `pnpm -C products/yappc/frontend/web type-check` | Passed |
+| Phase action execution authorization | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.lifecycle.AdvancePhaseUseCaseTest"` | Passed |
 | Typed phase gate context | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest"` | Passed |
+| Phase gate lifecycle matrix | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest"` | Passed |
+| Canonical completed artifacts | `./gradlew :products:yappc:core:yappc-services:test --tests "com.ghatana.yappc.services.phase.PhasePacketServiceImplTest" --tests "com.ghatana.yappc.storage.YappcArtifactRepositoryTest"` and `pnpm -C products/yappc/frontend/web type-check` | Passed |
+| Data Cloud tenant enforcement | `./gradlew :products:yappc:infrastructure:datacloud:test --tests "com.ghatana.yappc.infrastructure.datacloud.repository.YappcDataCloudRepositoryTenantEnforcementTest"` | Passed |
 
 ## In Progress
 
 | ID range | Current status |
 | --- | --- |
-| YAPPC-P0-004, YAPPC-P0-009, YAPPC-P0-012, YAPPC-P0-015 through YAPPC-P0-025 | Not yet complete in this pass. Next focus is server-side phase action execution authorization, artifact source/matching, tenant enforcement, and route/client parity gates. |
+| YAPPC-P0-004, YAPPC-P0-009, YAPPC-P0-019 through YAPPC-P0-025 | Not yet complete in this pass. Next focus is route/client parity gates, API Kernel handoff, and platform run writer. |
 
 ## Not Started
 

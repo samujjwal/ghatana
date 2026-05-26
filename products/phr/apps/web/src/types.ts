@@ -176,3 +176,145 @@ export interface PhrLoginRequest {
   nationalId: string;
   password: string;
 }
+
+// ─── Extended profile ─────────────────────────────────────────────────────────
+
+export interface PatientProfileExtended extends PatientProfile {
+  birthDate?: string;
+  preferredLanguage?: string;
+  facilityId?: string;
+  mrn?: string;
+  gender?: string;
+}
+
+export interface PatientProfileUpdateRequest {
+  emergencyContact?: string;
+  preferredLanguage?: string;
+  facilityId?: string;
+}
+
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+
+export interface TimelineEvent {
+  id: string;
+  date: string;
+  type: 'visit' | 'lab' | 'immunization' | 'medication' | 'consent' | 'document';
+  title: string;
+  summary: string;
+  resourceId?: string;
+}
+
+// ─── Conditions ───────────────────────────────────────────────────────────────
+
+export interface ConditionSummary {
+  id: string;
+  /** Display name of the condition (SNOMED / free text). */
+  name: string;
+  /** Human-readable display label; aliases `name` for compatibility with ICD-10 wire responses. */
+  display: string;
+  /** ICD-10 or SNOMED code. */
+  code?: string;
+  status: 'active' | 'resolved' | 'inactive';
+  onsetDate?: string;
+  resolvedDate?: string;
+  icdCode?: string;
+}
+
+// ─── Observations ─────────────────────────────────────────────────────────────
+
+export interface ObservationSummary {
+  id: string;
+  name: string;
+  value: string;
+  unit?: string;
+  status: 'normal' | 'abnormal' | 'pending';
+  recordedAt: string;
+  loincCode?: string;
+}
+
+// ─── Immunizations ────────────────────────────────────────────────────────────
+
+export interface ImmunizationSummary {
+  id: string;
+  vaccine: string;
+  date: string;
+  dose?: string;
+  site?: string;
+  cvxCode?: string;
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+export interface DocumentSummary {
+  id: string;
+  title: string;
+  category: 'lab' | 'referral' | 'discharge' | 'imaging' | 'other';
+  uploadedAt: string;
+  mimeType: string;
+  sizeKb?: number;
+  /** MIME content-type for display (e.g. "application/pdf"). */
+  contentType?: string;
+  /** OCR pipeline status. */
+  ocrStatus?: 'pending' | 'processing' | 'ready' | 'failed';
+}
+
+export interface DocumentUploadResult {
+  id: string;
+  status: 'pending_ocr' | 'processed' | 'failed';
+  ocrAvailable: boolean;
+}
+
+export interface OcrReviewDocument {
+  id: string;
+  title: string;
+  ocrText: string;
+  correctedText?: string;
+  confidence: number;
+  status: 'pending_review' | 'confirmed' | 'rejected';
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface NotificationSummary {
+  id: string;
+  type: 'consent_expiry' | 'appointment_reminder' | 'lab_result' | 'emergency_access' | 'system';
+  title: string;
+  body: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export interface PatientRosterEntry {
+  id: string;
+  name: string;
+  mrn: string;
+  lastVisit?: string;
+  condition?: string;
+  alertCount: number;
+}
+
+// ─── Caregiver ────────────────────────────────────────────────────────────────
+
+export interface DependentEntry {
+  id: string;
+  name: string;
+  relationship: string;
+  birthDate?: string;
+  alertCount: number;
+  /** Approximate age in years derived from birthDate. */
+  age?: number;
+}
+
+// ─── FCHV ─────────────────────────────────────────────────────────────────────
+
+export interface FchvPatientEntry {
+  id: string;
+  name: string;
+  village: string;
+  lastContact?: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  /** Number of outstanding actions (referrals, follow-ups). */
+  pendingActions: number;
+}

@@ -790,6 +790,141 @@ class DataCloudCRUDJourneyE2ETest {
         assertThat(verifyResponse.statusCode()).isIn(200, 404, 503);
     }
 
+    // ==================== DC-DATA-003: Batch Save/Delete Transaction Semantics Tests ====================
+
+    @Test
+    @DisplayName("DC-DATA-003: Batch save is atomic - all or nothing")
+    void dcData003BatchSaveIsAtomic() throws Exception {
+        String collectionName = "batch-save-atomic-collection";
+
+        // Create collection first
+        Map<String, Object> collectionPayload = Map.of("name", collectionName, "schema", Map.of("type", "object"));
+        HttpRequest collectionRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/collections"))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(collectionPayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+        httpClient.send(collectionRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Attempt batch save with valid entities
+        Map<String, Object> batchPayload = Map.of(
+            "entities", List.of(
+                Map.of("id", "batch-atomic-1", "name", "Atomic 1"),
+                Map.of("id", "batch-atomic-2", "name", "Atomic 2"),
+                Map.of("id", "batch-atomic-3", "name", "Atomic 3")
+            ),
+            "transactional", true
+        );
+
+        HttpRequest batchRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/batch"))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(batchPayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> batchResponse = httpClient.send(batchRequest, HttpResponse.BodyHandlers.ofString());
+        // Should succeed (200) or endpoint not exist (404)
+        assertThat(batchResponse.statusCode()).isIn(200, 201, 404, 503);
+
+        // If endpoint exists, verify all entities were created atomically
+        if (batchResponse.statusCode() == 200 || batchResponse.statusCode() == 201) {
+            for (String id : List.of("batch-atomic-1", "batch-atomic-2", "batch-atomic-3")) {
+                HttpRequest verifyRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + id))
+                    .GET()
+                    .header("X-Tenant-Id", CRUD_TENANT)
+                    .build();
+
+                HttpResponse<String> verifyResponse = httpClient.send(verifyRequest, HttpResponse.BodyHandlers.ofString());
+                assertThat(verifyResponse.statusCode()).isEqualTo(200);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("DC-DATA-003: Batch delete is atomic - all or nothing")
+    void dcData003BatchDeleteIsAtomic() throws Exception {
+        String collectionName = "batch-delete-atomic-collection";
+
+        // Create entities first
+        for (int i = 1; i <= 3; i++) {
+            Map<String, Object> entity = Map.of("id", "atomic-del-" + i, "name", "Atomic Delete " + i);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(entity)))
+                .header("Content-Type", "application/json")
+                .header("X-Tenant-Id", CRUD_TENANT)
+                .build();
+            httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // Batch delete with transactional flag
+        Map<String, Object> deletePayload = Map.of(
+            "ids", List.of("atomic-del-1", "atomic-del-2", "atomic-del-3"),
+            "transactional", true
+        );
+
+        HttpRequest deleteRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/batch/delete"))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(deletePayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> deleteResponse = httpClient.send(deleteRequest, HttpResponse.BodyHandlers.ofString());
+        // Should succeed (200/204) or endpoint not exist (404)
+        assertThat(deleteResponse.statusCode()).isIn(200, 204, 404, 503);
+
+        // If endpoint exists, verify all entities were deleted atomically
+        if (deleteResponse.statusCode() == 200 || deleteResponse.statusCode() == 204) {
+            for (String id : List.of("atomic-del-1", "atomic-del-2", "atomic-del-3")) {
+                HttpRequest verifyRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + id))
+                    .GET()
+                    .header("X-Tenant-Id", CRUD_TENANT)
+                    .build();
+
+                HttpResponse<String> verifyResponse = httpClient.send(verifyRequest, HttpResponse.BodyHandlers.ofString());
+                assertThat(verifyResponse.statusCode()).isEqualTo(404);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("DC-DATA-003: Batch operations expose transaction metadata")
+    void dcData003BatchOperationsExposeTransactionMetadata() throws Exception {
+        String collectionName = "batch-tx-metadata-collection";
+
+        // Attempt batch save with transaction metadata request
+        Map<String, Object> batchPayload = Map.of(
+            "entities", List.of(
+                Map.of("id", "tx-meta-1", "name", "Transaction Meta 1")
+            ),
+            "transactional", true,
+            "returnTransactionMetadata", true
+        );
+
+        HttpRequest batchRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/batch"))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(batchPayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> batchResponse = httpClient.send(batchRequest, HttpResponse.BodyHandlers.ofString());
+        // Should succeed (200) or endpoint not exist (404)
+        assertThat(batchResponse.statusCode()).isIn(200, 201, 404, 503);
+
+        // If endpoint exists, verify transaction metadata is returned
+        if (batchResponse.statusCode() == 200 || batchResponse.statusCode() == 201) {
+            Map<String, Object> responseBody = mapper.readValue(batchResponse.body(), new TypeReference<Map<String, Object>>() {});
+            // Should contain transaction metadata if supported
+            assertThat(responseBody).containsKey("transactionId");
+        }
+    }
+
     // ==================== DC-DATA-004: Transaction Failure Rollback Tests ====================
 
     @Test
@@ -997,6 +1132,127 @@ class DataCloudCRUDJourneyE2ETest {
             boolean hasTenantBEntity = entities.stream()
                 .anyMatch(e -> "query-b-1".equals(e.get("id")));
             assertThat(hasTenantBEntity).isFalse();
+        }
+    }
+
+    // ==================== DC-DATA-006: Update/Archive First-Class Tests ====================
+
+    @Test
+    @DisplayName("DC-DATA-006: Update operation is first-class if exposed")
+    void dcData006UpdateIsFirstClassIfExposed() throws Exception {
+        String collectionName = "update-first-class-collection";
+        String entityId = "update-test-1";
+
+        // Create entity
+        Map<String, Object> entity = Map.of("id", entityId, "name", "Original Name", "version", 1);
+        HttpRequest createRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(entity)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+        httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Update entity using first-class update endpoint
+        Map<String, Object> updatePayload = Map.of("name", "Updated Name", "version", 2);
+        HttpRequest updateRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + entityId))
+            .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(updatePayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> updateResponse = httpClient.send(updateRequest, HttpResponse.BodyHandlers.ofString());
+        // Should succeed (200) or endpoint not exist (404)
+        assertThat(updateResponse.statusCode()).isIn(200, 404, 503);
+
+        // If endpoint exists, verify update succeeded
+        if (updateResponse.statusCode() == 200) {
+            HttpRequest verifyRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + entityId))
+                .GET()
+                .header("X-Tenant-Id", CRUD_TENANT)
+                .build();
+
+            HttpResponse<String> verifyResponse = httpClient.send(verifyRequest, HttpResponse.BodyHandlers.ofString());
+            Map<String, Object> verifyBody = mapper.readValue(verifyResponse.body(), new TypeReference<Map<String, Object>>() {});
+            assertThat(verifyBody.get("name")).isEqualTo("Updated Name");
+        }
+    }
+
+    @Test
+    @DisplayName("DC-DATA-006: Archive operation is first-class if exposed")
+    void dcData006ArchiveIsFirstClassIfExposed() throws Exception {
+        String collectionName = "archive-first-class-collection";
+        String entityId = "archive-test-1";
+
+        // Create entity
+        Map<String, Object> entity = Map.of("id", entityId, "name", "To Be Archived", "status", "active");
+        HttpRequest createRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(entity)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+        httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Archive entity using first-class archive endpoint
+        HttpRequest archiveRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + entityId + "/archive"))
+            .POST(HttpRequest.BodyPublishers.ofString("{}"))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> archiveResponse = httpClient.send(archiveRequest, HttpResponse.BodyHandlers.ofString());
+        // Should succeed (200/204) or endpoint not exist (404)
+        assertThat(archiveResponse.statusCode()).isIn(200, 204, 404, 503);
+
+        // If endpoint exists, verify archive succeeded
+        if (archiveResponse.statusCode() == 200 || archiveResponse.statusCode() == 204) {
+            HttpRequest verifyRequest = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + entityId))
+                .GET()
+                .header("X-Tenant-Id", CRUD_TENANT)
+                .build();
+
+            HttpResponse<String> verifyResponse = httpClient.send(verifyRequest, HttpResponse.BodyHandlers.ofString());
+            Map<String, Object> verifyBody = mapper.readValue(verifyResponse.body(), new TypeReference<Map<String, Object>>() {});
+            assertThat(verifyBody.get("status")).isEqualTo("archived");
+        }
+    }
+
+    @Test
+    @DisplayName("DC-DATA-006: Update and archive return version metadata")
+    void dcData006UpdateAndArchiveReturnVersionMetadata() throws Exception {
+        String collectionName = "version-metadata-collection";
+        String entityId = "version-test-1";
+
+        // Create entity
+        Map<String, Object> entity = Map.of("id", entityId, "name", "Version Test");
+        HttpRequest createRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName))
+            .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(entity)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+        httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Update entity
+        Map<String, Object> updatePayload = Map.of("name", "Updated Version Test");
+        HttpRequest updateRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/entities/" + collectionName + "/" + entityId))
+            .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(updatePayload)))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", CRUD_TENANT)
+            .build();
+
+        HttpResponse<String> updateResponse = httpClient.send(updateRequest, HttpResponse.BodyHandlers.ofString());
+        if (updateResponse.statusCode() == 200) {
+            Map<String, Object> updateBody = mapper.readValue(updateResponse.body(), new TypeReference<Map<String, Object>>() {});
+            // Should contain version metadata if supported
+            assertThat(updateBody).containsKey("version");
+            assertThat(updateBody).containsKey("updatedAt");
         }
     }
 

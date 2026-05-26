@@ -5,8 +5,10 @@
 export type CompletedArtifact = {
     artifactId: string;
     artifactType: string;
+    version: string;
     title: string;
     completedAt: string;
     completedBy: string;
+    evidenceId: string | null;
 };
 

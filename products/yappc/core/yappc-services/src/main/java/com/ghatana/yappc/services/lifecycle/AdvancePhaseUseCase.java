@@ -151,6 +151,73 @@ public class AdvancePhaseUseCase {
      * @return {@link Promise} of {@link TransitionResult}
      */
     public Promise<TransitionResult> execute(TransitionRequest request) {
+        log.info("AdvancePhaseUseCase: {} â†’ {} for project={} tenant={}",
+            request.fromPhase(), request.toPhase(), request.projectId(), request.tenantId());
+
+        return authorizePhaseAdvance(request)
+                .then(authorizationResult -> authorizationResult
+                        .map(result -> {
+                            publishToDlq(request, result);
+                            return Promise.of(result);
+                        })
+                        .orElseGet(() -> executeAuthorizedTransition(request)));
+    }
+
+    private Promise<Optional<TransitionResult>> authorizePhaseAdvance(TransitionRequest request) {
+        CapabilityEvaluationService.CapabilityEvaluationRequest capabilityRequest =
+                new CapabilityEvaluationService.CapabilityEvaluationRequest(
+                        request.tenantId(),
+                        request.requestedBy(),
+                        request.workspaceId(),
+                        request.projectId(),
+                        null,
+                        "phase:advance",
+                        request.fromPhase());
+
+        return capabilityEvaluationService.evaluate(capabilityRequest)
+                .map(capabilities -> {
+                    PhasePacket.PhaseReadiness readiness = new PhasePacket.PhaseReadiness(
+                            true,
+                            request.toPhase(),
+                            List.of(),
+                            1.0,
+                            false);
+                    List<PhasePacket.PhaseAction> actions = phaseActionAuthorizationService.determineAvailableActions(
+                            capabilities,
+                            request.tenantTier(),
+                            request.enabledPhaseFlags(),
+                            readiness,
+                            List.of(),
+                            List.of());
+                    PhasePacket.PhaseAction advanceAction = actions.stream()
+                            .filter(action -> "advance-phase".equals(action.actionId()))
+                            .findFirst()
+                            .orElseThrow();
+                    if (advanceAction.enabled()) {
+                        return Optional.<TransitionResult>empty();
+                    }
+                    return Optional.of(TransitionResult.blocked(
+                            "PHASE_ACTION_UNAUTHORIZED",
+                            advanceAction.disabledReason() != null
+                                    ? advanceAction.disabledReason()
+                                    : "phaseAction.disabled.unauthorized"));
+                })
+                .then((result, error) -> {
+                    if (error == null) {
+                        return Promise.of(result);
+                    }
+                    log.error(
+                            "AdvancePhaseUseCase: capability authorization failed for project={} tenant={}",
+                            request.projectId(),
+                            request.tenantId(),
+                            error);
+                    return Promise.of(Optional.of(TransitionResult.blocked(
+                            "PHASE_ACTION_AUTHORIZATION_ERROR",
+                            "phaseAction.disabled.authorizationUnavailable")));
+                });
+    }
+
+    private Promise<TransitionResult> executeAuthorizedTransition(TransitionRequest request) {
         log.info("AdvancePhaseUseCase: {} → {} for project={} tenant={}",
             request.fromPhase(), request.toPhase(), request.projectId(), request.tenantId());
 

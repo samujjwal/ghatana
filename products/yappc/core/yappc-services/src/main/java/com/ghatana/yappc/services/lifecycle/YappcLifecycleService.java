@@ -36,7 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import javax.sql.DataSource;
 
 import static io.activej.http.HttpMethod.GET;
@@ -347,7 +349,10 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         (String) json.get("fromPhase"),
                                         (String) json.get("toPhase"),
                                         (String) json.get("tenantId"),
-                                        (String) json.get("requestedBy"));
+                                        (String) json.get("requestedBy"),
+                                        (String) json.get("workspaceId"),
+                                        parseTenantTier(json.get("tenantTier")),
+                                        parseStringSet(json.get("enabledPhaseFlags")));
                                 if (tr.tenantId() == null || tr.tenantId().isBlank()) {
                                     return Promise.of(HttpResponse.ofCode(400)
                                             .withJson("{\"error\":\"Missing required tenantId field\"}")
@@ -585,6 +590,35 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             payload.put("missingArtifacts", result.missingArtifacts());
         }
         return payload;
+    }
+
+    private static com.ghatana.yappc.api.PhasePacket.TenantTier parseTenantTier(Object value) {
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return com.ghatana.yappc.api.PhasePacket.TenantTier.valueOf(text.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                return com.ghatana.yappc.api.PhasePacket.TenantTier.PRO;
+            }
+        }
+        return com.ghatana.yappc.api.PhasePacket.TenantTier.PRO;
+    }
+
+    private static Set<String> parseStringSet(Object value) {
+        if (value instanceof Collection<?> collection) {
+            return collection.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(String::trim)
+                    .filter(item -> !item.isBlank())
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            return java.util.Arrays.stream(text.split(","))
+                    .map(String::trim)
+                    .filter(item -> !item.isBlank())
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        }
+        return Set.of();
     }
 
     public static void main(String[] args) throws Exception {

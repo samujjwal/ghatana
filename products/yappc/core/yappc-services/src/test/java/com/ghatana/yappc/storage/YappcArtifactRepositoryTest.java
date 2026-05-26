@@ -79,6 +79,41 @@ class YappcArtifactRepositoryTest extends EventloopTestBase {
     }
 
     @Test
+    void shouldListOnlyCanonicalCompletedArtifactMetadata() {
+        // GIVEN
+        String productId = "product-123";
+        PhaseType phase = PhaseType.INTENT;
+        String validVersion = runPromise(() -> repository.storeArtifact(productId, phase, "valid".getBytes()));
+        String malformedVersion = runPromise(() -> repository.storeArtifact(productId, phase, "malformed".getBytes()));
+
+        runPromise(() -> repository.storeMetadata(productId, phase, validVersion, Map.of(
+                "artifactId", "IntentDocument",
+                "artifactType", "IntentDocument",
+                "completedAt", "2026-05-26T10:15:30Z",
+                "completedBy", "alice@example.com",
+                "evidenceId", "evidence-intent-1",
+                "title", "Intent brief"
+        )));
+        runPromise(() -> repository.storeMetadata(productId, phase, malformedVersion, Map.of(
+                "artifactId", "GoalStatement",
+                "artifactType", "GoalStatement"
+        )));
+
+        // WHEN
+        List<YappcArtifactRepository.ArtifactMetadata> metadata =
+                runPromise(() -> repository.listCompletedArtifactMetadata(productId, phase));
+
+        // THEN
+        assertEquals(1, metadata.size());
+        YappcArtifactRepository.ArtifactMetadata artifact = metadata.get(0);
+        assertEquals("IntentDocument", artifact.artifactId());
+        assertEquals("IntentDocument", artifact.artifactType());
+        assertEquals(validVersion, artifact.version());
+        assertEquals("alice@example.com", artifact.completedBy());
+        assertEquals("evidence-intent-1", artifact.evidenceId());
+    }
+
+    @Test
     void shouldHandleNonExistentArtifact() { 
         // GIVEN
         String productId = "nonexistent";

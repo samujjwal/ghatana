@@ -164,3 +164,31 @@ export async function loginMobile(nationalId: string, password: string): Promise
   }
   return assertMobileSession(await response.json());
 }
+
+/**
+ * Revokes an active consent grant for the authenticated patient.
+ *
+ * @param grantId   The consent grant identifier to revoke.
+ * @param session   The current mobile session context.
+ * @returns         Resolves when revocation is confirmed.
+ * @throws          Error with a user-facing message on failure.
+ */
+export async function revokeConsentGrant(grantId: string, session: MobileSession): Promise<void> {
+  if (!API_BASE_URL) {
+    throw new Error('PHR mobile API base URL is not configured.');
+  }
+  const response = await fetch(`${API_BASE_URL}/consents/${encodeURIComponent(grantId)}/revoke`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': session.tenantId,
+      'X-Principal-Id': session.principalId,
+      'X-Role': session.role,
+      'X-Correlation-ID': crypto.randomUUID(),
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Consent revocation failed with status ${response.status}.`);
+  }
+}

@@ -39,9 +39,16 @@ export const ne: EnLocale = {
     loading: 'सहमति लोड हुँदैछ…',
     error: 'सहमति लोड गर्न असफल भयो।',
     noConsents: 'कुनै सक्रिय सहमति छैन।',
+    empty: 'कुनै सहमति फेला परेन।',
     granted: 'अनुमति दिइएको',
-    revoked: 'फिर्ता लिइएको',
+    revoked: 'फिर्ता लिइइएको',
+    active: 'सक्रिय',
+    inactive: 'निष्क्रिय',
     expires: 'म्याद: {{date}}',
+    revoke: 'फिर्ता लिनुहोस्',
+    revoking: 'फिर्ता लिइइदैछ…',
+    revokeConfirm: 'क्या तपाईं यो सहमति फिर्ता लिनुहुन्छ?',
+    revokeError: 'सहमति फिर्ता लिन असफल भयो।',
   },
   alerts: {
     title: 'सूचनाहरू',
@@ -80,6 +87,9 @@ export const ne: EnLocale = {
     unauthorized: 'यो कार्य गर्न तपाईंलाई अनुमति छैन।',
     notFound: 'अनुरोध गरिएको स्रोत फेला परेन।',
   },
+  offline: {
+    banner: 'तपाईं अफलाइन हुनुहुन्छ। केही सुविधाहरू उपलब्ध नहोलान।',
+  },
   common: {
     retry: 'पुनः प्रयास गर्नुहोस्',
     cancel: 'रद्द गर्नुहोस्',
@@ -90,5 +100,6 @@ export const ne: EnLocale = {
     ok: 'ठीक छ',
     yes: 'हो',
     no: 'होइन',
+    error: 'त्रुटि भयो।',
   },
 } as const;

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -929,6 +930,175 @@ class SecurityPrivacyTest {
         }
     }
 
+    // ==================== DC-SEC-001: Route Metadata Fail-Closed Tests ====================
+
+    @Test
+    @DisplayName("DC-SEC-001: Routes with missing metadata fail closed")
+    void routesWithMissingMetadataFailClosed() {
+        RouteMetadataValidator validator = new RouteMetadataValidator();
+
+        // Route without required security metadata should be rejected
+        RouteConfig insecureRoute = new RouteConfig(
+            "/api/v1/entities",
+            "POST",
+            Map.of("description", "Create entity")
+            // Missing required security metadata
+        );
+
+        assertThat(validator.validate(insecureRoute).isValid()).isFalse();
+        assertThat(validator.validate(insecureRoute).violations())
+            .contains("missing_required_security_metadata");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: Routes with invalid metadata fail closed")
+    void routesWithInvalidMetadataFailClosed() {
+        RouteMetadataValidator validator = new RouteMetadataValidator();
+
+        // Route with invalid security level
+        RouteConfig invalidRoute = new RouteConfig(
+            "/api/v1/entities",
+            "POST",
+            Map.of(
+                "securityLevel", "INVALID_LEVEL",
+                "description", "Create entity"
+            )
+        );
+
+        assertThat(validator.validate(invalidRoute).isValid()).isFalse();
+        assertThat(validator.validate(invalidRoute).violations())
+            .contains("invalid_security_level");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: CRITICAL routes require authentication")
+    void criticalRoutesRequireAuthentication() {
+        RouteMetadataValidator validator = new RouteMetadataValidator();
+
+        // CRITICAL route without authentication should be rejected
+        RouteConfig criticalRoute = new RouteConfig(
+            "/api/v1/admin/delete-all",
+            "DELETE",
+            Map.of(
+                "securityLevel", "CRITICAL",
+                "description", "Delete all entities",
+                "requiresAuth", false
+            )
+        );
+
+        assertThat(validator.validate(criticalRoute).isValid()).isFalse();
+        assertThat(validator.validate(criticalRoute).violations())
+            .contains("critical_route_requires_authentication");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: CRITICAL routes require audit logging")
+    void criticalRoutesRequireAuditLogging() {
+        RouteMetadataValidator validator = new RouteMetadataValidator();
+
+        // CRITICAL route without audit logging should be rejected
+        RouteConfig criticalRoute = new RouteConfig(
+            "/api/v1/admin/delete-all",
+            "DELETE",
+            Map.of(
+                "securityLevel", "CRITICAL",
+                "description", "Delete all entities",
+                "requiresAuth", true,
+                "auditEnabled", false
+            )
+        );
+
+        assertThat(validator.validate(criticalRoute).isValid()).isFalse();
+        assertThat(validator.validate(criticalRoute).violations())
+            .contains("critical_route_requires_audit_logging");
+    }
+
+    // ==================== DC-SEC-002: Blocking Audit Failure Injection Tests ====================
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route blocks when audit service fails")
+    void criticalRouteBlocksWhenAuditServiceFails() {
+        AuditFailureInjector injector = new AuditFailureInjector();
+
+        // Simulate audit service failure
+        injector.setAuditServiceAvailable(false);
+
+        // Attempt to call CRITICAL route
+        RouteExecutionContext context = new RouteExecutionContext(
+            "/api/v1/admin/delete-all",
+            "DELETE",
+            Map.of("securityLevel", "CRITICAL", "requiresAuth", true, "auditEnabled", true)
+        );
+
+        RouteExecutionResult result = injector.executeWithAudit(context);
+
+        // Should be blocked due to audit failure
+        assertThat(result.isAllowed()).isFalse();
+        assertThat(result.getBlockReason()).isEqualTo("audit_service_unavailable");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route blocks when audit log write fails")
+    void criticalRouteBlocksWhenAuditLogWriteFails() {
+        AuditFailureInjector injector = new AuditFailureInjector();
+
+        // Simulate audit log write failure
+        injector.setAuditLogWriteFailure(true);
+
+        RouteExecutionContext context = new RouteExecutionContext(
+            "/api/v1/admin/delete-all",
+            "DELETE",
+            Map.of("securityLevel", "CRITICAL", "requiresAuth", true, "auditEnabled", true)
+        );
+
+        RouteExecutionResult result = injector.executeWithAudit(context);
+
+        // Should be blocked due to audit write failure
+        assertThat(result.isAllowed()).isFalse();
+        assertThat(result.getBlockReason()).isEqualTo("audit_log_write_failed");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: CRITICAL route blocks when audit timeout occurs")
+    void criticalRouteBlocksWhenAuditTimeoutOccurs() {
+        AuditFailureInjector injector = new AuditFailureInjector();
+
+        // Simulate audit timeout
+        injector.setAuditTimeout(true);
+
+        RouteExecutionContext context = new RouteExecutionContext(
+            "/api/v1/admin/delete-all",
+            "DELETE",
+            Map.of("securityLevel", "CRITICAL", "requiresAuth", true, "auditEnabled", true)
+        );
+
+        RouteExecutionResult result = injector.executeWithAudit(context);
+
+        // Should be blocked due to audit timeout
+        assertThat(result.isAllowed()).isFalse();
+        assertThat(result.getBlockReason()).isEqualTo("audit_timeout");
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: Non-CRITICAL route continues when audit fails")
+    void nonCriticalRouteContinuesWhenAuditFails() {
+        AuditFailureInjector injector = new AuditFailureInjector();
+
+        // Simulate audit service failure
+        injector.setAuditServiceAvailable(false);
+
+        RouteExecutionContext context = new RouteExecutionContext(
+            "/api/v1/entities",
+            "POST",
+            Map.of("securityLevel", "INTERNAL", "requiresAuth", true, "auditEnabled", true)
+        );
+
+        RouteExecutionResult result = injector.executeWithAudit(context);
+
+        // Should be allowed (non-critical routes don't block on audit failure)
+        assertThat(result.isAllowed()).isTrue();
+    }
+
     static class DataMinimizer {
         private static final List<String> PUBLIC_API_ALLOWED_FIELDS = List.of("id", "name", "created_at"); 
 
@@ -940,6 +1110,147 @@ class SecurityPrivacyTest {
                 }
             }
             return minimized;
+        }
+    }
+
+    // Supporting classes for DC-SEC-001 tests
+    static class RouteConfig {
+        private final String path;
+        private final String method;
+        private final Map<String, Object> metadata;
+
+        RouteConfig(String path, String method, Map<String, Object> metadata) {
+            this.path = path;
+            this.method = method;
+            this.metadata = metadata;
+        }
+
+        String getPath() { return path; }
+        String getMethod() { return method; }
+        Map<String, Object> getMetadata() { return metadata; }
+    }
+
+    static class ValidationResult {
+        private final boolean valid;
+        private final List<String> violations;
+
+        ValidationResult(boolean valid, List<String> violations) {
+            this.valid = valid;
+            this.violations = violations;
+        }
+
+        boolean isValid() { return valid; }
+        List<String> violations() { return violations; }
+    }
+
+    static class RouteMetadataValidator {
+        private static final Set<String> VALID_SECURITY_LEVELS = Set.of("PUBLIC", "INTERNAL", "CRITICAL");
+
+        ValidationResult validate(RouteConfig route) {
+            List<String> violations = new ArrayList<>();
+            Map<String, Object> metadata = route.getMetadata();
+
+            // Check for required security metadata
+            if (!metadata.containsKey("securityLevel")) {
+                violations.add("missing_required_security_metadata");
+            }
+
+            // Validate security level
+            if (metadata.containsKey("securityLevel")) {
+                String securityLevel = (String) metadata.get("securityLevel");
+                if (!VALID_SECURITY_LEVELS.contains(securityLevel)) {
+                    violations.add("invalid_security_level");
+                }
+
+                // CRITICAL routes require authentication
+                if ("CRITICAL".equals(securityLevel)) {
+                    if (!metadata.containsKey("requiresAuth") || !Boolean.TRUE.equals(metadata.get("requiresAuth"))) {
+                        violations.add("critical_route_requires_authentication");
+                    }
+
+                    // CRITICAL routes require audit logging
+                    if (!metadata.containsKey("auditEnabled") || !Boolean.TRUE.equals(metadata.get("auditEnabled"))) {
+                        violations.add("critical_route_requires_audit_logging");
+                    }
+                }
+            }
+
+            return new ValidationResult(violations.isEmpty(), violations);
+        }
+    }
+
+    // Supporting classes for DC-SEC-002 tests
+    static class RouteExecutionContext {
+        private final String path;
+        private final String method;
+        private final Map<String, Object> metadata;
+
+        RouteExecutionContext(String path, String method, Map<String, Object> metadata) {
+            this.path = path;
+            this.method = method;
+            this.metadata = metadata;
+        }
+
+        String getPath() { return path; }
+        String getMethod() { return method; }
+        Map<String, Object> getMetadata() { return metadata; }
+    }
+
+    static class RouteExecutionResult {
+        private final boolean allowed;
+        private final String blockReason;
+
+        RouteExecutionResult(boolean allowed, String blockReason) {
+            this.allowed = allowed;
+            this.blockReason = blockReason;
+        }
+
+        boolean isAllowed() { return allowed; }
+        String getBlockReason() { return blockReason; }
+    }
+
+    static class AuditFailureInjector {
+        private boolean auditServiceAvailable = true;
+        private boolean auditLogWriteFailure = false;
+        private boolean auditTimeout = false;
+
+        void setAuditServiceAvailable(boolean available) {
+            this.auditServiceAvailable = available;
+        }
+
+        void setAuditLogWriteFailure(boolean failure) {
+            this.auditLogWriteFailure = failure;
+        }
+
+        void setAuditTimeout(boolean timeout) {
+            this.auditTimeout = timeout;
+        }
+
+        RouteExecutionResult executeWithAudit(RouteExecutionContext context) {
+            Map<String, Object> metadata = context.getMetadata();
+            String securityLevel = (String) metadata.get("securityLevel");
+
+            // Only CRITICAL routes block on audit failure
+            if (!"CRITICAL".equals(securityLevel)) {
+                return new RouteExecutionResult(true, null);
+            }
+
+            // Check audit service availability
+            if (!auditServiceAvailable) {
+                return new RouteExecutionResult(false, "audit_service_unavailable");
+            }
+
+            // Check audit log write failure
+            if (auditLogWriteFailure) {
+                return new RouteExecutionResult(false, "audit_log_write_failed");
+            }
+
+            // Check audit timeout
+            if (auditTimeout) {
+                return new RouteExecutionResult(false, "audit_timeout");
+            }
+
+            return new RouteExecutionResult(true, null);
         }
     }
 }

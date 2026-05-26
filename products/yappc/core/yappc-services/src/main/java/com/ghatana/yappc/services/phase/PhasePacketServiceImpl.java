@@ -608,22 +608,31 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 for (String reason : policyDecision.deniedReasons()) {
                     records.add(new PhasePacket.GovernanceRecord(
                         "POLICY_DENIAL",
+                        "POLICY_DENIAL",
                         "DENIED",
-                        reason,
-                        policyDecision.policyId(),
+                        "system",
                         Instant.now(),
-                        Map.of("phase", phase, "projectId", projectId),
+                        Map.of(
+                            "phase", phase,
+                            "projectId", projectId,
+                            "workspaceId", workspaceId,
+                            "reason", reason
+                        ),
                         policyDecision.policyId()
                     ));
                 }
             } else {
                 records.add(new PhasePacket.GovernanceRecord(
                     "POLICY_APPROVAL",
+                    "POLICY_APPROVAL",
                     "APPROVED",
-                    "Phase governance check passed",
-                    policyDecision.policyId(),
+                    "system",
                     Instant.now(),
-                    Map.of("phase", phase, "projectId", projectId),
+                    Map.of(
+                        "phase", phase,
+                        "projectId", projectId,
+                        "workspaceId", workspaceId
+                    ),
                     policyDecision.policyId()
                 ));
             }
@@ -822,8 +831,14 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
     ) {
         return required.isComplete()
                 || completedArtifacts.stream().anyMatch(completed ->
-                        completed.artifactId().equals(required.artifactId())
-                                || completed.artifactType().equals(required.artifactType()));
+                        equalsCanonical(completed.artifactId(), required.artifactId())
+                                || equalsCanonical(completed.artifactType(), required.artifactType()));
+    }
+
+    private boolean equalsCanonical(String actual, String expected) {
+        return actual != null
+                && expected != null
+                && actual.equalsIgnoreCase(expected);
     }
 
     private double roundScore(double score) {
@@ -874,8 +889,8 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 .<PhasePacket.RequiredArtifact>map(artifactKey -> new PhasePacket.RequiredArtifact(
                     artifactKey,
                     artifactKey,
-                    "REQUIRED",
-                    null,
+                    artifactKey,
+                    "Required lifecycle artifact: " + artifactKey,
                     false
                 ))
                 .toList();
@@ -903,24 +918,18 @@ public final class PhasePacketServiceImpl implements PhasePacketService {
                 phaseType = com.ghatana.yappc.domain.PhaseType.INTENT;
             }
             
-            // List artifact versions for this project and phase
-            return artifactRepository.listVersions(projectId, phaseType)
-                .map(versions -> {
-                    if (versions == null || versions.isEmpty()) {
-                        return List.of();
-                    }
-
-                    // Convert to CompletedArtifact records
-                    return versions.stream()
-                        .<PhasePacket.CompletedArtifact>map(version -> new PhasePacket.CompletedArtifact(
-                            phase + "-" + version,
-                            phase + "-" + version,
-                            phase,
-                            Instant.now(),
-                            null
-                        ))
-                        .toList();
-                });
+            return artifactRepository.listCompletedArtifactMetadata(projectId, phaseType)
+                .map(artifacts -> artifacts.stream()
+                    .<PhasePacket.CompletedArtifact>map(artifact -> new PhasePacket.CompletedArtifact(
+                        artifact.artifactId(),
+                        artifact.artifactType(),
+                        artifact.version(),
+                        artifact.title(),
+                        artifact.completedAt(),
+                        artifact.completedBy(),
+                        artifact.evidenceId()
+                    ))
+                    .toList());
         } catch (Exception e) {
             log.error("Error querying completed artifacts: phase={}, projectId={}, tenantId={}", phase, projectId, tenantId, e);
             return Promise.of(List.of());

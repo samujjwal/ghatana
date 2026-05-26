@@ -88,9 +88,11 @@ export interface RequiredArtifact {
 export interface CompletedArtifact {
   readonly artifactId: string;
   readonly artifactType: string;
+  readonly version: string;
   readonly title: string;
   readonly completedAt: string;
   readonly completedBy: string;
+  readonly evidenceId: string | null;
 }
 
 /**

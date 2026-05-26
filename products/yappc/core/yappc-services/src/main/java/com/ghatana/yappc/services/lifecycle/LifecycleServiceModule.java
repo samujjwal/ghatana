@@ -880,9 +880,17 @@ public class LifecycleServiceModule extends AbstractModule {
             TransitionConfigLoader transitionConfigLoader,
             com.ghatana.governance.PolicyEngine policyEngine,
             YappcArtifactRepository artifactRepository,
-            DlqPublisher dlqPublisher) {
+            DlqPublisher dlqPublisher,
+            CapabilityEvaluationService capabilityEvaluationService) {
         logger.info("Creating AdvancePhaseUseCase");
-        return new AdvancePhaseUseCase(transitionConfigLoader, policyEngine, artifactRepository, dlqPublisher);
+        return new AdvancePhaseUseCase(
+                transitionConfigLoader,
+                policyEngine,
+                artifactRepository,
+                dlqPublisher,
+                capabilityEvaluationService,
+                new com.ghatana.yappc.services.phase.PhaseActionAuthorizationService(),
+                null);
     }
 
     // ========== Stage Config (3.3) ==========

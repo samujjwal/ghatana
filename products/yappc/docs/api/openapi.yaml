@@ -5771,11 +5771,13 @@ components:
 
     CompletedArtifact:
       type: object
-      required: [artifactId, artifactType, title, completedAt, completedBy]
+      required: [artifactId, artifactType, version, title, completedAt, completedBy, evidenceId]
       properties:
         artifactId:
           type: string
         artifactType:
+          type: string
+        version:
           type: string
         title:
           type: string
@@ -5784,6 +5786,9 @@ components:
           format: date-time
         completedBy:
           type: string
+        evidenceId:
+          type: string
+          nullable: true
 
     ActivityFeedEntry:
       type: object

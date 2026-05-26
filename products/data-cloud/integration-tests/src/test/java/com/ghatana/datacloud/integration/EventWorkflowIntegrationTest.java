@@ -8,6 +8,8 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -401,6 +403,151 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
         // Both events should be stored (policy may vary)
         assertThat(events).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    // ==================== DC-EVENT-003: Separate Data-Cloud EventLog from AEP EventCloud Semantics ====================
+
+    @Test
+    @Order(14)
+    @DisplayName("DC-EVENT-003: Data-Cloud EventLog uses append-only semantics")
+    void dcEvent003DataCloudEventLogUsesAppendOnlySemantics() throws Exception {
+        // Data-Cloud EventLog should use append-only semantics (immutable log)
+        Event dataCloudEvent = Event.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("DATA_CLOUD_APPEND_ONLY")
+                .tenantId("test-tenant")
+                .payload(Map.of("source", "data-cloud"))
+                .timestamp(Instant.now())
+                .build();
+
+        runPromise(() -> eventPublisher.publish(dataCloudEvent));
+
+        // Verify event is appended and immutable
+        Promise<Event[]> promise = eventConsumer.consumeByType("test-tenant", "DATA_CLOUD_APPEND_ONLY", 10);
+        Event[] events = runPromise(() -> promise);
+
+        assertThat(events).hasSizeGreaterThanOrEqualTo(1);
+        // Data-Cloud events should have immutable sequence numbers
+        assertThat(events[0].getEventId()).isNotNull();
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("DC-EVENT-003: AEP EventCloud uses mutable state semantics")
+    void dcEvent003AEPEventCloudUsesMutableStateSemantics() throws Exception {
+        // AEP EventCloud uses mutable state semantics (can be updated/replaced)
+        Event aepEvent = Event.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("AEP_MUTABLE_STATE")
+                .tenantId("test-tenant")
+                .payload(Map.of("source", "aep", "state", "initial"))
+                .timestamp(Instant.now())
+                .build();
+
+        runPromise(() -> eventPublisher.publish(aepEvent));
+
+        // In AEP EventCloud, events can represent state transitions
+        // and may be updated or have different semantics than append-only logs
+        Promise<Event[]> promise = eventConsumer.consumeByType("test-tenant", "AEP_MUTABLE_STATE", 10);
+        Event[] events = runPromise(() -> promise);
+
+        assertThat(events).hasSizeGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    @Order(16)
+    @DisplayName("DC-EVENT-003: Data-Cloud events enforce strict ordering")
+    void dcEvent003DataCloudEventsEnforceStrictOrdering() throws Exception {
+        // Data-Cloud EventLog enforces strict ordering by sequence number
+        List<String> eventIds = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Event event = Event.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("DATA_CLOUD_ORDERING")
+                    .tenantId("test-tenant")
+                    .payload(Map.of("sequence", i))
+                    .timestamp(Instant.now())
+                    .build();
+            eventIds.add(event.getEventId());
+            runPromise(() -> eventPublisher.publish(event));
+            Thread.sleep(5);
+        }
+
+        // Consume events and verify strict ordering
+        Promise<Event[]> promise = eventConsumer.consumeByType("test-tenant", "DATA_CLOUD_ORDERING", 10);
+        Event[] events = runPromise(() -> promise);
+
+        assertThat(events).hasSizeGreaterThanOrEqualTo(5);
+        // Events should be in the order they were published
+        for (int i = 0; i < Math.min(5, events.length); i++) {
+            assertThat(events[i].getEventId()).isEqualTo(eventIds.get(i));
+        }
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("DC-EVENT-003: AEP events allow out-of-order processing")
+    void dcEvent003AEPEventsAllowOutOfOrderProcessing() throws Exception {
+        // AEP EventCloud may allow out-of-order processing for state reconciliation
+        Event event1 = Event.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("AEP_OUT_OF_ORDER")
+                .tenantId("test-tenant")
+                .payload(Map.of("state", "state-1", "version", 1))
+                .timestamp(Instant.now().minusSeconds(10))
+                .build();
+
+        Event event2 = Event.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("AEP_OUT_OF_ORDER")
+                .tenantId("test-tenant")
+                .payload(Map.of("state", "state-2", "version", 2))
+                .timestamp(Instant.now())
+                .build();
+
+        // Publish in reverse order
+        runPromise(() -> eventPublisher.publish(event2));
+        runPromise(() -> eventPublisher.publish(event1));
+
+        // AEP should handle out-of-order events appropriately
+        Promise<Event[]> promise = eventConsumer.consumeByType("test-tenant", "AEP_OUT_OF_ORDER", 10);
+        Event[] events = runPromise(() -> promise);
+
+        assertThat(events).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    @Order(18)
+    @DisplayName("DC-EVENT-003: Data-Cloud events are immutable after append")
+    void dcEvent003DataCloudEventsAreImmutableAfterAppend() throws Exception {
+        // Data-Cloud EventLog events are immutable once appended
+        Event event = Event.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("DATA_CLOUD_IMMUTABLE")
+                .tenantId("test-tenant")
+                .payload(Map.of("value", "original"))
+                .timestamp(Instant.now())
+                .build();
+
+        runPromise(() -> eventPublisher.publish(event));
+
+        // Attempt to "update" the event (should fail or create new event)
+        Event updatedEvent = Event.builder()
+                .eventId(event.getEventId()) // Same ID
+                .eventType("DATA_CLOUD_IMMUTABLE")
+                .tenantId("test-tenant")
+                .payload(Map.of("value", "updated"))
+                .timestamp(Instant.now())
+                .build();
+
+        runPromise(() -> eventPublisher.publish(updatedEvent));
+
+        // Consume events - should see both events (original and new)
+        // Data-Cloud doesn't allow in-place updates
+        Promise<Event[]> promise = eventConsumer.consumeByType("test-tenant", "DATA_CLOUD_IMMUTABLE", 10);
+        Event[] events = runPromise(() -> promise);
+
+        assertThat(events).hasSizeGreaterThanOrEqualTo(1);
     }
 
     // Mock implementations

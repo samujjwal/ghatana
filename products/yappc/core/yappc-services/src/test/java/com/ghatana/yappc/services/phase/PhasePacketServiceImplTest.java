@@ -6,6 +6,7 @@ import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.api.PhasePacket;
+import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.capability.CapabilityEvaluationService;
 import com.ghatana.yappc.services.lifecycle.TransitionConfigLoader;
 import com.ghatana.yappc.services.lifecycle.gate.PhaseGateValidator;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -105,6 +108,8 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         lenient().when(artifactRepository.listVersions(anyString(), any()))
                 .thenReturn(Promise.of(List.of()));
+        lenient().when(artifactRepository.listCompletedArtifactMetadata(anyString(), any()))
+                .thenReturn(Promise.of(List.of()));
 
         lenient().when(auditService.queryByPhase(anyString(), anyString(), any(), any()))
                 .thenReturn(Promise.of(List.of()));
@@ -135,6 +140,47 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
 
         assertThat(packet).isNotNull();
         assertThat(packet.capabilities()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Completed artifacts come from canonical repository metadata")
+    void completedArtifacts_useCanonicalArtifactMetadata() {
+        Instant completedAt = Instant.parse("2026-05-26T10:15:30Z");
+        when(artifactRepository.listCompletedArtifactMetadata(PROJECT_ID, PhaseType.INTENT))
+                .thenReturn(Promise.of(List.of(
+                        new YappcArtifactRepository.ArtifactMetadata(
+                                "IntentDocument",
+                                "IntentDocument",
+                                "version-1",
+                                "Intent brief",
+                                completedAt,
+                                "alice@example.com",
+                                "evidence-intent-1"
+                        ))));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.completedArtifacts()).singleElement().satisfies(artifact -> {
+            assertThat(artifact.artifactId()).isEqualTo("IntentDocument");
+            assertThat(artifact.artifactType()).isEqualTo("IntentDocument");
+            assertThat(artifact.version()).isEqualTo("version-1");
+            assertThat(artifact.completedAt()).isEqualTo(completedAt);
+            assertThat(artifact.completedBy()).isEqualTo("alice@example.com");
+            assertThat(artifact.evidenceId()).isEqualTo("evidence-intent-1");
+        });
+    }
+
+    @Test
+    @DisplayName("Storage versions without canonical artifact metadata do not complete required artifacts")
+    void completedArtifacts_doNotReconstructFromStorageVersions() {
+        when(artifactRepository.listCompletedArtifactMetadata(PROJECT_ID, PhaseType.INTENT))
+                .thenReturn(Promise.of(List.of()));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(PHASE, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.completedArtifacts()).isEmpty();
     }
 
     // ─── Correlation ID handling ────────────────────────────────────────────────
@@ -372,6 +418,98 @@ class PhasePacketServiceImplTest extends EventloopTestBase {
                 "previewHealthy",
                 "generationHealthy",
                 "runtimeHealthy");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})
+    @DisplayName("Phase matrix: gate blocker blocks every lifecycle phase")
+    void phaseMatrix_gateBlockerBlocksEachPhase(String phase) {
+        lenient().when(phaseGateValidator.validate(anyString(), any(), any(PhaseGateValidator.PhaseGateContext.class)))
+                .thenReturn(Promise.of(new PhaseGateValidator.ValidationResult(
+                        com.ghatana.yappc.domain.PhaseType.valueOf(phase),
+                        false,
+                        List.of("missing-artifact: required-" + phase.toLowerCase()))));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(phase, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.blockers()).anySatisfy(blocker -> {
+            assertThat(blocker.type()).isEqualTo("ARTIFACT");
+            assertThat(blocker.id()).isEqualTo("missing-artifact: required-" + phase.toLowerCase());
+            assertThat(blocker.resolvable()).isTrue();
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})
+    @DisplayName("Phase matrix: policy denial blocks every lifecycle phase")
+    void phaseMatrix_policyDenialBlocksEachPhase(String phase) {
+        when(platformIntegrationClient.evaluatePolicy(any()))
+                .thenReturn(new PlatformPolicy(
+                        "policy-deny-" + phase,
+                        false,
+                        List.of("denied-" + phase.toLowerCase()),
+                        Map.of(),
+                        Instant.now()));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(phase, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.governance()).anySatisfy(record -> {
+            assertThat(record.type()).isEqualTo("POLICY_DENIAL");
+            assertThat(record.outcome()).isEqualTo("DENIED");
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})
+    @DisplayName("Phase matrix: missing evidence blocks every lifecycle phase")
+    void phaseMatrix_missingEvidenceBlocksEachPhase(String phase) {
+        when(platformIntegrationClient.searchEvidence(any()))
+                .thenThrow(new RuntimeException("evidence unavailable"));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(phase, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.evidence()).anySatisfy(evidence ->
+                assertThat(evidence.type()).isEqualTo("SYSTEM_DEGRADED"));
+        assertThat(packet.readiness().missingPrerequisites()).contains("Phase evidence unavailable");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})
+    @DisplayName("Phase matrix: degraded health blocks every lifecycle phase")
+    void phaseMatrix_degradedHealthBlocksEachPhase(String phase) {
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(phase, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        assertThat(packet.healthSignals().preview().isHealthy()).isFalse();
+        assertThat(packet.readiness().canAdvance()).isFalse();
+        assertThat(packet.readiness().missingPrerequisites())
+                .contains("Healthy preview, generation, and runtime signals");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"INTENT", "SHAPE", "VALIDATE", "GENERATE", "RUN", "OBSERVE", "LEARN", "EVOLVE"})
+    @DisplayName("Phase matrix: disabled advance flag disables primary action for every lifecycle phase")
+    void phaseMatrix_disabledAdvanceFlagDisablesEachPhase(String phase) {
+        lenient().when(dataCloudClient.findById(anyString(), anyString(), anyString()))
+                .thenReturn(Promise.of(Optional.of(
+                        DataCloudClient.Entity.of(PROJECT_ID, "projects",
+                                Map.of("name", "Test Project", "tier", "FREE", "status", "active")))));
+
+        PhasePacket packet = runPromise(() ->
+                service.buildPhasePacket(phase, PROJECT_ID, WORKSPACE_ID, testPrincipal, CORRELATION_ID));
+
+        PhasePacket.PhaseAction advance = packet.availableActions().stream()
+                .filter(action -> "advance-phase".equals(action.actionId()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(advance.enabled()).isFalse();
+        assertThat(advance.disabledReason()).isEqualTo("phaseAction.disabled.phaseAdvanceEntitlementMissing");
     }
 
 }

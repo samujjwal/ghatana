@@ -35,9 +35,16 @@ export const en = {
     loading: 'Loading consents…',
     error: 'Failed to load consents.',
     noConsents: 'No active consents.',
+    empty: 'No consents found.',
     granted: 'Granted',
     revoked: 'Revoked',
+    active: 'Active',
+    inactive: 'Inactive',
     expires: 'Expires: {{date}}',
+    revoke: 'Revoke',
+    revoking: 'Revoking…',
+    revokeConfirm: 'Are you sure you want to revoke this consent?',
+    revokeError: 'Failed to revoke consent.',
   },
   alerts: {
     title: 'Alerts',
@@ -76,6 +83,9 @@ export const en = {
     unauthorized: 'You are not authorized to perform this action.',
     notFound: 'The requested resource was not found.',
   },
+  offline: {
+    banner: 'You are offline. Some features may be unavailable.',
+  },
   common: {
     retry: 'Retry',
     cancel: 'Cancel',
@@ -86,6 +96,7 @@ export const en = {
     ok: 'OK',
     yes: 'Yes',
     no: 'No',
+    error: 'An error occurred.',
   },
 } as const;
 

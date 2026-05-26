@@ -5,20 +5,33 @@ import type {
   AppointmentSummary,
   AuditEvent,
   AuditEventsPage,
+  ConditionSummary,
   ConsentGrant,
   ConsentGrantRequest,
   ConsentRevokeResult,
   DashboardData,
+  DependentEntry,
+  DocumentSummary,
+  DocumentUploadResult,
   EmergencyAccessEvent,
   EmergencyAccessRequest,
   EmergencyReviewRequest,
+  FchvPatientEntry,
+  ImmunizationSummary,
   LabResultSummary,
   MedicationSummary,
+  NotificationSummary,
+  ObservationSummary,
+  OcrReviewDocument,
   PatientProfile,
+  PatientProfileExtended,
+  PatientProfileUpdateRequest,
   PatientRecordSummary,
+  PatientRosterEntry,
   PhrLoginRequest,
   PhrReleaseReadiness,
   PhrSession,
+  TimelineEvent,
 } from '../types';
 import { t } from '../i18n/phrI18n';
 
@@ -635,4 +648,213 @@ export async function logoutSession(context: {
       'X-Principal-Id': context.principalId,
     },
   });
+}
+
+// ─── Patient profile ──────────────────────────────────────────────────────────
+
+export async function fetchPatientProfile(): Promise<PatientProfileExtended> {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load profile: ${response.status}`, response.status, 'Profile');
+  }
+  return response.json() as Promise<PatientProfileExtended>;
+}
+
+export async function updatePatientProfile(
+  update: PatientProfileUpdateRequest,
+  context: { tenantId: string; principalId: string; correlationId?: string },
+): Promise<PatientProfileExtended> {
+  const response = await fetch(`${API_BASE_URL}/profile`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      ...(context.correlationId ? { 'X-Correlation-ID': context.correlationId } : {}),
+    },
+    body: JSON.stringify(update),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to update profile: ${response.status}`, response.status, 'Profile');
+  }
+  return response.json() as Promise<PatientProfileExtended>;
+}
+
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+
+export async function fetchTimeline(principalId: string): Promise<TimelineEvent[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/timeline/${encodeURIComponent(principalId)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load timeline: ${response.status}`, response.status, 'Timeline');
+  }
+  const body = await response.json() as { items: TimelineEvent[] };
+  return body.items;
+}
+
+// ─── Conditions ───────────────────────────────────────────────────────────────
+
+export async function fetchConditions(principalId: string): Promise<ConditionSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/conditions/${encodeURIComponent(principalId)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load conditions: ${response.status}`, response.status, 'Conditions');
+  }
+  const body = await response.json() as { items: ConditionSummary[] };
+  return body.items;
+}
+
+// ─── Observations ─────────────────────────────────────────────────────────────
+
+export async function fetchObservations(principalId: string): Promise<ObservationSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/clinical/labs/observations?patientId=${encodeURIComponent(principalId)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load observations: ${response.status}`, response.status, 'Observations');
+  }
+  const body = await response.json() as { items: ObservationSummary[] };
+  return body.items;
+}
+
+// ─── Immunizations ────────────────────────────────────────────────────────────
+
+export async function fetchImmunizations(principalId: string): Promise<ImmunizationSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/clinical/immunizations?patientId=${encodeURIComponent(principalId)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load immunizations: ${response.status}`, response.status, 'Immunizations');
+  }
+  const body = await response.json() as { items: ImmunizationSummary[] };
+  return body.items;
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+export async function fetchDocuments(): Promise<DocumentSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/documents`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load documents: ${response.status}`, response.status, 'Documents');
+  }
+  const body = await response.json() as { items: DocumentSummary[] };
+  return body.items;
+}
+
+export async function uploadDocument(
+  file: File,
+): Promise<DocumentUploadResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Document upload failed: ${response.status}`, response.status, 'Documents');
+  }
+  return response.json() as Promise<DocumentUploadResult>;
+}
+
+export async function fetchOcrDocument(docId: string): Promise<OcrReviewDocument> {
+  const response = await fetch(
+    `${API_BASE_URL}/documents/${encodeURIComponent(docId)}/ocr`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load OCR document: ${response.status}`, response.status, 'OCR');
+  }
+  return response.json() as Promise<OcrReviewDocument>;
+}
+
+export async function confirmOcrDocument(
+  docId: string,
+  correctedText: string,
+  context: { tenantId: string; principalId: string },
+): Promise<OcrReviewDocument> {
+  const response = await fetch(`${API_BASE_URL}/documents/${encodeURIComponent(docId)}/ocr/confirm`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+    },
+    body: JSON.stringify({ correctedText }),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`OCR confirmation failed: ${response.status}`, response.status, 'OCR');
+  }
+  return response.json() as Promise<OcrReviewDocument>;
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function fetchNotifications(principalId: string): Promise<NotificationSummary[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/notifications?principalId=${encodeURIComponent(principalId)}`,
+    { headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load notifications: ${response.status}`, response.status, 'Notifications');
+  }
+  const body = await response.json() as { items: NotificationSummary[] };
+  return body.items;
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export async function fetchProviderPatients(
+  context: { tenantId: string; principalId: string },
+): Promise<PatientRosterEntry[]> {
+  const response = await fetch(`${API_BASE_URL}/provider/patients`, {
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+    },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load patient roster: ${response.status}`, response.status, 'Provider');
+  }
+  const body = await response.json() as { items: PatientRosterEntry[] };
+  return body.items;
+}
+
+// ─── Caregiver ────────────────────────────────────────────────────────────────
+
+export async function fetchCaregiverDependents(): Promise<DependentEntry[]> {
+  const response = await fetch(`${API_BASE_URL}/caregiver/dependents`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load dependents: ${response.status}`, response.status, 'Caregiver');
+  }
+  const body = await response.json() as { items: DependentEntry[] };
+  return body.items;
+}
+
+// ─── FCHV ─────────────────────────────────────────────────────────────────────
+
+export async function fetchFchvDashboard(): Promise<FchvPatientEntry[]> {
+  const response = await fetch(`${API_BASE_URL}/fchv/dashboard`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Failed to load FCHV dashboard: ${response.status}`, response.status, 'FCHV');
+  }
+  const body = await response.json() as { items: FchvPatientEntry[] };
+  return body.items;
 }

@@ -2,11 +2,16 @@ package com.ghatana.yappc.storage;
 
 import com.ghatana.yappc.domain.PhaseType;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @doc.type class
@@ -80,6 +85,28 @@ public class YappcArtifactRepository {
     }
 
     /**
+     * Lists canonical completed artifact metadata for a product phase.
+     *
+     * <p>Only versions with explicit artifact identity, type, actor, and timestamp metadata
+     * are returned. This keeps lifecycle gates from treating storage versions as completed
+     * artifacts when the canonical artifact record is missing or malformed.</p>
+     *
+     * @param productId Product identifier
+     * @param phase Phase type
+     * @return Promise of canonical artifact metadata records
+     */
+    public Promise<List<ArtifactMetadata>> listCompletedArtifactMetadata(String productId, PhaseType phase) {
+        return listVersions(productId, phase)
+                .then(versions -> Promises.toList(versions.stream()
+                        .map(version -> getMetadata(productId, phase, version)
+                                .map(metadata -> ArtifactMetadata.from(productId, phase, version, metadata)))
+                        .toList()))
+                .map(records -> records.stream()
+                        .flatMap(Optional::stream)
+                        .toList());
+    }
+
+    /**
      * Lists all artifact paths matching the given path prefix.
      * Used by {@code AdvancePhaseUseCase} to verify that required artifact IDs are present.
      *
@@ -140,5 +167,86 @@ public class YappcArtifactRepository {
 
         return store.delete(contentPath)
                 .then(unused -> store.delete(metadataPath));
+    }
+
+    /**
+     * Canonical artifact metadata used by lifecycle phase readiness.
+     *
+     * @param artifactId stable artifact identifier
+     * @param artifactType canonical artifact type
+     * @param version storage version identifier
+     * @param title display title
+     * @param completedAt canonical completion timestamp
+     * @param completedBy actor that completed or approved the artifact
+     * @param evidenceId evidence/provenance identifier for completion
+     */
+    public record ArtifactMetadata(
+            String artifactId,
+            String artifactType,
+            String version,
+            String title,
+            Instant completedAt,
+            String completedBy,
+            String evidenceId
+    ) {
+        private static Optional<ArtifactMetadata> from(
+                String productId,
+                PhaseType phase,
+                String version,
+                Map<String, String> metadata
+        ) {
+            if (metadata == null || metadata.isEmpty()) {
+                return Optional.empty();
+            }
+            String artifactId = firstNonBlank(metadata, "artifactId", "artifact_id", "id");
+            String artifactType = firstNonBlank(metadata, "artifactType", "artifact_type", "type");
+            String completedAtValue = firstNonBlank(metadata, "completedAt", "completed_at", "createdAt", "created_at");
+            String completedBy = firstNonBlank(metadata, "completedBy", "completed_by", "actor", "createdBy", "created_by");
+            if (isBlank(artifactId) || isBlank(artifactType) || isBlank(completedAtValue) || isBlank(completedBy)) {
+                log.warn(
+                        "Skipping malformed artifact metadata: productId={}, phase={}, version={}, artifactId={}, artifactType={}",
+                        productId,
+                        phase,
+                        version,
+                        artifactId,
+                        artifactType
+                );
+                return Optional.empty();
+            }
+            try {
+                return Optional.of(new ArtifactMetadata(
+                        artifactId,
+                        artifactType,
+                        version,
+                        firstNonBlank(metadata, "title", "name", "displayName", "display_name", "artifactId"),
+                        Instant.parse(completedAtValue),
+                        completedBy,
+                        firstNonBlank(metadata, "evidenceId", "evidence_id", "traceId", "trace_id")
+                ));
+            } catch (DateTimeParseException e) {
+                log.warn(
+                        "Skipping artifact metadata with invalid completion timestamp: productId={}, phase={}, version={}",
+                        productId,
+                        phase,
+                        version,
+                        e
+                );
+                return Optional.empty();
+            }
+        }
+
+        private static String firstNonBlank(Map<String, String> metadata, String... keys) {
+            for (String key : keys) {
+                String value = metadata.get(key);
+                if (!isBlank(value)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        private static boolean isBlank(String value) {
+            return value == null || value.isBlank();
+        }
     }
 }

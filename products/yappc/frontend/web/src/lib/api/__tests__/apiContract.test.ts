@@ -95,6 +95,123 @@ function extractClientRoutes(): string[] {
   return [];
 }
 
+interface RouteContract {
+  readonly method: string;
+  readonly path: string;
+  readonly auth: string;
+  readonly scopes: readonly string[];
+  readonly owner: string;
+  readonly operationId: string;
+}
+
+function parseStructuredRouteManifest(content: string): Map<string, RouteContract> {
+  const routes = new Map<string, RouteContract>();
+  let currentServer = '';
+  let current: Partial<RouteContract> | null = null;
+
+  const finalize = (): void => {
+    if (!current?.method || !current.path || !current.operationId) return;
+    routes.set(current.operationId, {
+      method: current.method,
+      path: current.path,
+      auth: current.auth ?? '',
+      scopes: current.scopes ?? [],
+      owner: current.owner ?? currentServer,
+      operationId: current.operationId,
+    });
+  };
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    if (!line.startsWith(' ') && trimmed.endsWith(':')) {
+      currentServer = trimmed.slice(0, -1);
+      continue;
+    }
+
+    if (trimmed.startsWith('- ')) {
+      finalize();
+      current = {};
+      const field = parseManifestField(trimmed.slice(2));
+      if (field) applyManifestField(current, field[0], field[1]);
+      continue;
+    }
+
+    if (current && line.startsWith('  ')) {
+      const field = parseManifestField(trimmed);
+      if (field) applyManifestField(current, field[0], field[1]);
+    }
+  }
+
+  finalize();
+  return routes;
+}
+
+function parseManifestField(line: string): readonly [string, string] | null {
+  const separator = line.indexOf(':');
+  if (separator === -1) return null;
+  return [line.slice(0, separator).trim(), line.slice(separator + 1).trim()];
+}
+
+function applyManifestField(target: Partial<RouteContract>, key: string, value: string): void {
+  if (key === 'scopes') {
+    target.scopes = value
+      .replace(/^\[/, '')
+      .replace(/\]$/, '')
+      .split(',')
+      .map(scope => scope.trim())
+      .filter(Boolean);
+    return;
+  }
+  if (key === 'method' || key === 'path' || key === 'auth' || key === 'owner' || key === 'operationId') {
+    target[key] = value;
+  }
+}
+
+function parseOpenApiOperations(content: string): Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>> {
+  const operations = new Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>>();
+  let currentPath = '';
+  let currentMethod = '';
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (/^\/[^:]+:$/.test(trimmed)) {
+      currentPath = trimmed.slice(0, -1);
+      currentMethod = '';
+      continue;
+    }
+    if (currentPath && /^(get|post|put|delete|patch):$/.test(trimmed)) {
+      currentMethod = trimmed.slice(0, -1).toUpperCase();
+      continue;
+    }
+    if (currentPath && currentMethod && trimmed.startsWith('operationId:')) {
+      const operationId = trimmed.slice('operationId:'.length).trim();
+      operations.set(operationId, { method: currentMethod, path: currentPath, operationId });
+      currentMethod = '';
+    }
+  }
+
+  return operations;
+}
+
+function parseGeneratedServiceOperations(content: string): Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>> {
+  const operations = new Map<string, Pick<RouteContract, 'method' | 'path' | 'operationId'>>();
+  const methodBlocks = content.matchAll(/public static (\w+)\([^]*?return __request\(OpenAPI, \{([^]*?)\n        \}\);/g);
+
+  for (const match of methodBlocks) {
+    const operationId = match[1];
+    const body = match[2];
+    const method = body.match(/method: '([A-Z]+)'/)?.[1];
+    const url = body.match(/url: '([^']+)'/)?.[1];
+    if (method && url) {
+      operations.set(operationId, { method, path: url, operationId });
+    }
+  }
+
+  return operations;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Contract Tests
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,5 +323,55 @@ describe('API Client Structure', () => {
     // This test would check for duplicate exports across client files
     // For now, placeholder
     expect(true).toBe(true);
+  });
+});
+
+describe('Phase cockpit generated client parity', () => {
+  const criticalOperations = [
+    { operationId: 'getPhasePacket', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'requestPhasePacket', auth: 'required', scopes: ['project:read'] },
+    { operationId: 'getDashboardActions', auth: 'required', scopes: ['workspace:read'] },
+    { operationId: 'requestDashboardActions', auth: 'required', scopes: ['workspace:read'] },
+  ] as const;
+
+  it('matches manifest, OpenAPI, and generated LifecycleService methods', () => {
+    const manifest = parseStructuredRouteManifest(fs.readFileSync(routeManifestPath, 'utf8'));
+    const openApi = parseOpenApiOperations(fs.readFileSync(openApiPath, 'utf8'));
+    const lifecycleServicePath = path.join(
+      repoRoot,
+      'products/yappc/frontend/web/src/clients/generated/api/services/LifecycleService.ts'
+    );
+    const generated = parseGeneratedServiceOperations(fs.readFileSync(lifecycleServicePath, 'utf8'));
+
+    for (const expected of criticalOperations) {
+      const manifestRoute = manifest.get(expected.operationId);
+      const openApiOperation = openApi.get(expected.operationId);
+      const generatedOperation = generated.get(expected.operationId);
+
+      expect(manifestRoute, `${expected.operationId} manifest route`).toBeDefined();
+      expect(openApiOperation, `${expected.operationId} OpenAPI operation`).toBeDefined();
+      expect(generatedOperation, `${expected.operationId} generated client method`).toBeDefined();
+      expect(openApiOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(generatedOperation).toMatchObject({
+        method: manifestRoute?.method,
+        path: manifestRoute?.path,
+      });
+      expect(manifestRoute?.auth).toBe(expected.auth);
+      expect(manifestRoute?.scopes).toEqual(expected.scopes);
+      expect(manifestRoute?.owner).toBe('yappc-services');
+    }
+  });
+
+  it('keeps usePhasePacket on the generated GET phase packet method', () => {
+    const hookSource = fs.readFileSync(
+      path.join(repoRoot, 'products/yappc/frontend/web/src/hooks/usePhasePacket.ts'),
+      'utf8'
+    );
+
+    expect(hookSource).toContain("import { LifecycleService } from '../clients/generated/api'");
+    expect(hookSource).toContain('LifecycleService.getPhasePacket(');
   });
 });
