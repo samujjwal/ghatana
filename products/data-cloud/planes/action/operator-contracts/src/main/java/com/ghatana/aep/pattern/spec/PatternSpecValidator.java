@@ -325,8 +325,11 @@ public final class PatternSpecValidator {
 
     private static boolean isValidLifecycleState(String state) {
         String normalized = state.toLowerCase();
+        // AEP-LIFECYCLE-001: Complete lifecycle state validation including all required states
         return normalized.equals("active") || normalized.equals("draft") || normalized.equals("disabled")
-            || normalized.equals("shadow") || normalized.equals("recommended") || normalized.equals("predictive");
+            || normalized.equals("shadow") || normalized.equals("recommended") || normalized.equals("predictive")
+            || normalized.equals("candidate") || normalized.equals("approved") || normalized.equals("degraded")
+            || normalized.equals("retired") || normalized.equals("rollback");
     }
 
     private static boolean isApprovedEvidenceStore(String evidenceStore) {

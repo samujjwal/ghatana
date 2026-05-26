@@ -1243,7 +1243,9 @@ public class EntityCrudHandler {
 
     private static String buildBatchDeleteToken(String tenantId, String collection, int count, long issuedAtMs) {
         String scope = "batch-delete";
-        String payload = scope + ":" + tenantId + ":" + collection + ":" + count + ":" + issuedAtMs;
+        // DC-ENTITY-001: Count is not included in HMAC signature to allow flexible batch sizes
+        // Token is scoped to tenant+collection+timestamp only
+        String payload = scope + ":" + tenantId + ":" + collection + ":" + issuedAtMs;
         String hmac = DestructiveActionToken.hmacSha256Hex(
             DestructiveActionToken.resolveSecret(DestructiveActionToken.runtimeEnvironment()), payload);
         String raw = issuedAtMs + "." + hmac;

@@ -1,185 +1,650 @@
-Below is the implementation backlog from the latest `d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a` audit. It prioritizes **PHR first**, keeps **Digital Marketing** as the next release-hardening product, and treats **Tutorputor/FlashIt** only as future consumers to improve Kernel, Data Cloud, AEP/agents, YAPPC, and reusable foundations.
+## Execution result — commit `efdcdd4ba4a5233556dfb53fe5e89f1477d20d46`
 
-Important current inconsistency: the PHR release evidence says `releaseVerdict: pass`, but the same evidence still contains stale blocker names like `missing-fhir-contract-validation`, `missing-consent-gate`, `missing-pii-classification`, `missing-audit-evidence`, and `missing-data-sovereignty-gate`. It also still classifies rollback as `ready-local` while deployment targets include staging/prod.  The registry shows the same PHR lifecycle and blocker matrix state.  Digital Marketing is lifecycle-enabled with required gates for registry, manifest, lifecycle contract, bridge compliance, consent boundary, persistence proof, and Google Ads proof.
+I reviewed the `samujjwal/ghatana` snapshot at commit `efdcdd4ba4a5233556dfb53fe5e89f1477d20d46`, with the latest decision included: **Data-Cloud may use an AEP-powered Action Plane, but AEP owns adaptive event semantics.**
 
-## Execution Progress (2026-05-24)
+The commit itself mainly changes release/evidence behavior and refreshes evidence files. The most important code change is that the release workflow now validates that the generated Data-Cloud release bundle’s `targetCommitSha` matches the actual release commit before upload.  The workflow implementation confirms this check: it sets `TARGET_COMMIT_SHA` to `github.sha`, generates the bundle, then fails if `bundle.targetCommitSha` or `bundle.evidenceRun.targetCommitSha` does not match the release commit. 
 
-### Completed this implementation slice
+---
 
-- Added hard contradiction enforcement in `scripts/check-product-release-readiness.mjs`:
-	- release cannot be considered healthy when lifecycle blocker matrix has unresolved `missing-*`/`blocked`/`pending` style entries
-	- staging/prod deployment targets cannot coexist with rollback status `ready-local`
-	- per-product and aggregate readiness evidence now emits identity/freshness metadata (`sourceCommitSha`, `targetCommitSha`, `targetEnvironment`, `validationStatus`, `reviewDueAt`, `expiresAt`)
-- Added strict metadata and contradiction validation in `scripts/validate-release-evidence.mjs`:
-	- validates release identity/freshness metadata on aggregate and per-product readiness evidence
-	- fails pass-state scorecards that still carry blocker matrix contradictions or non-empty blocking gaps
-	- now honors freshness policy semantics for `failOnStale` and phased `requireSourceBacking` enforcement for migrated evidence schema
-	- added regression coverage in `scripts/__tests__/release-evidence-gates.test.mjs`
-- Reconciled PHR truth sources:
-	- removed stale `missing-*` blocker entries from PHR lifecycle blocker matrix in registry and per-product readiness evidence
-	- updated rollback readiness from `ready-local` to env-specific readiness for local/dev/staging/prod
-	- bound per-product/aggregate release evidence to target commit `d0ed7ff0daa3084ab80b3b5e2db44a7f0dfe677a`
-- Reconciled Digital Marketing truth sources:
-	- aligned `nextRequiredWork` wording with staging/prod evidence revalidation policy in registry, product config, shape matrix, generated shape matrix, and architecture matrix docs
-	- bound per-product readiness evidence to target commit metadata and freshness fields
-- Regenerated deterministic registry artifacts via:
-	- `node scripts/generate-product-registry-artifacts.mjs`
+# 1. Executive verdict
 
-### Validation status
+**Architecture direction:** strong.
+**Data-Cloud/AEP boundary:** coherent and improved.
+**Action Plane model:** now aligned with your decision.
+**Release gate design:** stronger.
+**Production readiness at this exact commit:** **not fully valid**, because the checked-in production-ready evidence targets commit `936924cf915e366f3f0c47bee266a277601b1288`, not the reviewed commit `efdcdd4ba4a5233556dfb53fe5e89f1477d20d46`.
 
-- `pnpm check:validate-release-evidence`: **pass**
-- `node --test scripts/__tests__/release-evidence-gates.test.mjs`: **pass**
-- `pnpm check:product-release-readiness -- --products phr,digital-marketing`: **pass**
-- `pnpm check:product-release-readiness`: **pass**
-- `pnpm check:release-gate`: **pass**
+This is the central finding:
 
-### Remaining execution to close this backlog fully
+```text
+readiness-evidence.yaml says production-ready
+but promotion.targetCommit = 936924cf...
+and release bundle targetCommitSha = 936924cf...
+while requested review commit = efdcdd4...
+```
 
-- release validation chain is complete for this slice (focused + full gate sequence)
-- complete remaining P1/P2 implementation items listed in sections 2-9 (AEP/YAPPC/Data Cloud hardening and future consumer onboarding)
+The readiness file at `efdcdd4...` marks Data-Cloud as `production-ready`, but its promotion block points to `sourceCommit` and `targetCommit` `936924cf915e366f3f0c47bee266a277601b1288`.  The release bundle also has `commit`, `sourceCommitSha`, and `targetCommitSha` set to `936924cf915e366f3f0c47bee266a277601b1288`. 
 
-# 1. P0 — release-blocking truth and evidence cleanup
+So at this exact commit, the production-ready claim is **stale relative to HEAD**. The new release workflow check is good and should prevent this going forward, but the snapshot still contains evidence for a previous commit.
 
-| ID     | What                                                                      | Where                                                                                                                                                                                                      | Why                                                                                                             | Acceptance criteria                                                                                                                                        | Focused validation                                                                               |
-| ------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| P0-001 | Reconcile PHR `releaseVerdict: pass` with stale blocker matrix.           | `.kernel/evidence/product-release-readiness.phr.json`, `.kernel/evidence/phr/phr-lifecycle-evidence-pack.json`, `config/canonical-product-registry.json`, `products/phr/lifecycle/readiness-evidence.yaml` | A product cannot be both passing and still list unresolved `missing-*` healthcare blockers.                     | Either remove stale blocker names with evidence-backed gate status, or keep release verdict blocked with exact unresolved tasks.                           | `pnpm check:product-release-readiness -- --products phr`                                         |
-| P0-002 | Regenerate or revalidate PHR release evidence at target commit `d0ed7ff`. | `.kernel/evidence/product-release-readiness.phr.json`                                                                                                                                                      | Evidence run inside file points to another commit (`87af...`), so freshness against `d0ed7ff` must be proven.   | Evidence includes `targetCommitSha: d0ed7ff...`, source commit, generatedAt, validation status, and no stale pass/fail contradiction.                      | `pnpm check:validate-release-evidence && pnpm check:product-release-readiness -- --products phr` |
-| P0-003 | Reconcile PHR rollback readiness with staging/prod deployment targets.    | `config/canonical-product-registry.json`, `products/phr/kernel-product.yaml`, `products/phr/lifecycle/rollback/**`, `.kernel/evidence/phr/**`                                                              | PHR has staging/prod deployment targets, but rollback is still `ready-local`.                                   | Rollback readiness is env-specific: local/dev/staging/prod. Staging/prod have explicit bootstrap + rollback evidence, or staging/prod targets are blocked. | `pnpm check:release-rollback-drill && pnpm check:phr-lifecycle-readiness`                        |
-| P0-004 | Verify PHR healthcare gates are executable, not just declared.            | `products/phr/lifecycle/gate-packs/consent.yaml`, `pii-classification.yaml`, `audit-evidence.yaml`, `fhir-contract-validation.yaml`, `tenant-data-sovereignty.yaml`                                        | Required PHR gates exist in registry/evidence refs, but stale blocker names imply the gates may not be proven.  | Each gate maps to an executable check, evidence ref, test file, pass/fail state, and release-blocking severity.                                            | `pnpm check:phr-lifecycle-pilot -- --smoke --evidence-pack-dir .kernel/evidence/phr`             |
-| P0-005 | Prove PHR Data Cloud runtime profile for release.                         | `products/phr/lifecycle/foundation-usage-profile.yaml`, `.kernel/evidence/data-cloud/**`, Data Cloud release runtime scripts                                                                               | PHR must only release if the Data Cloud slices it uses are production-ready.                                    | PHR foundation usage profile classifies each Data Cloud capability as required-production/disabled/future/not-used with evidence.                          | `pnpm check:data-cloud-release-runtime-profile`                                                  |
-| P0-006 | Reconcile Digital Marketing release evidence and registry state.          | `.kernel/evidence/product-release-readiness.digital-marketing.json`, `.kernel/evidence/digital-marketing/**`, `config/canonical-product-registry.json`                                                     | DMOS gates are declared and improved, but they must be fresh and executable for current commit.                 | DMOS evidence has current commit SHA, target env, validation status, and no stale “nextRequiredWork” if already complete.                                  | `pnpm check:product-release-readiness -- --products digital-marketing`                           |
-| P0-007 | Verify Data Cloud platform-provider readiness is not declarative only.    | `.kernel/evidence/data-cloud/platform-provider-readiness.json`, `products/data-cloud/**`, `scripts/check-data-cloud-platform-provider-readiness.mjs`                                                       | Data Cloud now appears improved, but provider readiness must be backed by executable evidence.                  | Every evidence ref exists, is validated, and maps to an executable check.                                                                                  | `pnpm check:data-cloud-platform-provider-readiness`                                              |
-| P0-008 | Ensure product release evidence cannot pass with stale blockers.          | `scripts/check-product-release-readiness.mjs`, `scripts/validate-release-evidence.mjs`                                                                                                                     | Current evidence shows a pass while still listing blocker-style entries.                                        | Script fails if `releaseVerdict=pass` and blocker matrix contains unresolved `missing-*`, `blocked`, or unvalidated gate states.                           | `pnpm check:validate-release-evidence && pnpm check:product-release-readiness`                   |
-| P0-009 | Enforce evidence freshness for all release and asset evidence.            | `.kernel/evidence/**`, `ProductFamilyControlPlaneController`, Data Cloud evidence ingestion                                                                                                                | YAPPC/Data Cloud should not ingest stale release state as truth.                                                | Evidence must include target commit, source commit, generatedAt, expiresAt/reviewDueAt, validationStatus, and target environment.                          | `pnpm check:doc-claims-evidence && pnpm check:current-state-claims`                              |
-| P0-010 | Keep `production-stubs` clean after `Ephemeral*` renames.                 | `products/digital-marketing/dm-infra/**`, `platform-plugins/**`, `config/production-stub-allowlist.json`                                                                                                   | Renaming `InMemory*` to `Ephemeral*` is good only if production guard blocks it.                                | No production path can instantiate ephemeral/in-memory/noop adapters unless explicitly dev/test-scoped.                                                    | `pnpm check:production-stubs`                                                                    |
+---
 
-# 2. PHR release backlog — highest priority
+# 2. What improved
 
-| ID      | Priority | What                                                                   | Where                                                                                                                                                 | Acceptance criteria                                                                                                   |
-| ------- | -------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| PHR-001 | P0       | Make PHR lifecycle readiness truthful and env-specific.                | `config/canonical-product-registry.json`, `products/phr/kernel-product.yaml`, `products/phr/lifecycle/readiness-evidence.yaml`                        | Local/dev/staging/prod readiness are separate. `releaseVerdict: pass` only applies to the target env.                 |
-| PHR-002 | P0       | Replace stale blocker names with precise gate results.                 | `.kernel/evidence/product-release-readiness.phr.json`, `.kernel/evidence/phr/phr-lifecycle-evidence-pack.json`                                        | `missing-*` blocker names disappear if solved; unresolved gates include exact file/test/evidence paths.               |
-| PHR-003 | P0       | Validate PHR staging bootstrap.                                        | `.kernel/evidence/phr/staging-bootstrap-evidence.json` or equivalent, `products/phr/lifecycle/**`                                                     | Staging proves Kernel, Data Cloud, distributed cache, FHIR, PII, audit, auth, tenant isolation, health checks.        |
-| PHR-004 | P0       | Validate PHR prod bootstrap.                                           | `.kernel/evidence/phr/prod-bootstrap-evidence.json` or equivalent                                                                                     | Prod bootstrap proves fail-closed config, secrets, Data Cloud runtime truth, distributed cache, FHIR, audit, health.  |
-| PHR-005 | P0       | Validate PHR staging rollback.                                         | `.kernel/evidence/phr/staging-rollback-evidence.json`, `products/phr/lifecycle/rollback/**`                                                           | Previous artifact, approval contract, healthcare post-rollback gates, audit continuity, and verification gates pass.  |
-| PHR-006 | P0       | Validate PHR prod rollback.                                            | `.kernel/evidence/phr/prod-rollback-evidence.json`, `products/phr/lifecycle/rollback/**`                                                              | Same as staging, with prod-specific config and fail-closed behavior.                                                  |
-| PHR-007 | P0       | Prove PHR consent gate.                                                | `ConsentManagementService`, `products/phr/lifecycle/gate-packs/consent.yaml`, consent tests                                                           | Consent grant/revoke/access check/emergency/self-access/denied access are covered and evidence-backed.                |
-| PHR-008 | P0       | Prove PHR PII classification gate.                                     | `products/phr/lifecycle/gate-packs/pii-classification.yaml`, PHR data model/schema files                                                              | Every patient-sensitive entity has classification, retention, redaction, audit treatment.                             |
-| PHR-009 | P0       | Prove PHR audit evidence gate.                                         | `PHRAuditTrailServiceImpl`, PHR event/evidence code, `audit-evidence.yaml`                                                                            | Patient data access, consent changes, break-glass, rollback, and admin actions emit durable audit.                    |
-| PHR-010 | P0       | Prove FHIR contract validation gate.                                   | `products/phr/docs/openapi.yaml`, FHIR server/transformer, `FhirGoldenFixturesTest`, `fhir/golden/**`                                                 | FHIR resources validate against golden fixtures and route contract parity.                                            |
-| PHR-011 | P0       | Prove tenant data sovereignty gate.                                    | PHR service base, Data Cloud storage paths, tenant tests                                                                                              | No PHR data mutation/query can run without tenant/principal; cross-tenant reads fail and audit.                       |
-| PHR-012 | P1       | Finalize PHR Data Cloud runtime truth integration.                     | PHR release producer, Data Cloud release/runtime collections, YAPPC cockpit                                                                           | PHR release readiness comes from durable Data Cloud records, not only JSON files.                                     |
-| PHR-013 | P1       | Harden distributed consent cache proof.                                | `PhrDistributedCacheProofTest`, `DistributedCacheConsentInvalidationTest`, `PhrKernelModule`                                                          | PHR startup fails without distributed cache in production; consent revocation invalidates cache.                      |
-| PHR-014 | P1       | Harden break-glass review workflow.                                    | `EmergencyAccessReviewWorkflow`, `KernelEventEmergencyAccessNotificationSender`, `KernelEventEmergencyAccessReviewAuditLogger`, break-glass E2E tests | Emergency access requires justification, notification, durable audit, post-hoc review, expiration.                    |
-| PHR-015 | P1       | Harden PHR notification outbox.                                        | `PhrNotificationOutboxDispatcher`, `PhrNotificationDeliveryChannelsFactory`, notification tests                                                       | No noop notification sender in production; failed delivery is observable and retriable.                               |
-| PHR-016 | P1       | Harden PHR role-based UI flows.                                        | `products/phr/apps/web/**`, `products/phr/ui/src/pages/PhrReleaseCockpit.tsx`, UI tests                                                               | Patient/provider/admin views are backend-authorized, runtime-truth-driven, and include locked/denied/degraded states. |
-| PHR-017 | P1       | Add PHR release cockpit evidence view.                                 | `products/phr/ui/src/pages/PhrReleaseCockpit.tsx`, YAPPC/Data Cloud release APIs                                                                      | Shows env-specific gates, stale evidence, blockers, foundation usage, rollback readiness.                             |
-| PHR-018 | P1       | Promote PHR reusable assets as candidates only.                        | `.kernel/evidence/phr/reusable-assets-registration.json`, Data Cloud asset registry                                                                   | Consent gate, audit trail, FHIR validation, break-glass workflow, rollback gate have asset records and evidence.      |
-| PHR-019 | P2       | Generalize PHR healthcare gate patterns for future regulated products. | Kernel/Data Cloud/YAPPC asset registry                                                                                                                | Healthcare gates become reusable templates without leaking PHR business logic into Kernel.                            |
+## 2.1 Data-Cloud/AEP boundary is correct
 
-# 3. Digital Marketing backlog — second priority
+Data-Cloud’s canonical architecture now says Data-Cloud owns governed entity storage, metadata, schemas, audit, retention, encryption support, queryable historical metadata, and pluggable persistence. It explicitly says Data-Cloud does **not** own CEP, PatternSpec/EPL, EventCloud subscriptions/tailing/windowing, pattern learning/adaptation, agent orchestration, `EventOperatorCapability` semantics, or predictive/recommended lifecycle. 
 
-| ID       | Priority | What                                                       | Where                                                                                                        | Acceptance criteria                                                                                                                       |
-| -------- | -------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| DMOS-001 | P0       | Revalidate DMOS release evidence at target commit.         | `.kernel/evidence/product-release-readiness.digital-marketing.json`, `.kernel/evidence/digital-marketing/**` | Evidence commit SHA, generatedAt, target env, and validation status match current audit target.                                           |
-| DMOS-002 | P0       | Reconcile DMOS `nextRequiredWork` with completed evidence. | `config/canonical-product-registry.json`, DMOS readiness evidence                                            | If staging/prod evidence is complete, registry no longer says to promote non-local profiles later; if not, exact missing proof is listed. |
-| DMOS-003 | P0       | Verify production bootstrap executability.                 | `.kernel/evidence/digital-marketing/prod-bootstrap-evidence.json`, `ProductionBootstrapValidator`            | Prod bootstrap proves DB, migrations, secrets, storage, cache, feature flags, Google Ads, OTLP, Kernel bridge, Data Cloud.                |
-| DMOS-004 | P0       | Verify staging bootstrap executability.                    | `.kernel/evidence/digital-marketing/staging-bootstrap-evidence.json`                                         | Same as prod, with staging-specific sandbox/validation semantics.                                                                         |
-| DMOS-005 | P0       | Verify prod/staging rollback evidence.                     | `.kernel/evidence/digital-marketing/*rollback*`, lifecycle rollback gate packs                               | Rollback covers campaign state, external IDs, in-flight notifications, AI logs, DLQ replay, Data Cloud audit trail.                       |
-| DMOS-006 | P0       | Enforce ephemeral adapter blocking.                        | `ProductionProfileGuard`, `dm-infra/Ephemeral*`, `EphemeralNotificationPlugin`                               | Prod fails if any ephemeral adapter/repository/plugin is wired.                                                                           |
-| DMOS-007 | P1       | Verify Google Ads connector proof is executable.           | `dm-connector-google-ads`, `connector-google-ads-proof.yaml`, connector tests                                | OAuth, token refresh, idempotency, retry, DLQ, compensation, external ID preservation pass.                                               |
-| DMOS-008 | P1       | Verify AI transparency evidence.                           | `AiActionLogService`, `AiActionLogEntry`, `PostgresAiActionLogRepository`, evidence                          | Prompt/input/model/provider/confidence/risk/policy/approval/outcome are immutable and queryable.                                          |
-| DMOS-009 | P1       | Harden Kernel bridge gates.                                | `DigitalMarketingKernelAdapterImpl`, `DigitalMarketingLifecycleGateTest`, bridge gate packs                  | Auth, consent, audit, approval, risk, notification, feature flags fail closed in prod.                                                    |
-| DMOS-010 | P1       | Harden DMOS release cockpit.                               | `products/digital-marketing/ui/src/pages/DmosReleaseCockpit.tsx`                                             | Shows env readiness, connector readiness, rollback, foundation usage, stale evidence, promoted assets.                                    |
-| DMOS-011 | P1       | Validate promoted reusable assets are not premature.       | `.kernel/evidence/digital-marketing/reusable-assets-registration.json`, asset promotion policy               | Promoted assets have current evidence, tests, owner approval, compatibility, usage, security review.                                      |
-| DMOS-012 | P2       | Keep DMOS secondary to PHR.                                | Planning docs / task matrix                                                                                  | DMOS work must prioritize foundation hardening useful for PHR/YAPPC/Data Cloud.                                                           |
+This is exactly the right boundary.
 
-# 4. Data Cloud backlog
+## 2.2 Data-Cloud can use AEP as Action Plane
 
-| ID     | Priority | What                                                                               | Where                                                                                                                      | Acceptance criteria                                                                           |
-| ------ | -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| DC-001 | P0       | Validate platform-provider pass state.                                             | `.kernel/evidence/data-cloud/platform-provider-readiness.json`, `scripts/check-data-cloud-platform-provider-readiness.mjs` | Provider readiness pass is executable and evidence refs are current.                          |
-| DC-002 | P0       | Make PHR the primary product proving Data Cloud runtime profile.                   | `scripts/check-data-cloud-release-runtime-profile.mjs`, PHR foundation usage profile                                       | Data Cloud runtime profile passes specifically for PHR-required capabilities.                 |
-| DC-003 | P0       | Store env-specific bootstrap/rollback readiness in durable Data Cloud collections. | Data Cloud migrations/runtime-composition, release readiness service                                                       | PHR/DMOS env evidence is queryable, tenant-scoped, freshness-checked.                         |
-| DC-004 | P1       | Harden product release readiness service.                                          | `ProductReleaseReadinessService`                                                                                           | Computes readiness from runtime truth + evidence, not static registry only.                   |
-| DC-005 | P1       | Harden product-family asset service.                                               | `ProductFamilyAssetService`, asset registry schema                                                                         | Asset records enforce maturity, promotion, evidence freshness, compatibility, owner approval. |
-| DC-006 | P1       | Prove Data Cloud governance plane for PHR data.                                    | `TenantIsolationService`, `RoutePolicyChecker`, `GovernanceAuditService`                                                   | PHR tenant isolation and audit gates rely on Data Cloud governance evidence.                  |
-| DC-007 | P1       | Validate field-level encryption for PHR/DMOS sensitive data.                       | `FieldLevelEncryptionService`, tests                                                                                       | PII/secrets are encrypted/redacted as required by product usage profile.                      |
-| DC-008 | P2       | Improve Data Cloud release cockpits.                                               | `PhrReleaseCockpitPage`, `DmosReleaseCockpitPage`, `DocTruthWarningsPage`                                                  | Cockpits show backend truth, not static demo/readiness text.                                  |
+The plane architecture now directly incorporates the latest decision: the Action Plane is described as an **AEP-powered compatibility and migration area** for persisted action metadata, review evidence, policy evidence, audit evidence, storage integrations, and AEP integration adapters. It also says adaptive event-processing semantics belong to AEP. 
 
-# 5. Kernel backlog
+This is the correct formulation:
 
-| ID      | Priority | What                                                                       | Where                                                               | Acceptance criteria                                                                           |
-| ------- | -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| KER-001 | P0       | Enforce env-specific bootstrap/rollback evidence for staging/prod targets. | `ProductReleaseReadinessProducer`, release gate scripts             | Any product targeting staging/prod fails without validated bootstrap and rollback evidence.   |
-| KER-002 | P0       | Fail release on evidence contradiction.                                    | release scripts, `ProductReleaseReadinessProducer`                  | Release cannot pass while blocker matrix contains unresolved `missing-*`.                     |
-| KER-003 | P1       | Bind release evidence to commit SHA.                                       | release evidence producer/scripts                                   | Stale evidence from earlier commits is warning or failure depending on release target.        |
-| KER-004 | P1       | Harden Kernel timeline.                                                    | `KernelTimelineEventProducer`, YAPPC Kernel timeline endpoint       | Timeline comes from durable lifecycle events and includes product, env, phase, evidence refs. |
-| KER-005 | P1       | Enforce ephemeral plugin guard.                                            | `EphemeralNotificationPlugin`, plugin registry/config               | Ephemeral plugins are dev/test only and blocked by prod profile.                              |
-| KER-006 | P1       | Keep Kernel product-agnostic.                                              | Kernel/plugins ArchUnit checks                                      | PHR/DMOS business logic stays out of Kernel/plugins.                                          |
-| KER-007 | P2       | Create reusable release-evidence templates.                                | `config/product-release-evidence-requirements.json`, docs/templates | Tutorputor/FlashIt can reuse evidence structure without new framework work.                   |
+```text
+Data-Cloud owns persisted action metadata, review evidence, policy evidence, audit evidence, and storage integrations.
+AEP owns adaptive event-processing semantics.
+```
 
-# 6. AEP and agents backlog
+## 2.3 Action Plane inventory is now much more precise
 
-| ID      | Priority | What                                                 | Where                                                                   | Acceptance criteria                                                                              |
-| ------- | -------- | ---------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| AEP-001 | P0       | Complete GovernedAgentDispatcher migration.          | `products/data-cloud/planes/action/orchestrator/**`, `agent-runtime/**` | No production agent dispatch bypasses governed dispatcher unless explicitly disabled/non-prod.   |
-| AEP-002 | P0       | Remove or gate LLM-gateway fallback.                 | Agent execution services / Action Plane orchestration                   | Fallback path is disabled in prod after all agents validate through governed dispatch.           |
-| AEP-003 | P1       | Wire dispatch safety pipeline into real execution.   | `AgentDispatchPipeline`, gates/stages, orchestrator                     | Release, version, grant, mastery, invariant, mode gates run before dispatch.                     |
-| AEP-004 | P1       | Persist agent dispatch evidence.                     | Data Cloud event/run ledger, AEP runtime                                | Gate failures and dispatch results are tenant-scoped and auditable.                              |
-| AEP-005 | P1       | Validate agent-as-event-operator semantics.          | operator contracts, PatternSpec compiler/validator, agent operators     | Agents work as event operators in pattern definitions with typed outputs and side-effect policy. |
-| AEP-006 | P1       | Complete PatternSpec production path.                | PatternSpec tests, schema registry, replay/time/uncertainty tests       | DAG, replay, time semantics, uncertainty, output types, schema registry pass.                    |
-| AEP-007 | P2       | Use Tutorputor as future agent generality validator. | Tutorputor orchestration/foundation profile                             | Tutorputor plan proves mastery/learning/simulation agents can use governed dispatcher.           |
+`ACTION_PLANE_MODULE_INVENTORY.md` now states that Data-Cloud’s Action Plane is AEP-powered and clarifies ownership per module. It identifies AEP-owned semantic modules temporarily co-located under Data-Cloud, including `operator-contracts`, `central-runtime`, `engine`, `agent-runtime`, and `orchestrator`, while Data-Cloud-owned modules include registry, analytics, security, event bridge, API, scaling, observability, identity, and compliance. 
 
-# 7. YAPPC backlog
+This fixes the prior ambiguity around “AEP inside Data-Cloud.”
 
-| ID        | Priority | What                                                | Where                                           | Acceptance criteria                                                                              |
-| --------- | -------- | --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| YAPPC-001 | P0       | Surface evidence contradictions.                    | `ProductFamilyControlPlaneController`, YAPPC UI | PHR “pass but stale blockers” is shown as contradiction, not hidden.                             |
-| YAPPC-002 | P0       | Validate evidence before ingesting into Data Cloud. | `ProductFamilyControlPlaneController`           | Ingest requires commit SHA, generatedAt, target env, validation status, freshness.               |
-| YAPPC-003 | P1       | Build PHR-first release cockpit.                    | YAPPC frontend/backend                          | Shows PHR env readiness, gates, blockers, foundation usage, rollback, Data Cloud profile.        |
-| YAPPC-004 | P1       | Build DMOS release cockpit as secondary.            | YAPPC frontend/backend                          | Same model, with connector/approval/AI action details.                                           |
-| YAPPC-005 | P1       | Add asset registry truth view.                      | YAPPC asset UI/API                              | Shows candidate/hardened/promoted assets, evidence refs, compatibility, stale evidence warnings. |
-| YAPPC-006 | P1       | Add doc-truth and registry-truth cockpit.           | `yappc_truth_checks`, UI                        | Flags stale registry blockers, docs claiming implemented without evidence, code/evidence drift.  |
-| YAPPC-007 | P2       | Add guided reuse for Tutorputor/FlashIt.            | YAPPC reuse recommendations                     | Suggests PHR/DMOS/Data Cloud/AEP assets by target product shape.                                 |
+## 2.4 Action Plane module inventory evidence exists
 
-# 8. Tutorputor and FlashIt backlog — future consumers only
+The generated module-inventory evidence passes, reports 17 Gradle-included Action Plane modules, 20 inventory rows, and zero violations. It also marks non-included planned/migration-only modules as non-release-blocking. 
 
-| ID     | Priority | Product    | What                                                    | Where                                                                            | Acceptance criteria                                                                   |
-| ------ | -------- | ---------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| TP-001 | P1       | Tutorputor | Draft foundation usage profile.                         | `products/tutorputor/lifecycle/foundation-usage-profile.yaml`                    | Identifies Kernel, Data Cloud, AEP/agents, mastery, content, simulation, cache needs. |
-| TP-002 | P1       | Tutorputor | Plan governed dispatcher integration.                   | Tutorputor orchestration docs/modules                                            | Tutorputor future agents route through GovernedAgentDispatcher.                       |
-| TP-003 | P1       | Tutorputor | Complete distributed cache validation plan.             | Tutorputor foundation profile / tests                                            | Tutorputor does not introduce local-only cache patterns.                              |
-| TP-004 | P2       | Tutorputor | Generate YAPPC guided reuse recommendations.            | `.kernel/evidence/guided-reuse-recommendations.*`                                | Uses PHR/DMOS assets where appropriate.                                               |
-| FI-001 | P1       | FlashIt    | Keep lifecycle disabled until mobile adapters are real. | `config/canonical-product-registry.json`, `products/flashit/kernel-product.yaml` | No mobile release path is executable until IPA/AAB artifacts and adapters exist.      |
-| FI-002 | P1       | FlashIt    | Draft foundation usage profile.                         | `products/flashit/lifecycle/foundation-usage-profile.yaml`                       | Covers mobile/offline/sync/personal-data/runtime evidence needs.                      |
-| FI-003 | P2       | FlashIt    | Generate YAPPC guided reuse recommendations.            | YAPPC/Data Cloud asset registry                                                  | Reuses auth, privacy, learning UI, offline sync candidates when ready.                |
+This is a strong improvement because the inventory is now backed by executable evidence.
 
-# 9. Documentation and registry truth backlog
+## 2.5 Production readiness task map is more honest than before
 
-| ID      | Priority | What                                                 | Where                                                                            | Acceptance criteria                                                            |
-| ------- | -------- | ---------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| DOC-001 | P0       | Remove stale PHR blocker matrix or make it accurate. | `config/canonical-product-registry.json`, PHR release evidence                   | No stale `missing-*` blockers when release verdict is pass.                    |
-| DOC-002 | P0       | Align PHR rollback readiness with env targets.       | Registry + PHR rollback evidence                                                 | `ready-local` does not imply staging/prod ready.                               |
-| DOC-003 | P1       | Align DMOS nextRequiredWork with evidence state.     | Registry + DMOS evidence                                                         | No “future promotion” text if staging/prod evidence is current and executable. |
-| DOC-004 | P1       | Add evidence freshness policy docs.                  | `docs/implementation/**`, Kernel/Data Cloud docs                                 | Evidence freshness, commit binding, and revalidation rules documented.         |
-| DOC-005 | P1       | Update product-family release strategy docs.         | `docs/implementation/GHATANA_WORLD_CLASS_IMPLEMENTATION_TRACKER.md`, Kernel docs | PHR-first, DMOS-second, Tutorputor/FlashIt future-consumer model captured.     |
-| DOC-006 | P2       | Add reusable asset promotion guide.                  | Data Cloud/YAPPC docs                                                            | Candidate → hardened → promoted/shared lifecycle documented.                   |
+The task map now says canonical release truth is `readiness-evidence.yaml` and current-head executable evidence under `.kernel/evidence`. It defines “Completed,” “Verified,” and “Release-ready,” and states that readiness must progress through `blocked`, `candidate`, `staging-ready`, and `production-ready`. 
 
-# 10. Final execution order
+That is a good correction from the previous “everything completed” posture.
 
-1. Fix PHR evidence contradiction: `releaseVerdict=pass` versus stale blocker matrix.
-2. Revalidate PHR release evidence at `d0ed7ff`.
-3. Make PHR rollback readiness env-specific and resolve `ready-local` versus staging/prod.
-4. Prove PHR Data Cloud runtime profile.
-5. Run focused PHR checks only.
-6. Reconcile DMOS readiness/evidence freshness.
-7. Validate DMOS ephemeral adapter blocking and connector proof.
-8. Run focused DMOS checks only.
-9. Validate Data Cloud platform-provider evidence refs.
-10. Harden Kernel release evidence producer against contradictions.
-11. Wire YAPPC cockpit to show contradictions, stale evidence, and env readiness.
-12. Register/promote reusable assets only after evidence freshness checks.
-13. Draft Tutorputor/FlashIt foundation profiles after PHR/DMOS evidence stabilizes.
-14. Run `pnpm check:product-release-readiness`.
-15. Run `pnpm check:release-gate` only after all focused checks pass.
+---
+
+# 3. Critical issue: production-ready evidence is stale
+
+## P0 finding
+
+**Where**
+
+```text
+products/data-cloud/lifecycle/readiness-evidence.yaml
+.kernel/evidence/data-cloud-release-bundle.json
+.kernel/evidence/data-cloud-active-modules.json
+.kernel/evidence/action-plane-module-inventory.json
+products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md
+```
+
+**Finding**
+
+At commit `efdcdd4...`, readiness says `production-ready`, but the promotion and evidence target `936924cf...`, not `efdcdd4...`. 
+
+The release bundle also targets `936924cf...` and embeds active-module evidence generated at `936924cf...`. 
+
+The task map also records all verified evidence commits as `936924cf...`. 
+
+**Impact**
+
+The product may have been release-ready at `936924cf...`, but **this commit cannot honestly be called production-ready using that evidence**.
+
+**Required fix**
+
+Regenerate and recommit evidence at `efdcdd4...`, or move the production-ready promotion back to the exact commit for which evidence was generated.
+
+---
+
+# 4. Updated production-readiness score
+
+| Area                                          |  Score | Notes                                                                            |
+| --------------------------------------------- | -----: | -------------------------------------------------------------------------------- |
+| Data-Cloud/AEP boundary                       |   9/10 | Boundary wording is now clear and coherent.                                      |
+| AEP-powered Action Plane model                |   9/10 | Correctly says Action Plane may be AEP-powered while semantics remain AEP-owned. |
+| Action Plane inventory                        | 8.5/10 | Inventory and generated evidence now align well.                                 |
+| Release gate design                           | 8.5/10 | New release bundle target-commit validation is strong.                           |
+| Active-module evidence model                  |   8/10 | Strong, but evidence currently targets earlier commit.                           |
+| Production-ready truthfulness at `efdcdd4...` |   5/10 | Marked production-ready but evidence targets `936924cf...`.                      |
+| Overall architecture maturity                 | 8.3/10 | Strong direction.                                                                |
+| Overall production readiness at this commit   | 6.5/10 | Blocked by evidence/commit mismatch.                                             |
+
+---
+
+# 5. Extended task list — what and where
+
+## P0 — Fix release evidence truth
+
+### DC-P0-001 — Regenerate evidence for `efdcdd4...`
+
+**Where**
+
+```text
+.kernel/evidence/data-cloud-active-modules.json
+.kernel/evidence/action-plane-boundaries.json
+.kernel/evidence/action-plane-module-inventory.json
+.kernel/evidence/product-release-readiness.json
+.kernel/evidence/agent-capability-duplicates.json
+.kernel/evidence/agent-runtime-test-excludes.json
+.kernel/evidence/agent-usage-audit.json
+.kernel/evidence/audit-completeness.json
+.kernel/evidence/data-cloud-operations-readiness.json
+.kernel/evidence/production-readiness-task-map.json
+.kernel/evidence/data-cloud-release-bundle.json
+```
+
+**Do**
+
+Run all release evidence checks at `efdcdd4...`.
+
+**Acceptance**
+
+Every `evidenceRun.commit`, `sourceCommitSha`, and `targetCommitSha` equals `efdcdd4ba4a5233556dfb53fe5e89f1477d20d46`.
+
+---
+
+### DC-P0-002 — Fix readiness promotion target
+
+**Where**
+
+```text
+products/data-cloud/lifecycle/readiness-evidence.yaml
+```
+
+**Current problem**
+
+Promotion source/target points to `936924cf...`, not the reviewed commit. 
+
+**Do**
+
+Either:
+
+```text
+Option A: regenerate evidence at efdcdd4 and update sourceCommit/targetCommit to efdcdd4
+Option B: move production-ready status back to candidate/staging-ready at efdcdd4
+```
+
+**Acceptance**
+
+Production-ready status is only present when evidence bundle target equals current commit.
+
+---
+
+### DC-P0-003 — Add readiness self-check
+
+**Where**
+
+```text
+scripts/check-data-cloud-platform-provider-readiness.mjs
+scripts/check-product-release-readiness.mjs
+products/data-cloud/lifecycle/readiness-evidence.yaml
+```
+
+**Do**
+
+Add a hard check:
+
+```text
+if readiness.status == production-ready:
+  promotion.targetCommit must equal current HEAD
+  evidenceBundle.targetCommitSha must equal current HEAD
+  all nested evidenceRun.commit values must equal current HEAD
+```
+
+**Acceptance**
+
+A commit like `efdcdd4...` would fail if it carries production-ready status but previous-commit evidence.
+
+---
+
+## P1 — Keep AEP-powered Action Plane coherent
+
+### DC-P1-001 — Keep the new Action Plane wording
+
+**Where**
+
+```text
+products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md
+products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
+products/data-cloud/ARCHITECTURE.md
+```
+
+**Do**
+
+Preserve this rule:
+
+```text
+Data-Cloud’s Action Plane is AEP-powered.
+Data-Cloud owns persisted metadata/evidence/storage integrations.
+AEP owns adaptive event-processing semantics.
+```
+
+**Acceptance**
+
+No active doc says Data-Cloud owns EventCloud, PatternSpec/EPL, `EventOperatorCapability` behavior, CEP, or adaptive learning.
+
+---
+
+### DC-P1-002 — Maintain module ownership classification
+
+**Where**
+
+```text
+products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
+.kernel/evidence/action-plane-module-inventory.json
+scripts/check-action-plane-module-inventory.mjs
+```
+
+**Do**
+
+Keep all Action Plane modules classified as:
+
+```text
+AEP-owned semantic module temporarily co-located
+Data-Cloud-owned persistence/metadata/governance module
+Temporary compatibility module
+Migration-only module
+```
+
+**Acceptance**
+
+Generated inventory evidence stays at zero violations. Current evidence reports zero violations, but it must be regenerated for HEAD. 
+
+---
+
+### DC-P1-003 — Keep non-included planned modules non-release-blocking
+
+**Where**
+
+```text
+products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md
+```
+
+**Current state**
+
+`gateway`, `k8s:multi-region`, and `agent-catalog` are present in inventory but marked `Gradle Included? no`, `planned`, and `Release Blocking? no`. 
+
+**Do**
+
+Keep that discipline. Do not mark planned modules active unless they are in generated Gradle settings and build-covered.
+
+**Acceptance**
+
+No planned module is falsely release-certified.
+
+---
+
+## P2 — Strengthen release gate enforcement
+
+### DC-P2-001 — Keep release workflow as the only production certifier
+
+**Where**
+
+```text
+.github/workflows/data-cloud-release.yml
+```
+
+**Current state**
+
+The release workflow explicitly states it is the only authoritative production certification gate and that advisory CI cannot bypass it. 
+
+**Do**
+
+Keep this. Do not allow advisory CI or local checks to mark production-ready.
+
+**Acceptance**
+
+Only `data-cloud-release.yml` can produce production promotion evidence.
+
+---
+
+### DC-P2-002 — Keep release bundle target-commit validation
+
+**Where**
+
+```text
+.github/workflows/data-cloud-release.yml
+```
+
+**Current state**
+
+The workflow now validates that `data-cloud-release-bundle.json` has `targetCommitSha` equal to `${{ github.sha }}` and `bundle.pass === true`. 
+
+**Do**
+
+Keep and expand this to validate every nested evidence item.
+
+**Acceptance**
+
+Release fails if the bundle or any nested release-blocking evidence targets a different commit.
+
+---
+
+### DC-P2-003 — Add nested evidence validation inside release bundle generator
+
+**Where**
+
+```text
+scripts/generate-data-cloud-release-bundle.mjs
+.kernel/evidence/data-cloud-release-bundle.json
+```
+
+**Do**
+
+Add validation:
+
+```text
+bundle.evidenceRun.commit == HEAD
+bundle.targetCommitSha == HEAD
+for every item.payload.evidenceRun.commit:
+  commit == HEAD
+```
+
+**Acceptance**
+
+A bundle like the one at `efdcdd4...` targeting `936924cf...` cannot pass.
+
+---
+
+## P3 — Active module and build evidence tasks
+
+### DC-P3-001 — Regenerate active-module evidence at HEAD
+
+**Where**
+
+```text
+scripts/generate-data-cloud-active-modules-evidence.mjs
+.kernel/evidence/data-cloud-active-modules.json
+```
+
+**Current state**
+
+The active-module evidence passes but targets `936924cf...`. It reports 36 active modules, 34 release-blocking modules, 2 advisory modules, and 34 release-blocking check tasks. 
+
+**Do**
+
+Regenerate at `efdcdd4...`.
+
+**Acceptance**
+
+Evidence commit equals `efdcdd4...`.
+
+---
+
+### DC-P3-002 — Require execution result for release-blocking checks
+
+**Where**
+
+```text
+scripts/generate-data-cloud-active-modules-evidence.mjs
+.github/workflows/data-cloud-release.yml
+```
+
+**Do**
+
+Ensure evidence includes actual Gradle execution result, not only generated task lists.
+
+**Acceptance**
+
+Evidence contains:
+
+```json
+{
+  "gradleExitStatus": 0,
+  "executedTasks": [...],
+  "failedTasks": [],
+  "durationMs": ...
+}
+```
+
+---
+
+### DC-P3-003 — Keep all 34 release-blocking modules checked
+
+**Where**
+
+```text
+scripts/list-data-cloud-active-modules.mjs
+.github/workflows/data-cloud-release.yml
+```
+
+**Do**
+
+Keep `--scope=release-blocking --task=check`.
+
+**Acceptance**
+
+All 34 release-blocking checks run and pass at the release commit.
+
+---
+
+## P4 — Production readiness task map tasks
+
+### DC-P4-001 — Fix task map’s current readiness claim at this commit
+
+**Where**
+
+```text
+products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md
+```
+
+**Current state**
+
+It says current readiness state is `production-ready`, but all evidence commits listed are `936924cf...`, not `efdcdd4...`. 
+
+**Do**
+
+Update task map generation so it derives readiness from:
+
+```text
+readiness-evidence.yaml status
+AND evidence bundle targetCommitSha == current HEAD
+AND all evidence commits == current HEAD
+```
+
+**Acceptance**
+
+At `efdcdd4...`, the task map must not claim release-ready unless all evidence is regenerated for `efdcdd4...`.
+
+---
+
+### DC-P4-002 — Add task-map self-consistency check
+
+**Where**
+
+```text
+scripts/check-production-readiness-task-map.mjs
+.kernel/evidence/production-readiness-task-map.json
+```
+
+**Do**
+
+Validate:
+
+```text
+Task-map Evidence Commit values match current HEAD.
+Task-map readiness state matches readiness-evidence.yaml.
+Task-map release-ready claim matches evidence bundle.
+```
+
+**Acceptance**
+
+Task map cannot say “production-ready” using previous-commit evidence.
+
+---
+
+## P5 — AEP/Action Plane semantic boundaries
+
+### DC-P5-001 — Continue preventing Data-Cloud from owning AEP semantics
+
+**Where**
+
+```text
+products/data-cloud/ARCHITECTURE.md
+products/data-cloud/docs/architecture/PLANE_ARCHITECTURE.md
+scripts/check-action-plane-boundaries.mjs
+.kernel/evidence/action-plane-boundaries.json
+```
+
+**Do**
+
+Keep forbidden semantics in non-action Data-Cloud planes:
+
+```text
+EventCloud
+PatternSpec/EPL
+EventOperatorCapability runtime
+CEP
+adaptive event runtime
+pattern learning/adaptation
+predictive/recommended lifecycle
+```
+
+**Acceptance**
+
+Boundary evidence passes at current HEAD.
+
+---
+
+### DC-P5-002 — Make AEP integration through public contracts/SPI only
+
+**Where**
+
+```text
+products/data-cloud/planes/action/event-bridge/**
+products/data-cloud/planes/event/**
+products/data-cloud/planes/shared-spi/**
+products/aep/**
+```
+
+**Do**
+
+Verify no Data-Cloud plane imports AEP implementation internals.
+
+**Acceptance**
+
+AEP-powered Action Plane remains a clean integration layer, not hidden ownership transfer.
+
+---
+
+## P6 — Agent/EventOperatorCapability tasks
+
+### DC-P6-001 — Keep capability metadata storage separate from behavior
+
+**Where**
+
+```text
+products/data-cloud/planes/action/registry/**
+products/data-cloud/planes/action/agent-runtime/**
+products/aep/docs/specs/EVENT_OPERATOR_CAPABILITY_SPEC.md
+```
+
+**Current boundary**
+
+Data-Cloud may store capability metadata and audit evidence, but must not own `EventOperatorCapability` behavior. 
+
+**Do**
+
+Ensure Data-Cloud-owned registry modules store metadata only.
+
+**Acceptance**
+
+Behavioral execution remains AEP-owned.
+
+---
+
+### DC-P6-002 — Keep agent usage audit evidence current
+
+**Where**
+
+```text
+scripts/audit-agent-usage.mjs
+.kernel/evidence/agent-usage-audit.json
+products/data-cloud/planes/action/agent-runtime/docs/AGENT_USAGE_EXCEPTIONS.md
+```
+
+**Current improvement**
+
+The commit diff shows `agent-usage-audit` now includes approved exception registry and additional approved exception patterns such as `AgentCapabilityExecutionFactory`, `AgentEventOperatorCapabilityAdapter`, and `GovernedAgentDispatcher`. 
+
+**Do**
+
+Regenerate at HEAD and keep zero violations.
+
+**Acceptance**
+
+Direct agent execution bypasses are either eliminated or explicitly approved.
+
+---
+
+## P7 — Operations, audit, and production proof
+
+### DC-P7-001 — Keep audit completeness evidence current
+
+**Where**
+
+```text
+.kernel/evidence/audit-completeness.json
+scripts/check-audit-completeness.mjs
+```
+
+**Do**
+
+Regenerate at current HEAD.
+
+**Acceptance**
+
+Audit completeness evidence commit equals release commit.
+
+---
+
+### DC-P7-002 — Keep operations readiness evidence current
+
+**Where**
+
+```text
+.kernel/evidence/data-cloud-operations-readiness.json
+scripts/check-data-cloud-operations-readiness.mjs
+products/data-cloud/docs/operations/**
+```
+
+**Do**
+
+Regenerate at current HEAD.
+
+**Acceptance**
+
+Operations readiness proof is part of release bundle and matches release commit.
+
+---
+
+# 6. Current score at `efdcdd4...`
+
+| Area                                              |  Score | Notes                                                            |
+| ------------------------------------------------- | -----: | ---------------------------------------------------------------- |
+| Boundary coherence                                |   9/10 | Excellent Data-Cloud/AEP separation.                             |
+| AEP-powered Action Plane model                    |   9/10 | Correctly documented.                                            |
+| Action Plane inventory                            |   9/10 | Much stronger; evidence exists.                                  |
+| Release workflow design                           |   9/10 | New bundle target-commit validation is strong.                   |
+| Evidence freshness at reviewed commit             |   4/10 | Evidence targets `936924cf...`, not `efdcdd4...`.                |
+| Production-ready claim truthfulness               |   5/10 | Marked production-ready, but evidence is not for current commit. |
+| Overall architecture maturity                     | 8.5/10 | Strong.                                                          |
+| Overall production readiness at this exact commit | 6.5/10 | Blocked by evidence mismatch.                                    |
+
+---
+
+# 7. Final verdict
+
+The codebase has improved materially. The latest architecture now supports the right model:
+
+> **Data-Cloud uses an AEP-powered Action Plane. Data-Cloud owns persisted metadata/evidence/storage integrations. AEP owns adaptive event-processing semantics.**
+
+That is coherent and should remain.
+
+However, at commit `efdcdd4ba4a5233556dfb53fe5e89f1477d20d46`, the production-ready designation is not fully trustworthy because the evidence bundle and readiness promotion target commit `936924cf915e366f3f0c47bee266a277601b1288`, not `efdcdd4...`.  
+
+The next fix is simple and critical: **regenerate all release evidence at `efdcdd4...` or move the production-ready promotion back to `936924cf...`.**

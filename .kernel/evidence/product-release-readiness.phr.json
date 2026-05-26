@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-25T03:41:29.612Z",
+  "generatedAt": "2026-05-26T14:55:33.505Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+    "commit": "73c0c110542226333369fe8046193139efaac158",
+    "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+    "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-  "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+  "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+  "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-26T03:41:29.642Z",
-  "expiresAt": "2026-05-27T03:41:29.642Z",
+  "reviewDueAt": "2026-05-27T14:55:33.533Z",
+  "expiresAt": "2026-05-28T14:55:33.533Z",
   "productId": "phr",
   "releaseVerdict": "pass",
   "releaseProfiles": [

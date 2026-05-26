@@ -1,20 +1,20 @@
 {
-  "generatedAt": "2026-05-25T03:41:29.543Z",
+  "generatedAt": "2026-05-26T14:55:33.435Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-product-release-readiness.mjs",
     "command": "pnpm check:product-release-readiness",
     "source": "scripts/check-product-release-readiness.mjs",
-    "commit": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-    "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+    "commit": "73c0c110542226333369fe8046193139efaac158",
+    "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+    "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
-  "targetCommitSha": "d951b48a6ee8197ec6bb24919e21134844fe30c6",
+  "sourceCommitSha": "73c0c110542226333369fe8046193139efaac158",
+  "targetCommitSha": "73c0c110542226333369fe8046193139efaac158",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-26T03:41:29.576Z",
-  "expiresAt": "2026-05-27T03:41:29.576Z",
+  "reviewDueAt": "2026-05-27T14:55:33.470Z",
+  "expiresAt": "2026-05-28T14:55:33.470Z",
   "pass": true,
   "journeyResults": [
     {
@@ -183,52 +183,52 @@
     {
       "script": "pnpm:build:kernel-lifecycle-platform",
       "status": 0,
-      "durationMs": 17897
+      "durationMs": 16330
     },
     {
       "script": "./scripts/check-affected-product-strict-release-profile.mjs",
       "status": 0,
-      "durationMs": 67
+      "durationMs": 59
     },
     {
       "script": "./scripts/check-phr-lifecycle-readiness.mjs",
       "status": 0,
-      "durationMs": 174
+      "durationMs": 165
     },
     {
       "script": "./scripts/check-phr-lifecycle-pilot.mjs",
       "status": 0,
-      "durationMs": 285
+      "durationMs": 279
     },
     {
       "script": "./scripts/check-phr-kernel-context.mjs",
       "status": 0,
-      "durationMs": 69
+      "durationMs": 53
     },
     {
       "script": "./scripts/check-phr-data-cloud-rls.mjs",
       "status": 0,
-      "durationMs": 66
+      "durationMs": 57
     },
     {
       "script": "./scripts/check-phr-emergency-access-audit.mjs",
       "status": 0,
-      "durationMs": 61
+      "durationMs": 56
     },
     {
       "script": "./scripts/check-phr-fhir-validation.mjs",
       "status": 0,
-      "durationMs": 57
+      "durationMs": 59
     },
     {
       "script": "./scripts/check-phr-hipaa-compliance.mjs",
       "status": 0,
-      "durationMs": 63
+      "durationMs": 57
     },
     {
       "script": "./scripts/check-phr-consent-cache.mjs",
       "status": 0,
-      "durationMs": 55
+      "durationMs": 65
     }
   ],
   "scopedCheckGroups": {

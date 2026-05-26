@@ -23,7 +23,7 @@ public final class PatternSpecCompiler {
     }
 
     public static CompiledPattern compile(Map<String, Object> spec) {
-        return compile(spec, null);
+        return compile(spec, null, null, null);
     }
 
     /**
@@ -34,9 +34,26 @@ public final class PatternSpecCompiler {
      * @return compiled pattern
      */
     public static CompiledPattern compile(Map<String, Object> spec, ExternalAgentCapabilityRegistry registry) {
+        return compile(spec, registry, null, null);
+    }
+
+    /**
+     * Compiles a PatternSpec with production-specific context validation.
+     *
+     * @param spec the pattern specification (map representation for backward compatibility)
+     * @param registry the capability registry for resolving capabilityRef
+     * @param commitSha the commit SHA for production truth binding
+     * @param environment the target environment (e.g., "production")
+     * @return compiled pattern
+     */
+    public static CompiledPattern compile(
+            Map<String, Object> spec,
+            ExternalAgentCapabilityRegistry registry,
+            String commitSha,
+            String environment) {
         // Parse map to typed model at boundary (DC-P5-001)
         PatternSpec typedSpec = PatternSpecParser.parse(spec);
-        return compileTyped(typedSpec, registry);
+        return compileTyped(typedSpec, registry, commitSha, environment);
     }
 
     /**
@@ -95,7 +112,26 @@ public final class PatternSpecCompiler {
      * @return compiled pattern
      */
     public static CompiledPattern compileTyped(PatternSpec spec, ExternalAgentCapabilityRegistry registry) {
-        PatternSpecValidationResult validation = PatternSpecValidator.validate(spec.toMap());
+        return compileTyped(spec, registry, null, null);
+    }
+
+    /**
+     * Compiles a typed PatternSpec with production-specific context validation.
+     *
+     * @param spec the typed pattern specification
+     * @param registry the capability registry for resolving capabilityRef
+     * @param commitSha the commit SHA for production truth binding
+     * @param environment the target environment (e.g., "production")
+     * @return compiled pattern
+     */
+    public static CompiledPattern compileTyped(
+            PatternSpec spec,
+            ExternalAgentCapabilityRegistry registry,
+            String commitSha,
+            String environment) {
+        // AEP-COMPILER-001: Pass production context to validator for lifecycle/evidence validation
+        PatternSpecValidationResult validation = PatternSpecValidator.validate(
+            spec.toMap(), commitSha, environment, registry);
         if (!validation.valid()) {
             throw new IllegalArgumentException(String.join("; ", validation.errors()));
         }

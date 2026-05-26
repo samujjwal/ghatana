@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-05-26T15:10:00.000Z",
+  "description": "Approved exceptions for direct agent runtime bypass. Each entry must be documented with justification and owner.",
+  "allowlist": {
+    "capabilityAdapters": [
+      {
+        "path": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/runtime/safety/GovernedAgentDispatcher.java",
+        "justification": "Core governed dispatcher implementation - this is the approved path for all agent execution",
+        "owner": "agent-runtime-team",
+        "approvedDate": "2026-05-26",
+        "reviewDate": "2026-08-26"
+      }
+    ],
+    "testFiles": [
+      {
+        "pattern": "**/test/**/*.java",
+        "justification": "Test files may directly instantiate agents for unit testing purposes",
+        "owner": "quality-team",
+        "approvedDate": "2026-05-26",
+        "reviewDate": "2026-08-26"
+      },
+      {
+        "pattern": "**/__tests__/**/*.java",
+        "justification": "Test files may directly instantiate agents for unit testing purposes",
+        "owner": "quality-team",
+        "approvedDate": "2026-05-26",
+        "reviewDate": "2026-08-26"
+      }
+    ],
+    "legacyExceptions": []
+  },
+  "governance": {
+    "maxExceptionCount": 5,
+    "requireJustification": true,
+    "requireOwner": true,
+    "requireReviewDate": true,
+    "autoExpireAfterDays": 90
+  }
+}

@@ -18,8 +18,8 @@ const repoRoot = path.resolve(__dirname, '..');
 const settingsPath = path.join(repoRoot, 'config/generated/settings-gradle-includes.kts');
 
 const advisoryModules = new Set([
-  ':products:data-cloud:delivery:api-contract-tests',
-  ':products:data-cloud:integration-tests',
+  // DC-E2E-001: Promoted API contract and integration tests to release-blocking
+  // These modules are now required for release to ensure E2E journey coverage
 ]);
 
 const releaseBlockingModules = new Set([
@@ -37,6 +37,8 @@ const releaseBlockingModules = new Set([
   ':products:data-cloud:contracts',
   ':products:data-cloud:extensions:agent-registry',
   ':products:data-cloud:extensions:agent-catalog',
+  ':products:data-cloud:delivery:api-contract-tests',
+  ':products:data-cloud:integration-tests',
   ':products:data-cloud:planes:intelligence:feature-ingest',
   ':products:data-cloud:planes:event:store',
   ':products:data-cloud:extensions:kernel-bridge',
