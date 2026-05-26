@@ -49,6 +49,31 @@ test('rejects JSON evidence with stale evidenceRun.commit', () => {
   }
 });
 
+test('can skip product release readiness files during product readiness bootstrap', () => {
+  const root = tempRepo();
+  try {
+    write(root, '.kernel/evidence/product-release-readiness.json', {
+      evidenceRun: { commit: 'b'.repeat(40) },
+    });
+    write(root, '.kernel/evidence/product-release-readiness.phr.json', {
+      evidenceRun: { commit: 'b'.repeat(40) },
+    });
+    write(root, '.kernel/evidence/data-cloud-release-runtime-profile.json', {
+      evidenceRun: { commit: 'a'.repeat(40) },
+    });
+
+    assert.deepEqual(
+      findEvidenceCurrentCommitViolations(root, {
+        expectedCommit: 'a'.repeat(40),
+        skipProductReleaseReadiness: true,
+      }),
+      [],
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('rejects malformed evidenceRun.commit values', () => {
   const root = tempRepo();
   try {

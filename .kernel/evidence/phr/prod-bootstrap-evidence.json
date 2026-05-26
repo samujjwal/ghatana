@@ -3,11 +3,11 @@
   "productId": "phr",
   "environment": "prod",
   "targetEnv": "prod",
-  "generatedAt": "2026-05-26T00:47:59.326Z",
-  "commitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "generatedAt": "2026-05-26T04:16:27.682Z",
+  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-26T00:47:59.326Z",
+    "validatedAt": "2026-05-26T04:16:27.682Z",
     "failClosed": true,
     "postgres": {
       "status": "ready",
@@ -148,7 +148,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-26T00:47:59.326Z",
+    "validatedAt": "2026-05-26T04:16:27.682Z",
     "validationMethod": "automated-bootstrap-verification-script",
     "validationScript": "scripts/check-phr-lifecycle-readiness.mjs",
     "allComponentsExecutable": true,
@@ -236,6 +236,6 @@
     ".kernel/evidence/phr/phr-lifecycle-evidence-pack.json",
     ".kernel/evidence/phr/staging-bootstrap-evidence.json"
   ],
-  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303"
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
 }

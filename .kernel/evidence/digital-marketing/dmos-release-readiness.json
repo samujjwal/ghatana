@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
   "productName": "Digital Marketing Operations System",
-  "checkedAt": "2026-05-26T00:48:56.155Z",
+  "checkedAt": "2026-05-26T04:07:29.636Z",
   "releaseReadiness": {
     "status": "ready",
     "overallScore": 9,
@@ -126,7 +126,7 @@
     },
     "persistence": {
       "status": "passed",
-      "lastChecked": "2026-05-26T00:48:28.977Z",
+      "lastChecked": "2026-05-26T04:06:30.431Z",
       "evidenceRefs": [
         "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml",
         ".kernel/evidence/digital-marketing/database-module-evidence.json",
@@ -143,7 +143,7 @@
     },
     "connector": {
       "status": "passed",
-      "lastChecked": "2026-05-26T00:48:56.155Z",
+      "lastChecked": "2026-05-26T04:07:29.636Z",
       "evidenceRefs": [
         "products/digital-marketing/lifecycle/gate-packs/connector-google-ads-proof.yaml",
         "products/digital-marketing/src/test/java/com/ghatana/digitalmarketing/connector/GoogleAdsConnectorProofTest.java",
@@ -175,7 +175,7 @@
     },
     "deployment": {
       "status": "passed",
-      "lastChecked": "2026-05-26T00:48:56.155Z",
+      "lastChecked": "2026-05-26T04:07:29.636Z",
       "evidenceRefs": [
         ".kernel/out/products/digital-marketing/deploy/2026-05-23T14-07-04-2f134454/deployment-manifest.json",
         ".kernel/evidence/digital-marketing/staging-bootstrap-evidence.json",
@@ -274,18 +274,18 @@
     "overallStatus": "passed"
   },
   "nextRequiredWork": [],
-  "generatedAt": "2026-05-26T00:48:56.155Z",
+  "generatedAt": "2026-05-26T04:07:29.636Z",
   "evidenceRun": {
     "generatedBy": "scripts/check:digital-marketing-lifecycle-pilot",
     "command": "pnpm check:digital-marketing-lifecycle-pilot",
     "source": ".kernel/evidence/digital-marketing/dmos-release-readiness.json",
-    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "reviewDueAt": "2026-05-26T19:37:55.288Z",

@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
-  "generatedAt": "2026-05-26T00:48:56.155Z",
-  "commitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "generatedAt": "2026-05-26T04:07:29.636Z",
+  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "oauthConfigured": true,
   "tokenRefreshEnabled": true,
   "idempotencyKeysEnabled": true,
@@ -35,8 +35,8 @@
   },
   "evidenceFreshness": {
     "status": "current",
-    "lastVerifiedAt": "2026-05-26T00:48:56.155Z",
-    "verifiedAtCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "lastVerifiedAt": "2026-05-26T04:07:29.636Z",
+    "verifiedAtCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
     "nextReviewDueAt": "2026-08-24T00:00:00.000Z",
     "reviewCadence": "quarterly",
     "verificationMethod": "automated-connector-runtime-proof-and-env-bootstrap-validation",
@@ -51,16 +51,16 @@
     "products/digital-marketing/dm-api/src/test/java/com/ghatana/digitalmarketing/api/DmosConnectorReadinessServletTest.java"
   ],
   "validationStatus": {
-    "validatedAt": "2026-05-26T00:48:56.155Z",
+    "validatedAt": "2026-05-26T04:07:29.636Z",
     "overallStatus": "passed",
     "allProductionGuaranteesMet": true,
     "stagingSandboxMode": true,
     "prodProductionMode": true
   },
-  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "executableProof": {
-    "validatedAt": "2026-05-26T00:48:56.155Z",
+    "validatedAt": "2026-05-26T04:07:29.636Z",
     "commands": [
       "./gradlew :products:digital-marketing:dm-application:test --rerun-tasks --tests com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsConnectorReadinessServiceImplTest",
       "./gradlew :products:digital-marketing:dm-api:test --rerun-tasks --tests com.ghatana.digitalmarketing.api.DmosConnectorReadinessServletTest"

@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-05-26T00:53:03.198Z",
-  "sourceCommit": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "generatedAt": "2026-05-26T04:19:39.508Z",
+  "sourceCommit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "sourceBranch": "main",
   "productScope": [
-    "data-cloud"
+    "phr"
   ],
   "releaseEnvironment": "staging",
   "releaseGate": {

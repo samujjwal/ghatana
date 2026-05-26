@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-26T00:51:15.635Z",
+  "generatedAt": "2026-05-26T04:00:20.431Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
     "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
     "command": "pnpm check:data-cloud-security-sbom-proof",
-    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
   },
   "source": {
     "workflow": ".github/workflows/data-cloud-release.yml"

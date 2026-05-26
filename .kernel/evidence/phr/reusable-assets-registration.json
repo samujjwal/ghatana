@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-26T03:33:23.511Z",
-  "commitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+  "generatedAt": "2026-05-26T04:13:20.766Z",
+  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "promotionPolicy": {
     "promotionRequires": [
       "test_coverage_gte_80",
@@ -12,8 +12,8 @@
       "rollback_evidence_present",
       "no_pending_blocking_issues"
     ],
-    "promotionLockSha": "af0793843502db5f34c0ba7f00043261b3c86982",
-    "lockedAt": "2026-05-26T03:33:23.511Z",
+    "promotionLockSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "lockedAt": "2026-05-26T04:13:20.766Z",
     "promotionApprovedBy": "phr-team-lead",
     "allAssetsLockedForPromotion": true
   },
@@ -36,8 +36,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -103,8 +103,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -168,8 +168,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -233,8 +233,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -299,8 +299,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -363,8 +363,8 @@
       "last_used_at": null,
       "promotion_status": "promoted",
       "promotion_lock": {
-        "lockedAt": "2026-05-26T03:33:23.511Z",
-        "lockedAtSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+        "lockedAt": "2026-05-26T04:13:20.766Z",
+        "lockedAtSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "promotionTarget": "shared-package",
         "approvedBy": "phr-team-lead",
         "stagingBootstrapValidated": true,
@@ -414,16 +414,16 @@
       }
     }
   ],
-  "sourceCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
-  "targetCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "expiresAt": "2026-08-23T00:00:00.000Z",
   "evidenceRun": {
-    "commit": "af0793843502db5f34c0ba7f00043261b3c86982",
-    "generatedAt": "2026-05-26T03:33:23.511Z",
+    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "generatedAt": "2026-05-26T04:13:20.766Z",
     "source": "product-family-asset-registry",
-    "sourceCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982",
-    "targetCommitSha": "af0793843502db5f34c0ba7f00043261b3c86982"
+    "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
   }
 }

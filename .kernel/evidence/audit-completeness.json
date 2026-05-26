@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-26T00:51:15.888Z",
+  "generatedAt": "2026-05-26T04:00:20.676Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-audit-completeness.mjs",
     "source": "scripts/check-audit-completeness.mjs",
     "command": "pnpm check:audit-completeness",
-    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
   },
   "summary": {
     "requiredFileCount": 10,

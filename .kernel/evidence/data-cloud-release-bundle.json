@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-05-26T00:52:54.766Z",
+  "generatedAt": "2026-05-26T04:19:38.497Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/generate-data-cloud-release-bundle.mjs",
     "source": "scripts/generate-data-cloud-release-bundle.mjs",
     "command": "pnpm generate:data-cloud-release-bundle",
-    "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-    "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
-  "reviewDueAt": "2026-05-27T00:52:54.766Z",
-  "expiresAt": "2026-05-28T00:52:54.766Z",
+  "reviewDueAt": "2026-05-27T04:19:38.497Z",
+  "expiresAt": "2026-05-28T04:19:38.497Z",
   "summary": {
     "itemCount": 23,
     "presentItems": 23,
@@ -26,13 +26,13 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-active-modules.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:13.055Z",
+        "generatedAt": "2026-05-26T04:00:16.174Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "source": "scripts/generate-data-cloud-active-modules-evidence.mjs",
           "command": "pnpm check:data-cloud-active-module-evidence",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "source": {
           "settings": "config/generated/settings-gradle-includes.kts",
@@ -432,13 +432,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-boundaries.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:13.437Z",
+        "generatedAt": "2026-05-26T04:00:17.069Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-boundaries.mjs",
           "source": "scripts/check-action-plane-boundaries.mjs",
           "command": "pnpm check:action-plane-boundaries",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "scope": {
           "scannedRoots": [
@@ -497,13 +497,13 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-module-inventory.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:13.933Z",
+        "generatedAt": "2026-05-26T04:00:18.137Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-action-plane-module-inventory.mjs",
           "source": "scripts/check-action-plane-module-inventory.mjs",
           "command": "pnpm check:action-plane-module-inventory",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "source": {
           "inventory": "products/data-cloud/docs/architecture/ACTION_PLANE_MODULE_INVENTORY.md",
@@ -684,23 +684,23 @@
       "present": true,
       "path": ".kernel/evidence/production-readiness-task-map.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:15.392Z",
+        "generatedAt": "2026-05-26T04:00:20.184Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-production-readiness-task-map.mjs",
           "source": "scripts/check-production-readiness-task-map.mjs",
           "command": "pnpm check:production-readiness-task-map",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-        "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+        "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+        "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "targetEnvironment": "staging",
         "validationStatus": "validated",
-        "reviewDueAt": "2026-05-27T00:51:15.392Z",
-        "expiresAt": "2026-05-28T00:51:15.392Z",
+        "reviewDueAt": "2026-05-27T04:00:20.184Z",
+        "expiresAt": "2026-05-28T04:00:20.184Z",
         "source": {
           "taskMap": "products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md",
           "readiness": "products/data-cloud/lifecycle/readiness-evidence.yaml",
@@ -916,13 +916,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-capability-duplicates.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:14.290Z",
+        "generatedAt": "2026-05-26T04:00:18.710Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-capability-duplicates.mjs",
           "source": "scripts/check-agent-capability-duplicates.mjs",
           "command": "pnpm check:agent-capability-duplicates",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "summary": {
           "scannedScopes": 15,
@@ -935,13 +935,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-runtime-test-excludes.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:14.742Z",
+        "generatedAt": "2026-05-26T04:00:19.468Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-agent-runtime-test-excludes.mjs",
           "source": "scripts/check-agent-runtime-test-excludes.mjs",
           "command": "pnpm check:agent-runtime-test-excludes",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "summary": {
           "gradleFile": "products/data-cloud/planes/action/agent-runtime/build.gradle.kts",
@@ -954,13 +954,13 @@
       "present": true,
       "path": ".kernel/evidence/agent-usage-audit.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:14.985Z",
+        "generatedAt": "2026-05-26T04:00:19.743Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/audit-agent-usage.mjs",
           "source": "scripts/audit-agent-usage.mjs",
           "command": "pnpm check:agent-usage-audit",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "summary": {
           "scannedDirectories": 7,
@@ -995,13 +995,13 @@
       "present": true,
       "path": ".kernel/evidence/audit-completeness.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:15.888Z",
+        "generatedAt": "2026-05-26T04:00:20.676Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-audit-completeness.mjs",
           "source": "scripts/check-audit-completeness.mjs",
           "command": "pnpm check:audit-completeness",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "summary": {
           "requiredFileCount": 10,
@@ -1073,13 +1073,13 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-operations-readiness.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:16.122Z",
+        "generatedAt": "2026-05-26T04:00:20.974Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
           "source": "scripts/check-data-cloud-operations-readiness.mjs",
           "command": "pnpm check:data-cloud-operations-readiness",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "summary": {
           "requiredFileCount": 15,
@@ -1120,22 +1120,22 @@
       "present": true,
       "path": ".kernel/evidence/product-release-readiness.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:52:45.795Z",
+        "generatedAt": "2026-05-26T04:18:02.253Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-product-release-readiness.mjs",
           "command": "pnpm check:product-release-readiness",
           "source": "scripts/check-product-release-readiness.mjs",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-        "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+        "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+        "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "targetEnvironment": "staging",
         "validationStatus": "validated",
-        "reviewDueAt": "2026-05-27T00:52:45.802Z",
-        "expiresAt": "2026-05-28T00:52:45.802Z",
+        "reviewDueAt": "2026-05-27T04:18:02.278Z",
+        "expiresAt": "2026-05-28T04:18:02.278Z",
         "pass": true,
         "journeyResults": [
           {
@@ -1304,142 +1304,157 @@
           {
             "script": "pnpm:build:kernel-lifecycle-platform",
             "status": 0,
-            "durationMs": 5826
+            "durationMs": 6606
           },
           {
             "script": "pnpm:check:aggregate-gate-integrity",
             "status": 0,
-            "durationMs": 386
+            "durationMs": 279
           },
           {
             "script": "./scripts/check-release-profile-local-targets.mjs",
             "status": 0,
-            "durationMs": 48
+            "durationMs": 57
           },
           {
             "script": "./scripts/check-product-family-asset-registry.mjs",
             "status": 0,
-            "durationMs": 61
+            "durationMs": 70
           },
           {
             "script": "./scripts/check-affected-product-strict-release-profile.mjs",
             "status": 0,
-            "durationMs": 52
+            "durationMs": 58
           },
           {
             "script": "./scripts/check-kernel-platform-lifecycle.mjs",
             "status": 0,
-            "durationMs": 30396
+            "durationMs": 42746
           },
           {
             "script": "./scripts/check-kernel-lifecycle-truth.mjs",
             "status": 0,
-            "durationMs": 50
+            "durationMs": 98
           },
           {
             "script": "./scripts/check-toolchain-adapter-contracts.mjs",
             "status": 0,
-            "durationMs": 48
+            "durationMs": 121
           },
           {
             "script": "./scripts/check-product-artifact-contracts.mjs",
             "status": 0,
-            "durationMs": 75
+            "durationMs": 166
           },
           {
             "script": "./scripts/check-product-deployment-contracts.mjs",
             "status": 0,
-            "durationMs": 77
+            "durationMs": 130
           },
           {
             "script": "./scripts/check-product-environment-contracts.mjs",
             "status": 0,
-            "durationMs": 48
+            "durationMs": 93
           },
           {
             "script": "./scripts/check-product-shape-capability-matrix.mjs",
             "status": 0,
-            "durationMs": 51
+            "durationMs": 300
           },
           {
             "script": "./scripts/check-product-registry-drift.mjs",
             "status": 0,
-            "durationMs": 49
+            "durationMs": 108
           },
           {
             "script": "./scripts/check-product-release-evidence-packs.mjs",
             "status": 0,
-            "durationMs": 50
+            "durationMs": 114
           },
           {
             "script": "./scripts/check-product-ci-matrices.mjs",
             "status": 0,
-            "durationMs": 51
+            "durationMs": 120
           },
           {
             "script": "./scripts/check-product-slo-budgets.mjs",
             "status": 0,
-            "durationMs": 52
+            "durationMs": 112
           },
           {
             "script": "./scripts/check-product-cost-budgets.mjs",
             "status": 0,
-            "durationMs": 53
+            "durationMs": 100
           },
           {
             "script": "./scripts/check-product-domain-invariants.mjs",
             "status": 0,
-            "durationMs": 112
+            "durationMs": 208
           },
           {
             "script": "./scripts/check-product-a11y-route-matrix.mjs",
             "status": 0,
-            "durationMs": 60
+            "durationMs": 100
           },
           {
             "script": "./scripts/check-openapi-release-quality.mjs",
             "status": 0,
-            "durationMs": 56
+            "durationMs": 93
           },
           {
             "script": "./scripts/check-openapi-breaking-changes.mjs",
             "status": 0,
-            "durationMs": 232
-          },
-          {
-            "script": "pnpm:check:data-cloud-release-gate",
-            "status": 0,
-            "durationMs": 63148
-          },
-          {
-            "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
-            "status": 0,
-            "durationMs": 29706
-          },
-          {
-            "script": "./scripts/check-data-cloud-ui-a11y.mjs",
-            "status": 0,
-            "durationMs": 52
-          },
-          {
-            "script": "./scripts/check-data-cloud-platform-providers.mjs",
-            "status": 0,
-            "durationMs": 213
+            "durationMs": 397
           },
           {
             "script": "./scripts/check-data-cloud-platform-provider-readiness.mjs",
             "status": 0,
-            "durationMs": 89
+            "durationMs": 139
           },
           {
-            "script": "./scripts/check-action-plane-route-lifecycle.mjs",
+            "script": "./scripts/check-data-cloud-release-runtime-profile.mjs",
             "status": 0,
-            "durationMs": 117
+            "durationMs": 140849
           },
           {
-            "script": "./scripts/check-data-cloud-maturity-proof.mjs",
+            "script": "./scripts/check-phr-lifecycle-readiness.mjs",
             "status": 0,
-            "durationMs": 556
+            "durationMs": 81
+          },
+          {
+            "script": "./scripts/check-phr-lifecycle-pilot.mjs",
+            "status": 0,
+            "durationMs": 169
+          },
+          {
+            "script": "./scripts/check-phr-kernel-context.mjs",
+            "status": 0,
+            "durationMs": 75
+          },
+          {
+            "script": "./scripts/check-phr-data-cloud-rls.mjs",
+            "status": 0,
+            "durationMs": 209
+          },
+          {
+            "script": "./scripts/check-phr-emergency-access-audit.mjs",
+            "status": 0,
+            "durationMs": 84
+          },
+          {
+            "script": "./scripts/check-phr-fhir-validation.mjs",
+            "status": 0,
+            "durationMs": 90
+          },
+          {
+            "script": "./scripts/check-phr-hipaa-compliance.mjs",
+            "status": 0,
+            "durationMs": 74
+          },
+          {
+            "script": "./scripts/check-phr-consent-cache.mjs",
+            "status": 0,
+            "durationMs": 94551
           }
         ],
         "scopedCheckGroups": {
@@ -1538,7 +1553,7 @@
           "polyglot-service-release"
         ],
         "affectedProducts": [
-          "data-cloud"
+          "phr"
         ],
         "perProductBlockingGaps": [],
         "scopedExecution": true,
@@ -1563,13 +1578,16 @@
           "./scripts/check-product-a11y-route-matrix.mjs",
           "./scripts/check-openapi-release-quality.mjs",
           "./scripts/check-openapi-breaking-changes.mjs",
-          "pnpm:check:data-cloud-release-gate",
-          "./scripts/check-data-cloud-release-runtime-profile.mjs",
-          "./scripts/check-data-cloud-ui-a11y.mjs",
-          "./scripts/check-data-cloud-platform-providers.mjs",
           "./scripts/check-data-cloud-platform-provider-readiness.mjs",
-          "./scripts/check-action-plane-route-lifecycle.mjs",
-          "./scripts/check-data-cloud-maturity-proof.mjs"
+          "./scripts/check-data-cloud-release-runtime-profile.mjs",
+          "./scripts/check-phr-lifecycle-readiness.mjs",
+          "./scripts/check-phr-lifecycle-pilot.mjs",
+          "./scripts/check-phr-kernel-context.mjs",
+          "./scripts/check-phr-data-cloud-rls.mjs",
+          "./scripts/check-phr-emergency-access-audit.mjs",
+          "./scripts/check-phr-fhir-validation.mjs",
+          "./scripts/check-phr-hipaa-compliance.mjs",
+          "./scripts/check-phr-consent-cache.mjs"
         ]
       }
     },
@@ -1578,12 +1596,12 @@
       "path": ".kernel/evidence/ai-governance-behavioral-proof/ai-governance-behavioral-proof-latest.json",
       "payload": {
         "timestamp": "generated-on-demand",
-        "generatedAt": "2026-05-26T00:52:28.954Z",
+        "generatedAt": "2026-05-26T04:15:31.030Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
           "command": "pnpm check:ai-governance-behavioral-proof",
           "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "violations": [],
         "warnings": [],
@@ -1601,7 +1619,7 @@
       "present": true,
       "path": ".kernel/evidence/openapi-breaking-changes.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:11.888Z",
+        "generatedAt": "2026-05-26T04:14:05.815Z",
         "status": "passed",
         "details": [
           {
@@ -1656,7 +1674,7 @@
       "present": true,
       "path": ".kernel/evidence/action-plane-route-lifecycle.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:52:45.216Z",
+        "generatedAt": "2026-05-26T04:16:26.119Z",
         "productId": "data-cloud",
         "area": "action-plane-route-lifecycle",
         "targetScore": 5,
@@ -1704,22 +1722,22 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-release-runtime-profile.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:52:44.735Z",
+        "generatedAt": "2026-05-26T04:16:26.808Z",
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-release-runtime-profile.mjs",
           "command": "pnpm check:data-cloud-release-runtime-profile",
           "source": "scripts/check-data-cloud-release-runtime-profile.mjs",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-          "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+          "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
           "targetEnvironment": "staging"
         },
-        "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-        "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+        "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+        "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
         "targetEnvironment": "staging",
         "validationStatus": "validated",
-        "reviewDueAt": "2026-05-27T00:52:44.735Z",
-        "expiresAt": "2026-05-28T00:52:44.735Z",
+        "reviewDueAt": "2026-05-27T04:16:26.808Z",
+        "expiresAt": "2026-05-28T04:16:26.808Z",
         "checks": [
           {
             "check": "Runtime dependency failure-injection executable",
@@ -2105,13 +2123,13 @@
       "present": true,
       "path": ".kernel/evidence/data-cloud-security-sbom-proof.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:15.635Z",
+        "generatedAt": "2026-05-26T04:00:20.431Z",
         "pass": true,
         "evidenceRun": {
           "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
           "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
           "command": "pnpm check:data-cloud-security-sbom-proof",
-          "commit": "704c9c2dcf5d81319589da2578c6a88c92451303"
+          "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
         },
         "source": {
           "workflow": ".github/workflows/data-cloud-release.yml"
@@ -2230,7 +2248,7 @@
       "present": true,
       "path": ".kernel/evidence/product-cost-budgets.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:11.433Z",
+        "generatedAt": "2026-05-26T04:14:05.032Z",
         "status": "passed",
         "activeBusinessProducts": [
           "dcmaar",
@@ -2247,7 +2265,7 @@
       "present": true,
       "path": ".kernel/evidence/product-domain-invariants.json",
       "payload": {
-        "generatedAt": "2026-05-26T00:51:11.545Z",
+        "generatedAt": "2026-05-26T04:14:05.241Z",
         "status": "passed",
         "coverage": [
           {
@@ -2261,7 +2279,7 @@
           {
             "productId": "digital-marketing",
             "hasInvariantDeclaration": false,
-            "javaTestCount": 301,
+            "javaTestCount": 303,
             "tsTestCount": 50,
             "invariantNamedTestCount": 106
           },

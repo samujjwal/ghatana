@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "digital-marketing",
-  "generatedAt": "2026-05-26T00:48:28.977Z",
-  "commitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "generatedAt": "2026-05-26T04:06:30.431Z",
+  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "tenantIsolation": true,
   "dataIntegrityConstraints": true,
   "isolationMode": "row-level-security",
@@ -18,10 +18,10 @@
     "products/digital-marketing/lifecycle/gate-packs/persistence-proof.yaml",
     "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java"
   ],
-  "sourceCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
-  "targetCommitSha": "704c9c2dcf5d81319589da2578c6a88c92451303",
+  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
   "executableProof": {
-    "validatedAt": "2026-05-26T00:48:28.977Z",
+    "validatedAt": "2026-05-26T04:06:30.431Z",
     "command": "./gradlew :products:digital-marketing:dm-persistence:test --rerun-tasks --tests com.ghatana.digitalmarketing.persistence.PostgresCampaignRepositoryIT",
     "tests": [
       "products/digital-marketing/dm-persistence/src/test/java/com/ghatana/digitalmarketing/persistence/PostgresCampaignRepositoryIT.java"
