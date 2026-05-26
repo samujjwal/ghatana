@@ -2,12 +2,22 @@ import React from 'react';
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { usePhrAccess } from './auth/PhrAccessContext';
+import { usePhrSession } from './auth/PhrSessionContext';
 import { isRouteAllowedForRole, phrRouteContracts } from './routeManifest';
 import { attachPhrRouteElement, type PhrRouteManifestEntry } from './phrRouteElements';
 import { LoginPage } from './pages/LoginPage';
 
+/**
+ * Guards a route by checking the session is authenticated and the role
+ * meets the route minimum. Unauthenticated requests redirect to /login.
+ */
 export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
   const { role } = usePhrAccess();
+  const { isAuthenticated } = usePhrSession();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (!isRouteAllowedForRole(route, role)) {
     return (

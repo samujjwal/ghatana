@@ -83,3 +83,96 @@ export interface PhrReleaseReadiness {
   };
   sections: Record<string, PhrReleaseReadinessSection>;
 }
+
+// ─── Audit ────────────────────────────────────────────────────────────────
+
+export interface AuditEvent {
+  id: string;
+  tenantId: string;
+  eventType: string;
+  principal: string;
+  resourceType: string;
+  resourceId: string | null;
+  timestamp: string;
+  success: boolean;
+  details: Record<string, string>;
+}
+
+export interface AuditEventsPage {
+  events: AuditEvent[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// ─── Consent management ───────────────────────────────────────────────────
+
+export interface ConsentGrantRequest {
+  patientId: string;
+  granteeId: string;
+  purpose: string;
+  resourceTypes: string[];
+  expiresAt: string;
+}
+
+export interface ConsentRevokeResult {
+  grantId: string;
+  status: 'REVOKED';
+}
+
+// ─── Appointment creation ─────────────────────────────────────────────────
+
+export interface AppointmentRequest {
+  specialty: string;
+  preferredDate: string;
+  notes?: string;
+}
+
+export interface AppointmentCreateResult {
+  id: string;
+  status: 'requested' | 'confirmed' | 'cancelled';
+  specialty: string;
+  preferredDate: string;
+  createdAt: string;
+}
+
+// ─── Emergency access ─────────────────────────────────────────────────────
+
+export interface EmergencyAccessRequest {
+  patientId: string;
+  reason: string;
+  clinicianId: string;
+}
+
+export interface EmergencyAccessEvent {
+  id: string;
+  patientId: string;
+  clinicianId: string;
+  reason: string;
+  status: 'PENDING' | 'REVIEWED' | 'EXPIRED';
+  accessedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNote?: string;
+}
+
+export interface EmergencyReviewRequest {
+  eventId: string;
+  reviewNote: string;
+  reviewerId: string;
+}
+
+// ─── Auth session ─────────────────────────────────────────────────────────
+
+export interface PhrSession {
+  principalId: string;
+  tenantId: string;
+  role: 'patient' | 'caregiver' | 'clinician' | 'admin';
+  name: string;
+  expiresAt: string;
+}
+
+export interface PhrLoginRequest {
+  nationalId: string;
+  password: string;
+}

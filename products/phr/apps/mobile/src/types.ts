@@ -32,3 +32,13 @@ export interface MobileDashboard {
   consents: MobileConsent[];
   notifications: MobileNotificationItem[];
 }
+
+// ─── Auth session ─────────────────────────────────────────────────────────
+
+export interface MobileSession {
+  principalId: string;
+  tenantId: string;
+  role: 'patient' | 'caregiver' | 'clinician' | 'admin';
+  name: string;
+  expiresAt: string;
+}

@@ -1,20 +1,22 @@
 {
   "timestamp": "generated-on-demand",
-  "generatedAt": "2026-05-26T14:18:06.838Z",
+  "generatedAt": "2026-05-26T17:29:58.326Z",
   "evidenceRun": {
     "generatedBy": "scripts/check-ai-governance-behavioral-proof.mjs",
     "command": "pnpm check:ai-governance-behavioral-proof",
     "source": "scripts/check-ai-governance-behavioral-proof.mjs",
-    "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
   },
   "violations": [],
   "warnings": [],
   "evidence": [
     "Data Cloud: Executed real AI governance behavioral scenarios"
   ],
+  "scenarioEvidence": [],
   "summary": {
     "totalViolations": 0,
     "totalWarnings": 0,
-    "totalEvidence": 1
+    "totalEvidence": 1,
+    "totalScenarioEvidence": 0
   }
 }

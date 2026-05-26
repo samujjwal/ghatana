@@ -6,6 +6,12 @@ export interface PhrRouteContract extends ProductRouteCapability {
   readonly personas?: readonly string[];
   readonly tiers?: readonly string[];
   readonly emergencyAction?: boolean;
+  /**
+   * When present and set to `true`, this route is behind a feature flag and
+   * is not yet production-ready. The router renders a `FeatureFlagPage`
+   * placeholder instead of the real page component.
+   */
+  readonly featureFlag?: boolean;
 }
 
 export const PHR_ROLE_ORDER: Readonly<Record<PhrRole, number>> = {
@@ -143,6 +149,59 @@ export const phrRouteContracts = [
     tiers: ['core'],
     actions: ['view-records'],
     cards: [],
+  },
+
+  // ── Feature-flagged routes (not yet production-ready) ──────────────────────
+  // These routes are visible in the IA but render a "coming soon" placeholder
+  // until the backing service is promoted to production.
+
+  {
+    path: '/provider/dashboard',
+    label: t('route.provider.dashboard.label'),
+    description: t('route.provider.dashboard.description'),
+    group: t('route.group.provider'),
+    minimumRole: 'clinician',
+    personas: ['clinician', 'admin'],
+    tiers: ['clinical'],
+    actions: ['view-provider-dashboard'],
+    cards: ['provider-panel'],
+    featureFlag: true,
+  },
+  {
+    path: '/provider/patients',
+    label: t('route.provider.patients.label'),
+    description: t('route.provider.patients.description'),
+    group: t('route.group.provider'),
+    minimumRole: 'clinician',
+    personas: ['clinician', 'admin'],
+    tiers: ['clinical'],
+    actions: ['view-patient-list'],
+    cards: ['patient-roster'],
+    featureFlag: true,
+  },
+  {
+    path: '/caregiver/dependents',
+    label: t('route.caregiver.dependents.label'),
+    description: t('route.caregiver.dependents.description'),
+    group: t('route.group.caregiver'),
+    minimumRole: 'caregiver',
+    personas: ['caregiver', 'admin'],
+    tiers: ['core'],
+    actions: ['view-dependents'],
+    cards: ['dependent-summaries'],
+    featureFlag: true,
+  },
+  {
+    path: '/fchv/dashboard',
+    label: t('route.fchv.dashboard.label'),
+    description: t('route.fchv.dashboard.description'),
+    group: t('route.group.fchv'),
+    minimumRole: 'caregiver',
+    personas: ['caregiver', 'admin'],
+    tiers: ['core'],
+    actions: ['view-fchv-dashboard'],
+    cards: ['community-health-summary'],
+    featureFlag: true,
   },
 ] as const satisfies readonly PhrRouteContract[];
 

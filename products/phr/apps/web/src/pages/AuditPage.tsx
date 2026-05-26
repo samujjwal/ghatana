@@ -3,98 +3,75 @@
  *
  * Displays immutable access history for patient data, including
  * access events, consent grants, and consent revocations.
+ * Queries the real PHR audit/evidence API â€” no mock data.
  *
  * @doc.type page
  * @doc.purpose Audit page for immutable access history
  * @doc.layer frontend
  */
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { fetchAuditEvents } from '../api/phrApi';
 import { formatPhrDateTime, t } from '../i18n/phrI18n';
+import type { AuditEvent } from '../types';
 
-interface AuditEvent {
-  id: string;
-  tenantId: string;
-  eventType: string;
-  principal: string;
-  resourceType: string;
-  resourceId: string | null;
-  timestamp: string;
-  success: boolean;
-  details: Record<string, string>;
-}
+type AuditFilter = 'all' | 'access' | 'consent' | 'emergency';
 
 export function AuditPage(): React.ReactElement {
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'access' | 'consent'>('all');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<AuditFilter>('all');
 
-  useEffect(() => {
-    // Simulate loading audit events
-    const mockEvents: AuditEvent[] = [
-      {
-        id: '1',
-        tenantId: 'tenant-1',
-        eventType: 'PATIENT_READ',
-        principal: 'provider-1',
-        resourceType: 'Patient',
-        resourceId: 'patient-1',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        success: true,
-        details: { classification: 'C3' },
-      },
-      {
-        id: '2',
-        tenantId: 'tenant-1',
-        eventType: 'CONSENT_GRANTED',
-        principal: 'patient-1',
-        resourceType: 'Consent',
-        resourceId: 'consent-1',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        success: true,
-        details: { grantee: 'provider-1', action: 'PATIENT_READ' },
-      },
-    ];
-    
-    setTimeout(() => {
-      setAuditEvents(mockEvents);
-      setLoading(false);
-    }, 500);
+  const loadAuditEvents = useCallback((activeFilter: AuditFilter): void => {
+    setLoading(true);
+    setError(null);
+    fetchAuditEvents({ filter: activeFilter })
+      .then((page) => {
+        setAuditEvents(page.events);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t('audit.loading'));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  const filteredEvents = auditEvents.filter((event) => {
-    if (filter === 'all') return true;
-    if (filter === 'access') return event.eventType.includes('READ') || event.eventType.includes('WRITE');
-    if (filter === 'consent') return event.eventType.includes('CONSENT');
-    return true;
-  });
+  useEffect(() => {
+    loadAuditEvents(filter);
+  }, [filter, loadAuditEvents]);
+
+  const handleFilterChange = (nextFilter: AuditFilter): void => {
+    setFilter(nextFilter);
+  };
+
+  const filterButtons: Array<{ key: AuditFilter; label: string }> = [
+    { key: 'all', label: t('audit.filter.all') },
+    { key: 'access', label: t('audit.filter.access') },
+    { key: 'consent', label: t('audit.filter.consent') },
+  ];
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">{t('audit.title')}</h1>
-      
+
       <div className="mb-6 flex gap-4">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-        >
-          {t('audit.filter.all')}
-        </button>
-        <button
-          onClick={() => setFilter('access')}
-          className={`px-4 py-2 rounded ${filter === 'access' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-        >
-          {t('audit.filter.access')}
-        </button>
-        <button
-          onClick={() => setFilter('consent')}
-          className={`px-4 py-2 rounded ${filter === 'consent' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-        >
-          {t('audit.filter.consent')}
-        </button>
+        {filterButtons.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => handleFilterChange(key)}
+            aria-pressed={filter === key}
+            className={`px-4 py-2 rounded ${filter === key ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
         <div className="text-center py-8">{t('audit.loading')}</div>
+      ) : error ? (
+        <div role="alert" className="text-center py-8 text-red-700">{error}</div>
       ) : (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -121,7 +98,7 @@ export function AuditPage(): React.ReactElement {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredEvents.map((event) => (
+              {auditEvents.map((event) => (
                 <tr key={event.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatPhrDateTime(event.timestamp)}
@@ -134,7 +111,7 @@ export function AuditPage(): React.ReactElement {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {event.resourceType}
-                    {event.resourceId && ` (${event.resourceId})`}
+                    {event.resourceId !== null && ` (${event.resourceId})`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span
@@ -158,8 +135,8 @@ export function AuditPage(): React.ReactElement {
               ))}
             </tbody>
           </table>
-          
-          {filteredEvents.length === 0 && (
+
+          {auditEvents.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               {t('audit.empty')}
             </div>

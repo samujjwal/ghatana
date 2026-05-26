@@ -41,7 +41,11 @@ const REQUIRED_SOURCE_TOKENS = [
   },
   {
     file: 'products/data-cloud/docs/operations/RUNBOOK.md',
-    tokens: ['backup', 'restore', 'health'],
+    tokens: ['backup', 'restore', 'health', 'alerting'],
+  },
+  {
+    file: 'monitoring/alertmanager/alertmanager.yml',
+    tokens: ['alert', 'route', 'receiver'],
   },
 ];
 

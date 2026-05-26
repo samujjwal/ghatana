@@ -45,6 +45,46 @@ function parseJson(filePath) {
   }
 }
 
+function validateNestedCommit(obj, expectedCommit, path = '') {
+  const violations = [];
+  if (!obj || typeof obj !== 'object') {
+    return violations;
+  }
+
+  // Check evidenceRun.commit at current level
+  const commit = obj?.evidenceRun?.commit;
+  if (commit !== undefined) {
+    if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
+      violations.push(`${path}: evidenceRun.commit must be a 40-character git SHA`);
+    } else if (commit !== expectedCommit) {
+      violations.push(`${path}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
+    }
+  }
+
+  // Check sourceCommitSha and targetCommitSha at current level
+  for (const field of ['sourceCommitSha', 'targetCommitSha']) {
+    const value = obj?.evidenceRun?.[field] ?? obj?.[field];
+    if (value === undefined) {
+      continue;
+    }
+    if (typeof value !== 'string' || !/^[a-f0-9]{40}$/i.test(value)) {
+      violations.push(`${path}: ${field} must be a 40-character git SHA`);
+    } else if (value !== expectedCommit) {
+      violations.push(`${path}: ${field} ${value} must match current HEAD ${expectedCommit}`);
+    }
+  }
+
+  // Recursively validate nested objects
+  for (const [key, value] of Object.entries(obj)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const nestedPath = path ? `${path}.${key}` : key;
+      violations.push(...validateNestedCommit(value, expectedCommit, nestedPath));
+    }
+  }
+
+  return violations;
+}
+
 export function findEvidenceCurrentCommitViolations(
   root = process.cwd(),
   {
@@ -77,25 +117,9 @@ export function findEvidenceCurrentCommitViolations(
       continue;
     }
 
-    const commit = payload?.evidenceRun?.commit;
-    if (commit !== undefined) {
-      if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
-        violations.push(`${evidenceFile}: evidenceRun.commit must be a 40-character git SHA`);
-      } else if (commit !== expectedCommit) {
-        violations.push(`${evidenceFile}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
-      }
-    }
-    for (const field of ['sourceCommitSha', 'targetCommitSha']) {
-      const value = payload?.evidenceRun?.[field] ?? payload?.[field];
-      if (value === undefined) {
-        continue;
-      }
-      if (typeof value !== 'string' || !/^[a-f0-9]{40}$/i.test(value)) {
-        violations.push(`${evidenceFile}: ${field} must be a 40-character git SHA`);
-      } else if (value !== expectedCommit) {
-        violations.push(`${evidenceFile}: ${field} ${value} must match current HEAD ${expectedCommit}`);
-      }
-    }
+    // Validate top-level and nested commit fields recursively
+    const nestedViolations = validateNestedCommit(payload, expectedCommit, evidenceFile);
+    violations.push(...nestedViolations);
   }
 
   return violations;

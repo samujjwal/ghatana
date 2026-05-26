@@ -67,6 +67,10 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for GovernedAgentDispatcher: release-awareness, invariant checks,
  * trace recording, and backward-compat 3-arg constructor.
+ *
+ * <p>AGENT-002: Governed dispatch E2E test</p>
+ * <p>AGENT-003: Agent denial/failure tests</p>
+ * <p>AGENT-004: Replay-safety tests for agent actions</p>
  */
 @DisplayName("GovernedAgentDispatcher")
 @ExtendWith(MockitoExtension.class) 

@@ -512,6 +512,7 @@ jobs:
         with:
           name: yappc-release-gate-evidence
           path: |
+            .kernel/evidence/yappc/**
             .kernel/evidence/product-slo-budgets.json
             .kernel/evidence/product-cost-budgets.json
             .kernel/evidence/product-domain-invariants.json

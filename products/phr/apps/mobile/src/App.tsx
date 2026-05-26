@@ -8,9 +8,9 @@ import { NotificationsScreen } from './screens/NotificationsScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { authenticateBiometric } from './services/biometricAuth';
-import { fetchMobileDashboard, syncOfflineDashboard } from './services/phrMobileApi';
+import { fetchMobileDashboard, loginMobile, syncOfflineDashboard } from './services/phrMobileApi';
 import { registerForPushNotificationsAsync } from './services/pushNotifications';
-import type { MobileDashboard } from './types';
+import type { MobileDashboard, MobileSession } from './types';
 
 type ScreenKey = 'dashboard' | 'records' | 'consents' | 'notifications' | 'emergency' | 'settings';
 const APP_DIAGNOSTIC_EVENT = 'phr-mobile:diagnostic';
@@ -61,7 +61,8 @@ class AppErrorBoundary extends React.Component<{ children: ReactNode }, { hasErr
 }
 
 export default function App(): React.ReactElement {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [session, setSession] = React.useState<MobileSession | null>(null);
+  const isAuthenticated = session !== null;
   const [activeScreen, setActiveScreen] = React.useState<ScreenKey>('dashboard');
   const [dashboard, setDashboard] = React.useState<MobileDashboard | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -80,9 +81,12 @@ export default function App(): React.ReactElement {
       });
   }, []);
 
+  // Dashboard is only fetched AFTER successful authentication.
   React.useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+    if (isAuthenticated) {
+      loadDashboard();
+    }
+  }, [isAuthenticated, loadDashboard]);
 
   const onEnablePush = async (): Promise<void> => {
     const token = await registerForPushNotificationsAsync();
@@ -102,6 +106,18 @@ export default function App(): React.ReactElement {
       setSyncMessage(error instanceof Error ? error.message : 'Offline cache refresh failed.');
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.page}>
+        <LoginScreen
+          onSuccess={setSession}
+          onLoginError={() => { /* error is already displayed inside LoginScreen */ }}
+          loginFn={loginMobile}
+        />
+      </SafeAreaView>
+    );
+  }
 
   if (!dashboard) {
     if (loadError) {
@@ -123,31 +139,22 @@ export default function App(): React.ReactElement {
     );
   }
 
-  const loadedDashboard = dashboard;
-
-  if (!isAuthenticated) {
-    return (
-      <SafeAreaView style={styles.page}>
-        <LoginScreen onContinue={() => setIsAuthenticated(true)} />
-      </SafeAreaView>
-    );
-  }
 
   const renderScreen = (): React.ReactElement => {
     switch (activeScreen) {
       case 'records':
-        return <RecordsScreen records={loadedDashboard.records} />;
+        return <RecordsScreen records={dashboard.records} />;
       case 'consents':
-        return <ConsentScreen consents={loadedDashboard.consents} />;
+        return <ConsentScreen consents={dashboard.consents} />;
       case 'notifications':
-        return <NotificationsScreen notifications={loadedDashboard.notifications} onEnablePush={() => void onEnablePush()} />;
+        return <NotificationsScreen notifications={dashboard.notifications} onEnablePush={() => void onEnablePush()} />;
       case 'emergency':
         return <EmergencyAccessScreen onAuthenticate={() => void onAuthenticate()} />;
       case 'settings':
         return <SettingsScreen onSyncOffline={() => void onSyncOffline()} syncMessage={syncMessage} />;
       case 'dashboard':
       default:
-        return <DashboardScreen dashboard={loadedDashboard} />;
+        return <DashboardScreen dashboard={dashboard} />;
     }
   };
 

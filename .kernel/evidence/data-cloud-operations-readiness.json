@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-26T14:16:45.260Z",
+  "generatedAt": "2026-05-26T17:48:21.525Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/check-data-cloud-operations-readiness.mjs",
     "source": "scripts/check-data-cloud-operations-readiness.mjs",
     "command": "pnpm check:data-cloud-operations-readiness",
-    "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
   },
   "summary": {
     "requiredFileCount": 15,

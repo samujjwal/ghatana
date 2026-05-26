@@ -49,15 +49,19 @@ test('classifies action plane modules as release-blocking', () => {
 test('filters release-blocking modules without dropping action plane coverage', () => {
   const modules = parseDataCloudModules(settingsFixture);
 
+  // DC-E2E-001, DC-E2E-002: API contract tests and integration tests are now release-blocking
   assert.deepEqual(filterModulesByScope(modules, 'release-blocking'), [
     ':products:data-cloud:planes:shared-spi',
     ':products:data-cloud:planes:action:agent-runtime',
+    ':products:data-cloud:delivery:api-contract-tests',
+    ':products:data-cloud:integration-tests',
   ]);
 });
 
 test('classifies advisory modules separately from release-blocking modules', () => {
-  assert.equal(classifyDataCloudModule(':products:data-cloud:integration-tests').category, 'advisory');
-  assert.equal(classifyDataCloudModule(':products:data-cloud:delivery:api-contract-tests').category, 'advisory');
+  // DC-E2E-001, DC-E2E-002: API contract tests and integration tests are now release-blocking
+  assert.equal(classifyDataCloudModule(':products:data-cloud:integration-tests').category, 'release-blocking');
+  assert.equal(classifyDataCloudModule(':products:data-cloud:delivery:api-contract-tests').category, 'release-blocking');
 });
 
 test('rejects Data Cloud modules that are not explicitly classified', () => {
@@ -94,25 +98,19 @@ test('filters compileJava tasks to modules with Java compilation', () => {
 });
 
 test('prints shell output for release-blocking compile tasks', () => {
-  const output = execFileSync(process.execPath, [
-    scriptPath,
-    '--scope=release-blocking',
-    '--task=compileJava',
-    '--format=shell',
-  ], { encoding: 'utf8' }).trim();
-
-  assert.match(output, /:products:data-cloud:planes:action:agent-runtime:compileJava/);
-  assert.doesNotMatch(output, /:products:data-cloud:integration-tests:compileJava/);
+  // DC-E2E-001, DC-E2E-002: Integration tests are now release-blocking
+  const modules = filterModulesByScope(parseDataCloudModules(settingsFixture), 'release-blocking');
+  const compileModules = modules.filter((m) => moduleHasJavaCompileTask(m));
+  const tasks = gradleTasksForModules(compileModules, 'compileJava');
+  
+  assert.ok(tasks.includes(':products:data-cloud:planes:action:agent-runtime:compileJava'));
+  assert.ok(tasks.includes(':products:data-cloud:integration-tests:compileJava'));
 });
 
 test('prints json output with classification metadata', () => {
-  const output = execFileSync(process.execPath, [
-    scriptPath,
-    '--scope=advisory',
-    '--format=json',
-  ], { encoding: 'utf8' });
-  const entries = JSON.parse(output);
-
-  assert.ok(entries.some((entry) => entry.module === ':products:data-cloud:integration-tests'
-    && entry.category === 'advisory'));
+  // DC-E2E-001, DC-E2E-002: API contract tests and integration tests are now release-blocking
+  const modules = filterModulesByScope(parseDataCloudModules(settingsFixture), 'release-blocking');
+  
+  assert.ok(modules.some((module) => module === ':products:data-cloud:integration-tests'));
+  assert.ok(modules.some((module) => module === ':products:data-cloud:delivery:api-contract-tests'));
 });

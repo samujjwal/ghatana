@@ -6,6 +6,8 @@ package com.ghatana.phr.api;
 
 import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.api.routes.PhrAdministrativeRoutes;
+import com.ghatana.phr.api.routes.PhrAuditRoutes;
+import com.ghatana.phr.api.routes.PhrAuthRoutes;
 import com.ghatana.phr.api.routes.PhrClinicalRoutes;
 import com.ghatana.phr.api.routes.PhrConsentRoutes;
 import com.ghatana.phr.api.routes.PhrDocumentImagingRoutes;
@@ -57,6 +59,10 @@ import java.util.Objects;
  *   POST   /admin/billing/encounters                    — Create a billing encounter
  *   POST   /records/documents                           — Upload a patient document
  *   POST   /records/imaging/orders                      — Create an imaging order
+ *   POST   /appointments                               — Patient self-scheduling request
+ *   GET    /audit/events                               — Paginated audit event trail
+ *   POST   /auth/login                                 — Session bootstrap via credentials
+ *   POST   /auth/logout                                — Session termination
  *   GET    /route-entitlements                          — Route/content entitlement payload
  *   GET    /release-readiness                           — Admin release readiness runtime truth
  *   GET    /health                                      — Liveness probe
@@ -88,6 +94,8 @@ public final class PhrHttpServer implements KernelLifecycleAware {
     private final PhrReleaseReadinessRoutes releaseReadinessRoutes;
     private final PhrEntitlementRoutes entitlementRoutes;
     private final PhrHealthRoutes healthRoutes;
+    private final PhrAuditRoutes auditRoutes;
+    private final PhrAuthRoutes authRoutes;
     private volatile boolean started = false;
 
     /**
@@ -150,6 +158,25 @@ public final class PhrHttpServer implements KernelLifecycleAware {
             PhrReleaseReadinessRoutes releaseReadinessRoutes,
             PhrEntitlementRoutes entitlementRoutes,
             PhrHealthRoutes healthRoutes) {
+        this(eventloop, fhirRoutes, patientRecordRoutes, consentRoutes, clinicalRoutes,
+            emergencyRoutes, administrativeRoutes, documentImagingRoutes, releaseReadinessRoutes,
+            entitlementRoutes, healthRoutes, null, null);
+    }
+
+    public PhrHttpServer(
+            Eventloop eventloop,
+            PhrFhirRoutes fhirRoutes,
+            PhrPatientRecordRoutes patientRecordRoutes,
+            PhrConsentRoutes consentRoutes,
+            PhrClinicalRoutes clinicalRoutes,
+            PhrEmergencyRoutes emergencyRoutes,
+            PhrAdministrativeRoutes administrativeRoutes,
+            PhrDocumentImagingRoutes documentImagingRoutes,
+            PhrReleaseReadinessRoutes releaseReadinessRoutes,
+            PhrEntitlementRoutes entitlementRoutes,
+            PhrHealthRoutes healthRoutes,
+            PhrAuditRoutes auditRoutes,
+            PhrAuthRoutes authRoutes) {
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop cannot be null");
         this.fhirRoutes = Objects.requireNonNull(fhirRoutes, "fhirRoutes cannot be null");
         this.patientRecordRoutes = patientRecordRoutes;
@@ -161,6 +188,8 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         this.releaseReadinessRoutes = releaseReadinessRoutes;
         this.entitlementRoutes = Objects.requireNonNull(entitlementRoutes, "entitlementRoutes cannot be null");
         this.healthRoutes = Objects.requireNonNull(healthRoutes, "healthRoutes cannot be null");
+        this.auditRoutes = auditRoutes;
+        this.authRoutes = authRoutes;
     }
 
     // -------------------------------------------------------------------------
@@ -231,6 +260,15 @@ public final class PhrHttpServer implements KernelLifecycleAware {
         }
         if (releaseReadinessRoutes != null) {
             builder.with("/release-readiness", releaseReadinessRoutes.getServlet());
+        }
+        if (administrativeRoutes != null) {
+            builder.with("/appointments/*", administrativeRoutes.getPatientFacingServlet());
+        }
+        if (auditRoutes != null) {
+            builder.with("/audit/*", auditRoutes.getServlet());
+        }
+        if (authRoutes != null) {
+            builder.with("/auth/*", authRoutes.getServlet());
         }
         return builder
             .with("/route-entitlements", entitlementRoutes.getServlet())

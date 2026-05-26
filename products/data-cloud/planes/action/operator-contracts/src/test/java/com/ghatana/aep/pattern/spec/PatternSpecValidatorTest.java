@@ -7,6 +7,12 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * PatternSpec validation tests.
+ *
+ * <p>AEP-001: PatternSpec full lifecycle transition E2E</p>
+ * <p>AEP-002: Production PatternSpec compile validation tests</p>
+ */
 class PatternSpecValidatorTest {
 
     @Test
@@ -126,6 +132,166 @@ class PatternSpecValidatorTest {
             "pattern", Map.of("event", "service.error_rate_elevated"))));
 
         assertThat(result.valid()).isTrue();
+    }
+
+    // ==================== AEP-001: PatternSpec Lifecycle Transition Tests ====================
+
+    @Test
+    void aep001ShadowToActiveTransitionValid() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full",
+            "approvalPolicy", "human_required"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void aep001ActiveToDegradedTransitionValid() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "DEGRADED",
+            "degradationReason", "high_error_rate",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "medium",
+            "rollbackPolicy", "manual",
+            "auditPolicy", "full"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void aep001DegradedToRollbackTransitionValid() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ROLLBACK",
+            "rollbackTo", "previous_version",
+            "evidencePolicy", Map.of("retentionDays", 90),
+            "evidenceStore", "eventcloud://default"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "high",
+            "rollbackPolicy", "automatic",
+            "auditPolicy", "full"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void aep001ActiveToRetiredTransitionValid() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "RETIRED",
+            "retirementReason", "obsolete",
+            "evidencePolicy", Map.of("retentionDays", 365),
+            "evidenceStore", "eventcloud://archive"));
+        spec.put("governance", Map.of(
+            "owner", "sre",
+            "riskLevel", "low",
+            "rollbackPolicy", "none",
+            "auditPolicy", "full"));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isTrue();
+    }
+
+    @Test
+    void aep001IllegalTransitionRetiredToActiveRejected() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of(
+            "state", "ACTIVE",
+            "previousState", "RETIRED")); // Illegal: cannot reactivate retired spec
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> 
+            assertThat(error).contains("illegal transition"));
+    }
+
+    @Test
+    void aep001ShadowToProductionWithoutApprovalRejected() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("lifecycle", Map.of("state", "ACTIVE"));
+        spec.put("governance", Map.of("owner", "sre")); // Missing approvalPolicy
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(
+            spec, "7f84bc08e9e4e6d7e209cb49a855f199f7c90347", "production");
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> 
+            assertThat(error).contains("approvalPolicy"));
+    }
+
+    // ==================== AEP-002: Production Compile Validation Tests ====================
+
+    @Test
+    void aep002ProductionCompileValidatesOutputSchema() {
+        Map<String, Object> spec = validSpec(Map.of(
+            "operator", "AGENT_PREDICATE",
+            "agentRef", "agents/sre-risk-assessor@1.0.0",
+            "capabilityRef", "agents/sre-risk-assessor@1.0.0/capability")));
+        // Missing outputSchema
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> 
+            assertThat(error).contains("outputSchema"));
+    }
+
+    @Test
+    void aep002ProductionCompileValidatesReplayPolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("semantics", Map.of(
+            "timePolicy", Map.of(),
+            "uncertaintyPolicy", Map.of()
+            // Missing replayPolicy
+        ));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> 
+            assertThat(error).contains("replayPolicy"));
+    }
+
+    @Test
+    void aep002ProductionCompileValidatesUncertaintyPolicy() {
+        Map<String, Object> spec = validSpec(Map.of("event", "deploy.started"));
+        spec.put("semantics", Map.of(
+            "timePolicy", Map.of(),
+            "replayPolicy", Map.of()
+            // Missing uncertaintyPolicy
+        ));
+
+        PatternSpecValidationResult result = PatternSpecValidator.validate(spec);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anySatisfy(error -> 
+            assertThat(error).contains("uncertaintyPolicy"));
     }
 
     // AEP-004: Production semantics hardening tests

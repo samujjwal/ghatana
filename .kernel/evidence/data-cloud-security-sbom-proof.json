@@ -5,7 +5,7 @@
     "generatedBy": "scripts/check-data-cloud-security-sbom-proof.mjs",
     "source": "scripts/check-data-cloud-security-sbom-proof.mjs",
     "command": "pnpm check:data-cloud-security-sbom-proof",
-    "commit": "936924cf915e366f3f0c47bee266a277601b1288"
+    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
   },
   "source": {
     "workflow": ".github/workflows/data-cloud-release.yml"

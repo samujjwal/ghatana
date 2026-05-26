@@ -10,9 +10,8 @@ import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
-import com.ghatana.yappc.agent.StepBudget;
-import com.ghatana.yappc.agent.StepContext;
 import com.ghatana.yappc.agent.WorkflowStep;
+import com.ghatana.yappc.agent.WorkflowStepOperatorAdapter;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -140,12 +139,6 @@ public class AgentExecutorOperator extends AbstractOperator {
                     Map.of("_error", "agent_not_found", "agentId", agentId)));
         }
 
-        StepContext context = new StepContext(
-                resultCorrelationId,   // runId = correlationId
-                effectiveTenant,
-                extractPhase(agentId), // e.g., "architecture.intake" → "architecture"
-                null,                  // configSnapshotId — not yet in dispatch event
-                new StepBudget(30.0, 60_000L));
 
         // Input: pass the dispatch metadata as a Map; agents that need richer input
         // should evolve the dispatch event schema to include a typed "input" payload field.
@@ -159,13 +152,36 @@ public class AgentExecutorOperator extends AbstractOperator {
         log.info("[AgentExecutor] Dispatching to agent: agentId={} fromStage={} toStage={}",
                 agentId, fromStage, toStage);
 
-        return agent.execute(input, context)
-                .map(stepResult -> {
-                    String status = stepResult != null && stepResult.isSuccess() ? "success" : "error";
-                    Map<String, Object> extra = stepResult != null && stepResult.output() != null
-                            ? Map.of("output", stepResult.output().toString())
-                            : Map.of();
-                    log.info("[AgentExecutor] Agent completed: agentId={} status={}", agentId, status);
+        WorkflowStepOperatorAdapter<Object, Object> governedOperator =
+                new WorkflowStepOperatorAdapter<>(agent);
+        Event governedDispatch = GEvent.builder()
+                .typeTenantVersion(effectiveTenant, "agent.capability.requested", "v1")
+                .addPayload("input", input)
+                .addPayload("tenantId", effectiveTenant)
+                .addPayload("runId", resultCorrelationId)
+                .addPayload("phase", extractPhase(agentId))
+                .addPayload("configSnapshotId", "")
+                .addPayload("capabilityRef", agentId)
+                .addPayload("operatorContract", "EventOperatorCapability")
+                .addPayload("policy", "yappc-agent-runtime-policy")
+                .addPayload("approval", "required-for-destructive-actions")
+                .addPayload("idempotencyKey", resultCorrelationId + ":" + agentId)
+                .addPayload("audit", "agent.dispatch.governed")
+                .addPayload("outputValidation", "operator-result-validated")
+                .build();
+
+        return governedOperator.process(governedDispatch)
+                .map(operatorResult -> {
+                    String status = operatorResult != null && operatorResult.isSuccess() ? "success" : "error";
+                    Map<String, Object> extra = Map.of(
+                            "capabilityRef", agentId,
+                            "operatorContract", "EventOperatorCapability",
+                            "policy", "yappc-agent-runtime-policy",
+                            "approval", "required-for-destructive-actions",
+                            "idempotencyKey", resultCorrelationId + ":" + agentId,
+                            "audit", "agent.dispatch.governed",
+                            "outputValidation", "operator-result-validated");
+                    log.info("[AgentExecutor] Governed agent completed: capabilityRef={} status={}", agentId, status);
                     return buildResultEvent(effectiveTenant, agentId, status,
                             fromStage, toStage, resultCorrelationId, extra);
                 })

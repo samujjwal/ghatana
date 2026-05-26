@@ -1,0 +1,262 @@
+{
+  "checkId": "YAPPC-002 Data-Cloud contract integration",
+  "generatedAt": "2026-05-26T17:48:46.139Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-datacloud-contract-integration.mjs",
+    "command": "node scripts/check-yappc-datacloud-contract-integration.mjs",
+    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+  },
+  "summary": {
+    "checkCount": 33,
+    "passedChecks": 33,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "pass": true,
+      "path": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "message": "missing products/data-cloud/contracts/openapi/data-cloud.yaml"
+    },
+    {
+      "name": "products/data-cloud/delivery/sdk/src/codegen/java/com/ghatana/datacloud/sdk/codegen/DataCloudSdkGeneratorMain.java",
+      "pass": true,
+      "path": "products/data-cloud/delivery/sdk/src/codegen/java/com/ghatana/datacloud/sdk/codegen/DataCloudSdkGeneratorMain.java",
+      "message": "missing products/data-cloud/delivery/sdk/src/codegen/java/com/ghatana/datacloud/sdk/codegen/DataCloudSdkGeneratorMain.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "message": "missing products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "message": "missing products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/datacloud/YappcDataCloudE2ETest.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java"
+    },
+    {
+      "name": "products/data-cloud/contracts/openapi/data-cloud.yaml includes Query entities in a collection",
+      "pass": true,
+      "path": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "token": "Query entities in a collection",
+      "message": "products/data-cloud/contracts/openapi/data-cloud.yaml must include Query entities in a collection"
+    },
+    {
+      "name": "products/data-cloud/contracts/openapi/data-cloud.yaml includes tenant isolation",
+      "pass": true,
+      "path": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "token": "tenant isolation",
+      "message": "products/data-cloud/contracts/openapi/data-cloud.yaml must include tenant isolation"
+    },
+    {
+      "name": "products/data-cloud/contracts/openapi/data-cloud.yaml includes /api/v1/entities/{collection}/query/stream",
+      "pass": true,
+      "path": "products/data-cloud/contracts/openapi/data-cloud.yaml",
+      "token": "/api/v1/entities/{collection}/query/stream",
+      "message": "products/data-cloud/contracts/openapi/data-cloud.yaml must include /api/v1/entities/{collection}/query/stream"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java includes storeArtifact",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "token": "storeArtifact",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java must include storeArtifact"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java includes retrieveArtifact",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "token": "retrieveArtifact",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java must include retrieveArtifact"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java includes listArtifacts",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "token": "listArtifacts",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java must include listArtifacts"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java includes metadata",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "token": "metadata",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java must include metadata"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java includes tenantId",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java",
+      "token": "tenantId",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudArtifactFacade.java must include tenantId"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java includes createProject",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "token": "createProject",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java must include createProject"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java includes retrieveProject",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "token": "retrieveProject",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java must include retrieveProject"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java includes listProjects",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "token": "listProjects",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java must include listProjects"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java includes workspaceId",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "token": "workspaceId",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java must include workspaceId"
+    },
+    {
+      "name": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java includes tenantId",
+      "pass": true,
+      "path": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java",
+      "token": "tenantId",
+      "message": "products/yappc/core/yappc-facades/src/main/java/com/ghatana/yappc/facades/datacloud/DataCloudProjectFacade.java must include tenantId"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes DataCloudClient",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "DataCloudClient",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include DataCloudClient"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes save(",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "save(",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include save("
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes findById(",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "findById(",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include findById("
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes findAll(",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "findAll(",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include findAll("
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes deleteById(",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "deleteById(",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include deleteById("
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java includes TenantContext",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java",
+      "token": "TenantContext",
+      "message": "products/yappc/infrastructure/datacloud/src/main/java/com/ghatana/yappc/infrastructure/datacloud/adapter/YappcDataCloudRepository.java must include TenantContext"
+    },
+    {
+      "name": "artifactMetadataPersistence",
+      "pass": true,
+      "tokens": [
+        "metadata",
+        "saved",
+        "preservesMetadata"
+      ]
+    },
+    {
+      "name": "projectWorkspaceContextPersistence",
+      "pass": true,
+      "tokens": [
+        "project",
+        "workspace",
+        "TenantContext"
+      ]
+    },
+    {
+      "name": "generatedContractStorage",
+      "pass": true,
+      "tokens": [
+        "DataCloudClient",
+        "YappcDataCloudRepository",
+        "save"
+      ]
+    },
+    {
+      "name": "artifactEvidenceStorage",
+      "pass": true,
+      "tokens": [
+        "audit",
+        "event",
+        "Data-Cloud event plane"
+      ]
+    },
+    {
+      "name": "retrievalQuery",
+      "pass": true,
+      "tokens": [
+        "retrieved",
+        "findById",
+        "findAll",
+        "query"
+      ]
+    },
+    {
+      "name": "tenantIsolation",
+      "pass": true,
+      "tokens": [
+        "tenantIsolation",
+        "tenant A",
+        "tenant B"
+      ]
+    },
+    {
+      "name": "no duplicate YAPPC persistence paths outside canonical adapters",
+      "pass": true,
+      "matches": []
+    }
+  ],
+  "violations": [],
+  "contractCoverage": [
+    "artifactMetadataPersistence",
+    "projectWorkspaceContextPersistence",
+    "generatedContractStorage",
+    "artifactEvidenceStorage",
+    "retrievalQuery",
+    "tenantIsolation"
+  ],
+  "duplicatePersistenceHits": []
+}

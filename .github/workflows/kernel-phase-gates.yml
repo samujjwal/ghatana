@@ -223,6 +223,7 @@ jobs:
         with:
           name: phase6-artifact-intelligence-evidence
           path: |
+            .kernel/evidence/yappc/**
             .kernel/evidence/artifact-intelligence/**
             build/reports/artifact-intelligence/**
           if-no-files-found: warn

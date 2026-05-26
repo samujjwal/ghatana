@@ -824,7 +824,7 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
             .apiKeyResolver(apiKeyResolver)
             .jwtProvider(jwtProvider)
             .policyEngine(policyEngine)
-            .auditService(auditService) // Working audit service
+            .auditService(auditService)
             .enforcing(true)
             .strictTenantResolution(true)
             .deploymentProfile("production")
@@ -832,6 +832,272 @@ class DataCloudSecurityFilterProductionProfileTest extends EventloopTestBase {
 
         // Should not throw any exception
         filter.validateProductionRequirements();
+    }
+
+    // ==================== DC-SEC-001: Route Metadata Fail-Closed Tests ====================
+
+    @Test
+    @DisplayName("DC-SEC-001: Production profile rejects route without metadata")
+    void dcSec001ProductionProfileRejectsRouteWithoutMetadata() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        // Request to a route that doesn't exist in RouteSecurityRegistry
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/unknown-route")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should reject (403 or 404) due to missing route metadata
+        assertThat(response.getCode()).isIn(403, 404);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: Staging profile rejects route without metadata")
+    void dcSec001StagingProfileRejectsRouteWithoutMetadata() {
+        System.setProperty("DATACLOUD_PROFILE", "staging");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("staging")
+            .build();
+
+        // Request to a route that doesn't exist in RouteSecurityRegistry
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/unknown-route")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should reject (403 or 404) due to missing route metadata
+        assertThat(response.getCode()).isIn(403, 404);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: Sovereign profile rejects route without metadata")
+    void dcSec001SovereignProfileRejectsRouteWithoutMetadata() {
+        System.setProperty("DATACLOUD_PROFILE", "sovereign");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("sovereign")
+            .build();
+
+        // Request to a route that doesn't exist in RouteSecurityRegistry
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/unknown-route")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should reject (403 or 404) due to missing route metadata
+        assertThat(response.getCode()).isIn(403, 404);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-001: Local profile allows route without metadata")
+    void dcSec001LocalProfileAllowsRouteWithoutMetadata() {
+        System.setProperty("DATACLOUD_PROFILE", "local");
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(auditService)
+            .enforcing(true)
+            .strictTenantResolution(false)
+            .deploymentProfile("local")
+            .build();
+
+        // Request to a route that doesn't exist in RouteSecurityRegistry
+        HttpRequest request = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/unknown-route")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Local profile may allow (200) or reject (404) - both are acceptable
+        assertThat(response.getCode()).isIn(200, 404);
+    }
+
+    // ==================== DC-SEC-002: Blocking Audit Failure Injection Tests ====================
+
+    @Test
+    @DisplayName("DC-SEC-002: Critical route blocks when audit service fails in production")
+    void dcSec002CriticalRouteBlocksWhenAuditFailsInProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
+        // Audit service that fails to record
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit persistence failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(adminApiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        // Request to a CRITICAL route (governance policy delete)
+        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/governance/policies/{id}")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should block (500 or 503) when audit fails on CRITICAL route
+        assertThat(response.getCode()).isIn(500, 503);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: Sensitive route allows when audit service fails in production")
+    void dcSec002SensitiveRouteAllowsWhenAuditFailsInProduction() {
+        System.setProperty("DATACLOUD_PROFILE", "production");
+
+        // Audit service that fails to record
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit persistence failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(apiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("production")
+            .build();
+
+        // Request to a SENSITIVE route (query)
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/entities/{collection}")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // SENSITIVE routes may still succeed (200) despite audit failure (audit is fire-and-forget)
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("DC-SEC-002: Staging profile blocks critical route when audit fails")
+    void dcSec002StagingProfileBlocksCriticalRouteWhenAuditFails() {
+        System.setProperty("DATACLOUD_PROFILE", "staging");
+
+        ApiKeyResolver adminApiKeyResolver = apiKey -> Optional.of(new Principal("admin-1", List.of("ADMIN"), "tenant-1"));
+
+        // Audit service that fails to record
+        AuditService failingAuditService = new AuditService() {
+            @Override
+            public Promise<Void> record(AuditEvent event) {
+                return Promise.ofException(new RuntimeException("Audit persistence failed"));
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> query(AuditQuery query) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByProject(String projectId, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+
+            @Override
+            public Promise<List<AuditEvent>> queryByPhase(String projectId, String phase, Instant startDate, Instant endDate) {
+                return Promise.of(List.of());
+            }
+        };
+
+        filter = DataCloudSecurityFilter.builder()
+            .apiKeyResolver(adminApiKeyResolver)
+            .jwtProvider(jwtProvider)
+            .policyEngine(policyEngine)
+            .auditService(failingAuditService)
+            .enforcing(true)
+            .strictTenantResolution(true)
+            .deploymentProfile("staging")
+            .build();
+
+        // Request to a CRITICAL route
+        HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/governance/policies/{id}")
+            .withHeader(HttpHeaders.of("X-API-Key"), "valid-api-key")
+            .build();
+
+        HttpResponse response = runPromise(() ->
+            filter.apply(req -> HttpResponse.ok200().toPromise()).serve(request));
+
+        // Should block (500 or 503) when audit fails on CRITICAL route in staging
+        assertThat(response.getCode()).isIn(500, 503);
     }
 
     @Test

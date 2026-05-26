@@ -1,13 +1,24 @@
 import { z } from 'zod';
 import type {
+  AppointmentCreateResult,
+  AppointmentRequest,
   AppointmentSummary,
+  AuditEvent,
+  AuditEventsPage,
   ConsentGrant,
+  ConsentGrantRequest,
+  ConsentRevokeResult,
   DashboardData,
+  EmergencyAccessEvent,
+  EmergencyAccessRequest,
+  EmergencyReviewRequest,
   LabResultSummary,
   MedicationSummary,
   PatientProfile,
   PatientRecordSummary,
+  PhrLoginRequest,
   PhrReleaseReadiness,
+  PhrSession,
 } from '../types';
 import { t } from '../i18n/phrI18n';
 
@@ -373,4 +384,255 @@ export async function fetchReleaseReadiness(options: {
     throw new PhrApiError(`PHR release readiness failed with status ${response.status}`, response.status);
   }
   return response.json() as Promise<PhrReleaseReadiness>;
+}
+
+// ─── Audit events API ──────────────────────────────────────────────────────
+
+const AuditEventSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  eventType: z.string(),
+  principal: z.string(),
+  resourceType: z.string(),
+  resourceId: z.string().nullable(),
+  timestamp: z.string(),
+  success: z.boolean(),
+  details: z.record(z.string(), z.string()),
+});
+
+const AuditEventsPageSchema = z.object({
+  events: z.array(AuditEventSchema),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+});
+
+export async function fetchAuditEvents(options: {
+  patientId?: string;
+  filter?: 'all' | 'access' | 'consent' | 'emergency';
+  page?: number;
+  pageSize?: number;
+  tenantId?: string;
+  principalId?: string;
+  role?: string;
+}): Promise<AuditEventsPage> {
+  const tenantId = options.tenantId ?? 'tenant-health-1';
+  const principalId = options.principalId ?? 'current';
+  const role = options.role ?? 'patient';
+  const url = new URL(`${API_BASE_URL}/audit/events`);
+  if (options.patientId) url.searchParams.set('patientId', options.patientId);
+  if (options.filter && options.filter !== 'all') url.searchParams.set('filter', options.filter);
+  url.searchParams.set('page', String(options.page ?? 0));
+  url.searchParams.set('pageSize', String(options.pageSize ?? 50));
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': tenantId,
+      'X-Principal-Id': principalId,
+      'X-Role': role,
+    },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Audit events request failed with status ${response.status}`, response.status, 'AuditEvent');
+  }
+  return AuditEventsPageSchema.parse(await response.json());
+}
+
+// ─── Consent management API ────────────────────────────────────────────────
+
+const ConsentGrantRequestSchema = z.object({
+  patientId: z.string().min(1),
+  granteeId: z.string().min(1),
+  purpose: z.string().min(1),
+  resourceTypes: z.array(z.string()).min(1),
+  expiresAt: z.string().min(1),
+}).strict();
+
+export async function createConsentGrant(
+  request: ConsentGrantRequest,
+  context: { tenantId: string; principalId: string; role: string },
+): Promise<ConsentGrant> {
+  const validated = ConsentGrantRequestSchema.parse(request);
+  const response = await fetch(`${API_BASE_URL}/consents/grants`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      'X-Role': context.role,
+    },
+    body: JSON.stringify(validated),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Create consent grant failed with status ${response.status}`, response.status, 'Consent');
+  }
+  const raw = await response.json() as unknown;
+  return FhirConsentSchema.parse(raw).id !== undefined
+    ? fhirConsentToGrant(FhirConsentSchema.parse(raw))
+    : (raw as ConsentGrant);
+}
+
+export async function revokeConsentGrant(
+  grantId: string,
+  patientId: string,
+  context: { tenantId: string; principalId: string; role: string },
+): Promise<ConsentRevokeResult> {
+  if (!grantId || !patientId) {
+    throw new PhrApiError('grantId and patientId are required to revoke consent', 400, 'Consent');
+  }
+  const url = new URL(`${API_BASE_URL}/consents/grants/${encodeURIComponent(grantId)}/revoke`);
+  url.searchParams.set('patientId', patientId);
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      'X-Role': context.role,
+    },
+  });
+  if (!response.ok) {
+    throw new PhrApiError(`Revoke consent grant failed with status ${response.status}`, response.status, 'Consent');
+  }
+  return response.json() as Promise<ConsentRevokeResult>;
+}
+
+// ─── Appointment API ───────────────────────────────────────────────────────
+
+const AppointmentRequestSchema = z.object({
+  specialty: z.string().min(1, 'Specialty is required'),
+  preferredDate: z.string().min(1, 'Preferred date is required'),
+  notes: z.string().optional(),
+}).strict();
+
+export async function createAppointmentRequest(
+  request: AppointmentRequest,
+  context: { tenantId: string; principalId: string; role: string },
+): Promise<AppointmentCreateResult> {
+  const validated = AppointmentRequestSchema.parse(request);
+  const response = await fetch(`${API_BASE_URL}/appointments`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      'X-Role': context.role,
+    },
+    body: JSON.stringify(validated),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(
+      `Create appointment request failed with status ${response.status}`,
+      response.status,
+      'Appointment',
+    );
+  }
+  return response.json() as Promise<AppointmentCreateResult>;
+}
+
+// ─── Emergency access API ──────────────────────────────────────────────────
+
+const EmergencyAccessRequestSchema = z.object({
+  patientId: z.string().min(1, 'Patient ID is required'),
+  reason: z.string().min(5, 'Reason must be at least 5 characters'),
+  clinicianId: z.string().min(1, 'Clinician ID is required'),
+}).strict();
+
+export async function requestEmergencyAccess(
+  request: EmergencyAccessRequest,
+  context: { tenantId: string; principalId: string; role: string },
+): Promise<EmergencyAccessEvent> {
+  const validated = EmergencyAccessRequestSchema.parse(request);
+  const response = await fetch(`${API_BASE_URL}/emergency/access`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      'X-Role': context.role,
+    },
+    body: JSON.stringify(validated),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(
+      `Emergency access request failed with status ${response.status}`,
+      response.status,
+      'EmergencyAccess',
+    );
+  }
+  return response.json() as Promise<EmergencyAccessEvent>;
+}
+
+export async function reviewEmergencyAccess(
+  review: EmergencyReviewRequest,
+  context: { tenantId: string; principalId: string; role: string },
+): Promise<EmergencyAccessEvent> {
+  const response = await fetch(`${API_BASE_URL}/emergency/reviews/${encodeURIComponent(review.eventId)}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+      'X-Role': context.role,
+    },
+    body: JSON.stringify({ reviewNote: review.reviewNote, reviewerId: review.reviewerId }),
+  });
+  if (!response.ok) {
+    throw new PhrApiError(
+      `Emergency access review failed with status ${response.status}`,
+      response.status,
+      'EmergencyAccess',
+    );
+  }
+  return response.json() as Promise<EmergencyAccessEvent>;
+}
+
+// ─── Auth session API ──────────────────────────────────────────────────────
+
+const PhrSessionSchema = z.object({
+  principalId: z.string(),
+  tenantId: z.string(),
+  role: z.enum(['patient', 'caregiver', 'clinician', 'admin']),
+  name: z.string(),
+  expiresAt: z.string(),
+});
+
+export async function loginWithCredentials(request: PhrLoginRequest): Promise<PhrSession> {
+  if (!request.nationalId.trim() || !request.password) {
+    throw new PhrApiError('National ID and password are required', 400);
+  }
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ nationalId: request.nationalId, password: request.password }),
+  });
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new PhrApiError(t('login.error.invalidCredentials'), 401);
+    }
+    throw new PhrApiError(`Login failed with status ${response.status}`, response.status);
+  }
+  return PhrSessionSchema.parse(await response.json());
+}
+
+export async function logoutSession(context: {
+  tenantId: string;
+  principalId: string;
+}): Promise<void> {
+  await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'X-Tenant-Id': context.tenantId,
+      'X-Principal-Id': context.principalId,
+    },
+  });
 }

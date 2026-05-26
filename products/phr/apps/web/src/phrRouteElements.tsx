@@ -5,6 +5,7 @@ import { AuditPage } from './pages/AuditPage';
 import { ConsentPage } from './pages/ConsentPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { EmergencyAccessPage } from './pages/EmergencyAccessPage';
+import { FeatureFlagPage } from './pages/FeatureFlagPage';
 import { LabsPage } from './pages/LabsPage';
 import { MedicationsPage } from './pages/MedicationsPage';
 import { RecordDetailPage } from './pages/RecordDetailPage';
@@ -16,7 +17,7 @@ export interface PhrRouteManifestEntry extends PhrRouteContract {
   readonly element: React.ReactElement;
 }
 
-const routeElements = {
+const routeElements: Record<PhrRoutePath, React.ReactElement> = {
   '/dashboard': <DashboardPage />,
   '/records': <RecordsPage />,
   '/consents': <ConsentPage />,
@@ -28,7 +29,12 @@ const routeElements = {
   '/audit': <AuditPage />,
   '/settings': <SettingsPage />,
   '/records/:recordId': <RecordDetailPage />,
-} satisfies Record<PhrRoutePath, React.ReactElement>;
+  // Feature-flagged placeholder routes
+  '/provider/dashboard': <FeatureFlagPage routePath="/provider/dashboard" />,
+  '/provider/patients': <FeatureFlagPage routePath="/provider/patients" />,
+  '/caregiver/dependents': <FeatureFlagPage routePath="/caregiver/dependents" />,
+  '/fchv/dashboard': <FeatureFlagPage routePath="/fchv/dashboard" />,
+};
 
 export function attachPhrRouteElement(route: PhrRouteContract): PhrRouteManifestEntry {
   const element = routeElements[route.path as PhrRoutePath];

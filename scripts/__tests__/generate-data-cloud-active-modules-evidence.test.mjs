@@ -42,8 +42,8 @@ test('generates executable evidence for classified active modules', () => {
 
     assert.equal(evidence.pass, true);
     assert.equal(evidence.summary.totalActiveModules, 3);
-    assert.equal(evidence.summary.releaseBlockingModules, 2);
-    assert.equal(evidence.summary.advisoryModules, 1);
+    assert.equal(evidence.summary.releaseBlockingModules, 3);
+    assert.equal(evidence.summary.advisoryModules, 0);
     assert.deepEqual(evidence.validation.invalidModules, []);
     assert.ok(evidence.generatedTasks.compileJava.includes(':products:data-cloud:planes:action:agent-runtime:compileJava'));
     assert.ok(evidence.generatedTasks.releaseBlockingCheck.includes(':products:data-cloud:planes:shared-spi:check'));

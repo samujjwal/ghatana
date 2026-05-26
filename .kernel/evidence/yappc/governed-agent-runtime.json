@@ -1,0 +1,148 @@
+{
+  "checkId": "YAPPC-003 governed agent runtime",
+  "generatedAt": "2026-05-26T17:49:52.637Z",
+  "pass": true,
+  "evidenceRun": {
+    "generatedBy": "scripts/check-yappc-governed-agent-runtime.mjs",
+    "command": "node scripts/check-yappc-governed-agent-runtime.mjs",
+    "commit": "600bebfa0832716d6589d5bcae223191138563cc"
+  },
+  "summary": {
+    "checkCount": 24,
+    "passedChecks": 24,
+    "violationCount": 0
+  },
+  "checks": [
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchOperator.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchOperator.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchOperator.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchValidatorOperator.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchValidatorOperator.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchValidatorOperator.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentExecutorOperator.java"
+    },
+    {
+      "name": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/YappcAgentOrchestrationBootstrapper.java",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/YappcAgentOrchestrationBootstrapper.java",
+      "message": "missing products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/YappcAgentOrchestrationBootstrapper.java"
+    },
+    {
+      "name": "products/yappc/core/agents/runtime/src/main/java/com/ghatana/yappc/agent/WorkflowStepOperatorAdapter.java",
+      "pass": true,
+      "path": "products/yappc/core/agents/runtime/src/main/java/com/ghatana/yappc/agent/WorkflowStepOperatorAdapter.java",
+      "message": "missing products/yappc/core/agents/runtime/src/main/java/com/ghatana/yappc/agent/WorkflowStepOperatorAdapter.java"
+    },
+    {
+      "name": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java",
+      "pass": true,
+      "path": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java",
+      "message": "missing products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/agent/capability/EventOperatorCapability.java"
+    },
+    {
+      "name": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java",
+      "pass": true,
+      "path": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java",
+      "message": "missing products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java"
+    },
+    {
+      "name": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java",
+      "pass": true,
+      "path": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java",
+      "message": "missing products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java"
+    },
+    {
+      "name": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "pass": true,
+      "path": "products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java",
+      "message": "missing products/yappc/infrastructure/datacloud/src/integrationTest/java/com/ghatana/yappc/infrastructure/YappcDataCloudAgentRuntimeE2ETest.java"
+    },
+    {
+      "name": "AgentExecutorOperator includes WorkflowStepOperatorAdapter",
+      "pass": true,
+      "token": "WorkflowStepOperatorAdapter"
+    },
+    {
+      "name": "AgentExecutorOperator includes capabilityRef",
+      "pass": true,
+      "token": "capabilityRef"
+    },
+    {
+      "name": "AgentExecutorOperator includes EventOperatorCapability",
+      "pass": true,
+      "token": "EventOperatorCapability"
+    },
+    {
+      "name": "AgentExecutorOperator includes policy",
+      "pass": true,
+      "token": "policy"
+    },
+    {
+      "name": "AgentExecutorOperator includes approval",
+      "pass": true,
+      "token": "approval"
+    },
+    {
+      "name": "AgentExecutorOperator includes idempotencyKey",
+      "pass": true,
+      "token": "idempotencyKey"
+    },
+    {
+      "name": "AgentExecutorOperator includes audit",
+      "pass": true,
+      "token": "audit"
+    },
+    {
+      "name": "AgentExecutorOperator includes outputValidation",
+      "pass": true,
+      "token": "outputValidation"
+    },
+    {
+      "name": "AgentExecutorOperator includes agent_system_not_initialized",
+      "pass": true,
+      "token": "agent_system_not_initialized"
+    },
+    {
+      "name": "AgentExecutorOperator includes agent_not_found",
+      "pass": true,
+      "token": "agent_not_found"
+    },
+    {
+      "name": "YAPPC workflow asks for agent action before execution",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchOperator.java"
+    },
+    {
+      "name": "YAPPC dispatch validator gates runtime execution",
+      "pass": true,
+      "path": "products/yappc/core/yappc-services/src/main/java/com/ghatana/yappc/services/lifecycle/operators/AgentDispatchValidatorOperator.java"
+    },
+    {
+      "name": "canonical EventOperatorCapability validates capabilityRef",
+      "pass": true,
+      "path": "products/data-cloud/planes/action/operator-contracts/src/main/java/com/ghatana/aep/pattern/spec/PatternSpecValidator.java"
+    },
+    {
+      "name": "canonical adapter implements EventOperatorCapability",
+      "pass": true,
+      "path": "products/data-cloud/planes/action/agent-runtime/src/main/java/com/ghatana/agent/registry/AgentEventOperatorCapabilityAdapter.java"
+    },
+    {
+      "name": "no YAPPC production path directly executes TypedAgent or workflow agent",
+      "pass": true,
+      "matches": []
+    }
+  ],
+  "violations": [],
+  "directBypasses": []
+}

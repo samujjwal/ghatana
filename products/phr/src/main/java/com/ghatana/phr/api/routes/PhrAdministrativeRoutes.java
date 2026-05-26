@@ -65,12 +65,77 @@ public final class PhrAdministrativeRoutes {
             .build();
     }
 
+    /**
+     * Returns a patient-facing servlet for the top-level {@code /appointments} path.
+     *
+     * <p>Handles patient self-scheduling requests. This is separate from the admin
+     * appointment management at {@code /admin/appointments/*}.
+     *
+     * @return routing servlet; never null
+     */
+    public AsyncServlet getPatientFacingServlet() {
+        return RoutingServlet.builder(eventloop)
+            .with(HttpMethod.POST, "/", this::handleCreateSchedulingRequest)
+            .build();
+    }
+
     private AsyncServlet appointmentServlet() {
         return RoutingServlet.builder(eventloop)
             .with(HttpMethod.GET, "/", this::handleListAppointments)
             .with(HttpMethod.GET, "/slots", this::handleAvailableSlots)
             .with(HttpMethod.POST, "/:appointmentId/cancel", this::handleCancelAppointment)
             .build();
+    }
+
+    private Promise<HttpResponse> handleCreateSchedulingRequest(HttpRequest request) {
+        PhrRouteSupport.PhrRequestContext context;
+        try {
+            context = PhrRouteSupport.requireContext(request);
+        } catch (IllegalArgumentException ex) {
+            return PhrRouteSupport.errorResponse(400, "MISSING_CONTEXT", ex.getMessage());
+        }
+
+        return request.loadBody()
+            .then(body -> {
+                String specialty;
+                String preferredDate;
+                String notes;
+                try {
+                    JsonNode node = PhrRouteSupport.JSON.readTree(body.getString(StandardCharsets.UTF_8));
+                    specialty = requireTextField(node, "specialty");
+                    preferredDate = requireTextField(node, "preferredDate");
+                    notes = node.path("notes").isMissingNode() ? null : node.path("notes").asText(null);
+                } catch (IllegalArgumentException ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", ex.getMessage());
+                } catch (Exception ex) {
+                    return PhrRouteSupport.errorResponse(400, "INVALID_APPOINTMENT_REQUEST", "Request body must be valid JSON");
+                }
+
+                String requestId = "req-" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+                String createdAt = Instant.now().toString();
+                String patientId = context.principalId();
+
+                Map<String, Object> result = new java.util.LinkedHashMap<>();
+                result.put("id", requestId);
+                result.put("status", "requested");
+                result.put("specialty", specialty);
+                result.put("preferredDate", preferredDate);
+                result.put("createdAt", createdAt);
+                if (notes != null && !notes.isBlank()) {
+                    result.put("notes", notes);
+                }
+                result.put("patientId", patientId);
+
+                return PhrRouteSupport.jsonResponse(201, result);
+            });
+    }
+
+    private static String requireTextField(JsonNode node, String fieldName) {
+        JsonNode field = node.get(fieldName);
+        if (field == null || field.isNull() || field.asText("").isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        return field.asText().strip();
     }
 
     private AsyncServlet telemedicineServlet() {

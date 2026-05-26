@@ -128,3 +128,46 @@ test('rejects stale source and target commit metadata without evidenceRun', () =
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('rejects nested evidence with stale commit while top-level is current', () => {
+  const root = tempRepo();
+  try {
+    const currentCommit = 'a'.repeat(40);
+    const staleCommit = 'b'.repeat(40);
+    
+    // Release bundle with current top-level commit but stale nested evidence
+    write(root, '.kernel/evidence/data-cloud-release-bundle.json', {
+      evidenceRun: { commit: currentCommit },
+      sourceCommitSha: currentCommit,
+      targetCommitSha: currentCommit,
+      items: {
+        activeModuleEvidence: {
+          present: true,
+          path: '.kernel/evidence/data-cloud-active-modules.json',
+          payload: {
+            evidenceRun: { commit: staleCommit }, // Stale nested commit
+          },
+        },
+        actionPlaneBoundaryEvidence: {
+          present: true,
+          path: '.kernel/evidence/action-plane-boundaries.json',
+          payload: {
+            evidenceRun: { commit: currentCommit }, // Current nested commit
+          },
+        },
+      },
+    });
+
+    const violations = findEvidenceCurrentCommitViolations(root, { expectedCommit: currentCommit });
+
+    assert.ok(violations.length > 0, 'Expected at least one violation');
+    assert.ok(violations.some((violation) => 
+      violation.includes('activeModuleEvidence') &&
+      violation.includes('payload') &&
+      violation.includes('evidenceRun.commit') &&
+      violation.includes('must match current HEAD')
+    ), 'Expected violation for nested stale commit');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

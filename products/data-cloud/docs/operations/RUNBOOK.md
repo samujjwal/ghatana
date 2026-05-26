@@ -6,6 +6,10 @@ This runbook covers the validated Data Cloud deployment paths and the verificati
 
 The UI's shell-role mode is a disclosure and diagnostics aid only. It does not change backend authorization or tenant boundaries.
 
+## Alerting
+
+Data Cloud operations include alerting configuration for monitoring system health, backup status, and degraded dependencies. Alerting rules are configured in `monitoring/alertmanager/alertmanager.yml` with routes and receivers for critical operational events.
+
 ## Deployment Modes
 
 ### Local development
