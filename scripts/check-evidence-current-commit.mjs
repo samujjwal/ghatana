@@ -78,15 +78,23 @@ export function findEvidenceCurrentCommitViolations(
     }
 
     const commit = payload?.evidenceRun?.commit;
-    if (commit === undefined) {
-      continue;
+    if (commit !== undefined) {
+      if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
+        violations.push(`${evidenceFile}: evidenceRun.commit must be a 40-character git SHA`);
+      } else if (commit !== expectedCommit) {
+        violations.push(`${evidenceFile}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
+      }
     }
-    if (typeof commit !== 'string' || !/^[a-f0-9]{40}$/i.test(commit)) {
-      violations.push(`${evidenceFile}: evidenceRun.commit must be a 40-character git SHA`);
-      continue;
-    }
-    if (commit !== expectedCommit) {
-      violations.push(`${evidenceFile}: evidenceRun.commit ${commit} must match current HEAD ${expectedCommit}`);
+    for (const field of ['sourceCommitSha', 'targetCommitSha']) {
+      const value = payload?.evidenceRun?.[field] ?? payload?.[field];
+      if (value === undefined) {
+        continue;
+      }
+      if (typeof value !== 'string' || !/^[a-f0-9]{40}$/i.test(value)) {
+        violations.push(`${evidenceFile}: ${field} must be a 40-character git SHA`);
+      } else if (value !== expectedCommit) {
+        violations.push(`${evidenceFile}: ${field} ${value} must match current HEAD ${expectedCommit}`);
+      }
     }
   }
 

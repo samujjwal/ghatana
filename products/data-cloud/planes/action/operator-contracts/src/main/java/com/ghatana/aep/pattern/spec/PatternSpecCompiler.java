@@ -1,8 +1,10 @@
 package com.ghatana.aep.pattern.spec;
 
 import com.ghatana.aep.agent.capability.CapabilityDescriptor;
+import com.ghatana.aep.agent.capability.CapabilityKind;
 import com.ghatana.aep.agent.capability.CapabilityId;
 import com.ghatana.aep.agent.capability.ExternalAgentCapabilityRegistry;
+import com.ghatana.core.operator.agent.AgentCapabilityRole;
 import com.ghatana.aep.operator.contract.OperatorKind;
 
 import java.util.ArrayList;
@@ -161,13 +163,27 @@ public final class PatternSpecCompiler {
                 throw new IllegalArgumentException(path + " capabilityRef " + capabilityRef + " not found in registry");
             }
             
-            // DC-P5-002: Verify capability kind matches operator
+            // DC-P5-002/DC-P5-003: Verify capability kind and role match operator
             CapabilityDescriptor descriptor = capabilityDescriptor.get();
-            if (operatorKind.name().startsWith("AGENT_") && !operatorKind.name().equals(descriptor.kind().name())) {
-                throw new IllegalArgumentException(path + " operator kind " + operatorKind + " does not match capability kind " + descriptor.kind());
+            if (operatorKind.name().startsWith("AGENT_") && descriptor.kind() != CapabilityKind.EVENT_OPERATOR) {
+                throw new IllegalArgumentException(path + " operator kind " + operatorKind + " requires EVENT_OPERATOR capability kind, got " + descriptor.kind());
+            }
+            if (operatorKind.name().startsWith("AGENT_")) {
+                AgentCapabilityRole expectedRole = AgentCapabilityRole.valueOf(operatorKind.name());
+                Optional<AgentCapabilityRole> actualRole = descriptor.capabilityRole();
+                if (actualRole.isEmpty()) {
+                    throw new IllegalArgumentException(path + " capabilityRef " + capabilityRef + " is missing role metadata for " + expectedRole);
+                }
+                if (actualRole.orElseThrow() != expectedRole) {
+                    throw new IllegalArgumentException(path + " operator role " + expectedRole + " does not match capability role " + actualRole.orElseThrow());
+                }
             }
             
             // DC-P5-002: Verify input/output schema compatibility
+            if (expression.inputSchema() != null && descriptor.inputSchema() != null
+                    && !expression.inputSchema().equals(descriptor.inputSchema())) {
+                throw new IllegalArgumentException(path + " input schema " + expression.inputSchema() + " does not match capability input schema " + descriptor.inputSchema());
+            }
             if (expression.outputSchema() != null && descriptor.outputSchema() != null
                     && !expression.outputSchema().equals(descriptor.outputSchema())) {
                 throw new IllegalArgumentException(path + " output schema " + expression.outputSchema() + " does not match capability output schema " + descriptor.outputSchema());
@@ -194,7 +210,7 @@ public final class PatternSpecCompiler {
             Optional.ofNullable(expression.event()),
             Optional.ofNullable(expression.agentRef()),
             Optional.ofNullable(capabilityRef),
-            Optional.empty(),
+            Optional.ofNullable(expression.inputSchema()),
             Optional.ofNullable(expression.outputSchema()),
             expression.parameters() != null ? expression.parameters() : Map.of(),
             children,

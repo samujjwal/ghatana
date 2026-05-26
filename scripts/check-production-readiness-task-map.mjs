@@ -4,11 +4,14 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { renderProductionReadinessTaskMap } from './generate-production-readiness-task-map.mjs';
+
 const SCRIPT_PATH = 'scripts/check-production-readiness-task-map.mjs';
 const TASK_MAP_PATH = 'products/data-cloud/docs/audits/PRODUCTION_READINESS_TASK_MAP.md';
 const READINESS_PATH = 'products/data-cloud/lifecycle/readiness-evidence.yaml';
 const EVIDENCE_PATH = '.kernel/evidence/production-readiness-task-map.json';
 const COMMAND = 'pnpm check:production-readiness-task-map';
+const COMMIT_PATTERN = /^[a-f0-9]{40}$/i;
 const REQUIRED_COLUMNS = [
   'Task',
   'Implementation Status',
@@ -143,6 +146,21 @@ function evidenceCommit(root, evidencePath) {
   }
 }
 
+function readinessStatus(readiness) {
+  return readiness.match(/^status:\s*([a-z-]+)\s*$/m)?.[1] ?? null;
+}
+
+function normalizedCellCommit(value) {
+  const cleaned = cleanPath(String(value ?? '')).trim();
+  return COMMIT_PATTERN.test(cleaned) ? cleaned : null;
+}
+
+function normalizeGeneratedTaskMap(markdown) {
+  return markdown
+    .replace(/\|\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\s*\|/g, '| <verifiedAt> |')
+    .trim();
+}
+
 export function createProductionReadinessTaskMapEvidence(root = process.cwd(), now = new Date()) {
   const violations = [];
   const taskMapFullPath = path.join(root, TASK_MAP_PATH);
@@ -162,6 +180,11 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
   const markdown = existsSync(taskMapFullPath) ? readFileSync(taskMapFullPath, 'utf8') : '';
   const readiness = existsSync(readinessFullPath) ? readFileSync(readinessFullPath, 'utf8') : '';
   const { headers, rows } = parseTable(markdown);
+  const status = readinessStatus(readiness);
+
+  if (markdown && normalizeGeneratedTaskMap(markdown) !== normalizeGeneratedTaskMap(renderProductionReadinessTaskMap(root, now))) {
+    violations.push(`${TASK_MAP_PATH} must match scripts/generate-production-readiness-task-map.mjs output`);
+  }
 
   for (const column of REQUIRED_COLUMNS) {
     if (!headers.includes(column)) {
@@ -169,8 +192,12 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
     }
   }
 
-  if (/ready for production deployment/i.test(markdown) && /status:\s*blocked\b/.test(readiness)) {
+  if (/ready for production deployment/i.test(markdown) && status === 'blocked') {
     violations.push('Task map must not claim production readiness while readiness-evidence.yaml is blocked');
+  }
+  const stateClaim = markdown.match(/\*\*Current readiness state:\*\*\s*([a-z-]+)/i)?.[1];
+  if (stateClaim && status && stateClaim !== status) {
+    violations.push(`Task map current readiness state ${stateClaim} must match readiness-evidence.yaml status ${status}`);
   }
   if (!/\bblocked\b[\s\S]*\bcandidate\b[\s\S]*\bstaging-ready\b[\s\S]*\bproduction-ready\b/.test(markdown)) {
     violations.push('Task map must document blocked -> candidate -> staging-ready -> production-ready progression');
@@ -183,6 +210,7 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
     const releaseBlocking = (row['Release Blocking'] ?? '').toLowerCase();
     const evidenceStatus = (row['Evidence Status'] ?? '').toLowerCase();
     const evidenceCommitValue = (row['Evidence Commit'] ?? '').toLowerCase();
+    const rowCommit = normalizedCellCommit(row['Evidence Commit']);
 
     if (!['yes', 'no'].includes(releaseBlocking)) {
       violations.push(`${task}: Release Blocking must be yes/no`);
@@ -192,6 +220,12 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
     }
     if (releaseBlocking === 'yes' && evidenceCommitValue.includes('current head required')) {
       violations.push(`${task}: release-blocking evidence must be generated at current HEAD ${head}`);
+    }
+    if (releaseBlocking === 'yes' && !rowCommit) {
+      violations.push(`${task}: release-blocking Evidence Commit must be a 40-character git SHA`);
+    }
+    if (rowCommit && rowCommit !== head) {
+      violations.push(`${task}: Evidence Commit ${rowCommit} must match HEAD ${head}`);
     }
     if (evidenceFile && evidenceFile !== EVIDENCE_PATH && !existsSync(path.join(root, evidenceFile))) {
       violations.push(`${task}: evidence file/path does not exist: ${evidenceFile}`);
@@ -205,6 +239,9 @@ export function createProductionReadinessTaskMapEvidence(root = process.cwd(), n
     const commit = evidenceCommit(root, evidenceFile);
     if (evidenceStatus === 'verified' && commit !== head) {
       violations.push(`${task}: cannot be verified because evidence commit ${commit ?? 'missing'} does not match HEAD ${head}`);
+    }
+    if (rowCommit && commit && rowCommit !== commit) {
+      violations.push(`${task}: Evidence Commit ${rowCommit} must match ${evidenceFile} evidenceRun.commit ${commit}`);
     }
   }
 

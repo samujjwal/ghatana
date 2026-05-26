@@ -598,7 +598,26 @@ jobs:
         run: pnpm check:validate-release-evidence
 
       - name: Generate Data Cloud release evidence bundle
-        run: pnpm generate:data-cloud-release-bundle
+        env:
+          TARGET_COMMIT_SHA: ${{ github.sha }}
+          AUDIT_TARGET_COMMIT: ${{ github.sha }}
+          RELEASE_ENVIRONMENT: ${{ env.RELEASE_ENVIRONMENT }}
+        run: |
+          pnpm generate:data-cloud-release-bundle
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const bundle = JSON.parse(fs.readFileSync('.kernel/evidence/data-cloud-release-bundle.json', 'utf8'));
+          const expected = process.env.TARGET_COMMIT_SHA;
+          if (bundle.targetCommitSha !== expected || bundle.evidenceRun?.targetCommitSha !== expected) {
+            console.error(`Data Cloud release bundle targetCommitSha ${bundle.targetCommitSha} must match release commit ${expected}`);
+            process.exit(1);
+          }
+          if (bundle.pass !== true) {
+            console.error('Data Cloud release bundle must pass before upload.');
+            process.exit(1);
+          }
+          console.log(`Data Cloud release bundle target commit validated: ${expected}`);
+          NODE
 
       - name: Upload release summary artifact
         uses: actions/upload-artifact@v4

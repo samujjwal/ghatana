@@ -3,11 +3,11 @@
   "productId": "digital-marketing",
   "environment": "staging",
   "targetEnv": "staging",
-  "generatedAt": "2026-05-26T04:07:29.636Z",
-  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "generatedAt": "2026-05-26T06:01:38.473Z",
+  "commitSha": "936924cf915e366f3f0c47bee266a277601b1288",
   "bootstrap": {
     "validated": true,
-    "validatedAt": "2026-05-26T04:07:29.636Z",
+    "validatedAt": "2026-05-26T06:01:38.473Z",
     "failClosed": true,
     "postgres": {
       "status": "ready",
@@ -135,7 +135,7 @@
     }
   },
   "executabilityProof": {
-    "validatedAt": "2026-05-26T04:07:29.636Z",
+    "validatedAt": "2026-05-26T06:01:38.473Z",
     "validationMethod": "automated-bootstrap-verification-script",
     "validationScript": "scripts/check-dmos-lifecycle-readiness.mjs",
     "allComponentsExecutable": true,
@@ -220,6 +220,6 @@
     "products/digital-marketing/lifecycle/readiness-evidence.yaml",
     ".kernel/evidence/digital-marketing/digital-marketing-lifecycle-evidence-pack.json"
   ],
-  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
-  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288"
 }

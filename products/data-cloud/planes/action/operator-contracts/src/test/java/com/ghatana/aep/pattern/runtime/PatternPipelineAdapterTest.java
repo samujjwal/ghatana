@@ -162,7 +162,7 @@ class PatternPipelineAdapterTest {
             "operator", "AGENT_ACTION",
             "capabilityRef", capabilityRef,
             "inputSchema", "EventContext",
-            "toolPolicy", "ticketing.propose",
+            "toolPolicy", Map.of("mode", "ticketing.propose"),
             "outputSchema", "ActionResult")));
         CapabilityResolver resolver = new MapCapabilityResolver(Map.of(
             capabilityRef, descriptor(

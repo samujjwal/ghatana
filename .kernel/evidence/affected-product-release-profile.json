@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-26T04:13:20.825Z",
+  "generatedAt": "2026-05-26T14:16:38.822Z",
   "affectedProducts": [
-    "phr"
+    "data-cloud"
   ],
   "strictTargetCoverage": [
     {
@@ -49,25 +49,20 @@
   ],
   "perProductCoverage": [
     {
-      "productId": "phr",
+      "productId": "data-cloud",
       "requiredScripts": [
-        "build:phr",
-        "test:phr"
+        "build:data-cloud",
+        "test:data-cloud"
       ],
       "optionalCore": [
-        "validate:phr",
-        "package:phr"
+        "validate:data-cloud",
+        "package:data-cloud"
       ],
       "hasAtLeastOneReleaseCore": true,
       "hasWebSurface": true,
       "hasBackendSurface": true,
-      "deploymentTargets": [
-        "compose-local",
-        "dev",
-        "staging",
-        "prod"
-      ],
-      "hasFoundationUsageProfile": true
+      "deploymentTargets": [],
+      "hasFoundationUsageProfile": false
     }
   ],
   "violations": []

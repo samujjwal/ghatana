@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import YAML from 'yaml';
 
 import { loadCanonicalRegistry, resolveAffectedProducts } from './resolve-affected-products.mjs';
 
@@ -19,6 +20,7 @@ const targetEnvironment = process.env.RELEASE_ENVIRONMENT ?? 'staging';
 const evidenceValidityHours = Number(process.env.RELEASE_EVIDENCE_VALIDITY_HOURS ?? '48');
 const dataCloudProviderReadinessCheck = './scripts/check-data-cloud-platform-provider-readiness.mjs';
 const dataCloudRuntimeProfileCheck = './scripts/check-data-cloud-release-runtime-profile.mjs';
+const dataCloudReadinessPath = path.join(repoRoot, 'products/data-cloud/lifecycle/readiness-evidence.yaml');
 const businessProductFoundationChecks = [
   dataCloudProviderReadinessCheck,
   dataCloudRuntimeProfileCheck,
@@ -110,6 +112,86 @@ function validateRegistryAndEvidenceConsistency(productId, productMetadata) {
       gate: 'lifecycle-readiness-blockers',
       reason: 'unresolved-blocker-matrix',
       message: `Product ${productId} has unresolved blocker matrix entries while lifecycle readiness is enabled`,
+    });
+  }
+
+  return gaps;
+}
+
+function readYamlIfExists(filePath) {
+  if (!existsSync(filePath)) {
+    return null;
+  }
+
+  return YAML.parse(readFileSync(filePath, 'utf8'));
+}
+
+function validateDataCloudProductionPromotionEvidence() {
+  const gaps = [];
+  const readiness = readYamlIfExists(dataCloudReadinessPath);
+  if (!readiness || readiness.status !== 'production-ready') {
+    return gaps;
+  }
+
+  const currentCommit = currentGitSha();
+  const promotion = readiness.promotion;
+  if (!promotion || typeof promotion !== 'object') {
+    return [{
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-evidence',
+      message: 'Data Cloud production-ready status requires promotion evidence',
+    }];
+  }
+
+  if (promotion.previousStatus !== 'staging-ready' || promotion.requestedStatus !== 'production-ready') {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'invalid-promotion-transition',
+      message: 'Data Cloud production-ready promotion must transition from staging-ready to production-ready',
+    });
+  }
+
+  const approval = promotion.approval;
+  if (!approval || approval.status !== 'approved' || !approval.approvedAt || !approval.approvedBy) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-approval',
+      message: 'Data Cloud production-ready promotion requires approvedAt and approvedBy metadata',
+    });
+  }
+
+  if (promotion.sourceCommit !== currentCommit || promotion.targetCommit !== currentCommit) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'stale-promotion-commit',
+      message: `Data Cloud production-ready promotion commits must match current HEAD ${currentCommit}`,
+      expectedCommitSha: currentCommit,
+      actualSourceCommitSha: promotion.sourceCommit,
+      actualTargetCommitSha: promotion.targetCommit,
+    });
+  }
+
+  const bundlePath = path.join(repoRoot, String(promotion.evidenceBundle ?? ''));
+  const bundle = readJsonIfExists(bundlePath);
+  if (!bundle) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'missing-promotion-bundle',
+      message: 'Data Cloud production-ready promotion evidence bundle is missing',
+      evidenceBundle: promotion.evidenceBundle,
+    });
+  } else if (bundle.pass !== true || bundle.evidenceRun?.commit !== currentCommit || bundle.targetCommitSha !== currentCommit) {
+    gaps.push({
+      severity: 'P0',
+      gate: 'data-cloud-production-promotion',
+      reason: 'invalid-promotion-bundle',
+      message: `Data Cloud production-ready promotion bundle must pass and match current HEAD ${currentCommit}`,
+      evidenceBundle: promotion.evidenceBundle,
     });
   }
 
@@ -1027,6 +1109,10 @@ export function buildProductScorecard(productId, runs, releaseProfiles, registry
 
   const consistencyGaps = validateRegistryAndEvidenceConsistency(productId, productMetadata);
   blockingGaps.push(...consistencyGaps);
+
+  if (productId === 'data-cloud') {
+    blockingGaps.push(...validateDataCloudProductionPromotionEvidence());
+  }
 
   const freshnessGap = enforceExistingEvidenceFreshness ? releaseEvidenceFreshnessGap(productId) : null;
   if (freshnessGap) {

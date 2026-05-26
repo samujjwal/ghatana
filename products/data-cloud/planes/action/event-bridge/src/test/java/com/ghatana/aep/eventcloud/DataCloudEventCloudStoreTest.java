@@ -14,6 +14,7 @@ import com.ghatana.aep.model.PatternPartialMatch;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.provider.InMemoryEventLogStoreProvider;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -24,6 +25,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @doc.type class
+ * @doc.purpose Contract tests proving the Data-Cloud EventCloud bridge persists AEP EventCloud state without owning AEP semantics
+ * @doc.layer product
+ * @doc.pattern ContractTest
+ */
+@DisplayName("Data-Cloud EventCloud bridge persistence contract")
 class DataCloudEventCloudStoreTest extends EventloopTestBase {
 
     @Test
@@ -40,6 +48,7 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
         assertThat(record).hasValueSatisfying(value -> {
             assertThat(value.event().eventId()).isEqualTo("event-1");
             assertThat(value.event().eventType()).isEqualTo("deploy.started");
+            assertThat(value.event().idempotencyKey()).isEqualTo("event-1-idempotency");
             assertThat(value.event().payload()).containsEntry("service", "checkout");
         });
     }
@@ -168,6 +177,36 @@ class DataCloudEventCloudStoreTest extends EventloopTestBase {
                 Instant.parse("2026-05-23T00:10:00Z"),
                 Instant.parse("2026-05-23T00:01:00Z"),
                 Instant.parse("2026-05-23T00:11:00Z"));
+    }
+
+    @Test
+    void bridgePersistsStateWithoutPatternEvaluationOrReordering() {
+        DataCloudEventCloudStore store = store();
+        EventCloudOffset first = runPromise(() -> store.append(event(
+            "event-1",
+            "deploy.started",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:10:00Z")));
+        runPromise(() -> store.append(event(
+            "event-2",
+            "deploy.completed",
+            "tenant-a",
+            "partition-a",
+            "2026-05-23T00:01:00Z")));
+        List<EventCloudRecord> replayed = new ArrayList<>();
+
+        EventCloudWatermark watermark = runPromise(() -> store.watermark("tenant-a", "partition-a"));
+        runPromise(() -> store.replay("tenant-a", first, watermark.offset(), replayed::add));
+
+        assertThat(replayed).extracting(record -> record.event().eventType())
+            .containsExactly("deploy.started", "deploy.completed");
+        assertThat(replayed).extracting(record -> record.event().eventTime())
+            .containsExactly(
+                Instant.parse("2026-05-23T00:10:00Z"),
+                Instant.parse("2026-05-23T00:01:00Z"));
+        assertThat(replayed).extracting(record -> record.event().payload())
+            .allSatisfy(payload -> assertThat(payload).containsKey("service"));
     }
 
     @Test

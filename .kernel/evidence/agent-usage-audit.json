@@ -1,15 +1,22 @@
 {
-  "generatedAt": "2026-05-26T04:00:19.743Z",
+  "generatedAt": "2026-05-26T14:16:43.206Z",
   "pass": true,
   "evidenceRun": {
     "generatedBy": "scripts/audit-agent-usage.mjs",
     "source": "scripts/audit-agent-usage.mjs",
     "command": "pnpm check:agent-usage-audit",
-    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba"
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetEnvironment": "staging"
   },
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetEnvironment": "staging",
   "summary": {
     "scannedDirectories": 7,
     "findingCount": 0,
+    "approvedExceptionRegistry": "products/data-cloud/planes/action/agent-runtime/docs/AGENT_USAGE_EXCEPTIONS.md",
     "approvedExceptionPatterns": [
       "\\/test\\/",
       "\\/__tests__\\/",
@@ -30,7 +37,10 @@
       "HybridStateStore",
       "WindowedQueryPlan",
       "AepCentralRegistryService",
-      "AgentMarketplaceService"
+      "AgentMarketplaceService",
+      "AgentCapabilityExecutionFactory",
+      "AgentEventOperatorCapabilityAdapter",
+      "GovernedAgentDispatcher"
     ]
   },
   "violations": []

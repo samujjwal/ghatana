@@ -91,6 +91,9 @@ jobs:
           const start = Number(process.argv[3]);
           const end = Number(process.argv[4]);
           const evidence = JSON.parse(fs.readFileSync('.kernel/evidence/data-cloud-active-modules.json', 'utf8'));
+          const head = require('node:child_process')
+            .execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' })
+            .trim();
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
             '## Data Cloud Active Module Compile',
             '',
@@ -100,6 +103,8 @@ jobs:
             `- Compile tasks executed: ${tasks.length}`,
             '- Failed tasks: 0',
             `- Duration seconds: ${Math.max(0, end - start)}`,
+            `- Current HEAD: ${head}`,
+            `- Evidence commit: ${evidence.evidenceRun.commit}`,
             '',
           ].join('\n'));
           NODE

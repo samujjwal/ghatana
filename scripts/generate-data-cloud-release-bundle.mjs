@@ -110,6 +110,14 @@ export function createDataCloudReleaseBundle(root = process.cwd(), now = new Dat
     if (commit !== undefined && commit !== head) {
       violations.push(`${key}: evidenceRun.commit ${commit} must match HEAD ${head}`);
     }
+    const sourceCommitSha = item.payload?.evidenceRun?.sourceCommitSha ?? item.payload?.sourceCommitSha;
+    if (sourceCommitSha !== undefined && sourceCommitSha !== head) {
+      violations.push(`${key}: sourceCommitSha ${sourceCommitSha} must match HEAD ${head}`);
+    }
+    const itemTargetCommitSha = item.payload?.evidenceRun?.targetCommitSha ?? item.payload?.targetCommitSha;
+    if (itemTargetCommitSha !== undefined && itemTargetCommitSha !== targetCommitSha) {
+      violations.push(`${key}: targetCommitSha ${itemTargetCommitSha} must match release target ${targetCommitSha}`);
+    }
     if (item.payload?.pass === false) {
       violations.push(`${key}: pass is false`);
     }

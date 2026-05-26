@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0.0",
   "productId": "phr",
-  "generatedAt": "2026-05-26T04:16:27.682Z",
-  "commitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "generatedAt": "2026-05-26T05:34:39.875Z",
+  "commitSha": "936924cf915e366f3f0c47bee266a277601b1288",
   "cacheType": "redis-cluster",
   "cachePurpose": "consent-decisions",
   "multiNodeInvalidation": true,
@@ -23,10 +23,10 @@
     "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",
     "products/phr/src/test/java/com/ghatana/phr/kernel/DistributedCacheConsentInvalidationTest.java"
   ],
-  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
-  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
   "executableProof": {
-    "validatedAt": "2026-05-26T04:16:27.682Z",
+    "validatedAt": "2026-05-26T05:34:39.875Z",
     "command": "./gradlew :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
     "tests": [
       "products/phr/src/test/java/com/ghatana/phr/cache/PhrDistributedCacheProofTest.java",

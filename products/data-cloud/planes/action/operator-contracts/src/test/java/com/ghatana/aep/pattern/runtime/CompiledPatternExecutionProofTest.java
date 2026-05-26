@@ -117,8 +117,15 @@ class CompiledPatternExecutionProofTest {
         return Map.of(
             "apiVersion", "aep.ghatana.io/v1",
             "kind", "PatternSpec",
-            "metadata", Map.of("name", "sre-risk-sequence", "tenantId", "tenant-a"),
-            "semantics", Map.of("timePolicy", Map.of(), "uncertaintyPolicy", Map.of(), "replayPolicy", Map.of()),
+            "metadata", Map.of(
+                "name", "sre-risk-sequence",
+                "namespace", "sre",
+                "version", "1.0.0",
+                "tenantId", "tenant-a"),
+            "semantics", Map.of(
+                "timePolicy", "event_time",
+                "uncertaintyPolicy", "propagate",
+                "replayPolicy", "recorded_output"),
             "pattern", Map.of(
                 "operator", "SEQ",
                 "operands", List.of(
@@ -135,7 +142,7 @@ class CompiledPatternExecutionProofTest {
             "emit", Map.of("eventType", "pattern.matched", "outputSchema", "PatternMatched"),
             "lifecycle", Map.of("state", "SHADOW"),
             "governance", Map.of("reviewPolicy", "human_required"),
-            "observability", Map.of("metrics", true));
+            "observability", Map.of("metricsPolicy", "enabled", "loggingPolicy", "enabled"));
     }
 
     private static TestEvent event(

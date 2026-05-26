@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "productId": "phr",
   "productName": "Personal Health Records",
-  "checkedAt": "2026-05-26T04:16:27.682Z",
+  "checkedAt": "2026-05-26T05:34:39.875Z",
   "environmentSpecific": true,
   "environments": {
     "local": {
@@ -215,7 +215,7 @@
     },
     "cache": {
       "status": "passed",
-      "lastChecked": "2026-05-26T04:16:27.682Z",
+      "lastChecked": "2026-05-26T05:34:39.875Z",
       "evidenceRefs": [
         "products/phr/src/main/java/com/ghatana/phr/kernel/PhrKernelModule.java",
         ".kernel/evidence/phr/distributed-cache-proof.json",
@@ -233,7 +233,7 @@
       "stagingProof": {
         "status": "validated",
         "required": true,
-        "validatedAt": "2026-05-26T04:16:27.682Z",
+        "validatedAt": "2026-05-26T05:34:39.875Z",
         "evidenceRef": ".kernel/evidence/phr/staging-bootstrap-evidence.json",
         "runtimeProofCommand": "./gradlew :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
         "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and staging redis bootstrap is executable"
@@ -241,7 +241,7 @@
       "prodProof": {
         "status": "validated",
         "required": true,
-        "validatedAt": "2026-05-26T04:16:27.682Z",
+        "validatedAt": "2026-05-26T05:34:39.875Z",
         "evidenceRef": ".kernel/evidence/phr/prod-bootstrap-evidence.json",
         "runtimeProofCommand": "./gradlew :products:phr:test -DincludeIntegrationTests=true --rerun-tasks --tests *DistributedCacheConsentInvalidationTest --tests *PhrDistributedCacheProofTest",
         "acceptanceCriteria": "Consent invalidation propagates across simulated nodes and prod redis bootstrap is executable"
@@ -296,7 +296,7 @@
     },
     "deployment": {
       "status": "passed",
-      "lastChecked": "2026-05-26T04:16:27.682Z",
+      "lastChecked": "2026-05-26T05:34:39.875Z",
       "evidenceRefs": [
         ".kernel/out/products/phr/deploy/2026-05-23T14-07-05-7773a9bf/deployment-manifest.json",
         "products/phr/deploy/local.compose.yaml",
@@ -354,7 +354,7 @@
             "elasticsearch"
           ],
           "status": "validated",
-          "validatedAt": "2026-05-26T04:16:27.682Z"
+          "validatedAt": "2026-05-26T05:34:39.875Z"
         },
         "prod": {
           "secrets": [
@@ -372,7 +372,7 @@
             "elasticsearch"
           ],
           "status": "validated",
-          "validatedAt": "2026-05-26T04:16:27.682Z"
+          "validatedAt": "2026-05-26T05:34:39.875Z"
         }
       }
     }
@@ -473,18 +473,18 @@
     "Implement break-glass E2E test with post-hoc review",
     "Verify UI privacy hardening for all roles"
   ],
-  "generatedAt": "2026-05-26T04:16:27.682Z",
+  "generatedAt": "2026-05-26T05:34:39.875Z",
   "evidenceRun": {
     "generatedBy": "scripts/check:phr-lifecycle-readiness",
     "command": "pnpm check:phr-lifecycle-readiness",
     "source": ".kernel/evidence/phr/phr-release-readiness.json",
-    "commit": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
-    "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
-    "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+    "commit": "936924cf915e366f3f0c47bee266a277601b1288",
+    "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+    "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
     "targetEnvironment": "staging"
   },
-  "sourceCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
-  "targetCommitSha": "8f7a0c545dfc10b465c1ae63c39e48021b8400ba",
+  "sourceCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
+  "targetCommitSha": "936924cf915e366f3f0c47bee266a277601b1288",
   "targetEnvironment": "staging",
   "validationStatus": "validated",
   "reviewDueAt": "2026-05-26T19:37:55.288Z",

@@ -2,7 +2,7 @@
 
 **Canonical source:** generated Gradle includes plus `scripts/list-data-cloud-active-modules.mjs`.
 
-The Action Plane is a compatibility and migration area for stored execution metadata, checkpoints, review evidence, and AEP integration adapters. AEP semantic modules may remain under `products/data-cloud/planes/action/*` during migration, but that is code-location reality only and does not transfer product ownership to Data-Cloud.
+Data-Cloud's Action Plane is AEP-powered. Data-Cloud owns persisted action metadata, review evidence, policy evidence, audit evidence, and storage integrations. AEP owns the adaptive event-processing semantics used by the Action Plane. AEP semantic modules may remain under `products/data-cloud/planes/action/*` during migration, but that is code-location reality only and does not transfer product ownership to Data-Cloud.
 
 ## Inventory
 

@@ -89,3 +89,42 @@ test('rejects malformed evidenceRun.commit values', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('rejects stale source and target commit metadata', () => {
+  const root = tempRepo();
+  try {
+    write(root, '.kernel/evidence/data-cloud-release-bundle.json', {
+      evidenceRun: {
+        commit: 'a'.repeat(40),
+        sourceCommitSha: 'a'.repeat(40),
+        targetCommitSha: 'b'.repeat(40),
+      },
+      sourceCommitSha: 'a'.repeat(40),
+      targetCommitSha: 'b'.repeat(40),
+    });
+
+    const violations = findEvidenceCurrentCommitViolations(root, { expectedCommit: 'a'.repeat(40) });
+
+    assert.ok(violations.some((violation) => violation.includes('targetCommitSha')));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects stale source and target commit metadata without evidenceRun', () => {
+  const root = tempRepo();
+  try {
+    write(root, '.kernel/evidence/digital-marketing/google-ads-connector.json', {
+      productId: 'digital-marketing',
+      sourceCommitSha: 'b'.repeat(40),
+      targetCommitSha: 'b'.repeat(40),
+    });
+
+    const violations = findEvidenceCurrentCommitViolations(root, { expectedCommit: 'a'.repeat(40) });
+
+    assert.equal(violations.length, 2);
+    assert.ok(violations.every((violation) => violation.includes('must match current HEAD')));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

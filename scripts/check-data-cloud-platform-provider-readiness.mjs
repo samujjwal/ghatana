@@ -96,6 +96,10 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function isBlank(value) {
+  return value === null || value === undefined || String(value).trim().length === 0;
+}
+
 function sleepMs(durationMs) {
   const signal = new Int32Array(new SharedArrayBuffer(4));
   Atomics.wait(signal, 0, 0, durationMs);
@@ -169,9 +173,9 @@ function assertEvidenceRun(label, payload, expected) {
 function assertExecutableReadinessEvidence(readiness) {
   const productReleaseReadinessBootstrap =
     process.env.DATACLOUD_RELEASE_GATE_BOOTSTRAP === 'product-release-readiness';
-  const allowedStatuses = new Set(['blocked', 'staging-ready', 'production-ready']);
+  const allowedStatuses = new Set(['blocked', 'candidate', 'staging-ready', 'production-ready']);
   if (!allowedStatuses.has(String(readiness.status ?? ''))) {
-    fail('Data Cloud readiness status must be blocked, staging-ready, or production-ready');
+    fail('Data Cloud readiness status must be blocked, candidate, staging-ready, or production-ready');
   }
   assertIncludesAll('Data Cloud readiness blockers', readiness.conformance?.keepStatusBlockedUntil, REQUIRED_BLOCKERS);
   const currentCommitViolations = findEvidenceCurrentCommitViolations(repoRoot, {
@@ -220,6 +224,38 @@ function assertExecutableReadinessEvidence(readiness) {
     }
     if (blocker === 'action-plane-boundary-tests-pass' && payload.pass !== true) {
       fail('Action Plane boundary evidence must have pass: true');
+    }
+  }
+
+  if (readiness.status === 'production-ready') {
+    const promotion = readiness.promotion;
+    if (!promotion || typeof promotion !== 'object') {
+      fail('Data Cloud production-ready status requires promotion evidence');
+    }
+    if (promotion.previousStatus !== 'staging-ready' || promotion.requestedStatus !== 'production-ready') {
+      fail('Data Cloud production-ready status requires promotion.previousStatus staging-ready and requestedStatus production-ready');
+    }
+    const approval = promotion.approval;
+    if (!approval || approval.status !== 'approved' || isBlank(approval.approvedAt) || isBlank(approval.approvedBy)) {
+      fail('Data Cloud production-ready status requires approved promotion.approval metadata');
+    }
+    const currentCommit = currentGitSha();
+    if (promotion.sourceCommit !== currentCommit || promotion.targetCommit !== currentCommit) {
+      fail(`Data Cloud production-ready promotion sourceCommit and targetCommit must match current HEAD ${currentCommit}`);
+    }
+    if (promotion.evidenceBundle !== '.kernel/evidence/data-cloud-release-bundle.json') {
+      fail('Data Cloud production-ready promotion must reference .kernel/evidence/data-cloud-release-bundle.json');
+    }
+    const bundle = readJson(promotion.evidenceBundle);
+    assertEvidenceRun('production-ready promotion bundle', bundle, {
+      source: 'scripts/generate-data-cloud-release-bundle.mjs',
+      command: 'pnpm generate:data-cloud-release-bundle',
+    });
+    if (bundle.pass !== true) {
+      fail('Data Cloud production-ready promotion bundle must have pass: true');
+    }
+    if (bundle.evidenceRun?.commit !== currentCommit || bundle.targetCommitSha !== currentCommit) {
+      fail(`Data Cloud production-ready promotion bundle must match current HEAD ${currentCommit}`);
     }
   }
 }
